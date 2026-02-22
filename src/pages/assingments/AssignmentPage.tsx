@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.tsx';
-import apiClient from '../../services/api.ts';
+import apiClient from '../../services/api';
 import { toast } from '../../components/Toast.tsx';
 import {
   FileText,
