@@ -74,13 +74,13 @@ export default function ProfilePage() {
     return (
       <div className="space-y-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-32 mb-6"></div>
-          <div className="bg-white rounded-2xl shadow-card p-6 max-w-2xl">
+          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-32 mb-6"></div>
+          <div className="bg-white dark:bg-card rounded-2xl shadow-card p-6 max-w-2xl">
             <div className="space-y-4">
-              <div className="h-4 bg-gray-200 rounded w-24"></div>
-              <div className="h-10 bg-gray-200 rounded"></div>
-              <div className="h-4 bg-gray-200 rounded w-32"></div>
-              <div className="h-4 bg-gray-200 rounded w-28"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-24"></div>
+              <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-32"></div>
+              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-28"></div>
             </div>
           </div>
         </div>
@@ -92,20 +92,20 @@ export default function ProfilePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Profile</h1>
-        <div className="flex items-center text-sm text-gray-500">
+        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
           <Clock className="w-4 h-4 mr-1" />
           Last updated: {new Date().toLocaleDateString()}
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-card p-6 max-w-2xl">
+      <div className="bg-white dark:bg-card rounded-2xl shadow-card p-6 max-w-2xl">
         <div className="flex items-center mb-6">
           <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-xl font-semibold mr-4">
             {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">{user?.name}</h2>
-            <p className="text-gray-600 capitalize">{user?.role}</p>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{user?.name}</h2>
+            <p className="text-gray-600 dark:text-gray-300 capitalize">{user?.role}</p>
           </div>
         </div>
 

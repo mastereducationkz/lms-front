@@ -69,10 +69,10 @@ export default function FavoriteFlashcardsPage() {
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'easy': return 'bg-green-100 text-green-800';
-      case 'normal': return 'bg-blue-100 text-blue-800';
-      case 'hard': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'easy': return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400';
+      case 'normal': return 'bg-gray-100 dark:bg-secondary text-gray-800 dark:text-foreground';
+      case 'hard': return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400';
+      default: return 'bg-gray-100 dark:bg-secondary text-gray-800 dark:text-foreground';
     }
   };
 
@@ -155,9 +155,9 @@ export default function FavoriteFlashcardsPage() {
               <span>Card {currentPracticeIndex + 1} of {favorites.length}</span>
               <span>{Math.round(progress)}% complete</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 dark:bg-secondary rounded-full h-2">
               <div 
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                className="bg-gray-500 dark:bg-gray-400 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>

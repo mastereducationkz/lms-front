@@ -78,7 +78,7 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
       <div className="space-y-4">
         {/* File attachment */}
         {submissionDetails.file_url && (
-          <div className="flex items-center p-3 bg-white dark:bg-gray-900 rounded-lg border">
+          <div className="flex items-center p-3 bg-white dark:bg-card rounded-lg border dark:border-border">
             <FileText className="w-5 h-5 text-blue-600 mr-3" />
             <div className="flex-1">
               <div className="font-medium">
@@ -103,7 +103,7 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
 
         {/* Text answer */}
         {submissionDetails.answers?.text && (
-          <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border whitespace-pre-wrap">
+          <div className="bg-white dark:bg-card p-4 rounded-lg border dark:border-border whitespace-pre-wrap">
             {submissionDetails.answers.text}
           </div>
         )}
@@ -112,7 +112,7 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
         {submissionDetails.answers?.tasks && submissionDetails.answers.tasks.length > 0 && (
           <div className="space-y-3">
             {submissionDetails.answers.tasks.map((task: any, idx: number) => (
-              <div key={idx} className="bg-white dark:bg-gray-900 p-4 rounded-lg border">
+              <div key={idx} className="bg-white dark:bg-card p-4 rounded-lg border dark:border-border">
                 <div className="text-sm font-medium text-muted-foreground mb-2">
                   Task {idx + 1}
                 </div>
@@ -184,7 +184,7 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
 
           {/* Right side - Grading Controls (2/5 width) */}
           <div className="lg:col-span-2">
-            <div className="bg-white dark:bg-gray-950 p-4 border rounded-lg sticky top-4 space-y-4">
+            <div className="bg-white dark:bg-card p-4 border border-border rounded-lg sticky top-4 space-y-4">
               <h3 className="font-semibold">Grading</h3>
 
               <div className="space-y-2">

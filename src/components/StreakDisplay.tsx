@@ -70,9 +70,9 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({ streakInfo, className = '
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow-md p-6 ${className}`}>
+    <div className={`bg-white dark:bg-card rounded-lg shadow-md p-6 ${className}`}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-800">Серия обучения</h3>
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-foreground">Серия обучения</h3>
         <span className="text-2xl">{getStreakIcon()}</span>
       </div>
       
@@ -80,33 +80,33 @@ const StreakDisplay: React.FC<StreakDisplayProps> = ({ streakInfo, className = '
         <span className={`text-3xl font-bold ${getStreakColor()}`}>
           {streakInfo.daily_streak}
         </span>
-        <span className="ml-2 text-gray-600">
+        <span className="ml-2 text-gray-600 dark:text-gray-400">
           {streakInfo.daily_streak === 1 ? 'день' : 
            streakInfo.daily_streak < 5 ? 'дня' : 'дней'}
         </span>
       </div>
       
-      <p className="text-sm text-gray-600 mb-2">
+      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
         {getStreakMessage()}
       </p>
       
-      <div className="text-xs text-gray-500">
+      <div className="text-xs text-gray-500 dark:text-gray-400">
         <p>Последняя активность: {formatLastActivity()}</p>
         <p>Общее время изучения: {Math.round(streakInfo.total_study_time_minutes / 60)} ч</p>
       </div>
       
       {streakInfo.streak_status === 'at_risk' && (
-        <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-xs">
+        <div className="mt-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-yellow-800 dark:text-yellow-300 text-xs">
           💡 Изучите что-нибудь сегодня, чтобы сохранить серию!
         </div>
       )}
 
       {/* Multiplier Badge */}
-      <div className="mt-4 pt-3 border-t border-gray-100">
+      <div className="mt-4 pt-3 border-t border-gray-100 dark:border-border">
         {streakInfo.current_multiplier && streakInfo.current_multiplier > 1.0 ? (
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1 font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded text-sm w-fit">
+              <span className="flex items-center gap-1 font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded text-sm w-fit">
                 ⚡ {streakInfo.current_multiplier}x Boost
               </span>
             </div>

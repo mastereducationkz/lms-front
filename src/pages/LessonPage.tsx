@@ -1471,7 +1471,7 @@ export default function LessonPage() {
       if (!attachments || attachments.length === 0) return null;
 
       return (
-        <div className="mt-6 p-4 rounded-lg border">
+        <div className="mt-6 p-4 rounded-lg border dark:border-gray-700">
           <div className="space-y-4">
             {attachments.map((attachment) => (
               <div key={attachment.id} className="rounded">
@@ -1527,10 +1527,10 @@ export default function LessonPage() {
 
 
     const optionalBanner = currentStep.is_optional ? (
-      <div className="bg-indigo-50 border-1 border-indigo-200 rounded-md p-3 mb-4 flex items-start gap-3">
+      <div className="bg-indigo-50 dark:bg-indigo-900/20 border-1 border-indigo-200 dark:border-indigo-800 rounded-md p-3 mb-4 flex items-start gap-3">
          <div>
-            <h4 className="text-sm font-medium text-indigo-800">Optional Step</h4>
-            <p className="text-xs text-indigo-600 mt-1">
+            <h4 className="text-sm font-medium text-indigo-800 dark:text-indigo-400">Optional Step</h4>
+            <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
               You can skip this step and proceed to the next one without completing it.
             </p>
          </div>
@@ -1547,13 +1547,13 @@ export default function LessonPage() {
               
               {/* Special "Read explanation" text above everything */}
               {currentStep.content_text && currentStep.content_text.includes("Read the explanation and make notes.") && (
-                <div className="mb-4 p-4 bg-blue-50 border-l-4 border-blue-500 text-blue-700">
+                <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 text-blue-700 dark:text-blue-400">
                   <p className="font-medium">Read the explanation and make notes.</p>
                 </div>
               )}
   
               {renderAttachments(currentStep.attachments)}
-              <div className="prose max-w-none">
+              <div className="prose dark:prose-invert max-w-none">
                 <div dangerouslySetInnerHTML={{ 
                   __html: renderTextWithLatex(
                     (currentStep.content_text || '').replace(/<p><strong>Read the explanation and make notes.<\/strong><\/p>/g, '')
@@ -1571,13 +1571,13 @@ export default function LessonPage() {
   
               {/* Special "Watch explanations" text above video */}
               {currentStep.content_text && currentStep.content_text.includes("Watch the explanations for the previous questions") && (
-                <div className="mb-4 p-4 bg-blue-50 border-l-4 border-blue-500 text-blue-700">
+                <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 text-blue-700 dark:text-blue-400">
                   <p className="font-medium">Watch the explanations for the previous questions</p>
                 </div>
               )}
   
               {currentStep.video_url && (
-                <div className="bg-gray-100 rounded-lg overflow-hidden">
+                <div className="bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
                   <YouTubeVideoPlayer
                     key={currentStep.id}
                     url={currentStep.video_url}
@@ -1602,20 +1602,20 @@ export default function LessonPage() {
   
               {/* Video Progress Indicator */}
               {currentStep && currentStep.video_url && (
-                <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/40 rounded-lg border border-blue-200 dark:border-blue-900/50">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-blue-800">Video Watch Progress</span>
-                    <span className="text-sm text-blue-600">
+                    <span className="text-sm font-medium text-blue-800 dark:text-blue-300/80">Video Watch Progress</span>
+                    <span className="text-sm text-blue-600 dark:text-blue-400/80">
                       {Math.round((videoProgress.get(currentStep.id.toString()) || 0) * 100)}%
                     </span>
                   </div>
-                  <div className="w-full bg-blue-200 rounded-full h-2">
+                  <div className="w-full bg-blue-200 dark:bg-blue-900/40 rounded-full h-2">
                     <div
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                      className="bg-blue-600 dark:bg-blue-600/70 h-2 rounded-full transition-all duration-300"
                       style={{ width: `${(videoProgress.get(currentStep.id.toString()) || 0) * 100}%` }}
                     />
                   </div>
-                  <p className="text-xs text-blue-600 mt-2">
+                  <p className="text-xs text-blue-600 dark:text-blue-400/70 mt-2">
                     You need to watch 90% or more of the video to proceed to the next step
                   </p>
                 </div>
@@ -1624,7 +1624,7 @@ export default function LessonPage() {
               {renderAttachments(currentStep.attachments)}
   
               {currentStep.content_text && (
-                <div className="prose max-w-none">
+                <div className="prose dark:prose-invert max-w-none">
                   <div dangerouslySetInnerHTML={{ 
                     __html: renderTextWithLatex(
                       currentStep.content_text.replace(/<p><strong>Watch the explanations for the previous questions<\/strong><\/p>/g, '')
@@ -1756,7 +1756,7 @@ export default function LessonPage() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-2">Error</h2>
+          <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">Error</h2>
           <p className="text-muted-foreground">{error}</p>
           <Button onClick={() => window.location.reload()} className="mt-4">
             Retry
@@ -1810,7 +1810,7 @@ export default function LessonPage() {
                 size="sm" 
                 onClick={skipLesson} 
                 title="Skip Lesson (Teacher Only)"
-                className="ml-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                className="ml-2 text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20"
               >
                 <SkipForward className="w-4 h-4 mr-1" />
                 Skip
@@ -1822,7 +1822,7 @@ export default function LessonPage() {
                 size="sm" 
                 onClick={autoCompleteAllSteps} 
                 title="DEV: Auto-complete all steps"
-                className="ml-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 font-mono text-xs"
+                className="ml-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 font-mono text-xs"
               >
                 🚀 Auto-Complete
               </Button>
@@ -1837,8 +1837,8 @@ export default function LessonPage() {
                 onClick={toggleLookUp}
                 className={`h-9 w-9 p-0 rounded-lg border transition-colors ${
                   isLookUpEnabled 
-                    ? 'text-blue-600 border-blue-100' 
-                    : 'bg-white text-gray-400 border-gray-100 hover:bg-gray-50'
+                    ? 'text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800' 
+                    : 'bg-white dark:bg-card text-gray-400 dark:text-gray-500 border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
                 }`}
                 title={isLookUpEnabled ? 'Disable Look Up' : 'Enable Look Up'}
               >
@@ -1918,7 +1918,7 @@ export default function LessonPage() {
                       </div>
                     ) : (
                       <div className="text-center py-12 border-none">
-                        <p className="text-gray-500">No steps available for this lesson.</p>
+                        <p className="text-gray-500 dark:text-gray-400">No steps available for this lesson.</p>
                       </div>
                     )}
                   </CardContent>
@@ -1942,13 +1942,13 @@ export default function LessonPage() {
                     {currentStep?.is_optional && (
                       <>
                         <span className="hidden sm:inline">•</span>
-                        <span className="text-blue-600 font-medium">(Optional)</span>
+                        <span className="text-blue-600 dark:text-blue-400 font-medium">(Optional)</span>
                       </>
                     )}
                     {currentStep && !isStepCompleted(currentStep) && !currentStep.is_optional && (
                       <>
                         <span className="hidden sm:inline">•</span>
-                        <span className="text-orange-600 font-medium">
+                        <span className="text-orange-600 dark:text-orange-400 font-medium">
                           {currentStep.content_type === 'video_text' ? 'Video not watched enough' :
                               currentStep.content_type === 'quiz' && !isStepCompleted(currentStep) ? 'Quiz is not complete' :
                               'Step is not completed'}

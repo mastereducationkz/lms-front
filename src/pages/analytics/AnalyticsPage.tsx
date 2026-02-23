@@ -446,8 +446,8 @@ export default function AnalyticsPage() {
       <div className="p-6">
         <Card>
           <CardContent className="p-12 text-center">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
-            <p className="text-gray-500">You don't have permission to view analytics.</p>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-foreground mb-2">Access Denied</h2>
+            <p className="text-gray-500 dark:text-gray-400">You don't have permission to view analytics.</p>
           </CardContent>
         </Card>
       </div>
@@ -457,8 +457,8 @@ export default function AnalyticsPage() {
   if (courses.length === 0 && !loadingOverview) {
     return (
       <div className="p-8 text-center">
-        <h2 className="text-xl font-semibold mb-2">No courses found</h2>
-        <p className="text-gray-500">You don't have access to any courses yet.</p>
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-foreground mb-2">No courses found</h2>
+        <p className="text-gray-500 dark:text-gray-400">You don't have access to any courses yet.</p>
       </div>
     );
   }
@@ -468,8 +468,8 @@ export default function AnalyticsPage() {
       {/* Header & Controls */}
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">{user?.role === 'head_curator' ? 'Аналитика' : 'Analytics'}</h1>
-          <p className="text-gray-500 mt-1">{user?.role === 'head_curator' ? 'Отслеживание прогресса студентов и эффективности курсов' : 'Monitor student progress and course performance'}</p>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-foreground">{user?.role === 'head_curator' ? 'Аналитика' : 'Analytics'}</h1>
+          <p className="text-gray-500 dark:text-gray-400 mt-1">{user?.role === 'head_curator' ? 'Отслеживание прогресса студентов и эффективности курсов' : 'Monitor student progress and course performance'}</p>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -477,7 +477,7 @@ export default function AnalyticsPage() {
             value={selectedCourseId} 
              onValueChange={handleCourseChange}
           >
-            <SelectTrigger className="w-full sm:w-[280px] bg-white">
+            <SelectTrigger className="w-full sm:w-[280px] bg-white dark:bg-card">
               <SelectValue placeholder={user?.role === 'head_curator' ? "Выберите курс" : "Select course"} />
             </SelectTrigger>
             <SelectContent>
@@ -494,8 +494,8 @@ export default function AnalyticsPage() {
              onValueChange={handleGroupChange}
              disabled={loadingGroups}
           >
-            <SelectTrigger className="w-full sm:w-[200px] bg-white">
-              <SelectValue placeholder={user?.role === 'head_curator' ? "Фильтр по группе" : "Filter by group"} />
+<SelectTrigger className="w-full sm:w-[200px] bg-white dark:bg-card">
+            <SelectValue placeholder={user?.role === 'head_curator' ? "Фильтр по группе" : "Filter by group"} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{user?.role === 'head_curator' ? "Все группы" : "All Groups"}</SelectItem>
@@ -510,7 +510,7 @@ export default function AnalyticsPage() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded relative" role="alert">
            <strong className="font-bold">Error: </strong>
            <span className="block sm:inline">{error}</span>
         </div>
@@ -673,14 +673,14 @@ export default function AnalyticsPage() {
                         <Skeleton className="h-12 w-full" />
                     </div>
                 ) : topicAnalysis.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">No data available</div>
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">No data available</div>
                 ) : (
                     <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
                         {topicAnalysis.slice(0, 50).map((topic) => (
                         <div key={topic.id} className="flex items-center">
                             <div className="flex-1 space-y-1 min-w-0">
                             <div className="flex items-center justify-between gap-4">
-                                <p className="text-sm font-semibold leading-tight text-gray-900 break-words" title={topic.title}>
+                                <p className="text-sm font-semibold leading-tight text-gray-900 dark:text-foreground break-words" title={topic.title}>
                                     {topic.title}
                                 </p>
                                 <Badge variant={topic.errorRate > 70 ? "destructive" : "secondary"}>
@@ -720,11 +720,11 @@ export default function AnalyticsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[200px] cursor-pointer hover:bg-gray-100" onClick={() => handleSortChange('name')}>
+                    <TableHead className="w-[200px] cursor-pointer hover:bg-gray-100 dark:hover:bg-secondary" onClick={() => handleSortChange('name')}>
                       Student {studentSort === 'name' && (studentSortDir === 'asc' ? '↑' : '↓')}
                     </TableHead>
                     <TableHead className="text-center">Group</TableHead>
-                    <TableHead className="cursor-pointer hover:bg-gray-100" onClick={() => handleSortChange('progress')}>
+                    <TableHead className="cursor-pointer hover:bg-gray-100 dark:hover:bg-secondary" onClick={() => handleSortChange('progress')}>
                       Progress {studentSort === 'progress' && (studentSortDir === 'asc' ? '↑' : '↓')}
                     </TableHead>
                     <TableHead>Current Lesson</TableHead>
@@ -735,7 +735,7 @@ export default function AnalyticsPage() {
                     )}
                     <TableHead className="text-center">Assignments</TableHead>
                     <TableHead className="text-center">Time Spent</TableHead>
-                    <TableHead className="cursor-pointer hover:bg-gray-100" onClick={() => handleSortChange('activity')}>
+                    <TableHead className="cursor-pointer hover:bg-gray-100 dark:hover:bg-secondary" onClick={() => handleSortChange('activity')}>
                       Last Active {studentSort === 'activity' && (studentSortDir === 'asc' ? '↑' : '↓')}
                     </TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -745,43 +745,43 @@ export default function AnalyticsPage() {
                   {sortedStudents.map((student) => (
                     <TableRow 
                       key={student.student_id}
-                      className="hover:bg-gray-50 cursor-pointer group py-0"
+                      className="hover:bg-gray-50 dark:hover:bg-secondary/50 cursor-pointer group py-0"
                       onClick={() => navigate(`/analytics/student/${student.student_id}?course_id=${selectedCourseId}`)}
                     >
                       <TableCell className="text-sm">
                         <div>
-                          <p className="font-medium text-gray-900">{student.student_name}</p>
-                          <p className="text-gray-500">{student.email}</p>
+                          <p className="font-medium text-gray-900 dark:text-foreground">{student.student_name}</p>
+                          <p className="text-gray-500 dark:text-gray-400">{student.email}</p>
                         </div>
                       </TableCell>
                       <TableCell className="text-center py-2 pr-0">
-                        <Badge variant="outline" className="font-normal text-gray-500 text-xs px-2 py-0 h-6">
+                        <Badge variant="outline" className="font-normal text-gray-500 dark:text-gray-400 text-xs px-2 py-0 h-6">
                             {groups.find(g => g.name === student.group_name)?.description || student.group_name || 'No Group'}
                         </Badge>
                       </TableCell>
                       <TableCell className="py-2">
                         <div className="flex items-center gap-2">
                           <Progress value={student.progress_percentage} className="h-2 w-16" />
-                          <span className="text-sm font-medium text-gray-700">{Math.round(student.progress_percentage)}%</span>
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{Math.round(student.progress_percentage)}%</span>
                         </div>
                       </TableCell>
                       <TableCell className="py-2">
                          <div className="flex flex-col gap-1 max-w-[200px]">
                             <div className="flex items-center gap-2">
-                                <span className="text-sm text-gray-700 truncate font-medium" title={student.current_lesson || 'Not started'}>
+                                <span className="text-sm text-gray-700 dark:text-gray-300 truncate font-medium" title={student.current_lesson || 'Not started'}>
                                    {student.current_lesson || 'Not started'}
                                 </span>
                             </div>
                             {student.current_lesson && student.current_lesson !== 'Not started' && (
                                 <div className="flex items-center gap-2 mt-1.5">
-                                    <div className="flex-1 bg-gray-100 rounded-full h-1.5">
+                                    <div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
                                         <div 
                                             className="bg-blue-500 h-1.5 rounded-full" 
                                             style={{ width: `${student.current_lesson_progress || 0}%` }}
                                         />
                                     </div>
                                     {(student.current_lesson_steps_total || 0) > 0 && (
-                                        <span className="text-[10px] text-gray-500 font-medium whitespace-nowrap min-w-[30px] text-right">
+                                        <span className="text-[10px] text-gray-500 dark:text-gray-400 font-medium whitespace-nowrap min-w-[30px] text-right">
                                             {student.current_lesson_steps_completed || 0}/{student.current_lesson_steps_total}
                                         </span>
                                     )}
@@ -791,16 +791,16 @@ export default function AnalyticsPage() {
                       </TableCell>
                       {courses.find(c => c.id.toString() === selectedCourseId)?.title.toLowerCase().includes('sat') ? (
                           <TableCell className="py-2">
-                             <div className="flex flex-col gap-0.5 text-xs text-gray-700">
+                             <div className="flex flex-col gap-0.5 text-xs text-gray-700 dark:text-gray-300">
                                 <div>
-                                    <span className="font-medium text-gray-500 mr-1">Verbal:</span>
+                                    <span className="font-medium text-gray-500 dark:text-gray-400 mr-1">Verbal:</span>
                                     {student.last_test_result?.verbal_score != null ?
                                         `${student.last_test_result.verbal_score}/${student.last_test_result.verbal_max || 0}`
                                         : '-'
                                     }
                                 </div>
                                 <div>
-                                    <span className="font-medium text-gray-500 mr-2.5">Math:</span>
+                                    <span className="font-medium text-gray-500 dark:text-gray-400 mr-2.5">Math:</span>
                                     {student.last_test_result?.math_score != null ?
                                         `${student.last_test_result.math_score}/${student.last_test_result.math_max || 0}`
                                         : '-'
@@ -812,7 +812,7 @@ export default function AnalyticsPage() {
                         <TableCell className="py-2">
                            {student.last_test_result ? (
                               <div className="flex flex-col gap-1">
-                                  <span className="text-xs font-medium text-gray-900 truncate max-w-[120px]" title={student.last_test_result.title}>
+                                  <span className="text-xs font-medium text-gray-900 dark:text-foreground truncate max-w-[120px]" title={student.last_test_result.title}>
                                       {student.last_test_result.title}
                                   </span>
                                   <span className={`text-xs font-bold ${
@@ -834,13 +834,13 @@ export default function AnalyticsPage() {
                          </div>
                       </TableCell>
                       <TableCell className="text-center">
-                        <div className="flex items-center justify-center gap-1 text-gray-600">
+                        <div className="flex items-center justify-center gap-1 text-gray-600 dark:text-gray-400">
                           <Clock className="h-4 w-4" />
                           <span>{formatDuration(student.time_spent_minutes)}</span>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
                           {formatTimeAgo(student.last_activity)}
                         </div>
                       </TableCell>
@@ -853,7 +853,7 @@ export default function AnalyticsPage() {
                   ))}
                   {sortedStudents.length === 0 && (
                      <TableRow>
-                         <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                         <TableCell colSpan={9} className="text-center py-8 text-gray-500 dark:text-gray-400">
                              No students found matching current filters.
                          </TableCell>
                      </TableRow>
@@ -921,7 +921,7 @@ export default function AnalyticsPage() {
                   ))}
                   {groupsAnalytics.length === 0 && (
                       <TableRow>
-                          <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                          <TableCell colSpan={5} className="text-center py-8 text-gray-500 dark:text-gray-400">
                               No groups found.
                           </TableCell>
                       </TableRow>
@@ -934,28 +934,28 @@ export default function AnalyticsPage() {
         </TabsContent>
 
         <TabsContent value="quizzes" className="space-y-6">
-            <div className="flex flex-col md:flex-row gap-4 items-end justify-between bg-gray-50 p-4 rounded-xl border border-gray-100 bg-white">
+            <div className="flex flex-col md:flex-row gap-4 items-end justify-between bg-white dark:bg-card p-4 rounded-xl border border-gray-100 dark:border-border">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full md:w-auto flex-1">
                     <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
                             <Search className="h-3 w-3" />
                             Search Questions
                         </label>
                         <input 
                             type="text"
                             placeholder="Search by keyword..."
-                            className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
+                            className="w-full px-3 py-2 bg-white dark:bg-card border border-gray-200 dark:border-border dark:text-foreground dark:placeholder:text-gray-500 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
                             value={quizSearch}
                             onChange={(e) => setQuizSearch(e.target.value)}
                         />
                     </div>
                     <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
                             <Filter className="h-3 w-3" />
                             Filter by Lesson
                         </label>
                         <Select value={lessonFilter} onValueChange={setLessonFilter}>
-                            <SelectTrigger className="w-full bg-white border-gray-200">
+                            <SelectTrigger className="w-full bg-white dark:bg-card border-gray-200 dark:border-border">
                                 <SelectValue placeholder="All Lessons" />
                             </SelectTrigger>
                             <SelectContent>
@@ -968,18 +968,18 @@ export default function AnalyticsPage() {
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <Badge variant="outline" className="h-9 px-3 font-medium bg-blue-50 text-blue-700 border-blue-100">
+                    <Badge variant="outline" className="h-9 px-3 font-medium bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-800">
                         {filteredQuizErrors.length} Questions Analyzed
                     </Badge>
                 </div>
             </div>
 
             <Card className="border-none shadow-sm overflow-hidden">
-                <CardHeader className="bg-white border-b border-gray-100 py-4">
+                <CardHeader className="bg-white dark:bg-card border-b border-gray-100 dark:border-border py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <div>
-                                <CardTitle className="text-lg font-bold text-gray-900">Difficult Quiz Questions</CardTitle>
+                                <CardTitle className="text-lg font-bold text-gray-900 dark:text-foreground">Difficult Quiz Questions</CardTitle>
                                 <CardDescription>Questions with the highest error rates across the selected group</CardDescription>
                             </div>
                         </div>
@@ -1007,26 +1007,26 @@ export default function AnalyticsPage() {
                                     ))
                                 ) : filteredQuizErrors.length > 0 ? (
                                     filteredQuizErrors.map((error, idx) => (
-                                        <TableRow key={`${error.step_id}-${error.question_id}-${idx}`} className="group hover:bg-blue-50/50 transition-colors border-b border-gray-100/50">
+                                        <TableRow key={`${error.step_id}-${error.question_id}-${idx}`} className="group hover:bg-blue-50/50 dark:hover:bg-blue-900/20 transition-colors border-b border-gray-100/50 dark:border-border">
                                             <TableCell className="py-5">
                                                 <div className="max-w-md">
-                                                    <p className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2" title={error.question_text}>
+                                                    <p className="text-sm font-semibold text-gray-900 dark:text-foreground leading-snug line-clamp-2" title={error.question_text}>
                                                         {error.question_text || "Untitled Question"}
                                                     </p>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="py-4">
-                                                <Badge variant="outline" className="text-[10px] font-medium uppercase tracking-wider bg-gray-50 border-gray-200 text-gray-500 whitespace-nowrap">
+                                                <Badge variant="outline" className="text-[10px] font-medium uppercase tracking-wider bg-gray-50 dark:bg-secondary border-gray-200 dark:border-border text-gray-500 dark:text-gray-400 whitespace-nowrap">
                                                     {formatQuestionType(error.question_type)}
                                                 </Badge>
                                             </TableCell>
                                             <TableCell className="py-4">
-                                                <p className="text-xs text-gray-500 truncate max-w-[220px]">
+                                                <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[220px]">
                                                     {error.lesson_title} <span className="text-gray-300 mx-1">•</span> {error.step_title}
                                                 </p>
                                             </TableCell>
                                             <TableCell className="py-4 text-center">
-                                                <span className="text-sm text-gray-600">{error.total_attempts}</span>
+                                                <span className="text-sm text-gray-600 dark:text-gray-400">{error.total_attempts}</span>
                                             </TableCell>
                                             <TableCell className="py-5 text-center">
                                                 <div className="flex flex-col items-center gap-1">
@@ -1037,7 +1037,7 @@ export default function AnalyticsPage() {
                                                     }`}>
                                                         {Number(error.error_rate).toFixed(1)}%
                                                     </span>
-                                                    <div className="w-12 h-1 bg-gray-100 rounded-full overflow-hidden">
+                                                    <div className="w-12 h-1 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
                                                         <div 
                                                             className={`h-full transition-all duration-500 ${
                                                                 error.error_rate > 60 ? 'bg-red-500' : 
@@ -1064,12 +1064,12 @@ export default function AnalyticsPage() {
                                     <TableRow>
                                         <TableCell colSpan={5} className="text-center py-20">
                                             <div className="flex flex-col items-center justify-center space-y-3">
-                                                <div className="p-4 bg-gray-50 rounded-full">
+                                                <div className="p-4 bg-gray-50 dark:bg-secondary rounded-full">
                                                     <XAxis className="h-8 w-8 text-gray-300" />
                                                 </div>
                                                 <div className="space-y-1">
-                                                    <p className="text-lg font-semibold text-gray-900">No difficult questions found</p>
-                                                    <p className="text-sm text-gray-500">Try adjusting your filters or search terms</p>
+                                                    <p className="text-lg font-semibold text-gray-900 dark:text-foreground">No difficult questions found</p>
+                                                    <p className="text-sm text-gray-500 dark:text-gray-400">Try adjusting your filters or search terms</p>
                                                 </div>
                                                 <Button 
                                                     variant="outline" 
@@ -1101,22 +1101,22 @@ export default function AnalyticsPage() {
                       </CardHeader>
                       <CardContent>
                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm text-gray-500">Error Rate</span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">Error Rate</span>
                             <Badge variant={topic.errorRate > 50 ? "destructive" : "secondary"}>{Math.round(topic.errorRate)}%</Badge>
                          </div>
                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm text-gray-500">Total Errors</span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">Total Errors</span>
                             <span className="font-medium text-red-600">{topic.errors}</span>
                          </div>
                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-500">Questions</span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400">Questions</span>
                             <span className="font-medium">{topic.questions}</span>
                          </div>
                       </CardContent>
                     </Card>
                   ))}
                   {topicAnalysis.length === 0 && (
-                      <div className="col-span-3 text-center py-8 text-gray-500">No topic analysis available due to lack of error data.</div>
+                      <div className="col-span-3 text-center py-8 text-gray-500 dark:text-gray-400">No topic analysis available due to lack of error data.</div>
                   )}
                 </div>
              </div>
@@ -1129,15 +1129,15 @@ export default function AnalyticsPage() {
                          <div key={video.step_id} className="flex items-center justify-between p-4 border rounded-lg">
                              <div>
                                  <h4 className="font-medium">{video.lesson_title}</h4>
-                                 <p className="text-sm text-gray-500">{video.step_title}</p>
+                                 <p className="text-sm text-gray-500 dark:text-gray-400">{video.step_title}</p>
                              </div>
                              <div className="text-right">
                                  <div className="font-bold">{video.total_views} Views</div>
-                                 <div className="text-xs text-gray-500">{Math.round(video.average_watch_time_minutes)} mins avg</div>
+                                 <div className="text-xs text-gray-500 dark:text-gray-400">{Math.round(video.average_watch_time_minutes)} mins avg</div>
                              </div>
                          </div>
                      ))}
-                     {videoMetrics.length === 0 && <div className="text-center py-8 text-gray-500">No video engagement data available</div>}
+                     {videoMetrics.length === 0 && <div className="text-center py-8 text-gray-500 dark:text-gray-400">No video engagement data available</div>}
                  </div>
              )}
         </TabsContent>

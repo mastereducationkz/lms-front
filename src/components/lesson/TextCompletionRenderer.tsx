@@ -68,7 +68,7 @@ export const TextCompletionRenderer: React.FC<TextCompletionRendererProps> = ({
     return (
         <div
             ref={containerRef}
-            className="text-gray-800 text-lg leading-relaxed prose prose-lg max-w-none"
+            className="text-gray-800 dark:text-gray-100 text-lg leading-relaxed prose prose-lg dark:prose-invert max-w-none"
         >
             {mounted && gaps.map((gap) => {
                 if (!gap.container) return null;
@@ -84,7 +84,7 @@ export const TextCompletionRenderer: React.FC<TextCompletionRendererProps> = ({
                 return createPortal(
                     <span className="inline-flex items-center gap-1">
                         {showNumbering && (
-                            <span className="text-sm font-semibold text-gray-700">
+                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                                 {gap.index + 1}.
                             </span>
                         )}
@@ -111,7 +111,7 @@ export const TextCompletionRenderer: React.FC<TextCompletionRendererProps> = ({
                             }}
                         />
                         {isIncorrect && (
-                            <span className="text-sm font-medium text-green-700 bg-green-100 px-2 py-0.5 rounded border border-green-200">
+                            <span className="text-sm font-medium text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/20 px-2 py-0.5 rounded border border-green-200 dark:border-green-400">
                                 {correctAnswer}
                             </span>
                         )}

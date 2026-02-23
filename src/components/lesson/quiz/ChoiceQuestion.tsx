@@ -28,18 +28,18 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
         if (showResult) {
           if (isSelected) {
             if (isCorrectOption) {
-              buttonClass += " bg-green-50 border-green-400";
+              buttonClass += " bg-green-50 border-green-400 dark:bg-green-900/20 dark:border-green-500";
             } else {
-              buttonClass += " bg-red-50 border-red-400";
+              buttonClass += " bg-red-50 border-red-400 dark:bg-red-900/20 dark:border-red-500";
             }
           } else {
-            buttonClass += " bg-gray-50 border-gray-200";
+            buttonClass += " bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700";
           }
         } else {
           if (isSelected) {
-            buttonClass += " bg-blue-50 border-blue-400";
+            buttonClass += " bg-blue-50 border-blue-400 dark:bg-blue-900/20 dark:border-blue-400";
           } else {
-            buttonClass += " bg-white hover:bg-gray-50 border-gray-200 hover:border-gray-300";
+            buttonClass += " bg-white hover:bg-gray-50 border-gray-200 hover:border-gray-300 dark:bg-transparent dark:hover:bg-gray-800/40 dark:border-gray-700/40 dark:hover:border-gray-600/60";
           }
         }
         
@@ -57,10 +57,10 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
                     ? isCorrectOption
                       ? "bg-green-500 border-green-500"
                       : "bg-red-500 border-red-500"
-                    : "border-gray-300 bg-white"
+                    : "border-gray-300 bg-white dark:border-gray-600 dark:bg-transparent"
                   : isSelected
                     ? "bg-blue-500 border-blue-500"
-                    : "border-gray-300 bg-white"
+                    : "border-gray-300 bg-white dark:border-gray-600 dark:bg-transparent"
               }`}>
                 {showResult ? (
                   isSelected ? (
@@ -78,9 +78,9 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
               <span className={`text-base font-bold flex-shrink-0 ${
                 showResult
                   ? isSelected
-                    ? isCorrectOption ? "text-green-700" : "text-red-700"
-                    : "text-gray-600"
-                  : isSelected ? "text-blue-700" : "text-gray-600"
+                    ? isCorrectOption ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"
+                    : "text-gray-600 dark:text-gray-300"
+                  : isSelected ? "text-blue-700 dark:text-blue-400" : "text-gray-600 dark:text-gray-300"
               }`}>
                 {option.letter}.
               </span>
@@ -90,9 +90,9 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
                   <span className={`text-base block ${
                     showResult
                       ? isSelected
-                        ? isCorrectOption ? "text-green-800" : "text-red-800"
-                        : "text-gray-700"
-                      : isSelected ? "text-gray-900" : "text-gray-700"
+                        ? isCorrectOption ? "text-green-800 dark:text-green-400" : "text-red-800 dark:text-red-400"
+                        : "text-gray-700 dark:text-gray-200"
+                      : isSelected ? "text-gray-900 dark:text-white" : "text-gray-700 dark:text-gray-200"
                   }`} dangerouslySetInnerHTML={{ __html: renderTextWithLatex(option.text) }} />
                 )}
                 
@@ -100,7 +100,7 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
                   <img
                     src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + option.image_url}
                     alt={`Option ${option.letter}`}
-                    className="mt-2 max-h-96 rounded border"
+                    className="mt-2 max-h-96 rounded border dark:border-gray-700"
                   />
                 )}
               </div>

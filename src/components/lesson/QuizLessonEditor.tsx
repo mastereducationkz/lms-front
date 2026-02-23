@@ -1456,8 +1456,8 @@ export default function QuizLessonEditor({
                             className="min-h-[200px]"
                           />
                           {(draftQuestion.content_text || '').trim() && (
-                            <div className="text-xs text-gray-600 p-2 bg-gray-50 rounded border max-h-32 overflow-y-auto">
-                              Preview: <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex((draftQuestion.content_text || '').replace(/\[\[(.*?)\]\]/g, '<b>[$1]</b>')) }} />
+                            <div className="text-xs text-gray-600 dark:text-gray-300 p-2 bg-gray-50 dark:bg-gray-800 rounded border dark:border-gray-700 max-h-32 overflow-y-auto">
+                              Preview: <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex((draftQuestion.content_text || '').replace(/\[\[(.*?)\]\]/g, '<b>[$1]</b>')) }} />
                             </div>
                           )}
                         </TabsContent>
@@ -1470,8 +1470,8 @@ export default function QuizLessonEditor({
                             className="min-h-[200px]"
                           />
                           {(draftQuestion.explanation || '').trim() && (
-                            <div className="text-xs text-gray-600 p-2 bg-gray-50 rounded border max-h-32 overflow-y-auto">
-                              Preview: <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(draftQuestion.explanation || '') }} />
+                            <div className="text-xs text-gray-600 dark:text-gray-300 p-2 bg-gray-50 dark:bg-gray-800 rounded border dark:border-gray-700 max-h-32 overflow-y-auto">
+                              Preview: <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(draftQuestion.explanation || '') }} />
                             </div>
                           )}
                         </TabsContent>

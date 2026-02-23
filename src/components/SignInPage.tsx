@@ -72,7 +72,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
             <p className="animate-element animate-delay-200 text-muted-foreground">{description}</p>
 
             {error && (
-              <div className="animate-element animate-delay-250 -mb-2 p-3 text-sm text-red-700 bg-red-100 border border-red-300 rounded">
+              <div className="animate-element animate-delay-250 -mb-2 p-3 text-sm text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded">
                 {error}
               </div>
             )}
@@ -85,7 +85,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                     name="email" 
                     type="email" 
                     placeholder="Enter your email address" 
-                    className="w-full bg-white text-lg p-4 focus:outline-none " 
+                    className="w-full bg-white dark:bg-card text-lg p-4 focus:outline-none " 
                     required
                     disabled={loading}
                   />
@@ -100,7 +100,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                       name="password" 
                       type={showPassword ? 'text' : 'password'} 
                       placeholder="Enter your password" 
-                      className="w-full bg-white text-lg p-4 focus:outline-none" 
+                      className="w-full bg-white dark:bg-card text-lg p-4 focus:outline-none" 
                       required
                       disabled={loading}
                     />

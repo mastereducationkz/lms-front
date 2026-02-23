@@ -337,10 +337,10 @@ function LikertScale({
   rightLabel?: string;
 }) {
   return (
-    <div className="space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
+    <div className="space-y-3 p-4 border border-gray-200 dark:border-border rounded-lg bg-gray-50 dark:bg-secondary">
       <Label className="text-sm font-medium block">{label}</Label>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs text-gray-500 w-24 text-left">{leftLabel}</span>
+        <span className="text-xs text-gray-500 dark:text-gray-400 w-24 text-left">{leftLabel}</span>
         <div className="flex gap-2 flex-1 justify-center">
           {LIKERT_SCALE.map((option) => (
             <button
@@ -350,14 +350,14 @@ function LikertScale({
               className={`w-10 h-10 text-sm rounded-lg border transition-all font-medium ${
                 value === option.value
                   ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                  : 'bg-white dark:bg-card text-gray-700 dark:text-gray-300 border-gray-300 dark:border-border hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'
               }`}
             >
               {option.value}
             </button>
           ))}
         </div>
-        <span className="text-xs text-gray-500 w-24 text-right">{rightLabel}</span>
+        <span className="text-xs text-gray-500 dark:text-gray-400 w-24 text-right">{rightLabel}</span>
       </div>
       {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
@@ -1018,7 +1018,7 @@ export default function AssignmentZeroPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-background dark:to-background">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
@@ -1026,12 +1026,12 @@ export default function AssignmentZeroPage() {
 
   if (alreadyCompleted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 dark:from-background dark:to-background p-4">
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
             <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Already Completed!</h2>
-            <p className="text-gray-600 mb-6">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-foreground mb-2">Already Completed!</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               You have already submitted Assignment Zero. You can proceed to your dashboard.
             </p>
             <Button onClick={() => navigate('/dashboard')} className="w-full">
@@ -1046,7 +1046,7 @@ export default function AssignmentZeroPage() {
   const CurrentStepIcon = DYNAMIC_STEPS[currentStep - 1]?.icon || User;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-background dark:to-background py-8 px-4">
       <SavingIndicator status={saveStatus} />
       
       <div className="max-w-2xl mx-auto">
@@ -1057,15 +1057,15 @@ export default function AssignmentZeroPage() {
               variant="outline" 
               size="sm" 
               onClick={() => logout()}
-              className="flex items-center gap-2 text-gray-600 hover:text-red-600 hover:border-red-200 transition-colors"
+              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-red-600 hover:border-red-200 transition-colors"
             >
               <LogOut className="w-4 h-4" />
               <span>Logout</span>
             </Button>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Assignment Zero</h1>
-          <p className="text-lg text-gray-600">Self-Assessment Questionnaire</p>
-          <p className="text-sm text-gray-500 mt-2">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground mb-2">Assignment Zero</h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400">Self-Assessment Questionnaire</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
             Please be honest when answering questions. This helps us understand your current level.
           </p>
         </div>
@@ -1086,7 +1086,7 @@ export default function AssignmentZeroPage() {
                       ? 'bg-blue-600 text-white'
                       : stepNumber < currentStep
                       ? 'bg-green-500 text-white cursor-pointer hover:bg-green-600'
-                      : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      : 'bg-gray-200 dark:bg-secondary text-gray-500 dark:text-gray-400 cursor-not-allowed'
                   }`}
                   title={step.title}
                 >
@@ -1099,13 +1099,13 @@ export default function AssignmentZeroPage() {
               );
             })}
           </div>
-          <div className="relative h-2 bg-gray-200 rounded-full">
+          <div className="relative h-2 bg-gray-200 dark:bg-secondary rounded-full">
             <div
               className="absolute h-full bg-blue-600 rounded-full transition-all"
               style={{ width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%` }}
             />
           </div>
-          <p className="text-center text-sm text-gray-600 mt-2">
+          <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-2">
             Step {currentStep} of {totalSteps}: {DYNAMIC_STEPS[currentStep - 1]?.title}
           </p>
         </div>
@@ -1190,7 +1190,7 @@ export default function AssignmentZeroPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="email">Email *</Label>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     This email will be used to give you access to the weekly practice tests.
                   </p>
                   <Input
@@ -1213,7 +1213,7 @@ export default function AssignmentZeroPage() {
                   <>
                     <div className="space-y-2">
                       <Label htmlFor="college_board_email">College Board Account Email *</Label>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         Please provide your email with which you have registered your College Board account.
                       </p>
                       <Input
@@ -1231,7 +1231,7 @@ export default function AssignmentZeroPage() {
 
                     <div className="space-y-2">
                       <Label htmlFor="college_board_password">College Board Account Password *</Label>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         Your email and password will be used by your teacher to check if you have correctly
                         registered for SAT.
                       </p>
@@ -1348,7 +1348,7 @@ export default function AssignmentZeroPage() {
                     </div>
 
                     {formData.has_passed_sat_before && (
-                      <div className="space-y-4 p-4 bg-gray-50 rounded-lg border">
+                      <div className="space-y-4 p-4 bg-gray-50 dark:bg-secondary rounded-lg border dark:border-border">
                         <Label className="font-medium">What was your score and on which exam?</Label>
                         
                         {/* Month and Year Selection */}
@@ -1421,7 +1421,7 @@ export default function AssignmentZeroPage() {
 
                         {/* Show total score if both are entered */}
                         {formData.previous_sat_verbal && formData.previous_sat_math && (
-                          <div className="text-sm text-gray-600 bg-white p-2 rounded border">
+                          <div className="text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-card p-2 rounded border dark:border-border">
                             Total Score: <span className="font-semibold">{Number(formData.previous_sat_verbal) + Number(formData.previous_sat_math)}</span>
                           </div>
                         )}
@@ -1485,7 +1485,7 @@ export default function AssignmentZeroPage() {
                     </div>
 
                     {formData.has_passed_ielts_before && (
-                      <div className="space-y-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                      <div className="space-y-4 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
                         <Label className="font-medium">What were your previous IELTS scores?</Label>
                         
                         <div className="grid grid-cols-2 gap-4">
@@ -1570,7 +1570,7 @@ export default function AssignmentZeroPage() {
                   <Label htmlFor="recent_practice_test_score">
                     What was your score on recent practice tests? *
                   </Label>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     For example: "I passed Bluebook Practice Test 5 on October 23rd and got 1200 (Verbal
                     500, Math 700)"
                   </p>
@@ -1592,7 +1592,7 @@ export default function AssignmentZeroPage() {
                   </Label>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <Label htmlFor="bluebook_verbal" className="text-sm text-gray-600">Verbal Score</Label>
+                      <Label htmlFor="bluebook_verbal" className="text-sm text-gray-600 dark:text-gray-400">Verbal Score</Label>
                       <Input
                         id="bluebook_verbal"
                         type="number"
@@ -1606,7 +1606,7 @@ export default function AssignmentZeroPage() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="bluebook_math" className="text-sm text-gray-600">Math Score</Label>
+                      <Label htmlFor="bluebook_math" className="text-sm text-gray-600 dark:text-gray-400">Math Score</Label>
                       <Input
                         id="bluebook_math"
                         type="number"
@@ -1627,13 +1627,13 @@ export default function AssignmentZeroPage() {
 
                 <div className="space-y-2">
                   <Label>Upload a screenshot with your results of Bluebook Practice Test 5 *</Label>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     Max 10 MB. Supported formats: JPEG, PNG, GIF, WEBP
                   </p>
 
                   {formData.screenshot_url ? (
-                    <div className="border rounded-lg p-4 bg-green-50 border-green-200">
-                      <div className="flex items-center gap-2 text-green-700">
+                    <div className="border rounded-lg p-4 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                      <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
                         <CheckCircle className="w-5 h-5" />
                         <span className="font-medium">Screenshot uploaded successfully!</span>
                       </div>
@@ -1651,8 +1651,8 @@ export default function AssignmentZeroPage() {
                     <div
                       className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
                         errors.screenshot_url
-                          ? 'border-red-300 bg-red-50'
-                          : 'border-gray-300 hover:border-blue-400'
+                          ? 'border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20'
+                          : 'border-gray-300 dark:border-border hover:border-blue-400 dark:hover:border-blue-500'
                       }`}
                     >
                       <input
@@ -1670,12 +1670,12 @@ export default function AssignmentZeroPage() {
                         {uploadingFile ? (
                           <>
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                            <span className="text-gray-600">Uploading...</span>
+                            <span className="text-gray-600 dark:text-gray-400">Uploading...</span>
                           </>
                         ) : (
                           <>
                             <Upload className="w-8 h-8 text-gray-400" />
-                            <span className="text-gray-600">Click to upload screenshot</span>
+                            <span className="text-gray-600 dark:text-gray-400">Click to upload screenshot</span>
                           </>
                         )}
                       </label>
@@ -1691,9 +1691,9 @@ export default function AssignmentZeroPage() {
             {/* Step: Grammar Assessment */}
             {currentStepId === 'sat_grammar' && (
               <>
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4 flex gap-3">
-                  <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-amber-800">
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4 flex gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-amber-800 dark:text-amber-300">
                     <p className="font-medium mb-1">Important</p>
                     <p>
                       Please be honest when answering questions. This questionnaire is designed to
@@ -1752,8 +1752,8 @@ export default function AssignmentZeroPage() {
             {/* Step: Math Topics */}
             {currentStepId === 'sat_math' && (
               <>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                  <p className="text-sm text-blue-800">
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
                     <strong>Instructions:</strong> Select all the math topics that you feel you need
                     to work on or improve.
                   </p>
@@ -1772,7 +1772,7 @@ export default function AssignmentZeroPage() {
                     </div>
                   ))}
                 </div>
-                <p className="text-sm text-gray-500 mt-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
                   Selected: {formData.math_topics.length} topic(s)
                 </p>
               </>
@@ -1781,9 +1781,9 @@ export default function AssignmentZeroPage() {
             {/* IELTS Listening Assessment */}
             {currentStepId === 'ielts_listening' && (
               <>
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4 flex gap-3">
-                  <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-amber-800">
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-4 flex gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-amber-800 dark:text-amber-300">
                     <p className="font-medium mb-1">Important</p>
                     <p>
                       Please be honest when answering questions. This questionnaire is designed to
@@ -1860,8 +1860,8 @@ export default function AssignmentZeroPage() {
             {/* IELTS Weak Topics */}
             {currentStepId === 'ielts_topics' && (
               <>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                  <p className="text-sm text-blue-800">
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
                     <strong>Instructions:</strong> Select all the IELTS topics and question types that you feel you need
                     to work on or improve.
                   </p>
@@ -1880,7 +1880,7 @@ export default function AssignmentZeroPage() {
                     </div>
                   ))}
                 </div>
-                <p className="text-sm text-gray-500 mt-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
                   Selected: {formData.ielts_weak_topics.length} topic(s)
                 </p>
               </>
@@ -1891,7 +1891,7 @@ export default function AssignmentZeroPage() {
               <>
                 <div className="space-y-2">
                   <Label htmlFor="additional_comments">Additional Comments (Optional)</Label>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     Is there anything else you'd like us to know? Any specific questions, concerns, or
                     areas you'd like help with?
                   </p>
@@ -1905,9 +1905,9 @@ export default function AssignmentZeroPage() {
                 </div>
 
                 {/* Important Notice */}
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex gap-3">
-                  <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-amber-800">
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 flex gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-amber-800 dark:text-amber-300">
                     <p className="font-medium mb-1">Important</p>
                     <p>
                       Please be honest when answering questions. This questionnaire is designed to
@@ -1920,7 +1920,7 @@ export default function AssignmentZeroPage() {
             )}
 
             {/* Navigation Buttons */}
-            <div className="flex justify-between pt-4 border-t">
+            <div className="flex justify-between pt-4 border-t dark:border-border">
               {currentStep > 1 ? (
                 <Button type="button" variant="outline" onClick={handleBack}>
                   <ArrowLeft className="w-4 h-4 mr-2" />

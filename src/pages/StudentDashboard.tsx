@@ -146,7 +146,7 @@ export default function StudentDashboard({
     const submission = submissions.find(sub => sub.assignment_id === assignment.id);
     if (submission) {
       if (submission.is_graded) {
-        return { status: 'graded', color: 'bg-green-100 text-green-800', icon: CheckCircle };
+        return { status: 'graded', color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle };
       } else {
         return { status: 'submitted', color: 'bg-blue-100 text-blue-800', icon: FileText };
       }
@@ -156,7 +156,7 @@ export default function StudentDashboard({
     const dueDate = assignment.due_date ? new Date(assignment.due_date) : null;
     
     if (dueDate && dueDate < now) {
-      return { status: 'overdue', color: 'bg-red-100 text-red-800', icon: AlertCircle };
+      return { status: 'overdue', color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400', icon: AlertCircle };
     } else if (dueDate && (dueDate.getTime() - now.getTime()) < 24 * 60 * 60 * 1000) {
       return { status: 'due_soon', color: 'bg-yellow-100 text-yellow-800', icon: Clock };
     } else {
@@ -175,10 +175,10 @@ export default function StudentDashboard({
 
   const getEventColor = (eventType: string) => {
     switch (eventType) {
-      case 'class': return 'bg-blue-100 text-blue-800';
-      case 'webinar': return 'bg-purple-100 text-purple-800';
-      case 'weekly_test': return 'bg-orange-100 text-orange-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'class': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
+      case 'webinar': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400';
+      case 'weekly_test': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
     }
   };
 
@@ -320,7 +320,7 @@ export default function StudentDashboard({
               onClick={() => setShowDailyQuestions(true)}
               // disabled={dailyQuestionsCompleted} // Allow viewing results
               variant={"outline"}
-              className={`flex items-center gap-2 text-black`}            >
+              className={`flex items-center gap-2 text-black dark:text-white`}            >
               {dailyQuestionsCompleted 
                 ? dailyQuestionsScore 
                   ? `Result: ${dailyQuestionsScore.score}/${dailyQuestionsScore.total} ✓` 
@@ -334,7 +334,7 @@ export default function StudentDashboard({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-2" data-tour="dashboard-stats">
         <Card className="h-fit">
           <CardContent className="p-6 flex items-center gap-4">
-            <div className="rounded-md bg-blue-100 text-blue-700 p-3">
+            <div className="rounded-md bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 p-3">
               <BookOpen className="h-6 w-6" />
             </div>
             <div>
@@ -351,7 +351,7 @@ export default function StudentDashboard({
 
         <Card className="h-fit">
           <CardContent className="p-6 flex items-center gap-4">
-            <div className="rounded-md bg-amber-100 text-amber-700 p-3">
+            <div className="rounded-md bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 p-3">
               <Clock className="h-6 w-6" />
             </div>
             <div>
@@ -368,7 +368,7 @@ export default function StudentDashboard({
 
         <Card className="h-fit">
           <CardContent className="p-6 flex items-center gap-4">
-            <div className="rounded-md bg-emerald-100 text-emerald-700 p-3">
+            <div className="rounded-md bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 p-3">
               <LineChart className="h-6 w-6" />
             </div>
             <div className="flex-1">
@@ -475,7 +475,7 @@ export default function StudentDashboard({
                       allDeadlines.map((deadline) => (
                         <div 
                           key={deadline.id} 
-                          className="flex items-center gap-3 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                          className="flex items-center gap-3 p-2 border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-secondary cursor-pointer transition-colors"
                           onClick={() => {
                             if (deadline.type === 'assignment' && 'assignmentId' in deadline) {
                               navigate(`/homework/${deadline.assignmentId}`);
@@ -542,7 +542,7 @@ export default function StudentDashboard({
                     return (
                       <div className="space-y-3">
                         {progressData.group_teachers.map(teacher => (
-                          <div key={teacher.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                          <div key={teacher.id} className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-secondary">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-medium">
                                 {teacher.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
@@ -583,7 +583,7 @@ export default function StudentDashboard({
                   return uniqueTeachers.length > 0 ? (
                     <div className="space-y-3">
                       {uniqueTeachers.map(teacher => (
-                        <div key={teacher.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                        <div key={teacher.id} className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-secondary">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-medium">
                               {teacher.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
@@ -624,17 +624,17 @@ export default function StudentDashboard({
         {/* Right Column - Main Content */}
         <div className="lg:col-span-2">
           <Tabs defaultValue="courses" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 h-12 bg-gray-100">
+            <TabsList className="grid w-full grid-cols-2 h-12 bg-gray-100 dark:bg-secondary">
               <TabsTrigger 
                 value="courses" 
-                className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:shadow-none"
               >
                 <BookOpen className="h-4 w-4" />
                 Courses
               </TabsTrigger>
               <TabsTrigger 
                 value="activity" 
-                className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:shadow-none"
               >
                 <LineChart className="h-4 w-4" />
                 Activity

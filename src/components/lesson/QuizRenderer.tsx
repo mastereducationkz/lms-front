@@ -13,11 +13,13 @@ import { FillInBlankQuestion } from './quiz/FillInBlankQuestion';
 import { MatchingQuestion } from './quiz/MatchingQuestion';
 import { ZoomableImage } from './ZoomableImage';
 import { AudioPlayer } from './quiz/AudioPlayer';
+import { LineChart, Line, XAxis, YAxis, ReferenceLine, ResponsiveContainer, Tooltip } from 'recharts';
+import apiClient from '../../services/api';
 import api from '../../services/api';
 
 // Exam mode badge component
 const ExamModeBadge = ({ maxPlays }: { maxPlays: number }) => (
-  <div className="flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-100 text-amber-700 rounded-lg text-sm font-medium mt-2">
+  <div className="flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-lg text-sm font-medium mt-2">
     <span>🔒</span>
     <span>Exam mode · {maxPlays} plays allowed · No pause or rewind</span>
   </div>
@@ -128,6 +130,22 @@ const QuizRenderer = (props: QuizRendererProps) => {
     }
   }, [highlightedQuestionId, questions.length > 0, quizState]);
   
+  // State for quiz attempts history (used on completed screen)
+  const [attemptsHistory, setAttemptsHistory] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (quizState === 'completed' && currentStep) {
+      apiClient.getStepQuizAttempts(currentStep.id)
+        .then((attempts) => {
+          const completed = attempts
+            .filter((a: any) => !a.is_draft && a.completed_at)
+            .sort((a: any, b: any) => new Date(a.completed_at).getTime() - new Date(b.completed_at).getTime());
+          setAttemptsHistory(completed);
+        })
+        .catch(() => setAttemptsHistory([]));
+    }
+  }, [quizState, currentStep?.id]);
+
   // State for error reporting
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportQuestionId, setReportQuestionId] = useState<string | null>(null);
@@ -232,8 +250,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
       <div className="w-full md:max-w-3xl md:mx-auto space-y-4 md:space-y-6 md:p-4">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold text-gray-900">Quick Practice</h2>
-          <p className="text-gray-600">Answer all questions below to continue</p>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Quick Practice</h2>
+          <p className="text-gray-600 dark:text-gray-300">Answer all questions below to continue</p>
 
           {/* Development / Teacher Helper Button */}
           {(import.meta.env.DEV || isTeacher) && (
@@ -254,7 +272,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
         {/* Quiz-level Media for Audio/PDF/Text Quizzes */}
         {quizData?.quiz_media_url && (
-          <div className="bg-white rounded-none md:rounded-lg">
+          <div className="bg-white dark:bg-card rounded-none md:rounded-lg">
             {quizData.quiz_media_type === 'audio' ? (
               <AudioPlayer
                 src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + quizData.quiz_media_url}
@@ -262,7 +280,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 maxPlays={quizData.audio_max_plays || 2}
               />
             ) : quizData.quiz_media_type === 'text' ? (
-              <div className="prose prose-lg max-w-none bg-gray-50 p-6 rounded-lg border">
+              <div className="prose prose-lg dark:prose-invert max-w-none bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border dark:border-gray-700">
                 <div dangerouslySetInnerHTML={{ __html: renderTextWithLatex(quizData.quiz_media_url) }} />
               </div>
             ) : quizData.quiz_media_type === 'pdf' ? (
@@ -273,8 +291,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
                   alt="Reference material"
                 />
               ) : (
-                <div className="border rounded-lg bg-gray-50">
-                  <div className="w-full h-[800px] border rounded-lg">
+                <div className="border dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
+                  <div className="w-full h-[800px] border dark:border-gray-700 rounded-lg">
                     <iframe
                       src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${quizData.quiz_media_url}#toolbar=0&navpanes=0&scrollbar=1`}
                       className="w-full h-full"
@@ -299,7 +317,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
             // Special rendering for image_content - just show the image, no question UI
             if (q.question_type === 'image_content') {
               return (
-                <div key={q.id} id={`question-${q.id}`} className="bg-white rounded-none md:rounded-xl border-t border-b md:border">
+                <div key={q.id} id={`question-${q.id}`} className="bg-white dark:bg-gray-900/50 rounded-none md:rounded-xl border-t border-b md:border dark:border-gray-800/60">
                   <div className="p-2 md:p-6 flex flex-col items-center">
                     {q.media_url && (
                       <img
@@ -309,7 +327,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                       />
                     )}
                     {q.question_text && (
-                      <p className="text-sm text-gray-600 mt-2 text-center">{q.question_text}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 text-center">{q.question_text}</p>
                     )}
                   </div>
                 </div>
@@ -317,11 +335,11 @@ const QuizRenderer = (props: QuizRendererProps) => {
             }
 
             return (
-              <div key={q.id} id={`question-${q.id}`} className="bg-white rounded-none md:rounded-xl border-t border-b md:border">
+              <div key={q.id} id={`question-${q.id}`} className="bg-white dark:bg-gray-900/50 rounded-none md:rounded-xl border-t border-b md:border dark:border-gray-800/60">
                 <div className="p-2 md:p-6">
                   {/* Question Number Badge */}
                   <div className="flex items-center gap-3 mb-4">
-                    <span className="text-sm font-medium text-gray-500">
+                    <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
                       Question{questionGaps > 1 ? 's' : ''} {displayNumber}{questionGaps > 1 ? `-${displayNumber + questionGaps - 1}` : ''} of {totalQuestionCount}
                     </span>
                   </div>
@@ -332,7 +350,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                       {q.media_type === 'pdf' ? (
                         <iframe
                           src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${q.media_url}#toolbar=0&navpanes=0&scrollbar=1`}
-                          className="w-full h-64 border rounded-lg"
+                          className="w-full h-64 border dark:border-gray-700 rounded-lg"
                           title="Question PDF"
                         />
                       ) : (
@@ -346,13 +364,13 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
                   {/* Content Text */}
                   {hasVisibleContent(q.content_text) && q.question_type !== 'text_completion' && q.question_type !== 'fill_blank' && (
-                    <div className="bg-gray-50 p-4 rounded-lg mb-4 border-l-3 border-blue-400">
-                      <div className="text-gray-700 prose max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.content_text) }} />
+                    <div className="bg-gray-50 dark:bg-gray-800/30 p-4 rounded-lg mb-4 border-l-3 border-blue-400 dark:border-blue-500/30">
+                      <div className="text-gray-700 dark:text-gray-200 prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.content_text) }} />
                     </div>
                   )}
 
                   {/* Question */}
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
                     <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex((q.question_text || (q.question_type === 'text_completion' ? 'Fill in the blanks:' : '')).replace(/\[\[([^\]]+)\]\]/g, '[[blank]]')) }} />
                   </h3>
 
@@ -419,9 +437,9 @@ const QuizRenderer = (props: QuizRendererProps) => {
                   {/* Result Indicator - Explanation only (removed buggy isCorrect labels) */}
                   {feedChecked && q.explanation && (
                     <div className="mt-4 space-y-3">
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <p className="text-sm font-medium text-blue-800 mb-1">Explanation:</p>
-                        <div className="text-blue-700 text-sm prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.explanation) }} />
+                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                        <p className="text-sm font-medium text-blue-800 dark:text-blue-400 mb-1">Explanation:</p>
+                        <div className="text-blue-700 dark:text-blue-400 text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.explanation) }} />
                       </div>
                     </div>
                   )}
@@ -433,8 +451,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
                       disabled={reportedQuestions.has(q.id.toString())}
                       className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                         reportedQuestions.has(q.id.toString())
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          : 'text-orange-600 hover:bg-orange-50 hover:text-orange-700'
+                          ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                          : 'text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:text-orange-700 dark:hover:text-orange-400'
                       }`}
                     >
                       <AlertTriangle className="w-3.5 h-3.5" />
@@ -461,33 +479,33 @@ const QuizRenderer = (props: QuizRendererProps) => {
             />
             {/* Modal content */}
             <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none">
-              <div className="relative bg-white rounded-xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto pointer-events-auto">
+              <div className="relative bg-white dark:bg-card rounded-xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto pointer-events-auto">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                    <AlertTriangle className="w-5 h-5 text-orange-600" />
+                  <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center">
+                    <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">Report an Error</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Report an Error</h3>
                 </div>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
                   Found a mistake in this question? Please describe the error and suggest the correct answer.
                 </p>
                 
                 {/* Error description */}
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                     What's wrong? <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     value={reportMessage}
                     onChange={(e) => setReportMessage(e.target.value)}
                     placeholder="Describe the error (e.g., the marked answer is incorrect, there's a typo, the question is unclear)..."
-                    className="w-full h-24 p-3 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                    className="w-full h-24 p-3 border border-gray-300 dark:border-gray-600 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-200"
                   />
                 </div>
                 
                 {/* Suggested correct answer */}
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
                     What should be the correct answer?
                   </label>
                   {(() => {
@@ -503,8 +521,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
                               key={idx} 
                               className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
                                 reportSuggestedAnswer === (opt.text || opt) 
-                                  ? 'border-orange-500 bg-orange-50' 
-                                  : 'border-gray-200 hover:border-gray-300'
+                                  ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' 
+                                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                               }`}
                             >
                               <input
@@ -513,9 +531,9 @@ const QuizRenderer = (props: QuizRendererProps) => {
                                 value={opt.text || opt}
                                 checked={reportSuggestedAnswer === (opt.text || opt)}
                                 onChange={(e) => setReportSuggestedAnswer(e.target.value)}
-                                className="w-4 h-4 text-orange-600 focus:ring-orange-500"
+                                className="w-4 h-4 text-orange-600 dark:text-orange-400 focus:ring-orange-500"
                               />
-                              <span className="text-sm text-gray-700" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(opt.text || opt) }} />
+                              <span className="text-sm text-gray-700 dark:text-gray-200" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(opt.text || opt) }} />
                             </label>
                           ))}
                         </div>
@@ -535,8 +553,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
                                 key={idx} 
                                 className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
                                   isSelected 
-                                    ? 'border-orange-500 bg-orange-50' 
-                                    : 'border-gray-200 hover:border-gray-300'
+                                    ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' 
+                                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                                 }`}
                               >
                                 <input
@@ -549,9 +567,9 @@ const QuizRenderer = (props: QuizRendererProps) => {
                                       setReportSuggestedAnswer(selectedAnswers.filter(a => a !== optText).join('|'));
                                     }
                                   }}
-                                  className="w-4 h-4 text-orange-600 focus:ring-orange-500 rounded"
+                                  className="w-4 h-4 text-orange-600 dark:text-orange-400 focus:ring-orange-500 rounded"
                                 />
-                                <span className="text-sm text-gray-700" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(optText) }} />
+                                <span className="text-sm text-gray-700 dark:text-gray-200" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(optText) }} />
                               </label>
                             );
                           })}
@@ -566,11 +584,11 @@ const QuizRenderer = (props: QuizRendererProps) => {
                         value={reportSuggestedAnswer}
                         onChange={(e) => setReportSuggestedAnswer(e.target.value)}
                         placeholder="Enter the correct answer..."
-                        className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                        className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-gray-800 dark:text-gray-200"
                       />
                     );
                   })()}
-                  <p className="text-xs text-gray-500 mt-1">Optional but helpful for review</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Optional but helpful for review</p>
                 </div>
                 
                 <div className="flex justify-end gap-3">
@@ -580,7 +598,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                       setReportMessage('');
                       setReportSuggestedAnswer('');
                     }}
-                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                   >
                     Cancel
                   </button>
@@ -642,7 +660,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 }
                 return ans === undefined;
               })
-                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                ? "bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed"
                 : "bg-blue-600 hover:bg-blue-700 text-white transition-all"
               }`}
             >
@@ -658,11 +676,11 @@ const QuizRenderer = (props: QuizRendererProps) => {
             return (
               <div className="flex flex-col items-center space-y-4">
                 {!isPassed && (
-                  <div className="p-4 bg-red-100 border border-red-300 rounded-lg mb-4">
-                    <p className="text-red-900 font-semibold text-center">
+                  <div className="p-4 bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-lg mb-4">
+                    <p className="text-red-900 dark:text-red-400 font-semibold text-center">
                       Score: {Math.round(scorePercentage)}% (minimum 50% required to continue)
                     </p>
-                    <p className="text-red-800 text-sm mt-2 text-center">
+                    <p className="text-red-800 dark:text-red-400 text-sm mt-2 text-center">
                       Please try again to improve your score
                     </p>
                   </div>
@@ -692,7 +710,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                     <Button
                       onClick={() => setShowAllAnswers(true)}
                       variant="outline"
-                      className="border-green-600 text-green-700 hover:bg-green-50 text-lg font-semibold"
+                      className="border-green-600 dark:border-green-500 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 text-lg font-semibold"
                     >
                       Show Correct Answers
                     </Button>
@@ -751,7 +769,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
           <div className="flex flex-col items-center gap-4">
             <Button
               onClick={startQuiz}
-              className="px-10 py-4 bg-white text-blue-900 text-lg font-bold hover:bg-blue-50 relative z-20"
+              className="px-10 py-4 bg-white dark:bg-gray-200 text-blue-900 text-lg font-bold hover:bg-blue-50 dark:hover:bg-gray-300 relative z-20"
             >
               Start Practice
             </Button>
@@ -785,7 +803,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
     if (q.question_type === 'image_content') {
       return (
         <div className="w-full md:max-w-3xl md:mx-auto space-y-4 md:space-y-6 md:p-4">
-          <div className="bg-white rounded-none md:rounded-xl border-t border-b md:border">
+          <div className="bg-white dark:bg-gray-900/50 rounded-none md:rounded-xl border-t border-b md:border dark:border-gray-800/60">
             <div className="p-2 md:p-6 flex flex-col items-center">
               {q.media_url && (
                 <img
@@ -795,7 +813,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 />
               )}
               {q.question_text && (
-                <p className="text-sm text-gray-600 mt-4 text-center">{q.question_text}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mt-4 text-center">{q.question_text}</p>
               )}
             </div>
           </div>
@@ -824,8 +842,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
       <div className="w-full md:max-w-3xl md:mx-auto space-y-4 md:space-y-6 md:p-4">
         {/* Header */}
         <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold text-gray-900">Quiz Question</h2>
-          <p className="text-gray-600">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Quiz Question</h2>
+          <p className="text-gray-600 dark:text-gray-300">
             Question{questionGaps > 1 ? 's' : ''} {displayNumber}{questionGaps > 1 ? `-${displayNumber + questionGaps - 1}` : ''} of {totalQuestionCount}
           </p>
           {(import.meta.env.DEV || isTeacher) && (
@@ -833,7 +851,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
               onClick={autoFillCorrectAnswers}
               variant="outline"
               size="sm"
-              className="mt-2 text-blue-600 border-blue-200 hover:bg-blue-50 flex items-center gap-2 mx-auto"
+              className="mt-2 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-2 mx-auto"
               title={isTeacher ? "Show Correct Answers" : "Development only: Auto-fill correct answers"}
             >
               {isTeacher ? <HelpCircle className="w-3 h-3" /> : "🔧"} 
@@ -849,7 +867,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
         {/* Quiz-level Media for Audio/PDF/Text Quizzes */}
         {quizData?.quiz_media_url && (
-          <div className="bg-white rounded-none md:rounded-lg">
+          <div className="bg-white dark:bg-card rounded-none md:rounded-lg">
             {quizData.quiz_media_type === 'audio' ? (
               <AudioPlayer
                 src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + quizData.quiz_media_url}
@@ -857,7 +875,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 maxPlays={quizData.audio_max_plays || 2}
               />
             ) : quizData.quiz_media_type === 'text' ? (
-              <div className="prose prose-lg max-w-none bg-gray-50 p-6 rounded-lg border">
+              <div className="prose prose-lg dark:prose-invert max-w-none bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border dark:border-gray-700">
                 <div dangerouslySetInnerHTML={{ __html: renderTextWithLatex(quizData.quiz_media_url) }} />
               </div>
             ) : quizData.quiz_media_type === 'pdf' ? (
@@ -868,8 +886,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
                   alt="Reference material"
                 />
               ) : (
-                <div className="border rounded-lg bg-gray-50">
-                  <div className="w-full h-[800px] border rounded-lg">
+                <div className="border dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
+                  <div className="w-full h-[800px] border dark:border-gray-700 rounded-lg">
                     <iframe
                       src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${quizData.quiz_media_url}#toolbar=0&navpanes=0&scrollbar=1`}
                       className="w-full h-full"
@@ -882,7 +900,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
           </div>
         )}
 
-        <div className="bg-white rounded-none md:rounded-xl border-t border-b md:border">
+        <div className="bg-white dark:bg-gray-900/50 rounded-none md:rounded-xl border-t border-b md:border dark:border-gray-800/60">
           <div className="p-2 md:p-6">
             {/* Media Attachment for Media Questions */}
             {(q.question_type === 'media_question' || q.question_type === 'media_open_question') && q.media_url && (
@@ -890,7 +908,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 {q.media_type === 'pdf' ? (
                   <iframe
                     src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${q.media_url}#toolbar=0&navpanes=0&scrollbar=1`}
-                    className="w-full h-64 border rounded-lg"
+                    className="w-full h-64 border dark:border-gray-700 rounded-lg"
                     title="Question PDF"
                   />
                 ) : (
@@ -904,13 +922,13 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
             {/* Content Text */}
             {hasVisibleContent(q.content_text) && q.question_type !== 'text_completion' && q.question_type !== 'fill_blank' && (
-              <div className="bg-gray-50 p-4 rounded-lg mb-4 border-l-3 border-blue-400">
-                <div className="text-gray-700 prose max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.content_text) }} />
+              <div className="bg-gray-50 dark:bg-gray-800/30 p-4 rounded-lg mb-4 border-l-3 border-blue-400 dark:border-blue-500/30">
+                <div className="text-gray-700 dark:text-gray-200 prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.content_text) }} />
               </div>
             )}
 
             {/* Question */}
-            <h3 className="text-lg font-bold text-gray-900 mb-4">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
               <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex((q.question_text || (q.question_type === 'text_completion' ? 'Fill in the blanks:' : '')).replace(/\[\[([^\]]+)\]\]/g, '[[blank]]')) }} />
             </h3>
 
@@ -1023,15 +1041,15 @@ const QuizRenderer = (props: QuizRendererProps) => {
         {/* Progress Header */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-lg font-semibold text-gray-700">
+            <span className="text-lg font-semibold text-gray-700 dark:text-gray-200">
               Question{questionGaps > 1 ? 's' : ''} {displayNumber}{questionGaps > 1 ? `-${currentEndNumber}` : ''} of {totalQuestionCount}
             </span>
-            <span className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+            <span className="text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">
               {Math.round(progress)}% Complete
             </span>
           </div>
 
-          <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
+          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 shadow-inner">
             <div
               className="bg-gradient-to-r from-blue-500 to-indigo-600 h-3 rounded-full transition-all duration-500 ease-out shadow-sm"
               style={{ width: `${progress}%` }}
@@ -1046,7 +1064,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
         {/* Quiz-level Media for Audio/PDF/Text Quizzes */}
         {quizData?.quiz_media_url && (
-          <div className="bg-white rounded-none md:rounded-lg border-t border-b md:border p-2 md:p-4 mb-4 md:mb-6">
+          <div className="bg-white dark:bg-card rounded-none md:rounded-lg border-t border-b md:border dark:border-gray-700 p-2 md:p-4 mb-4 md:mb-6">
             {quizData.quiz_media_type === 'audio' ? (
               <AudioPlayer
                 src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + quizData.quiz_media_url}
@@ -1054,7 +1072,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 maxPlays={quizData.audio_max_plays || 2}
               />
             ) : quizData.quiz_media_type === 'text' ? (
-              <div className="prose prose-lg max-w-none bg-gray-50 p-6 rounded-lg border">
+              <div className="prose prose-lg dark:prose-invert max-w-none bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border dark:border-gray-700">
                 <div dangerouslySetInnerHTML={{ __html: renderTextWithLatex(quizData.quiz_media_url) }} />
               </div>
             ) : quizData.quiz_media_type === 'pdf' ? (
@@ -1065,8 +1083,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
                   alt="Reference material"
                 />
               ) : (
-                <div className="border rounded-lg bg-gray-50">
-                  <div className="w-full h-[800px] border rounded-lg">
+                <div className="border dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
+                  <div className="w-full h-[800px] border dark:border-gray-700 rounded-lg">
                     <iframe
                       src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${quizData.quiz_media_url}#toolbar=0&navpanes=0&scrollbar=1`}
                       className="w-full h-full"
@@ -1080,7 +1098,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
         )}
 
         {/* Question Review */}
-        <div className="bg-white rounded-none md:rounded-2xl overflow-hidden border-t border-b md:border">
+        <div className="bg-white dark:bg-card rounded-none md:rounded-2xl overflow-hidden border-t border-b md:border dark:border-gray-700">
           <div className="p-3 md:p-8">
             {/* Media Attachment for Media Questions */}
             {(question.question_type === 'media_question' || question.question_type === 'media_open_question') && question.media_url && (
@@ -1088,7 +1106,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 {question.media_type === 'pdf' ? (
                   <iframe
                     src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${question.media_url}#toolbar=0&navpanes=0&scrollbar=1`}
-                    className="w-full h-64 border rounded-lg"
+                    className="w-full h-64 border dark:border-gray-700 rounded-lg"
                     title="Question PDF"
                   />
                 ) : (
@@ -1102,25 +1120,25 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
             {/* Content Text / Passage */}
             {hasVisibleContent(question.content_text) && question.question_type !== 'text_completion' && question.question_type !== 'fill_blank' && (
-              <div className="bg-gray-50 p-4 rounded-lg mb-4 border-l-3 border-blue-400">
-                <div className="text-gray-700 prose max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(question.content_text) }} />
+              <div className="bg-gray-50 dark:bg-gray-800/30 p-4 rounded-lg mb-4 border-l-3 border-blue-400 dark:border-blue-500/30">
+                <div className="text-gray-700 dark:text-gray-200 prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(question.content_text) }} />
               </div>
             )}
 
             {question.question_type !== 'fill_blank' && question.question_type !== 'text_completion' && (
-              <h3 className="text-xl font-bold text-gray-900 mb-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
                 <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex(question.question_text.replace(/\[\[.*?\]\]/g, '')) }} />
               </h3>
             )}
 
             {question.question_type === 'fill_blank' && (
-              <h3 className="text-xl font-bold text-gray-900 mb-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
                 Fill in the gaps
               </h3>
             )}
 
             {question.question_type === 'text_completion' && (
-              <h3 className="text-xl font-bold text-gray-900 mb-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
                 Fill in the blanks
               </h3>
             )}
@@ -1152,7 +1170,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
               />
             ) : (
               /* Fill-in-the-gaps Review */
-              <div className="p-6 rounded-xl border-2 bg-gray-50 border-gray-200">
+              <div className="p-6 rounded-xl border-2 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                 {(() => {
                   const answers: string[] = Array.isArray(question.correct_answer) ? question.correct_answer : (question.correct_answer ? [question.correct_answer] : []);
                   const current = gapAnswers.get(question.id.toString()) || new Array(answers.length).fill('');
@@ -1172,7 +1190,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                     const parts = (question.content_text || question.question_text || '').split(/\[\[(.*?)\]\]/g);
                     let gapIndex = 0;
                     return (
-                      <div className="text-lg leading-relaxed text-gray-800">
+                      <div className="text-lg leading-relaxed text-gray-800 dark:text-gray-100">
                         {parts.map((part: string, i: number) => {
                           const isGap = i % 2 === 1;
                           if (!isGap) {
@@ -1185,8 +1203,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
                           return (
                             <span key={`gap-review-${i}`} className={`inline-flex items-center px-3 py-1 mx-1 rounded-md font-medium ${isCorrectGap
-                              ? 'bg-green-200 text-green-800 border-2 border-green-300'
-                              : 'bg-red-200 text-red-800 border-2 border-red-300'
+                              ? 'bg-green-200 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-2 border-green-300 dark:border-green-700'
+                              : 'bg-red-200 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-2 border-red-300 dark:border-red-700'
                               }`}>
                               {userAnswer || `[Gap ${idx + 1}]`}
                               {/* Correct answer hidden */}
@@ -1202,11 +1220,11 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
             {/* Explanation */}
             {question.explanation && (
-              <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border-l-4 border-blue-400">
-                <h5 className="text-lg font-bold text-blue-900 mb-3 flex items-center gap-2">
+              <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border-l-4 border-blue-400">
+                <h5 className="text-lg font-bold text-blue-900 dark:text-blue-400 mb-3 flex items-center gap-2">
                   💡 Explanation
                 </h5>
-                <div className="text-blue-800 leading-relaxed" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(question.explanation) }} />
+                <div className="text-blue-800 dark:text-blue-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(question.explanation) }} />
               </div>
             )}
           </div>
@@ -1241,13 +1259,13 @@ const QuizRenderer = (props: QuizRendererProps) => {
     if (isPending) {
       return (
         <div className="w-full md:max-w-2xl md:mx-auto text-center space-y-6 md:p-6">
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
             Submission Received
           </h1>
-          <div className="p-4 md:p-8 rounded-2xl border bg-yellow-50 border-yellow-200">
+          <div className="p-4 md:p-8 rounded-2xl border dark:border-gray-700 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
              <div className="text-6xl mb-4">📝</div>
-             <h2 className="text-xl font-bold text-yellow-800 mb-2">Pending Teacher Review</h2>
-             <p className="text-yellow-700">
+             <h2 className="text-xl font-bold text-yellow-800 dark:text-yellow-400 mb-2">Pending Teacher Review</h2>
+             <p className="text-yellow-700 dark:text-yellow-400">
                Your quiz includes long text questions that require manual grading. 
                Your score will be updated once the teacher reviews your answers.
              </p>
@@ -1278,8 +1296,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
       return (
         <div className="w-full md:max-w-3xl md:mx-auto space-y-4 md:space-y-6 md:p-4">
           <div className="text-center space-y-2 mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Correct Answers</h2>
-            <p className="text-gray-600">Review your answers below</p>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Correct Answers</h2>
+            <p className="text-gray-600 dark:text-gray-300">Review your answers below</p>
           </div>
 
           <div className="space-y-6">
@@ -1291,14 +1309,14 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 : 1;
 
               return (
-                <div key={q.id} className="bg-white rounded-none md:rounded-xl border-t border-b md:border">
+                <div key={q.id} className="bg-white dark:bg-gray-900/50 rounded-none md:rounded-xl border-t border-b md:border dark:border-gray-800/60">
                   <div className="p-2 md:p-6">
                     {/* Question Number Badge */}
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
                         {displayNumber}
                       </div>
-                      <span className="text-sm font-medium text-gray-500">
+                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
                         Question{questionGaps > 1 ? 's' : ''} {displayNumber}{questionGaps > 1 ? `-${displayNumber + questionGaps - 1}` : ''} of {totalQuestionCount}
                       </span>
                     </div>
@@ -1323,13 +1341,13 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
                     {/* Content Text */}
                     {hasVisibleContent(q.content_text) && q.question_type !== 'text_completion' && q.question_type !== 'fill_blank' && (
-                      <div className="bg-gray-50 p-4 rounded-lg mb-4 border-l-3 border-blue-400">
-                        <div className="text-gray-700 prose max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.content_text) }} />
+                      <div className="bg-gray-50 dark:bg-gray-800/30 p-4 rounded-lg mb-4 border-l-3 border-blue-400 dark:border-blue-500/30">
+                        <div className="text-gray-700 dark:text-gray-200 prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.content_text) }} />
                       </div>
                     )}
 
                     {/* Question */}
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
                       <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex((q.question_text || (q.question_type === 'text_completion' ? 'Fill in the blanks:' : '')).replace(/\[\[([^\]]+)\]\]/g, '[[blank]]')) }} />
                     </h3>
 
@@ -1393,7 +1411,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
           <div className="flex justify-center pt-6 pb-10">
             <Button
               onClick={() => setShowAllAnswers(false)}
-              className="px-8 py-3 bg-gray-800 hover:bg-gray-900 text-white rounded-lg text-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+              className="px-8 py-3 bg-gray-800 dark:bg-gray-700 hover:bg-gray-900 dark:hover:bg-gray-600 text-white rounded-lg text-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200"
             >
               Back to Results
             </Button>
@@ -1402,84 +1420,153 @@ const QuizRenderer = (props: QuizRendererProps) => {
       );
     }
 
-    return (
-      <div className="w-full md:max-w-2xl md:mx-auto text-center space-y-6 md:p-6">
-        {/* Header */}
-        <h1 className="text-3xl font-bold text-gray-900">
-          Quiz Complete!
-        </h1>
+    const previousAttempts = attemptsHistory.slice(0, -1);
+    const previousAttempt = previousAttempts.length > 0 ? previousAttempts[previousAttempts.length - 1] : null;
+    const scoreDiff = previousAttempt ? percentage - Math.round(previousAttempt.score_percentage) : null;
 
-        {/* Results Card */}
-        <div className={`p-4 md:p-8 rounded-2xl border ${isPassed ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
-          }`}>
+    const formatDate = (dateStr: string) => {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
+
+    const chartData = attemptsHistory.map((a: any, i: number) => ({
+      attempt: i + 1,
+      score: Math.round(a.score_percentage),
+      date: a.completed_at ? formatDate(a.completed_at) : `#${i + 1}`,
+    }));
+
+    return (
+      <div className="w-full max-w-3xl mx-auto text-center space-y-4 py-6 md:py-10">
+        <h2 className="text-3xl font-bold text-foreground">
+          {isPassed ? 'Nice work!' : 'Keep going!'}
+        </h2>
+        <p className="text-base text-muted-foreground">
+          {isPassed ? 'You passed the quiz' : "You're making progress — try again"}
+        </p>
+
+        <div className="w-full p-6 md:p-8 rounded-2xl bg-white dark:bg-card">
           <div className="space-y-6">
-            {/* Score Display */}
-            <div className="space-y-2">
-              <div className={`text-6xl font-bold ${isPassed ? 'text-green-600' : 'text-red-600'
-                }`}>
+            <div className="space-y-2 text-center">
+              <div className={`text-6xl font-bold ${
+                isPassed ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'
+              }`}>
                 {percentage}%
               </div>
-              <p className={`text-lg font-medium ${isPassed ? 'text-green-800' : 'text-red-800'
-                }`}>
+              <p className="text-lg text-muted-foreground">
                 {correctItems} out of {totalItems} {totalItems === 1 ? 'answer' : 'answers'} correct
               </p>
+
+              {scoreDiff !== null && scoreDiff > 0 && (
+                <p className="text-base font-medium text-green-600 dark:text-green-400">
+                  +{scoreDiff}% from last attempt
+                </p>
+              )}
+              {scoreDiff !== null && scoreDiff < 0 && (
+                <p className="text-base font-medium text-muted-foreground">
+                  {scoreDiff}% from last attempt
+                </p>
+              )}
+              {scoreDiff !== null && scoreDiff === 0 && (
+                <p className="text-base text-muted-foreground">
+                  Same score as last time
+                </p>
+              )}
+
               {!isPassed && (
-                <div className="mt-4 p-4 bg-red-100 border border-red-300 rounded-lg">
-                  <p className="text-red-900 font-semibold">
-                    You need to score at least 50% to continue
-                  </p>
-                  <p className="text-red-800 text-sm mt-2">
-                    Please try again to improve your score
-                  </p>
-                </div>
+                <p className="text-base text-muted-foreground">
+                  Score at least 50% to continue
+                </p>
               )}
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className={`rounded-lg p-3 border ${isPassed ? 'bg-white/50 border-green-200' : 'bg-white/50 border-red-200'
-                }`}>
-                <div className={`text-2xl font-bold ${isPassed ? 'text-green-600' : 'text-red-600'
-                  }`}>{correctItems}</div>
-                <div className={`text-sm font-medium ${isPassed ? 'text-green-800' : 'text-red-800'
-                  }`}>Correct</div>
+            <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto">
+              <div className="rounded-lg p-3 bg-gray-50 dark:bg-secondary text-center">
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{correctItems}</div>
+                <div className="text-base text-muted-foreground">Correct</div>
               </div>
-              <div className={`rounded-lg p-3 border ${isPassed ? 'bg-white/50 border-green-200' : 'bg-white/50 border-red-200'
-                }`}>
-                <div className={`text-2xl font-bold ${isPassed ? 'text-green-600' : 'text-red-600'
-                  }`}>{totalItems - correctItems}</div>
-                <div className={`text-sm font-medium ${isPassed ? 'text-green-800' : 'text-red-800'
-                  }`}>Incorrect</div>
+              <div className="rounded-lg p-3 bg-gray-50 dark:bg-secondary text-center">
+                <div className="text-2xl font-bold text-red-500 dark:text-red-400">{totalItems - correctItems}</div>
+                <div className="text-base text-muted-foreground">Incorrect</div>
               </div>
-              <div className={`rounded-lg p-3 border ${isPassed ? 'bg-white/50 border-green-200' : 'bg-white/50 border-red-200'
-                }`}>
-                <div className={`text-2xl font-bold ${isPassed ? 'text-green-600' : 'text-red-600'
-                  }`}>{totalItems}</div>
-                <div className={`text-sm font-medium ${isPassed ? 'text-green-800' : 'text-red-800'
-                  }`}>Total</div>
+              <div className="rounded-lg p-3 bg-gray-50 dark:bg-secondary text-center">
+                <div className="text-2xl font-bold text-foreground">{totalItems}</div>
+                <div className="text-base text-muted-foreground">Total</div>
               </div>
             </div>
+
+            {chartData.length === 1 && (
+              <p className="text-base text-muted-foreground text-center">This is your first attempt</p>
+            )}
+
+            {chartData.length > 1 && (
+              <div>
+                <h3 className="text-base font-semibold text-foreground mb-3 text-left">Your attempts</h3>
+                <ResponsiveContainer width="100%" height={160}>
+                  <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={false}
+                      className="fill-muted-foreground"
+                    />
+                    <YAxis
+                      domain={[0, 100]}
+                      tick={{ fontSize: 12 }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v) => `${v}%`}
+                      className="fill-muted-foreground"
+                    />
+                    <Tooltip
+                      formatter={(value: number) => [`${value}%`, 'Score']}
+                      labelFormatter={(_label: string, payload: readonly any[]) => {
+                        if (payload && payload[0]) {
+                          return `Attempt ${payload[0].payload.attempt} — ${payload[0].payload.date}`;
+                        }
+                        return '';
+                      }}
+                      contentStyle={{
+                        borderRadius: '8px',
+                        border: '1px solid hsl(var(--border))',
+                        backgroundColor: 'hsl(var(--card))',
+                        color: 'hsl(var(--foreground))',
+                        fontSize: '13px',
+                      }}
+                    />
+                    <ReferenceLine
+                      y={50}
+                      stroke="hsl(var(--muted-foreground))"
+                      strokeDasharray="4 4"
+                      strokeOpacity={0.5}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="score"
+                      stroke="hsl(217, 91%, 60%)"
+                      strokeWidth={2}
+                      dot={{ r: 4, fill: 'hsl(217, 91%, 60%)' }}
+                      activeDot={{ r: 6 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Feedback Section */}
         {quizAttempt && quizAttempt.feedback && (
-          <div className="max-w-2xl mx-auto mt-6 p-6 bg-blue-50 border border-blue-200 rounded-xl text-left">
-            <h3 className="text-lg font-bold text-blue-900 mb-2">Teacher Feedback</h3>
-            <div className="text-blue-800 prose max-w-none">
+          <div className="w-full p-5 rounded-2xl bg-white dark:bg-card text-left">
+            <h3 className="text-sm font-semibold text-foreground mb-1">Teacher Feedback</h3>
+            <div className="text-sm text-muted-foreground prose dark:prose-invert max-w-none">
               <p>{quizAttempt.feedback}</p>
             </div>
           </div>
         )}
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row justify-center gap-4 flex-wrap">
+        <div className="flex flex-col sm:flex-row justify-center gap-3 flex-wrap pt-2">
           {quizData?.display_mode === 'all_at_once' && (
-            <Button
-              onClick={reviewQuiz}
-              variant="outline"
-              className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:text-blue-800"
-            >
+            <Button onClick={reviewQuiz} variant="outline">
               Review Answers
             </Button>
           )}
@@ -1487,18 +1574,14 @@ const QuizRenderer = (props: QuizRendererProps) => {
           {(isPassed || import.meta.env.DEV || isTeacher) && (
             <Button
               onClick={() => setShowAllAnswers(true)}
-              className="bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg transition-all"
+              className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white"
             >
               Show Correct Answers
             </Button>
           )}
 
           {!hasLongText && (
-            <Button
-              onClick={resetQuiz}
-              variant="ghost"
-              className="text-gray-500 border hover:text-gray-700 hover:bg-gray-100"
-            >
+            <Button onClick={resetQuiz} variant="outline">
               Retake Quiz
             </Button>
           )}

@@ -31,7 +31,7 @@ import { Badge } from '../components/ui/badge';
 import Loader from '../components/Loader';
 import { getAllEvents, deleteEvent, bulkDeleteEvents, getAllGroups } from '../services/api';
 import type { Event, EventType, Group } from '../types';
-import { EVENT_TYPE_LABELS, EVENT_TYPE_COLORS } from '../types';
+import { EVENT_TYPE_LABELS } from '../types';
 
 export default function EventManagement() {
   const navigate = useNavigate();
@@ -174,7 +174,13 @@ export default function EventManagement() {
   };
 
   const getEventTypeColor = (eventType: EventType) => {
-    return EVENT_TYPE_COLORS[eventType] || 'bg-gray-100 text-gray-800 border-gray-200';
+    const withDark: Record<EventType, string> = {
+      class: 'bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+      weekly_test: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
+      webinar: 'bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-400 border-red-200 dark:border-red-800',
+      assignment: 'bg-orange-100 dark:bg-orange-900/30 text-orange-900 dark:text-orange-400 border-orange-200 dark:border-orange-800',
+    };
+    return withDark[eventType] || 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-600';
   };
 
   if (loading) {
@@ -186,8 +192,8 @@ export default function EventManagement() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Event Management</h1>
-          <p className="text-gray-600">Create and manage group schedules</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-foreground">Event Management</h1>
+          <p className="text-gray-600 dark:text-gray-400">Create and manage group schedules</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
           {selectedEventIds.length > 0 && (
@@ -212,11 +218,11 @@ export default function EventManagement() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg border p-4">
+      <div className="bg-white dark:bg-card rounded-lg border dark:border-border p-4">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
             <Input
               placeholder="Search events..."
               value={searchTerm}
@@ -267,7 +273,7 @@ export default function EventManagement() {
           </Select>
 
           {/* Lessons Toggle */}
-          <div className="flex items-center gap-2 px-2 border rounded-md bg-gray-50 h-10">
+          <div className="flex items-center gap-2 px-2 border dark:border-border rounded-md bg-gray-50 dark:bg-secondary h-10">
             <input
               type="checkbox"
               id="show-lessons"
@@ -275,7 +281,7 @@ export default function EventManagement() {
               onChange={(e) => setShowLessons(e.target.checked)}
               className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
             />
-            <label htmlFor="show-lessons" className="text-sm font-medium text-gray-700 cursor-pointer whitespace-nowrap">
+            <label htmlFor="show-lessons" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer whitespace-nowrap">
               Show Lessons
             </label>
           </div>
@@ -283,12 +289,12 @@ export default function EventManagement() {
       </div>
 
       {/* Events List */}
-      <div className="bg-white rounded-lg border">
+      <div className="bg-white dark:bg-card rounded-lg border dark:border-border">
         {filteredEvents.length === 0 ? (
           <div className="p-8 text-center">
-            <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Events Found</h3>
-            <p className="text-gray-600 mb-4">
+            <Calendar className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-foreground mb-2">No Events Found</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
               {searchTerm || selectedEventType !== 'all' || dateFilter !== 'all' 
                 ? 'Try adjusting your search filters'
                 : 'Create your first event to get started'
@@ -302,23 +308,23 @@ export default function EventManagement() {
             )}
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-gray-200 dark:divide-border">
             {/* Table Header with Select All */}
-            <div className="p-4 bg-gray-50 border-b flex items-center gap-4">
+            <div className="p-4 bg-gray-50 dark:bg-secondary border-b dark:border-border flex items-center gap-4">
               <input
                 type="checkbox"
                 checked={selectedEventIds.length === filteredEvents.length && filteredEvents.length > 0}
                 onChange={toggleSelectAll}
                 className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
               />
-              <span className="text-sm font-medium text-gray-600">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
                 {selectedEventIds.length > 0 
                   ? `${selectedEventIds.length} items selected` 
                   : `Select all events (${filteredEvents.length})`}
               </span>
             </div>
             {filteredEvents.map(event => (
-              <div key={event.id} className="p-6 hover:bg-gray-50 transition-colors flex items-start gap-4">
+              <div key={event.id} className="p-6 hover:bg-gray-50 dark:hover:bg-secondary transition-colors flex items-start gap-4">
                 <div className="pt-1">
                   <input
                     type="checkbox"
@@ -331,7 +337,7 @@ export default function EventManagement() {
                   <div className="flex-1 min-w-0">
                     {/* Event Header */}
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900 truncate">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground truncate">
                         {event.title}
                       </h3>
                       <Badge className={`${getEventTypeColor(event.event_type)} border`}>
@@ -343,7 +349,7 @@ export default function EventManagement() {
                         </Badge>
                       )}
                       {isScheduledLesson(event.id) && (
-                        <Badge variant="secondary" className="bg-purple-100 text-purple-700 border-purple-200">
+                        <Badge variant="secondary" className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800">
                           Scheduled Lesson
                         </Badge>
                       )}
@@ -355,7 +361,7 @@ export default function EventManagement() {
                     </div>
 
                     {/* Event Details */}
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-3">
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-3">
                       <div className="flex items-center gap-1">
                         <Clock className="w-4 h-4" />
                         {formatDateTime(event.start_datetime)} - {formatDateTime(event.end_datetime)}
@@ -392,13 +398,13 @@ export default function EventManagement() {
 
                     {/* Event Description */}
                     {event.description && (
-                      <p className="text-gray-600 text-sm line-clamp-2 mb-2">
+                      <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 mb-2">
                         {event.description}
                       </p>
                     )}
 
                     {/* Event Meta */}
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                       <span>Created by: {event.creator_name || 'Unknown'}</span>
                       <span>•</span>
                       <span>{new Date(event.created_at).toLocaleDateString('en-US')}</span>

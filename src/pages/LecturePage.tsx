@@ -97,7 +97,7 @@ export default function LecturePage() {
             </div>
           ) : (
             <div className="card p-6">
-              <div className="prose max-w-none">
+              <div className="prose dark:prose-invert max-w-none">
                 {contentText ? (
                   <div dangerouslySetInnerHTML={{ __html: contentText }} />
                 ) : (

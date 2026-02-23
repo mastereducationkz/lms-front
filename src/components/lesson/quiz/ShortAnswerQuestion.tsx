@@ -29,9 +29,9 @@ export const ShortAnswerQuestion: React.FC<ShortAnswerQuestionProps> = ({
         className={`w-full p-4 border-2 rounded-lg focus:outline-none ${
           showResult
             ? isCorrect
-              ? 'border-green-500 bg-green-50'
-              : 'border-red-500 bg-red-50'
-            : 'border-gray-300 focus:border-blue-500'
+              ? 'border-green-500 bg-green-50 dark:border-green-500 dark:bg-green-900/20'
+              : 'border-red-500 bg-red-50 dark:border-red-500 dark:bg-red-900/20'
+            : 'border-gray-300 focus:border-blue-500 dark:border-gray-600 dark:focus:border-blue-500 dark:bg-card dark:text-white'
         }`}
         disabled={disabled}
       />

@@ -181,7 +181,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   }
 
   return (
-    <div className={`bg-muted/50 border rounded-md p-3 space-y-2 ${className}`}>
+    <div className={`bg-muted/50 border dark:border-gray-700 rounded-md p-3 space-y-2 ${className}`}>
       <audio ref={audioRef} src={src} preload="metadata" />
       
       <div className="flex items-center gap-3">
@@ -256,7 +256,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           
           {showVolume && (
             <div 
-              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-3 bg-popover rounded-md shadow-md border"
+              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-3 bg-popover rounded-md shadow-md border dark:border-gray-700"
               onMouseLeave={() => setShowVolume(false)}
             >
               <div 

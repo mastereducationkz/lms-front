@@ -116,14 +116,14 @@ export const MatchingQuestion = ({
 
   // Color palette for matched pairs
   const pairColors = [
-    { bg: 'bg-blue-100', border: 'border-blue-400', text: 'text-blue-700', badge: 'bg-blue-200' },
-    { bg: 'bg-green-100', border: 'border-green-400', text: 'text-green-700', badge: 'bg-green-200' },
-    { bg: 'bg-purple-100', border: 'border-purple-400', text: 'text-purple-700', badge: 'bg-purple-200' },
-    { bg: 'bg-orange-100', border: 'border-orange-400', text: 'text-orange-700', badge: 'bg-orange-200' },
-    { bg: 'bg-pink-100', border: 'border-pink-400', text: 'text-pink-700', badge: 'bg-pink-200' },
-    { bg: 'bg-teal-100', border: 'border-teal-400', text: 'text-teal-700', badge: 'bg-teal-200' },
-    { bg: 'bg-indigo-100', border: 'border-indigo-400', text: 'text-indigo-700', badge: 'bg-indigo-200' },
-    { bg: 'bg-yellow-100', border: 'border-yellow-400', text: 'text-yellow-700', badge: 'bg-yellow-200' },
+    { bg: 'bg-blue-100 dark:bg-blue-900/20', border: 'border-blue-400 dark:border-blue-500', text: 'text-blue-700 dark:text-blue-400', badge: 'bg-blue-200 dark:bg-blue-800/50' },
+    { bg: 'bg-green-100 dark:bg-green-900/20', border: 'border-green-400 dark:border-green-500', text: 'text-green-700 dark:text-green-400', badge: 'bg-green-200 dark:bg-green-800/50' },
+    { bg: 'bg-purple-100 dark:bg-purple-900/20', border: 'border-purple-400 dark:border-purple-500', text: 'text-purple-700 dark:text-purple-400', badge: 'bg-purple-200 dark:bg-purple-800/50' },
+    { bg: 'bg-orange-100 dark:bg-orange-900/20', border: 'border-orange-400 dark:border-orange-500', text: 'text-orange-700 dark:text-orange-400', badge: 'bg-orange-200 dark:bg-orange-800/50' },
+    { bg: 'bg-pink-100 dark:bg-pink-900/20', border: 'border-pink-400 dark:border-pink-500', text: 'text-pink-700 dark:text-pink-400', badge: 'bg-pink-200 dark:bg-pink-800/50' },
+    { bg: 'bg-teal-100 dark:bg-teal-900/20', border: 'border-teal-400 dark:border-teal-500', text: 'text-teal-700 dark:text-teal-400', badge: 'bg-teal-200 dark:bg-teal-800/50' },
+    { bg: 'bg-indigo-100 dark:bg-indigo-900/20', border: 'border-indigo-400 dark:border-indigo-500', text: 'text-indigo-700 dark:text-indigo-400', badge: 'bg-indigo-200 dark:bg-indigo-800/50' },
+    { bg: 'bg-yellow-100 dark:bg-yellow-900/20', border: 'border-yellow-400 dark:border-yellow-500', text: 'text-yellow-700 dark:text-yellow-400', badge: 'bg-yellow-200 dark:bg-yellow-800/50' },
   ];
 
   const getColorForPair = (leftIdx: number) => {
@@ -135,8 +135,8 @@ export const MatchingQuestion = ({
       <div className="grid grid-cols-2 gap-6">
         {/* Left side - Terms */}
         <div className="space-y-2">
-          <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3 flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs">1</span>
+          <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3 flex items-center gap-2 dark:text-gray-300">
+            <span className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs dark:bg-gray-700">1</span>
             Left
           </div>
           {pairs.map((pair, leftIdx) => {
@@ -150,17 +150,17 @@ export const MatchingQuestion = ({
             
             let style = '';
             if (status === 'selected') {
-              style = 'border-blue-500 bg-blue-50 ring-2 ring-blue-300 shadow-md';
+              style = 'border-blue-500 bg-blue-50 ring-2 ring-blue-300 shadow-md dark:border-blue-500 dark:bg-blue-900/20 dark:ring-blue-500';
             } else if (showResult) {
               style = status === 'correct' 
-                ? 'border-green-500 bg-green-50' 
+                ? 'border-green-500 bg-green-50 dark:border-green-500 dark:bg-green-900/20' 
                 : status === 'incorrect' 
-                  ? 'border-red-500 bg-red-50'
-                  : 'border-gray-200 bg-white';
+                  ? 'border-red-500 bg-red-50 dark:border-red-500 dark:bg-red-900/20'
+                  : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-card';
             } else if (isMatched && color) {
               style = `${color.border} ${color.bg}`;
             } else {
-              style = 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50';
+              style = 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50 dark:border-gray-700 dark:bg-card dark:hover:border-blue-500 dark:hover:bg-blue-900/20';
             }
             
             return (
@@ -172,7 +172,7 @@ export const MatchingQuestion = ({
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 flex-1">
                     <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${
-                      isMatched && color ? `${color.badge} ${color.text}` : 'bg-gray-100 text-gray-600'
+                      isMatched && color ? `${color.badge} ${color.text}` : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
                     }`}>
                       {leftIdx + 1}
                     </span>
@@ -192,8 +192,8 @@ export const MatchingQuestion = ({
 
         {/* Right side - Definitions (shuffled) */}
         <div className="space-y-2">
-          <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3 flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs">2</span>
+          <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3 flex items-center gap-2 dark:text-gray-300">
+            <span className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs dark:bg-gray-700">2</span>
             Right
           </div>
           {shuffledRightIndices.map((originalIdx, displayIdx) => {
@@ -227,7 +227,7 @@ export const MatchingQuestion = ({
               >
                 <div className="flex items-center gap-3">
                   <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${
-                    isMatched && color ? `${color.badge} ${color.text}` : 'bg-gray-100 text-gray-600'
+                    isMatched && color ? `${color.badge} ${color.text}` : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
                   }`}>
                     {displayLetter}
                   </span>

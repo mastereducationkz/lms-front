@@ -111,9 +111,9 @@ export default function DashboardPage() {
   if (error) {
     return (
       <div>
-        <div className="bg-red-50 border border-red-200 rounded p-4">
-          <h3 className="font-semibold text-red-800">Error loading dashboard</h3>
-          <p className="text-red-600">{error}</p>
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-4">
+          <h3 className="font-semibold text-red-800 dark:text-red-300">Error loading dashboard</h3>
+          <p className="text-red-600 dark:text-red-400">{error}</p>
           <button 
             onClick={loadDashboardData}
             className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"

@@ -116,9 +116,9 @@ export default function StudentDashboard({
   const overallProgress = progressData?.overall_completion_percentage ?? stats?.overall_progress ?? 0;
 
   const getProgressColor = (percentage: number) => {
-    if (percentage >= 80) return 'text-green-600';
-    if (percentage >= 50) return 'text-yellow-600';
-    return 'text-red-600';
+    if (percentage >= 80) return 'text-green-600 dark:text-green-400';
+    if (percentage >= 50) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   };
 
   // Helper functions for todo list
@@ -289,14 +289,14 @@ export default function StudentDashboard({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-2" data-tour="dashboard-stats">
         <Card className="h-fit">
           <CardContent className="p-6 flex items-center gap-4">
-            <div className="rounded-md bg-blue-100 text-blue-700 p-3">
+            <div className="rounded-md bg-blue-100 text-blue-700 dark:bg-blue-800/30 dark:text-blue-400 p-3">
               <BookOpen className="h-6 w-6" />
             </div>
             <div>
               <div className="text-3xl font-bold">{coursesCount}</div>
               <div className="text-muted-foreground text-sm">My courses</div>
               {progressData && (
-                <div className="text-xs text-green-600 mt-1">
+                <div className="text-xs text-green-600 dark:text-green-400 mt-1">
                   {progressData.completed_lessons}/{progressData.total_lessons} lessons completed
                 </div>
               )}
@@ -306,14 +306,14 @@ export default function StudentDashboard({
 
         <Card className="h-fit" data-tour="streak-display">
           <CardContent className="p-6 flex items-center gap-4">
-            <div className="rounded-md bg-amber-100 text-amber-700 p-3">
+            <div className="rounded-md bg-amber-100 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 p-3">
               <Clock className="h-6 w-6" />
             </div>
             <div>
               <div className="text-3xl font-bold">{totalStudyHours}h</div>
               <div className="text-muted-foreground text-sm">Study time</div>
               {progressData && (
-                <div className="text-xs text-blue-600 mt-1">
+                <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
                   {progressData.total_time_spent_minutes} minutes total
                 </div>
               )}
@@ -323,14 +323,14 @@ export default function StudentDashboard({
 
         <Card className="h-fit">
           <CardContent className="p-6 flex items-center gap-4">
-            <div className="rounded-md bg-emerald-100 text-emerald-700 p-3">
+            <div className="rounded-md bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 p-3">
               <LineChart className="h-6 w-6" />
             </div>
             <div className="flex-1">
               <div className="text-3xl font-bold">{overallProgress}%</div>
               <div className="text-muted-foreground text-sm">Progress Overview</div>
               {progressData && (
-                <div className="text-xs text-emerald-600 mt-1">
+                <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
                   {progressData.completed_steps}/{progressData.total_steps} steps completed
                 </div>
               )}
@@ -389,9 +389,9 @@ export default function StudentDashboard({
             </CardHeader>
             <CardContent>
               {isLoadingTodo ? (
-                <div className="text-center py-4 text-gray-500">Loading deadlines...</div>
+                <div className="text-center py-4 text-gray-500 dark:text-gray-400">Loading deadlines...</div>
               ) : (
-                <div className="max-h-[19.5rem] overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
+                <div className="max-h-[19.5rem] overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-gray-600 dark:scrollbar-track-gray-700 hover:scrollbar-thumb-gray-400 dark:hover:scrollbar-thumb-gray-500">
                   {/* Combined assignments and events */}
                   {(() => {
                     const allDeadlines = [
@@ -424,13 +424,13 @@ export default function StudentDashboard({
 
                     return allDeadlines.length > 0 ? (
                       allDeadlines.map((deadline) => (
-                        <div key={deadline.id} className="flex items-center gap-3 p-2 border rounded-lg hover:bg-gray-50">
+                        <div key={deadline.id} className="flex items-center gap-3 p-2 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 border-gray-200 dark:border-gray-700">
                           {deadline.type === 'assignment' ? (
                             <>
-                              <deadline.status.icon className="h-4 w-4 text-gray-500" />
+                              <deadline.status.icon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium text-sm truncate">{deadline.title}</div>
-                                <div className="text-xs text-gray-500">
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
                                   Due {formatDate(deadline.date!)}
                                 </div>
                               </div>
@@ -442,13 +442,13 @@ export default function StudentDashboard({
                             <>
                               {(() => {
                                 const EventIcon = getEventIcon(deadline.eventType);
-                                return <EventIcon className="h-4 w-4 text-gray-500" />;
+                                return <EventIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />;
                               })()}
                               <div className="flex-1 min-w-0">
                                 <div className="font-medium text-sm truncate">{deadline.title}</div>
-                                <div className="text-xs text-gray-500">
-                                  {formatDateTime(deadline.date!)}
-                                </div>
+<div className="text-xs text-gray-500 dark:text-gray-400">
+                                {formatDateTime(deadline.date!)}
+                              </div>
                               </div>
                               <Badge className={`text-xs ${getEventColor(deadline.eventType)}`}>
                                 {deadline.eventType.replace('_', ' ')}
@@ -458,7 +458,7 @@ export default function StudentDashboard({
                         </div>
                       ))
                     ) : (
-                      <div className="text-center py-4 text-gray-500 text-sm">
+                      <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
                         No current tasks
                       </div>
                     );
@@ -492,14 +492,14 @@ export default function StudentDashboard({
                   return uniqueTeachers.length > 0 ? (
                     <div className="space-y-3">
                       {uniqueTeachers.map(teacher => (
-                        <div key={teacher.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                        <div key={teacher.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 border-gray-200 dark:border-gray-700">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-medium">
+                            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-800/30 dark:text-blue-400 flex items-center justify-center font-medium">
                               {teacher.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                             </div>
                             <div>
                               <div className="font-medium text-sm">{teacher.name}</div>
-                              <div className="text-xs text-gray-500">
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
                                 {progressData.courses.filter(c => c.teacher_id === teacher.id).length} course(s)
                               </div>
                             </div>
@@ -520,7 +520,7 @@ export default function StudentDashboard({
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-4 text-gray-500 text-sm">
+                    <div className="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
                       No teacher information available
                     </div>
                   );
@@ -533,17 +533,17 @@ export default function StudentDashboard({
         {/* Right Column - Main Content */}
         <div className="lg:col-span-2">
           <Tabs defaultValue="courses" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 h-12 bg-gray-100">
+            <TabsList className="grid w-full grid-cols-2 h-12 bg-gray-100 dark:bg-gray-700">
               <TabsTrigger 
                 value="courses" 
-                className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-900 dark:data-[state=active]:shadow-gray-900/30"
               >
                 <BookOpen className="h-4 w-4" />
                 Courses
               </TabsTrigger>
               <TabsTrigger 
                 value="activity" 
-                className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-900 dark:data-[state=active]:shadow-gray-900/30"
               >
                 <LineChart className="h-4 w-4" />
                 Activity
@@ -565,10 +565,10 @@ export default function StudentDashboard({
               {/* Course Progress Details */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {progressData.courses.map((course) => (
-                  <Card key={course.course_id} className="hover:shadow-lg transition-shadow overflow-hidden">
+                  <Card key={course.course_id} className="hover:shadow-lg dark:hover:shadow-gray-900/30 transition-shadow overflow-hidden">
                     {/* Course Image */}
                     {course.cover_image_url ? (
-                      <div className="relative h-48 bg-gray-200">
+                      <div className="relative h-48 bg-gray-200 dark:bg-gray-700">
                         <img
                           src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + course.cover_image_url}
                           alt={course.course_title}
@@ -728,7 +728,7 @@ export default function StudentDashboard({
                             </span>
                           </TableCell>
                           <TableCell>
-                            <span className="text-sm text-gray-600">
+                            <span className="text-sm text-gray-600 dark:text-gray-300">
                               {course.time_spent_minutes} min
                             </span>
                           </TableCell>

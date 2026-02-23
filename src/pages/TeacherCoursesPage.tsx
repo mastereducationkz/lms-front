@@ -127,7 +127,7 @@ export default function TeacherCoursesPage() {
             <div className="h-8 bg-gray-200 rounded w-48"></div>
             <div className="h-10 bg-gray-200 rounded w-32"></div>
           </div>
-          <div className="bg-white rounded-2xl shadow-card p-6">
+          <div className="bg-white dark:bg-card rounded-2xl shadow-card p-6">
             <div className="space-y-4">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="h-16 bg-gray-200 rounded"></div>
@@ -143,12 +143,12 @@ export default function TeacherCoursesPage() {
     return (
       <div className="space-y-6 p-6">
         <h1 className="text-3xl font-bold">My Courses</h1>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
           <div className="flex items-center">
-            <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
-            <h3 className="font-semibold text-red-800">Error</h3>
+            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mr-2" />
+            <h3 className="font-semibold text-red-800 dark:text-red-400">Error</h3>
           </div>
-          <p className="text-red-600 mt-1">{error}</p>
+          <p className="text-red-600 dark:text-red-400 mt-1">{error}</p>
           <button 
             onClick={loadCourses}
             className="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
@@ -164,7 +164,7 @@ export default function TeacherCoursesPage() {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold flex items-center">
-          <BookOpen className="w-8 h-8 mr-3 text-blue-600" />
+          <BookOpen className="w-8 h-8 mr-3 text-blue-600 dark:text-blue-400" />
           My Courses
         </h1>
         {user?.role === 'admin' && (
@@ -183,21 +183,21 @@ export default function TeacherCoursesPage() {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+        <div className="bg-white dark:bg-card rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center">
-            <BookOpen className="w-6 h-6 text-blue-600 mr-2" />
+            <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-400 mr-2" />
             <div>
-              <div className="text-sm text-gray-600">Total Courses</div>
+              <div className="text-sm text-gray-600 dark:text-gray-300">Total Courses</div>
               <div className="text-xl font-bold">{courses.length}</div>
             </div>
           </div>
         </div>
         
-        <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+        <div className="bg-white dark:bg-card rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center">
-            <Users className="w-6 h-6 text-green-600 mr-2" />
+            <Users className="w-6 h-6 text-green-600 dark:text-green-400 mr-2" />
             <div>
-              <div className="text-sm text-gray-600">Total Students</div>
+              <div className="text-sm text-gray-600 dark:text-gray-300">Total Students</div>
               <div className="text-xl font-bold">
                 {courses.reduce((sum, course) => sum + (course.students_count || 0), 0)}
               </div>
@@ -205,11 +205,11 @@ export default function TeacherCoursesPage() {
           </div>
         </div>
         
-        <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+        <div className="bg-white dark:bg-card rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center">
             <Settings className="w-6 h-6 text-purple-600 mr-2" />
             <div>
-              <div className="text-sm text-gray-600">Total Modules</div>
+              <div className="text-sm text-gray-600 dark:text-gray-300">Total Modules</div>
               <div className="text-xl font-bold">
                 {courses.reduce((sum, course) => sum + (course.modules_count || 0), 0)}
               </div>
@@ -232,50 +232,50 @@ export default function TeacherCoursesPage() {
           <CardContent className="p-0 pt-0">
             <Table>
               <TableHeader>
-                <TableRow className="bg-gray-50">
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Course</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Modules</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Students</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Progress</TableHead>
-                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</TableHead>
-                  <TableHead className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</TableHead>
+                <TableRow className="bg-gray-50 dark:bg-gray-800">
+                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Course</TableHead>
+                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Modules</TableHead>
+                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Students</TableHead>
+                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Completed</TableHead>
+                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Avg Progress</TableHead>
+                  <TableHead className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</TableHead>
+                  <TableHead className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {courses.map(course => (
-                  <TableRow key={course.id} className="hover:bg-gray-50">
+                  <TableRow key={course.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                     <TableCell className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-md bg-gray-100 overflow-hidden flex items-center justify-center text-gray-500 text-xs">
+                        <div className="w-10 h-10 rounded-md bg-gray-100 dark:bg-gray-700 overflow-hidden flex items-center justify-center text-gray-500 dark:text-gray-400 text-xs">
                           {course.cover_image_url ? (
                             <img src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + course.cover_image_url} alt={course.title} className="w-full h-full object-cover" />
                           ) : (
                             <span className="font-medium">{course.title?.slice(0,1)?.toUpperCase() || 'C'}</span>
                           )}
                         </div>
-                        <div className="font-medium text-gray-900">{course.title}</div>
+                        <div className="font-medium text-gray-900 dark:text-white">{course.title}</div>
                       </div>
                     </TableCell>
-                    <TableCell className="px-6 py-4 text-gray-600 whitespace-nowrap">
+                    <TableCell className="px-6 py-4 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                       <span className="font-medium">{course.modules_count || 0}</span>
                     </TableCell>
-                    <TableCell className="px-6 py-4 text-gray-600 whitespace-nowrap">
+                    <TableCell className="px-6 py-4 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                       <span className="font-medium">{course.students_count || 0}</span>
                     </TableCell>
-                    <TableCell className="px-6 py-4 text-gray-600 whitespace-nowrap">
+                    <TableCell className="px-6 py-4 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                       <span className="font-medium">{course.completed_count || 0}</span>
                     </TableCell>
-                    <TableCell className="px-6 py-4 text-gray-600 whitespace-nowrap">
+                    <TableCell className="px-6 py-4 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                       <span className="font-medium">{course.avg_progress ?? 0}%</span>
                     </TableCell>
                     <TableCell className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                         course.status === 'active' 
-                          ? 'bg-green-100 text-green-800' 
+                          ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400' 
                           : course.status === 'draft'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-gray-100 text-gray-800'
+                          ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100'
                       }`}>
                         {course.status || 'Active'}
                       </span>

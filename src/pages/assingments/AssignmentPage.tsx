@@ -273,7 +273,7 @@ export default function AssignmentPage() {
         return (
           <div className="space-y-6">
             {/* Grading Status Panel */}
-            <Card className={submission.status === 'graded' ? 'border-green-200 bg-green-50/30' : 'border-blue-200 bg-blue-50/30'}>
+            <Card className={submission.status === 'graded' ? 'border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-900/20' : 'border-border bg-secondary/50'}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   {submission.status === 'graded' ? (
@@ -283,7 +283,7 @@ export default function AssignmentPage() {
                     </>
                   ) : (
                     <>
-                      <span className="text-blue-800">Submitted - Awaiting Grade</span>
+                      <span className="text-foreground">Submitted - Awaiting Grade</span>
                     </>
                   )}
                 </CardTitle>
@@ -293,23 +293,23 @@ export default function AssignmentPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Score Display */}
-                <div className="flex items-center justify-between p-4 bg-white rounded-lg border">
+                <div className="flex items-center justify-between p-4 bg-white dark:bg-card rounded-lg border dark:border-border">
                   <div>
-                    <div className="text-sm text-gray-600">Your Score</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">Your Score</div>
                     <div className="text-3xl font-bold">
                       {submission.status === 'graded' ? (
                         <span className={(submission.score || 0) >= (effectiveMaxScore * 0.6) ? 'text-green-600' : 'text-red-600'}>
                           {submission.score || 0}
                         </span>
                       ) : (
-                        <span className="text-gray-400">—</span>
+                        <span className="text-gray-400 dark:text-gray-500">—</span>
                       )}
-                      <span className="text-lg text-gray-500 font-normal"> / {effectiveMaxScore}</span>
+                      <span className="text-lg text-gray-500 dark:text-gray-400 font-normal"> / {effectiveMaxScore}</span>
                     </div>
                   </div>
                   {submission.status === 'graded' && (
                     <div className="text-right">
-                      <div className="text-sm text-gray-600">Percentage</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Percentage</div>
                       <div className={`text-2xl font-bold ${(submission.score || 0) >= (effectiveMaxScore * 0.6) ? 'text-green-600' : 'text-red-600'}`}>
                         {Math.round(((submission.score || 0) / effectiveMaxScore) * 100)}%
                       </div>
@@ -318,14 +318,14 @@ export default function AssignmentPage() {
                 </div>
 
                 {/* Teacher Feedback */}
-                <div className="p-4 bg-white rounded-lg border">
+                <div className="p-4 bg-white dark:bg-card rounded-lg border dark:border-border">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="font-medium text-gray-900">Teacher Feedback</span>
+                    <span className="font-medium text-gray-900 dark:text-foreground">Teacher Feedback</span>
                   </div>
                   {submission.feedback ? (
-                    <p className="text-gray-700 whitespace-pre-wrap">{submission.feedback}</p>
+                    <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{submission.feedback}</p>
                   ) : (
-                    <p className="text-gray-500 italic">No feedback provided yet</p>
+                    <p className="text-gray-500 dark:text-gray-400 italic">No feedback provided yet</p>
                   )}
                 </div>
 
@@ -392,7 +392,7 @@ export default function AssignmentPage() {
                                 href={file.file_url.startsWith('http') ? file.file_url : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + file.file_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-800 flex items-center"
+                                className="text-foreground hover:underline flex items-center"
                                 >
                                 <Download className="w-4 h-4" />
                                 </a>
@@ -413,7 +413,7 @@ export default function AssignmentPage() {
                       href={submission.file_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800"
+                      className="text-foreground hover:underline"
                     >
                       Download
                     </a>
@@ -450,20 +450,20 @@ export default function AssignmentPage() {
     if (assignment.assignment_type === 'file_upload') {
       return (
         <div className="space-y-6">
-          <div className="prose max-w-none">
+          <div className="prose dark:prose-invert max-w-none">
             <h3 className="text-lg font-medium mb-2">Instructions</h3>
-            <p className="text-gray-700 whitespace-pre-wrap">
+            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
               {assignment.content?.question || assignment.description}
             </p>
 
             {assignment.content?.teacher_file_url && (
-              <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                <h4 className="text-sm font-medium text-blue-900 mb-2">Reference Material</h4>
+              <div className="mt-4 p-4 bg-secondary/50 dark:bg-secondary rounded-lg border border-border">
+                <h4 className="text-sm font-medium text-foreground mb-2">Reference Material</h4>
                 <a
                   href={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + assignment.content.teacher_file_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center text-blue-700 hover:underline"
+                  className="flex items-center text-foreground hover:underline"
                 >
                   <Download className="w-4 h-4 mr-2" />
                   {assignment.content.teacher_file_name || 'Download File'}
@@ -514,12 +514,12 @@ export default function AssignmentPage() {
                 {files.length > 0 && (
                  <div className="space-y-2">
                     {files.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-blue-50 rounded border border-blue-100">
+                        <div key={index} className="flex items-center justify-between p-3 bg-secondary/50 dark:bg-secondary rounded border border-border">
                             <div className="flex items-center">
-                            <FileText className="w-5 h-5 text-blue-600 mr-3" />
+                            <FileText className="w-5 h-5 text-muted-foreground mr-3" />
                             <div>
-                                <span className="font-medium text-blue-900 block">{file.name}</span>
-                                <span className="text-xs text-blue-700">
+                                <span className="font-medium text-foreground block">{file.name}</span>
+                                <span className="text-xs text-muted-foreground">
                                 Size: {(file.size / 1024 / 1024).toFixed(2)} MB
                                 </span>
                             </div>
@@ -557,7 +557,7 @@ export default function AssignmentPage() {
                               ...prev,
                               [field.id]: e.target.value
                             }))}
-                            className="w-full px-3 py-2 border rounded-md text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full px-3 py-2 border rounded-md text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring"
                             placeholder="Enter your answer..."
                           />
                         </div>
@@ -614,7 +614,7 @@ export default function AssignmentPage() {
 
   if (!assignment) return (
     <div className="flex items-center justify-center min-h-[400px]">
-      <div className="text-gray-500 text-lg">Loading assignment...</div>
+      <div className="text-gray-500 dark:text-gray-400 text-lg">Loading assignment...</div>
     </div>
   );
 
@@ -670,7 +670,7 @@ export default function AssignmentPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-6 text-sm text-gray-600">
+          <div className="flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
             {assignment.due_date && (
               <div className={`flex items-center space-x-2 ${isOverdue && !extension ? 'text-red-600' : ''}`}>
                 <Calendar className="w-4 h-4" />
@@ -685,7 +685,7 @@ export default function AssignmentPage() {
                   Extended Deadline: {new Date(extension.extended_deadline).toLocaleDateString()} {new Date(extension.extended_deadline).toLocaleTimeString()}
                 </span>
                 {extension.reason && (
-                  <span className="text-xs text-gray-500">({extension.reason})</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">({extension.reason})</span>
                 )}
               </div>
             )}
@@ -711,12 +711,12 @@ export default function AssignmentPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Download className="w-5 h-5 text-blue-600" />
+                <div className="p-2 bg-secondary rounded-lg">
+                  <Download className="w-5 h-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Assignment File</p>
-                  <p className="text-xs text-gray-600">Download the assignment file to get started</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-foreground">Assignment File</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Download the assignment file to get started</p>
                 </div>
               </div>
               <Button

@@ -102,7 +102,7 @@ export default function CourseOverviewPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
       </div>
     );
   }
@@ -111,8 +111,8 @@ export default function CourseOverviewPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Error</h2>
-          <p className="text-gray-600">{error || 'Course not found'}</p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Error</h2>
+          <p className="text-gray-600 dark:text-gray-300">{error || 'Course not found'}</p>
           <Button onClick={() => navigate('/courses')} className="mt-4">
             Back to Courses
           </Button>
@@ -122,17 +122,17 @@ export default function CourseOverviewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-background">
       {/* Course Info (not a header) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="w-full">
-            <h1 className="text-2xl font-bold text-gray-900">{course.title}</h1>
-            <p className="mt-1 text-base text-gray-600">{course.description}</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{course.title}</h1>
+            <p className="mt-1 text-base text-gray-600 dark:text-gray-300">{course.description}</p>
 
             {/* Progress Bar */}
             <div className="mt-6 max-w-xl">
-              <div className="flex justify-between text-sm text-gray-600 mb-2">
+              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300 mb-2">
                 <span className="font-medium">Course Progress</span>
                 <span className="font-medium">{calculateProgress()}%</span>
               </div>
@@ -142,15 +142,15 @@ export default function CourseOverviewPage() {
             <div className="mt-6 flex items-center space-x-4">
               {course.estimated_duration_minutes && course.estimated_duration_minutes > 0 && (
                 <div className="flex items-center space-x-1">
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  <span className="text-xs text-gray-500">
+                  <Clock className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
                     {formatDuration(course.estimated_duration_minutes)}
                   </span>
                 </div>
               )}
               <div className="flex items-center space-x-1">
-                <Users className="w-4 h-4 text-gray-400" />
-                <span className="text-xs text-gray-500">
+                <Users className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                <span className="text-xs text-gray-500 dark:text-gray-400">
                   {modules.length} modules
                 </span>
               </div>
@@ -163,24 +163,24 @@ export default function CourseOverviewPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
           {modules.map((module) => (
-            <Card key={module.id} className={module.is_completed ? "border-green-200 bg-green-50/30" : ""}>
+            <Card key={module.id} className={module.is_completed ? "border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-900/20" : ""}>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
                       <h2 className="text-xl font-semibold">{module.title}</h2>
                       {module.is_completed && (
-                        <span className="flex items-center text-xs font-medium text-green-600 bg-green-100 px-2 py-0.5 rounded-full">
+                        <span className="flex items-center text-xs font-medium text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
                           <CheckCircle className="w-3 h-3 mr-1" />
                           Completed
                         </span>
                       )}
                     </div>
                     {module.description && (
-                      <p className="text-sm text-gray-600 mt-1">{module.description}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{module.description}</p>
                     )}
                   </div>
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100">
                     {module.total_lessons} lessons
                   </span>
                 </CardTitle>
@@ -199,19 +199,19 @@ export default function CourseOverviewPage() {
                         title={!isAccessible ? "Complete previous lessons to unlock" : ""}
                         className={`w-full flex items-center justify-between p-4 rounded-lg border transition-colors text-left ${
                           !isAccessible
-                            ? 'opacity-50 cursor-not-allowed bg-gray-50 border-gray-200'
+                            ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-secondary border-gray-200 dark:border-border'
                             : lesson.is_completed
-                              ? 'bg-green-50 border-green-200 hover:border-green-300 hover:bg-green-100'
-                              : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                              ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 hover:border-green-300 dark:hover:border-green-700 hover:bg-green-100 dark:hover:bg-green-900/30'
+                              : 'border-gray-200 dark:border-border hover:border-gray-300 dark:hover:border-border hover:bg-gray-100 dark:hover:bg-secondary'
                         }`}
                       >
                         <div className="flex items-center space-x-3">
                           <div className={`flex-shrink-0 ${
                             !isAccessible 
-                              ? 'text-gray-400' 
+                              ? 'text-gray-400 dark:text-gray-500' 
                               : lesson.is_completed 
-                                ? 'text-green-600' 
-                                : 'text-gray-400'
+                                ? 'text-green-600 dark:text-green-400' 
+                                : 'text-gray-400 dark:text-gray-500'
                           }`}>
                             {!isAccessible ? (
                               <Lock className="w-5 h-5" />
@@ -222,16 +222,16 @@ export default function CourseOverviewPage() {
                             )}
                           </div>
                           <div>
-                            <h3 className={`font-medium ${lesson.is_completed ? 'text-green-900' : 'text-gray-900'}`}>
+                            <h3 className={`font-medium ${lesson.is_completed ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-white'}`}>
                               {lesson.title}
                             </h3>
                             {lesson.description && (
-                              <p className={`text-sm mt-1 ${lesson.is_completed ? 'text-green-700' : 'text-gray-500'}`}>
+                              <p className={`text-sm mt-1 ${lesson.is_completed ? 'text-green-700 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
                                 {lesson.description}
                               </p>
                             )}
                             {lesson.steps && lesson.steps.length > 0 && (
-                              <p className={`text-xs mt-1 ${lesson.is_completed ? 'text-green-600' : 'text-gray-400'}`}>
+                              <p className={`text-xs mt-1 ${lesson.is_completed ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
                                 {lesson.steps.length} steps
                               </p>
                             )}

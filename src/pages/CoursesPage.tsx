@@ -33,9 +33,9 @@ export default function CoursesPage() {
   }, []);
 
   const getProgressColor = (percentage: number) => {
-    if (percentage >= 80) return 'text-green-600';
-    if (percentage >= 50) return 'text-yellow-600';
-    return 'text-red-600';
+    if (percentage >= 80) return 'text-green-600 dark:text-green-400';
+    if (percentage >= 50) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   };
 
   const loadCourses = async () => {
@@ -104,9 +104,9 @@ export default function CoursesPage() {
     return (
       <div className="space-y-6">
         <h2 className="text-2xl sm:text-3xl font-bold">Courses</h2>
-        <div className="bg-red-50 border border-red-200 rounded p-4">
-          <h3 className="font-semibold text-red-800">Error loading courses</h3>
-          <p className="text-red-600">{error}</p>
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-4">
+          <h3 className="font-semibold text-red-800 dark:text-red-400">Error loading courses</h3>
+          <p className="text-red-600 dark:text-red-400">{error}</p>
           <Button 
             onClick={loadCourses}
             variant="destructive"
@@ -134,7 +134,7 @@ export default function CoursesPage() {
       </div>
 
       {courses.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
           <p>No courses available</p>
           {user?.role === 'student' && (
             <p className="text-sm mt-2">Contact your teacher to get enrolled in courses</p>
@@ -146,7 +146,7 @@ export default function CoursesPage() {
             <Card key={course.id} className="hover:shadow-lg transition-shadow overflow-hidden">
               {/* Course Image */}
               {course.image ? (
-                <div className="relative h-48 bg-gray-200">
+                <div className="relative h-48 bg-gray-200 dark:bg-gray-700">
                   <img
                     src={course.image}
                     alt={course.title}
@@ -216,7 +216,7 @@ export default function CoursesPage() {
                   </div>
                 )}
                 {/* Course Info */}
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 dark:text-gray-300">
                   {course.description}
                 </div>
                 {/* Action Button */}

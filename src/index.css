@@ -59,18 +59,26 @@
 }
 
 .rich-text-editor .ql-toolbar {
-  border-top: 1px solid #e5e7eb;
-  border-left: 1px solid #e5e7eb;
-  border-right: 1px solid #e5e7eb;
-  border-bottom: none;
-}
+    border-top: 1px solid #e5e7eb;
+    border-left: 1px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
+    border-bottom: none;
+  }
 
-.rich-text-editor .ql-container {
-  border-bottom: 1px solid #e5e7eb;
-  border-left: 1px solid #e5e7eb;
-  border-right: 1px solid #e5e7eb;
-  border-top: none;
-}
+  .dark .rich-text-editor .ql-toolbar {
+    border-color: #374151;
+  }
+
+  .rich-text-editor .ql-container {
+    border-bottom: 1px solid #e5e7eb;
+    border-left: 1px solid #e5e7eb;
+    border-right: 1px solid #e5e7eb;
+    border-top: none;
+  }
+
+  .dark .rich-text-editor .ql-container {
+    border-color: #374151;
+  }
 
 /* Стили для математических символов в toolbar */
 .math-toolbar {
@@ -80,6 +88,11 @@
   padding: 0.5rem;
 }
 
+.dark .math-toolbar {
+  background-color: #1f2937;
+  border-color: #374151;
+}
+
 /* Стили для LaTeX диалога */
 .latex-dialog .formula-preview {
   background-color: #f8fafc;
@@ -87,6 +100,11 @@
   border-radius: 0.375rem;
   padding: 1rem;
   margin-top: 0.5rem;
+}
+
+.dark .latex-dialog .formula-preview {
+  background-color: #1e293b;
+  border-color: #334155;
 }
 
 /* Стили для ошибок LaTeX */
@@ -100,6 +118,12 @@
   font-size: 0.875rem;
 }
 
+.dark .latex-error {
+  color: #f87171;
+  background-color: #450a0a;
+  border-color: #7f1d1d;
+}
+
 /* Стили для успешного рендеринга LaTeX */
 .latex-success {
   color: #059669;
@@ -107,6 +131,12 @@
   border: 1px solid #bbf7d0;
   border-radius: 0.375rem;
   padding: 0.5rem;
+}
+
+.dark .latex-success {
+  color: #34d399;
+  background-color: #022c22;
+  border-color: #064e3b;
 }
 
 /* Стили для кнопки LaTeX в toolbar */
@@ -123,9 +153,20 @@
   margin: 0 1px;
 }
 
+.dark .ql-latex {
+  background: #1f2937;
+  border-color: #4b5563;
+  color: #d1d5db;
+}
+
 .ql-latex:hover {
   background-color: #f3f4f6;
   border-color: #999;
+}
+
+.dark .ql-latex:hover {
+  background-color: #374151;
+  border-color: #6b7280;
 }
 
 .ql-latex svg {
@@ -135,33 +176,33 @@
 
 @layer components {
   .card {
-    @apply bg-white rounded-2xl shadow-card;
+    @apply bg-white dark:bg-card rounded-2xl shadow-card;
   }
   .btn-primary {
     @apply bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg;
   }
   .btn-secondary {
-    @apply bg-gray-900 hover:bg-black text-white px-4 py-2 rounded-lg;
+    @apply bg-gray-900 dark:bg-gray-100 hover:bg-black dark:hover:bg-gray-200 text-white dark:text-gray-900 px-4 py-2 rounded-lg;
   }
   .nav-link {
-    @apply flex items-center px-4 py-2 rounded-xl text-gray-700 hover:bg-gray-100;
+    @apply flex items-center px-4 py-2 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800;
   }
   .nav-link-active {
-    @apply bg-blue-50 text-blue-700;
+    @apply bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400;
   }
   .course-module {
-    @apply bg-white border border-gray-200 rounded-lg transition-all duration-200 hover:shadow-md;
+    @apply bg-white dark:bg-card border border-gray-200 dark:border-border rounded-lg transition-all duration-200 hover:shadow-md;
   }
   .lesson-item {
-    @apply bg-gray-50 border border-gray-200 rounded-lg p-3 transition-all duration-200 hover:bg-gray-100;
+    @apply bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 transition-all duration-200 hover:bg-gray-100 dark:hover:bg-gray-700;
   }
   .dashed-button {
-    @apply border-2 border-dashed border-gray-300 rounded-lg transition-all duration-200 hover:border-gray-400 hover:bg-gray-50;
+    @apply border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg transition-all duration-200 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800;
   }
 
   /* Input component styles */
   .input {
-    @apply flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm;
+    @apply flex h-9 w-full rounded-md border border-input bg-white dark:bg-card px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm;
   }
 
   /* Select component styles */
@@ -249,6 +290,10 @@
     scrollbar-color: #d1d5db #f3f4f6;
   }
 
+  .dark .custom-scrollbar {
+    scrollbar-color: #4b5563 #1f2937;
+  }
+
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
   }
@@ -258,14 +303,26 @@
     border-radius: 3px;
   }
 
+  .dark .custom-scrollbar::-webkit-scrollbar-track {
+    background: #1f2937;
+  }
+
   .custom-scrollbar::-webkit-scrollbar-thumb {
     background: #d1d5db;
     border-radius: 3px;
     transition: background-color 0.2s ease;
   }
 
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #4b5563;
+  }
+
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #9ca3af;
+  }
+
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
   }
 
   /* Rich Text Editor Styles */
@@ -281,12 +338,21 @@
     border-radius: 0.5rem 0.5rem 0 0;
   }
 
+  .dark .rich-text-editor .ql-toolbar {
+    background-color: #1f2937;
+    border-color: #374151;
+  }
+
   .rich-text-editor .ql-container {
     border: 1px solid #e5e7eb;
     border-top: none;
     border-radius: 0 0 0.5rem 0.5rem;
     font-size: 14px;
     line-height: 1.6;
+  }
+
+  .dark .rich-text-editor .ql-container {
+    border-color: #374151;
   }
 
   .rich-text-editor .ql-editor {
@@ -296,6 +362,11 @@
     background-color: white;
     transition: height 0.2s ease-in-out;
     overflow-y: auto;
+  }
+
+  .dark .rich-text-editor .ql-editor {
+    background-color: #111827;
+    color: #f3f4f6;
   }
 
   .rich-text-editor .ql-editor:focus {
@@ -327,6 +398,11 @@
     color: #6b7280;
   }
 
+  .dark .rich-text-editor .ql-editor blockquote {
+    border-left-color: #374151;
+    color: #9ca3af;
+  }
+
   .rich-text-editor .ql-editor code {
     background-color: #f3f4f6;
     padding: 0.125rem 0.25rem;
@@ -335,8 +411,17 @@
     font-size: 0.875rem;
   }
 
+  .dark .rich-text-editor .ql-editor code {
+    background-color: #1f2937;
+    color: #e5e7eb;
+  }
+
   .rich-text-editor .ql-editor pre {
     background-color: #f3f4f6;
+  }
+
+  .dark .rich-text-editor .ql-editor pre {
+    background-color: #1f2937;
   }
 
   /* Copy Protection Styles */
@@ -401,6 +486,14 @@
     color: #2563eb;
   }
 
+  .dark .rich-text-editor .ql-editor a {
+    color: #60a5fa;
+  }
+
+  .dark .rich-text-editor .ql-editor a:hover {
+    color: #93bbfd;
+  }
+
   .rich-text-editor .ql-editor img {
     max-width: 100%;
     height: auto;
@@ -439,25 +532,25 @@
     --radius: 0.5rem;
   }
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    --background: 220 6% 10%;
+    --foreground: 0 0% 95%;
+    --card: 220 6% 12%;
+    --card-foreground: 0 0% 95%;
+    --popover: 220 6% 12%;
+    --popover-foreground: 0 0% 95%;
     /* Dark mode primary: same hue for brand consistency */
     --primary: 223 98% 49%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 6% 17%;
+    --secondary-foreground: 0 0% 95%;
+    --muted: 220 6% 17%;
+    --muted-foreground: 220 5% 55%;
+    --accent: 220 6% 17%;
+    --accent-foreground: 0 0% 95%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
+    --border: 220 6% 20%;
+    --input: 220 6% 20%;
     --ring: 221.2 83.2% 53.3%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -473,6 +566,10 @@
 @layer base {
   * {
     @apply border-border;
+  }
+  .dark .prose *:not(.katex *):not(code):not(pre) {
+    color: inherit !important;
+    background-color: transparent !important;
   }
   html, body {
     @apply h-full;

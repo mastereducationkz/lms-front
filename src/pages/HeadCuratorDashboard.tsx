@@ -128,8 +128,8 @@ export default function HeadCuratorDashboard() {
       {/* Заголовок */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Рады видеть вас, {user?.name}!</h1>
-          <p className="text-gray-500 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-foreground">Рады видеть вас, {user?.name}!</h1>
+          <p className="text-gray-500 dark:text-gray-400 flex items-center gap-2">
             {user?.role === 'head_curator' 
               ? "Обзор эффективности кураторов и активности студентов" 
               : "Обзор успеваемости ваших групп и активности студентов"}
@@ -142,7 +142,7 @@ export default function HeadCuratorDashboard() {
         </div>
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
-            <SelectTrigger className="w-[180px] bg-white border-gray-200">
+            <SelectTrigger className="w-[180px] bg-white border-gray-200 dark:bg-card dark:border-border">
               <SelectValue placeholder="Все группы" />
             </SelectTrigger>
             <SelectContent>
@@ -161,7 +161,7 @@ export default function HeadCuratorDashboard() {
                 id="date"
                 variant="outline"
                 className={cn(
-                  "w-[260px] justify-start text-left font-normal bg-white",
+                  "w-[260px] justify-start text-left font-normal bg-white dark:bg-card",
                   !dateRange && "text-muted-foreground"
                 )}
               >
@@ -181,8 +181,8 @@ export default function HeadCuratorDashboard() {
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 flex flex-row" align="end">
-              <div className="flex flex-col border-r p-2 gap-1 min-w-[120px]">
-                <p className="text-[10px] font-semibold text-gray-400 px-2 py-1 uppercase tracking-wider">Периоды</p>
+              <div className="flex flex-col border-r border-gray-200 dark:border-border p-2 gap-1 min-w-[120px]">
+                <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 px-2 py-1 uppercase tracking-wider">Периоды</p>
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -231,26 +231,26 @@ export default function HeadCuratorDashboard() {
 
       {/* Missing Attendance Reminders */}
       {stats?.missing_attendance_reminders && stats.missing_attendance_reminders.length > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+        <div className="bg-yellow-50 border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800 rounded-md p-3">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-medium text-yellow-900">
+            <h3 className="text-xs font-medium text-yellow-900 dark:text-yellow-300">
               Посещаемость не заполнена ({stats.missing_attendance_reminders.length})
             </h3>
             <Button
               onClick={() => navigate('/attendance')}
               size="sm"
               variant="outline"
-              className="text-xs h-6 px-2 border-yellow-300 text-yellow-700 hover:bg-yellow-100"
+              className="text-xs h-6 px-2 border-yellow-300 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100 dark:border-yellow-800 dark:hover:bg-yellow-900/20"
             >
               Перейти к посещаемости
             </Button>
           </div>
           <div className="space-y-1.5">
             {stats.missing_attendance_reminders.slice(0, 3).map((reminder: any) => (
-              <div key={reminder.event_id} className="flex items-center justify-between text-xs py-1.5 border-b border-yellow-100 last:border-0">
+              <div key={reminder.event_id} className="flex items-center justify-between text-xs py-1.5 border-b border-yellow-100 dark:border-yellow-800 last:border-0">
                 <div className="flex-1 min-w-0 mr-3">
-                  <p className="text-yellow-900 truncate font-medium">{reminder.title}</p>
-                  <p className="text-[11px] text-yellow-700">
+                  <p className="text-yellow-900 dark:text-yellow-300 truncate font-medium">{reminder.title}</p>
+                  <p className="text-[11px] text-yellow-700 dark:text-yellow-400">
                     {reminder.group_name} • {new Date(reminder.event_date).toLocaleDateString('ru-RU')}
                   </p>
                 </div>
@@ -297,8 +297,8 @@ export default function HeadCuratorDashboard() {
 
         <Card className="border-0 shadow-sm">
           <CardContent className="p-6">
-            <p className="text-gray-500 text-sm font-medium">Студентов всего</p>
-            <h3 className="text-3xl font-bold mt-1 text-gray-900">{stats.total_students}</h3>
+            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Студентов всего</p>
+            <h3 className="text-3xl font-bold mt-1 text-gray-900 dark:text-foreground">{stats.total_students}</h3>
             <div className="mt-4 text-xs text-indigo-600 flex items-center font-medium">
               {stats.active_students_7d} активны за 7д
             </div>
@@ -319,7 +319,7 @@ export default function HeadCuratorDashboard() {
 
         <Card className="border-0 shadow-sm">
           <CardContent className="p-6">
-            <p className="text-gray-500 text-sm font-medium">Неактивных</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Неактивных</p>
             <h3 className="text-3xl font-bold mt-1 text-amber-600">
               {stats.inactive_students || 0}
             </h3>
@@ -425,7 +425,7 @@ export default function HeadCuratorDashboard() {
       {/* Задачи кураторов — только для head_curator */}
       {user?.role === 'head_curator' && (
         <Card className="shadow-sm border-0 overflow-hidden">
-          <CardHeader className="bg-white flex flex-row items-center justify-between">
+          <CardHeader className="bg-white dark:bg-card flex flex-row items-center justify-between">
             <CardTitle className="text-lg font-bold">Задачи кураторов</CardTitle>
             <Button
               variant="ghost"
@@ -451,27 +451,27 @@ export default function HeadCuratorDashboard() {
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500 font-medium">В ожидании</span>
-                    <p className="text-xl font-bold text-gray-700">
+                    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">В ожидании</span>
+                    <p className="text-xl font-bold text-gray-700 dark:text-gray-300">
                       {curatorTasksSummary.reduce((s, c) => s + (c.pending || 0) + (c.in_progress || 0), 0)}
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500 font-medium">Просрочено</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Просрочено</span>
                     <p className="text-xl font-bold text-red-600">
                       {curatorTasksSummary.reduce((s, c) => s + (c.overdue || 0), 0)}
                     </p>
                   </div>
                   <div>
-                    <span className="text-xs text-gray-500 font-medium">Всего</span>
-                    <p className="text-xl font-bold text-gray-900">
+                    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Всего</span>
+                    <p className="text-xl font-bold text-gray-900 dark:text-foreground">
                       {curatorTasksSummary.reduce((s, c) => s + (c.total || 0), 0)}
                     </p>
                   </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
-                    <thead className="bg-gray-50/80 text-gray-600 border-b border-gray-100 uppercase text-[10px] font-bold">
+                    <thead className="bg-gray-50/80 dark:bg-secondary/30 text-gray-600 dark:text-gray-400 border-b border-gray-100 dark:border-border uppercase text-[10px] font-bold">
                       <tr>
                         <th className="text-left px-6 py-4">Куратор</th>
                         <th className="text-center px-4 py-4">Выполнено</th>
@@ -481,23 +481,23 @@ export default function HeadCuratorDashboard() {
                         <th className="text-center px-4 py-4">Всего</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-gray-100 dark:divide-border">
                       {curatorTasksSummary.map((c: any) => (
-                        <tr key={c.curator_id} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="px-6 py-4 font-semibold text-gray-900">{c.curator_name || 'Unknown'}</td>
+                        <tr key={c.curator_id} className="hover:bg-gray-50/50 dark:hover:bg-secondary/30 transition-colors">
+                          <td className="px-6 py-4 font-semibold text-gray-900 dark:text-foreground">{c.curator_name || 'Unknown'}</td>
                           <td className="px-4 py-4 text-center">
                             <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
                               {c.completed || 0}
                             </Badge>
                           </td>
-                          <td className="px-4 py-4 text-center text-gray-600">{c.in_progress || 0}</td>
-                          <td className="px-4 py-4 text-center text-gray-600">{c.pending || 0}</td>
+                          <td className="px-4 py-4 text-center text-gray-600 dark:text-gray-400">{c.in_progress || 0}</td>
+                          <td className="px-4 py-4 text-center text-gray-600 dark:text-gray-400">{c.pending || 0}</td>
                           <td className="px-4 py-4 text-center">
                             <Badge variant={c.overdue > 0 ? "destructive" : "secondary"} className={c.overdue === 0 ? "bg-green-50 text-green-700" : ""}>
                               {c.overdue || 0}
                             </Badge>
                           </td>
-                          <td className="px-4 py-4 text-center font-medium text-gray-700">{c.total || 0}</td>
+                          <td className="px-4 py-4 text-center font-medium text-gray-700 dark:text-gray-300">{c.total || 0}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -511,7 +511,7 @@ export default function HeadCuratorDashboard() {
 
       {/* Таблица кураторов/групп */}
       <Card className="shadow-sm border-0 overflow-hidden">
-        <CardHeader className="bg-white">
+        <CardHeader className="bg-white dark:bg-card">
           <CardTitle className="text-lg font-bold">
             {user?.role === 'head_curator' ? "Сводная таблица по кураторам" : "Сводная таблица по группам"}
           </CardTitle>
@@ -519,7 +519,7 @@ export default function HeadCuratorDashboard() {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50/80 text-gray-600 border-b border-gray-100 uppercase text-[10px] font-bold">
+              <thead className="bg-gray-50/80 dark:bg-secondary/30 text-gray-600 dark:text-gray-400 border-b border-gray-100 dark:border-border uppercase text-[10px] font-bold">
                 <tr>
                   <th className="text-left px-6 py-4">
                     {user?.role === 'head_curator' ? "Куратор" : "Группа"}
@@ -532,9 +532,9 @@ export default function HeadCuratorDashboard() {
                   <th className="text-right px-6 py-4">Действия</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-100 dark:divide-border">
                 {curatorPerformance.map((item: any) => (
-                  <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
+                  <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-secondary/30 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
@@ -542,16 +542,16 @@ export default function HeadCuratorDashboard() {
                             {item.name.charAt(0)}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="font-semibold text-gray-900">{item.name}</span>
+                        <span className="font-semibold text-gray-900 dark:text-foreground">{item.name}</span>
                       </div>
                     </td>
                     {user?.role === 'head_curator' && (
-                       <td className="px-4 py-4 text-center text-gray-600 font-medium">{item.groups_count}</td>
+                       <td className="px-4 py-4 text-center text-gray-600 dark:text-gray-400 font-medium">{item.groups_count}</td>
                     )}
-                    <td className="px-4 py-4 text-center text-gray-600 font-medium">{item.students_count}</td>
+                    <td className="px-4 py-4 text-center text-gray-600 dark:text-gray-400 font-medium">{item.students_count}</td>
                     <td className="px-4 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden hidden sm:block">
+                        <div className="w-16 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden hidden sm:block">
                           <div 
                             className="h-full bg-green-500 rounded-full" 
                             style={{ width: `${item.avg_progress}%` }} 
@@ -613,7 +613,7 @@ export default function HeadCuratorDashboard() {
               Группы с просрочками
             </CardTitle>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Здесь отображаются группы, в которых есть студенты с невыполненными вовремя заданиями или заданиями, сданными после дедлайна.
           </p>
         </CardHeader>
@@ -637,7 +637,7 @@ export default function HeadCuratorDashboard() {
                 ))}
                 {atRiskGroups.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="px-6 py-10 text-center text-gray-400 italic bg-white">
+                    <td colSpan={3} className="px-6 py-10 text-center text-gray-400 italic bg-white dark:bg-card">
                       Проблемных групп не обнаружено. Все задания под контролем! ✨
                     </td>
                   </tr>

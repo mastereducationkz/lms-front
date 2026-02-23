@@ -63,7 +63,7 @@ export default function WelcomeScreens({ userName, userRole, onComplete }: Welco
   const welcomeMessage = getWelcomeMessage();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-background">
       <div className="text-center px-4">
         <AnimatePresence mode="wait">
           {currentScreen === 0 && (
@@ -73,7 +73,7 @@ export default function WelcomeScreens({ userName, userRole, onComplete }: Welco
               animate={{ y: 0, opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.6 }}
-              className="text-6xl md:text-8xl font-light text-gray-900"
+              className="text-6xl md:text-8xl font-light text-gray-900 dark:text-foreground"
             >
               Hello,{' '}
               <span
@@ -93,7 +93,7 @@ export default function WelcomeScreens({ userName, userRole, onComplete }: Welco
               animate={{ y: 0, opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.8 }}
-              className="text-5xl md:text-7xl font-light text-gray-900"
+              className="text-5xl md:text-7xl font-light text-gray-900 dark:text-foreground"
             >
               {welcomeMessage.main}{' '}
               <br />

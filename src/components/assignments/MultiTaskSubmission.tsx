@@ -128,7 +128,7 @@ function CourseUnitTaskDisplay({ task, isCompleted, onCompletion, readOnly, stud
       </div>
       <div className="bg-gray-50 p-3 rounded-md">
         <div className="flex items-center space-x-2 mb-2">
-          <BookOpen className="w-4 h-4 text-blue-600" />
+          <BookOpen className="w-4 h-4 text-muted-foreground" />
           <span className="font-medium">{courseData?.title || `Course ${task.content.course_id}`}</span>
         </div>
         <div className="space-y-2 ml-6">
@@ -371,9 +371,9 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                 )}
                 
                 {/* Download Link */}
-                <div className="flex items-center p-2 bg-blue-50 rounded-md text-sm">
-                  <FileText className="w-4 h-4 text-blue-600 mr-2" />
-                  <a href={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + task.content.teacher_file_url} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">
+                <div className="flex items-center p-2 bg-secondary/50 dark:bg-secondary rounded-md text-sm border border-border">
+                  <FileText className="w-4 h-4 text-muted-foreground mr-2" />
+                  <a href={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + task.content.teacher_file_url} target="_blank" rel="noopener noreferrer" className="text-foreground hover:underline">
                     Download Reference File: {task.content.teacher_file_name || 'File'}
                   </a>
                 </div>
@@ -420,7 +420,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                                         : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + file.file_url;
                                     window.open(url, '_blank');
                                     }}
-                                    className="text-blue-600 hover:text-blue-800 h-8 px-2"
+                                    className="text-foreground hover:underline h-8 px-2"
                                 >
                                     <ExternalLink className="w-4 h-4 mr-1" />
                                     Open
@@ -462,7 +462,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                   <label htmlFor={`file-${task.id}`} className="cursor-pointer">
                     <div className="flex flex-col items-center space-y-2">
                       <Upload className="w-6 h-6 text-gray-400" />
-                      <span className="text-sm text-blue-600 hover:text-blue-800">
+                      <span className="text-sm text-foreground hover:underline cursor-pointer">
                         {uploading[task.id] ? 'Uploading...' : (displayFiles.length > 0 ? 'Add Another File' : 'Upload File(s)')}
                       </span>
                       <span className="text-xs text-gray-500">
@@ -624,9 +624,9 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
         return (
           <div className="space-y-3">
             <div className="text-sm text-gray-600">{task.content.link_description}</div>
-            <div className="flex items-center p-3 border rounded-lg bg-gray-50">
-              <LinkIcon className="w-4 h-4 text-blue-600 mr-2" />
-              <a href={task.content.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex-1 truncate">
+            <div className="flex items-center p-3 border rounded-lg bg-secondary/50 dark:bg-secondary border-border">
+              <LinkIcon className="w-4 h-4 text-muted-foreground mr-2" />
+              <a href={task.content.url} target="_blank" rel="noopener noreferrer" className="text-foreground hover:underline flex-1 truncate">
                 {task.content.url}
               </a>
               <ExternalLink className="w-3 h-3 text-gray-400 ml-2" />
@@ -652,17 +652,17 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
           <div className="space-y-3">
             {/* File Download Link */}
             {task.content.teacher_file_url && (
-              <div className="flex items-center p-3 bg-blue-50 rounded-md border border-blue-200">
-                <FileSearch className="w-5 h-5 text-blue-600 mr-3" />
+              <div className="flex items-center p-3 bg-secondary/50 dark:bg-secondary rounded-md border border-border">
+                <FileSearch className="w-5 h-5 text-muted-foreground mr-3" />
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-blue-900">
+                  <div className="text-sm font-medium text-foreground">
                     {task.content.teacher_file_name || 'Reference File'}
                   </div>
                   <a 
                     href={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + task.content.teacher_file_url} 
                     target="_blank" 
                     rel="noopener noreferrer" 
-                    className="text-xs text-blue-600 hover:underline"
+                    className="text-xs text-foreground hover:underline"
                   >
                     Open/Download File
                   </a>
@@ -813,10 +813,10 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
   return (
     <div className="space-y-6">
       {assignment.content.instructions && (
-        <Card className="bg-blue-50 border-blue-100">
+        <Card className="bg-secondary/50 dark:bg-secondary border-border">
           <CardContent className="pt-6">
-            <h4 className="font-medium text-blue-900 mb-2">Instructions</h4>
-            <p className="text-blue-800 text-sm whitespace-pre-wrap">{assignment.content.instructions}</p>
+            <h4 className="font-medium text-foreground mb-2">Instructions</h4>
+            <p className="text-foreground text-sm whitespace-pre-wrap">{assignment.content.instructions}</p>
           </CardContent>
         </Card>
       )}

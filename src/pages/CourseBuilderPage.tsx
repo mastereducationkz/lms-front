@@ -173,14 +173,14 @@ const DraggableModule = ({
                 <MoreVertical className="w-4 h-4 text-gray-500" />
               </button>
               {openDropdown === module.id && (
-                <div className="absolute right-0 top-full mt-1 bg-white border rounded-lg shadow-lg z-10 min-w-[120px]">
+                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border dark:border-border rounded-lg shadow-lg z-10 min-w-[120px]">
                   {!isPending && (
                     <button 
                       onClick={() => {
                         onEditModule(module);
                         // onToggleDropdown(null) will be handled by parent
                       }}
-                      className="block w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-t-lg"
+                      className="block w-full text-left px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-secondary rounded-t-lg"
                     >
                       Edit
                     </button>
@@ -190,7 +190,7 @@ const DraggableModule = ({
                       onRemoveModule(module.id);
                       // onToggleDropdown(null) will be handled by parent
                     }}
-                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-b-lg"
+                    className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-secondary rounded-b-lg"
                   >
                     Delete
                   </button>

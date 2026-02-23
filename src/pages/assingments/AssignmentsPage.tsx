@@ -252,25 +252,25 @@ export default function AssignmentsPage() {
     switch (assignment.status) {
       case 'graded':
         return (
-          <span className={`${baseClasses} bg-green-50 text-green-700 border border-green-200`}>
+          <span className={`${baseClasses} bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800`}>
             Graded
           </span>
         );
       case 'submitted':
         return (
-          <span className={`${baseClasses} bg-blue-50 text-blue-700 border border-blue-200`}>
+          <span className={`${baseClasses} bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800`}>
             Submitted
           </span>
         );
       case 'overdue':
         return (
-          <span className={`${baseClasses} bg-red-50 text-red-700 border border-red-200`}>
+          <span className={`${baseClasses} bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800`}>
             Overdue
           </span>
         );
       default:
         return (
-          <span className={`${baseClasses} bg-gray-50 text-gray-600 border border-gray-200`}>
+          <span className={`${baseClasses} bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700`}>
             Not Submitted
           </span>
         );
@@ -286,7 +286,7 @@ export default function AssignmentsPage() {
       <div className="space-y-6">
         <div className="animate-pulse">
           <div className="h-8 bg-gray-200 rounded w-48 mb-6"></div>
-          <div className="bg-white rounded-xl shadow p-6">
+          <div className="bg-white dark:bg-card rounded-xl shadow p-6">
             <div className="space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="h-12 bg-gray-200 rounded"></div>
@@ -302,12 +302,12 @@ export default function AssignmentsPage() {
     return (
       <div className="space-y-6">
         <h1 className="text-3xl font-bold">Homework</h1>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
           <div className="flex items-center">
-            <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
-            <h3 className="font-semibold text-red-800">Error</h3>
+            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mr-2" />
+            <h3 className="font-semibold text-red-800 dark:text-red-400">Error</h3>
           </div>
-          <p className="text-red-600 mt-1">{error}</p>
+          <p className="text-red-600 dark:text-red-400 mt-1">{error}</p>
           <Button 
             onClick={loadAssignments}
             variant="outline"
@@ -323,7 +323,7 @@ export default function AssignmentsPage() {
   return (
     <div className="p-8 space-y-8 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 uppercase">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white uppercase">
           Homework
         </h1>
         {user?.role === 'teacher' || user?.role === 'admin' ? (
@@ -339,7 +339,7 @@ export default function AssignmentsPage() {
 
       {/* Filter Tabs & Group Filter */}
       <div className="flex flex-wrap items-center gap-4">
-        <div className="bg-white rounded-lg p-1 shadow-sm border border-gray-200 inline-flex">
+        <div className="bg-white dark:bg-card rounded-lg p-1 shadow-sm border border-gray-200 dark:border-gray-700 inline-flex">
           {[
             { key: 'all', label: 'All', count: assignments.length },
             { key: 'pending', label: 'Pending', count: assignments.filter(a => a.status === 'not_submitted').length },
@@ -353,7 +353,7 @@ export default function AssignmentsPage() {
               className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
                 filter === tab.key
                   ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
               {tab.label} ({tab.count})
@@ -364,7 +364,7 @@ export default function AssignmentsPage() {
         {(user?.role === 'teacher' || user?.role === 'admin' || user?.role === 'curator') && groups.length > 0 && (
           <div className="w-[200px]">
             <Select value={selectedGroupId} onValueChange={setGroupId}>
-              <SelectTrigger className="bg-white">
+              <SelectTrigger className="bg-white dark:bg-card">
                 <SelectValue placeholder="All Groups" />
               </SelectTrigger>
               <SelectContent>
@@ -388,7 +388,7 @@ export default function AssignmentsPage() {
             />
             <label
               htmlFor="show-hidden"
-              className="text-sm text-gray-600 cursor-pointer select-none"
+              className="text-sm text-gray-600 dark:text-gray-300 cursor-pointer select-none"
             >
               Show archived
             </label>
@@ -399,12 +399,12 @@ export default function AssignmentsPage() {
       {/* Assignments List */}
       <div className="space-y-6">
         {filteredAssignments.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <ClipboardList className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <div className="bg-white dark:bg-card rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
+            <ClipboardList className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
               {filter === 'all' ? 'No homework yet' : `No ${filter} homework`}
             </h3>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-300">
               {filter === 'all' 
                 ? 'Homework will appear here when they are created by your teachers.'
                 : `You don't have any ${filter} homework at the moment.`
@@ -415,22 +415,22 @@ export default function AssignmentsPage() {
           Object.entries(groupedAssignments).sort(([a], [b]) => a.localeCompare(b)).map(([groupName, groupAssignments]) => {
             const isExpanded = expandedGroups[groupName] !== false; // Default to expanded
             return (
-              <div key={groupName} className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-none">
+              <div key={groupName} className="bg-white dark:bg-card rounded-lg border border-slate-200 dark:border-gray-700 overflow-hidden shadow-none">
                 <button
                   onClick={() => toggleGroup(groupName)}
-                  className="w-full flex items-center justify-between px-6 py-3 bg-slate-50/50 border-b border-slate-200 hover:bg-slate-100/50 transition-colors"
+                  className="w-full flex items-center justify-between px-6 py-3 bg-slate-50/50 dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 hover:bg-slate-100/50 dark:hover:bg-gray-700 transition-colors"
                 >
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-tight">{groupName}</h3>
-                    <span className="text-[11px] font-medium text-slate-400">({groupAssignments.length})</span>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight">{groupName}</h3>
+                    <span className="text-[11px] font-medium text-slate-400 dark:text-gray-500">({groupAssignments.length})</span>
                   </div>
-                  {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+                  {isExpanded ? <ChevronDown className="w-4 h-4 text-slate-400 dark:text-gray-500" /> : <ChevronRight className="w-4 h-4 text-slate-400 dark:text-gray-500" />}
                 </button>
 
                 {isExpanded && (
                   <div className="overflow-x-auto">
                     <table className="min-w-full text-sm">
-                      <thead className="bg-white text-slate-500 border-b border-slate-100">
+                      <thead className="bg-white dark:bg-card text-slate-500 dark:text-gray-400 border-b border-slate-100 dark:border-gray-700">
                         <tr>
                           <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Homework</th>
                           <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Due Date</th>
@@ -439,36 +439,36 @@ export default function AssignmentsPage() {
                           <th className="text-right px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Action</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100">
+                      <tbody className="divide-y divide-slate-100 dark:divide-gray-700">
                         {groupAssignments.map(assignment => (
-                          <tr key={assignment.id} className="border-t hover:bg-gray-50/50">
+                          <tr key={assignment.id} className="border-t hover:bg-gray-50/50 dark:hover:bg-gray-800">
                             <td className="px-6 py-4">
                               <div>
                                 <div 
-                                  className="font-medium text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+                                  className="font-medium text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                                   onClick={() => navigate(`/homework/${assignment.id}`)}
                                 >
                                   {assignment.title}
                                 </div>
                                 {assignment.description && (
-                                  <div className="text-xs text-gray-500 mt-1 line-clamp-1">
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
                                     {assignment.description}
                                   </div>
                                 )}
                               </div>
                             </td>
-                            <td className="px-6 py-4 text-gray-600">
+                            <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
                               {assignment.extended_deadline ? (
-                                <div className="flex items-center text-green-600">
+                                <div className="flex items-center text-green-600 dark:text-green-400">
                                   <Calendar className="w-4 h-4 mr-1 text-green-400" />
                                   <span className="font-medium">
                                     {formatToKZTime(assignment.extended_deadline)}
                                   </span>
-                                  <span className="ml-1 text-[9px] bg-green-50 text-green-600 px-1 rounded border border-green-100 font-bold uppercase tracking-tight">Ext</span>
+                                  <span className="ml-1 text-[9px] bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 px-1 rounded border border-green-100 dark:border-green-800 font-bold uppercase tracking-tight">Ext</span>
                                 </div>
                               ) : assignment.due_date ? (
-                                <div className={`flex items-center ${isOverdue(assignment.due_date) && assignment.status === 'not_submitted' ? 'text-red-600' : ''}`}>
-                                  <Calendar className={`w-4 h-4 mr-1 ${isOverdue(assignment.due_date) && assignment.status === 'not_submitted' ? 'text-red-400' : 'text-gray-400'}`} />
+                                <div className={`flex items-center ${isOverdue(assignment.due_date) && assignment.status === 'not_submitted' ? 'text-red-600 dark:text-red-400' : ''}`}>
+                                  <Calendar className={`w-4 h-4 mr-1 ${isOverdue(assignment.due_date) && assignment.status === 'not_submitted' ? 'text-red-400' : 'text-gray-400 dark:text-gray-500'}`} />
                                   <span className="font-medium">
                                     {formatToKZTime(assignment.due_date)}
                                   </span>
@@ -481,7 +481,7 @@ export default function AssignmentsPage() {
                                   </span>
                                 </div>
                               ) : (
-                                <span className="text-gray-400">-</span>
+                                <span className="text-gray-400 dark:text-gray-500">-</span>
                               )}
                             </td>
                             <td className="px-6 py-4">
@@ -490,13 +490,13 @@ export default function AssignmentsPage() {
                             <td className="px-6 py-4">
                               {assignment.status === 'graded' ? (
                                 <div className="flex flex-col">
-                                  <span className="text-green-600 font-semibold">{assignment.score}/{assignment.max_score ?? 100}</span>
-                                  <span className="text-[10px] text-gray-400">
+                                  <span className="text-green-600 dark:text-green-400 font-semibold">{assignment.score}/{assignment.max_score ?? 100}</span>
+                                  <span className="text-[10px] text-gray-400 dark:text-gray-500">
                                     {Math.round((assignment.score || 0) / (assignment.max_score || 100) * 100)}%
                                   </span>
                                 </div>
                               ) : (
-                                <span className="text-gray-400">-</span>
+                                <span className="text-gray-400 dark:text-gray-500">-</span>
                               )}
                             </td>
                             <td className="px-6 py-4 text-right">
@@ -508,7 +508,7 @@ export default function AssignmentsPage() {
                                       variant="ghost"
                                       size="icon"
                                       title="View Progress"
-                                      className="h-8 w-8 text-slate-400 hover:text-blue-600"
+                                      className="h-8 w-8 text-slate-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400"
                                     >
                                       <Eye className="w-4 h-4" />
                                     </Button>
@@ -517,7 +517,7 @@ export default function AssignmentsPage() {
                                       variant="ghost"
                                       size="icon"
                                       title="Copy Assignment"
-                                      className="h-8 w-8 text-slate-400 hover:text-blue-600"
+                                      className="h-8 w-8 text-slate-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400"
                                     >
                                       <Copy className="w-4 h-4" />
                                     </Button>
@@ -526,7 +526,7 @@ export default function AssignmentsPage() {
                                       variant="ghost"
                                       size="icon"
                                       title="Edit Assignment"
-                                      className="h-8 w-8 text-slate-400 hover:text-blue-600"
+                                      className="h-8 w-8 text-slate-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400"
                                     >
                                       <Edit className="w-4 h-4" />
                                     </Button>
@@ -542,7 +542,7 @@ export default function AssignmentsPage() {
                                       variant="ghost"
                                       size="icon"
                                       title={assignment.is_hidden ? "Restore" : "Archive"}
-                                      className={`h-8 w-8 ${assignment.is_hidden ? "text-orange-500 hover:text-orange-600" : "text-slate-400 hover:text-slate-600"}`}
+                                      className={`h-8 w-8 ${assignment.is_hidden ? "text-orange-500 dark:text-orange-400 hover:text-orange-600 dark:hover:text-orange-400" : "text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-400"}`}
                                     >
                                       {assignment.is_hidden ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
                                     </Button>
@@ -552,7 +552,7 @@ export default function AssignmentsPage() {
                                     size="sm"
                                     onClick={() => navigate(`/homework/${assignment.id}`)}
                                     variant="ghost"
-                                    className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-bold uppercase tracking-widest text-[10px]"
+                                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-bold uppercase tracking-widest text-[10px]"
                                   >
                                     {assignment.status === 'graded' || assignment.status === 'submitted' ? 'View' : 'Submit'}
                                   </Button>

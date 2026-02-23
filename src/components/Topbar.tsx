@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { connectSocket } from '../services/socket';
 import { Badge } from './ui/badge';
 import { Link } from 'react-router-dom';
-import { Bell } from 'lucide-react';
+import { Bell, Sun, Moon } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import StreakIcon from './StreakIcon';
 import { WhatsNewButton } from './PlatformUpdatesModal';
 import PointsDisplay from './gamification/PointsDisplay';
@@ -14,6 +15,7 @@ interface TopbarProps {
 
 export default function Topbar({ onOpenSidebar }: TopbarProps) {
   const { user, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [unreadCount, setUnreadCount] = useState(0);
   
   const firstName = user?.name?.split(' ')[0] || 'User';
@@ -56,21 +58,24 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
   };
 
   return (
-    <div className="sticky top-0 z-10 bg-gray-50/80 backdrop-blur border-b px-4 sm:px-5 md:px-6 py-3 sm:py-3.5 flex items-center justify-between">
+    <div className="sticky top-0 z-10 bg-gray-50/80 dark:bg-card/80 backdrop-blur border-b border-border px-4 sm:px-5 md:px-6 py-3 sm:py-3.5 flex items-center justify-between">
       <div>
-        <div className="text-sm sm:text-[14px] text-gray-500">{['curator', 'head_curator'].includes(user?.role || '') ? 'С возвращением' : 'Welcome back'}</div>
-        <div className="text-[16px] sm:text-xl font-semibold text-gray-900">{user?.name}!</div>
+        <div className="text-sm sm:text-[14px] text-gray-500 dark:text-gray-400">{['curator', 'head_curator'].includes(user?.role || '') ? 'С возвращением' : 'Welcome back'}</div>
+        <div className="text-[16px] sm:text-xl font-semibold text-gray-900 dark:text-white">{user?.name}!</div>
       </div>
       <div className="flex items-center gap-3">
-        {/* What's New Button for Teachers/Admins */}
         <WhatsNewButton userRole={user?.role} />
-        {/* Activity Points for Students */}
         {user?.role === 'student' && <PointsDisplay />}
 
-
-        {/* Daily Streak */}
         <StreakIcon />
-        <button className="lg:hidden w-10 h-10 rounded-lg bg-white border text-lg" onClick={onOpenSidebar} aria-label="Open menu">☰</button>
+        <button
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="w-9 h-9 rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          aria-label="Toggle theme"
+        >
+          {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </button>
+        <button className="lg:hidden w-10 h-10 rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 text-lg" onClick={onOpenSidebar} aria-label="Open menu">☰</button>
       </div>
     </div>
   );

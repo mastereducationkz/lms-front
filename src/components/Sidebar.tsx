@@ -185,8 +185,8 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
   };
 
   const wrapperClass = variant === 'desktop'
-    ? `hidden lg:flex ${isCollapsed ? 'w-20 p-2' : 'w-64 p-4 sm:p-6'} h-screen fixed top-0 left-0 bg-white border-r flex-col transition-all duration-300`
-    : 'flex w-64 h-full bg-white border-r p-4 sm:p-6 flex-col';
+    ? `hidden lg:flex ${isCollapsed ? 'w-20 p-2' : 'w-64 p-4 sm:p-6'} h-screen fixed top-0 left-0 bg-white dark:bg-card border-r border-border flex-col transition-all duration-300`
+    : 'flex w-64 h-full bg-white dark:bg-card border-r border-border p-4 sm:p-6 flex-col';
 
   return (
     <aside className={wrapperClass}>
@@ -195,14 +195,14 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
           <img src={logoIco} alt="Master Education" className="w-7 h-7 sm:w-8 sm:h-8 rounded" />
           {!isCollapsed && (
             <div className="ml-3 leading-tight">
-              <div className="text-base sm:text-lg font-semibold text-gray-900 -mt-1">Master Education</div>
+              <div className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white -mt-1">Master Education</div>
             </div>
           )}
         </div>
         {variant === 'desktop' && onToggle && (
           <button 
             onClick={onToggle} 
-            className={`p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors ${isCollapsed ? '' : 'ml-auto'}`}
+            className={`p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-secondary text-gray-500 dark:text-gray-400 transition-colors ${isCollapsed ? '' : 'ml-auto'}`}
           >
             {isCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
           </button>
@@ -221,12 +221,12 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                 {/* Main Courses Button */}
                 <button
                   onClick={handleCoursesToggle}
-                  className={`w-full flex items-center rounded-xl text-gray-700 hover:bg-gray-100 transition-colors py-3 text-base lg:py-2 lg:text-sm ${isCollapsed ? 'justify-center px-2' : 'px-5 lg:px-4'}`}
+                  className={`w-full flex items-center rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-secondary transition-colors py-3 text-base lg:py-2 lg:text-sm ${isCollapsed ? 'justify-center px-2' : 'px-5 lg:px-4'}`}
                 >
                   <Icon className={`w-6 h-6 lg:w-5 lg:h-5 opacity-70 ${isCollapsed ? '' : 'mr-3'}`} />
                   {!isCollapsed && (
                     <>
-                      <span className="flex-1 text-gray-800 text-base lg:text-sm text-left">{label}</span>
+                      <span className="flex-1 text-gray-800 dark:text-gray-200 text-base lg:text-sm text-left">{label}</span>
                       {badge > 0 && (
                         <span className="ml-2 text-xs bg-red-600 text-white rounded-full px-2 py-0.5">{badge}</span>
                       )}
@@ -239,16 +239,16 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                 {isCoursesExpanded && !isCollapsed && (
                   <div className="ml-6 mt-1 space-y-1">
                     {isLoadingCourses ? (
-                      <div className="px-4 py-2 text-sm text-gray-500">{['head_curator', 'curator'].includes(user?.role || '') ? 'Загрузка курсов...' : 'Loading courses...'}</div>
+                      <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">{['head_curator', 'curator'].includes(user?.role || '') ? 'Загрузка курсов...' : 'Loading courses...'}</div>
                     ) : courses.length === 0 ? (
-                      <div className="px-4 py-2 text-sm text-gray-500">{['head_curator', 'curator'].includes(user?.role || '') ? 'Курсы не найдены' : 'No courses found'}</div>
+                      <div className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">{['head_curator', 'curator'].includes(user?.role || '') ? 'Курсы не найдены' : 'No courses found'}</div>
                     ) : (
                       courses.slice(0, 5).map((course) => (
                         <NavLink
                           key={course.id}
                           to={`/course/${course.id}`}
                           className={({ isActive }) =>
-                            `flex items-center rounded-lg text-gray-600 hover:bg-gray-100 transition-colors px-3 py-2 text-sm ${isActive ? 'bg-blue-50 text-blue-700 border-l-2 border-blue-500' : ''}`
+                            `flex items-center rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-secondary transition-colors px-3 py-2 text-sm ${isActive ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-l-2 border-blue-500' : ''}`
                           }
                         >
                           <div className="w-2 h-2 bg-blue-400 rounded-full mr-3 flex-shrink-0"></div>
@@ -259,7 +259,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                     {courses.length > 5 && (
                       <NavLink
                         to={user?.role === 'teacher' ? '/teacher/courses' : '/courses'}
-                        className="flex items-center rounded-lg text-blue-600 hover:bg-blue-50 transition-colors px-3 py-2 text-sm font-medium"
+                        className="flex items-center rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors px-3 py-2 text-sm font-medium"
                       >
                         <span>{['head_curator', 'curator'].includes(user?.role || '') ? `Все курсы (${courses.length})` : `View all courses (${courses.length})`}</span>
                       </NavLink>
@@ -277,14 +277,14 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
               end={to === '/courses' || to === '/teacher/courses'}
               data-tour={dataTour}
               className={({ isActive }) =>
-                `flex items-center rounded-xl text-gray-700 hover:bg-gray-100 transition-colors 
+                `flex items-center rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-secondary transition-colors 
                  py-3 text-base lg:py-2 lg:text-sm ${isActive ? 'nav-link-active' : ''} ${isCollapsed ? 'justify-center px-2' : 'px-5 lg:px-4'}`
               }
             >
               <Icon className={`w-6 h-6 lg:w-5 lg:h-5 opacity-70 ${isCollapsed ? '' : 'mr-3'}`} />
               {!isCollapsed && (
                 <>
-                  <span className="flex-1 text-gray-800 text-base lg:text-sm">{label}</span>
+                  <span className="flex-1 text-gray-800 dark:text-gray-200 text-base lg:text-sm">{label}</span>
                   {badge > 0 && (
                     <span className="ml-2 text-xs bg-red-600 text-white rounded-full px-2 py-0.5">{badge}</span>
                   )}
@@ -295,11 +295,11 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
         }).filter(Boolean)}
       </nav>
       
-      <div className="mt-auto pt-6 border-t">
+      <div className="mt-auto pt-6 border-t dark:border-border">
         <div className="relative" data-tour="profile-nav">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} p-2 rounded-lg hover:bg-gray-50 transition-colors`}
+            className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-secondary transition-colors`}
           >
             <div className="flex items-center">
               <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
@@ -307,22 +307,22 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
               </div>
               {!isCollapsed && (
                 <div className="ml-3 text-left">
-                  <div className="text-sm font-medium text-gray-900 line-clamp-1">{user?.name || 'User'}</div>
-                  <div className="text-xs text-gray-500">{user?.role === 'head_curator' ? 'Руководитель кураторов' : user?.role === 'curator' ? 'Куратор' : (user?.role || 'Unknown')}</div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">{user?.name || 'User'}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">{user?.role === 'head_curator' ? 'Руководитель кураторов' : user?.role === 'curator' ? 'Куратор' : (user?.role || 'Unknown')}</div>
                 </div>
               )}
             </div>
             {!isCollapsed && (
-              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
             )}
           </button>
           
           {isDropdownOpen && (
-            <div className={`absolute bottom-full ${isCollapsed ? 'left-full ml-2 w-48' : 'left-0 right-0 w-full'} mb-2 bg-white border rounded-lg shadow-lg py-2 z-50`}>
+            <div className={`absolute bottom-full ${isCollapsed ? 'left-full ml-2 w-48' : 'left-0 right-0 w-full'} mb-2 bg-white dark:bg-card border border-border rounded-lg shadow-lg py-2 z-50`}>
               <NavLink
                 to="/profile"
                 onClick={() => setIsDropdownOpen(false)}
-                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-secondary transition-colors"
               >
                 <UserCheck className="w-4 h-4 mr-3" />
                 {['head_curator', 'curator'].includes(user?.role || '') ? 'Профиль' : 'Profile'}
@@ -330,15 +330,15 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
               <NavLink
                 to="/settings"
                 onClick={() => setIsDropdownOpen(false)}
-                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-secondary transition-colors"
               >
                 <Settings className="w-4 h-4 mr-3" />
                 {['head_curator', 'curator'].includes(user?.role || '') ? 'Настройки' : 'Settings'}
               </NavLink>
-              <div className="border-t my-1"></div>
+              <div className="border-t dark:border-gray-700 my-1"></div>
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                className="w-full flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               >
                 <LogOut className="w-4 h-4 mr-3" />
                 {['head_curator', 'curator'].includes(user?.role || '') ? 'Выйти' : 'Logout'}
@@ -365,7 +365,7 @@ export function SidebarMobile({ open, onClose }: SidebarMobileProps) {
   return (
     <div className="lg:hidden fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="absolute top-0 left-0 w-64 h-full bg-white border-r p-0">
+      <div className="absolute top-0 left-0 w-64 h-full bg-white dark:bg-card border-r border-border p-0">
         <Sidebar variant="mobile" />
       </div>
     </div>

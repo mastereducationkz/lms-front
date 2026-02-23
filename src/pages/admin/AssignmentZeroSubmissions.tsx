@@ -318,7 +318,7 @@ const AssignmentZeroSubmissions = () => {
     <div className="container mx-auto p-6 max-w-7xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">Assignment Zero Submissions</h1>
-        <p className="text-gray-600">View and analyze student self-assessment questionnaires</p>
+        <p className="text-gray-600 dark:text-gray-400">View and analyze student self-assessment questionnaires</p>
       </div>
 
       {/* Filters and Search */}
@@ -379,19 +379,19 @@ const AssignmentZeroSubmissions = () => {
                       {submission.is_draft ? 'Draft' : 'Submitted'}
                     </Badge>
                     {hasSATData(submission) && (
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                      <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800">
                         <BookOpen className="w-3 h-3 mr-1" />
                         SAT {calculateSATAverageScore(submission) ? `(${calculateSATAverageScore(submission)}/5)` : ''}
                       </Badge>
                     )}
                     {hasIELTSData(submission) && (
-                      <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                      <Badge variant="outline" className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800">
                         <Headphones className="w-3 h-3 mr-1" />
                         IELTS {calculateIELTSAverageScore(submission) ? `(${calculateIELTSAverageScore(submission)}/5)` : ''}
                       </Badge>
                     )}
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-gray-600">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-gray-600 dark:text-gray-400">
                     <div>
                       <span className="font-medium">Email:</span> {submission.email}
                     </div>
@@ -442,7 +442,7 @@ const AssignmentZeroSubmissions = () => {
 
       {filteredSubmissions.length === 0 && (
         <Card>
-          <CardContent className="pt-6 text-center text-gray-500">
+          <CardContent className="pt-6 text-center text-gray-500 dark:text-gray-400">
             <p>No submissions found matching your criteria.</p>
           </CardContent>
         </Card>
@@ -452,18 +452,18 @@ const AssignmentZeroSubmissions = () => {
       {selectedSubmission && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
           <Card className="max-w-5xl w-full max-h-[90vh] overflow-y-auto">
-            <CardHeader className="sticky top-0 bg-white z-10 border-b">
+            <CardHeader className="sticky top-0 bg-white dark:bg-card z-10 border-b dark:border-border">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <CardTitle>Assignment Zero - {selectedSubmission.full_name}</CardTitle>
                   {hasSATData(selectedSubmission) && (
-                    <Badge className="bg-blue-100 text-blue-700">
+                    <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
                       <BookOpen className="w-3 h-3 mr-1" />
                       SAT
                     </Badge>
                   )}
                   {hasIELTSData(selectedSubmission) && (
-                    <Badge className="bg-green-100 text-green-700">
+                    <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
                       <Headphones className="w-3 h-3 mr-1" />
                       IELTS
                     </Badge>
@@ -477,75 +477,75 @@ const AssignmentZeroSubmissions = () => {
             <CardContent className="pt-6">
               <div className="space-y-6">
                 {/* Personal Information */}
-                <div className="bg-gray-50 rounded-lg p-4">
+                <div className="bg-gray-50 dark:bg-secondary rounded-lg p-4">
                   <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                     Personal Information
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                     <div className="space-y-1">
-                      <span className="text-gray-500 text-xs uppercase">Full Name</span>
+                      <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Full Name</span>
                       <p className="font-medium">{selectedSubmission.full_name}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-gray-500 text-xs uppercase">Email</span>
+                      <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Email</span>
                       <p className="font-medium">{selectedSubmission.email}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-gray-500 text-xs uppercase">Phone</span>
+                      <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Phone</span>
                       <p className="font-medium">{selectedSubmission.phone_number}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-gray-500 text-xs uppercase">Parent Phone</span>
+                      <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Parent Phone</span>
                       <p className="font-medium">{selectedSubmission.parent_phone_number}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-gray-500 text-xs uppercase">Telegram</span>
+                      <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Telegram</span>
                       <p className="font-medium">{selectedSubmission.telegram_id}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-gray-500 text-xs uppercase">Birthday</span>
+                      <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Birthday</span>
                       <p className="font-medium">{selectedSubmission.birthday_date}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-gray-500 text-xs uppercase">City</span>
+                      <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">City</span>
                       <p className="font-medium">{selectedSubmission.city}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-gray-500 text-xs uppercase">School Type</span>
+                      <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">School Type</span>
                       <p className="font-medium">{selectedSubmission.school_type}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-gray-500 text-xs uppercase">Group</span>
+                      <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Group</span>
                       <p className="font-medium">{selectedSubmission.group_name}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Account Information */}
-                <div className="bg-gray-50 rounded-lg p-4">
+                <div className="bg-gray-50 dark:bg-secondary rounded-lg p-4">
                   <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                     Account Information
                   </h3>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="space-y-1">
-                      <span className="text-gray-500 text-xs uppercase">College Board Email</span>
+                      <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">College Board Email</span>
                       <p className="font-medium">{selectedSubmission.college_board_email || 'N/A'}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-gray-500 text-xs uppercase">College Board Password</span>
-                      <p className="font-medium font-mono bg-gray-100 px-2 py-1 rounded">{selectedSubmission.college_board_password || 'N/A'}</p>
+                      <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">College Board Password</span>
+                      <p className="font-medium font-mono bg-gray-100 dark:bg-card dark:border dark:border-border px-2 py-1 rounded">{selectedSubmission.college_board_password || 'N/A'}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* SAT Section */}
                 {hasSATData(selectedSubmission) && (
-                  <div className="border-2 border-blue-200 rounded-lg overflow-hidden">
-                    <div className="bg-blue-50 px-4 py-3 border-b border-blue-200">
-                      <h3 className="text-lg font-semibold text-blue-800 flex items-center gap-2">
+                  <div className="border-2 border-blue-200 dark:border-blue-800 rounded-lg overflow-hidden">
+                    <div className="bg-blue-50 dark:bg-blue-900/20 px-4 py-3 border-b border-blue-200 dark:border-blue-800">
+                      <h3 className="text-lg font-semibold text-blue-800 dark:text-blue-300 flex items-center gap-2">
                         SAT Assessment
                         {calculateSATAverageScore(selectedSubmission) && (
-                          <Badge className="bg-blue-100 text-blue-700 ml-auto">
+                          <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 ml-auto">
                             Average: {calculateSATAverageScore(selectedSubmission)}/5
                           </Badge>
                         )}
@@ -554,33 +554,33 @@ const AssignmentZeroSubmissions = () => {
                     <div className="p-4 space-y-4">
                       {/* SAT Test Information */}
                       <div>
-                        <h4 className="font-medium mb-2 text-blue-700">Test Information</h4>
+                        <h4 className="font-medium mb-2 text-blue-700 dark:text-blue-400">Test Information</h4>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
                           <div className="space-y-1">
-                            <span className="text-gray-500 text-xs uppercase">Target Date</span>
+                            <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Target Date</span>
                             <p className="font-medium">{selectedSubmission.sat_target_date || 'N/A'}</p>
                           </div>
                           <div className="space-y-1">
-                            <span className="text-gray-500 text-xs uppercase">Passed Before</span>
+                            <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Passed Before</span>
                             <p className="font-medium">{selectedSubmission.has_passed_sat_before ? 'Yes' : 'No'}</p>
                           </div>
                           {selectedSubmission.previous_sat_score && (
                             <div className="space-y-1">
-                              <span className="text-gray-500 text-xs uppercase">Previous Score</span>
+                              <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Previous Score</span>
                               <p className="font-medium">{selectedSubmission.previous_sat_score}</p>
                             </div>
                           )}
                           <div className="space-y-1 col-span-2">
-                            <span className="text-gray-500 text-xs uppercase">Recent Practice Test</span>
+                            <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Recent Practice Test</span>
                             <p className="font-medium">{selectedSubmission.recent_practice_test_score || 'N/A'}</p>
                           </div>
                           <div className="space-y-1 col-span-2">
-                            <span className="text-gray-500 text-xs uppercase">Bluebook Practice Test 5</span>
+                            <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Bluebook Practice Test 5</span>
                             <p className="font-medium">{selectedSubmission.bluebook_practice_test_5_score || 'N/A'}</p>
                           </div>
                           {selectedSubmission.screenshot_url && (
                             <div className="space-y-1">
-                              <span className="text-gray-500 text-xs uppercase">Screenshot</span>
+                              <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Screenshot</span>
                               <a
                                 href={(import.meta.env.VITE_BACKEND_URL || 'http://127.0.0.1:8000') + selectedSubmission.screenshot_url}
                                 target="_blank"
@@ -596,34 +596,34 @@ const AssignmentZeroSubmissions = () => {
 
                       {/* Grammar Assessment */}
                       <div>
-                        <h4 className="font-medium mb-2 text-blue-700">Grammar Assessment (1-5)</h4>
+                        <h4 className="font-medium mb-2 text-blue-700 dark:text-blue-400">Grammar Assessment (1-5)</h4>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Punctuation</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Punctuation</span>
                             <p className="font-bold text-lg">{selectedSubmission.grammar_punctuation || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Noun Clauses</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Noun Clauses</span>
                             <p className="font-bold text-lg">{selectedSubmission.grammar_noun_clauses || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Relative Clauses</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Relative Clauses</span>
                             <p className="font-bold text-lg">{selectedSubmission.grammar_relative_clauses || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Verb Forms</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Verb Forms</span>
                             <p className="font-bold text-lg">{selectedSubmission.grammar_verb_forms || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Comparisons</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Comparisons</span>
                             <p className="font-bold text-lg">{selectedSubmission.grammar_comparisons || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Transitions</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Transitions</span>
                             <p className="font-bold text-lg">{selectedSubmission.grammar_transitions || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Synthesis</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Synthesis</span>
                             <p className="font-bold text-lg">{selectedSubmission.grammar_synthesis || '-'}</p>
                           </div>
                         </div>
@@ -631,26 +631,26 @@ const AssignmentZeroSubmissions = () => {
 
                       {/* Reading Skills */}
                       <div>
-                        <h4 className="font-medium mb-2 text-blue-700">Reading Skills (1-5)</h4>
+                        <h4 className="font-medium mb-2 text-blue-700 dark:text-blue-400">Reading Skills (1-5)</h4>
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Word in Context</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Word in Context</span>
                             <p className="font-bold text-lg">{selectedSubmission.reading_word_in_context || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Text Structure</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Text Structure</span>
                             <p className="font-bold text-lg">{selectedSubmission.reading_text_structure || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Cross-Text</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Cross-Text</span>
                             <p className="font-bold text-lg">{selectedSubmission.reading_cross_text || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Central Ideas</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Central Ideas</span>
                             <p className="font-bold text-lg">{selectedSubmission.reading_central_ideas || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Inferences</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Inferences</span>
                             <p className="font-bold text-lg">{selectedSubmission.reading_inferences || '-'}</p>
                           </div>
                         </div>
@@ -658,26 +658,26 @@ const AssignmentZeroSubmissions = () => {
 
                       {/* Passage Types */}
                       <div>
-                        <h4 className="font-medium mb-2 text-blue-700">Passage Types (1-5)</h4>
+                        <h4 className="font-medium mb-2 text-blue-700 dark:text-blue-400">Passage Types (1-5)</h4>
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Literary</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Literary</span>
                             <p className="font-bold text-lg">{selectedSubmission.passages_literary || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Social Science</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Social Science</span>
                             <p className="font-bold text-lg">{selectedSubmission.passages_social_science || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Humanities</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Humanities</span>
                             <p className="font-bold text-lg">{selectedSubmission.passages_humanities || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Science</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Science</span>
                             <p className="font-bold text-lg">{selectedSubmission.passages_science || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Poetry</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Poetry</span>
                             <p className="font-bold text-lg">{selectedSubmission.passages_poetry || '-'}</p>
                           </div>
                         </div>
@@ -686,12 +686,12 @@ const AssignmentZeroSubmissions = () => {
                       {/* Math Topics */}
                       {selectedSubmission.math_topics && selectedSubmission.math_topics.length > 0 && (
                         <div>
-                          <h4 className="font-medium mb-2 text-blue-700">
+                          <h4 className="font-medium mb-2 text-blue-700 dark:text-blue-400">
                             Math Topics to Work On ({selectedSubmission.math_topics.length} selected)
                           </h4>
                           <div className="flex flex-wrap gap-2">
                             {selectedSubmission.math_topics.map((topic) => (
-                              <Badge key={topic} variant="secondary" className="bg-blue-100 text-blue-700">
+                              <Badge key={topic} variant="secondary" className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400">
                                 {topic}
                               </Badge>
                             ))}
@@ -704,12 +704,12 @@ const AssignmentZeroSubmissions = () => {
 
                 {/* IELTS Section */}
                 {hasIELTSData(selectedSubmission) && (
-                  <div className="border-2 border-green-200 rounded-lg overflow-hidden">
-                    <div className="bg-green-50 px-4 py-3 border-b border-green-200">
-                      <h3 className="text-lg font-semibold text-green-800 flex items-center gap-2">
+                  <div className="border-2 border-green-200 dark:border-green-800 rounded-lg overflow-hidden">
+                    <div className="bg-green-50 dark:bg-green-900/20 px-4 py-3 border-b border-green-200 dark:border-green-800">
+                      <h3 className="text-lg font-semibold text-green-800 dark:text-green-300 flex items-center gap-2">
                         IELTS Assessment
                         {calculateIELTSAverageScore(selectedSubmission) && (
-                          <Badge className="bg-green-100 text-green-700 ml-auto">
+                          <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 ml-auto">
                             Average: {calculateIELTSAverageScore(selectedSubmission)}/5
                           </Badge>
                         )}
@@ -718,23 +718,23 @@ const AssignmentZeroSubmissions = () => {
                     <div className="p-4 space-y-4">
                       {/* IELTS Test Information */}
                       <div>
-                        <h4 className="font-medium mb-2 text-green-700">Test Information</h4>
+                        <h4 className="font-medium mb-2 text-green-700 dark:text-green-400">Test Information</h4>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                           <div className="space-y-1">
-                            <span className="text-gray-500 text-xs uppercase">Target Date</span>
+                            <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Target Date</span>
                             <p className="font-medium">{selectedSubmission.ielts_target_date || 'N/A'}</p>
                           </div>
                           <div className="space-y-1">
-                            <span className="text-gray-500 text-xs uppercase">Target Score</span>
+                            <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Target Score</span>
                             <p className="font-medium">{selectedSubmission.ielts_target_score || 'N/A'}</p>
                           </div>
                           <div className="space-y-1">
-                            <span className="text-gray-500 text-xs uppercase">Passed Before</span>
+                            <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Passed Before</span>
                             <p className="font-medium">{selectedSubmission.has_passed_ielts_before ? 'Yes' : 'No'}</p>
                           </div>
                           {selectedSubmission.previous_ielts_score && (
                             <div className="space-y-1">
-                              <span className="text-gray-500 text-xs uppercase">Previous Score</span>
+                              <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Previous Score</span>
                               <p className="font-medium">{selectedSubmission.previous_ielts_score}</p>
                             </div>
                           )}
@@ -743,22 +743,22 @@ const AssignmentZeroSubmissions = () => {
 
                       {/* Listening Skills */}
                       <div>
-                        <h4 className="font-medium mb-2 text-green-700">Listening Skills (1-5)</h4>
+                        <h4 className="font-medium mb-2 text-green-700 dark:text-green-400">Listening Skills (1-5)</h4>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Main Idea</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Main Idea</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_listening_main_idea || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Details</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Details</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_listening_details || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Opinion</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Opinion</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_listening_opinion || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Accents</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Accents</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_listening_accents || '-'}</p>
                           </div>
                         </div>
@@ -766,26 +766,26 @@ const AssignmentZeroSubmissions = () => {
 
                       {/* Reading Skills */}
                       <div>
-                        <h4 className="font-medium mb-2 text-green-700">Reading Skills (1-5)</h4>
+                        <h4 className="font-medium mb-2 text-green-700 dark:text-green-400">Reading Skills (1-5)</h4>
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Skimming</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Skimming</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_reading_skimming || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Scanning</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Scanning</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_reading_scanning || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Vocabulary</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Vocabulary</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_reading_vocabulary || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Inference</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Inference</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_reading_inference || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Matching</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Matching</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_reading_matching || '-'}</p>
                           </div>
                         </div>
@@ -793,30 +793,30 @@ const AssignmentZeroSubmissions = () => {
 
                       {/* Writing Skills */}
                       <div>
-                        <h4 className="font-medium mb-2 text-green-700">Writing Skills (1-5)</h4>
+                        <h4 className="font-medium mb-2 text-green-700 dark:text-green-400">Writing Skills (1-5)</h4>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Task 1 - Graphs</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Task 1 - Graphs</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_writing_task1_graphs || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Task 1 - Process</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Task 1 - Process</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_writing_task1_process || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Task 2 - Structure</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Task 2 - Structure</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_writing_task2_structure || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Task 2 - Arguments</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Task 2 - Arguments</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_writing_task2_arguments || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Grammar</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Grammar</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_writing_grammar || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Vocabulary</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Vocabulary</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_writing_vocabulary || '-'}</p>
                           </div>
                         </div>
@@ -824,30 +824,30 @@ const AssignmentZeroSubmissions = () => {
 
                       {/* Speaking Skills */}
                       <div>
-                        <h4 className="font-medium mb-2 text-green-700">Speaking Skills (1-5)</h4>
+                        <h4 className="font-medium mb-2 text-green-700 dark:text-green-400">Speaking Skills (1-5)</h4>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Fluency</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Fluency</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_speaking_fluency || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Vocabulary</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Vocabulary</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_speaking_vocabulary || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Grammar</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Grammar</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_speaking_grammar || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Pronunciation</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Pronunciation</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_speaking_pronunciation || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Part 2 (Long Turn)</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Part 2 (Long Turn)</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_speaking_part2 || '-'}</p>
                           </div>
-                          <div className="bg-white p-2 rounded border">
-                            <span className="text-gray-500 text-xs">Part 3 (Discussion)</span>
+                          <div className="bg-white dark:bg-card p-2 rounded border dark:border-border">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs">Part 3 (Discussion)</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_speaking_part3 || '-'}</p>
                           </div>
                         </div>
@@ -856,12 +856,12 @@ const AssignmentZeroSubmissions = () => {
                       {/* IELTS Weak Topics */}
                       {selectedSubmission.ielts_weak_topics && selectedSubmission.ielts_weak_topics.length > 0 && (
                         <div>
-                          <h4 className="font-medium mb-2 text-green-700">
+                          <h4 className="font-medium mb-2 text-green-700 dark:text-green-400">
                             Topics to Work On ({selectedSubmission.ielts_weak_topics.length} selected)
                           </h4>
                           <div className="flex flex-wrap gap-2">
                             {selectedSubmission.ielts_weak_topics.map((topic) => (
-                              <Badge key={topic} variant="secondary" className="bg-green-100 text-green-700">
+                              <Badge key={topic} variant="secondary" className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
                                 {topic}
                               </Badge>
                             ))}
@@ -878,12 +878,12 @@ const AssignmentZeroSubmissions = () => {
                     <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
                       Additional Comments
                     </h3>
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{selectedSubmission.additional_comments}</p>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{selectedSubmission.additional_comments}</p>
                   </div>
                 )}
 
                 {/* Submission Info */}
-                <div className="text-xs text-gray-500 text-center pt-4 border-t">
+                <div className="text-xs text-gray-500 dark:text-gray-400 text-center pt-4 border-t dark:border-border">
                   Submitted: {new Date(selectedSubmission.updated_at).toLocaleString()} | 
                 </div>
               </div>

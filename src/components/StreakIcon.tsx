@@ -184,17 +184,17 @@ const StreakIcon: React.FC = () => {
       
       {/* Calendar Popover */}
       {showCalendar && (
-        <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-200 p-4 z-50 w-72">
+        <div className="absolute top-full right-0 mt-2 bg-white dark:bg-card rounded-lg shadow-xl border border-gray-200 dark:border-border p-4 z-50 w-72">
           <div className="text-center mb-3">
-            <h3 className="font-semibold text-gray-900">{monthName}</h3>
-            <p className="text-sm text-gray-600 mt-1">{getTooltipText()}</p>
+            <h3 className="font-semibold text-gray-900 dark:text-foreground">{monthName}</h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{getTooltipText()}</p>
           </div>
           
           {/* Calendar Grid */}
           <div className="grid grid-cols-7 gap-1">
             {/* Day headers */}
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="text-xs font-medium text-gray-500 text-center py-1">
+              <div key={day} className="text-xs font-medium text-gray-500 dark:text-gray-400 text-center py-1">
                 {day}
               </div>
             ))}
@@ -214,9 +214,9 @@ const StreakIcon: React.FC = () => {
               if (day.isActive) {
                 dayClasses += "bg-orange-500 text-white font-semibold ";
               } else if (day.isPast) {
-                dayClasses += "text-gray-400 ";
+                dayClasses += "text-gray-400 dark:text-gray-500 ";
               } else {
-                dayClasses += "text-gray-700 ";
+                dayClasses += "text-gray-700 dark:text-gray-300 ";
               }
               
               return (
@@ -228,14 +228,14 @@ const StreakIcon: React.FC = () => {
           </div>
           
           {/* Legend */}
-          <div className="mt-3 pt-3 border-t border-gray-200 flex items-center justify-between text-xs">
+          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-border flex items-center justify-between text-xs">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded bg-orange-500"></div>
-              <span className="text-gray-600">Active days</span>
+              <span className="text-gray-600 dark:text-gray-400">Active days</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded ring-2 ring-blue-500"></div>
-              <span className="text-gray-600">Today</span>
+              <span className="text-gray-600 dark:text-gray-400">Today</span>
             </div>
           </div>
         </div>

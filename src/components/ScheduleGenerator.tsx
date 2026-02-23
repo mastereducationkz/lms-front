@@ -161,7 +161,7 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
                 <DialogHeader>
                     <DialogTitle>Generate Class Schedule</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4 py-4 text-gray-700">
+                <div className="space-y-4 py-4 text-gray-700 dark:text-gray-300">
                     {isLoading ? (
                         <div className="flex justify-center items-center py-12">
                             <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
@@ -169,29 +169,29 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
                     ) : (
                         <>
                             <div className="grid gap-2">
-                                <Label htmlFor="shorthand" className="text-gray-900 font-semibold">Быстрый ввод (пн ср пт 19:00)</Label>
+                                <Label htmlFor="shorthand" className="text-gray-900 dark:text-foreground font-semibold">Быстрый ввод (пн ср пт 19:00)</Label>
                                 <Input 
                                     id="shorthand" 
                                     placeholder="вт чт 20 00 сб 12 00"
                                     onChange={(e) => parseShorthand(e.target.value)}
-                                    className="border-gray-300 focus:border-blue-500"
+                                    className="border-gray-300 dark:border-border focus:border-blue-500"
                                 />
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="start-date" className="text-gray-900 font-semibold">Start Date</Label>
+                                <Label htmlFor="start-date" className="text-gray-900 dark:text-foreground font-semibold">Start Date</Label>
                                 <Input 
                                     id="start-date" 
                                     type="date" 
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
-                                    className="border-gray-300 focus:border-blue-500"
+                                    className="border-gray-300 dark:border-border focus:border-blue-500"
                                 />
                             </div>
 
                             <div className="space-y-3">
                                 <Label>Weekly Schedule</Label>
-                                <div className="grid gap-4 border rounded-md p-3">
+                                <div className="grid gap-4 border dark:border-border rounded-md p-3">
                                     {DAYS.map((day, i) => {
                                         const isSelected = scheduleConfig[i] !== undefined;
                                         return (

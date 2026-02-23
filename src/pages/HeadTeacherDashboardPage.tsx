@@ -244,7 +244,7 @@ export default function HeadTeacherDashboardPage() {
           <p className="text-slate-500 mt-1">Overview of teacher performance and course activity</p>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center bg-white p-2 rounded-xl border shadow-sm">
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center bg-white dark:bg-card dark:border-border p-2 rounded-xl border shadow-sm">
           <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
             <SelectTrigger className="w-[240px] border-0 bg-transparent font-medium focus:ring-0">
               <SelectValue placeholder="Select a course" />
@@ -258,7 +258,7 @@ export default function HeadTeacherDashboardPage() {
             </SelectContent>
           </Select>
           
-          <div className="h-8 w-px bg-slate-200 hidden sm:block" />
+          <div className="h-8 w-px bg-slate-200 dark:bg-border hidden sm:block" />
 
           <Popover>
             <PopoverTrigger asChild>
@@ -301,37 +301,37 @@ export default function HeadTeacherDashboardPage() {
 
       {/* Missing Attendance Alert */}
       {missingAttendance.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+            <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between gap-4 mb-2">
-                <h3 className="text-sm font-semibold text-amber-900">
+                <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-300">
                   Attendance Not Recorded ({missingAttendance.length})
                 </h3>
                 <Button
                   onClick={() => navigate('/attendance')}
                   size="sm"
                   variant="outline"
-                  className="text-xs h-7 border-amber-300 text-amber-700 hover:bg-amber-100"
+                  className="text-xs h-7 border-amber-300 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/20"
                 >
                   Go to Attendance
                 </Button>
               </div>
-              <p className="text-xs text-amber-700 mb-3">
+              <p className="text-xs text-amber-700 dark:text-amber-400 mb-3">
                 The following classes ended more than 2 hours ago without attendance records:
               </p>
               <div className="space-y-2">
                 {missingAttendance.slice(0, 5).map((reminder) => (
-                  <div key={reminder.event_id} className="flex items-center justify-between bg-white/60 rounded-md px-3 py-2">
+                  <div key={reminder.event_id} className="flex items-center justify-between bg-white/60 dark:bg-card/60 rounded-md px-3 py-2">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-amber-900 truncate">{reminder.title}</p>
-                      <p className="text-xs text-amber-600">
+                      <p className="text-sm font-medium text-amber-900 dark:text-amber-300 truncate">{reminder.title}</p>
+                      <p className="text-xs text-amber-600 dark:text-amber-400">
                         {reminder.group_name} • {new Date(reminder.event_date).toLocaleDateString()}
                       </p>
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0">
-                      <span className="text-xs text-amber-700">
+                      <span className="text-xs text-amber-700 dark:text-amber-400">
                         {reminder.recorded_students}/{reminder.expected_students} recorded
                       </span>
                       <Button
@@ -344,7 +344,7 @@ export default function HeadTeacherDashboardPage() {
                         }}
                         size="sm"
                         variant="ghost"
-                        className="text-xs h-7 text-amber-700 hover:bg-amber-100"
+                        className="text-xs h-7 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/20"
                       >
                         Mark
                       </Button>
@@ -361,34 +361,34 @@ export default function HeadTeacherDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Total Teachers</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Teachers</CardTitle>
             <Users className="h-4 w-4 text-slate-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900">{totalTeachers}</div>
-            <p className="text-xs text-slate-500 mt-1">Active in this course</p>
+            <div className="text-2xl font-bold text-slate-900 dark:text-foreground">{totalTeachers}</div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Active in this course</p>
           </CardContent>
         </Card>
 
         <Card className="border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Total Students</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Students</CardTitle>
             <Users className="h-4 w-4 text-slate-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900">{totalStudents}</div>
-            <p className="text-xs text-slate-500 mt-1">Across all groups</p>
+            <div className="text-2xl font-bold text-slate-900 dark:text-foreground">{totalStudents}</div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Across all groups</p>
           </CardContent>
         </Card>
 
         <Card className="border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Homework Checked</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">Homework Checked</CardTitle>
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{totalHomeworksChecked}</div>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               out of {teachersData?.teachers.reduce((sum, t) => sum + t.total_submissions_count, 0) || 0} submitted
             </p>
           </CardContent>
@@ -396,12 +396,12 @@ export default function HeadTeacherDashboardPage() {
 
         <Card className="border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Feedbacks Given</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">Feedbacks Given</CardTitle>
             <BarChart3 className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-blue-600">{totalFeedbacks}</div>
-            <p className="text-xs text-slate-500 mt-1">Written comments</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Written comments</p>
           </CardContent>
         </Card>
       </div>
@@ -525,15 +525,15 @@ export default function HeadTeacherDashboardPage() {
                <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
             </div>
           ) : teachersData?.teachers.length === 0 ? (
-            <div className="p-12 text-center text-slate-400 bg-slate-50/50">
+            <div className="p-12 text-center text-slate-400 bg-slate-50/50 dark:bg-secondary/20">
               No teachers found
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
-                    <TableHead className="font-bold text-slate-900">
+                  <TableRow className="bg-slate-50/80 dark:bg-secondary/50 hover:bg-slate-50/80 dark:hover:bg-secondary/50">
+                    <TableHead className="font-bold text-slate-900 dark:text-foreground">
                       <button 
                         onClick={() => handleSort('teacher_name')} 
                         className="flex items-center gap-1 hover:text-blue-600 transition-colors"
@@ -541,7 +541,7 @@ export default function HeadTeacherDashboardPage() {
                         Teacher {getSortIcon('teacher_name')}
                       </button>
                     </TableHead>
-                    <TableHead className="text-center font-bold text-slate-900">
+                    <TableHead className="text-center font-bold text-slate-900 dark:text-foreground">
                       <button 
                         onClick={() => handleSort('groups_count')} 
                         className="flex items-center gap-1 mx-auto hover:text-blue-600 transition-colors"
@@ -549,7 +549,7 @@ export default function HeadTeacherDashboardPage() {
                         Groups {getSortIcon('groups_count')}
                       </button>
                     </TableHead>
-                    <TableHead className="text-center font-bold text-slate-900">
+                    <TableHead className="text-center font-bold text-slate-900 dark:text-foreground">
                       <button 
                         onClick={() => handleSort('students_count')} 
                         className="flex items-center gap-1 mx-auto hover:text-blue-600 transition-colors"
@@ -557,7 +557,7 @@ export default function HeadTeacherDashboardPage() {
                         Students {getSortIcon('students_count')}
                       </button>
                     </TableHead>
-                    <TableHead className="text-center font-bold text-slate-900">
+                    <TableHead className="text-center font-bold text-slate-900 dark:text-foreground">
                       <button 
                         onClick={() => handleSort('checked_homeworks_count')} 
                         className="flex items-center gap-1 mx-auto hover:text-blue-600 transition-colors"
@@ -565,7 +565,7 @@ export default function HeadTeacherDashboardPage() {
                         HW Checked {getSortIcon('checked_homeworks_count')}
                       </button>
                     </TableHead>
-                    <TableHead className="text-center font-bold text-slate-900">
+                    <TableHead className="text-center font-bold text-slate-900 dark:text-foreground">
                       <button 
                         onClick={() => handleSort('feedbacks_given_count')} 
                         className="flex items-center gap-1 mx-auto hover:text-blue-600 transition-colors"
@@ -573,7 +573,7 @@ export default function HeadTeacherDashboardPage() {
                         Feedbacks {getSortIcon('feedbacks_given_count')}
                       </button>
                     </TableHead>
-                    <TableHead className="text-center font-bold text-slate-900">
+                    <TableHead className="text-center font-bold text-slate-900 dark:text-foreground">
                       <button 
                         onClick={() => handleSort('missed_attendance_count')} 
                         className="flex items-center gap-1 mx-auto hover:text-blue-600 transition-colors"
@@ -581,42 +581,42 @@ export default function HeadTeacherDashboardPage() {
                         Missed Att. {getSortIcon('missed_attendance_count')}
                       </button>
                     </TableHead>
-                    <TableHead className="text-center font-bold text-slate-900">Activity Trend</TableHead>
-                    <TableHead className="text-right font-bold text-slate-900">Action</TableHead>
+                    <TableHead className="text-center font-bold text-slate-900 dark:text-foreground">Activity Trend</TableHead>
+                    <TableHead className="text-right font-bold text-slate-900 dark:text-foreground">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {sortedTeachers.map((teacher) => (
                     <TableRow 
                       key={teacher.teacher_id} 
-                      className="hover:bg-slate-50/50 transition-colors group cursor-pointer"
+                      className="hover:bg-slate-50/50 dark:hover:bg-secondary/30 transition-colors group cursor-pointer"
                       onClick={() => navigate(`/head-teacher/course/${selectedCourseId}/teacher/${teacher.teacher_id}`)}
                     >
                        <TableCell>
                         <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9 border border-slate-200">
-                            <AvatarFallback className="bg-white text-slate-700 font-medium">
+                          <Avatar className="h-9 w-9 border border-slate-200 dark:border-border">
+                            <AvatarFallback className="bg-white dark:bg-secondary text-slate-700 dark:text-slate-300 font-medium">
                               {teacher.teacher_name.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <span className="font-semibold text-slate-900 block">{teacher.teacher_name}</span>
-                            <span className="text-xs text-slate-500">{teacher.email}</span>
+                            <span className="font-semibold text-slate-900 dark:text-foreground block">{teacher.teacher_name}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">{teacher.email}</span>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-center font-medium text-slate-600">
+                      <TableCell className="text-center font-medium text-slate-600 dark:text-slate-400">
                         {teacher.groups_count}
                       </TableCell>
-                      <TableCell className="text-center font-medium text-slate-600">
+                      <TableCell className="text-center font-medium text-slate-600 dark:text-slate-400">
                         {teacher.students_count}
                       </TableCell>
                       <TableCell className="text-center">
                         <div className="flex flex-col items-center gap-1">
-                          <Badge variant="secondary" className="bg-green-50 text-green-700 hover:bg-green-100 border-green-200">
+                          <Badge variant="secondary" className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/50 border-green-200 dark:border-green-800">
                             {teacher.checked_homeworks_count} / {teacher.total_submissions_count}
                           </Badge>
-                          <span className="text-xs text-slate-500">
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
                             {teacher.total_submissions_count > 0 
                               ? `${Math.round((teacher.checked_homeworks_count / teacher.total_submissions_count) * 100)}%`
                               : '0%'}
@@ -624,27 +624,27 @@ export default function HeadTeacherDashboardPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
-                         <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200">
+                         <Badge variant="secondary" className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 border-blue-200 dark:border-blue-800">
                            {teacher.feedbacks_given_count}
                          </Badge>
                       </TableCell>
                       <TableCell className="text-center">
                         {(teacher.missed_attendance_count ?? 0) > 0 ? (
-                          <Badge variant="secondary" className="bg-red-50 text-red-700 hover:bg-red-100 border-red-200">
+                          <Badge variant="secondary" className="bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/50 border-red-200 dark:border-red-800">
                             {teacher.missed_attendance_count}
                           </Badge>
                         ) : (
-                          <Badge variant="secondary" className="bg-slate-50 text-slate-500 hover:bg-slate-100 border-slate-200">
+                          <Badge variant="secondary" className="bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 border-slate-200 dark:border-slate-600">
                             0
                           </Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-center">
-                         <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
+                         <div className="flex items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                            <span className={teacher.homeworks_checked_last_7_days > 0 ? "text-emerald-600 font-medium" : ""}>
                              {teacher.homeworks_checked_last_7_days} (7d)
                            </span>
-                           <span className="text-slate-300">|</span>
+                           <span className="text-slate-300 dark:text-slate-400">|</span>
                            <span>{teacher.homeworks_checked_last_30_days} (30d)</span>
                          </div>
                       </TableCell>

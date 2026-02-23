@@ -754,10 +754,10 @@ export default function UserManagement() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-foreground flex items-center">
             User Management
           </h1>
-          <p className="text-gray-600 mt-1">Manage system users and permissions</p>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage system users and permissions</p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <Button
@@ -928,9 +928,9 @@ export default function UserManagement() {
             </div>
           ) : error ? (
             <div className="p-6 text-center">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <h3 className="font-semibold text-red-800">Error loading users</h3>
-                <p className="text-red-600">{error}</p>
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <h3 className="font-semibold text-red-800 dark:text-red-400">Error loading users</h3>
+                <p className="text-red-600 dark:text-red-400">{error}</p>
                 <button 
                   onClick={loadUsers}
                   className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
@@ -943,32 +943,32 @@ export default function UserManagement() {
             <>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gray-50 dark:bg-secondary">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         User
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Role
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Group
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white dark:bg-card divide-y divide-gray-200 dark:divide-border">
                     {roleFilter === 'student' && teacherGroups.length > 0 ? (
                       // Show grouped students by teacher
                       teacherGroups.map((teacherGroup) => (
                         <React.Fragment key={teacherGroup.teacher_name}>
                           {/* Teacher group header */}
-                          <tr className="hover:bg-gray-50 bg-blue-50">
+                          <tr className="hover:bg-gray-50 dark:hover:bg-secondary">
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div className="flex items-center gap-2">
                                 <Button
@@ -990,9 +990,9 @@ export default function UserManagement() {
                                   )}
                                 </Button>
                                 <div>
-                                  <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                                  <div className="text-sm font-medium text-gray-900 dark:text-foreground flex items-center gap-2">
                                     {teacherGroup.teacher_name}
-                                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+                                    <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded-full">
                                       {teacherGroup.total_students} students
                                     </span>
                                   </div>
@@ -1000,15 +1000,15 @@ export default function UserManagement() {
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-700">
+                              <span className="px-2 py-1 text-xs rounded-full bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400 text-purple-700">
                                 Teacher Group
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm text-gray-500">-</span>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">-</span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">
+                              <span className="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700">
                                 Active
                               </span>
                             </td>
@@ -1038,18 +1038,18 @@ export default function UserManagement() {
                           
                           {/* Student rows when expanded */}
                           {teacherGroup.is_expanded && teacherGroup.students.map((student) => (
-                            <tr key={student.id || student.email} className="hover:bg-gray-50 bg-gray-25">
+                            <tr key={student.id || student.email} className="hover:bg-gray-50 dark:hover:bg-secondary bg-gray-25">
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <div className="ml-8">
-                                  <div className="text-sm font-medium text-gray-900">{student.name || student.full_name}</div>
-                                  <div className="text-sm text-gray-500">{student.email}</div>
+                                  <div className="text-sm font-medium text-gray-900 dark:text-foreground">{student.name || student.full_name}</div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400">{student.email}</div>
                                   {student.student_id && (
                                     <div className="text-xs text-gray-400">ID: {student.student_id}</div>
                                   )}
                                 </div>
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
-                                <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">
+                                <span className="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700">
                                   student
                                 </span>
                               </td>
@@ -1057,19 +1057,19 @@ export default function UserManagement() {
                                 {student.teacher_name || student.curator_name ? (
                                   <div className="text-sm">
                                     {student.teacher_name && (
-                                      <div className="text-xs text-gray-500">👨‍🏫 {student.teacher_name}</div>
+                                      <div className="text-xs text-gray-500 dark:text-gray-400">👨‍🏫 {student.teacher_name}</div>
                                     )}
                                     {student.curator_name && (
-                                      <div className="text-xs text-gray-500">👨‍💼 {student.curator_name}</div>
+                                      <div className="text-xs text-gray-500 dark:text-gray-400">👨‍💼 {student.curator_name}</div>
                                     )}
                                   </div>
                                 ) : (
-                                  <span className="text-sm text-gray-500">No group</span>
+                                  <span className="text-sm text-gray-500 dark:text-gray-400">No group</span>
                                 )}
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap">
                                 <span className={`px-2 py-1 text-xs rounded-full ${
-                                  student.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                                  student.is_active ? 'bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700' : 'bg-gray-100 dark:bg-gray-800 dark:text-gray-400 text-gray-700'
                                 }`}>
                                   {student.is_active ? 'Active' : 'Inactive'}
                                 </span>
@@ -1101,11 +1101,11 @@ export default function UserManagement() {
                     ) : (
                       // Show regular user list for non-student roles
                       users?.map((user) => (
-                        <tr key={user.id || user.email} className="hover:bg-gray-50">
+                        <tr key={user.id || user.email} className="hover:bg-gray-50 dark:hover:bg-secondary">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div>
-                              <div className="text-sm font-medium text-gray-900">{user.name || user.full_name}</div>
-                              <div className="text-sm text-gray-500">{user.email}</div>
+                              <div className="text-sm font-medium text-gray-900 dark:text-foreground">{user.name || user.full_name}</div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">{user.email}</div>
                               {user.student_id && (
                                 <div className="text-xs text-gray-400">ID: {user.student_id}</div>
                               )}
@@ -1113,11 +1113,11 @@ export default function UserManagement() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`px-2 py-1 text-xs rounded-full ${
-                              user.role === 'admin' ? 'bg-red-100 text-red-700' :
-                              user.role === 'teacher' ? 'bg-purple-100 text-purple-700' :
-                              user.role === 'head_curator' ? 'bg-indigo-100 text-indigo-700' :
-                              user.role === 'curator' ? 'bg-blue-100 text-blue-700' :
-                              'bg-green-100 text-green-700'
+                              user.role === 'admin' ? 'bg-red-100 dark:bg-red-900/30 dark:text-red-400 text-red-700' :
+                              user.role === 'teacher' ? 'bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400 text-purple-700' :
+                              user.role === 'head_curator' ? 'bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 text-indigo-700' :
+                              user.role === 'curator' ? 'bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 text-blue-700' :
+                              'bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700'
                             }`}>
                               {user.role}
                             </span>
@@ -1126,19 +1126,19 @@ export default function UserManagement() {
                             {user.teacher_name || user.curator_name ? (
                               <div className="text-sm">
                                 {user.teacher_name && (
-                                  <div className="text-xs text-gray-500">👨‍🏫 {user.teacher_name}</div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">👨‍🏫 {user.teacher_name}</div>
                                 )}
                                 {user.curator_name && (
-                                  <div className="text-xs text-gray-500">👨‍💼 {user.curator_name}</div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400">👨‍💼 {user.curator_name}</div>
                                 )}
                               </div>
                             ) : (
-                              <span className="text-sm text-gray-500">No group</span>
+                              <span className="text-sm text-gray-500 dark:text-gray-400">No group</span>
                             )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`px-2 py-1 text-xs rounded-full ${
-                              user.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                              user.is_active ? 'bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700' : 'bg-gray-100 dark:bg-gray-800 dark:text-gray-400 text-gray-700'
                             }`}>
                               {user.is_active ? 'Active' : 'Inactive'}
                             </span>
@@ -1172,9 +1172,9 @@ export default function UserManagement() {
               
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="px-6 py-3 border-t bg-gray-50">
+                <div className="px-6 py-3 border-t dark:border-border bg-gray-50 dark:bg-secondary">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-700">
+                    <div className="text-sm text-gray-700 dark:text-gray-400">
                       {roleFilter === 'student' ? 
                         `Showing ${teacherGroups.length} teacher groups with ${totalUsers} students` :
                         `Showing ${((currentPage - 1) * pageSize) + 1} to ${Math.min(currentPage * pageSize, totalUsers)} of ${totalUsers} results`
@@ -1262,61 +1262,61 @@ export default function UserManagement() {
             
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+<thead className="bg-gray-50 dark:bg-secondary">
+                <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Group Name
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Teacher
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Curator
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Students
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="bg-white dark:bg-card divide-y divide-gray-200 dark:divide-border">
                   {groups?.map((group) => (
-                    <tr key={group.id} className="hover:bg-gray-50">
+                    <tr key={group.id} className="hover:bg-gray-50 dark:hover:bg-secondary">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
-                          <div className="text-sm font-medium text-gray-900">{group.name}</div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-foreground">{group.name}</div>
                           {group.description && (
-                            <div className="text-sm text-gray-500">{group.description}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">{group.description}</div>
                           )}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-700">
+                        <span className="px-2 py-1 text-xs rounded-full bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400 text-purple-700">
                           {group.teacher_name || 'No Teacher'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {group.curator_name ? (
-                          <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">
+                          <span className="px-2 py-1 text-xs rounded-full bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 text-blue-700">
                             {group.curator_name}
                           </span>
                         ) : (
-                          <span className="text-sm text-gray-500">No Curator</span>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">No Curator</span>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">
+                        <span className="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700">
                           {group.student_count || 0} students
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs rounded-full ${
-                          group.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                          group.is_active ? 'bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700' : 'bg-gray-100 dark:bg-gray-800 dark:text-gray-400 text-gray-700'
                         }`}>
                           {group.is_active ? 'Active' : 'Inactive'}
                         </span>
@@ -1408,8 +1408,8 @@ export default function UserManagement() {
         submitText="Done"
       >
         <div className="space-y-4">
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-            <p className="text-green-800 text-sm">
+          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
+            <p className="text-green-800 dark:text-green-400 text-sm">
               The user has been created with an auto-generated password.
             </p>
           </div>
@@ -1417,7 +1417,7 @@ export default function UserManagement() {
           <div>
             <Label className="text-sm font-medium mb-1.5 block">Generated Password</Label>
             <div className="flex items-center gap-2">
-              <div className="bg-gray-100 border border-gray-200 rounded-md p-3 flex-1 font-mono text-lg tracking-wider text-center select-all">
+              <div className="bg-gray-100 dark:bg-secondary border border-gray-200 dark:border-border rounded-md p-3 flex-1 font-mono text-lg tracking-wider text-center select-all">
                 {generatedPassword}
               </div>
               <Button
@@ -1437,9 +1437,9 @@ export default function UserManagement() {
             </div>
           </div>
           
-          <p className="text-xs text-gray-500 mt-2">
-            Please copy and share this password with the user. It will not be shown again.
-          </p>
+<p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+          Please copy and share this password with the user. It will not be shown again.
+        </p>
         </div>
       </Modal>
 
@@ -1497,7 +1497,7 @@ export default function UserManagement() {
         submitText="Deactivate"
       >
         <div>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
             {selectedUser ? (
               <>Are you sure you want to deactivate <strong>{selectedUser.name}</strong>? This action can be undone later.</>
             ) : (
@@ -1562,7 +1562,7 @@ export default function UserManagement() {
         <div className="space-y-4">
           <div className="p-1">
             <Label className="text-sm font-medium">Schedule Data (TSV Format)</Label>
-            <p className="text-xs text-gray-500 mt-1 mb-2">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-2">
               Format: Date [tab] Student [tab] Teacher [tab] Course [tab] Lessons [tab] Shorthand
             </p>
             <textarea
@@ -1573,7 +1573,7 @@ export default function UserManagement() {
               disabled={isBulkScheduleLoading}
             />
             <div className="flex justify-between items-center mt-1">
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 {bulkScheduleText.trim().split('\n').filter(l => l.trim()).length} lines detected
               </p>
               <Button
@@ -1698,11 +1698,11 @@ function UserForm({ formData, setFormData, groups, courses, errors = {} }: UserF
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-gray-500">No groups available</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">No groups available</p>
               )}
             </div>
             {formData.group_ids.length > 0 && (
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Selected: {formData.group_ids.length} group(s)
               </p>
             )}
@@ -1741,11 +1741,11 @@ function UserForm({ formData, setFormData, groups, courses, errors = {} }: UserF
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-gray-500">No courses available</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">No courses available</p>
               )}
             </div>
             {formData.course_ids.length > 0 && (
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Selected: {formData.course_ids.length} course(s)
               </p>
             )}
@@ -1885,7 +1885,7 @@ function GroupForm({ formData, setFormData, teachers, curators, students, course
             ))}
           </SelectContent>
         </Select>
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
           Select a course to automatically grant this group access
         </p>
       </div>
@@ -1905,7 +1905,7 @@ function GroupForm({ formData, setFormData, teachers, curators, students, course
         {errors.name && (
           <p className="text-red-500 text-xs mt-1">{errors.name}</p>
         )}
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
           Format: "First Name - Description". You can edit this field.
         </p>
       </div>
@@ -1920,7 +1920,7 @@ function GroupForm({ formData, setFormData, teachers, curators, students, course
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           placeholder="Optional description (will be used in group name)"
         />
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
           This description will be used in the group name format: "Teacher - Description"
         </p>
       </div>
@@ -1929,7 +1929,7 @@ function GroupForm({ formData, setFormData, teachers, curators, students, course
         <Label className="text-sm font-medium">Students (Optional)</Label>
         <div className="mt-2 max-h-40 overflow-y-auto border rounded-md p-2 space-y-2">
           {students.length === 0 ? (
-            <p className="text-gray-500 text-sm">No students available</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No students available</p>
           ) : (
             students.map((student) => (
               <div key={student.id} className="flex items-center space-x-2">
@@ -1958,7 +1958,7 @@ function GroupForm({ formData, setFormData, teachers, curators, students, course
           )}
         </div>
         {formData.student_ids.length > 0 && (
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
             Selected: {formData.student_ids.length} student(s)
           </p>
         )}
@@ -2091,10 +2091,10 @@ function BulkAddStudentsForm({ formData, setFormData, groups, students, errors =
 
         <div className="mt-2 max-h-60 overflow-y-auto border rounded-md p-2 space-y-2">
           {filteredStudents.length === 0 ? (
-            <p className="text-gray-500 text-sm text-center py-4">No students found</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-4">No students found</p>
           ) : (
             filteredStudents.map((student) => (
-              <div key={student.id} className="flex items-center space-x-2 hover:bg-gray-50 p-1 rounded">
+              <div key={student.id} className="flex items-center space-x-2 hover:bg-gray-50 dark:hover:bg-secondary p-1 rounded">
                 <Checkbox
                   id={`bulk-student-${student.id}`}
                   checked={formData.studentIds.includes(Number(student.id))}
@@ -2102,7 +2102,7 @@ function BulkAddStudentsForm({ formData, setFormData, groups, students, errors =
                 />
                 <Label htmlFor={`bulk-student-${student.id}`} className="text-sm cursor-pointer flex-1">
                   <div className="font-medium">{student.name || student.full_name}</div>
-                  <div className="text-xs text-gray-500">{student.email}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">{student.email}</div>
                 </Label>
               </div>
             ))
@@ -2110,7 +2110,7 @@ function BulkAddStudentsForm({ formData, setFormData, groups, students, errors =
         </div>
         
         <div className="flex justify-between items-center mt-2">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
             Selected: {formData.studentIds.length} student(s)
           </p>
           {errors.studentIds && (
@@ -2142,7 +2142,7 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
     <div className="space-y-4">
       <div className="p-1">
         <Label className="text-sm font-medium">Student Data (Tab-separated)</Label>
-        <p className="text-xs text-gray-500 mt-1 mb-2">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-2">
           Paste data with columns: Name, Phone, Months, Date, Email (separated by tabs)
         </p>
         <textarea
@@ -2153,7 +2153,7 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
           disabled={isLoading}
         />
         <div className="flex justify-between items-center mt-1">
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
             {formData.text.trim().split('\n').filter(l => l.trim()).length} lines detected
           </p>
           <Button
@@ -2199,11 +2199,11 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
               </div>
             ))
           ) : (
-            <p className="text-sm text-gray-500">No groups available</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">No groups available</p>
           )}
         </div>
         {formData.groupIds.length > 0 && (
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             Selected: {formData.groupIds.length} group(s)
           </p>
         )}
@@ -2215,9 +2215,9 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
           <h4 className="font-medium text-sm">Import Results</h4>
           
           {results.created.length > 0 && (
-            <div className="bg-green-50 border border-green-200 rounded-md p-3">
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-3">
               <div className="flex justify-between items-center mb-2">
-                <h5 className="text-green-800 font-medium text-sm">
+                <h5 className="text-green-800 dark:text-green-400 font-medium text-sm">
                   ✓ Successfully created ({results.created.length})
                 </h5>
                 <Button
@@ -2238,10 +2238,10 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
               </div>
               <div className="max-h-40 overflow-y-auto space-y-1">
                 {results.created.map((item, idx) => (
-                  <div key={idx} className="text-xs text-green-700 flex justify-between items-center bg-white p-2 rounded">
+                  <div key={idx} className="text-xs text-green-700 dark:text-green-400 flex justify-between items-center bg-white dark:bg-card p-2 rounded">
                     <span>{item.user.name} ({item.user.email})</span>
                     {item.generated_password && (
-                      <code className="bg-green-100 px-2 py-0.5 rounded text-green-800 cursor-pointer hover:bg-green-200"
+                      <code className="bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded text-green-800 dark:text-green-400 cursor-pointer hover:bg-green-200 dark:hover:bg-green-800/50"
                         onClick={() => {
                           navigator.clipboard.writeText(item.generated_password!);
                         }}
@@ -2257,13 +2257,13 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
           )}
 
           {results.failed.length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3">
-              <h5 className="text-red-800 font-medium text-sm mb-2">
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
+              <h5 className="text-red-800 dark:text-red-400 font-medium text-sm mb-2">
                 ✗ Failed ({results.failed.length})
               </h5>
               <div className="max-h-40 overflow-y-auto space-y-1">
                 {results.failed.map((item, idx) => (
-                  <div key={idx} className="text-xs text-red-700 bg-white p-2 rounded">
+                  <div key={idx} className="text-xs text-red-700 dark:text-red-400 bg-white dark:bg-card p-2 rounded">
                     <span className="font-medium">{item.email}:</span> {item.error}
                   </div>
                 ))}

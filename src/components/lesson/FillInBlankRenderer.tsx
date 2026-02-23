@@ -79,7 +79,7 @@ export const FillInBlankRenderer: React.FC<FillInBlankRendererProps> = ({
   return (
     <div
       ref={containerRef}
-      className="text-gray-800 text-lg leading-relaxed prose prose-lg max-w-none"
+      className="text-gray-800 dark:text-gray-100 text-lg leading-relaxed prose prose-lg dark:prose-invert max-w-none"
     >
       {mounted && gaps.map((gap) => {
         if (!gap.container) return null;
