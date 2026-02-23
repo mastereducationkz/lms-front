@@ -111,7 +111,7 @@ function CourseUnitTaskDisplay({ task, isCompleted, onCompletion, readOnly, stud
   if (loading) {
     return (
       <div className="space-y-3">
-        <div className="text-sm text-gray-600">Loading course information...</div>
+        <div className="text-sm text-gray-600 dark:text-gray-400">Loading course information...</div>
       </div>
     );
   }
@@ -122,11 +122,11 @@ function CourseUnitTaskDisplay({ task, isCompleted, onCompletion, readOnly, stud
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-gray-600 dark:text-gray-400">
           Complete the following lessons:
         </div>
       </div>
-      <div className="bg-gray-50 p-3 rounded-md">
+      <div className="bg-gray-50 dark:bg-secondary p-3 rounded-md">
         <div className="flex items-center space-x-2 mb-2">
           <BookOpen className="w-4 h-4 text-muted-foreground" />
           <span className="font-medium">{courseData?.title || `Course ${task.content.course_id}`}</span>
@@ -141,9 +141,9 @@ function CourseUnitTaskDisplay({ task, isCompleted, onCompletion, readOnly, stud
                     {lessonCompleted ? (
                       <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
                     ) : (
-                      <div className="w-4 h-4 rounded-full border-2 border-gray-300 flex-shrink-0" />
+                      <div className="w-4 h-4 rounded-full border-2 border-gray-300 dark:border-gray-600 flex-shrink-0" />
                     )}
-                    <span className={lessonCompleted ? 'text-green-700 line-through' : ''}>
+                    <span className={lessonCompleted ? 'text-green-700 dark:text-green-400 line-through' : 'text-foreground'}>
                       {lesson.title}
                     </span>
                   </div>
@@ -179,11 +179,11 @@ function CourseUnitTaskDisplay({ task, isCompleted, onCompletion, readOnly, stud
           )}
         </div>
         {totalCount > 0 && (
-          <div className="mt-3 pt-3 border-t border-gray-200">
-            <div className="text-xs text-gray-600">
+          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-border">
+            <div className="text-xs text-gray-600 dark:text-gray-400">
              Progress: {completedCount} / {totalCount} lessons completed
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-1">
               <div 
                 className="bg-green-600 h-2 rounded-full transition-all" 
                 style={{ width: `${(completedCount / totalCount) * 100}%` }}
@@ -358,7 +358,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
               <div className="space-y-2">
                 {/* Image Preview for teacher's reference file */}
                 {task.content.teacher_file_name && /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(task.content.teacher_file_name) && (
-                  <div className="border rounded-lg overflow-hidden bg-gray-50">
+                  <div className="border dark:border-border rounded-lg overflow-hidden bg-gray-50 dark:bg-secondary">
                     <img 
                       src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + task.content.teacher_file_url}
                       alt={task.content.teacher_file_name || 'Reference image'}
@@ -387,7 +387,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                         <div key={index} className="space-y-3">
                             {/* Image Preview */}
                             {file.file_name && /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(file.file_name) && (
-                                <div className="border rounded-lg overflow-hidden bg-gray-50">
+                                <div className="border dark:border-border rounded-lg overflow-hidden bg-gray-50 dark:bg-secondary">
                                 <img 
                                     src={file.file_url.startsWith('http') 
                                     ? file.file_url 

@@ -379,9 +379,9 @@ export default function AssignmentPage() {
                 {submittedFiles.length > 0 && (
                   <div className="space-y-3">
                      {submittedFiles.map((file: any, index: number) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded border">
+                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-secondary rounded border dark:border-border">
                             <div className="flex items-center">
-                            <FileText className="w-5 h-5 text-gray-500 mr-3" />
+                            <FileText className="w-5 h-5 text-gray-500 dark:text-gray-400 mr-3" />
                             <span>{file.file_name || file.submitted_file_name || 'File'}</span>
                             </div>
                             <div className="flex gap-2">
@@ -404,9 +404,9 @@ export default function AssignmentPage() {
                 
                 {/* Fallback for very old legacy or corrupted data if no files found but file_url exists */}
                 {submittedFiles.length === 0 && submission.file_url && (
-                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded border">
+                   <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-secondary rounded border dark:border-border">
                     <div className="flex items-center">
-                      <FileText className="w-5 h-5 text-gray-500 mr-3" />
+                      <FileText className="w-5 h-5 text-gray-500 dark:text-gray-400 mr-3" />
                       <span>{submission.submitted_file_name}</span>
                     </div>
                     <a
@@ -421,7 +421,7 @@ export default function AssignmentPage() {
                 )}
 
                 {submission.answers?.text && (
-                  <div className="p-4 bg-gray-50 rounded border whitespace-pre-wrap mt-4">
+                  <div className="p-4 bg-gray-50 dark:bg-secondary rounded border dark:border-border whitespace-pre-wrap mt-4">
                     {submission.answers.text}
                   </div>
                 )}
@@ -479,7 +479,7 @@ export default function AssignmentPage() {
                 <CardTitle>Your Submission</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
                   <input
                     type="file"
                     id="file-upload"
@@ -499,13 +499,13 @@ export default function AssignmentPage() {
                     className="cursor-pointer flex flex-col items-center justify-center"
                   >
                     <Upload className="w-12 h-12 text-gray-400 mb-3" />
-                    <span className="text-lg font-medium text-gray-900 mb-1">
+                    <span className="text-lg font-medium text-gray-900 dark:text-foreground mb-1">
                       {files.length > 0 ? 'Add more files' : 'Drop your files here or click to upload'}
                     </span>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">
                       Allowed types: {assignment.allowed_file_types?.join(', ') || 'All files'}
                     </span>
-                    <span className="text-sm text-gray-500 mt-1">
+                    <span className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       Max size: {assignment.max_file_size_mb}MB
                     </span>
                   </label>
@@ -622,7 +622,7 @@ export default function AssignmentPage() {
     <div className="max-w-4xl mx-auto space-y-6 p-6">
       {/* Header Card */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center text-red-800">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center text-red-800 dark:text-red-400">
           <AlertCircle className="w-5 h-5 mr-2" />
           {error}
         </div>
@@ -631,20 +631,20 @@ export default function AssignmentPage() {
         <CardHeader>
           <div className="flex items-start justify-between">
             <div className="space-y-3">
-              <CardTitle className="text-3xl font-bold text-gray-900">
+              <CardTitle className="text-3xl font-bold text-gray-900 dark:text-foreground">
                 <div className="flex items-center justify-between w-full">
                   <span className="pr-3 truncate">{assignment.title}</span>
                   {submission && submission.status === 'graded' && (
                     <div className="flex items-center space-x-2 ">
                       <Award className="w-4 h-4 text-yellow-600" />
-                      <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
                         Score: {submission.score}/{assignment.max_score}
                       </span>
                     </div>
                   )}
                 </div>
               </CardTitle>
-              <CardDescription className="text-base text-gray-600">
+              <CardDescription className="text-base text-gray-600 dark:text-gray-400">
                 {assignment.description}
               </CardDescription>
             </div>
