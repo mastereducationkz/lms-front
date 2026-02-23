@@ -111,13 +111,13 @@ export default function ProfilePage() {
 
         <div className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               <User className="w-4 h-4 inline mr-1" />
               Full Name
             </label>
             <input 
               type="text"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full border border-gray-300 dark:border-border rounded-lg px-3 py-2 bg-white dark:bg-secondary text-foreground focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               value={name} 
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
               placeholder="Enter your full name"
@@ -126,42 +126,42 @@ export default function ProfilePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 <Mail className="w-4 h-4 inline mr-1" />
                 Email
               </label>
               <input 
                 type="email"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-50"
+                className="w-full border border-gray-300 dark:border-border rounded-lg px-3 py-2 bg-gray-50 dark:bg-secondary text-foreground"
                 value={user?.email || ''}
                 disabled
               />
-              <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Email cannot be changed</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 <Shield className="w-4 h-4 inline mr-1" />
                 Role
               </label>
               <input 
                 type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 capitalize"
+                className="w-full border border-gray-300 dark:border-border rounded-lg px-3 py-2 bg-gray-50 dark:bg-secondary text-foreground capitalize"
                 value={user?.role || ''}
                 disabled
               />
-              <p className="text-xs text-gray-500 mt-1">Role is assigned by administration</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Role is assigned by administration</p>
             </div>
           </div>
 
           {user?.student_id && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Student ID
               </label>
               <input 
                 type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-50"
+                className="w-full border border-gray-300 dark:border-border rounded-lg px-3 py-2 bg-gray-50 dark:bg-secondary text-foreground"
                 value={user.student_id}
                 disabled
               />
@@ -170,13 +170,13 @@ export default function ProfilePage() {
 
           {/* Teacher Substitution Preference */}
           {user?.role === 'teacher' && (
-            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="p-4 bg-gray-50 dark:bg-secondary rounded-lg border border-gray-200 dark:border-border">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <BellOff className="w-5 h-5 text-gray-600" />
+                  <BellOff className="w-5 h-5 text-gray-600 dark:text-gray-400" />
                   <div>
-                    <p className="font-medium text-gray-900">Hide from substitution requests</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="font-medium text-gray-900 dark:text-foreground">Hide from substitution requests</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       When enabled, other teachers will not see you as available for substitutions
                     </p>
                   </div>
@@ -185,7 +185,7 @@ export default function ProfilePage() {
                   onClick={handleToggleSubstitutions}
                   disabled={savingPref}
                   className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
-                    noSubstitutions ? 'bg-blue-600' : 'bg-gray-300'
+                    noSubstitutions ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
                   } ${savingPref ? 'opacity-50 cursor-wait' : ''}`}
                 >
                   <span
@@ -200,26 +200,26 @@ export default function ProfilePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 <Calendar className="w-4 h-4 inline mr-1" />
                 Account Created
               </label>
               <input 
                 type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-50"
+                className="w-full border border-gray-300 dark:border-border rounded-lg px-3 py-2 bg-gray-50 dark:bg-secondary text-foreground"
                 value={user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
                 disabled
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 <Clock className="w-4 h-4 inline mr-1" />
                 Total Study Time
               </label>
               <input 
                 type="text"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-50"
+                className="w-full border border-gray-300 dark:border-border rounded-lg px-3 py-2 bg-gray-50 dark:bg-secondary text-foreground"
                 value={`${Math.round((user?.total_study_time_minutes || 0) / 60)} hours`}
                 disabled
               />
@@ -229,18 +229,18 @@ export default function ProfilePage() {
           {message && (
             <div className={`p-3 rounded-lg text-sm ${
               message.includes('success') 
-                ? 'bg-green-50 text-green-700 border border-green-200' 
-                : 'bg-red-50 text-red-700 border border-red-200'
+                ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800' 
+                : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
             }`}>
               {message}
             </div>
           )}
 
-          <div className="flex justify-between items-center pt-4 border-t">
+          <div className="flex justify-between items-center pt-4 border-t dark:border-border">
             <button
               onClick={handleSave}
               disabled={saving || !name.trim() || name === user?.name}
-              className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
             >
               <Save className="w-4 h-4 mr-2" />
               {saving ? 'Saving...' : 'Save Changes'}

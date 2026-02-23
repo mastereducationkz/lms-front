@@ -49,15 +49,15 @@ const StreakIcon: React.FC = () => {
   const getStreakColor = () => {
     switch (streakData?.streak_status) {
       case 'active':
-        return 'bg-white text-orange-500';
+        return 'bg-white dark:bg-card text-orange-500';
       case 'at_risk':
-        return 'bg-white text-yellow-500';
+        return 'bg-white dark:bg-card text-yellow-500';
       case 'broken':
-        return 'bg-white text-gray-400';
+        return 'bg-white dark:bg-card text-gray-400';
       case 'not_started':
-        return 'bg-white text-gray-400';
+        return 'bg-white dark:bg-card text-gray-400';
       default:
-        return 'bg-white text-gray-400';
+        return 'bg-white dark:bg-card text-gray-400';
     }
   };
 
