@@ -67,10 +67,10 @@ export default function MyLessonRequests() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-        case 'approved': return <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">Approved</Badge>;
+        case 'approved': return <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">Approved</Badge>;
         case 'rejected': return <Badge variant="destructive">Rejected</Badge>;
-        case 'pending': return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">Pending Admin</Badge>;
-        case 'pending_teacher': return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200">Waiting for Teacher</Badge>;
+        case 'pending': return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800">Pending Admin</Badge>;
+        case 'pending_teacher': return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800">Waiting for Teacher</Badge>;
         default: return <Badge variant="secondary">{status}</Badge>;
     }
   };
@@ -137,7 +137,7 @@ export default function MyLessonRequests() {
                                             {new Date(req.original_datetime).toLocaleString()}
                                         </TableCell>
                                         <TableCell>
-                                            {req.reason && <div className="text-sm text-gray-500 mb-1">Reason: {req.reason}</div>}
+                                            {req.reason && <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Reason: {req.reason}</div>}
                                             {req.request_type === 'reschedule' && req.new_datetime && (
                                                 <div className="text-xs">
                                                     New Time: <span className="font-medium">{new Date(req.new_datetime).toLocaleString()}</span>
@@ -172,13 +172,13 @@ export default function MyLessonRequests() {
         <TabsContent value="incoming" className="space-y-6">
             {/* Active Requests */}
             <Card>
-                <CardHeader className="px-6 py-4 border-b bg-blue-50/30">
+                <CardHeader className="px-6 py-4 border-b bg-blue-50/30 dark:bg-blue-900/10">
                     <div className="flex justify-between items-center">
                         <div>
-                            <CardTitle className="text-lg text-blue-800">New Opportunities</CardTitle>
+                            <CardTitle className="text-lg text-blue-800 dark:text-blue-400">New Opportunities</CardTitle>
                             <CardDescription>Substitution requests requiring your action</CardDescription>
                         </div>
-                        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200">
+                        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800">
                             {incomingPending.length} New
                         </Badge>
                     </div>

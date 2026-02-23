@@ -460,54 +460,54 @@ export default function EventManagement() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg border p-4">
+        <div className="bg-white dark:bg-card rounded-lg border dark:border-border p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Events</p>
-              <p className="text-2xl font-bold text-gray-900">{events.length}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Events</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-foreground">{events.length}</p>
             </div>
             <Calendar className="w-8 h-8 text-blue-600" />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-4">
+        <div className="bg-white dark:bg-card rounded-lg border dark:border-border p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Classes</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Classes</p>
               <p className="text-2xl font-bold text-blue-600">
                 {events.filter(e => e.event_type === 'class').length}
               </p>
             </div>
-            <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center">
+            <div className="w-8 h-8 rounded bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
               <span className="text-blue-600 font-bold text-sm">C</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-4">
+        <div className="bg-white dark:bg-card rounded-lg border dark:border-border p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Tests</p>
-              <p className="text-2xl font-bold text-yellow-600">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tests</p>
+              <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                 {events.filter(e => e.event_type === 'weekly_test').length}
               </p>
             </div>
-            <div className="w-8 h-8 rounded bg-yellow-100 flex items-center justify-center">
-              <span className="text-yellow-600 font-bold text-sm">T</span>
+            <div className="w-8 h-8 rounded bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
+              <span className="text-yellow-600 dark:text-yellow-400 font-bold text-sm">T</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border p-4">
+        <div className="bg-white dark:bg-card rounded-lg border dark:border-border p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Webinars</p>
-              <p className="text-2xl font-bold text-red-600">
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Webinars</p>
+              <p className="text-2xl font-bold text-red-600 dark:text-red-400">
                 {events.filter(e => e.event_type === 'webinar').length}
               </p>
             </div>
-            <div className="w-8 h-8 rounded bg-red-100 flex items-center justify-center">
-              <span className="text-red-600 font-bold text-sm">W</span>
+            <div className="w-8 h-8 rounded bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+              <span className="text-red-600 dark:text-red-400 font-bold text-sm">W</span>
             </div>
           </div>
         </div>

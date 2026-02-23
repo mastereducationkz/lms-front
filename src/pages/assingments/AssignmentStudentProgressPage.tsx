@@ -258,14 +258,14 @@
       switch (status) {
         case 'graded':
           return (
-            <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">
+            <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/30">
               <CheckCircle className="w-3 h-3 mr-1" />
               Graded
             </Badge>
           );
         case 'submitted':
           return (
-            <Badge variant="default" className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+            <Badge variant="default" className="bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/30">
               <Clock className="w-3 h-3 mr-1" />
               Submitted
             </Badge>
@@ -323,10 +323,10 @@
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center">
-                <AlertCircle className="w-5 h-5 text-red-600 mr-2" />
-                <h3 className="font-semibold text-red-800">Error</h3>
+                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mr-2" />
+                <h3 className="font-semibold text-red-800 dark:text-red-400">Error</h3>
               </div>
-              <p className="text-red-600 mt-1">{error}</p>
+              <p className="text-red-600 dark:text-red-400 mt-1">{error}</p>
               <Button onClick={loadAssignmentProgress} className="mt-3">
                 Try Again
               </Button>
@@ -348,7 +348,7 @@
           </div>
           <Card>
             <CardContent className="p-6 text-center">
-              <p className="text-gray-600">No data available</p>
+              <p className="text-gray-600 dark:text-gray-400">No data available</p>
             </CardContent>
           </Card>
         </div>
@@ -381,7 +381,7 @@
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <p className="text-sm text-gray-600">Due Date</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Due Date</p>
                 <p className="font-medium">
                   {data.assignment.due_date ? (
                     <span className={`flex items-center ${isOverdue(data.assignment.due_date) ? 'text-red-600' : ''}`}>
@@ -395,16 +395,16 @@
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Max Score</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Max Score</p>
                 <p className="font-medium">{data.assignment.max_score} points</p>
               </div>
               <div>
-                <p className="text-sm text-gray-600">Total Students</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Total Students</p>
                 <p className="font-medium">{data.summary.total_students} students</p>
               </div>
 
               <div>
-                <p className="text-sm text-gray-600">Late Penalty</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Late Penalty</p>
                 <p className="font-medium">
                   {data.assignment.late_penalty_enabled 
                     ? `${data.assignment.late_penalty_multiplier}x multiplier` 
@@ -420,9 +420,9 @@
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center">
-                <FileText className="w-6 h-6 text-gray-600 mr-2" />
+                <FileText className="w-6 h-6 text-gray-600 dark:text-gray-400 mr-2" />
                 <div>
-                  <div className="text-sm text-gray-600">Not Submitted</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Not Submitted</div>
                   <div className="text-xl font-bold">{data.summary.not_submitted}</div>
                 </div>
               </div>
@@ -434,7 +434,7 @@
               <div className="flex items-center">
                 <Clock className="w-6 h-6 text-blue-600 mr-2" />
                 <div>
-                  <div className="text-sm text-gray-600">Submitted</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Submitted</div>
                   <div className="text-xl font-bold">{data.summary.submitted}</div>
                 </div>
               </div>
@@ -446,7 +446,7 @@
               <div className="flex items-center">
                 <CheckCircle className="w-6 h-6 text-green-600 mr-2" />
                 <div>
-                  <div className="text-sm text-gray-600">Graded</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Graded</div>
                   <div className="text-xl font-bold">{data.summary.graded}</div>
                 </div>
               </div>
@@ -458,7 +458,7 @@
               <div className="flex items-center">
                 <AlertCircle className="w-6 h-6 text-red-600 mr-2" />
                 <div>
-                  <div className="text-sm text-gray-600">Overdue</div>
+                  <div className="text-sm text-gray-600 dark:text-gray-400">Overdue</div>
                   <div className="text-xl font-bold">{data.summary.overdue}</div>
                 </div>
               </div>
@@ -477,49 +477,49 @@
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {data.source_breakdown.course && (
-                  <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/10 rounded-lg">
                     <div>
-                      <div className="text-sm text-blue-600">Course Students</div>
-                      <div className="text-lg font-bold text-blue-800">{data.source_breakdown.course}</div>
+                      <div className="text-sm text-blue-600 dark:text-blue-400">Course Students</div>
+                      <div className="text-lg font-bold text-blue-800 dark:text-blue-400">{data.source_breakdown.course}</div>
                     </div>
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <span className="text-blue-600 text-sm font-medium">C</span>
+                    <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 dark:text-blue-400 text-sm font-medium">C</span>
                     </div>
                   </div>
                 )}
                 
                 {data.source_breakdown.group && (
-                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/10 rounded-lg">
                     <div>
-                      <div className="text-sm text-green-600">Group Students</div>
-                      <div className="text-lg font-bold text-green-800">{data.source_breakdown.group}</div>
+                      <div className="text-sm text-green-600 dark:text-green-400">Group Students</div>
+                      <div className="text-lg font-bold text-green-800 dark:text-green-400">{data.source_breakdown.group}</div>
                     </div>
-                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                      <span className="text-green-600 text-sm font-medium">G</span>
+                    <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                      <span className="text-green-600 dark:text-green-400 text-sm font-medium">G</span>
                     </div>
                   </div>
                 )}
                 
                 {data.source_breakdown.both && (
-                  <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/10 rounded-lg">
                     <div>
-                      <div className="text-sm text-purple-600">Course & Group</div>
-                      <div className="text-lg font-bold text-purple-800">{data.source_breakdown.both}</div>
+                      <div className="text-sm text-purple-600 dark:text-purple-400">Course & Group</div>
+                      <div className="text-lg font-bold text-purple-800 dark:text-purple-400">{data.source_breakdown.both}</div>
                     </div>
-                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                      <span className="text-purple-600 text-sm font-medium">B</span>
+                    <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+                      <span className="text-purple-600 dark:text-purple-400 text-sm font-medium">B</span>
                     </div>
                   </div>
                 )}
                 
                 {data.source_breakdown.unknown && (
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-secondary rounded-lg">
                     <div>
-                      <div className="text-sm text-gray-600">Unknown Source</div>
-                      <div className="text-lg font-bold text-gray-800">{data.source_breakdown.unknown}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Unknown Source</div>
+                      <div className="text-lg font-bold text-gray-800 dark:text-foreground">{data.source_breakdown.unknown}</div>
                     </div>
-                    <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                      <span className="text-gray-600 text-sm font-medium">?</span>
+                    <div className="w-8 h-8 bg-gray-100 dark:bg-secondary rounded-full flex items-center justify-center">
+                      <span className="text-gray-600 dark:text-gray-400 text-sm font-medium">?</span>
                     </div>
                   </div>
                 )}
@@ -559,7 +559,7 @@
                   <TableBody>
                     {filteredStudents.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                        <TableCell colSpan={6} className="text-center py-8 text-gray-500 dark:text-gray-400">
                           No students found with this status
                         </TableCell>
                       </TableRow>
@@ -571,7 +571,7 @@
                           <TableCell>
                             <div>
                               <div className="font-medium">{student.name}</div>
-                              <div className="text-sm text-gray-600">{student.email}</div>
+                              <div className="text-sm text-gray-600 dark:text-gray-400">{student.email}</div>
                               {studentExtension && (
                                 <div className="text-sm text-green-600 flex items-center mt-1">
                                   <Calendar className="w-3 h-3 mr-1" />
@@ -600,7 +600,7 @@
                             {student.submitted_at ? (
                               <div className="flex flex-col">
                                 <div className="flex items-center">
-                                  <Clock className="w-4 h-4 mr-1 text-gray-600" />
+                                  <Clock className="w-4 h-4 mr-1 text-gray-600 dark:text-gray-400" />
                                   {new Date(student.submitted_at).toLocaleDateString()}
                                 </div>
                                 {student.is_late && (
@@ -662,7 +662,7 @@
             </DialogHeader>
             <div className="p-2 h-full overflow-y-auto">
               {loadingSubmission ? (
-                <div className="text-sm text-gray-500">Loading submission...</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Loading submission...</div>
               ) : selectedSubmission ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
                   {/* Left side - Student info and submission details */}
@@ -670,8 +670,8 @@
                     {/* Multi-Task Submission View */}
                     {data?.assignment.assignment_type === 'multi_task' && (
                       <div className="mb-6">
-                        <h3 className="text-sm font-medium text-gray-600 mb-2">Student's Work</h3>
-                        <div className="border rounded-lg p-4 bg-white">
+                        <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Student's Work</h3>
+                        <div className="border rounded-lg p-4 bg-white dark:bg-card dark:border-border">
                           <MultiTaskSubmission 
                             assignment={data.assignment}
                             initialAnswers={selectedSubmission.answers}
@@ -686,13 +686,13 @@
                     {/* File Upload View (Legacy or mixed) */}
                     {(selectedSubmission.file_url || (selectedSubmission.answers?.files && selectedSubmission.answers.files.length > 0)) && (
                       <div className="space-y-4">
-                        <div className="text-sm font-medium text-gray-600">Submitted Files</div>
+                        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Submitted Files</div>
                         
                         {/* Multiple Files List */}
                         {selectedSubmission.answers?.files && selectedSubmission.answers.files.length > 0 ? (
                             <div className="space-y-3">
                                 {selectedSubmission.answers.files.map((file: any, index: number) => (
-                                    <div key={index} className="bg-gray-50 p-3 rounded border">
+                                    <div key={index} className="bg-gray-50 dark:bg-secondary p-3 rounded border dark:border-border">
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="text-sm font-medium">
                                                 {file.file_name || file.submitted_file_name || `File ${index + 1}`}
@@ -739,10 +739,10 @@
                             </div>
                         ) : selectedSubmission.file_url ? (
                             /* Legacy Single File Fallback */
-                            <div className="bg-gray-50 p-3 rounded border">
-                                <div className="flex items-center justify-between mb-2">
-                                    <div className="text-sm">
-                                    {selectedSubmission.submitted_file_name || 'Download file'}
+            <div className="bg-gray-50 dark:bg-secondary p-3 rounded border dark:border-border">
+                <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm">
+                    {selectedSubmission.submitted_file_name || 'Download file'}
                                     </div>
                                     <Button
                                     variant="outline"
@@ -757,7 +757,7 @@
                                 {/* PDF Viewer */}
                                 {selectedSubmission.submitted_file_name?.toLowerCase().endsWith('.pdf') && (
                                     <div className="mt-3">
-                                    <div className="text-xs text-gray-500 mb-2">PDF Preview:</div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">PDF Preview:</div>
                                     <div className="border rounded overflow-hidden h-[60vh]">
                                         <iframe
                                         src={`${buildFileUrl(selectedSubmission.file_url)}#toolbar=0&navpanes=0&scrollbar=0`}
@@ -792,11 +792,11 @@
                   {/* Right side - Grading form */}
                   <div className="space-y-4 h-full overflow-auto p-4">
                   <div className="space-y-2">
-                      <div className="text-sm font-medium text-gray-600">Student Information</div>
-                      <div className="bg-gray-50 p-3 rounded border">
+                      <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Student Information</div>
+                      <div className="bg-gray-50 dark:bg-secondary p-3 rounded border dark:border-border">
                         <div className="font-medium">{selectedSubmission.user_name || 'Student #' + selectedSubmission.user_id}</div>
                         {selectedSubmission.submitted_at && (
-                          <div className="text-sm text-gray-600 mt-1">
+                          <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                             Submitted: {new Date(selectedSubmission.submitted_at).toLocaleString()}
                           </div>
                         )}
@@ -806,9 +806,9 @@
                     <div className="space-y-3">
                       {/* Auto-Check Results */}
                       {selectedSubmission.answers?.auto_check_result && (
-                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="p-4 bg-blue-50 dark:bg-blue-900/10 rounded-lg border border-blue-200 dark:border-blue-800">
                           <div className="flex items-center justify-between mb-3">
-                            <span className="text-sm font-semibold text-blue-900">Auto-Check Results</span>
+                            <span className="text-sm font-semibold text-blue-900 dark:text-blue-400">Auto-Check Results</span>
                             <Badge variant="outline" className={
                               selectedSubmission.answers.auto_check_result.correct_count === selectedSubmission.answers.auto_check_result.total_count
                                 ? 'border-green-500 text-green-700'
@@ -829,8 +829,8 @@
                                     key={field.id} 
                                     className={`flex items-center justify-between p-2 rounded text-sm ${
                                       isCorrect 
-                                        ? 'bg-green-100 border border-green-200' 
-                                        : 'bg-red-100 border border-red-200'
+                                        ? 'bg-green-100 border border-green-200 dark:bg-green-900/20 dark:border-green-800' 
+                                        : 'bg-red-100 border border-red-200 dark:bg-red-900/20 dark:border-red-800'
                                     }`}
                                   >
                                     <div className="flex-1">
@@ -839,7 +839,7 @@
                                     </div>
                                     <div className="flex items-center gap-2">
                                       {!isCorrect && (
-                                        <span className="text-xs text-gray-500">
+                                        <span className="text-xs text-gray-500 dark:text-gray-400">
                                           (correct: <span className="font-mono">{field.correct_answer}</span>)
                                         </span>
                                       )}
@@ -857,7 +857,7 @@
                       )}
 
                       <div>
-                        <label className="text-sm text-gray-600">Score</label>
+                        <label className="text-sm text-gray-600 dark:text-gray-400">Score</label>
                         <Input
                           type="number"
                           min={0}
@@ -866,11 +866,11 @@
                           onChange={(e) => setScoreInput(e.target.value)}
                           className="mt-1"
                         />
-                        <div className="text-xs text-gray-500 mt-1">Max score: {data?.assignment.max_score}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">Max score: {data?.assignment.max_score}</div>
                       </div>
                       
                       <div>
-                        <label className="text-sm text-gray-600">Feedback</label>
+                        <label className="text-sm text-gray-600 dark:text-gray-400">Feedback</label>
                         <Textarea
                           rows={6}
                           value={feedbackInput}
@@ -898,7 +898,7 @@
                   </div>
                 </div>
               ) : (
-                <div className="text-sm text-gray-500">Select a submission to grade.</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">Select a submission to grade.</div>
               )}
             </div>
           </DialogContent>
@@ -935,8 +935,8 @@
                 />
               </div>
               {extensionDialog.studentId && extensions.find(ext => ext.student_id === extensionDialog.studentId) && (
-                <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                  <span className="text-sm text-yellow-800">This student already has an extension</span>
+                <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                  <span className="text-sm text-yellow-800 dark:text-yellow-400">This student already has an extension</span>
                   <Button
                     variant="destructive"
                     size="sm"

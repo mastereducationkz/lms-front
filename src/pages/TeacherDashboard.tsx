@@ -612,31 +612,31 @@ export default function TeacherDashboard() {
 
       {/* Missing Attendance Reminders */}
       {stats?.missing_attendance_reminders && stats.missing_attendance_reminders.length > 0 && (
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-3">
+        <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900/40 rounded-md p-3">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-medium text-yellow-900 dark:text-yellow-400">
+            <h3 className="text-xs font-medium text-yellow-900 dark:text-yellow-500/80">
               Attendance Required ({stats.missing_attendance_reminders.length})
             </h3>
             <Button
               onClick={() => navigate('/attendance')}
               size="sm"
               variant="outline"
-              className="text-xs h-6 px-2 border-yellow-300 dark:border-yellow-600 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/20"
+              className="text-xs h-6 px-2 border-yellow-300 dark:border-yellow-900/40 text-yellow-700 dark:text-yellow-500/80 hover:bg-yellow-100 dark:hover:bg-yellow-900/20"
             >
               Go to Attendance
             </Button>
           </div>
           <div className="space-y-1.5">
             {stats.missing_attendance_reminders.slice(0, 3).map((reminder) => (
-              <div key={reminder.event_id} className="flex items-center justify-between text-xs py-1.5 border-b border-yellow-100 dark:border-yellow-800 last:border-0">
+              <div key={reminder.event_id} className="flex items-center justify-between text-xs py-1.5 border-b border-yellow-100 dark:border-yellow-900/30 last:border-0">
                 <div className="flex-1 min-w-0 mr-3">
-                  <p className="text-yellow-900 dark:text-yellow-400 truncate font-medium">{reminder.title}</p>
-                  <p className="text-[11px] text-yellow-700 dark:text-yellow-400">
+                  <p className="text-yellow-900 dark:text-gray-200 truncate font-medium">{reminder.title}</p>
+                  <p className="text-[11px] text-yellow-700 dark:text-gray-400">
                     {reminder.group_name} • {new Date(reminder.event_date).toLocaleDateString()}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-[11px] text-yellow-700 dark:text-yellow-400">
+                  <span className="text-[11px] text-yellow-700 dark:text-gray-400">
                     {reminder.recorded_students}/{reminder.expected_students}
                   </span>
                   <Button
@@ -649,7 +649,7 @@ export default function TeacherDashboard() {
                     }}
                     size="sm"
                     variant="ghost"
-                    className="text-[11px] h-6 px-2 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/20"
+                    className="text-[11px] h-6 px-2 text-yellow-700 dark:text-gray-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/20"
                   >
                     Mark
                   </Button>
@@ -1264,10 +1264,9 @@ export default function TeacherDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 my-4">
             {/* Left side - Submission Content View (2/3 width) */}
             <div className="lg:col-span-2 space-y-4">
-              <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700">
+              <div className="bg-slate-50 dark:bg-и p-4 rounded-lg border dark:border-border">
                 <h3 className="font-semibold text-gray-900 dark:text-foreground mb-4 flex items-center">
-                  <FileText className="w-4 h-4 mr-2" />
-                  Student's Work
+                    Student's Work
                 </h3>
                 
                 {currentAssignment?.assignment_type === 'multi_task' && selectedSubmission ? (

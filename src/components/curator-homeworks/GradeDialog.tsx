@@ -173,9 +173,8 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
             </div>
 
             {/* Submission Content */}
-            <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border">
+            <div className="bg-slate-50 dark:bg-secondary p-4 rounded-lg border dark:border-border">
               <h3 className="font-semibold mb-3 flex items-center text-sm">
-                <FileText className="w-4 h-4 mr-2" />
                 Student's Work
               </h3>
               {renderSubmissionContent()}

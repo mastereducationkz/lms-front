@@ -51,9 +51,9 @@ export default function EditEvent() {
   if (error) {
     return (
       <div className="max-w-4xl mx-auto p-4 sm:p-6">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <h2 className="text-lg font-semibold text-red-800 mb-2">Loading Error</h2>
-          <p className="text-red-600">{error}</p>
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <h2 className="text-lg font-semibold text-red-800 dark:text-red-400 mb-2">Loading Error</h2>
+          <p className="text-red-600 dark:text-red-400">{error}</p>
           <button 
             onClick={() => navigate('/admin/events')}
             className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
@@ -68,9 +68,9 @@ export default function EditEvent() {
   if (!event) {
     return (
       <div className="max-w-4xl mx-auto p-4 sm:p-6">
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <h2 className="text-lg font-semibold text-yellow-800 mb-2">Event Not Found</h2>
-          <p className="text-yellow-600">The requested event does not exist or has been deleted.</p>
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+          <h2 className="text-lg font-semibold text-yellow-800 dark:text-yellow-400 mb-2">Event Not Found</h2>
+          <p className="text-yellow-600 dark:text-yellow-400">The requested event does not exist or has been deleted.</p>
           <button 
             onClick={() => navigate('/admin/events')}
             className="mt-4 px-4 py-2 bg-yellow-600 text-white rounded hover:bg-yellow-700"

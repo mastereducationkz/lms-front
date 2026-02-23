@@ -235,17 +235,17 @@ export default function TeacherClassPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground flex items-center">
             <GraduationCap className="w-8 h-8 mr-3 text-blue-600" />
             My Class
           </h1>
-          <p className="text-gray-600 mt-1">Manage and monitor your students</p>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage and monitor your students</p>
         </div>
         <div className="flex items-center gap-3">
           <Button
             onClick={() => setIsWeeklyAwardsOpen(true)}
             variant="outline"
-            className="border-gray-300 text-gray-700 hover:bg-gray-50"
+            className="border-gray-300 dark:border-border text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-secondary"
           >
             🏆 Weekly Awards
           </Button>
@@ -267,8 +267,8 @@ export default function TeacherClassPage() {
                 <Users className="w-6 h-6 text-blue-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Groups</p>
-                <p className="text-2xl font-bold text-gray-900">{groups.length}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Groups</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-foreground">{groups.length}</p>
               </div>
             </div>
           </CardContent>
@@ -281,8 +281,8 @@ export default function TeacherClassPage() {
                 <UserIcon className="w-6 h-6 text-green-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Students</p>
-                <p className="text-2xl font-bold text-gray-900">{totalStudents}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Students</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-foreground">{totalStudents}</p>
               </div>
             </div>
           </CardContent>
@@ -295,8 +295,8 @@ export default function TeacherClassPage() {
                 <BookOpen className="w-6 h-6 text-purple-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Active Students</p>
-                <p className="text-2xl font-bold text-gray-900">{totalActiveStudents}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Students</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-foreground">{totalActiveStudents}</p>
               </div>
             </div>
           </CardContent>
@@ -309,8 +309,8 @@ export default function TeacherClassPage() {
                 <TrendingUp className="w-6 h-6 text-orange-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Avg Progress</p>
-                <p className="text-2xl font-bold text-gray-900">{overallAverageProgress.toFixed(1)}%</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Progress</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-foreground">{overallAverageProgress.toFixed(1)}%</p>
               </div>
             </div>
           </CardContent>
@@ -354,8 +354,8 @@ export default function TeacherClassPage() {
       ) : filteredGroups.length === 0 ? (
         <div className="text-center py-12">
           <GraduationCap className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No groups found</h3>
-          <p className="text-gray-600">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-foreground mb-2">No groups found</h3>
+          <p className="text-gray-600 dark:text-gray-400">
             {searchQuery ? 'No groups or students match your search.' : 'You don\'t have any groups assigned yet.'}
           </p>
         </div>
@@ -381,11 +381,11 @@ export default function TeacherClassPage() {
                     <div>
                       <CardTitle className="text-lg">{group.name}</CardTitle>
                       {group.description && (
-                        <p className="text-sm text-gray-600 mt-1">{group.description}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{group.description}</p>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                     <span className="flex items-center gap-1">
                       <Users className="w-4 h-4" />
                       {group.total_students} students
@@ -406,7 +406,7 @@ export default function TeacherClassPage() {
                       className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
                         (activeTab[group.id] || 'general') === 'general'
                           ? 'border-blue-600 text-blue-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-700'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                       }`}
                     >
                       General Progress
@@ -416,7 +416,7 @@ export default function TeacherClassPage() {
                       className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
                         activeTab[group.id] === 'weekly'
                           ? 'border-blue-600 text-blue-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-700'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                       }`}
                     >
                       Weekly Activity
@@ -425,43 +425,43 @@ export default function TeacherClassPage() {
 
                   {(activeTab[group.id] || 'general') === 'general' ? (
                     group.students.length === 0 ? (
-                      <p className="text-gray-500 text-center py-4">No students in this group</p>
+                      <p className="text-gray-500 dark:text-gray-400 text-center py-4">No students in this group</p>
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full">
-                          <thead className="bg-gray-50">
+                          <thead className="bg-gray-50 dark:bg-secondary">
                             <tr>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                 Student
                               </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                 Overall Progress
                               </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                 Lessons
                               </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                 Steps
                               </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                 Time Spent
                               </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                 Status
                               </th>
                             </tr>
                           </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
+                          <tbody className="bg-white dark:bg-card divide-y divide-gray-200 dark:divide-border">
                             {group.students.map((student) => {
                               const stats = studentStats[student.id];
                               return (
-                                <tr key={student.id} className="hover:bg-gray-50">
+                                <tr key={student.id} className="hover:bg-gray-50 dark:hover:bg-secondary">
                                   <td className="px-4 py-4 whitespace-nowrap">
                                     <div>
-                                      <div className="text-sm font-medium text-gray-900">
+                                      <div className="text-sm font-medium text-gray-900 dark:text-foreground">
                                         {student.name || student.full_name}
                                       </div>
-                                      <div className="text-sm text-gray-500">{student.email}</div>
+                                      <div className="text-sm text-gray-500 dark:text-gray-400">{student.email}</div>
                                       {student.student_id && (
                                         <div className="text-xs text-gray-400">ID: {student.student_id}</div>
                                       )}
@@ -473,36 +473,36 @@ export default function TeacherClassPage() {
                                         value={stats?.overall_completion_percentage || 0} 
                                         className="w-20 h-2"
                                       />
-                                      <span className="text-sm font-medium text-gray-900">
+                                      <span className="text-sm font-medium text-gray-900 dark:text-foreground">
                                         {stats?.overall_completion_percentage?.toFixed(1) || 0}%
                                       </span>
                                     </div>
-                                    <div className="text-xs text-gray-500 mt-1">
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                       {stats?.total_courses || 0} courses
                                     </div>
                                   </td>
                                   <td className="px-4 py-4 whitespace-nowrap">
-                                    <div className="text-sm text-gray-900">
+                                    <div className="text-sm text-gray-900 dark:text-foreground">
                                       {stats?.completed_lessons || 0}/{stats?.total_lessons || 0}
                                     </div>
-                                    <div className="text-xs text-gray-500">
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">
                                       {stats?.total_lessons ? ((stats.completed_lessons / stats.total_lessons) * 100).toFixed(1) : 0}% complete
                                     </div>
                                   </td>
                                   <td className="px-4 py-4 whitespace-nowrap">
-                                    <div className="text-sm text-gray-900">
+                                    <div className="text-sm text-gray-900 dark:text-foreground">
                                       {stats?.completed_steps || 0}/{stats?.total_steps || 0}
                                     </div>
-                                    <div className="text-xs text-gray-500">
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">
                                       {stats?.completed_steps ? ((stats.completed_steps / stats.total_steps) * 100).toFixed(1) : 0}% complete
                                     </div>
                                   </td>
                                   <td className="px-4 py-4 whitespace-nowrap">
-                                    <div className="flex items-center gap-1 text-sm text-gray-900">
+                                    <div className="flex items-center gap-1 text-sm text-gray-900 dark:text-foreground">
                                       <Clock className="w-4 h-4" />
                                       {stats?.total_time_spent_minutes || 0} min
                                     </div>
-                                    <div className="text-xs text-gray-500">
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">
                                       {stats?.total_time_spent_minutes ? Math.floor(stats.total_time_spent_minutes / 60) : 0}h {stats?.total_time_spent_minutes ? stats.total_time_spent_minutes % 60 : 0}m
                                     </div>
                                   </td>
@@ -526,35 +526,35 @@ export default function TeacherClassPage() {
                           <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
                         </div>
                       ) : (!groupWeeklyLeaderboard[group.id] || groupWeeklyLeaderboard[group.id].length === 0) ? (
-                        <div className="text-center py-8 bg-gray-50 rounded-lg">
-                          <TrendingUp className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                          <p className="text-gray-500">No activity recorded for this week yet.</p>
+                        <div className="text-center py-8 bg-gray-50 dark:bg-secondary rounded-lg">
+                          <TrendingUp className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                          <p className="text-gray-500 dark:text-gray-400">No activity recorded for this week yet.</p>
                         </div>
                       ) : (
                         <>
                           {/* Clean Table Layout */}
-                          <div className="overflow-hidden border border-gray-100 rounded-lg">
+                          <div className="overflow-hidden border border-gray-100 dark:border-border rounded-lg">
                             <table className="w-full">
-                              <thead className="bg-gray-50/50">
+                              <thead className="bg-gray-50/50 dark:bg-secondary">
                                 <tr>
-                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-16">Rank</th>
-                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Student</th>
-                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Weekly Points</th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">Rank</th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Student</th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Weekly Points</th>
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-gray-100">
+                              <tbody className="divide-y divide-gray-100 dark:divide-border">
                                 {groupWeeklyLeaderboard[group.id].map((student, index) => (
-                                  <tr key={student.user_id} className="hover:bg-gray-50 transition-colors">
+                                  <tr key={student.user_id} className="hover:bg-gray-50 dark:hover:bg-secondary transition-colors">
                                     <td className="px-4 py-3 px-6">
-                                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-50 border border-gray-100 font-medium text-sm text-gray-600">
+                                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-50 dark:bg-secondary border border-gray-100 dark:border-border font-medium text-sm text-gray-600 dark:text-gray-400">
                                         {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : index + 1}
                                       </div>
                                     </td>
                                     <td className="px-4 py-3">
-                                      <span className="font-medium text-gray-900">{student.user_name}</span>
+                                      <span className="font-medium text-gray-900 dark:text-foreground">{student.user_name}</span>
                                     </td>
                                     <td className="px-4 py-3">
-                                      <span className="font-medium text-gray-700">{student.points}</span>
+                                      <span className="font-medium text-gray-700 dark:text-gray-300">{student.points}</span>
                                     </td>
                                   </tr>
                                 ))}
@@ -564,11 +564,11 @@ export default function TeacherClassPage() {
                         </>
                       )}
                       
-                      <div className="bg-gray-50 p-4 rounded-lg flex items-start gap-3 border border-gray-200">
-                        <Target className="w-5 h-5 text-gray-600 mt-0.5" />
+                      <div className="bg-gray-50 dark:bg-secondary p-4 rounded-lg flex items-start gap-3 border border-gray-200 dark:border-border">
+                        <Target className="w-5 h-5 text-gray-600 dark:text-gray-400 mt-0.5" />
                         <div>
-                          <p className="text-sm font-medium text-gray-900">Weekly Award Tip</p>
-                          <p className="text-xs text-gray-600 mt-1">
+                          <p className="text-sm font-medium text-gray-900 dark:text-foreground">Weekly Award Tip</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                             This view shows students ranked by points earned since last Monday. 
                             You can reward top performers with extra bonus points to boost motivation!
                           </p>

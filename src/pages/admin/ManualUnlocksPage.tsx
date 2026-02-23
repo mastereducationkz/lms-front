@@ -171,12 +171,12 @@ export default function ManualUnlocksPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 font-sans p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-background text-gray-900 dark:text-foreground font-sans p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header Section */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Manual Unlocks</h1>
-          <p className="text-gray-600 mt-1">Manage student and group access overrides for course lessons</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-foreground">Manual Unlocks</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage student and group access overrides for course lessons</p>
         </div>
 
         {/* Two Column Grid */}
@@ -191,11 +191,11 @@ export default function ManualUnlocksPage() {
                   placeholder="Search students or groups..." 
                   value={searchQuery}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
-                  className="pl-9 h-10 border-gray-200 bg-white"
+                  className="pl-9 h-10 border-gray-200 dark:border-border bg-white dark:bg-card"
                 />
               </div>
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TargetType)} className="w-full sm:w-auto">
-                <TabsList className="grid grid-cols-2 w-full sm:w-[240px] bg-gray-100">
+                <TabsList className="grid grid-cols-2 w-full sm:w-[240px] bg-gray-100 dark:bg-secondary">
                   <TabsTrigger value="user" className="text-sm font-medium">
                     Students
                   </TabsTrigger>
@@ -210,8 +210,8 @@ export default function ManualUnlocksPage() {
               {filteredTargets.length === 0 ? (
                 <Card>
                   <CardContent className="p-8 text-center">
-                    <UserIcon className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-600">No results found</p>
+                    <UserIcon className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                    <p className="text-gray-600 dark:text-gray-400">No results found</p>
                   </CardContent>
                 </Card>
               ) : (
@@ -225,14 +225,14 @@ export default function ManualUnlocksPage() {
                         type: activeTab, 
                         name: activeTab === 'user' ? (target.name || target.full_name || '') : target.name 
                       })}
-                      className={`cursor-pointer transition-all hover:border-blue-300 ${isSelected ? 'ring-2 ring-blue-500 border-transparent shadow-sm' : 'border-gray-200'}`}
+                      className={`cursor-pointer transition-all hover:border-blue-300 ${isSelected ? 'ring-2 ring-blue-500 border-transparent shadow-sm' : 'border-gray-200 dark:border-border'}`}
                     >
                       <CardContent className="p-4 flex items-center justify-between">
                         <div className="min-w-0">
-                          <h3 className="text-sm font-bold text-gray-900 truncate">
+                          <h3 className="text-sm font-bold text-gray-900 dark:text-foreground truncate">
                             {activeTab === 'user' ? (target.name || target.full_name) : target.name}
                           </h3>
-                          <p className="text-xs text-gray-500 truncate mt-0.5">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
                             {activeTab === 'user' ? target.email : `${target.student_count || 0} Students`}
                           </p>
                         </div>
@@ -247,19 +247,19 @@ export default function ManualUnlocksPage() {
 
           {/* Right Column: Details (Sticky) */}
           <div className="lg:sticky lg:top-6">
-            <Card className="border-gray-200 shadow-sm overflow-hidden min-h-[400px]">
-              <CardHeader className="bg-gray-50 border-b p-4">
+            <Card className="border-gray-200 dark:border-border shadow-sm overflow-hidden min-h-[400px]">
+              <CardHeader className="bg-gray-50 dark:bg-secondary border-b p-4">
                 <div className="flex flex-col gap-4">
                   <div>
-                    <CardTitle className="text-lg font-bold text-gray-900">
+                    <CardTitle className="text-lg font-bold text-gray-900 dark:text-foreground">
                       {selectedTarget ? selectedTarget.name : 'Target Details'}
                     </CardTitle>
                     {selectedTarget && (
-                      <p className="text-xs text-gray-600 mt-1">Manage overrides for this {selectedTarget.type}</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Manage overrides for this {selectedTarget.type}</p>
                     )}
                   </div>
                   <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
-                    <SelectTrigger className="w-full bg-white border-gray-200 text-sm">
+                    <SelectTrigger className="w-full bg-white dark:bg-card border-gray-200 dark:border-border text-sm">
                       <SelectValue placeholder="Select a course..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -275,15 +275,15 @@ export default function ManualUnlocksPage() {
               <CardContent className="p-0">
                 {!selectedTarget ? (
                   <div className="py-24 flex flex-col items-center justify-center text-center px-8">
-                    <UserIcon className="w-12 h-12 text-gray-300 mb-4" />
-                    <h5 className="font-bold text-gray-900">No Target Selected</h5>
-                    <p className="text-gray-600 text-sm mt-1">Pick a student or group from the list.</p>
+                    <UserIcon className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-4" />
+                    <h5 className="font-bold text-gray-900 dark:text-foreground">No Target Selected</h5>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">Pick a student or group from the list.</p>
                   </div>
                 ) : !selectedCourseId ? (
                   <div className="py-24 flex flex-col items-center justify-center text-center px-8">
-                    <Layout className="w-12 h-12 text-gray-300 mb-4" />
-                    <h5 className="font-bold text-gray-900">No Course Selected</h5>
-                    <p className="text-gray-600 text-sm mt-1">Choose a course to view lessons.</p>
+                    <Layout className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-4" />
+                    <h5 className="font-bold text-gray-900 dark:text-foreground">No Course Selected</h5>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mt-1">Choose a course to view lessons.</p>
                   </div>
                 ) : isStructureLoading ? (
                   <div className="py-24 flex items-center justify-center">
@@ -293,23 +293,23 @@ export default function ManualUnlocksPage() {
                   <div className="max-h-[calc(100vh-280px)] overflow-y-auto">
                     {courseStructure.map((module) => (
                       <div key={module.id}>
-                        <div className="bg-gray-50/80 px-4 py-2 border-y border-gray-100 flex items-center justify-between">
-                          <span className="text-xs font-bold text-gray-700 uppercase">{module.title}</span>
-                          <span className="text-[11px] font-medium text-gray-500">{module.lessons?.length || 0} Units</span>
+                        <div className="bg-gray-50/80 dark:bg-secondary px-4 py-2 border-y border-gray-100 dark:border-border flex items-center justify-between">
+                          <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase">{module.title}</span>
+                          <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">{module.lessons?.length || 0} Units</span>
                         </div>
-                        <div className="divide-y divide-gray-100">
+                        <div className="divide-y divide-gray-100 dark:divide-border">
                           {module.lessons?.map((lesson) => {
                             const unlocked = unlockedLessonIds.has(Number(lesson.id));
                             return (
-                              <div key={lesson.id} className="p-4 flex items-center justify-between hover:bg-gray-50/30">
+                              <div key={lesson.id} className="p-4 flex items-center justify-between hover:bg-gray-50/30 dark:hover:bg-secondary">
                                 <div className="space-y-1 min-w-0 flex-1 mr-4">
                                   <div className="flex items-center gap-2">
-                                    <span className="text-[11px] font-bold text-gray-500 uppercase">Unit {lesson.order_index}</span>
+                                    <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase">Unit {lesson.order_index}</span>
                                     {unlocked && (
                                       <Badge variant="outline" className="h-4 text-[10px] font-bold border-green-200 bg-green-50 text-green-700">Active Unlock</Badge>
                                     )}
                                   </div>
-                                  <div className="text-sm font-semibold text-gray-900 truncate">{lesson.title}</div>
+                                  <div className="text-sm font-semibold text-gray-900 dark:text-foreground truncate">{lesson.title}</div>
                                 </div>
                                 <Button
                                   size="sm"

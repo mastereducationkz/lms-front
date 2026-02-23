@@ -286,10 +286,10 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-foreground">
             {event ? 'Edit Event' : 'Create Event'}
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             {event ? 'Make changes to the event' : 'Fill in information about the new event'}
           </p>
         </div>
@@ -306,9 +306,9 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {error && (
-          <Alert className="border-red-200 bg-red-50">
-            <AlertCircle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">
+          <Alert className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
+            <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+            <AlertDescription className="text-red-800 dark:text-red-400">
               {error}
             </AlertDescription>
           </Alert>
@@ -381,15 +381,15 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
 
         {/* Lesson Linking (Optional for Class events) */}
         {formData.event_type === 'class' && (
-          <Card className="border-blue-100 bg-blue-50/20">
+          <Card className="border-blue-100 dark:border-blue-800 bg-blue-50/20 dark:bg-blue-900/10">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-blue-800">
+              <CardTitle className="flex items-center gap-2 text-blue-800 dark:text-blue-400">
                 <BookOpen className="w-5 h-5" />
                 Link to Course Lesson (Optional)
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-blue-600 mb-2">
+              <p className="text-sm text-blue-600 dark:text-blue-400 mb-2">
                 If this lesson corresponds to a specific item in your course catalog, you can link it here.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -643,7 +643,7 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
             {/* Courses Selection */}
             <div className="space-y-2">
               <Label className="text-base font-semibold">Courses</Label>
-              <p className="text-sm text-gray-500 mb-2">Assign to all students enrolled in these courses</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Assign to all students enrolled in these courses</p>
               {courses.map(course => (
                 <div key={course.id} className="flex items-center space-x-2">
                   <Checkbox
@@ -663,12 +663,12 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
                 <p className="text-gray-500 text-sm">No courses found</p>
               )}
             </div>
-            <div className="border-t pt-2"></div>
+            <div className="border-t dark:border-border pt-2"></div>
 
             {/* Groups Selection */}
             <div className="space-y-1">
               <Label className="text-base font-semibold">Groups</Label>
-              <p className="text-sm text-gray-500 mb-2">Assign to specific student groups</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Assign to specific student groups</p>
               {groups.map(group => (
                 <div key={group.id} className="flex items-center space-x-2">
                   <Checkbox

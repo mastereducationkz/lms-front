@@ -487,7 +487,7 @@ export default function AssignmentBuilderPage() {
         <CardContent className="space-y-4">
           <div>
             <h4 className="font-medium">{formData.title || 'Untitled Homework'}</h4>
-            <p className="text-gray-600">{formData.description || 'No description'}</p>
+            <p className="text-gray-600 dark:text-gray-400">{formData.description || 'No description'}</p>
           </div>
           {renderAssignmentTypeEditor()}
         </CardContent>
@@ -503,7 +503,7 @@ export default function AssignmentBuilderPage() {
           <h1 className="text-3xl font-bold flex items-center">
             {isEditing ? 'Edit Homework' : copyFromId ? 'Copy Homework' : 'Create Homework'}
           </h1>
-          <p className="text-gray-600 mt-1">
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             {isEditing ? 'Update existing homework' : 'Create a new homework for your students'}
           </p>
         </div>
@@ -526,10 +526,10 @@ export default function AssignmentBuilderPage() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
           <div className="flex items-center">
-            <X className="w-5 h-5 text-red-600 mr-2" />
-            <span className="text-red-800">{error}</span>
+            <X className="w-5 h-5 text-red-600 dark:text-red-400 mr-2" />
+            <span className="text-red-800 dark:text-red-400">{error}</span>
           </div>
         </div>
       )}
@@ -601,13 +601,13 @@ export default function AssignmentBuilderPage() {
                     Groups *
                   </Label>
                   {groupsLoading ? (
-                    <div className="text-sm text-gray-500">Loading groups...</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">Loading groups...</div>
                   ) : groups.length === 0 ? (
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                       No groups found. Please create a group first.
                     </p>
                   ) : (
-                    <div className="space-y-2 border rounded-md p-4 max-h-60 overflow-y-auto bg-white">
+                    <div className="space-y-2 border rounded-md p-4 max-h-60 overflow-y-auto bg-white dark:bg-card">
                       {groups.map(group => (
                         <div key={group.id} className="flex items-center space-x-2">
                           <Checkbox 
@@ -619,13 +619,13 @@ export default function AssignmentBuilderPage() {
                             htmlFor={`group-${group.id}`}
                             className="text-sm font-normal cursor-pointer"
                           >
-                            {group.name} <span className="text-xs text-gray-500">({group.student_count || 0} students)</span>
+                            {group.name} <span className="text-xs text-gray-500 dark:text-gray-400">({group.student_count || 0} students)</span>
                           </Label>
                         </div>
                       ))}
                     </div>
                   )}
-                  <div className="text-xs text-gray-500 mt-2">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                     Selected: {formData.group_ids?.length || 0} groups
                   </div>
                 </div>
@@ -669,7 +669,7 @@ export default function AssignmentBuilderPage() {
                   
                   {formData.late_penalty_enabled && (
                     <div className="pl-6">
-                      <Label htmlFor="penalty-multiplier" className="text-xs text-gray-500 mb-1 block">
+                      <Label htmlFor="penalty-multiplier" className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">
                         Score Multiplier (e.g. 0.6 means 60% of score)
                       </Label>
                       <Input
@@ -698,9 +698,9 @@ export default function AssignmentBuilderPage() {
                               const groupDueDate = formData.due_date_mapping?.[groupId];
 
                               return (
-                                  <div key={groupId} className="p-3 border rounded-lg bg-white space-y-4">
+                                  <div key={groupId} className="p-3 border rounded-lg bg-white dark:bg-card dark:border-border space-y-4">
                                       <div className="flex items-center justify-between">
-                                          <span className="text-xs font-bold text-gray-900" title={group?.name}>
+                                          <span className="text-xs font-bold text-gray-900 dark:text-foreground" title={group?.name}>
                                             {group?.name}
                                           </span>
                                       </div>
@@ -713,7 +713,7 @@ export default function AssignmentBuilderPage() {
                                                     handleEventMappingChange(groupId, parseInt(value));
                                                 }}
                                             >
-                                              <SelectTrigger className="w-full bg-gray-50 border-gray-200 h-9 text-xs">
+                                              <SelectTrigger className="w-full bg-gray-50 dark:bg-secondary border-gray-200 dark:border-border h-9 text-xs">
                                                 <SelectValue placeholder="Pick a class..." />
                                               </SelectTrigger>
                                               <SelectContent>
@@ -739,7 +739,7 @@ export default function AssignmentBuilderPage() {
                                             
                                             {Number(selectedEventId) > 0 && (
                                               <div className="pl-2 pt-1.5 space-y-1.5 border-l-2 border-blue-500">
-                                                <Label className="text-[10px] text-blue-600 uppercase font-bold tracking-tight">Set Group Deadline (Optional)</Label>
+                                                <Label className="text-[10px] text-blue-600 dark:text-blue-400 uppercase font-bold tracking-tight">Set Group Deadline (Optional)</Label>
                                                 <DateTimePicker
                                                     date={groupDueDate ? new Date(groupDueDate) : undefined}
                                                     setDate={(date) => handleGroupDueDateChange(groupId, date ? date.toISOString() : '')}
@@ -879,11 +879,11 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
         <div className="space-y-2">
           {content.teacher_file_url ? (
             // Display existing uploaded file
-            <div className="flex items-center justify-between p-3 border rounded-lg bg-blue-50 border-blue-200">
+            <div className="flex items-center justify-between p-3 border rounded-lg bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
               <div className="flex items-center space-x-2 flex-1">
                 <FileText className="w-4 h-4 text-blue-600" />
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium text-blue-900">{content.teacher_file_name || 'Reference File'}</span>
+                  <span className="text-sm font-medium text-blue-900 dark:text-blue-400">{content.teacher_file_name || 'Reference File'}</span>
                   <a 
                     href={content.teacher_file_url} 
                     target="_blank" 
@@ -912,11 +912,11 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
               </Button>
             </div>
           ) : teacherFile ? (
-            <div className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
+            <div className="flex items-center justify-between p-3 border rounded-lg bg-gray-50 dark:bg-secondary">
               <div className="flex items-center space-x-2">
                 <FileText className="w-4 h-4 text-blue-600" />
                 <span className="text-sm font-medium">{teacherFileName}</span>
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
                   ({(teacherFile.size / 1024 / 1024).toFixed(2)} MB)
                 </span>
               </div>
@@ -931,7 +931,7 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
               </Button>
             </div>
           ) : (
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
               <input
                 type="file"
                 id={uniqueId}
@@ -946,7 +946,7 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
                     <span className="text-sm font-medium text-blue-600 hover:text-blue-800">
                       Click to upload teacher's file
                     </span>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Supported: {fileTypes.map(type => type.label).join(', ')}
                     </p>
                   </div>
@@ -989,7 +989,7 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
         <div className="flex items-center justify-between mb-3">
           <div>
             <Label className="text-sm font-semibold">Answer Fields (Optional)</Label>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               Add fields for students to enter answers. System will auto-check correctness.
             </p>
           </div>
@@ -1014,7 +1014,7 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
         {(content.answer_fields || []).length > 0 && (
           <div className="space-y-3">
             {(content.answer_fields || []).map((field: any, index: number) => (
-              <div key={field.id} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg border">
+              <div key={field.id} className="flex items-start gap-2 p-3 bg-gray-50 dark:bg-secondary rounded-lg border dark:border-border">
                 <div className="flex-1 space-y-2">
                   <Input
                     placeholder="Field label (e.g., Problem 1)"

@@ -95,10 +95,10 @@ const ScoreSelect = ({
   <Select value={value.toString()} onValueChange={onChange}>
       <SelectTrigger className={cn(
           "h-full w-full border-none focus:ring-0 px-1 text-center justify-center rounded-none",
-          "hover:bg-black/5" 
+          "hover:bg-black/5 dark:hover:bg-white/5" 
       )}>
           <SelectValue>
-            <span className="truncate text-xs text-gray-900">{value}</span>
+            <span className="truncate text-xs text-gray-900 dark:text-foreground">{value}</span>
           </SelectValue>
       </SelectTrigger>
       <SelectContent>
@@ -356,10 +356,10 @@ export default function CuratorLeaderboardPage() {
   };
 
   const getPercentColor = (percent: number) => {
-      if (percent >= 90) return "bg-[#e6f4ea] text-[#137333]"; // Green
-      if (percent >= 75) return "bg-[#e8f0fe] text-[#1967d2]"; // Blue
-      if (percent >= 50) return "bg-[#fef7e0] text-[#ea8600]"; // Orange
-      return "bg-[#fce8e6] text-[#c5221f]"; // Red
+      if (percent >= 90) return "bg-[#e6f4ea] text-[#137333] dark:bg-green-900/30 dark:text-green-400";
+      if (percent >= 75) return "bg-[#e8f0fe] text-[#1967d2] dark:bg-blue-900/30 dark:text-blue-400";
+      if (percent >= 50) return "bg-[#fef7e0] text-[#ea8600] dark:bg-amber-900/30 dark:text-amber-400";
+      return "bg-[#fce8e6] text-[#c5221f] dark:bg-red-900/30 dark:text-red-400";
   };
 
   const handleManualScoreChange = (studentId: number, field: keyof StudentRow, value: string) => {
@@ -555,21 +555,21 @@ export default function CuratorLeaderboardPage() {
   };
 
   return (
-    <div className="p-4 w-full h-full bg-white space-y-4 rounded">
+    <div className="p-4 w-full h-full bg-white dark:bg-card space-y-4 rounded">
       {/* Header Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4 ">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4 dark:border-border">
         <div>
-          <h1 className="text-xl font-semibold flex items-center gap-2 text-gray-800">
-            Лидерборд {data && <span className="text-sm font-normal text-gray-500">(Неделя с {new Date(data.week_start).toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' }).replace('.', '')})</span>}
+          <h1 className="text-xl font-semibold flex items-center gap-2 text-gray-800 dark:text-foreground">
+            Лидерборд {data && <span className="text-sm font-normal text-gray-500 dark:text-gray-400">(Неделя с {new Date(data.week_start).toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' }).replace('.', '')})</span>}
           </h1>
         </div>
         
         <div className="flex items-center gap-3">
-             <div className="flex items-center border rounded-md overflow-hidden bg-white h-8">
+             <div className="flex items-center border rounded-md overflow-hidden bg-white dark:bg-card dark:border-border h-8">
                 <Button 
                     variant="ghost" 
                     size="icon"
-                    className="h-full w-8 rounded-none border-r hover:bg-gray-50"
+                    className="h-full w-8 rounded-none border-r hover:bg-gray-50 dark:hover:bg-secondary"
                     onClick={() => setCurrentWeek(Math.max(1, currentWeek - 1))}
                     disabled={currentWeek <= 1}
                 >
@@ -580,7 +580,7 @@ export default function CuratorLeaderboardPage() {
                     value={currentWeek.toString()} 
                     onValueChange={(val) => setCurrentWeek(parseInt(val))}
                 >
-                    <SelectTrigger className="px-4 text-xs font-semibold min-w-[140px] text-center bg-gray-50/50 flex items-center justify-center h-full border-none focus:ring-0 rounded-none shadow-none">
+                    <SelectTrigger className="px-4 text-xs font-semibold min-w-[140px] text-center bg-gray-50/50 dark:bg-secondary flex items-center justify-center h-full border-none focus:ring-0 rounded-none shadow-none">
                         <SelectValue>
                             {data ? (
                                  `${new Date(data.week_start).toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' }).replace('.', '')} - ${(() => {
@@ -605,7 +605,7 @@ export default function CuratorLeaderboardPage() {
                 <Button 
                     variant="ghost" 
                     size="icon"
-                    className="h-full w-8 rounded-none border-l hover:bg-gray-50"
+                    className="h-full w-8 rounded-none border-l hover:bg-gray-50 dark:hover:bg-secondary"
                     onClick={() => setCurrentWeek(currentWeek + 1)}
                 >
                     <ChevronRight className="w-4 h-4" />
@@ -628,7 +628,7 @@ export default function CuratorLeaderboardPage() {
                         }
                     }}
                 >
-                    <SelectTrigger className="h-8 rounded-md border-gray-300">
+                    <SelectTrigger className="h-8 rounded-md border-gray-300 dark:border-border">
                         <SelectValue placeholder="Выберите группу" />
                     </SelectTrigger>
                     <SelectContent>
@@ -647,7 +647,7 @@ export default function CuratorLeaderboardPage() {
                 size="sm"
                 className={cn(
                     "h-8 transition-colors rounded-md font-medium",
-                    (configChanged || changedEntries.size > 0) ? "bg-green-600 hover:bg-green-700 text-white" : "bg-gray-100 text-gray-400"
+                    (configChanged || changedEntries.size > 0) ? "bg-green-600 hover:bg-green-700 text-white" : "bg-gray-100 text-gray-400 dark:bg-secondary dark:text-gray-500"
                 )}
             >
                 {isSaving ? (
@@ -660,25 +660,25 @@ export default function CuratorLeaderboardPage() {
       </div>
 
       {/* Spreadsheet Table */}
-      <div className="border border-gray-300 overflow-x-auto">
+      <div className="border border-gray-300 dark:border-border overflow-x-auto">
             {loading || !data ? (
                 <Table className="border-collapse w-full text-xs">
-                    <TableHeader className="bg-gray-100 sticky top-0 z-30">
-                        <TableRow className="h-auto border-b border-gray-300 hover:bg-gray-100">
-                             <TableHead className="w-48 sticky left-0 z-40 bg-gray-100 p-2 border-r border-gray-300"><Skeleton className="h-4 w-20 bg-gray-200" /></TableHead>
+                    <TableHeader className="bg-gray-100 dark:bg-secondary sticky top-0 z-30">
+                        <TableRow className="h-auto border-b border-gray-300 dark:border-border hover:bg-gray-100 dark:hover:bg-secondary">
+                             <TableHead className="w-48 sticky left-0 z-40 bg-gray-100 dark:bg-secondary p-2 border-r border-gray-300 dark:border-border"><Skeleton className="h-4 w-20 bg-gray-200 dark:bg-gray-700" /></TableHead>
                              {/* Skeleton columns */}
                              {[1, 2, 3].map(i => (
-                                <TableHead key={i} className="p-0 border-r border-gray-300 h-12 min-w-[100px] align-middle bg-gray-100">
-                                   <div className="p-1 flex justify-center"><Skeleton className="h-3 w-12 bg-gray-200" /></div>
+                                <TableHead key={i} className="p-0 border-r border-gray-300 dark:border-border h-12 min-w-[100px] align-middle bg-gray-100 dark:bg-secondary">
+                                   <div className="p-1 flex justify-center"><Skeleton className="h-3 w-12 bg-gray-200 dark:bg-gray-700" /></div>
                                 </TableHead>
                             ))}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {Array.from({ length: 5 }).map((_, idx) => (
-                            <TableRow key={idx} className="border-b border-gray-300 h-8">
-                                <TableCell className="p-2 sticky left-0 z-30 bg-white border-r border-gray-300">
-                                    <Skeleton className="h-3 w-32 bg-gray-100" />
+                            <TableRow key={idx} className="border-b border-gray-300 dark:border-border h-8">
+                                <TableCell className="p-2 sticky left-0 z-30 bg-white dark:bg-card border-r border-gray-300 dark:border-border">
+                                    <Skeleton className="h-3 w-32 bg-gray-100 dark:bg-gray-700" />
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -686,24 +686,24 @@ export default function CuratorLeaderboardPage() {
                 </Table>
             ) : (
             <Table className="border-collapse w-full text-xs">
-              <TableHeader className="bg-gray-100 sticky top-0 z-30">
-                <TableRow className="h-auto border-b border-gray-300 hover:bg-gray-100">
-                    <TableHead className="w-48 sticky left-0 z-40 bg-gray-100 font-semibold text-gray-700 p-2 border-r border-gray-300 text-left align-middle text-center">
+              <TableHeader className="bg-gray-100 dark:bg-secondary sticky top-0 z-30">
+                <TableRow className="h-auto border-b border-gray-300 dark:border-border hover:bg-gray-100 dark:hover:bg-secondary">
+                    <TableHead className="w-48 sticky left-0 z-40 bg-gray-100 dark:bg-secondary font-semibold text-gray-700 dark:text-gray-300 p-2 border-r border-gray-300 dark:border-border text-left align-middle text-center">
                         Студент
                     </TableHead>
                     {/* Dynamic Lesson Columns */}
                     {data.lessons.map(lesson => (
-                        <TableHead key={`lesson-${lesson.lesson_number}`} className="p-0 text-center border-r border-gray-300 h-16 min-w-[160px] align-top bg-gray-100">
+                        <TableHead key={`lesson-${lesson.lesson_number}`} className="p-0 text-center border-r border-gray-300 dark:border-border h-16 min-w-[160px] align-top bg-gray-100 dark:bg-secondary">
                             <div className="flex flex-col h-full">
-                                <div className="py-2 border-b border-gray-300 font-semibold text-gray-700 bg-gray-200/50 text-xs flex flex-col items-center">
+                                <div className="py-2 border-b border-gray-300 dark:border-border font-semibold text-gray-700 dark:text-gray-300 bg-gray-200/50 dark:bg-gray-700/50 text-xs flex flex-col items-center">
                                     <span className="text-sm">{formatDateParts(lesson.start_datetime).date}</span>
-                                    <span className="text-[10px] font-normal text-gray-500 leading-tight uppercase">{formatDateParts(lesson.start_datetime).dayTime}</span>
+                                    <span className="text-[10px] font-normal text-gray-500 dark:text-gray-400 leading-tight uppercase">{formatDateParts(lesson.start_datetime).dayTime}</span>
                                 </div>
                                 <div className="flex flex-1 items-stretch">
-                                    <div className="w-1/2 py-2 text-[10px] font-bold text-gray-600 border-r border-gray-300 text-center uppercase tracking-tighter flex items-center justify-center">
+                                    <div className="w-1/2 py-2 text-[10px] font-bold text-gray-600 dark:text-gray-400 border-r border-gray-300 dark:border-border text-center uppercase tracking-tighter flex items-center justify-center">
                                         Урок
                                     </div>
-                                    <div className="w-1/2 py-2 text-[10px] font-bold text-gray-600 bg-gray-50 text-center uppercase tracking-tighter flex items-center justify-center" title={lesson.homework?.title || "Без ДЗ"}>
+                                    <div className="w-1/2 py-2 text-[10px] font-bold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-secondary text-center uppercase tracking-tighter flex items-center justify-center" title={lesson.homework?.title || "Без ДЗ"}>
                                         ДЗ
                                     </div>
                                 </div>
@@ -712,7 +712,7 @@ export default function CuratorLeaderboardPage() {
                     ))}
                     
                     <TableHead 
-                        className={cn("text-center font-semibold p-2 w-28 text-gray-700 bg-gray-100 border-r border-gray-300 align-middle whitespace-normal leading-tight cursor-pointer hover:bg-gray-200 transition-colors select-none group relative", !enabledCols.curator_hour && "opacity-60 bg-gray-50 text-gray-400")}
+                        className={cn("text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-gray-200 dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.curator_hour && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-gray-400 dark:text-gray-500")}
                         onClick={() => toggleColumn('curator_hour')}
                         title={enabledCols.curator_hour ? "Нажмите, чтобы скрыть" : "Нажмите, чтобы показать"}
                     >
@@ -720,7 +720,7 @@ export default function CuratorLeaderboardPage() {
                             <span>Час<br/>куратора</span>
                             <Input 
                                 type="date" 
-                                className="h-6 w-24 text-[10px] p-1 mt-1 border-gray-300"
+                                className="h-6 w-24 text-[10px] p-1 mt-1 border-gray-300 dark:border-border"
                                 value={enabledCols.curator_hour_date || ''}
                                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -739,9 +739,9 @@ export default function CuratorLeaderboardPage() {
                             }
                         </div>
                     </TableHead>
-                    <TableHead className="text-center font-semibold p-2 w-28 text-gray-700 bg-gray-100 border-r border-gray-300 align-middle whitespace-normal leading-tight">Пробный<br/>экзамен</TableHead>
+                    <TableHead className="text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight">Пробный<br/>экзамен</TableHead>
                     <TableHead 
-                        className={cn("text-center font-semibold p-2 w-28 text-gray-700 bg-gray-100 border-r border-gray-300 align-middle whitespace-normal leading-tight cursor-pointer hover:bg-gray-200 transition-colors select-none group relative", !enabledCols.study_buddy && "opacity-60 bg-gray-50 text-gray-400")}
+                        className={cn("text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-gray-200 dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.study_buddy && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-gray-400 dark:text-gray-500")}
                         onClick={() => toggleColumn('study_buddy')}
                         title={enabledCols.study_buddy ? "Нажмите, чтобы скрыть" : "Нажмите, чтобы показать"}
                     >
@@ -754,7 +754,7 @@ export default function CuratorLeaderboardPage() {
                         </div>
                     </TableHead>
                     <TableHead 
-                        className={cn("text-center font-semibold p-2 w-28 text-gray-700 bg-gray-100 border-r border-gray-300 align-middle whitespace-normal leading-tight cursor-pointer hover:bg-gray-200 transition-colors select-none group relative", !enabledCols.self_reflection_journal && "opacity-60 bg-gray-50 text-gray-400")}
+                        className={cn("text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-gray-200 dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.self_reflection_journal && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-gray-400 dark:text-gray-500")}
                         onClick={() => toggleColumn('self_reflection_journal')}
                         title={enabledCols.self_reflection_journal ? "Нажмите, чтобы скрыть" : "Нажмите, чтобы показать"}
                     >
@@ -767,7 +767,7 @@ export default function CuratorLeaderboardPage() {
                         </div>
                     </TableHead>
                     <TableHead 
-                        className={cn("text-center font-semibold p-2 w-28 text-gray-700 bg-gray-100 border-r border-gray-300 align-middle whitespace-normal leading-tight cursor-pointer hover:bg-gray-200 transition-colors select-none group relative", !enabledCols.weekly_evaluation && "opacity-60 bg-gray-50 text-gray-400")}
+                        className={cn("text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-gray-200 dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.weekly_evaluation && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-gray-400 dark:text-gray-500")}
                         onClick={() => toggleColumn('weekly_evaluation')}
                         title={enabledCols.weekly_evaluation ? "Нажмите, чтобы скрыть" : "Нажмите, чтобы показать"}
                     >
@@ -780,7 +780,7 @@ export default function CuratorLeaderboardPage() {
                         </div>
                     </TableHead>
                     <TableHead 
-                        className={cn("text-center font-semibold p-2 w-28 text-gray-700 bg-gray-100 border-r border-gray-300 align-middle whitespace-normal leading-tight cursor-pointer hover:bg-gray-200 transition-colors select-none group relative", !enabledCols.extra_points && "opacity-60 bg-gray-50 text-gray-400")}
+                        className={cn("text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-gray-200 dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.extra_points && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-gray-400 dark:text-gray-500")}
                         onClick={() => toggleColumn('extra_points')}
                         title={enabledCols.extra_points ? "Нажмите, чтобы скрыть" : "Нажмите, чтобы показать"}
                     >
@@ -793,19 +793,19 @@ export default function CuratorLeaderboardPage() {
                         </div>
                     </TableHead>
                     
-                    <TableHead className="text-center font-bold p-2 w-16 text-gray-800 bg-gray-100 border-r border-gray-300 align-middle">Итого</TableHead>
-                    <TableHead className="text-center font-bold p-2 w-16 sticky right-0 z-40 bg-gray-100 align-middle shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">%</TableHead>
+                    <TableHead className="text-center font-bold p-2 w-16 text-gray-800 dark:text-foreground bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle">Итого</TableHead>
+                    <TableHead className="text-center font-bold p-2 w-16 sticky right-0 z-40 bg-gray-100 dark:bg-secondary align-middle shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">%</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {data.students.map((student, index) => {
                     const percent = calculatePercent(student);
                     return (
-                    <TableRow key={student.student_id} className="hover:bg-blue-50/50 border-b border-gray-300 h-12">
-                        <TableCell className="p-2 sticky left-0 z-30 bg-white border-r border-gray-300">
+                    <TableRow key={student.student_id} className="hover:bg-blue-50/50 dark:hover:bg-secondary/50 border-b border-gray-300 dark:border-border h-12">
+                        <TableCell className="p-2 sticky left-0 z-30 bg-white dark:bg-card border-r border-gray-300 dark:border-border">
                              <div className="flex items-center gap-2">
                                 <span className="text-[10px] text-gray-400 w-4 text-right font-mono">{index + 1}</span>
-                                <span className="truncate max-w-[150px] font-medium text-gray-900" title={student.student_name}>{student.student_name}</span>
+                                <span className="truncate max-w-[150px] font-medium text-gray-900 dark:text-foreground" title={student.student_name}>{student.student_name}</span>
                             </div>
                         </TableCell>
                         
@@ -818,19 +818,19 @@ export default function CuratorLeaderboardPage() {
                             const hwStatus = lessonStatus ? lessonStatus.homework_status : null;
                             
                             return (
-                                <TableCell key={`cell-${lessonKey}`} className="p-0 border-r border-gray-300">
+                                <TableCell key={`cell-${lessonKey}`} className="p-0 border-r border-gray-300 dark:border-border">
                                     <div className="flex w-full h-12 items-stretch">
-                                        <div className="w-1/2 border-r border-gray-300">
+                                        <div className="w-1/2 border-r border-gray-300 dark:border-border">
                                             <AttendanceToggle 
                                                 initialStatus={status}
                                                 onChange={(newStatus) => handleAttendanceChange(student.student_id, lessonKey, newStatus)}
                                                 disabled={user?.role === 'curator'}
                                             />
                                         </div>
-                                        <div className="w-1/2 bg-gray-50 flex items-center justify-center p-0">
+                                        <div className="w-1/2 bg-gray-50 dark:bg-secondary flex items-center justify-center p-0">
                                             <div className={cn(
                                                 "w-full text-center text-[11px]",
-                                                hwStatus?.submitted ? "text-green-700 font-bold" : (hwStatus?.score != null) ? "text-orange-700 font-medium" : "text-gray-400"
+                                                hwStatus?.submitted ? "text-green-700 dark:text-green-400 font-bold" : (hwStatus?.score != null) ? "text-orange-700 dark:text-orange-400 font-medium" : "text-gray-400"
                                             )}>
                                                 {hwStatus?.submitted 
                                                     ? `${hwStatus.score !== null ? hwStatus.score : 'Сдано'}`
@@ -843,19 +843,19 @@ export default function CuratorLeaderboardPage() {
                             );
                         })}
 
-                        <TableCell className={cn("p-0 border-r border-gray-300 h-12", !enabledCols.curator_hour && "bg-gray-100 opacity-50 pointer-events-none")}>
+                        <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border h-12", !enabledCols.curator_hour && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
                             <ScoreSelect value={student.curator_hour} max={MAX_SCORES.curator_hour} onChange={(v) => handleManualScoreChange(student.student_id, 'curator_hour', v)} />
                         </TableCell>
-                        <TableCell className="p-0 border-r border-gray-300 h-12">
+                        <TableCell className="p-0 border-r border-gray-300 dark:border-border h-12">
                             <div className="w-full h-full flex items-center justify-center text-xs font-medium">
                                 {student.mock_exam > 0 ? (
-                                    <span className="text-gray-900">{student.mock_exam}%</span>
+                                    <span className="text-gray-900 dark:text-foreground">{student.mock_exam}%</span>
                                 ) : (
                                     <span className="text-gray-400 italic">Не сдано</span>
                                 )}
                             </div>
                         </TableCell>
-                        <TableCell className={cn("p-0 border-r border-gray-300", !enabledCols.study_buddy && "bg-gray-100 opacity-50 pointer-events-none")}>
+                        <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border", !enabledCols.study_buddy && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
                             <div className="h-12 w-full">
                                 <AttendanceToggle 
                                     initialStatus={student.study_buddy === 15 ? 'attended' : 'absent'} 
@@ -864,17 +864,17 @@ export default function CuratorLeaderboardPage() {
                                 />
                             </div>
                         </TableCell>
-                        <TableCell className={cn("p-0 border-r border-gray-300", !enabledCols.self_reflection_journal && "bg-gray-100 opacity-50 pointer-events-none")}>
+                        <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border", !enabledCols.self_reflection_journal && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
                             <ScoreSelect value={student.self_reflection_journal} max={MAX_SCORES.self_reflection_journal} onChange={(v) => handleManualScoreChange(student.student_id, 'self_reflection_journal', v)} />
                         </TableCell>
-                        <TableCell className={cn("p-0 border-r border-gray-300", !enabledCols.weekly_evaluation && "bg-gray-100 opacity-50 pointer-events-none")}>
+                        <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border", !enabledCols.weekly_evaluation && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
                             <ScoreSelect value={student.weekly_evaluation} max={MAX_SCORES.weekly_evaluation} onChange={(v) => handleManualScoreChange(student.student_id, 'weekly_evaluation', v)} />
                         </TableCell>
-                        <TableCell className={cn("p-0 border-r border-gray-300", !enabledCols.extra_points && "bg-gray-100 opacity-50 pointer-events-none")}>
+                        <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border", !enabledCols.extra_points && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
                             <ScoreSelect value={student.extra_points} max={10} onChange={(v) => handleManualScoreChange(student.student_id, 'extra_points', v)} />
                         </TableCell>
 
-                        <TableCell className="p-2 text-center font-semibold text-gray-900 border-r border-gray-300 bg-white">
+                        <TableCell className="p-2 text-center font-semibold text-gray-900 dark:text-foreground border-r border-gray-300 dark:border-border bg-white dark:bg-card">
                             {calculateTotal(student)}
                         </TableCell>
                          <TableCell className={cn(

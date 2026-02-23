@@ -303,11 +303,11 @@ export default function TeacherAttendancePage() {
 
   const getStatusColor = (status: string) => {
       switch (status) {
-          case 'attended': return 'bg-green-200 text-green-700 hover:bg-green-300';
-          case 'late': return 'bg-yellow-200 text-yellow-700 hover:bg-yellow-500 hover:text-white';
-          case 'missed': return 'bg-rose-500 text-white hover:bg-rose-600';
-          case 'pending': return 'bg-gray-100/50 text-gray-400 hover:bg-gray-200';
-          default: return 'bg-gray-50 text-gray-400 border-gray-100';
+          case 'attended': return 'bg-green-200 dark:bg-green-900/40 text-green-700 dark:text-green-400 hover:bg-green-300 dark:hover:bg-green-900/60';
+          case 'late': return 'bg-yellow-200 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-500 hover:text-white dark:hover:bg-yellow-900/60';
+          case 'missed': return 'bg-rose-500 dark:bg-rose-900/50 text-white dark:text-rose-400 hover:bg-rose-600 dark:hover:bg-rose-900/70';
+          case 'pending': return 'bg-gray-100/50 dark:bg-secondary text-gray-400 hover:bg-gray-200 dark:hover:bg-secondary/80';
+          default: return 'bg-gray-50 dark:bg-secondary text-gray-400 hover:bg-gray-200 dark:hover:bg-secondary/80 border-gray-100 dark:border-border';
       }
   };
 
@@ -322,16 +322,16 @@ export default function TeacherAttendancePage() {
   };
 
   return (
-    <div className="p-8 space-y-8 max-w-[1600px] mx-auto min-h-screen text-gray-900 font-sans">
+    <div className="p-8 space-y-8 max-w-[1600px] mx-auto min-h-screen text-gray-900 dark:text-foreground font-sans">
       {/* Header - Aligned with AnalyticsPage */}
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Group Attendance</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-foreground">Group Attendance</h1>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           <Select value={selectedGroupId?.toString() || ''} onValueChange={(v) => setSelectedGroupId(Number(v))}>
-            <SelectTrigger className="w-full sm:w-[240px] bg-white border-gray-200">
+            <SelectTrigger className="w-full sm:w-[240px] bg-white dark:bg-card border-gray-200 dark:border-border">
               <SelectValue placeholder="Select group" />
             </SelectTrigger>
             <SelectContent>
@@ -355,7 +355,7 @@ export default function TeacherAttendancePage() {
             disabled={saving || totalChangesCount === 0}
             className={cn(
                 "font-semibold shadow-sm",
-                totalChangesCount > 0 ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-gray-100 text-gray-400 border-gray-200"
+                totalChangesCount > 0 ? "bg-blue-600 hover:bg-blue-700 text-white" : "bg-gray-100 dark:bg-secondary text-gray-400 border-gray-200 dark:border-border"
             )}
             variant={totalChangesCount > 0 ? "default" : "outline"}
           >
@@ -365,13 +365,13 @@ export default function TeacherAttendancePage() {
         </div>
       </div>
 
-      <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+      <div className="border border-gray-200 dark:border-border rounded-lg overflow-hidden bg-white dark:bg-card shadow-sm">
         {/* Sub-header / Filters */}
-        <div className="px-6 py-4 border-b border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-4 w-full md:w-auto">
                 <Input 
                     placeholder="Search students..." 
-                    className="w-full md:w-64 h-9 bg-gray-50/50 border-gray-200 text-sm focus-visible:ring-blue-500/20"
+                    className="w-full md:w-64 h-9 bg-gray-50/50 dark:bg-secondary border-gray-200 dark:border-border text-sm focus-visible:ring-blue-500/20"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -380,7 +380,7 @@ export default function TeacherAttendancePage() {
             <div className="flex items-center gap-6 text-sm">
                 {data && data.lessons.length > 0 && (
                     <button 
-                        className="text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline"
+                        className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline"
                         onClick={() => {
                             data.students.forEach(s => {
                                 data.lessons.forEach(l => {
@@ -406,32 +406,32 @@ export default function TeacherAttendancePage() {
                     <Skeleton className="h-12 w-full" />
                 </div>
             ) : !data || data.lessons.length === 0 ? (
-                <div className="py-24 text-center text-gray-500 font-medium">
+                <div className="py-24 text-center text-gray-500 dark:text-gray-400 font-medium">
                     No lessons available for this group.
                 </div>
             ) : (
                 <Table className="border-collapse text-left">
                     <TableHeader>
-                        <TableRow className="bg-gray-50/50 hover:bg-gray-50/50">
-                            <TableHead className="sticky left-0 z-40 bg-gray-50 border-r border-gray-200 px-3 py-3 md:px-6 md:py-4 min-w-[140px] md:min-w-[220px]">
-                                <span className="text-sm font-semibold text-gray-500">Student</span>
+                        <TableRow className="bg-gray-50/50 dark:bg-secondary hover:bg-gray-50/50 dark:hover:bg-secondary">
+                            <TableHead className="sticky left-0 z-40 bg-gray-50 dark:bg-secondary border-r border-gray-200 dark:border-border px-3 py-3 md:px-6 md:py-4 min-w-[140px] md:min-w-[220px]">
+                                <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">Student</span>
                             </TableHead>
                             {data.lessons.map(lesson => {
                                 const isLastActual = lesson.event_id === lastActualLessonId;
                                 return (
                                     <TableHead key={lesson.event_id} className={cn(
-                                        "text-center min-w-[110px] px-1 py-2 md:px-2 md:py-3 transition-colors border-r border-gray-200",
-                                        isFutureLesson(lesson.start_datetime) && "bg-gray-50/30 font-normal text-gray-400",
-                                        isLastActual && "bg-blue-50/30 border-l-2 border-r-2 border-blue-600"
+                                        "text-center min-w-[110px] px-1 py-2 md:px-2 md:py-3 transition-colors border-r border-gray-200 dark:border-border",
+                                        isFutureLesson(lesson.start_datetime) && "bg-gray-50/30 dark:bg-secondary/30 font-normal text-gray-400",
+                                        isLastActual && "bg-blue-50/30 dark:bg-blue-900/10 border-l-2 border-r-2 border-blue-600 dark:border-blue-500/40"
                                     )}>
                                         <div className="flex flex-col items-center">
                                             <span className={cn(
                                                 "text-[10px] font-medium capitalize",
-                                                isLastActual ? "text-blue-600 font-bold" : "text-gray-400"
+                                                isLastActual ? "text-blue-600 dark:text-blue-400 font-bold" : "text-gray-400"
                                             )}>{formatDay(lesson.start_datetime)}</span>
                                             <span className={cn(
                                                 "text-sm font-bold",
-                                                isLastActual ? "text-blue-700" : "text-gray-900"
+                                                isLastActual ? "text-blue-700 dark:text-blue-400" : "text-gray-900 dark:text-foreground"
                                             )}>{formatDate(lesson.start_datetime)}</span>
                                         </div>
                                     </TableHead>
@@ -439,12 +439,12 @@ export default function TeacherAttendancePage() {
                             })}
                         </TableRow>
                     </TableHeader>
-                    <TableBody className="divide-y divide-gray-100">
+                    <TableBody className="divide-y divide-gray-100 dark:divide-border">
                         {filteredStudents.map((student) => (
-                        <TableRow key={student.student_id} className="hover:bg-gray-50/50 transition-colors group">
-                            <TableCell className="sticky left-0 z-30 bg-white border-r border-gray-200 px-3 py-3 md:px-6 md:py-3.5 group-hover:bg-gray-50 transition-colors">
+                        <TableRow key={student.student_id} className="hover:bg-gray-50/50 dark:hover:bg-secondary transition-colors group">
+                            <TableCell className="sticky left-0 z-30 bg-white dark:bg-card border-r border-gray-200 dark:border-border px-3 py-3 md:px-6 md:py-3.5 group-hover:bg-gray-50 dark:group-hover:bg-secondary transition-colors">
                                 <div className="flex flex-col">
-                                    <span className="text-sm font-medium text-gray-900 truncate max-w-[120px] md:max-w-none">{student.student_name}</span>
+                                    <span className="text-sm font-medium text-gray-900 dark:text-foreground truncate max-w-[120px] md:max-w-none">{student.student_name}</span>
                                 </div>
                             </TableCell>
                             {data.lessons.map(lesson => {
@@ -460,9 +460,9 @@ export default function TeacherAttendancePage() {
                                 <TableCell 
                                     key={`${student.student_id}-${lesson.event_id}`} 
                                     className={cn(
-                                        "p-0 text-center transition-colors cursor-pointer select-none border-r border-gray-100/50 min-w-[110px]",
-                                        isFuture ? "bg-gray-50/10 cursor-default" : getStatusColor(status),
-                                        isLastActual && !isFuture && "border-l-2 border-r-2 border-blue-600 shadow-[inset_0_0_0_1px_rgba(37,99,235,0.1)]",
+                                        "p-0 text-center transition-colors cursor-pointer select-none border-r border-gray-100/50 dark:border-border min-w-[110px]",
+                                        isFuture ? "bg-gray-50/10 dark:bg-secondary/10 cursor-default" : getStatusColor(status),
+                                        isLastActual && !isFuture && "border-l-2 border-r-2 border-blue-600 dark:border-blue-500/40 shadow-[inset_0_0_0_1px_rgba(37,99,235,0.1)] dark:shadow-none",
                                         isChanged && "brightness-95"
                                     )}
                                     onClick={() => !isFuture && toggleStudentStatus(student.student_id, lessonKey, status)}
@@ -481,7 +481,7 @@ export default function TeacherAttendancePage() {
                                 >
                                     <div className="flex flex-row items-center justify-center h-10 w-full gap-1 lg:flex-col lg:gap-0">
                                         {isFuture ? (
-                                            <div className="w-1.5 h-1.5 bg-gray-200 rounded-full" />
+                                            <div className="w-1.5 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full" />
                                         ) : (
                                             <>
                                                 <span className="font-bold text-[11px] tracking-wide">
@@ -509,7 +509,7 @@ export default function TeacherAttendancePage() {
                                                                 }}
                                                                 title="Add Activity Score"
                                                             >
-                                                                <Star className="w-3 h-3 text-gray-400 hover:fill-gray-200" />
+                                                                <Star className="w-3 h-3 text-gray-400 hover:fill-gray-200 dark:hover:fill-gray-600" />
                                                                 <span className="text-[9px] text-gray-400">+</span>
                                                             </div>
                                                         )}
@@ -536,7 +536,7 @@ export default function TeacherAttendancePage() {
             <DialogTitle>Activity Score</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Set activity score for <strong>{activityModal.studentName}</strong>
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
@@ -555,14 +555,14 @@ export default function TeacherAttendancePage() {
                 </Button>
               ))}
             </div>
-            <div className="mt-3 rounded-lg bg-gray-50 border border-gray-200 p-3 text-xs text-gray-500 space-y-1">
-              <p className="font-semibold text-gray-700 mb-1">Scale guide:</p>
-              <div className="flex items-center gap-2"><span className="font-medium text-gray-600 w-10">0</span> Did not participate at all</div>
-              <div className="flex items-center gap-2"><span className="font-medium text-gray-600 w-10">1-3</span> Minimal participation, mostly passive</div>
-              <div className="flex items-center gap-2"><span className="font-medium text-gray-600 w-10">4-5</span> Average participation, answered when asked</div>
-              <div className="flex items-center gap-2"><span className="font-medium text-gray-600 w-10">6-7</span> Active, volunteered answers, engaged</div>
-              <div className="flex items-center gap-2"><span className="font-medium text-gray-600 w-10">8-9</span> Very active, helped peers, asked questions</div>
-              <div className="flex items-center gap-2"><span className="font-medium text-gray-600 w-10">10</span> Outstanding, led discussions, exceptional effort</div>
+            <div className="mt-3 rounded-lg bg-gray-50 dark:bg-secondary border border-gray-200 dark:border-border p-3 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+              <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">Scale guide:</p>
+              <div className="flex items-center gap-2"><span className="font-medium text-gray-600 dark:text-gray-400 w-10">0</span> Did not participate at all</div>
+              <div className="flex items-center gap-2"><span className="font-medium text-gray-600 dark:text-gray-400 w-10">1-3</span> Minimal participation, mostly passive</div>
+              <div className="flex items-center gap-2"><span className="font-medium text-gray-600 dark:text-gray-400 w-10">4-5</span> Average participation, answered when asked</div>
+              <div className="flex items-center gap-2"><span className="font-medium text-gray-600 dark:text-gray-400 w-10">6-7</span> Active, volunteered answers, engaged</div>
+              <div className="flex items-center gap-2"><span className="font-medium text-gray-600 dark:text-gray-400 w-10">8-9</span> Very active, helped peers, asked questions</div>
+              <div className="flex items-center gap-2"><span className="font-medium text-gray-600 dark:text-gray-400 w-10">10</span> Outstanding, led discussions, exceptional effort</div>
             </div>
           </div>
           <DialogFooter>
