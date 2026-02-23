@@ -304,7 +304,7 @@ export default function StudentDashboard({
 
   return (
     <div className="space-y-8">
-      <Card className="border-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white" data-tour="dashboard-overview">
+      <Card className="border-0 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-900 dark:to-indigo-900 text-white" data-tour="dashboard-overview">
         <CardHeader className="p-5 sm:p-6">
           <CardTitle className="text-2xl sm:text-3xl">Welcome back, {firstName}!</CardTitle>
           <CardDescription className="text-white/80 text-sm sm:text-base">
