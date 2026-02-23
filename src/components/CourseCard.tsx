@@ -126,7 +126,7 @@ export default function CourseCard({ course, onContinue }: CourseCardProps) {
             <span className="text-sm font-semibold text-gray-900">{course.progress}%</span>
           </div>
           <div className="relative">
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
               <div
                 className={`h-2 rounded-full transition-all duration-500 ${
                   course.progress >= 100 

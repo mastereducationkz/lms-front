@@ -493,7 +493,7 @@ export default function DailyQuestionsPopup({
           {/* Progress indicator */}
           {allQuestions.length > 0 && !completed && (
             <div className="flex items-center gap-2 mt-4">
-              <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+              <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-blue-600 transition-all duration-300"
                   style={{ width: `${((currentIndex + 1) / allQuestions.length) * 100}%` }}

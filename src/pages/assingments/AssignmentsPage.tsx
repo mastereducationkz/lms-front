@@ -285,11 +285,11 @@ export default function AssignmentsPage() {
     return (
       <div className="space-y-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-48 mb-6"></div>
+          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-6"></div>
           <div className="bg-white dark:bg-card rounded-xl shadow p-6">
             <div className="space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-12 bg-gray-200 rounded"></div>
+                <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded"></div>
               ))}
             </div>
           </div>
@@ -339,7 +339,7 @@ export default function AssignmentsPage() {
 
       {/* Filter Tabs & Group Filter */}
       <div className="flex flex-wrap items-center gap-4">
-        <div className="bg-white dark:bg-card rounded-lg p-1 shadow-sm border border-gray-200 dark:border-gray-700 inline-flex">
+        <div className="bg-white dark:bg-card rounded-lg p-1 shadow-sm border border-gray-200 dark:border-border inline-flex">
           {[
             { key: 'all', label: 'All', count: assignments.length },
             { key: 'pending', label: 'Pending', count: assignments.filter(a => a.status === 'not_submitted').length },
@@ -399,7 +399,7 @@ export default function AssignmentsPage() {
       {/* Assignments List */}
       <div className="space-y-6">
         {filteredAssignments.length === 0 ? (
-          <div className="bg-white dark:bg-card rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center">
+          <div className="bg-white dark:bg-card rounded-xl shadow-sm border border-gray-200 dark:border-border p-12 text-center">
             <ClipboardList className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
               {filter === 'all' ? 'No homework yet' : `No ${filter} homework`}
@@ -415,10 +415,10 @@ export default function AssignmentsPage() {
           Object.entries(groupedAssignments).sort(([a], [b]) => a.localeCompare(b)).map(([groupName, groupAssignments]) => {
             const isExpanded = expandedGroups[groupName] !== false; // Default to expanded
             return (
-              <div key={groupName} className="bg-white dark:bg-card rounded-lg border border-slate-200 dark:border-gray-700 overflow-hidden shadow-none">
+              <div key={groupName} className="bg-white dark:bg-card rounded-lg border border-slate-200 dark:border-border overflow-hidden shadow-none">
                 <button
                   onClick={() => toggleGroup(groupName)}
-                  className="w-full flex items-center justify-between px-6 py-3 bg-slate-50/50 dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 hover:bg-slate-100/50 dark:hover:bg-gray-700 transition-colors"
+                  className="w-full flex items-center justify-between px-6 py-3 bg-slate-50/50 dark:bg-secondary border-b border-slate-200 dark:border-border hover:bg-slate-100/50 dark:hover:bg-secondary/80 transition-colors"
                 >
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight">{groupName}</h3>
@@ -430,7 +430,7 @@ export default function AssignmentsPage() {
                 {isExpanded && (
                   <div className="overflow-x-auto">
                     <table className="min-w-full text-sm">
-                      <thead className="bg-white dark:bg-card text-slate-500 dark:text-gray-400 border-b border-slate-100 dark:border-gray-700">
+                      <thead className="bg-white dark:bg-card text-slate-500 dark:text-gray-400 border-b border-slate-100 dark:border-border">
                         <tr>
                           <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Homework</th>
                           <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Due Date</th>
@@ -439,9 +439,9 @@ export default function AssignmentsPage() {
                           <th className="text-right px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Action</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-100 dark:divide-gray-700">
+                      <tbody className="divide-y divide-slate-100 dark:divide-border">
                         {groupAssignments.map(assignment => (
-                          <tr key={assignment.id} className="border-t hover:bg-gray-50/50 dark:hover:bg-gray-800">
+                          <tr key={assignment.id} className="border-t hover:bg-gray-50/50 dark:hover:bg-secondary">
                             <td className="px-6 py-4">
                               <div>
                                 <div 
