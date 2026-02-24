@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../services/api';
 import { Badge } from '../components/ui/badge';
@@ -130,9 +130,8 @@ function getWeekDates(weekStr: string): Date[] {
 
 /** Given a group's start_date and total_weeks, calculate the ISO week string for program_week N */
 function isoWeekForProgramWeek(startDate: string, programWeek: number): string {
-  const start = new Date(startDate);
-  const target = new Date(start);
-  target.setDate(start.getDate() + (programWeek - 1) * 7);
+  const [sy, sm, sd] = startDate.split('-').map(Number);
+  const target = new Date(sy, sm - 1, sd + (programWeek - 1) * 7);
   return getISOWeekString(target);
 }
 
@@ -142,6 +141,26 @@ function isoWeekAddWeeks(weekStr: string, delta: number): string {
   const monday = dates[0];
   monday.setDate(monday.getDate() + delta * 7);
   return getISOWeekString(monday);
+}
+
+/** Compute week offset (in weeks) from current ISO week to target ISO week. */
+function getWeekOffset(targetWeekStr: string): number {
+  const current = getISOWeekString(new Date());
+  if (targetWeekStr === current) return 0;
+  const currentMonday = getWeekDates(current)[0].getTime();
+  const targetMonday = getWeekDates(targetWeekStr)[0].getTime();
+  return Math.round((targetMonday - currentMonday) / (7 * 86400000));
+}
+
+/** Given an ISO week and group start_date, compute the program week (1-based) that contains that ISO week. */
+function programWeekForIsoWeek(isoWeekStr: string, startDate: string): number | null {
+  const monday = getWeekDates(isoWeekStr)[0];
+  const [sy, sm, sd] = startDate.split('-').map(Number);
+  const startLocal = new Date(sy, sm - 1, sd);
+  const mondayLocal = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate());
+  const deltaDays = Math.round((mondayLocal.getTime() - startLocal.getTime()) / 86400000);
+  if (deltaDays < 0) return null;
+  return Math.floor(deltaDays / 7) + 1;
 }
 
 function formatDeadlineTime(dueDate: string | null): string | null {
@@ -230,7 +249,9 @@ function getLeaderboardUrl(task: CuratorTask): string {
 export default function CuratorTasksPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isHeadCurator = user?.role === 'head_curator';
+  const [urlSynced, setUrlSynced] = useState(false);
 
   const [groups, setGroups] = useState<CuratorGroup[]>([]);
   const [curators, setCurators] = useState<Array<{ curator_id: number; curator_name: string }>>([]);
@@ -288,11 +309,54 @@ export default function CuratorTasksPage() {
   useEffect(() => {
     apiClient.getCuratorTaskGroups().then(data => {
       setGroups(data);
-      if (data.length > 0 && selectedGroupId === null && !isHeadCurator && data.length === 1) {
+      const week = searchParams.get('week');
+      const groupIdParam = searchParams.get('groupId');
+      if (week && /^\d{4}-W\d{2}$/.test(week)) {
+        setViewIsoWeekOffset(getWeekOffset(week));
+      }
+      if (groupIdParam) {
+        const gid = parseInt(groupIdParam, 10);
+        if (!isNaN(gid) && data.some(g => g.id === gid)) {
+          setSelectedGroupId(gid);
+        } else if (data.length > 0 && !isHeadCurator && data.length === 1) {
+          setSelectedGroupId(data[0].id);
+        }
+      } else if (data.length > 0 && !isHeadCurator && data.length === 1) {
         setSelectedGroupId(data[0].id);
       }
+      setUrlSynced(true);
     }).catch(console.error);
   }, [isHeadCurator]);
+
+  // Sync URL -> state when user navigates (back/forward)
+  useEffect(() => {
+    if (!urlSynced) return;
+    const week = searchParams.get('week');
+    const groupIdParam = searchParams.get('groupId');
+    if (week && /^\d{4}-W\d{2}$/.test(week)) {
+      setViewIsoWeekOffset(getWeekOffset(week));
+    }
+    if (groupIdParam) {
+      const gid = parseInt(groupIdParam, 10);
+      const valid = !isNaN(gid) && groups.length > 0 && groups.some(g => g.id === gid);
+      setSelectedGroupId(valid ? gid : null);
+    } else {
+      setSelectedGroupId(null);
+    }
+  }, [searchParams, urlSynced, groups]);
+
+  // Sync state -> URL
+  useEffect(() => {
+    if (!urlSynced) return;
+    const params = new URLSearchParams();
+    params.set('week', activeIsoWeek);
+    if (selectedGroupId != null) params.set('groupId', String(selectedGroupId));
+    const next = params.toString();
+    const current = searchParams.toString();
+    if (next !== current) {
+      setSearchParams(params, { replace: true });
+    }
+  }, [activeIsoWeek, selectedGroupId, urlSynced]);
 
   // ─── Load curators (head curator only) ───────────────────────────────────────
 
@@ -446,13 +510,16 @@ export default function CuratorTasksPage() {
   }, [selectedGroup, tasks]);
 
   // ─── Header labels ─────────────────────────────────────────────────────────
+  // All groups: show date range. Specific group: show relative program week.
+  const viewedProgramWeek = selectedGroup_data?.start_date
+    ? programWeekForIsoWeek(activeIsoWeek, selectedGroup_data.start_date)
+    : null;
+  const weekLabel = selectedGroup_data && viewedProgramWeek != null && totalWeeks && viewedProgramWeek >= 1 && viewedProgramWeek <= totalWeeks
+    ? `Неделя ${viewedProgramWeek}${totalWeeks ? ` из ${totalWeeks}` : ''}`
+    : getWeekDateRange(activeIsoWeek);
 
-  const weekLabel = !isCurrentCalendarMode && activeProgramWeek
-    ? `Неделя ${activeProgramWeek}${totalWeeks ? ` из ${totalWeeks}` : ''}`
-    : `Неделя ${activeIsoWeek.split('-W')[1]}`;
-
-  const phaseLabel = !isCurrentCalendarMode && activeProgramWeek === 1 ? 'Онбординг'
-    : !isCurrentCalendarMode && totalWeeks && activeProgramWeek && activeProgramWeek >= totalWeeks - 1 ? 'Продление'
+  const phaseLabel = viewedProgramWeek === 1 ? 'Онбординг'
+    : totalWeeks && viewedProgramWeek != null && viewedProgramWeek >= totalWeeks - 1 ? 'Продление'
     : null;
 
   const hasGroupContext = selectedGroup_data != null;
@@ -499,7 +566,9 @@ export default function CuratorTasksPage() {
                 )}>{phaseLabel}</span>
               )}
             </div>
-            <p className="text-xs text-gray-400 mt-0.5">{getWeekDateRange(activeIsoWeek)}</p>
+            {selectedGroup_data && viewedProgramWeek != null && (
+              <p className="text-xs text-gray-400 mt-0.5">{getWeekDateRange(activeIsoWeek)}</p>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
