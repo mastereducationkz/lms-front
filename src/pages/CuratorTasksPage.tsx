@@ -136,6 +136,14 @@ function isoWeekForProgramWeek(startDate: string, programWeek: number): string {
   return getISOWeekString(target);
 }
 
+/** Shift an ISO week string by N weeks (positive = future, negative = past). */
+function isoWeekAddWeeks(weekStr: string, delta: number): string {
+  const dates = getWeekDates(weekStr);
+  const monday = dates[0];
+  monday.setDate(monday.getDate() + delta * 7);
+  return getISOWeekString(monday);
+}
+
 function formatDeadlineTime(dueDate: string | null): string | null {
   if (!dueDate) return null;
   try {
@@ -229,6 +237,7 @@ export default function CuratorTasksPage() {
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [selectedCuratorId, setSelectedCuratorId] = useState<number | null>(null);
   const [viewProgramWeek, setViewProgramWeek] = useState<number | null>(null); // null = current week
+  const [viewIsoWeekOffset, setViewIsoWeekOffset] = useState(0); // offset from current ISO week when in calendar mode
 
   const [tasks, setTasks] = useState<CuratorTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -258,16 +267,21 @@ export default function CuratorTasksPage() {
   const currentProgramWeek = selectedGroup_data?.program_week ?? null;
   const totalWeeks = selectedGroup_data?.total_weeks ?? null;
 
-  // The program week we're currently viewing
-  const activeProgramWeek = viewProgramWeek ?? currentProgramWeek;
+  // "Current" mode uses calendar ISO week; arrows switch to explicit program week view.
+  const isCurrentCalendarMode = viewProgramWeek === null;
 
-  // ISO week string for the active program week
+  // The program week we're currently viewing (only when user explicitly navigates weeks)
+  const activeProgramWeek = isCurrentCalendarMode ? null : viewProgramWeek;
+  const navProgramWeek = viewProgramWeek ?? currentProgramWeek;
+
+  // ISO week string for the active week
   const activeIsoWeek = useMemo(() => {
-    if (selectedGroup_data?.start_date && activeProgramWeek) {
+    if (!isCurrentCalendarMode && selectedGroup_data?.start_date && activeProgramWeek) {
       return isoWeekForProgramWeek(selectedGroup_data.start_date, activeProgramWeek);
     }
-    return getISOWeekString(new Date());
-  }, [selectedGroup_data, activeProgramWeek]);
+    const base = getISOWeekString(new Date());
+    return viewIsoWeekOffset === 0 ? base : isoWeekAddWeeks(base, viewIsoWeekOffset);
+  }, [selectedGroup_data, activeProgramWeek, isCurrentCalendarMode, viewIsoWeekOffset]);
 
   // ─── Load groups ────────────────────────────────────────────────────────────
 
@@ -300,7 +314,7 @@ export default function CuratorTasksPage() {
         if (selectedCuratorId) params.curator_id = selectedCuratorId;
         if (selectedGroupId) params.group_id = selectedGroupId;
         if (filterStatus !== 'all') params.status = filterStatus;
-        if (selectedGroup_data && activeProgramWeek !== null) {
+        if (!isCurrentCalendarMode && selectedGroup_data && activeProgramWeek !== null) {
           params.program_week = activeProgramWeek;
         } else {
           params.week = activeIsoWeek;
@@ -311,7 +325,7 @@ export default function CuratorTasksPage() {
         const params: any = { limit: 200 };
         if (selectedGroupId) params.group_id = selectedGroupId;
         if (filterStatus !== 'all') params.status = filterStatus;
-        if (selectedGroup_data && activeProgramWeek !== null) {
+        if (!isCurrentCalendarMode && selectedGroup_data && activeProgramWeek !== null) {
           params.program_week = activeProgramWeek;
         } else {
           params.week = activeIsoWeek;
@@ -324,7 +338,7 @@ export default function CuratorTasksPage() {
     } finally {
       setLoading(false);
     }
-  }, [isHeadCurator, selectedGroupId, selectedCuratorId, selectedGroup_data, activeProgramWeek, activeIsoWeek, filterStatus]);
+  }, [isHeadCurator, selectedGroupId, selectedCuratorId, selectedGroup_data, activeProgramWeek, activeIsoWeek, filterStatus, isCurrentCalendarMode]);
 
   useEffect(() => { loadTasks(); }, [loadTasks]);
 
@@ -433,25 +447,42 @@ export default function CuratorTasksPage() {
 
   // ─── Header labels ─────────────────────────────────────────────────────────
 
-  const weekLabel = activeProgramWeek
+  const weekLabel = !isCurrentCalendarMode && activeProgramWeek
     ? `Неделя ${activeProgramWeek}${totalWeeks ? ` из ${totalWeeks}` : ''}`
-    : `Неделя ${getISOWeekString(new Date()).split('-W')[1]}`;
+    : `Неделя ${activeIsoWeek.split('-W')[1]}`;
 
-  const phaseLabel = activeProgramWeek === 1 ? 'Онбординг'
-    : totalWeeks && activeProgramWeek && activeProgramWeek >= totalWeeks - 1 ? 'Продление'
+  const phaseLabel = !isCurrentCalendarMode && activeProgramWeek === 1 ? 'Онбординг'
+    : !isCurrentCalendarMode && totalWeeks && activeProgramWeek && activeProgramWeek >= totalWeeks - 1 ? 'Продление'
     : null;
 
   const hasGroupContext = selectedGroup_data != null;
-  const canGoPrev = hasGroupContext && (activeProgramWeek ? activeProgramWeek > 1 : true);
-  const canGoNext = hasGroupContext && (totalWeeks && activeProgramWeek ? activeProgramWeek < totalWeeks : true);
+  const canGoPrev = isCurrentCalendarMode
+    ? viewIsoWeekOffset > -52
+    : hasGroupContext && !!navProgramWeek && navProgramWeek > 1;
+  const canGoNext = isCurrentCalendarMode
+    ? viewIsoWeekOffset < 52
+    : hasGroupContext && !!navProgramWeek && (totalWeeks ? navProgramWeek < totalWeeks : true);
 
   const handlePrevWeek = () => {
-    if (activeProgramWeek && canGoPrev) setViewProgramWeek(activeProgramWeek - 1);
+    if (!canGoPrev) return;
+    if (isCurrentCalendarMode) {
+      setViewIsoWeekOffset(o => o - 1);
+    } else if (navProgramWeek) {
+      setViewProgramWeek(navProgramWeek - 1);
+    }
   };
   const handleNextWeek = () => {
-    if (activeProgramWeek && canGoNext) setViewProgramWeek(activeProgramWeek + 1);
+    if (!canGoNext) return;
+    if (isCurrentCalendarMode) {
+      setViewIsoWeekOffset(o => o + 1);
+    } else if (navProgramWeek) {
+      setViewProgramWeek(navProgramWeek + 1);
+    }
   };
-  const handleCurrentWeek = () => setViewProgramWeek(null);
+  const handleCurrentWeek = () => {
+    setViewProgramWeek(null);
+    setViewIsoWeekOffset(0);
+  };
 
   return (
     <div className="p-4 md:p-6 max-w-[1440px] mx-auto space-y-5">
@@ -486,7 +517,7 @@ export default function CuratorTasksPage() {
           )}
           {/* Group selector */}
           {groups.length > 0 && (
-            <Select value={selectedGroupId ? String(selectedGroupId) : 'all'} onValueChange={v => { setSelectedGroupId(v === 'all' ? null : Number(v)); setViewProgramWeek(null); }}>
+            <Select value={selectedGroupId ? String(selectedGroupId) : 'all'} onValueChange={v => { setSelectedGroupId(v === 'all' ? null : Number(v)); setViewProgramWeek(null); setViewIsoWeekOffset(0); }}>
               <SelectTrigger className="w-[180px] h-8 text-xs"><SelectValue placeholder="Все группы" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Все группы</SelectItem>
