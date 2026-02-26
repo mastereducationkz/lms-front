@@ -624,6 +624,11 @@ export default function CuratorTasksPage() {
         <div className="flex items-center gap-4">
           <Progress value={pct} className="flex-1 h-1.5" />
           <span className="text-xs text-gray-500 tabular-nums whitespace-nowrap">{done} из {tasks.length}</span>
+          {!isHeadCurator && (
+            <Button onClick={handleGenerate} disabled={generating} size="sm" variant="ghost" className="h-7 px-2.5 text-xs text-gray-400 hover:text-gray-600">
+              {generating ? 'Обновление...' : '↻ Перегенерировать'}
+            </Button>
+          )}
         </div>
       )}
 
