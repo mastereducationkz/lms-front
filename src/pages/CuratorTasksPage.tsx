@@ -282,6 +282,18 @@ export default function CuratorTasksPage() {
   const [studentEditScreenshot, setStudentEditScreenshot] = useState('');
   const [studentSaving, setStudentSaving] = useState<number | null>(null);
 
+  // Add task dialog (head curator only)
+  const [addTaskDialogOpen, setAddTaskDialogOpen] = useState(false);
+  const [templates, setTemplates] = useState<Array<{ id: number; title: string; scope: string; task_type?: string }>>([]);
+  const [addTaskCuratorId, setAddTaskCuratorId] = useState<number | null>(null);
+  const [addTaskTemplateId, setAddTaskTemplateId] = useState<number | null>(null);
+  const [addTaskCustomTitle, setAddTaskCustomTitle] = useState('');
+  const [addTaskGroupId, setAddTaskGroupId] = useState<number | null>(null);
+  const [addTaskStudentId, setAddTaskStudentId] = useState<number | null>(null);
+  const [addTaskDueDate, setAddTaskDueDate] = useState('');
+  const [addTaskStudents, setAddTaskStudents] = useState<Array<{ id: number; name: string }>>([]);
+  const [addTaskSaving, setAddTaskSaving] = useState(false);
+
   // ─── Derived values ────────────────────────────────────────────────────────
 
   const selectedGroup_data = groups.find(g => g.id === selectedGroupId) ?? null;
@@ -405,6 +417,72 @@ export default function CuratorTasksPage() {
   }, [isHeadCurator, selectedGroupId, selectedCuratorId, selectedGroup_data, activeProgramWeek, activeIsoWeek, filterStatus, isCurrentCalendarMode]);
 
   useEffect(() => { loadTasks(); }, [loadTasks]);
+
+  // Load templates and reset form when add-task dialog opens
+  useEffect(() => {
+    if (addTaskDialogOpen && isHeadCurator) {
+      apiClient.getCuratorTaskTemplates().then(data => setTemplates(data)).catch(console.error);
+      setAddTaskCuratorId(null);
+      setAddTaskTemplateId(null);
+      setAddTaskCustomTitle('');
+      setAddTaskGroupId(null);
+      setAddTaskStudentId(null);
+      setAddTaskDueDate('');
+    }
+  }, [addTaskDialogOpen, isHeadCurator]);
+
+  // Load students when add-task group changes
+  useEffect(() => {
+    if (!addTaskGroupId) {
+      setAddTaskStudents([]);
+      setAddTaskStudentId(null);
+      return;
+    }
+    apiClient.getGroupStudents(addTaskGroupId).then(data => {
+      setAddTaskStudents(data.map((u: { id: number; name: string }) => ({ id: u.id, name: u.name })));
+      setAddTaskStudentId(null);
+    }).catch(() => setAddTaskStudents([]));
+  }, [addTaskGroupId]);
+
+  const isCustomTemplate = addTaskTemplateId && templates.some(t => t.id === addTaskTemplateId && t.task_type === 'manual');
+
+  const handleAddTask = async () => {
+    if (!addTaskCuratorId || !addTaskTemplateId) {
+      toast('Выберите куратора и шаблон задачи', 'error');
+      return;
+    }
+    if (isCustomTemplate && !addTaskCustomTitle.trim()) {
+      toast('Введите текст задачи для шаблона «Свой»', 'error');
+      return;
+    }
+    const progWeek = selectedGroup_data?.start_date ? programWeekForIsoWeek(activeIsoWeek, selectedGroup_data.start_date) : null;
+    setAddTaskSaving(true);
+    try {
+      await apiClient.createCuratorTaskInstance({
+        template_id: addTaskTemplateId,
+        curator_id: addTaskCuratorId,
+        student_id: addTaskStudentId ?? undefined,
+        group_id: addTaskGroupId ?? undefined,
+        due_date: addTaskDueDate || undefined,
+        week: activeIsoWeek,
+        program_week: progWeek ?? undefined,
+        custom_title: isCustomTemplate ? addTaskCustomTitle.trim() : undefined,
+      });
+      toast('Задача создана', 'success');
+      setAddTaskDialogOpen(false);
+      setAddTaskCuratorId(null);
+      setAddTaskTemplateId(null);
+      setAddTaskCustomTitle('');
+      setAddTaskGroupId(null);
+      setAddTaskStudentId(null);
+      setAddTaskDueDate('');
+      loadTasks();
+    } catch (e: any) {
+      toast(e?.response?.data?.detail || 'Ошибка создания задачи', 'error');
+    } finally {
+      setAddTaskSaving(false);
+    }
+  };
 
   // ─── Generate ──────────────────────────────────────────────────────────────
 
@@ -616,6 +694,12 @@ export default function CuratorTasksPage() {
               <SelectItem value="overdue">Просрочено</SelectItem>
             </SelectContent>
           </Select>
+
+          {isHeadCurator && (
+            <Button size="sm" className="h-8 text-xs" onClick={() => setAddTaskDialogOpen(true)}>
+              + Добавить задачу
+            </Button>
+          )}
         </div>
       </div>
 
@@ -834,6 +918,93 @@ export default function CuratorTasksPage() {
             );
           })()}
           <DialogFooter><Button variant="ghost" size="sm" onClick={() => setGroupDialogOpen(false)}>Закрыть</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add task dialog (head curator only) */}
+      <Dialog open={addTaskDialogOpen} onOpenChange={setAddTaskDialogOpen}>
+        <DialogContent className="sm:max-w-[420px]">
+          <DialogHeader>
+            <DialogTitle className="text-base font-semibold">Добавить задачу куратору</DialogTitle>
+            <DialogDescription>Создайте задачу для выбранного куратора на текущую неделю</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Куратор *</label>
+              <Select value={addTaskCuratorId ? String(addTaskCuratorId) : ''} onValueChange={v => setAddTaskCuratorId(v ? Number(v) : null)}>
+                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Выберите куратора" /></SelectTrigger>
+                <SelectContent>
+                  {curators.map(c => (
+                    <SelectItem key={c.curator_id} value={String(c.curator_id)}>{c.curator_name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Шаблон задачи *</label>
+              <Select value={addTaskTemplateId ? String(addTaskTemplateId) : ''} onValueChange={v => { setAddTaskTemplateId(v ? Number(v) : null); setAddTaskCustomTitle(''); }}>
+                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Выберите шаблон" /></SelectTrigger>
+                <SelectContent>
+                  {templates.map(t => (
+                    <SelectItem key={t.id} value={String(t.id)}>{t.title}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {isCustomTemplate && (
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Текст задачи *</label>
+                <Input
+                  value={addTaskCustomTitle}
+                  onChange={e => setAddTaskCustomTitle(e.target.value)}
+                  placeholder="Введите текст задачи"
+                  className="h-9 text-sm"
+                />
+              </div>
+            )}
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Группа</label>
+              <Select value={addTaskGroupId ? String(addTaskGroupId) : '__none__'} onValueChange={v => setAddTaskGroupId(v === '__none__' ? null : Number(v))}>
+                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Не выбрана" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Не выбрана</SelectItem>
+                  {groups.map(g => (
+                    <SelectItem key={g.id} value={String(g.id)}>{g.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {addTaskGroupId && addTaskStudents.length > 0 && (
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Ученик</label>
+                <Select value={addTaskStudentId ? String(addTaskStudentId) : '__none__'} onValueChange={v => setAddTaskStudentId(v === '__none__' ? null : Number(v))}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Не выбран" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none__">Не выбран</SelectItem>
+                    {addTaskStudents.map(s => (
+                      <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Дедлайн (опционально)</label>
+              <Input
+                type="datetime-local"
+                value={addTaskDueDate}
+                onChange={e => setAddTaskDueDate(e.target.value)}
+                className="h-9 text-sm"
+              />
+            </div>
+            <p className="text-xs text-gray-400">Неделя: {getWeekDateRange(activeIsoWeek)}</p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" size="sm" onClick={() => setAddTaskDialogOpen(false)}>Отмена</Button>
+            <Button size="sm" onClick={handleAddTask} disabled={addTaskSaving || !addTaskCuratorId || !addTaskTemplateId || (isCustomTemplate && !addTaskCustomTitle.trim())}>
+              {addTaskSaving ? 'Создание...' : 'Создать'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

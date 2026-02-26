@@ -56,7 +56,7 @@ import { uploadAssignmentFile, uploadTeacherFile, uploadSubmissionFile, uploadQu
 import { getUsers, updateUser, deactivateUser, assignUserToGroup, bulkAssignUsersToGroup, createUser, bulkCreateUsersFromText, resetUserPassword, getAllTeachers } from './users';
 import { getAllGroups, getGroups, getMyGroups, getTeacherGroups, getCourseGroups, grantCourseAccessToGroup, revokeCourseAccessFromGroup, createGroup, updateGroup, deleteGroup, assignTeacherToGroup, getGroupStudents, addStudentToGroup, removeStudentFromGroup, bulkAddStudentsToGroup } from './groups';
 import { getDetailedStudentAnalytics, getCourseAnalyticsOverview, getVideoEngagementAnalytics, getQuizPerformanceAnalytics, getQuizErrors, getAllStudentsAnalytics, getGroupsAnalytics, getCourseGroupsAnalytics, getCourseProgressHistory, getGroupStudentsAnalytics, getStudentProgressHistory, exportStudentReport, exportGroupReport, exportAllStudentsReport, exportAnalyticsExcel, getStudentDetailedProgress, getStudentSatScores, getStudentLearningPath } from './analytics';
-import { getCuratorPendingSubmissions, getCuratorRecentSubmissions, getCuratorStudentsProgress, getCuratorAssignmentsAnalytics, getCuratorHomeworkByGroup, getCuratorGroups, getGroupSchedule, getGroupLeaderboard, getWeeklyLessonsWithHwStatus, getGroupFullAttendanceMatrix, updateLeaderboardConfig, updateAttendanceBulk, updateLeaderboardEntry, updateAttendance, generateSchedule, getGroupSchedules, bulkScheduleUpload, getCuratorDetails, getCuratorTasks, getCuratorTaskGroups, getCuratorTasksSummary, updateCuratorTask, bulkUpdateCuratorTasks, getCuratorTaskTemplates, seedCuratorTaskTemplates, generateWeeklyTasks, getAllCuratorTasks, getCuratorsSummary } from './curator';
+import { getCuratorPendingSubmissions, getCuratorRecentSubmissions, getCuratorStudentsProgress, getCuratorAssignmentsAnalytics, getCuratorHomeworkByGroup, getCuratorGroups, getGroupSchedule, getGroupLeaderboard, getWeeklyLessonsWithHwStatus, getGroupFullAttendanceMatrix, updateLeaderboardConfig, updateAttendanceBulk, updateLeaderboardEntry, updateAttendance, generateSchedule, getGroupSchedules, bulkScheduleUpload, getCuratorDetails, getCuratorTasks, getCuratorTaskGroups, getCuratorTasksSummary, updateCuratorTask, bulkUpdateCuratorTasks, getCuratorTaskTemplates, seedCuratorTaskTemplates, generateWeeklyTasks, getAllCuratorTasks, getCuratorsSummary, createCuratorTaskInstance } from './curator';
 import { addFavoriteFlashcard, getFavoriteFlashcards, removeFavoriteFlashcard, removeFavoriteByCardId, checkIsFavorite, lookupWord, quickCreateFlashcard, getVocabularyCards } from './flashcards';
 import { getGamificationStatus, getBonusAllowance, giveTeacherBonus, getGamificationLeaderboard, getPointHistory, getStudentLeaderboard } from './gamification';
 import { getHeadTeacherManagedCourses, getHeadTeacherCourseTeachers, getHeadTeacherTeacherDetails, getHeadTeacherTeacherFeedbacks, getHeadTeacherTeacherAssignments } from './head-teacher';
@@ -140,7 +140,7 @@ const apiClient = {
   bulkScheduleUpload, getCuratorDetails, getCuratorTasks, getCuratorTaskGroups,
   getCuratorTasksSummary, updateCuratorTask, bulkUpdateCuratorTasks,
   getCuratorTaskTemplates, seedCuratorTaskTemplates, generateWeeklyTasks,
-  getAllCuratorTasks, getCuratorsSummary,
+  getAllCuratorTasks, getCuratorsSummary, createCuratorTaskInstance,
   // Flashcards & Vocabulary
   addFavoriteFlashcard, getFavoriteFlashcards, removeFavoriteFlashcard,
   removeFavoriteByCardId, checkIsFavorite, lookupWord, quickCreateFlashcard, getVocabularyCards,

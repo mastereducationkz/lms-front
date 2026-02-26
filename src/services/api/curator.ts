@@ -394,3 +394,31 @@ export async function getCuratorsSummary(week?: string): Promise<any[]> {
     throw error;
   }
 }
+
+export async function createCuratorTaskInstance(params: {
+  template_id: number;
+  curator_id: number;
+  student_id?: number;
+  group_id?: number;
+  due_date?: string;
+  week?: string;
+  program_week?: number;
+  custom_title?: string;
+}): Promise<any> {
+  try {
+    const q = new URLSearchParams();
+    q.set('template_id', String(params.template_id));
+    q.set('curator_id', String(params.curator_id));
+    if (params.student_id != null) q.set('student_id', String(params.student_id));
+    if (params.group_id != null) q.set('group_id', String(params.group_id));
+    if (params.due_date) q.set('due_date', params.due_date);
+    if (params.week) q.set('week', params.week);
+    if (params.custom_title) q.set('custom_title', params.custom_title);
+    if (params.program_week != null) q.set('program_week', String(params.program_week));
+    const response = await api.post(`/curator-tasks/create-instance?${q.toString()}`);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to create curator task instance:', error);
+    throw error;
+  }
+}
