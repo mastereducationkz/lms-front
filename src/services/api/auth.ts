@@ -50,7 +50,15 @@ export async function login(email: string, password: string): Promise<{ success:
 export async function logout(): Promise<void> {
   try {
     if (tokenManager.isAuthenticated()) {
-      await api.post('/auth/logout');
+      const accessToken = tokenManager.getAccessToken();
+      await axios.post(
+        `${API_BASE_URL}/auth/logout`,
+        {},
+        {
+          withCredentials: true,
+          headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined
+        }
+      );
     }
   } catch (error) {
     console.warn('Logout request failed:', error);

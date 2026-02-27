@@ -99,6 +99,7 @@ const tokenManager = new TokenManager();
 
 let isRefreshing = false;
 let refreshSubscribers: Array<(token: string) => void> = [];
+let isAuthFailureHandled = false;
 
 function onRefreshed(token: string): void {
   refreshSubscribers.forEach(callback => callback(token));
@@ -107,6 +108,24 @@ function onRefreshed(token: string): void {
 
 function addRefreshSubscriber(callback: (token: string) => void): void {
   refreshSubscribers.push(callback);
+}
+
+function isAuthEndpoint(url?: string): boolean {
+  if (!url) return false;
+  return (
+    url.includes('/auth/refresh') ||
+    url.includes('/auth/logout') ||
+    url.includes('/auth/login')
+  );
+}
+
+function handleAuthFailureOnce(): void {
+  if (isAuthFailureHandled) return;
+  isAuthFailureHandled = true;
+  tokenManager.clearTokens();
+  if (window.location.pathname !== '/login') {
+    window.location.href = '/login';
+  }
 }
 
 const api: AxiosInstance = axios.create({
@@ -137,8 +156,15 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
 
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isAuthEndpoint(originalRequest.url) || originalRequest.skipAuthRefresh) {
+        return Promise.reject(error);
+      }
+
       originalRequest._retry = true;
 
       if (isRefreshing) {
@@ -154,31 +180,37 @@ api.interceptors.response.use(
 
       try {
         const refreshToken = tokenManager.getRefreshToken();
-        if (refreshToken) {
-          const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-            refresh_token: refreshToken
-          });
-
-          const { access_token, refresh_token } = response.data;
-          tokenManager.setTokens(access_token, refresh_token);
-
-          isRefreshing = false;
-          onRefreshed(access_token);
-
-          originalRequest.headers.Authorization = `Bearer ${access_token}`;
-          return api(originalRequest);
+        if (!refreshToken) {
+          throw new Error('Missing refresh token');
         }
+
+        const response = await axios.post(
+          `${API_BASE_URL}/auth/refresh`,
+          { refresh_token: refreshToken },
+          { withCredentials: true }
+        );
+
+        const { access_token, refresh_token } = response.data;
+        tokenManager.setTokens(access_token, refresh_token);
+
+        isRefreshing = false;
+        isAuthFailureHandled = false;
+        onRefreshed(access_token);
+
+        originalRequest.headers.Authorization = `Bearer ${access_token}`;
+        return api(originalRequest);
       } catch (refreshError) {
         isRefreshing = false;
         refreshSubscribers = [];
         if (logoutHandler) {
-          await logoutHandler();
-        } else {
-          tokenManager.clearTokens();
+          try {
+            await logoutHandler();
+          } catch {
+            // Ignore logout handler failures during auth failure handling.
+          }
         }
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
-        }
+        handleAuthFailureOnce();
+        return Promise.reject(refreshError);
       }
     }
 
