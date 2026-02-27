@@ -321,6 +321,14 @@ export default function TeacherAttendancePage() {
       }
   };
 
+  const markAllPresentForLesson = (lesson: LessonMeta) => {
+      if (!data || isFutureLesson(lesson.start_datetime)) return;
+      const lessonKey = lesson.lesson_number.toString();
+      data.students.forEach((student) => {
+          updateStudentStatus(student.student_id, lessonKey, 'attended');
+      });
+  };
+
   return (
     <div className="p-8 space-y-8 max-w-[1600px] mx-auto min-h-screen text-gray-900 dark:text-foreground font-sans">
       {/* Header - Aligned with AnalyticsPage */}
@@ -380,15 +388,18 @@ export default function TeacherAttendancePage() {
             <div className="flex items-center gap-6 text-sm">
                 {data && data.lessons.length > 0 && (
                     <button 
-                        className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline"
+                        className={cn(
+                          "text-sm font-semibold hover:underline",
+                          lastActualLessonId
+                            ? "text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                            : "text-gray-400 dark:text-gray-500 cursor-not-allowed no-underline"
+                        )}
+                        disabled={!lastActualLessonId}
                         onClick={() => {
-                            data.students.forEach(s => {
-                                data.lessons.forEach(l => {
-                                    if (!isFutureLesson(l.start_datetime)) {
-                                        updateStudentStatus(s.student_id, l.lesson_number.toString(), 'attended');
-                                    }
-                                });
-                            });
+                            const lastLesson = data.lessons.find((l) => l.event_id === lastActualLessonId);
+                            if (lastLesson) {
+                                markAllPresentForLesson(lastLesson);
+                            }
                         }}
                     >
                         Mark all present
@@ -418,12 +429,19 @@ export default function TeacherAttendancePage() {
                             </TableHead>
                             {data.lessons.map(lesson => {
                                 const isLastActual = lesson.event_id === lastActualLessonId;
+                                const isFuture = isFutureLesson(lesson.start_datetime);
                                 return (
-                                    <TableHead key={lesson.event_id} className={cn(
+                                    <TableHead
+                                        key={lesson.event_id}
+                                        className={cn(
                                         "text-center min-w-[110px] px-1 py-2 md:px-2 md:py-3 transition-colors border-r border-gray-200 dark:border-border",
-                                        isFutureLesson(lesson.start_datetime) && "bg-gray-50/30 dark:bg-secondary/30 font-normal text-gray-400",
+                                        isFuture && "bg-gray-50/30 dark:bg-secondary/30 font-normal text-gray-400",
+                                        !isFuture && "cursor-pointer hover:bg-blue-50/20 dark:hover:bg-blue-900/10",
                                         isLastActual && "bg-blue-50/30 dark:bg-blue-900/10 border-l-2 border-r-2 border-blue-600 dark:border-blue-500/40"
-                                    )}>
+                                        )}
+                                        onClick={() => !isFuture && markAllPresentForLesson(lesson)}
+                                        title={isFuture ? 'Future lesson' : 'Mark all present for this date'}
+                                    >
                                         <div className="flex flex-col items-center">
                                             <span className={cn(
                                                 "text-[10px] font-medium capitalize",
