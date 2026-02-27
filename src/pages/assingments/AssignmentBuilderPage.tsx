@@ -25,6 +25,7 @@ import { Checkbox } from '../../components/ui/checkbox';
 
 import { DateTimePicker } from '../../components/ui/date-time-picker';
 import MultiTaskEditor from '../../components/assignments/MultiTaskEditor';
+import { parseAsUTC, formatInKZ } from '../../lib/datetime';
 
 interface AssignmentFormData {
   title: string;
@@ -133,7 +134,7 @@ export default function AssignmentBuilderPage() {
         correct_answers: correct_answers || {},
         max_score: assignment.max_score,
         due_date: assignment.due_date 
-          ? (assignment.due_date.endsWith('Z') ? assignment.due_date : new Date(assignment.due_date + 'Z').toISOString())
+          ? parseAsUTC(assignment.due_date).toISOString()
           : '',
         allowed_file_types: assignment.allowed_file_types || ['pdf', 'docx', 'doc', 'jpg', 'png'],
         max_file_size_mb: assignment.max_file_size_mb || 10,
@@ -146,7 +147,7 @@ export default function AssignmentBuilderPage() {
           ? { [assignment.group_id]: assignment.lesson_number } 
           : {},
         due_date_mapping: assignment.due_date && assignment.group_id 
-          ? { [assignment.group_id]: (assignment.due_date.endsWith('Z') ? assignment.due_date : new Date(assignment.due_date + 'Z').toISOString()) } 
+          ? { [assignment.group_id]: parseAsUTC(assignment.due_date).toISOString() } 
           : {},
         late_penalty_enabled: assignment.late_penalty_enabled || false,
         late_penalty_multiplier: assignment.late_penalty_multiplier || 0.6
@@ -255,13 +256,9 @@ export default function AssignmentBuilderPage() {
               console.log('Setting lesson_number_mapping:', updates.lesson_number_mapping);
           }
           
-          // Auto-populate due_date_mapping when an event is selected
+          // Auto-populate due_date_mapping when an event is selected (scheduled_at is UTC with Z)
           if (selectedEvent && selectedEvent.scheduled_at) {
-              // Ensure scheduled_at is treated as UTC if it's naive
-              const dateStr = selectedEvent.scheduled_at;
-              const eventDateTime = (dateStr.endsWith('Z') || dateStr.includes('+')) 
-                 ? new Date(dateStr).toISOString()
-                 : new Date(dateStr + 'Z').toISOString();
+              const eventDateTime = parseAsUTC(selectedEvent.scheduled_at).toISOString();
 
               updates.due_date_mapping = {
                   ...prev.due_date_mapping,
@@ -718,13 +715,13 @@ export default function AssignmentBuilderPage() {
                                               </SelectTrigger>
                                               <SelectContent>
                                                 {groupEvents
-                                                  .filter((event: any) => !event.is_past && new Date(event.scheduled_at) >= new Date())
+                                                  .filter((event: any) => !event.is_past && parseAsUTC(event.scheduled_at) >= new Date())
                                                   .map((event: any) => (
                                                     <SelectItem 
                                                       key={event.id} 
                                                       value={event.id.toString()}
                                                     >
-                                                        {event.title} - {new Date(event.scheduled_at).toLocaleDateString('en-US', { 
+                                                        {event.title} - {formatInKZ(event.scheduled_at, { 
                                                             weekday: 'short', 
                                                             month: 'short', 
                                                             day: 'numeric', 
@@ -741,7 +738,7 @@ export default function AssignmentBuilderPage() {
                                               <div className="pl-2 pt-1.5 space-y-1.5 border-l-2 border-blue-500">
                                                 <Label className="text-[10px] text-blue-600 dark:text-blue-400 uppercase font-bold tracking-tight">Set Group Deadline (Optional)</Label>
                                                 <DateTimePicker
-                                                    date={groupDueDate ? new Date(groupDueDate) : undefined}
+                                                    date={groupDueDate ? parseAsUTC(groupDueDate) : undefined}
                                                     setDate={(date) => handleGroupDueDateChange(groupId, date ? date.toISOString() : '')}
                                                     placeholder="Individual due date..."
                                                 />

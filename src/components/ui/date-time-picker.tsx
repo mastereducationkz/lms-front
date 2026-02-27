@@ -23,6 +23,14 @@ export function DateTimePicker({ date, setDate, placeholder }: DateTimePickerPro
     date ? format(date, "HH:mm") : "00:00"
   )
 
+  React.useEffect(() => {
+    if (date) {
+      setTime(format(date, "HH:mm"))
+    } else {
+      setTime("00:00")
+    }
+  }, [date])
+
   const handleDateSelect = (selectedDate: Date | undefined) => {
     if (selectedDate) {
       const [hours, minutes] = time.split(":")
