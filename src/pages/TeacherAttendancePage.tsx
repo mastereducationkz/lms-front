@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { 
   Loader2,
   Star,
+  MousePointerClick,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { 
@@ -408,6 +409,16 @@ export default function TeacherAttendancePage() {
             </div>
         </div>
 
+        {/* Interaction hint */}
+        {data && data.lessons.length > 0 && (
+          <div className="px-6 py-2.5 border-b border-gray-200 dark:border-border bg-blue-50/40 dark:bg-blue-900/10 text-xs text-blue-700 dark:text-blue-300 flex items-center gap-2">
+            <MousePointerClick className="w-3.5 h-3.5 shrink-0" />
+            <span>
+              Tip: click a lesson date in the header to mark all students <span className="font-semibold">Present</span> for that lesson.
+            </span>
+          </div>
+        )}
+
         {/* Matrix Grid */}
         <div className="overflow-x-auto relative min-h-[400px]">
             {loading ? (
@@ -451,6 +462,15 @@ export default function TeacherAttendancePage() {
                                                 "text-sm font-bold",
                                                 isLastActual ? "text-blue-700 dark:text-blue-400" : "text-gray-900 dark:text-foreground"
                                             )}>{formatDate(lesson.start_datetime)}</span>
+                                            {!isFuture ? (
+                                              <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-wide text-blue-600/80 dark:text-blue-300/80">
+                                                Mark all
+                                              </span>
+                                            ) : (
+                                              <span className="mt-0.5 text-[9px] uppercase tracking-wide text-gray-300 dark:text-gray-600">
+                                                Future
+                                              </span>
+                                            )}
                                         </div>
                                     </TableHead>
                                 );
