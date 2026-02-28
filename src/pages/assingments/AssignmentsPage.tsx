@@ -75,7 +75,9 @@ export default function AssignmentsPage() {
   const [statsLoading, setStatsLoading] = useState(false);
   const [pendingToGradeByGroup, setPendingToGradeByGroup] = useState<Map<string, number>>(new Map());
 
-  const isTeacher = user?.role === 'teacher' || user?.role === 'admin';
+  // Explicit view flags: students never see teacher UI, even with group_id in URL
+  const isTeacherView = user?.role === 'teacher' || user?.role === 'admin';
+  const isStudentView = user?.role === 'student';
 
   const setFilter = (tab: string) => {
     const newParams = new URLSearchParams(searchParams);
@@ -102,9 +104,21 @@ export default function AssignmentsPage() {
     setPage(1);
   }, [selectedGroupId, filter]);
 
+  // Student route guard: ignore group_id in URL so students never see teacher group-management UI
+  const effectiveSelectedGroupId = isStudentView ? 'all' : selectedGroupId;
+  const effectiveOverviewMode = isStudentView ? false : selectedGroupId === 'all';
+
+  useEffect(() => {
+    if (isStudentView && searchParams.has('group_id')) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('group_id');
+      setSearchParams(next, { replace: true });
+    }
+  }, [isStudentView, searchParams]);
+
   // Load submission stats for the selected group when teacher enters group view
   useEffect(() => {
-    if (!isTeacher || selectedGroupId === 'all') return;
+    if (!isTeacherView || selectedGroupId === 'all') return;
     const groupAssignments = assignments.filter(a => {
       if (selectedGroupId === 'ungrouped') return a.group_id == null;
       return a.group_id?.toString() === selectedGroupId;
@@ -131,11 +145,11 @@ export default function AssignmentsPage() {
       });
       setStatsLoading(false);
     });
-  }, [selectedGroupId, assignments, isTeacher]);
+  }, [selectedGroupId, assignments, isTeacherView]);
 
-  // Load "need grading" counters by group for overview cards
+  // Load "need grading" counters by group for overview cards (teacher only)
   useEffect(() => {
-    if (!isTeacher || assignments.length === 0) {
+    if (!isTeacherView || assignments.length === 0) {
       setPendingToGradeByGroup(new Map());
       return;
     }
@@ -160,7 +174,7 @@ export default function AssignmentsPage() {
       .catch(() => {
         setPendingToGradeByGroup(new Map());
       });
-  }, [isTeacher, assignments]);
+  }, [isTeacherView, assignments]);
 
   const loadData = async () => {
     setLoading(true);
@@ -303,12 +317,12 @@ export default function AssignmentsPage() {
   // Filtered assignments for group mode (by group + status)
   const filteredAssignments = assignments.filter(assignment => {
     if (!includeHidden && assignment.is_hidden) return false;
-    if (selectedGroupId !== 'all') {
-      if (selectedGroupId === 'ungrouped') {
+    if (effectiveSelectedGroupId !== 'all') {
+      if (effectiveSelectedGroupId === 'ungrouped') {
         if (assignment.group_id != null) return false;
-      } else if (assignment.group_id?.toString() !== selectedGroupId) {
-      return false;
-    }
+      } else if (assignment.group_id?.toString() !== effectiveSelectedGroupId) {
+        return false;
+      }
     }
     if (user?.role === 'student' && filter === 'all') {
       const effectiveDeadline = assignment.extended_deadline || assignment.due_date;
@@ -328,8 +342,7 @@ export default function AssignmentsPage() {
   const totalPages = Math.ceil(filteredAssignments.length / PAGE_SIZE) || 1;
   const paginatedAssignments = filteredAssignments.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const isOverviewMode = selectedGroupId === 'all';
-  const selectedGroup = groupsWithAssignments.find(g => g.id === selectedGroupId);
+  const selectedGroup = groupsWithAssignments.find(g => g.id === effectiveSelectedGroupId);
 
 
 
@@ -407,7 +420,7 @@ export default function AssignmentsPage() {
     );
   }
 
-  const countSource = isOverviewMode ? assignmentsByHidden : (selectedGroup?.assignments ?? []);
+  const countSource = (effectiveOverviewMode || isStudentView) ? assignmentsByHidden : (selectedGroup?.assignments ?? []);
   const excludeStudentGradedPast = (a: AssignmentWithStatus) => {
     if (user?.role !== 'student') return true;
     const effectiveDeadline = a.extended_deadline || a.due_date;
@@ -471,7 +484,7 @@ export default function AssignmentsPage() {
                             </td>
         {dueDateCell}
 
-        {isTeacher ? (
+        {isTeacherView ? (
           <>
             {/* Lesson */}
             <td className="px-6 py-4 text-gray-500 dark:text-gray-400 text-sm">
@@ -543,7 +556,7 @@ export default function AssignmentsPage() {
 
                             <td className="px-6 py-4 text-right">
                               <div className="flex items-center justify-end gap-1">
-            {isTeacher ? (
+            {isTeacherView ? (
               <>
                 <Button onClick={() => navigate(`/homework/${assignment.id}/progress`)} variant="ghost" size="icon" title="View Progress" className="h-8 w-8 text-slate-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400">
                                       <Eye className="w-4 h-4" />
@@ -593,7 +606,7 @@ export default function AssignmentsPage() {
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white uppercase">
           Homework
         </h1>
-        {user?.role === 'teacher' || user?.role === 'admin' ? (
+        {isTeacherView ? (
           <Button onClick={() => navigate('/homework/new')} variant="default" size="sm">
             Create Homework
           </Button>
@@ -622,14 +635,14 @@ export default function AssignmentsPage() {
           ))}
         </div>
 
-        {!isOverviewMode && selectedGroup && (
+        {!effectiveOverviewMode && selectedGroup && isTeacherView && (
           <Button variant="outline" size="sm" onClick={() => setGroupId('all')} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
             Back to groups
           </Button>
         )}
 
-        {(user?.role === 'teacher' || user?.role === 'admin') && (
+        {isTeacherView && (
           <div className="flex items-center gap-2 ml-auto">
             <Checkbox id="show-hidden" checked={includeHidden} onCheckedChange={(checked) => setIncludeHidden(checked === true)} />
             <label htmlFor="show-hidden" className="text-sm text-gray-600 dark:text-gray-300 cursor-pointer select-none">Show archived</label>
@@ -637,8 +650,8 @@ export default function AssignmentsPage() {
         )}
       </div>
 
-      {/* Content: Overview or Group mode */}
-      {isOverviewMode ? (
+      {/* Content: Overview (teacher) or Group mode / flat table (student) */}
+      {effectiveOverviewMode ? (
         <div className="space-y-6">
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
@@ -671,7 +684,7 @@ export default function AssignmentsPage() {
                 });
                 if (filter !== 'all' && filtered.length === 0) return null;
 
-                const toGradeCount = isTeacher ? (pendingToGradeByGroup.get(g.id) || 0) : 0;
+                const toGradeCount = isTeacherView ? (pendingToGradeByGroup.get(g.id) || 0) : 0;
 
                 // Student-facing stats
                 const pending = g.assignments.filter(a => a.status === 'not_submitted').length;
@@ -689,7 +702,7 @@ export default function AssignmentsPage() {
                       <h3 className="font-bold text-slate-900 dark:text-white truncate">{g.name}</h3>
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">{total} assignment{total !== 1 ? 's' : ''}</div>
-                    {isTeacher ? (
+                    {isTeacherView ? (
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
                         <span className={`flex items-center gap-1 font-medium ${toGradeCount > 0 ? "text-amber-600 dark:text-amber-400" : "text-gray-400 dark:text-gray-500"}`}>
                           {toGradeCount} to grade
@@ -732,7 +745,7 @@ export default function AssignmentsPage() {
                       <tr>
                         <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Homework</th>
                         <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Due Date</th>
-                        {isTeacher ? (
+                        {isTeacherView ? (
                           <>
                             <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Lesson</th>
                             <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Points</th>
