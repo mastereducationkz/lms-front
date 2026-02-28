@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '../../services/api';
-import { ClipboardList, Calendar, AlertCircle, Eye, Edit, Archive, ArchiveRestore, Copy, ArrowLeft, Search, Users, CheckCircle2, Clock } from 'lucide-react';
+import { ClipboardList, Calendar, AlertCircle, Eye, Edit, Archive, ArchiveRestore, Copy, ArrowLeft, Search, Users } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Input } from '../../components/ui/input';
@@ -73,6 +73,7 @@ export default function AssignmentsPage() {
   const [page, setPage] = useState(1);
   const [assignmentStats, setAssignmentStats] = useState<Map<number, AssignmentStats>>(new Map());
   const [statsLoading, setStatsLoading] = useState(false);
+  const [pendingToGradeByGroup, setPendingToGradeByGroup] = useState<Map<string, number>>(new Map());
 
   const isTeacher = user?.role === 'teacher' || user?.role === 'admin';
 
@@ -131,6 +132,35 @@ export default function AssignmentsPage() {
       setStatsLoading(false);
     });
   }, [selectedGroupId, assignments, isTeacher]);
+
+  // Load "need grading" counters by group for overview cards
+  useEffect(() => {
+    if (!isTeacher || assignments.length === 0) {
+      setPendingToGradeByGroup(new Map());
+      return;
+    }
+
+    const assignmentToGroup = new Map<number, string>();
+    for (const assignment of assignments) {
+      const key = String(assignment.group_id ?? 'ungrouped');
+      assignmentToGroup.set(assignment.id, key);
+    }
+
+    apiClient.getPendingSubmissions()
+      .then((pending: Array<{ assignment_id?: number }>) => {
+        const counts = new Map<string, number>();
+        for (const submission of pending || []) {
+          if (!submission.assignment_id) continue;
+          const groupKey = assignmentToGroup.get(submission.assignment_id);
+          if (!groupKey) continue;
+          counts.set(groupKey, (counts.get(groupKey) || 0) + 1);
+        }
+        setPendingToGradeByGroup(counts);
+      })
+      .catch(() => {
+        setPendingToGradeByGroup(new Map());
+      });
+  }, [isTeacher, assignments]);
 
   const loadData = async () => {
     setLoading(true);
@@ -277,8 +307,8 @@ export default function AssignmentsPage() {
       if (selectedGroupId === 'ungrouped') {
         if (assignment.group_id != null) return false;
       } else if (assignment.group_id?.toString() !== selectedGroupId) {
-        return false;
-      }
+      return false;
+    }
     }
     if (user?.role === 'student' && filter === 'all') {
       const effectiveDeadline = assignment.extended_deadline || assignment.due_date;
@@ -422,23 +452,23 @@ export default function AssignmentsPage() {
       </td>
     );
 
-    return (
-      <tr key={assignment.id} className="border-t hover:bg-gray-50/50 dark:hover:bg-secondary">
-        <td className="px-6 py-4">
-          <div>
-            <div
-              className="font-medium text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-              onClick={() => navigate(`/homework/${assignment.id}`)}
-            >
-              {assignment.title}
-            </div>
-            {assignment.description && (
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
-                {assignment.description}
-              </div>
-            )}
-          </div>
-        </td>
+            return (
+                          <tr key={assignment.id} className="border-t hover:bg-gray-50/50 dark:hover:bg-secondary">
+                            <td className="px-6 py-4">
+                              <div>
+                                <div 
+                                  className="font-medium text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                  onClick={() => navigate(`/homework/${assignment.id}`)}
+                                >
+                                  {assignment.title}
+                                </div>
+                                {assignment.description && (
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
+                                    {assignment.description}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
         {dueDateCell}
 
         {isTeacher ? (
@@ -467,11 +497,11 @@ export default function AssignmentsPage() {
                         className="bg-blue-500 h-1.5 rounded-full"
                         style={{ width: `${stats.total_students > 0 ? Math.round(((stats.submitted + stats.graded) / stats.total_students) * 100) : 0}%` }}
                       />
-                    </div>
+                                </div>
                     <span className="text-xs text-gray-500 dark:text-gray-400 tabular-nums whitespace-nowrap">
                       {stats.submitted + stats.graded}/{stats.total_students}
-                    </span>
-                  </div>
+                                  </span>
+                                </div>
                   <div className="flex gap-2 text-[11px]">
                     {stats.graded > 0 && (
                       <span className="flex items-center gap-0.5 text-green-600 dark:text-green-400">
@@ -481,79 +511,79 @@ export default function AssignmentsPage() {
                     {stats.submitted > 0 && (
                       <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400">
                         {stats.submitted} to grade
-                      </span>
+                                  </span>
                     )}
                     {stats.graded === 0 && stats.submitted === 0 && (
                       <span className="text-gray-400 dark:text-gray-500">No submissions</span>
                     )}
                   </div>
-                </div>
-              ) : (
+                                </div>
+                              ) : (
                 <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
-              )}
-            </td>
+                              )}
+                            </td>
           </>
         ) : (
           <>
             <td className="px-6 py-4">{getStatusBadge(assignment)}</td>
-            <td className="px-6 py-4">
-              {assignment.status === 'graded' ? (
-                <div className="flex flex-col">
-                  <span className="text-green-600 dark:text-green-400 font-semibold">{assignment.score}/{assignment.max_score ?? 100}</span>
-                  <span className="text-[10px] text-gray-400 dark:text-gray-500">
-                    {Math.round((assignment.score || 0) / (assignment.max_score || 100) * 100)}%
-                  </span>
-                </div>
-              ) : (
-                <span className="text-gray-400 dark:text-gray-500">-</span>
-              )}
-            </td>
+                            <td className="px-6 py-4">
+                              {assignment.status === 'graded' ? (
+                                <div className="flex flex-col">
+                                  <span className="text-green-600 dark:text-green-400 font-semibold">{assignment.score}/{assignment.max_score ?? 100}</span>
+                                  <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                                    {Math.round((assignment.score || 0) / (assignment.max_score || 100) * 100)}%
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400 dark:text-gray-500">-</span>
+                              )}
+                            </td>
           </>
         )}
 
-        <td className="px-6 py-4 text-right">
-          <div className="flex items-center justify-end gap-1">
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex items-center justify-end gap-1">
             {isTeacher ? (
               <>
                 <Button onClick={() => navigate(`/homework/${assignment.id}/progress`)} variant="ghost" size="icon" title="View Progress" className="h-8 w-8 text-slate-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400">
-                  <Eye className="w-4 h-4" />
-                </Button>
+                                      <Eye className="w-4 h-4" />
+                                    </Button>
                 <Button onClick={() => navigate(`/homework/new?copyFrom=${assignment.id}`)} variant="ghost" size="icon" title="Copy Assignment" className="h-8 w-8 text-slate-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400">
-                  <Copy className="w-4 h-4" />
-                </Button>
+                                      <Copy className="w-4 h-4" />
+                                    </Button>
                 <Button onClick={() => navigate(`/homework/${assignment.id}/edit`)} variant="ghost" size="icon" title="Edit Assignment" className="h-8 w-8 text-slate-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400">
-                  <Edit className="w-4 h-4" />
-                </Button>
-                <Button
-                  onClick={async () => {
-                    try {
-                      await apiClient.toggleAssignmentVisibility(String(assignment.id));
-                      loadAssignments();
-                    } catch (err) {
-                      console.error('Failed to toggle visibility:', err);
-                    }
-                  }}
-                  variant="ghost"
-                  size="icon"
-                  title={assignment.is_hidden ? "Restore" : "Archive"}
-                  className={`h-8 w-8 ${assignment.is_hidden ? "text-orange-500 dark:text-orange-400 hover:text-orange-600 dark:hover:text-orange-400" : "text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-400"}`}
-                >
-                  {assignment.is_hidden ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
-                </Button>
-              </>
-            ) : (
-              <Button
-                size="sm"
-                onClick={() => navigate(`/homework/${assignment.id}`)}
-                variant="ghost"
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-bold uppercase tracking-widest text-[10px]"
-              >
-                {assignment.status === 'graded' || assignment.status === 'submitted' ? 'View' : 'Submit'}
-              </Button>
-            )}
-          </div>
-        </td>
-      </tr>
+                                      <Edit className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      onClick={async () => {
+                                        try {
+                                          await apiClient.toggleAssignmentVisibility(String(assignment.id));
+                                          loadAssignments();
+                                        } catch (err) {
+                                          console.error('Failed to toggle visibility:', err);
+                                        }
+                                      }}
+                                      variant="ghost"
+                                      size="icon"
+                                      title={assignment.is_hidden ? "Restore" : "Archive"}
+                                      className={`h-8 w-8 ${assignment.is_hidden ? "text-orange-500 dark:text-orange-400 hover:text-orange-600 dark:hover:text-orange-400" : "text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-400"}`}
+                                    >
+                                      {assignment.is_hidden ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
+                                    </Button>
+                                  </>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => navigate(`/homework/${assignment.id}`)}
+                                    variant="ghost"
+                                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-bold uppercase tracking-widest text-[10px]"
+                                  >
+                                    {assignment.status === 'graded' || assignment.status === 'submitted' ? 'View' : 'Submit'}
+                                  </Button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
     );
   };
 
@@ -641,22 +671,7 @@ export default function AssignmentsPage() {
                 });
                 if (filter !== 'all' && filtered.length === 0) return null;
 
-                // For teachers, show group-level stats from loaded assignmentStats
-                const groupStats = isTeacher
-                  ? g.assignments.reduce(
-                      (acc, a) => {
-                        const s = assignmentStats.get(a.id);
-                        if (s) {
-                          acc.totalStudents = Math.max(acc.totalStudents, s.total_students);
-                          acc.submitted += s.submitted;
-                          acc.graded += s.graded;
-                          acc.toGrade += s.submitted;
-                        }
-                        return acc;
-                      },
-                      { totalStudents: 0, submitted: 0, graded: 0, toGrade: 0 }
-                    )
-                  : null;
+                const toGradeCount = isTeacher ? (pendingToGradeByGroup.get(g.id) || 0) : 0;
 
                 // Student-facing stats
                 const pending = g.assignments.filter(a => a.status === 'not_submitted').length;
@@ -676,19 +691,9 @@ export default function AssignmentsPage() {
                     <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">{total} assignment{total !== 1 ? 's' : ''}</div>
                     {isTeacher ? (
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
-                        {groupStats && groupStats.toGrade > 0 && (
-                          <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
-                            to grade
-                          </span>
-                        )}
-                        {groupStats && groupStats.graded > 0 && (
-                          <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                            graded
-                          </span>
-                        )}
-                        {(!groupStats || (groupStats.toGrade === 0 && groupStats.graded === 0)) && (
-                          <span className="text-gray-400 dark:text-gray-500">Click to view</span>
-                        )}
+                        <span className={`flex items-center gap-1 font-medium ${toGradeCount > 0 ? "text-amber-600 dark:text-amber-400" : "text-gray-400 dark:text-gray-500"}`}>
+                          {toGradeCount} to grade
+                        </span>
                       </div>
                     ) : (
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
@@ -744,9 +749,9 @@ export default function AssignmentsPage() {
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-border">
                       {paginatedAssignments.map(assignment => renderAssignmentRow(assignment))}
-                    </tbody>
-                  </table>
-                </div>
+                      </tbody>
+                    </table>
+                  </div>
               </div>
 
               {totalPages > 1 && (
@@ -765,8 +770,8 @@ export default function AssignmentsPage() {
                 </div>
               )}
             </>
-          )}
-        </div>
+        )}
+      </div>
       )}
     </div>
   );
