@@ -728,7 +728,7 @@ export default function AssignmentBuilderPage() {
                                                             hour: '2-digit', 
                                                             minute: '2-digit',
                                                             hour12: false
-                                                        })}
+                                                        })} (KZ)
                                                     </SelectItem>
                                                   ))}
                                               </SelectContent>

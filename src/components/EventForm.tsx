@@ -40,6 +40,7 @@ import {
 import type { Event, CreateEventRequest, UpdateEventRequest, EventType, Group, Course, CourseModule, Lesson } from '../types';
 import { EVENT_TYPE_LABELS } from '../types';
 import { useAuth } from '../contexts/AuthContext';
+import { toDatetimeLocal, fromDatetimeLocalKZ } from '../lib/datetime';
 
 interface EventFormProps {
   event?: Event;
@@ -60,13 +61,13 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
   const [selectedModuleForLesson, setSelectedModuleForLesson] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
-  // Form state
+  // Form state (display in KZ, send UTC)
   const [formData, setFormData] = useState({
     title: event?.title || '',
     description: event?.description || '',
     event_type: event?.event_type || 'class' as EventType,
-    start_datetime: event?.start_datetime ? new Date(event.start_datetime).toISOString().slice(0, 16) : '',
-    end_datetime: event?.end_datetime ? new Date(event.end_datetime).toISOString().slice(0, 16) : '',
+    start_datetime: event?.start_datetime ? toDatetimeLocal(event.start_datetime) : '',
+    end_datetime: event?.end_datetime ? toDatetimeLocal(event.end_datetime) : '',
     location: event?.location || '',
     is_online: event?.is_online ?? true,
     meeting_url: event?.meeting_url || '',
@@ -247,8 +248,8 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
         title: formData.title.trim(),
         description: formData.description.trim() || undefined,
         event_type: formData.event_type,
-        start_datetime: formData.start_datetime,
-        end_datetime: formData.end_datetime,
+        start_datetime: fromDatetimeLocalKZ(formData.start_datetime),
+        end_datetime: fromDatetimeLocalKZ(formData.end_datetime),
         location: formData.location.trim() || undefined,
         is_online: formData.is_online,
         meeting_url: formData.meeting_url.trim() || undefined,
