@@ -28,6 +28,7 @@ interface StudentAnalytics {
   student_id: number;
   student_name: string;
   email: string;
+  group_ids?: number[];
   group_name?: string;
   progress_percentage: number;
   last_activity?: string;
@@ -252,6 +253,7 @@ export default function AnalyticsPage() {
         // Processing happens in useEffect
     } catch (err) {
         console.error("Failed to fetch overview", err);
+        setError("Failed to load overview data. Please refresh the page.")
     } finally {
         setLoadingOverview(false);
     }
@@ -263,12 +265,20 @@ export default function AnalyticsPage() {
 
       // Filter by Group
       if (groupId !== 'all') {
-           // We try to match by Group Name if possible, as student data might use names
            const targetGroup = groups.find(g => String(g.id) === groupId);
-           if (targetGroup) {
-               // Normalizing comparison: backend might send group_name
-               rawStudents = rawStudents.filter((s: any) => s.group_name === targetGroup.name || s.group_name === targetGroup.description);
-           }
+           const targetGroupId = Number(groupId);
+
+           rawStudents = rawStudents.filter((s: any) => {
+             if (Array.isArray(s.group_ids) && s.group_ids.length > 0) {
+               return s.group_ids.includes(targetGroupId);
+             }
+
+             if (!targetGroup) {
+               return false;
+             }
+
+             return s.group_name === targetGroup.name || s.group_name === targetGroup.description;
+           });
       }
 
       // Calculate Stats based on FILTERED students
@@ -295,6 +305,7 @@ export default function AnalyticsPage() {
         student_id: s.student_id,
         student_name: s.student_name,
         email: s.email || '',
+        group_ids: s.group_ids || [],
         group_name: s.group_name,
         progress_percentage: s.completion_percentage || 0,
         last_activity: s.last_activity,

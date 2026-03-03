@@ -13,7 +13,9 @@ export async function getDetailedStudentAnalytics(studentId: string, courseId?: 
 
 export async function getCourseAnalyticsOverview(courseId: string): Promise<any> {
   try {
-    const response = await api.get(`/analytics/course/${courseId}/overview`);
+    const response = await api.get(`/analytics/course/${courseId}/overview`, {
+      timeout: 60000
+    });
     return response.data;
   } catch (error) {
     console.error('Failed to get course analytics overview:', error);
@@ -93,7 +95,9 @@ export async function getGroupsAnalytics(): Promise<any> {
 
 export async function getCourseGroupsAnalytics(courseId: string): Promise<any> {
   try {
-    const response = await api.get(`/analytics/course/${courseId}/groups`);
+    const response = await api.get(`/analytics/course/${courseId}/groups`, {
+      timeout: 60000
+    });
     return response.data;
   } catch (error) {
     console.error('Failed to fetch course groups analytics:', error);
