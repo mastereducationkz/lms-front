@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { renderTextWithLatex } from '../../utils/latex';
+import { applyHighlightsToDOM } from '../../utils/highlightUtils';
 
 interface TextCompletionRendererProps {
     text: string;
+    questionId?: string;
+    highlights?: Array<{ text: string; color: 'yellow' | 'pink' | 'blue' }>;
     answers?: Record<number, string>;
     onAnswerChange?: (gapIndex: number, value: string) => void;
     disabled?: boolean;
@@ -19,6 +22,8 @@ interface GapData {
 
 export const TextCompletionRenderer: React.FC<TextCompletionRendererProps> = ({
     text,
+    questionId,
+    highlights = [],
     answers = {},
     onAnswerChange,
     disabled = false,
@@ -29,6 +34,9 @@ export const TextCompletionRenderer: React.FC<TextCompletionRendererProps> = ({
     const containerRef = useRef<HTMLDivElement>(null);
     const [gaps, setGaps] = useState<GapData[]>([]);
     const [mounted, setMounted] = useState(false);
+
+    // Serialize highlights for stable useEffect dependency (avoids re-render on same data with new array ref)
+    const highlightsKey = JSON.stringify(highlights);
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -52,7 +60,7 @@ export const TextCompletionRenderer: React.FC<TextCompletionRendererProps> = ({
             return `<span id="${id}" class="inline-block align-baseline mx-1" style="display: inline-block; vertical-align: baseline;"></span>`;
         }).join('');
 
-        // Set HTML content
+        // Set HTML content (without highlights initially)
         containerRef.current.innerHTML = htmlContent;
 
         // Find all gap containers and store references
@@ -63,7 +71,13 @@ export const TextCompletionRenderer: React.FC<TextCompletionRendererProps> = ({
 
         setGaps(updatedGaps);
         setMounted(true);
-    }, [text]);
+    }, [text, questionId]);
+
+    // Apply highlights dynamically without rebuilding innerHTML
+    useEffect(() => {
+        if (!mounted || !containerRef.current) return;
+        applyHighlightsToDOM(containerRef.current, highlights, questionId);
+    }, [highlightsKey, mounted, questionId]);
 
     return (
         <div

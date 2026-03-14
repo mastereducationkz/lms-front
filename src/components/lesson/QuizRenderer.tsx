@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Button } from '../ui/button';
 import { ChevronRight, AlertTriangle, HelpCircle } from 'lucide-react';
 import { renderTextWithLatex } from '../../utils/latex';
+import { applyHighlightsToHtml as applyHighlightsToHtmlShared } from '../../utils/highlightUtils';
 import type { Step } from '../../types';
 import { useNavigate } from 'react-router-dom';
 import { LongTextQuestion } from './quiz/LongTextQuestion';
@@ -330,79 +331,12 @@ const QuizRenderer = (props: QuizRendererProps) => {
     };
   }, [highlightPalette]);
 
-  const getHighlightClassByColor = (color: HighlightColor) => {
-    if (color === 'pink') return 'bg-pink-200 dark:bg-pink-700/60';
-    if (color === 'blue') return 'bg-sky-200 dark:bg-sky-700/60';
-    return 'bg-amber-200 dark:bg-amber-700/60';
-  };
-
-  const applyHighlightsToHtml = (questionId: string, html: string, highlights: TextHighlight[]) => {
-    if (!html || highlights.length === 0 || typeof window === 'undefined') {
-      return html;
-    }
-
-    try {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(`<div id="quiz-highlight-root">${html}</div>`, 'text/html');
-      const root = doc.getElementById('quiz-highlight-root');
-      if (!root) return html;
-
-      const uniqueHighlights = highlights
-        .map((value) => ({ text: value.text.trim(), color: value.color }))
-        .filter((value) => value.text.length >= 2)
-        .sort((a, b) => b.text.length - a.text.length);
-
-      uniqueHighlights.forEach((highlight) => {
-        const loweredHighlight = highlight.text.toLowerCase();
-        const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-        const nodes: Text[] = [];
-
-        let node = walker.nextNode();
-        while (node) {
-          const textNode = node as Text;
-          const parentTag = textNode.parentElement?.tagName?.toLowerCase();
-          if (textNode.nodeValue && parentTag !== 'mark' && parentTag !== 'script' && parentTag !== 'style') {
-            nodes.push(textNode);
-          }
-          node = walker.nextNode();
-        }
-
-        nodes.forEach((textNode) => {
-          let cursor: Text | null = textNode;
-          while (cursor) {
-            const value = cursor.nodeValue || '';
-            const matchIndex = value.toLowerCase().indexOf(loweredHighlight);
-            if (matchIndex === -1) break;
-
-            const beforeMatch = cursor.splitText(matchIndex);
-            const afterMatch = beforeMatch.splitText(highlight.text.length);
-            const mark = doc.createElement('mark');
-            mark.className = `${getHighlightClassByColor(highlight.color)} text-inherit`;
-            mark.style.padding = '0';
-            mark.style.borderRadius = '0';
-            mark.style.cursor = 'pointer';
-            mark.title = 'Click to remove highlight';
-            mark.setAttribute('data-highlight-text', highlight.text);
-            mark.setAttribute('data-highlight-question-id', questionId);
-            mark.textContent = beforeMatch.nodeValue;
-            beforeMatch.parentNode?.replaceChild(mark, beforeMatch);
-            cursor = afterMatch;
-          }
-        });
-      });
-
-      return root.innerHTML;
-    } catch (error) {
-      console.error('Failed to apply text highlights:', error);
-      return html;
-    }
-  };
-
-  const getQuestionHighlights = (questionId: string) => textHighlightsByQuestion.get(questionId) || [];
+  const EMPTY_HIGHLIGHTS: TextHighlight[] = [];
+  const getQuestionHighlights = (questionId: string) => textHighlightsByQuestion.get(questionId) || EMPTY_HIGHLIGHTS;
 
   const renderHighlightedLatex = (questionId: string, htmlSource: string) => {
     const rendered = renderTextWithLatex(htmlSource);
-    return applyHighlightsToHtml(questionId, rendered, getQuestionHighlights(questionId));
+    return applyHighlightsToHtmlShared(rendered, getQuestionHighlights(questionId), questionId);
   };
 
   const handleHighlightedTextClick = (event: React.MouseEvent) => {
@@ -706,6 +640,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
                   ) : q.question_type === 'text_completion' ? (
                     <TextCompletionQuestion
                       question={q}
+                      questionId={q.id.toString()}
+                      highlights={getQuestionHighlights(q.id.toString())}
                       answers={gapAnswers.get(q.id.toString()) || []}
                       onAnswerChange={(idx, val) => {
                         const currentAnswers = gapAnswers.get(q.id.toString()) || [];
@@ -735,6 +671,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
                   ) : (
                     <FillInBlankQuestion
                       question={q}
+                      questionId={q.id.toString()}
+                      highlights={getQuestionHighlights(q.id.toString())}
                       answers={gapAnswers.get(q.id.toString()) || []}
                       onAnswerChange={(idx, val) => {
                         const currentAnswers = gapAnswers.get(q.id.toString()) || [];
@@ -1273,6 +1211,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
             ) : q.question_type === 'text_completion' ? (
               <TextCompletionQuestion
                 question={q}
+                questionId={q.id.toString()}
+                highlights={getQuestionHighlights(q.id.toString())}
                 answers={gapAnswers.get(q.id.toString()) || []}
                 onAnswerChange={(idx, val) => {
                   const currentAnswers = gapAnswers.get(q.id.toString()) || [];
@@ -1302,6 +1242,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
             ) : (
               <FillInBlankQuestion
                 question={q}
+                questionId={q.id.toString()}
+                highlights={getQuestionHighlights(q.id.toString())}
                 answers={gapAnswers.get(q.id.toString()) || []}
                 onAnswerChange={(idx, val) => {
                   const currentAnswers = gapAnswers.get(q.id.toString()) || [];

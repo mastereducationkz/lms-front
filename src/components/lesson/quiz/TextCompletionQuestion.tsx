@@ -3,6 +3,8 @@ import { TextCompletionRenderer } from '../TextCompletionRenderer';
 
 interface TextCompletionQuestionProps {
   question: any;
+  questionId?: string;
+  highlights?: Array<{ text: string; color: 'yellow' | 'pink' | 'blue' }>;
   answers: string[];
   onAnswerChange: (index: number, value: string) => void;
   disabled?: boolean;
@@ -11,6 +13,8 @@ interface TextCompletionQuestionProps {
 
 export const TextCompletionQuestion: React.FC<TextCompletionQuestionProps> = ({
   question,
+  questionId,
+  highlights,
   answers,
   onAnswerChange,
   disabled,
@@ -31,6 +35,8 @@ export const TextCompletionQuestion: React.FC<TextCompletionQuestionProps> = ({
     <div className="p-1">
       <TextCompletionRenderer
         text={textToRender}
+        questionId={questionId}
+        highlights={highlights}
         answers={answersObj}
         onAnswerChange={onAnswerChange}
         disabled={disabled}

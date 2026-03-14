@@ -3,6 +3,8 @@ import { FillInBlankRenderer } from '../FillInBlankRenderer';
 
 interface FillInBlankQuestionProps {
   question: any;
+  questionId?: string;
+  highlights?: Array<{ text: string; color: 'yellow' | 'pink' | 'blue' }>;
   answers: string[];
   onAnswerChange: (index: number, value: string) => void;
   disabled?: boolean;
@@ -11,6 +13,8 @@ interface FillInBlankQuestionProps {
 
 export const FillInBlankQuestion: React.FC<FillInBlankQuestionProps> = ({
   question,
+  questionId,
+  highlights,
   answers,
   onAnswerChange,
   disabled,
@@ -28,6 +32,8 @@ export const FillInBlankQuestion: React.FC<FillInBlankQuestionProps> = ({
     <div className="p-1">
       <FillInBlankRenderer
         text={question.content_text || question.question_text || ''}
+        questionId={questionId}
+        highlights={highlights}
         separator={question.gap_separator || ','}
         answers={answersObj}
         onAnswerChange={onAnswerChange}
