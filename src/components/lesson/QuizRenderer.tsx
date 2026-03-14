@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '../ui/button';
-import { ChevronRight, AlertTriangle, XCircle, HelpCircle } from 'lucide-react';
+import { ChevronRight, AlertTriangle, HelpCircle } from 'lucide-react';
 import { renderTextWithLatex } from '../../utils/latex';
 import type { Step } from '../../types';
 import { useNavigate } from 'react-router-dom';
@@ -39,6 +39,8 @@ const hasVisibleContent = (html: string | undefined | null): boolean => {
 // Define a more specific type for quiz questions if possible
 type QuizQuestion = any;
 type QuizData = any;
+type HighlightColor = 'yellow' | 'pink' | 'blue';
+type TextHighlight = { text: string; color: HighlightColor };
 
 interface QuizRendererProps {
   quizState: 'title' | 'question' | 'result' | 'completed' | 'feed';
@@ -153,6 +155,307 @@ const QuizRenderer = (props: QuizRendererProps) => {
   const [reportSuggestedAnswer, setReportSuggestedAnswer] = useState('');
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reportedQuestions, setReportedQuestions] = useState<Set<string>>(new Set());
+  const [textHighlightsByQuestion, setTextHighlightsByQuestion] = useState<Map<string, TextHighlight[]>>(new Map());
+  const [areHighlightsHydrated, setAreHighlightsHydrated] = useState(false);
+  const [highlightPalette, setHighlightPalette] = useState<{
+    questionId: string;
+    selectedText: string;
+    selectionOffsetY: number;
+  } | null>(null);
+
+  const quizTextHighlightsStorageKey = currentStep ? `quiz_text_highlights_${currentStep.id}` : null;
+
+  useEffect(() => {
+    setAreHighlightsHydrated(false);
+
+    if (!quizTextHighlightsStorageKey) {
+      setTextHighlightsByQuestion(new Map());
+      setAreHighlightsHydrated(true);
+      return;
+    }
+
+    try {
+      const savedHighlights = localStorage.getItem(quizTextHighlightsStorageKey);
+      if (!savedHighlights) {
+        setTextHighlightsByQuestion(new Map());
+        setAreHighlightsHydrated(true);
+        return;
+      }
+
+      const parsedHighlights = JSON.parse(savedHighlights);
+      if (!parsedHighlights || typeof parsedHighlights !== 'object' || Array.isArray(parsedHighlights)) {
+        setTextHighlightsByQuestion(new Map());
+        setAreHighlightsHydrated(true);
+        return;
+      }
+
+      const nextMap = new Map<string, TextHighlight[]>();
+      Object.entries(parsedHighlights).forEach(([questionId, values]) => {
+        if (!Array.isArray(values)) return;
+        const normalizedValues = values
+          .map((value: any) => {
+            if (typeof value === 'string') {
+              return { text: value.trim(), color: 'yellow' as HighlightColor };
+            }
+            if (!value || typeof value !== 'object') return null;
+            const text = value.text?.toString().trim();
+            const color = value.color as HighlightColor;
+            if (!text) return null;
+            if (color !== 'yellow' && color !== 'pink' && color !== 'blue') {
+              return { text, color: 'yellow' as HighlightColor };
+            }
+            return { text, color };
+          })
+          .filter((value): value is TextHighlight => Boolean(value) && value.text.length >= 2);
+        if (normalizedValues.length > 0) {
+          nextMap.set(questionId, normalizedValues);
+        }
+      });
+      setTextHighlightsByQuestion(nextMap);
+      setAreHighlightsHydrated(true);
+    } catch (error) {
+      console.error('Failed to restore text highlights from localStorage:', error);
+      setTextHighlightsByQuestion(new Map());
+      setAreHighlightsHydrated(true);
+    }
+  }, [quizTextHighlightsStorageKey]);
+
+  useEffect(() => {
+    if (!quizTextHighlightsStorageKey) return;
+    if (!areHighlightsHydrated) return;
+
+    const payload = Object.fromEntries(
+      Array.from(textHighlightsByQuestion.entries())
+        .filter(([, values]) => values.length > 0)
+    );
+
+    localStorage.setItem(quizTextHighlightsStorageKey, JSON.stringify(payload));
+  }, [quizTextHighlightsStorageKey, textHighlightsByQuestion, areHighlightsHydrated]);
+
+  const addTextHighlight = (questionId: string, highlightText: string, color: HighlightColor) => {
+    const normalizedText = highlightText.replace(/\s+/g, ' ').trim();
+    if (normalizedText.length < 2) return;
+
+    setTextHighlightsByQuestion(prev => {
+      const next = new Map(prev);
+      const current = next.get(questionId) || [];
+      const existingIndex = current.findIndex((item) => item.text === normalizedText);
+      if (existingIndex >= 0) {
+        const updated = [...current];
+        updated[existingIndex] = { ...updated[existingIndex], color };
+        next.set(questionId, updated);
+        return next;
+      }
+      next.set(questionId, [...current, { text: normalizedText, color }]);
+      return next;
+    });
+  };
+
+  const removeTextHighlight = (questionId: string, highlightText: string) => {
+    const normalizedText = highlightText.replace(/\s+/g, ' ').trim();
+    if (normalizedText.length < 2) return;
+
+    setTextHighlightsByQuestion(prev => {
+      const current = prev.get(questionId) || [];
+      const filtered = current.filter((item) => item.text !== normalizedText);
+      const next = new Map(prev);
+
+      if (filtered.length === 0) {
+        next.delete(questionId);
+      } else {
+        next.set(questionId, filtered);
+      }
+
+      return next;
+    });
+  };
+
+  const handleTextSelection = (questionId: string) => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+
+    const selectedText = selection.toString().replace(/\s+/g, ' ').trim();
+    if (selectedText.length < 2) return;
+
+    const anchorElement = selection.anchorNode instanceof Element
+      ? selection.anchorNode
+      : selection.anchorNode?.parentElement;
+    if (anchorElement?.closest('input, textarea, [contenteditable="true"]')) return;
+
+    const range = selection.getRangeAt(0);
+    const selectionRect = range.getBoundingClientRect();
+    if (!selectionRect.width && !selectionRect.height) return;
+
+    const questionElement = document.getElementById(`question-${questionId}`);
+    const questionRect = questionElement?.getBoundingClientRect();
+    const selectionOffsetY = questionRect
+      ? Math.max(8, selectionRect.top - questionRect.top)
+      : Math.max(8, selectionRect.top);
+
+    setHighlightPalette({
+      questionId,
+      selectedText,
+      selectionOffsetY
+    });
+  };
+
+  const handleHighlightColorPick = (color: HighlightColor) => {
+    if (!highlightPalette) return;
+    addTextHighlight(highlightPalette.questionId, highlightPalette.selectedText, color);
+    setHighlightPalette(null);
+    window.getSelection()?.removeAllRanges();
+  };
+
+  useEffect(() => {
+    if (!highlightPalette) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('[data-highlight-palette="true"]')) return;
+      setHighlightPalette(null);
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      setHighlightPalette(null);
+      window.getSelection()?.removeAllRanges();
+    };
+
+    window.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      window.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [highlightPalette]);
+
+  const getHighlightClassByColor = (color: HighlightColor) => {
+    if (color === 'pink') return 'bg-pink-200 dark:bg-pink-700/60';
+    if (color === 'blue') return 'bg-sky-200 dark:bg-sky-700/60';
+    return 'bg-amber-200 dark:bg-amber-700/60';
+  };
+
+  const applyHighlightsToHtml = (questionId: string, html: string, highlights: TextHighlight[]) => {
+    if (!html || highlights.length === 0 || typeof window === 'undefined') {
+      return html;
+    }
+
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(`<div id="quiz-highlight-root">${html}</div>`, 'text/html');
+      const root = doc.getElementById('quiz-highlight-root');
+      if (!root) return html;
+
+      const uniqueHighlights = highlights
+        .map((value) => ({ text: value.text.trim(), color: value.color }))
+        .filter((value) => value.text.length >= 2)
+        .sort((a, b) => b.text.length - a.text.length);
+
+      uniqueHighlights.forEach((highlight) => {
+        const loweredHighlight = highlight.text.toLowerCase();
+        const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        const nodes: Text[] = [];
+
+        let node = walker.nextNode();
+        while (node) {
+          const textNode = node as Text;
+          const parentTag = textNode.parentElement?.tagName?.toLowerCase();
+          if (textNode.nodeValue && parentTag !== 'mark' && parentTag !== 'script' && parentTag !== 'style') {
+            nodes.push(textNode);
+          }
+          node = walker.nextNode();
+        }
+
+        nodes.forEach((textNode) => {
+          let cursor: Text | null = textNode;
+          while (cursor) {
+            const value = cursor.nodeValue || '';
+            const matchIndex = value.toLowerCase().indexOf(loweredHighlight);
+            if (matchIndex === -1) break;
+
+            const beforeMatch = cursor.splitText(matchIndex);
+            const afterMatch = beforeMatch.splitText(highlight.text.length);
+            const mark = doc.createElement('mark');
+            mark.className = `${getHighlightClassByColor(highlight.color)} text-inherit`;
+            mark.style.padding = '0';
+            mark.style.borderRadius = '0';
+            mark.style.cursor = 'pointer';
+            mark.title = 'Click to remove highlight';
+            mark.setAttribute('data-highlight-text', highlight.text);
+            mark.setAttribute('data-highlight-question-id', questionId);
+            mark.textContent = beforeMatch.nodeValue;
+            beforeMatch.parentNode?.replaceChild(mark, beforeMatch);
+            cursor = afterMatch;
+          }
+        });
+      });
+
+      return root.innerHTML;
+    } catch (error) {
+      console.error('Failed to apply text highlights:', error);
+      return html;
+    }
+  };
+
+  const getQuestionHighlights = (questionId: string) => textHighlightsByQuestion.get(questionId) || [];
+
+  const renderHighlightedLatex = (questionId: string, htmlSource: string) => {
+    const rendered = renderTextWithLatex(htmlSource);
+    return applyHighlightsToHtml(questionId, rendered, getQuestionHighlights(questionId));
+  };
+
+  const handleHighlightedTextClick = (event: React.MouseEvent) => {
+    const target = event.target as HTMLElement | null
+    if (!target) return
+
+    const mark = target.closest('mark[data-highlight-text][data-highlight-question-id]') as HTMLElement | null
+    if (!mark) return
+
+    const questionId = mark.getAttribute('data-highlight-question-id') || ''
+    const highlightText = mark.getAttribute('data-highlight-text') || ''
+    if (!questionId || !highlightText) return
+
+    removeTextHighlight(questionId, highlightText)
+    setHighlightPalette(null)
+    window.getSelection()?.removeAllRanges()
+    event.preventDefault()
+    event.stopPropagation()
+  }
+
+  const renderHighlightPalette = (questionId: string) => {
+    if (!highlightPalette || highlightPalette.questionId !== questionId) return null;
+
+    return (
+      <div
+        data-highlight-palette="true"
+        className="absolute z-20 flex flex-col items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 p-2 shadow-lg backdrop-blur-sm"
+        style={{
+          right: -56,
+          top: highlightPalette.selectionOffsetY
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => handleHighlightColorPick('yellow')}
+          className="h-6 w-6 rounded-sm bg-amber-300 hover:bg-amber-400 ring-1 ring-black/10 dark:ring-white/15"
+          aria-label="Highlight text with yellow"
+        />
+        <button
+          type="button"
+          onClick={() => handleHighlightColorPick('pink')}
+          className="h-6 w-6 rounded-sm bg-pink-300 hover:bg-pink-400 ring-1 ring-black/10 dark:ring-white/15"
+          aria-label="Highlight text with pink"
+        />
+        <button
+          type="button"
+          onClick={() => handleHighlightColorPick('blue')}
+          className="h-6 w-6 rounded-sm bg-sky-300 hover:bg-sky-400 ring-1 ring-black/10 dark:ring-white/15"
+          aria-label="Highlight text with blue"
+        />
+      </div>
+    );
+  };
 
   // Get the question being reported
   const getReportedQuestion = () => {
@@ -335,7 +638,14 @@ const QuizRenderer = (props: QuizRendererProps) => {
             }
 
             return (
-              <div key={q.id} id={`question-${q.id}`} className="bg-white dark:bg-gray-900/50 rounded-none md:rounded-xl border-t border-b md:border dark:border-gray-800/60">
+              <div
+                key={q.id}
+                id={`question-${q.id}`}
+                className="relative overflow-visible bg-white dark:bg-gray-900/50 rounded-none md:rounded-xl border-t border-b md:border dark:border-gray-800/60"
+                onMouseUp={() => handleTextSelection(q.id.toString())}
+                onClick={handleHighlightedTextClick}
+              >
+                {renderHighlightPalette(q.id.toString())}
                 <div className="p-2 md:p-6">
                   {/* Question Number Badge */}
                   <div className="flex items-center gap-3 mb-4">
@@ -365,13 +675,16 @@ const QuizRenderer = (props: QuizRendererProps) => {
                   {/* Content Text */}
                   {hasVisibleContent(q.content_text) && q.question_type !== 'text_completion' && q.question_type !== 'fill_blank' && (
                     <div className="bg-gray-50 dark:bg-gray-800/30 p-4 rounded-lg mb-4 border-l-3 border-blue-400 dark:border-blue-500/30">
-                      <div className="text-gray-700 dark:text-gray-200 prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.content_text) }} />
+                      <div
+                        className="text-gray-700 dark:text-gray-200 prose dark:prose-invert max-w-none select-text"
+                        dangerouslySetInnerHTML={{ __html: renderHighlightedLatex(q.id.toString(), q.content_text) }}
+                      />
                     </div>
                   )}
 
                   {/* Question */}
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                    <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex((q.question_text || (q.question_type === 'text_completion' ? 'Fill in the blanks:' : '')).replace(/\[\[([^\]]+)\]\]/g, '[[blank]]')) }} />
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 select-text">
+                    <span dangerouslySetInnerHTML={{ __html: renderHighlightedLatex(q.id.toString(), (q.question_text || (q.question_type === 'text_completion' ? 'Fill in the blanks:' : '')).replace(/\[\[([^\]]+)\]\]/g, '[[blank]]')) }} />
                   </h3>
 
                   {/* Answer Input Based on Question Type */}
@@ -900,7 +1213,13 @@ const QuizRenderer = (props: QuizRendererProps) => {
           </div>
         )}
 
-        <div className="bg-white dark:bg-gray-900/50 rounded-none md:rounded-xl border-t border-b md:border dark:border-gray-800/60">
+        <div
+          id={`question-${q.id}`}
+          className="relative overflow-visible bg-white dark:bg-gray-900/50 rounded-none md:rounded-xl border-t border-b md:border dark:border-gray-800/60"
+          onMouseUp={() => handleTextSelection(q.id.toString())}
+          onClick={handleHighlightedTextClick}
+        >
+          {renderHighlightPalette(q.id.toString())}
           <div className="p-2 md:p-6">
             {/* Media Attachment for Media Questions */}
             {(q.question_type === 'media_question' || q.question_type === 'media_open_question') && q.media_url && (
@@ -923,13 +1242,16 @@ const QuizRenderer = (props: QuizRendererProps) => {
             {/* Content Text */}
             {hasVisibleContent(q.content_text) && q.question_type !== 'text_completion' && q.question_type !== 'fill_blank' && (
               <div className="bg-gray-50 dark:bg-gray-800/30 p-4 rounded-lg mb-4 border-l-3 border-blue-400 dark:border-blue-500/30">
-                <div className="text-gray-700 dark:text-gray-200 prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.content_text) }} />
+                <div
+                  className="text-gray-700 dark:text-gray-200 prose dark:prose-invert max-w-none select-text"
+                  dangerouslySetInnerHTML={{ __html: renderHighlightedLatex(q.id.toString(), q.content_text) }}
+                />
               </div>
             )}
 
             {/* Question */}
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-              <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex((q.question_text || (q.question_type === 'text_completion' ? 'Fill in the blanks:' : '')).replace(/\[\[([^\]]+)\]\]/g, '[[blank]]')) }} />
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 select-text">
+              <span dangerouslySetInnerHTML={{ __html: renderHighlightedLatex(q.id.toString(), (q.question_text || (q.question_type === 'text_completion' ? 'Fill in the blanks:' : '')).replace(/\[\[([^\]]+)\]\]/g, '[[blank]]')) }} />
             </h3>
 
             {/* Answer Input Based on Question Type */}
@@ -1590,20 +1912,28 @@ const QuizRenderer = (props: QuizRendererProps) => {
     );
   };
 
-  switch (quizState) {
-    case 'feed':
-      return renderQuizFeed();
-    case 'title':
-      return renderQuizTitleScreen();
-    case 'question':
-      return renderQuizQuestion();
-    case 'result':
-      return renderQuizResult();
-    case 'completed':
-      return renderQuizCompleted();
-    default:
-      return null;
-  }
+  const content = (() => {
+    switch (quizState) {
+      case 'feed':
+        return renderQuizFeed();
+      case 'title':
+        return renderQuizTitleScreen();
+      case 'question':
+        return renderQuizQuestion();
+      case 'result':
+        return renderQuizResult();
+      case 'completed':
+        return renderQuizCompleted();
+      default:
+        return null;
+    }
+  })();
+
+  return (
+    <>
+      {content}
+    </>
+  );
 };
 
 export default QuizRenderer;
