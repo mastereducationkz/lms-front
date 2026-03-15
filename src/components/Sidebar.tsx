@@ -33,7 +33,12 @@ import type { Course } from '../types';
 
 // Navigation items based on user roles
 type NavItemTuple = [to: string, label: string, Icon: LucideIcon, badge: number, roles: string[] | null, dataTour?: string];
-function getNavigationItems(_userRole: string | undefined, unreadCount: number, unseenGradedCount: number = 0): NavItemTuple[] {
+function getNavigationItems(
+  _userRole: string | undefined,
+  unreadCount: number,
+  unseenGradedCount: number = 0,
+  isSpecialGroupStudent: boolean = false
+): NavItemTuple[] {
   const allItems: NavItemTuple[] = [
     ['/dashboard', ['head_curator', 'curator'].includes(_userRole || '') ? 'Дашборд' : 'Dashboard', Home, 0, null, 'dashboard-nav'],
     ['/calendar', ['head_curator', 'curator'].includes(_userRole || '') ? 'Календарь' : 'Calendar', Calendar, 0, null, 'calendar-nav'],
@@ -59,6 +64,10 @@ function getNavigationItems(_userRole: string | undefined, unreadCount: number, 
     ['/chat', ['head_curator', 'curator'].includes(_userRole || '') ? 'Чат' : 'Chat', MessageCircle, unreadCount, null, 'messages-nav'],
   ];
 
+  if (_userRole === 'student' && isSpecialGroupStudent) {
+    return allItems.filter(([to]) => to !== '/calendar' && to !== '/homework');
+  }
+
   return allItems;
 }
 
@@ -77,6 +86,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
   const [courses, setCourses] = useState<Course[]>([]);
   const [isCoursesExpanded, setIsCoursesExpanded] = useState(false);
   const [isLoadingCourses, setIsLoadingCourses] = useState(false);
+  const [isSpecialGroupStudent, setIsSpecialGroupStudent] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   
@@ -99,6 +109,26 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
     const interval = setInterval(loadUnseenGradedCount, 30000);
     return () => clearInterval(interval);
   }, [user]);
+
+  useEffect(() => {
+    const loadSpecialGroupsState = async () => {
+      if (user?.role !== 'student') {
+        setIsSpecialGroupStudent(false);
+        return;
+      }
+
+      try {
+        const myGroups = await apiClient.getMyGroups();
+        const hasOnlySpecialGroups = myGroups.length > 0 && myGroups.every(group => group.is_special);
+        setIsSpecialGroupStudent(hasOnlySpecialGroups);
+      } catch (error) {
+        console.warn('Failed to load special group flags:', error);
+        setIsSpecialGroupStudent(false);
+      }
+    };
+
+    loadSpecialGroupsState();
+  }, [user?.id, user?.role]);
   
   useEffect(() => {
     if (!user) return;
@@ -210,7 +240,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
       </div>
       
       <nav className="flex flex-col space-y-1 flex-1">
-        {getNavigationItems(user?.role, unread, unseenGraded).map(([to, label, Icon, badge, roles, dataTour]) => {
+        {getNavigationItems(user?.role, unread, unseenGraded, isSpecialGroupStudent).map(([to, label, Icon, badge, roles, dataTour]) => {
           // Skip items if user doesn't have required role
           if (roles && (!user?.role || !roles.includes(user.role))) return null;
           

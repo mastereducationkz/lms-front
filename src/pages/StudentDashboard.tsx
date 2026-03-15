@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import apiClient from "../services/api";
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
-import StudentLeaderboard from '../components/StudentLeaderboard';
+import StudentLeaderboard from "../components/StudentLeaderboard";
 import DailyQuestionsPopup from '../components/DailyQuestionsPopup';
 
 interface StudentDashboardProps {
@@ -317,7 +317,6 @@ export default function StudentDashboard({
 
   return (
     <div className="space-y-8">
-      {!isSpecialGroupStudent && (
       <Card className="border-0 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-900 dark:to-indigo-900 text-white" data-tour="dashboard-overview">
         <CardHeader className="p-5 sm:p-6">
           <CardTitle className="text-2xl sm:text-3xl">Welcome back, {firstName}!</CardTitle>
@@ -344,7 +343,6 @@ export default function StudentDashboard({
           </div>
         </CardFooter>
       </Card>
-      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-2" data-tour="dashboard-stats">
         <Card className="h-fit">
@@ -423,158 +421,192 @@ export default function StudentDashboard({
 
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
-        <div className="lg:col-span-1 space-y-6">
-          {/* Leaderboard - prominent placement */}
-          <StudentLeaderboard />
+      <div className={`grid grid-cols-1 gap-6 mt-4 ${isSpecialGroupStudent ? "" : "lg:grid-cols-3"}`}>
+        {!isSpecialGroupStudent && (
+          <div className="lg:col-span-1 space-y-6">
+            <StudentLeaderboard />
 
-          {!isSpecialGroupStudent && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  Todo list
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="show-completed" 
-                    checked={showCompleted}
-                    onCheckedChange={(checked) => setShowCompleted(checked as boolean)}
-                  />
-                  <label 
-                    htmlFor="show-completed" 
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                  >
-                    Show completed tasks
-                  </label>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoadingTodo ? (
-                <div className="text-center py-4 text-gray-500">Loading deadlines...</div>
-              ) : (
-                <div className="max-h-[19.5rem] overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
-                  {/* Combined assignments and events */}
-                  {(() => {
-                    const allDeadlines = [
-                      ...relevantAssignments.map(assignment => ({
-                        id: `assignment-${assignment.id}`,
-                        assignmentId: assignment.id,
-                        title: assignment.title,
-                        date: assignment.due_date,
-                        type: 'assignment' as const,
-                        status: getAssignmentStatus(assignment),
-                        description: assignment.description
-                      })),
-                      ...relevantEvents.map(event => ({
-                        id: `event-${event.id}`,
-                        eventId: event.id,
-                        title: event.title,
-                        date: event.start_datetime,
-                        type: 'event' as const,
-                        eventType: event.event_type,
-                        description: event.description,
-                        isOnline: event.is_online,
-                        location: event.location
-                      }))
-                    ].filter(deadline => deadline.date) // Filter out items without dates
-                    .sort((a, b) => {
-                      const aDate = new Date(a.date!);
-                      const bDate = new Date(b.date!);
-                      
-                      // Sort by date (earliest first)
-                      return aDate.getTime() - bDate.getTime();
-                    });
-
-                    return allDeadlines.length > 0 ? (
-                      allDeadlines.map((deadline) => (
-                        <div 
-                          key={deadline.id} 
-                          className="flex items-center gap-3 p-2 border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-secondary cursor-pointer transition-colors"
-                          onClick={() => {
-                            if (deadline.type === 'assignment' && 'assignmentId' in deadline) {
-                              navigate(`/homework/${deadline.assignmentId}`);
-                            } else if (deadline.type === 'event' && 'eventId' in deadline) {
-                              navigate(`/calendar`);
-                            }
-                          }}
-                        >
-                          {deadline.type === 'assignment' ? (
-                            <>
-                              <deadline.status.icon className="h-4 w-4 text-gray-500" />
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium text-sm truncate">{deadline.title}</div>
-                                <div className="text-xs text-gray-500">
-                                  Due {formatDate(deadline.date!)}
-                                </div>
-                              </div>
-                              <Badge className={`text-xs ${deadline.status.color}`}>
-                                {deadline.status.status.replace('_', ' ')}
-                              </Badge>
-                            </>
-                          ) : (
-                            <>
-                              {(() => {
-                                const EventIcon = getEventIcon(deadline.eventType);
-                                return <EventIcon className="h-4 w-4 text-gray-500" />;
-                              })()}
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium text-sm truncate">{deadline.title}</div>
-                                <div className="text-xs text-gray-500">
-                                  {formatDateTime(deadline.date!)}
-                                </div>
-                              </div>
-                              <Badge className={`text-xs ${getEventColor(deadline.eventType)}`}>
-                                {deadline.eventType.replace('_', ' ')}
-                              </Badge>
-                            </>
-                          )}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-4 text-gray-500 text-sm">
-                        No current tasks
-                      </div>
-                    );
-                  })()}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          )}
-
-          {/* Your Teacher Card */}
-          {!isSpecialGroupStudent && progressData && progressData.courses && progressData.courses.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  Your Teacher
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    Todo list
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="show-completed"
+                      checked={showCompleted}
+                      onCheckedChange={(checked) => setShowCompleted(checked as boolean)}
+                    />
+                    <label
+                      htmlFor="show-completed"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Show completed tasks
+                    </label>
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {(() => {
-                  // If we have group teachers, display them first
-                  if (progressData.group_teachers && progressData.group_teachers.length > 0) {
-                    return (
+                {isLoadingTodo ? (
+                  <div className="text-center py-4 text-gray-500">Loading deadlines...</div>
+                ) : (
+                  <div className="max-h-[19.5rem] overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
+                    {/* Combined assignments and events */}
+                    {(() => {
+                      const allDeadlines = [
+                        ...relevantAssignments.map(assignment => ({
+                          id: `assignment-${assignment.id}`,
+                          assignmentId: assignment.id,
+                          title: assignment.title,
+                          date: assignment.due_date,
+                          type: 'assignment' as const,
+                          status: getAssignmentStatus(assignment),
+                          description: assignment.description
+                        })),
+                        ...relevantEvents.map(event => ({
+                          id: `event-${event.id}`,
+                          eventId: event.id,
+                          title: event.title,
+                          date: event.start_datetime,
+                          type: 'event' as const,
+                          eventType: event.event_type,
+                          description: event.description,
+                          isOnline: event.is_online,
+                          location: event.location
+                        }))
+                      ].filter(deadline => deadline.date).sort((a, b) => {
+                        const aDate = new Date(a.date!)
+                        const bDate = new Date(b.date!)
+                        return aDate.getTime() - bDate.getTime()
+                      })
+
+                      return allDeadlines.length > 0 ? (
+                        allDeadlines.map((deadline) => (
+                          <div
+                            key={deadline.id}
+                            className="flex items-center gap-3 p-2 border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-secondary cursor-pointer transition-colors"
+                            onClick={() => {
+                              if (deadline.type === 'assignment' && 'assignmentId' in deadline) {
+                                navigate(`/homework/${deadline.assignmentId}`)
+                              } else if (deadline.type === 'event' && 'eventId' in deadline) {
+                                navigate(`/calendar`)
+                              }
+                            }}
+                          >
+                            {deadline.type === 'assignment' ? (
+                              <>
+                                <deadline.status.icon className="h-4 w-4 text-gray-500" />
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium text-sm truncate">{deadline.title}</div>
+                                  <div className="text-xs text-gray-500">
+                                    Due {formatDate(deadline.date!)}
+                                  </div>
+                                </div>
+                                <Badge className={`text-xs ${deadline.status.color}`}>
+                                  {deadline.status.status.replace('_', ' ')}
+                                </Badge>
+                              </>
+                            ) : (
+                              <>
+                                {(() => {
+                                  const EventIcon = getEventIcon(deadline.eventType)
+                                  return <EventIcon className="h-4 w-4 text-gray-500" />
+                                })()}
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium text-sm truncate">{deadline.title}</div>
+                                  <div className="text-xs text-gray-500">
+                                    {formatDateTime(deadline.date!)}
+                                  </div>
+                                </div>
+                                <Badge className={`text-xs ${getEventColor(deadline.eventType)}`}>
+                                  {deadline.eventType.replace('_', ' ')}
+                                </Badge>
+                              </>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-4 text-gray-500 text-sm">
+                          No current tasks
+                        </div>
+                      )
+                    })()}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Your Teacher Card */}
+            {progressData && progressData.courses && progressData.courses.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    Your Teacher
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {(() => {
+                    if (progressData.group_teachers && progressData.group_teachers.length > 0) {
+                      return (
+                        <div className="space-y-3">
+                          {progressData.group_teachers.map(teacher => (
+                            <div key={teacher.id} className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-secondary">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-medium">
+                                  {teacher.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                                </div>
+                                <div>
+                                  <div className="font-medium text-sm">{teacher.name}</div>
+                                  <div className="text-xs text-gray-500">Group Teacher</div>
+                                </div>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  navigate('/chat', { state: { contactUserId: teacher.id } })
+                                }}
+                                className="flex items-center gap-1"
+                              >
+                                <MessageCircle className="h-4 w-4" />
+                                Contact
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    }
+
+                    const uniqueTeachers = Array.from(
+                      new Map(
+                        progressData.courses.map(course => [
+                          course.teacher_id,
+                          { id: course.teacher_id, name: course.teacher_name }
+                        ])
+                      ).values()
+                    )
+
+                    return uniqueTeachers.length > 0 ? (
                       <div className="space-y-3">
-                        {progressData.group_teachers.map(teacher => (
+                        {uniqueTeachers.map(teacher => (
                           <div key={teacher.id} className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-secondary">
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-medium">
-                                {teacher.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
+                                {teacher.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                               </div>
                               <div>
                                 <div className="font-medium text-sm">{teacher.name}</div>
-                                <div className="text-xs text-gray-500">Group Teacher</div>
+                                <div className="text-xs text-gray-500">
+                                  {progressData.courses.filter(c => c.teacher_id === teacher.id).length} course(s)
+                                </div>
                               </div>
                             </div>
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => {
-                                // Navigate to chat and start conversation with teacher
-                                navigate('/chat', { state: { contactUserId: teacher.id } });
+                                navigate('/chat', { state: { contactUserId: teacher.id } })
                               }}
                               className="flex items-center gap-1"
                             >
@@ -584,62 +616,20 @@ export default function StudentDashboard({
                           </div>
                         ))}
                       </div>
-                    );
-                  }
-
-                  // Fallback: Get unique teachers from all courses
-                  const uniqueTeachers = Array.from(
-                    new Map(
-                      progressData.courses.map(course => [
-                        course.teacher_id,
-                        { id: course.teacher_id, name: course.teacher_name }
-                      ])
-                    ).values()
-                  );
-
-                  return uniqueTeachers.length > 0 ? (
-                    <div className="space-y-3">
-                      {uniqueTeachers.map(teacher => (
-                        <div key={teacher.id} className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-secondary">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-medium">
-                              {teacher.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                            </div>
-                            <div>
-                              <div className="font-medium text-sm">{teacher.name}</div>
-                              <div className="text-xs text-gray-500">
-                                {progressData.courses.filter(c => c.teacher_id === teacher.id).length} course(s)
-                              </div>
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              // Navigate to chat and start conversation with teacher
-                              navigate('/chat', { state: { contactUserId: teacher.id } });
-                            }}
-                            className="flex items-center gap-1"
-                          >
-                            <MessageCircle className="h-4 w-4" />
-                            Contact
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-4 text-gray-500 text-sm">
-                      No teacher information available
-                    </div>
-                  );
-                })()}
-              </CardContent>
-            </Card>
-          )}
-        </div>
+                    ) : (
+                      <div className="text-center py-4 text-gray-500 text-sm">
+                        No teacher information available
+                      </div>
+                    )
+                  })()}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
 
         {/* Right Column - Main Content */}
-        <div className="lg:col-span-2">
+        <div className={isSpecialGroupStudent ? "" : "lg:col-span-2"}>
           <Tabs defaultValue="courses" className="w-full">
             <TabsList className="grid w-full grid-cols-2 h-12 bg-gray-100 dark:bg-secondary">
               <TabsTrigger 
@@ -671,9 +661,12 @@ export default function StudentDashboard({
           ) : progressData?.courses && progressData.courses.length > 0 ? (
             <div className="space-y-6" data-tour="recent-courses">
               {/* Course Progress Details */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              <div className={`${isSpecialGroupStudent ? "grid grid-cols-1 justify-items-start gap-4 sm:gap-6" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"}`}>
                 {progressData.courses.map((course) => (
-                  <Card key={course.course_id} className="hover:shadow-lg transition-shadow overflow-hidden">
+                  <Card
+                    key={course.course_id}
+                    className={`w-full ${isSpecialGroupStudent ? "max-w-[300px]" : ""} hover:shadow-lg transition-shadow overflow-hidden`}
+                  >
                     {/* Course Image */}
                     {course.cover_image_url ? (
                       <div className="relative h-48 bg-gray-200">

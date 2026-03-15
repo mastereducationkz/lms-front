@@ -660,6 +660,7 @@ export default function UserManagement() {
         teacher_id: editGroupFormData.teacher_id,
         curator_id: editGroupFormData.curator_id || undefined,
         course_id: editGroupFormData.course_id || undefined,
+        student_ids: editGroupFormData.student_ids,
         is_active: editGroupFormData.is_active,
         is_special: editGroupFormData.is_special
       };
@@ -1808,6 +1809,8 @@ interface GroupFormProps {
 }
 
 function GroupForm({ formData, setFormData, teachers, curators, students, courses, errors = {} }: GroupFormProps) {
+  const [studentSearchQuery, setStudentSearchQuery] = useState('');
+
   // Функция для генерации названия группы
   const generateGroupName = (teacherName: string, description?: string) => {
     const firstName = teacherName.split(" ")[0]; // Берем только первое имя
@@ -1826,6 +1829,15 @@ function GroupForm({ formData, setFormData, teachers, curators, students, course
       }
     }
   }, [formData.teacher_id, formData.description]);
+
+  const filteredStudents = students.filter(student => {
+    const query = studentSearchQuery.trim().toLowerCase();
+    if (!query) return true;
+
+    const studentName = (student.name || student.full_name || '').toLowerCase();
+    const studentEmail = (student.email || '').toLowerCase();
+    return studentName.includes(query) || studentEmail.includes(query);
+  });
 
   return (
     <div className="space-y-4">
@@ -1935,11 +1947,20 @@ function GroupForm({ formData, setFormData, teachers, curators, students, course
       
       <div className="p-1">
         <Label className="text-sm font-medium">Students (Optional)</Label>
+        <Input
+          type="text"
+          value={studentSearchQuery}
+          onChange={(e) => setStudentSearchQuery(e.target.value)}
+          placeholder="Search student by name or email"
+          className="mt-2"
+        />
         <div className="mt-2 max-h-40 overflow-y-auto border rounded-md p-2 space-y-2">
           {students.length === 0 ? (
             <p className="text-gray-500 dark:text-gray-400 text-sm">No students available</p>
+          ) : filteredStudents.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 text-sm">No students found</p>
           ) : (
-            students.map((student) => (
+            filteredStudents.map((student) => (
               <div key={student.id} className="flex items-center space-x-2">
                 <Checkbox
                   id={`student-${student.id}`}

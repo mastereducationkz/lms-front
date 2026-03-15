@@ -127,27 +127,35 @@ const StreakIcon: React.FC = () => {
     
     const streakCount = streakData?.daily_streak || 0;
     const todayDate = today.getDate();
+    const toDateKey = (value: Date) =>
+      `${value.getFullYear()}-${value.getMonth() + 1}-${value.getDate()}`;
+
+    const parseDateOnly = (value?: string | Date | null): Date | null => {
+      if (!value) return null;
+      if (value instanceof Date) return value;
+      const [year, month, day] = value.split('-').map(Number);
+      if (!year || !month || !day) return null;
+      return new Date(year, month - 1, day);
+    };
+
+    const activeDateKeys = new Set<string>();
+    const lastActivityDate = parseDateOnly(streakData?.last_activity_date);
+    const anchorDate = streakData?.is_active_today ? today : lastActivityDate;
+
+    if (streakCount > 0 && anchorDate) {
+      for (let i = 0; i < streakCount; i++) {
+        const activeDay = new Date(anchorDate);
+        activeDay.setDate(anchorDate.getDate() - i);
+        activeDateKeys.add(toDateKey(activeDay));
+      }
+    }
     
     // Add actual days of month
     for (let day = 1; day <= daysInMonth; day++) {
       const isToday = day === todayDate;
       const isPast = day < todayDate;
-      const daysAgo = todayDate - day;
-      
-      // Mark days as active based on streak count
-      // Show the last N days as active, where N = streak count
-      let isActive = false;
-      if (streakCount > 0) {
-        // If today is active, mark it
-        if (isToday && streakData?.is_active_today) {
-          isActive = true;
-        }
-        // Mark past days within the streak range
-        // For a 2-day streak: today (if active) + yesterday
-        else if (isPast && daysAgo > 0 && daysAgo <= streakCount) {
-          isActive = true;
-        }
-      }
+      const dayDate = new Date(currentYear, currentMonth, day);
+      const isActive = activeDateKeys.has(toDateKey(dayDate));
       
       days.push({ date: day, isActive, isToday, isPast });
     }

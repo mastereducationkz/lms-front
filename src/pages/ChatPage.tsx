@@ -315,7 +315,7 @@ export default function ChatPage() {
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>
-                  {currentUser?.role === 'student' ? 'Contact Teachers & Admins' : 'Select Contact'}
+                  {currentUser?.role === 'student' ? 'Contact Support Team' : 'Select Contact'}
                 </DialogTitle>
               </DialogHeader>
               
@@ -504,7 +504,7 @@ export default function ChatPage() {
             <div className="p-4 text-center text-gray-500 dark:text-gray-400">
               <p className="text-sm">No active conversations</p>
               {currentUser?.role === 'student' && (
-                <p className="text-xs mt-2">Click "Contact" to message your teachers or administrators</p>
+                <p className="text-xs mt-2">Click "Contact" to start a new conversation</p>
               )}
             </div>
           ) : (
@@ -575,7 +575,7 @@ export default function ChatPage() {
                     'Start conversation'
                 ) : (
                   currentUser?.role === 'student' ? 
-                    'Select a conversation or click "Contact" to reach teachers & admins' : 
+                    'Select a conversation or click "Contact" to start a new chat' : 
                     'Select a chat to start conversation'
                 )}
               </div>

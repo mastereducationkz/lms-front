@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import apiClient from "../services/api";
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import StudentLeaderboard from "../components/StudentLeaderboard";
 
 interface StudentDashboardProps {
   firstName: string;
@@ -285,7 +286,6 @@ export default function StudentDashboard({
 
   return (
     <div className="space-y-8">
-      {!isSpecialGroupStudent && (
       <Card className="border-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white" data-tour="dashboard-overview">
         <CardHeader className="p-5 sm:p-6">
           <CardTitle className="text-2xl sm:text-3xl">Welcome back, {firstName}!</CardTitle>
@@ -299,7 +299,6 @@ export default function StudentDashboard({
           </Button>
         </CardFooter>
       </Card>
-      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-2" data-tour="dashboard-stats">
         <Card className="h-fit">
@@ -378,9 +377,12 @@ export default function StudentDashboard({
 
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
+      <div className={`grid grid-cols-1 gap-6 mt-4 ${isSpecialGroupStudent ? '' : 'lg:grid-cols-3'}`}>
+        {!isSpecialGroupStudent && (
         <div className="lg:col-span-1 space-y-6">
-          {!isSpecialGroupStudent && (
+          <StudentLeaderboard />
+
+          <Card>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -483,10 +485,8 @@ export default function StudentDashboard({
               )}
             </CardContent>
           </Card>
-          )}
-
           {/* Your Teacher Card */}
-          {!isSpecialGroupStudent && progressData && progressData.courses && progressData.courses.length > 0 && (
+          {progressData && progressData.courses && progressData.courses.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -546,9 +546,10 @@ export default function StudentDashboard({
             </Card>
           )}
         </div>
+        )}
 
         {/* Right Column - Main Content */}
-        <div className="lg:col-span-2">
+        <div className={isSpecialGroupStudent ? "" : "lg:col-span-2"}>
           <Tabs defaultValue="courses" className="w-full">
             <TabsList className="grid w-full grid-cols-2 h-12 bg-gray-100 dark:bg-gray-700">
               <TabsTrigger 
@@ -580,9 +581,12 @@ export default function StudentDashboard({
           ) : progressData?.courses && progressData.courses.length > 0 ? (
             <div className="space-y-6" data-tour="recent-courses">
               {/* Course Progress Details */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              <div className={`${isSpecialGroupStudent ? "grid grid-cols-1 justify-items-center gap-4 sm:gap-6" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"}`}>
                 {progressData.courses.map((course) => (
-                  <Card key={course.course_id} className="hover:shadow-lg dark:hover:shadow-gray-900/30 transition-shadow overflow-hidden">
+                  <Card
+                    key={course.course_id}
+                    className={`w-full ${isSpecialGroupStudent ? "max-w-[300px]" : ""} hover:shadow-lg dark:hover:shadow-gray-900/30 transition-shadow overflow-hidden`}
+                  >
                     {/* Course Image */}
                     {course.cover_image_url ? (
                       <div className="relative h-48 bg-gray-200 dark:bg-gray-700">
