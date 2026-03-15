@@ -152,7 +152,12 @@ export default function StudentDashboard({
       setShowIeltsPrompt(false)
     } catch (error) {
       console.error('Failed to save IELTS planned date:', error)
-      setIeltsPromptMessage('Could not save IELTS date. Please try again.')
+      const statusCode = (error as { response?: { status?: number } })?.response?.status
+      if (statusCode === 404) {
+        setIeltsPromptMessage('Please complete Assignment Zero first, then set your IELTS date.')
+      } else {
+        setIeltsPromptMessage('Could not save IELTS date. Please try again.')
+      }
     } finally {
       setIsSavingIeltsPrompt(false)
     }
