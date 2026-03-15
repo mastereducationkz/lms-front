@@ -581,7 +581,7 @@ export default function StudentDashboard({
           ) : progressData?.courses && progressData.courses.length > 0 ? (
             <div className="space-y-6" data-tour="recent-courses">
               {/* Course Progress Details */}
-              <div className={`${isSpecialGroupStudent ? "grid grid-cols-1 justify-items-center gap-4 sm:gap-6" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"}`}>
+              <div className={`${isSpecialGroupStudent ? "grid grid-cols-1 justify-items-start gap-4 sm:gap-6" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"}`}>
                 {progressData.courses.map((course) => (
                   <Card
                     key={course.course_id}
