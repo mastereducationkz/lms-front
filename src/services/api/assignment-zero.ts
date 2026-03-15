@@ -26,6 +26,55 @@ export async function getMyAssignmentZeroSubmission(): Promise<any> {
   }
 }
 
+export async function updateAssignmentZeroPlannedDate(data: {
+  exam_type: 'sat' | 'ielts';
+  planned_test_date: string;
+}): Promise<any> {
+  try {
+    const response = await api.patch('/assignment-zero/planned-date', data);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Failed to update planned exam date');
+  }
+}
+
+export async function updateAssignmentZeroExamResult(data: {
+  exam_type: 'sat' | 'ielts';
+  result_score: string;
+  result_test_date: string;
+}): Promise<any> {
+  try {
+    const response = await api.patch('/assignment-zero/exam-result', data);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Failed to update exam result');
+  }
+}
+
+export async function getIeltsDatePromptStatus(): Promise<{
+  is_ielts_student: boolean;
+  should_prompt: boolean;
+  days_until_next_prompt?: number;
+  last_prompted_at?: string;
+  next_prompt_at?: string;
+}> {
+  try {
+    const response = await api.get('/assignment-zero/ielts-date-prompt-status');
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Failed to get IELTS prompt status');
+  }
+}
+
+export async function touchIeltsDatePrompt(): Promise<{ success: boolean; ielts_last_date_prompted_at: string }> {
+  try {
+    const response = await api.post('/assignment-zero/ielts-date-prompt-touch');
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Failed to update IELTS prompt status');
+  }
+}
+
 export async function saveAssignmentZeroProgress(data: Partial<{
   full_name: string;
   phone_number: string;
@@ -184,9 +233,16 @@ export async function uploadAssignmentZeroScreenshot(file: File): Promise<{ url:
   }
 }
 
-export async function getAllAssignmentZeroSubmissions(groupName?: string): Promise<any[]> {
+export async function getAllAssignmentZeroSubmissions(options?: {
+  groupName?: string;
+  skip?: number;
+  limit?: number;
+}): Promise<any[]> {
   try {
-    const params = groupName ? { group_name: groupName } : {};
+    const params: Record<string, string | number> = {};
+    if (options?.groupName) params.group_name = options.groupName;
+    if (typeof options?.skip === 'number') params.skip = options.skip;
+    if (typeof options?.limit === 'number') params.limit = options.limit;
     const response = await api.get('/assignment-zero/submissions', { params });
     return response.data;
   } catch (error: any) {

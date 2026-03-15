@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Progress } from "../components/ui/progress";
 import { Badge } from "../components/ui/badge";
 import { Checkbox } from "../components/ui/checkbox";
+import { Input } from "../components/ui/input";
 import type { DashboardStats, StudentProgressOverview, Assignment, Event, AssignmentSubmission } from "../types";
 import { Clock, BookOpen, LineChart, CheckCircle, Target, Calendar, FileText, AlertCircle, Video, GraduationCap, MessageCircle } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -38,6 +39,12 @@ export default function StudentDashboard({
   const [isLoadingTodo, setIsLoadingTodo] = useState(true);
   const [showCompleted, setShowCompleted] = useState(false);
   const [isSpecialGroupStudent, setIsSpecialGroupStudent] = useState(false);
+  const [showIeltsPrompt, setShowIeltsPrompt] = useState(false);
+  const [isLoadingIeltsPrompt, setIsLoadingIeltsPrompt] = useState(false);
+  const [isSavingIeltsPrompt, setIsSavingIeltsPrompt] = useState(false);
+  const [ieltsPromptDate, setIeltsPromptDate] = useState('');
+  const [ieltsCurrentExactDate, setIeltsCurrentExactDate] = useState<string | null>(null);
+  const [ieltsPromptMessage, setIeltsPromptMessage] = useState('');
   
   // Daily questions state
   const [dailyQuestionsCompleted, setDailyQuestionsCompleted] = useState(false);
@@ -49,6 +56,7 @@ export default function StudentDashboard({
     loadTodoData();
     loadDailyQuestionsStatus();
     loadSpecialGroupsState();
+    loadIeltsPromptStatus();
   }, []);
 
   const loadSpecialGroupsState = async () => {
@@ -59,6 +67,94 @@ export default function StudentDashboard({
     } catch (error) {
       console.error('Failed to load group flags:', error)
       setIsSpecialGroupStudent(false)
+    }
+  }
+
+  const loadIeltsPromptStatus = async () => {
+    try {
+      setIsLoadingIeltsPrompt(true)
+      const status = await apiClient.getIeltsDatePromptStatus()
+      const shouldPrompt = Boolean(status.is_ielts_student && status.should_prompt)
+      setShowIeltsPrompt(shouldPrompt)
+
+      if (shouldPrompt) {
+        try {
+          const submission = await apiClient.getMyAssignmentZeroSubmission()
+          const plannedDate = submission?.ielts_planned_test_date || null
+          if (plannedDate) {
+            const normalized = `${plannedDate}`.slice(0, 10)
+            setIeltsCurrentExactDate(normalized)
+            setIeltsPromptDate(normalized)
+          } else {
+            setIeltsCurrentExactDate(null)
+            setIeltsPromptDate('')
+          }
+        } catch (submissionError) {
+          console.error('Failed to load IELTS planned date from submission:', submissionError)
+          setIeltsCurrentExactDate(null)
+          setIeltsPromptDate('')
+        }
+      } else {
+        setIeltsCurrentExactDate(null)
+        setIeltsPromptDate('')
+      }
+    } catch (error) {
+      console.error('Failed to load IELTS prompt status:', error)
+      setShowIeltsPrompt(false)
+    } finally {
+      setIsLoadingIeltsPrompt(false)
+    }
+  }
+
+  const handleIeltsPromptDismiss = async () => {
+    try {
+      setIsSavingIeltsPrompt(true)
+      await apiClient.touchIeltsDatePrompt()
+      setShowIeltsPrompt(false)
+      setIeltsPromptMessage('')
+    } catch (error) {
+      console.error('Failed to update IELTS prompt touch state:', error)
+      setIeltsPromptMessage('Could not update reminder status. Please try again.')
+    } finally {
+      setIsSavingIeltsPrompt(false)
+    }
+  }
+
+  const handleIeltsPromptConfirmDate = async () => {
+    try {
+      setIsSavingIeltsPrompt(true)
+      setIeltsPromptMessage('')
+      await apiClient.touchIeltsDatePrompt()
+      setShowIeltsPrompt(false)
+    } catch (error) {
+      console.error('Failed to confirm IELTS date:', error)
+      setIeltsPromptMessage('Could not confirm IELTS date. Please try again.')
+    } finally {
+      setIsSavingIeltsPrompt(false)
+    }
+  }
+
+  const handleIeltsPromptSaveDate = async () => {
+    if (!ieltsPromptDate) {
+      setIeltsPromptMessage('Please select your IELTS test date.')
+      return
+    }
+
+    try {
+      setIsSavingIeltsPrompt(true)
+      setIeltsPromptMessage('')
+      await apiClient.updateAssignmentZeroPlannedDate({
+        exam_type: 'ielts',
+        planned_test_date: ieltsPromptDate,
+      })
+      await apiClient.touchIeltsDatePrompt()
+      setIeltsCurrentExactDate(ieltsPromptDate)
+      setShowIeltsPrompt(false)
+    } catch (error) {
+      console.error('Failed to save IELTS planned date:', error)
+      setIeltsPromptMessage('Could not save IELTS date. Please try again.')
+    } finally {
+      setIsSavingIeltsPrompt(false)
     }
   }
 
@@ -317,6 +413,50 @@ export default function StudentDashboard({
 
   return (
     <div className="space-y-8">
+      {!isLoadingIeltsPrompt && showIeltsPrompt && (
+        <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30">
+          <CardHeader>
+            <CardTitle className="text-base">IELTS date check-in</CardTitle>
+            <CardDescription>
+              We ask this every two weeks to keep your IELTS plan up to date.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {ieltsCurrentExactDate ? (
+              <div className="rounded-md border border-amber-200 bg-white/70 dark:bg-card/60 px-3 py-2 text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Current exact date:</span>{' '}
+                <span className="font-semibold">{ieltsCurrentExactDate}</span>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                We do not have your exact IELTS date yet. Please set it now.
+              </p>
+            )}
+            <Input
+              type="date"
+              value={ieltsPromptDate}
+              onChange={(event) => setIeltsPromptDate(event.target.value)}
+            />
+            {ieltsPromptMessage && (
+              <p className="text-sm text-red-600 dark:text-red-400">{ieltsPromptMessage}</p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={handleIeltsPromptSaveDate} disabled={isSavingIeltsPrompt}>
+                Save exact date
+              </Button>
+              {ieltsCurrentExactDate && (
+                <Button variant="secondary" onClick={handleIeltsPromptConfirmDate} disabled={isSavingIeltsPrompt}>
+                  Yes, this date is correct
+                </Button>
+              )}
+              <Button variant="outline" onClick={handleIeltsPromptDismiss} disabled={isSavingIeltsPrompt}>
+                Ask me again in 2 weeks
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="border-0 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-900 dark:to-indigo-900 text-white" data-tour="dashboard-overview">
         <CardHeader className="p-5 sm:p-6">
           <CardTitle className="text-2xl sm:text-3xl">Welcome back, {firstName}!</CardTitle>

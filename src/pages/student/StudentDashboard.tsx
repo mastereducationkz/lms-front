@@ -5,6 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Progress } from "../components/ui/progress";
 import { Badge } from "../components/ui/badge";
 import { Checkbox } from "../components/ui/checkbox";
+import { Input } from "../components/ui/input";
 import type { DashboardStats, StudentProgressOverview, Assignment, Event, AssignmentSubmission } from "../types";
 import { Clock, BookOpen, LineChart, CheckCircle, Target, Calendar, FileText, AlertCircle, Video, GraduationCap, MessageCircle, User } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -37,12 +38,68 @@ export default function StudentDashboard({
   const [isLoadingTodo, setIsLoadingTodo] = useState(true);
   const [showCompleted, setShowCompleted] = useState(false);
   const [isSpecialGroupStudent, setIsSpecialGroupStudent] = useState(false);
+  const [showIeltsPrompt, setShowIeltsPrompt] = useState(false);
+  const [isLoadingIeltsPrompt, setIsLoadingIeltsPrompt] = useState(false);
+  const [isSavingIeltsPrompt, setIsSavingIeltsPrompt] = useState(false);
+  const [ieltsPromptDate, setIeltsPromptDate] = useState('');
+  const [ieltsPromptMessage, setIeltsPromptMessage] = useState('');
 
   useEffect(() => {
     loadProgressData();
     loadTodoData();
     loadSpecialGroupsState();
+    loadIeltsPromptStatus();
   }, []);
+
+  const loadIeltsPromptStatus = async () => {
+    try {
+      setIsLoadingIeltsPrompt(true);
+      const status = await apiClient.getIeltsDatePromptStatus();
+      setShowIeltsPrompt(Boolean(status.is_ielts_student && status.should_prompt));
+    } catch (error) {
+      console.error('Failed to load IELTS prompt status:', error);
+      setShowIeltsPrompt(false);
+    } finally {
+      setIsLoadingIeltsPrompt(false);
+    }
+  };
+
+  const handleIeltsPromptDismiss = async () => {
+    try {
+      setIsSavingIeltsPrompt(true);
+      await apiClient.touchIeltsDatePrompt();
+      setShowIeltsPrompt(false);
+      setIeltsPromptMessage('');
+    } catch (error) {
+      console.error('Failed to update IELTS prompt touch state:', error);
+      setIeltsPromptMessage('Could not update reminder status. Please try again.');
+    } finally {
+      setIsSavingIeltsPrompt(false);
+    }
+  };
+
+  const handleIeltsPromptSaveDate = async () => {
+    if (!ieltsPromptDate) {
+      setIeltsPromptMessage('Please select your IELTS test date.');
+      return;
+    }
+
+    try {
+      setIsSavingIeltsPrompt(true);
+      setIeltsPromptMessage('');
+      await apiClient.updateAssignmentZeroPlannedDate({
+        exam_type: 'ielts',
+        planned_test_date: ieltsPromptDate,
+      });
+      await apiClient.touchIeltsDatePrompt();
+      setShowIeltsPrompt(false);
+    } catch (error) {
+      console.error('Failed to save IELTS planned date:', error);
+      setIeltsPromptMessage('Could not save IELTS date. Please try again.');
+    } finally {
+      setIsSavingIeltsPrompt(false);
+    }
+  };
 
   const loadSpecialGroupsState = async () => {
     try {
@@ -286,6 +343,35 @@ export default function StudentDashboard({
 
   return (
     <div className="space-y-8">
+      {!isLoadingIeltsPrompt && showIeltsPrompt && (
+        <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30">
+          <CardHeader>
+            <CardTitle className="text-base">Update your IELTS test date</CardTitle>
+            <CardDescription>
+              Please confirm your planned IELTS date. We ask this every two weeks to keep your plan up to date.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Input
+              type="date"
+              value={ieltsPromptDate}
+              onChange={(event) => setIeltsPromptDate(event.target.value)}
+            />
+            {ieltsPromptMessage && (
+              <p className="text-sm text-red-600 dark:text-red-400">{ieltsPromptMessage}</p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={handleIeltsPromptSaveDate} disabled={isSavingIeltsPrompt}>
+                Save IELTS date
+              </Button>
+              <Button variant="outline" onClick={handleIeltsPromptDismiss} disabled={isSavingIeltsPrompt}>
+                Remind me later
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="border-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white" data-tour="dashboard-overview">
         <CardHeader className="p-5 sm:p-6">
           <CardTitle className="text-2xl sm:text-3xl">Welcome back, {firstName}!</CardTitle>

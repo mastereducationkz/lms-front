@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Badge } from '../../components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 import apiClient from '../../services/api';
-import { Search, Download, Eye, Filter, BookOpen, Headphones } from 'lucide-react';
+import { Search, Download, Eye, Filter, BookOpen, Headphones, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 interface AssignmentZeroSubmission {
   id: number;
@@ -21,6 +22,9 @@ interface AssignmentZeroSubmission {
   school_type: string;
   group_name: string;
   sat_target_date: string;
+  sat_planned_test_date?: string | null;
+  sat_result_score?: string | null;
+  sat_result_test_date?: string | null;
   has_passed_sat_before: boolean;
   previous_sat_score: string | null;
   recent_practice_test_score: string;
@@ -50,6 +54,10 @@ interface AssignmentZeroSubmission {
   math_topics: string[];
   // IELTS Fields
   ielts_target_date: string | null;
+  ielts_planned_test_date?: string | null;
+  ielts_last_date_prompted_at?: string | null;
+  ielts_result_score?: string | null;
+  ielts_result_test_date?: string | null;
   has_passed_ielts_before: boolean;
   previous_ielts_score: string | null;
   ielts_target_score: string | null;
@@ -93,6 +101,10 @@ const AssignmentZeroSubmissions = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSubmission, setSelectedSubmission] = useState<AssignmentZeroSubmission | null>(null);
   const [filterDraft, setFilterDraft] = useState<'all' | 'draft' | 'submitted'>('submitted');
+  const [filterTrack, setFilterTrack] = useState<'all' | 'sat' | 'ielts'>('all');
+  const [filterGroup, setFilterGroup] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   useEffect(() => {
     fetchSubmissions();
@@ -100,13 +112,39 @@ const AssignmentZeroSubmissions = () => {
 
   useEffect(() => {
     filterSubmissions();
-  }, [searchQuery, submissions, filterDraft]);
+  }, [searchQuery, submissions, filterDraft, filterTrack, filterGroup]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterDraft, filterTrack, filterGroup]);
+
+  const uniqueGroups = useMemo(() => {
+    const groups = Array.from(new Set(submissions.map((s) => s.group_name).filter(Boolean)));
+    return groups.sort((a, b) => a.localeCompare(b));
+  }, [submissions]);
 
   const fetchSubmissions = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.getAllAssignmentZeroSubmissions();
-      setSubmissions(response);
+      const batchSize = 200;
+      let skip = 0;
+      let hasMore = true;
+      let allRows: AssignmentZeroSubmission[] = [];
+
+      while (hasMore) {
+        const batch = await apiClient.getAllAssignmentZeroSubmissions({
+          skip,
+          limit: batchSize,
+        });
+        allRows = [...allRows, ...batch];
+        if (batch.length < batchSize) {
+          hasMore = false;
+        } else {
+          skip += batchSize;
+        }
+      }
+
+      setSubmissions(allRows);
     } catch (error) {
       console.error('Failed to fetch submissions:', error);
     } finally {
@@ -122,6 +160,16 @@ const AssignmentZeroSubmissions = () => {
       filtered = filtered.filter((s) => s.is_draft);
     } else if (filterDraft === 'submitted') {
       filtered = filtered.filter((s) => !s.is_draft);
+    }
+
+    if (filterTrack === 'sat') {
+      filtered = filtered.filter((s) => hasSATData(s));
+    } else if (filterTrack === 'ielts') {
+      filtered = filtered.filter((s) => hasIELTSData(s));
+    }
+
+    if (filterGroup !== 'all') {
+      filtered = filtered.filter((s) => s.group_name === filterGroup);
     }
 
     // Filter by search query
@@ -306,6 +354,114 @@ const AssignmentZeroSubmissions = () => {
     link.click();
   };
 
+  const totalPages = Math.max(1, Math.ceil(filteredSubmissions.length / pageSize));
+  const paginatedSubmissions = filteredSubmissions.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  const formatDateTime = (value?: string | null) => {
+    if (!value) return 'N/A';
+    return new Date(value).toLocaleString();
+  };
+
+  const SAT_MONTH_TEMPLATE_DAY: Record<number, number> = {
+    3: 14,
+    5: 2,
+    6: 6,
+    8: 23,
+    9: 13,
+    10: 4,
+    11: 8,
+    12: 6,
+  };
+
+  const MONTH_NAME_TO_INDEX: Record<string, number> = {
+    january: 1,
+    february: 2,
+    march: 3,
+    april: 4,
+    may: 5,
+    june: 6,
+    july: 7,
+    august: 8,
+    september: 9,
+    sept: 9,
+    october: 10,
+    november: 11,
+    december: 12,
+  };
+
+  const resolveLegacySatMonthDate = (rawValue: string) => {
+    const normalized = rawValue.trim().toLowerCase().replace('.', '');
+    const month = MONTH_NAME_TO_INDEX[normalized];
+    if (!month) return null;
+
+    const templateDay = SAT_MONTH_TEMPLATE_DAY[month] ?? 1;
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const thisYearDate = new Date(currentYear, month - 1, templateDay);
+    const nextYearDate = new Date(currentYear + 1, month - 1, templateDay);
+
+    return thisYearDate >= today ? thisYearDate : nextYearDate;
+  };
+
+  const parseDateValue = (value?: string | null) => {
+    if (!value) return null;
+    const isoDatePattern = /^\d{4}-\d{2}-\d{2}$/;
+    if (isoDatePattern.test(value)) {
+      const isoDate = new Date(`${value}T00:00:00`);
+      return Number.isNaN(isoDate.getTime()) ? null : isoDate;
+    }
+
+    const legacySatDate = resolveLegacySatMonthDate(value);
+    if (legacySatDate) return legacySatDate;
+
+    const parsedDate = new Date(value);
+    return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+  };
+
+  const getCollectionAskDate = (plannedDate?: string | null) => {
+    const parsedDate = parseDateValue(plannedDate);
+    if (!parsedDate) return null;
+    const askDate = new Date(parsedDate);
+    askDate.setDate(askDate.getDate() + 13);
+    return askDate;
+  };
+
+  const formatDateOnly = (value?: string | null) => {
+    const parsedDate = parseDateValue(value);
+    return parsedDate ? parsedDate.toLocaleDateString() : 'N/A';
+  };
+
+  const getNextIeltsPromptAt = (value?: string | null) => {
+    if (!value) return null;
+    const date = new Date(value);
+    date.setDate(date.getDate() + 14);
+    return date.toISOString();
+  };
+
+  const getResultCollectionStatus = (
+    askDate: Date | null,
+    resultScore?: string | null,
+    resultDate?: string | null
+  ) => {
+    if (resultScore || resultDate) {
+      return 'Result received';
+    }
+    if (!askDate) {
+      return 'No planned date';
+    }
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const normalizedAskDate = new Date(askDate);
+    normalizedAskDate.setHours(0, 0, 0, 0);
+    if (now > normalizedAskDate) {
+      return 'Overdue';
+    }
+    return 'Pending';
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -324,129 +480,209 @@ const AssignmentZeroSubmissions = () => {
       {/* Filters and Search */}
       <Card className="mb-6">
         <CardContent className="pt-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
+          <div className="space-y-4">
+            <div className="flex flex-col xl:flex-row gap-3">
+              <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
                 placeholder="Search by name, email, group, or city..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 pr-10"
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  aria-label="Clear search"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant={filterDraft === 'all' ? 'default' : 'outline'}
-                onClick={() => setFilterDraft('all')}
-                size="sm"
-              >
-                <Filter className="w-4 h-4 mr-2" />
-                All ({submissions.length})
-              </Button>
-              <Button
-                variant={filterDraft === 'submitted' ? 'default' : 'outline'}
-                onClick={() => setFilterDraft('submitted')}
-                size="sm"
-              >
-                Submitted ({submissions.filter((s) => !s.is_draft).length})
-              </Button>
-              <Button
-                variant={filterDraft === 'draft' ? 'default' : 'outline'}
-                onClick={() => setFilterDraft('draft')}
-                size="sm"
-              >
-                Drafts ({submissions.filter((s) => s.is_draft).length})
+              <Button onClick={exportToCSV} variant="outline" className="shrink-0">
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
               </Button>
             </div>
-            <Button onClick={exportToCSV} variant="outline">
-              <Download className="w-4 h-4 mr-2" />
-              Export CSV
-            </Button>
+
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={filterDraft === 'all' ? 'default' : 'outline'}
+                  onClick={() => setFilterDraft('all')}
+                  size="sm"
+                >
+                  <Filter className="w-4 h-4 mr-2" />
+                  All ({submissions.length})
+                </Button>
+                <Button
+                  variant={filterDraft === 'submitted' ? 'default' : 'outline'}
+                  onClick={() => setFilterDraft('submitted')}
+                  size="sm"
+                >
+                  Submitted ({submissions.filter((s) => !s.is_draft).length})
+                </Button>
+                <Button
+                  variant={filterDraft === 'draft' ? 'default' : 'outline'}
+                  onClick={() => setFilterDraft('draft')}
+                  size="sm"
+                >
+                  Drafts ({submissions.filter((s) => s.is_draft).length})
+                </Button>
+              </div>
+
+              <div className="flex flex-wrap gap-2 lg:ml-auto">
+                <Button variant={filterTrack === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setFilterTrack('all')}>
+                  Track: All
+                </Button>
+                <Button variant={filterTrack === 'sat' ? 'default' : 'outline'} size="sm" onClick={() => setFilterTrack('sat')}>
+                  SAT
+                </Button>
+                <Button variant={filterTrack === 'ielts' ? 'default' : 'outline'} size="sm" onClick={() => setFilterTrack('ielts')}>
+                  IELTS
+                </Button>
+                <select
+                  value={filterGroup}
+                  onChange={(e) => setFilterGroup(e.target.value)}
+                  className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="all">All groups</option>
+                  {uniqueGroups.map((groupName) => (
+                    <option key={groupName} value={groupName}>
+                      {groupName}
+                    </option>
+                  ))}
+                </select>
+                {(searchQuery || filterTrack !== 'all' || filterGroup !== 'all' || filterDraft !== 'submitted') && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setFilterTrack('all');
+                      setFilterGroup('all');
+                      setFilterDraft('submitted');
+                    }}
+                  >
+                    Reset
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Found {filteredSubmissions.length} submissions
+            </p>
           </div>
         </CardContent>
       </Card>
 
-      {/* Submissions List */}
-      <div className="grid gap-4">
-        {filteredSubmissions.map((submission) => (
-          <Card key={submission.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2 flex-wrap">
-                    <h3 className="text-lg font-semibold">{submission.full_name}</h3>
-                    <Badge variant={submission.is_draft ? 'secondary' : 'default'}>
-                      {submission.is_draft ? 'Draft' : 'Submitted'}
-                    </Badge>
-                    {hasSATData(submission) && (
-                      <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800">
-                        <BookOpen className="w-3 h-3 mr-1" />
-                        SAT {calculateSATAverageScore(submission) ? `(${calculateSATAverageScore(submission)}/5)` : ''}
-                      </Badge>
-                    )}
-                    {hasIELTSData(submission) && (
-                      <Badge variant="outline" className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800">
-                        <Headphones className="w-3 h-3 mr-1" />
-                        IELTS {calculateIELTSAverageScore(submission) ? `(${calculateIELTSAverageScore(submission)}/5)` : ''}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <div>
-                      <span className="font-medium">Email:</span> {submission.email}
-                    </div>
-                    <div>
-                      <span className="font-medium">Group:</span> {submission.group_name}
-                    </div>
-                    <div>
-                      <span className="font-medium">City:</span> {submission.city}
-                    </div>
-                    <div>
-                      <span className="font-medium">School:</span> {submission.school_type}
-                    </div>
-                    {submission.sat_target_date && (
-                      <div>
-                        <span className="font-medium">SAT Target:</span> {submission.sat_target_date}
-                      </div>
-                    )}
-                    {submission.ielts_target_date && (
-                      <div>
-                        <span className="font-medium">IELTS Target:</span> {submission.ielts_target_date}
-                      </div>
-                    )}
-                    {submission.bluebook_practice_test_5_score && (
-                      <div>
-                        <span className="font-medium">Bluebook:</span> {submission.bluebook_practice_test_5_score}
-                      </div>
-                    )}
-                    {submission.ielts_target_score && (
-                      <div>
-                        <span className="font-medium">Target Score:</span> {submission.ielts_target_score}
-                      </div>
-                    )}
-                    <div>
-                      <span className="font-medium">Submitted:</span>{' '}
-                      {new Date(submission.updated_at).toLocaleDateString()}
-                    </div>
-                  </div>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => setSelectedSubmission(submission)}>
-                  <Eye className="w-4 h-4 mr-2" />
-                  View Details
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Submissions Table */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">Submissions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border dark:border-border overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Student</TableHead>
+                  <TableHead>Group</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Track</TableHead>
+                  <TableHead>SAT Target</TableHead>
+                  <TableHead>IELTS Target</TableHead>
+                  <TableHead>Updated</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedSubmissions.length > 0 ? (
+                  paginatedSubmissions.map((submission) => (
+                    <TableRow key={submission.id}>
+                      <TableCell>
+                        <div className="font-medium">{submission.full_name}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">{submission.email}</div>
+                      </TableCell>
+                      <TableCell>{submission.group_name || '-'}</TableCell>
+                      <TableCell>
+                        <Badge variant={submission.is_draft ? 'secondary' : 'default'}>
+                          {submission.is_draft ? 'Draft' : 'Submitted'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1 flex-wrap">
+                          {hasSATData(submission) && (
+                            <Badge variant="outline" className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800">
+                              <BookOpen className="w-3 h-3 mr-1" />
+                              SAT {calculateSATAverageScore(submission) ? `(${calculateSATAverageScore(submission)}/5)` : ''}
+                            </Badge>
+                          )}
+                          {hasIELTSData(submission) && (
+                            <Badge variant="outline" className="bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-800">
+                              <Headphones className="w-3 h-3 mr-1" />
+                              IELTS {calculateIELTSAverageScore(submission) ? `(${calculateIELTSAverageScore(submission)}/5)` : ''}
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>{submission.sat_target_date || '-'}</TableCell>
+                      <TableCell>{submission.ielts_target_date || '-'}</TableCell>
+                      <TableCell>{new Date(submission.updated_at).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="outline" size="sm" onClick={() => setSelectedSubmission(submission)}>
+                          <Eye className="w-4 h-4 mr-2" />
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={8} className="text-center text-gray-500 dark:text-gray-400 py-8">
+                      No submissions found matching your criteria.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
 
-      {filteredSubmissions.length === 0 && (
-        <Card>
-          <CardContent className="pt-6 text-center text-gray-500 dark:text-gray-400">
-            <p>No submissions found matching your criteria.</p>
-          </CardContent>
-        </Card>
-      )}
+          {/* Paging */}
+          <div className="mt-4 flex items-center justify-between">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Showing {filteredSubmissions.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}-
+              {Math.min(currentPage * pageSize, filteredSubmissions.length)} of {filteredSubmissions.length}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage <= 1}
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Previous
+              </Button>
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                Page {currentPage} / {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={currentPage >= totalPages}
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+              >
+                Next
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Detailed View Modal */}
       {selectedSubmission && (
@@ -538,6 +774,63 @@ const AssignmentZeroSubmissions = () => {
                   </div>
                 </div>
 
+                {/* Reminder Tracking */}
+                <div className="bg-gray-50 dark:bg-secondary rounded-lg p-4">
+                  <h3 className="text-lg font-semibold mb-3">Reminder Tracking</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div className="space-y-1">
+                      <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Last Prompted At</span>
+                      <p className="font-medium">{formatDateTime(selectedSubmission.ielts_last_date_prompted_at)}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Next Prompt At</span>
+                      <p className="font-medium">{formatDateTime(getNextIeltsPromptAt(selectedSubmission.ielts_last_date_prompted_at))}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">SAT Ask Result On</span>
+                      <p className="font-medium">
+                        {(() => {
+                          const satPlannedDate = selectedSubmission.sat_planned_test_date || selectedSubmission.sat_target_date || null;
+                          const satAskDate = getCollectionAskDate(satPlannedDate);
+                          return satAskDate ? satAskDate.toLocaleDateString() : 'N/A';
+                        })()}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {(() => {
+                          const satPlannedDate = selectedSubmission.sat_planned_test_date || selectedSubmission.sat_target_date || null;
+                          const satAskDate = getCollectionAskDate(satPlannedDate);
+                          return getResultCollectionStatus(
+                            satAskDate,
+                            selectedSubmission.sat_result_score,
+                            selectedSubmission.sat_result_test_date
+                          );
+                        })()}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">IELTS Ask Result On</span>
+                      <p className="font-medium">
+                        {(() => {
+                          const ieltsPlannedDate = selectedSubmission.ielts_planned_test_date || selectedSubmission.ielts_target_date;
+                          const ieltsAskDate = getCollectionAskDate(ieltsPlannedDate);
+                          return ieltsAskDate ? ieltsAskDate.toLocaleDateString() : 'N/A';
+                        })()}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {(() => {
+                          const ieltsPlannedDate = selectedSubmission.ielts_planned_test_date || selectedSubmission.ielts_target_date;
+                          const ieltsAskDate = getCollectionAskDate(ieltsPlannedDate);
+                          return getResultCollectionStatus(
+                            ieltsAskDate,
+                            selectedSubmission.ielts_result_score,
+                            selectedSubmission.ielts_result_test_date
+                          );
+                        })()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* SAT Section */}
                 {hasSATData(selectedSubmission) && (
                   <div className="border-2 border-blue-200 dark:border-blue-800 rounded-lg overflow-hidden">
@@ -559,6 +852,10 @@ const AssignmentZeroSubmissions = () => {
                           <div className="space-y-1">
                             <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Target Date</span>
                             <p className="font-medium">{selectedSubmission.sat_target_date || 'N/A'}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Planned Date</span>
+                            <p className="font-medium">{selectedSubmission.sat_planned_test_date || selectedSubmission.sat_target_date || 'N/A'}</p>
                           </div>
                           <div className="space-y-1">
                             <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Passed Before</span>
@@ -725,12 +1022,24 @@ const AssignmentZeroSubmissions = () => {
                             <p className="font-medium">{selectedSubmission.ielts_target_date || 'N/A'}</p>
                           </div>
                           <div className="space-y-1">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Planned Date</span>
+                            <p className="font-medium">{selectedSubmission.ielts_planned_test_date || selectedSubmission.ielts_target_date || 'N/A'}</p>
+                          </div>
+                          <div className="space-y-1">
                             <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Target Score</span>
                             <p className="font-medium">{selectedSubmission.ielts_target_score || 'N/A'}</p>
                           </div>
                           <div className="space-y-1">
                             <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Passed Before</span>
                             <p className="font-medium">{selectedSubmission.has_passed_ielts_before ? 'Yes' : 'No'}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Last Prompted At</span>
+                            <p className="font-medium">{formatDateTime(selectedSubmission.ielts_last_date_prompted_at)}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Next Prompt At</span>
+                            <p className="font-medium">{formatDateTime(getNextIeltsPromptAt(selectedSubmission.ielts_last_date_prompted_at))}</p>
                           </div>
                           {selectedSubmission.previous_ielts_score && (
                             <div className="space-y-1">

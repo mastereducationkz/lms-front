@@ -4,28 +4,15 @@ import { useAuth } from '../contexts/AuthContext.tsx';
 import apiClient from '../services/api';
 import { toast } from '../components/Toast.tsx';
 import {
-  User,
-  Mail,
-  GraduationCap,
-  Target,
   Upload,
   CheckCircle,
   ArrowRight,
   ArrowLeft,
   AlertCircle,
   Send,
-  BookOpen,
-  PenTool,
-  FileText,
-  Calculator,
-  MessageSquare,
   Cloud,
   CloudOff,
   Loader2,
-  Headphones,
-  Mic,
-  Edit3,
-  LogOut,
 } from 'lucide-react';
 import { Button } from '../components/ui/button.tsx';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card.tsx';
@@ -144,13 +131,37 @@ const SCHOOL_TYPES = [
   { value: 'Public', label: 'Public school (общеобразовательная)' },
 ];
 
-const SAT_TARGET_DATES = [
-  { value: 'October', label: 'October' },
-  { value: 'November', label: 'November' },
-  { value: 'December', label: 'December' },
-  { value: 'March', label: 'March' },
-  { value: 'May', label: 'May' },
+const SAT_DATE_TEMPLATES = [
+  { month: 8, day: 23 },
+  { month: 9, day: 13 },
+  { month: 10, day: 4 },
+  { month: 11, day: 8 },
+  { month: 12, day: 6 },
+  { month: 3, day: 14 },
+  { month: 5, day: 2 },
+  { month: 6, day: 6 },
 ];
+
+const SAT_TARGET_DATES = (() => {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const years = [today.getFullYear(), today.getFullYear() + 1];
+
+  const candidates = years
+    .flatMap((year) => SAT_DATE_TEMPLATES.map(({ month, day }) => new Date(year, month - 1, day)))
+    .filter((date) => date >= today)
+    .sort((a, b) => a.getTime() - b.getTime())
+    .slice(0, SAT_DATE_TEMPLATES.length);
+
+  return candidates.map((date) => {
+    const label = date.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+    return { value: label, label };
+  });
+})();
 
 const SAT_MONTHS = [
   { value: 'January', label: 'January' },
@@ -403,29 +414,29 @@ export default function AssignmentZeroPage() {
   // Dynamic steps based on user groups
   const DYNAMIC_STEPS = useMemo(() => {
     const baseSteps = [
-      { id: 'personal', title: 'Personal Info', icon: User, type: 'common' },
-      { id: 'account', title: 'Account Info', icon: Mail, type: 'common' },
-      { id: 'education', title: 'Education', icon: GraduationCap, type: 'common' },
+      { id: 'personal', title: 'Personal Info', type: 'common' },
+      { id: 'account', title: 'Account Info', type: 'common' },
+      { id: 'education', title: 'Education', type: 'common' },
     ];
     
     const satSteps = [
-      { id: 'sat_results', title: 'SAT Results', icon: Target, type: 'sat' },
-      { id: 'sat_grammar', title: 'Grammar', icon: PenTool, type: 'sat' },
-      { id: 'sat_reading', title: 'Reading', icon: BookOpen, type: 'sat' },
-      { id: 'sat_passages', title: 'Passages', icon: FileText, type: 'sat' },
-      { id: 'sat_math', title: 'Math Topics', icon: Calculator, type: 'sat' },
+      { id: 'sat_results', title: 'SAT Results', type: 'sat' },
+      { id: 'sat_grammar', title: 'Grammar', type: 'sat' },
+      { id: 'sat_reading', title: 'Reading', type: 'sat' },
+      { id: 'sat_passages', title: 'Passages', type: 'sat' },
+      { id: 'sat_math', title: 'Math Topics', type: 'sat' },
     ];
     
     const ieltsSteps = [
-      { id: 'ielts_listening', title: 'Listening', icon: Headphones, type: 'ielts' },
-      { id: 'ielts_reading', title: 'IELTS Reading', icon: BookOpen, type: 'ielts' },
-      { id: 'ielts_writing', title: 'Writing', icon: Edit3, type: 'ielts' },
-      { id: 'ielts_speaking', title: 'Speaking', icon: Mic, type: 'ielts' },
-      { id: 'ielts_topics', title: 'IELTS Topics', icon: FileText, type: 'ielts' },
+      { id: 'ielts_listening', title: 'Listening', type: 'ielts' },
+      { id: 'ielts_reading', title: 'IELTS Reading', type: 'ielts' },
+      { id: 'ielts_writing', title: 'Writing', type: 'ielts' },
+      { id: 'ielts_speaking', title: 'Speaking', type: 'ielts' },
+      { id: 'ielts_topics', title: 'IELTS Topics', type: 'ielts' },
     ];
     
     const endSteps = [
-      { id: 'comments', title: 'Comments', icon: MessageSquare, type: 'common' },
+      { id: 'comments', title: 'Comments', type: 'common' },
     ];
     
     let steps = [...baseSteps];
@@ -1043,80 +1054,78 @@ export default function AssignmentZeroPage() {
     );
   }
 
-  const CurrentStepIcon = DYNAMIC_STEPS[currentStep - 1]?.icon || User;
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-background dark:to-background py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-blue-50/40 dark:from-background dark:to-background py-8 px-4">
       <SavingIndicator status={saveStatus} />
       
       <div className="max-w-2xl mx-auto">
         {/* Header */}
-        <div className="relative text-center mb-8">
-          <div className="absolute right-0 top-0">
+        <div className="mb-6 rounded-2xl border border-slate-200/70 dark:border-border bg-white/80 dark:bg-card/80 backdrop-blur p-5 sm:p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground mb-1">Assignment Zero</h1>
+              <p className="text-base text-gray-600 dark:text-gray-400">Self-Assessment Questionnaire</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                Please be honest when answering questions. This helps us understand your current level.
+              </p>
+            </div>
             <Button 
               variant="outline" 
               size="sm" 
               onClick={() => logout()}
-              className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-red-600 hover:border-red-200 transition-colors"
+              className="text-gray-600 dark:text-gray-400 hover:text-red-600 hover:border-red-200 transition-colors"
             >
-              <LogOut className="w-4 h-4" />
-              <span>Logout</span>
+              Logout
             </Button>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground mb-2">Assignment Zero</h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400">Self-Assessment Questionnaire</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-            Please be honest when answering questions. This helps us understand your current level.
-          </p>
+          <div className="mt-5 flex items-center justify-between text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+            <span>Step {currentStep} of {totalSteps}</span>
+            <span>{Math.round((currentStep / totalSteps) * 100)}% completed</span>
+          </div>
+          <div className="mt-2 h-1.5 bg-slate-200 dark:bg-secondary rounded-full">
+            <div
+              className="h-full bg-blue-600 rounded-full transition-all duration-300"
+              style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+            />
+          </div>
         </div>
 
-        {/* Progress Indicator */}
+        {/* Step Pills */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-2 overflow-x-auto pb-2">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2">
             {DYNAMIC_STEPS.map((step, index) => {
-              const StepIcon = step.icon;
               const stepNumber = index + 1;
               return (
                 <button
                   key={step.id}
                   onClick={() => stepNumber <= currentStep && setCurrentStep(stepNumber)}
                   disabled={stepNumber > currentStep}
-                  className={`flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full font-semibold transition-all ${
+                  className={`flex-shrink-0 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium border transition-all ${
                     stepNumber === currentStep
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-blue-600 text-white border-blue-600'
                       : stepNumber < currentStep
-                      ? 'bg-green-500 text-white cursor-pointer hover:bg-green-600'
-                      : 'bg-gray-200 dark:bg-secondary text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-950/40'
+                      : 'bg-white dark:bg-card text-gray-500 dark:text-gray-400 border-slate-200 dark:border-border cursor-not-allowed'
                   }`}
                   title={step.title}
                 >
-                  {stepNumber < currentStep ? (
-                    <CheckCircle className="w-5 h-5" />
-                  ) : (
-                    <StepIcon className="w-5 h-5" />
-                  )}
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-black/10 dark:bg-white/10 text-[11px] font-semibold">
+                    {stepNumber < currentStep ? '✓' : stepNumber}
+                  </span>
+                  <span className="whitespace-nowrap">{step.title}</span>
                 </button>
               );
             })}
           </div>
-          <div className="relative h-2 bg-gray-200 dark:bg-secondary rounded-full">
-            <div
-              className="absolute h-full bg-blue-600 rounded-full transition-all"
-              style={{ width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%` }}
-            />
-          </div>
-          <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
             Step {currentStep} of {totalSteps}: {DYNAMIC_STEPS[currentStep - 1]?.title}
           </p>
         </div>
 
         {/* Form Card */}
-        <Card className="shadow-lg">
+        <Card className="shadow-sm rounded-2xl border border-slate-200/80 dark:border-border">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CurrentStepIcon className="w-5 h-5" />
-              {DYNAMIC_STEPS[currentStep - 1]?.title}
-            </CardTitle>
+            <CardTitle>{DYNAMIC_STEPS[currentStep - 1]?.title}</CardTitle>
             <CardDescription>
               {currentStepId === 'personal' && 'Tell us about yourself'}
               {currentStepId === 'account' && (showSAT ? 'Your College Board and platform accounts' : 'Your platform account')}
