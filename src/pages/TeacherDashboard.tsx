@@ -189,9 +189,10 @@ export default function TeacherDashboard() {
 
       // Load pending submissions
       try {
-        const pending = await apiClient.getPendingSubmissions();
+        const pendingData = await apiClient.getPendingSubmissionsMeta(100, 0);
+        const pending = pendingData.pending_submissions || [];
         setPendingSubmissions(pending);
-        setStats(prev => prev ? { ...prev, pending_submissions: pending.length } : null);
+        setStats(prev => prev ? { ...prev, pending_submissions: pendingData.total_pending_count || pending.length } : null);
       } catch (submissionError) {
         console.warn('Failed to load submissions:', submissionError);
         setPendingSubmissions([]);

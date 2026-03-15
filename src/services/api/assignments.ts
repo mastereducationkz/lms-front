@@ -233,13 +233,38 @@ export async function allowResubmission(submissionId: string | number): Promise<
   }
 }
 
-export async function getPendingSubmissions() {
+export async function getPendingSubmissions(limit?: number, offset: number = 0) {
   try {
-    const response = await api.get('/dashboard/teacher/pending-submissions');
+    const params: Record<string, number> = {};
+    if (typeof limit === 'number') params.limit = limit;
+    if (offset > 0) params.offset = offset;
+    const response = await api.get('/dashboard/teacher/pending-submissions', { params });
     return response.data.pending_submissions || [];
   } catch (error) {
     console.warn('Failed to load pending submissions:', error);
     return [];
+  }
+}
+
+export async function getPendingSubmissionsMeta(limit?: number, offset: number = 0): Promise<{
+  pending_submissions: any[];
+  total_pending_count: number;
+  has_more: boolean;
+}> {
+  try {
+    const params: Record<string, number> = {};
+    if (typeof limit === 'number') params.limit = limit;
+    if (offset > 0) params.offset = offset;
+
+    const response = await api.get('/dashboard/teacher/pending-submissions', { params });
+    return {
+      pending_submissions: response.data.pending_submissions || [],
+      total_pending_count: response.data.total_pending_count || 0,
+      has_more: Boolean(response.data.has_more)
+    };
+  } catch (error) {
+    console.warn('Failed to load pending submissions meta:', error);
+    return { pending_submissions: [], total_pending_count: 0, has_more: false };
   }
 }
 
