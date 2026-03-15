@@ -262,3 +262,32 @@ export async function getTeacherStudentsProgress() {
     return [];
   }
 }
+
+export async function autoGradeUnitHomework(): Promise<{ graded_count: number; eligible_count: number }> {
+  try {
+    const response = await api.post('/dashboard/teacher/auto-grade-unit-homework');
+    return response.data;
+  } catch (error) {
+    throw new Error('Failed to auto-grade unit homework');
+  }
+}
+
+export async function getAutoGradeUnitHomeworkPreview(): Promise<{
+  eligible_count: number;
+  items: Array<{
+    submission_id: number;
+    assignment_id: number;
+    assignment_title: string;
+    student_name: string;
+    student_email: string;
+    submitted_at: string;
+    target_score: number;
+  }>;
+}> {
+  try {
+    const response = await api.get('/dashboard/teacher/auto-grade-unit-homework/preview');
+    return response.data;
+  } catch (error) {
+    throw new Error('Failed to load auto-grade preview');
+  }
+}

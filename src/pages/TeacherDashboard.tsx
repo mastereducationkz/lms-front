@@ -97,6 +97,16 @@ interface Submission {
   feedback?: string;
 }
 
+interface AutoGradePreviewItem {
+  submission_id: number;
+  assignment_id: number;
+  assignment_title: string;
+  student_name: string;
+  student_email: string;
+  submitted_at: string;
+  target_score: number;
+}
+
 export default function TeacherDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -126,6 +136,10 @@ export default function TeacherDashboard() {
   const [currentAssignment, setCurrentAssignment] = useState<any>(null);
   const [isAssignmentDataLoaded, setIsAssignmentDataLoaded] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAutoGrading, setIsAutoGrading] = useState(false);
+  const [isAutoGradeDialogOpen, setIsAutoGradeDialogOpen] = useState(false);
+  const [isAutoGradePreviewLoading, setIsAutoGradePreviewLoading] = useState(false);
+  const [autoGradePreview, setAutoGradePreview] = useState<AutoGradePreviewItem[]>([]);
   
   // Weekly Awards Hub state
   const [isWeeklyAwardsOpen, setIsWeeklyAwardsOpen] = useState(false);
@@ -315,6 +329,48 @@ export default function TeacherDashboard() {
     } catch (error) {
       toast('Failed to allow resubmission', 'error');
       console.error('Resubmission error:', error);
+    }
+  };
+
+  const handleOpenAutoGradeDialog = async () => {
+    setIsAutoGradeDialogOpen(true);
+    setIsAutoGradePreviewLoading(true);
+
+    try {
+      const preview = await apiClient.getAutoGradeUnitHomeworkPreview();
+      setAutoGradePreview(preview?.items || []);
+    } catch (error) {
+      toast('Failed to load auto-grade preview', 'error');
+      console.error('Auto-grade preview error:', error);
+    } finally {
+      setIsAutoGradePreviewLoading(false);
+    }
+  };
+
+  const handleAutoGradeUnitHomework = async () => {
+    if (autoGradePreview.length === 0) {
+      toast('No eligible unit-only homework submissions found', 'info');
+      return;
+    }
+
+    setIsAutoGrading(true);
+    try {
+      const result = await apiClient.autoGradeUnitHomework();
+
+      if ((result?.graded_count || 0) > 0) {
+        toast(`Auto-graded ${result.graded_count} submission(s) with 100%`, 'success');
+      } else {
+        toast('No eligible unit-only homework submissions found', 'info');
+      }
+
+      setIsAutoGradeDialogOpen(false);
+      setAutoGradePreview([]);
+      loadTeacherData();
+    } catch (error) {
+      toast('Failed to auto-grade homework', 'error');
+      console.error('Auto-grade homework error:', error);
+    } finally {
+      setIsAutoGrading(false);
     }
   };
 
@@ -749,14 +805,25 @@ export default function TeacherDashboard() {
                 <p className="text-sm text-gray-500 dark:text-gray-400">Manage student assignments and grading</p>
               </div>
             </div>
-            
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
-              <TabsList className="grid w-full grid-cols-3 sm:w-[300px]">
-                <TabsTrigger value="pending">Pending</TabsTrigger>
-                <TabsTrigger value="graded">Graded</TabsTrigger>
-                <TabsTrigger value="all">All</TabsTrigger>
-              </TabsList>
-            </Tabs>
+
+            <div className="flex w-full sm:w-auto flex-col sm:flex-row sm:items-center gap-2">
+              <Button
+                onClick={handleOpenAutoGradeDialog}
+                disabled={isAutoGrading}
+                variant="outline"
+                className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+              >
+                {isAutoGrading ? 'Auto-grading...' : 'Auto-grade Unit HW'}
+              </Button>
+
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
+                <TabsList className="grid w-full grid-cols-3 sm:w-[300px]">
+                  <TabsTrigger value="pending">Pending</TabsTrigger>
+                  <TabsTrigger value="graded">Graded</TabsTrigger>
+                  <TabsTrigger value="all">All</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -1369,6 +1436,86 @@ export default function TeacherDashboard() {
         isOpen={isWeeklyAwardsOpen}
         onClose={() => setIsWeeklyAwardsOpen(false)}
       />
+
+      <Dialog
+        open={isAutoGradeDialogOpen}
+        onOpenChange={(open) => {
+          setIsAutoGradeDialogOpen(open);
+          if (!open) {
+            setAutoGradePreview([]);
+          }
+        }}
+      >
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Auto-grade Unit Homework</DialogTitle>
+            <DialogDescription>
+              This action automatically sets 100% for pending multi-task homework where all tasks are only unit completion tasks.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="rounded-md border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-900/10 p-3 text-sm text-emerald-900 dark:text-emerald-200">
+              Use this when homework only requires students to pass listed units and manual review is not needed.
+            </div>
+
+            {isAutoGradePreviewLoading ? (
+              <div className="text-sm text-gray-500 dark:text-gray-400">Loading eligible homework...</div>
+            ) : autoGradePreview.length === 0 ? (
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                No eligible pending homework found for auto-grading.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-gray-900 dark:text-foreground">
+                  Eligible submissions: {autoGradePreview.length}
+                </p>
+                <div className="rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div className="max-h-72 overflow-y-auto">
+                    <table className="min-w-full text-sm">
+                      <thead className="bg-gray-50 dark:bg-secondary/50 border-b border-gray-200 dark:border-gray-700">
+                        <tr>
+                          <th className="text-left px-3 py-2 font-medium">Homework</th>
+                          <th className="text-left px-3 py-2 font-medium">Student</th>
+                          <th className="text-left px-3 py-2 font-medium">Submitted</th>
+                          <th className="text-left px-3 py-2 font-medium">Score</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                        {autoGradePreview.map((item) => (
+                          <tr key={item.submission_id}>
+                            <td className="px-3 py-2 text-gray-900 dark:text-foreground">{item.assignment_title}</td>
+                            <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{item.student_name}</td>
+                            <td className="px-3 py-2 text-gray-600 dark:text-gray-400">
+                              {new Date(item.submitted_at).toLocaleString()}
+                            </td>
+                            <td className="px-3 py-2 text-emerald-700 dark:text-emerald-400 font-medium">
+                              {item.target_score}/{item.target_score}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAutoGradeDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAutoGradeUnitHomework}
+              disabled={isAutoGradePreviewLoading || isAutoGrading || autoGradePreview.length === 0}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            >
+              {isAutoGrading ? 'Auto-grading...' : `Auto-grade ${autoGradePreview.length} submission(s)`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
