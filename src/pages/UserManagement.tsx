@@ -54,6 +54,7 @@ interface GroupFormData {
   course_id?: number; // Курс, к которому привязана группа
   student_ids: number[];
   is_active: boolean;
+  is_special: boolean;
 }
 
 interface GroupWithDetails extends Group {
@@ -245,7 +246,8 @@ export default function UserManagement() {
     teacher_id: 0,
     curator_id: undefined,
     student_ids: [],
-    is_active: true
+    is_active: true,
+    is_special: false
   });
 
   const [editGroupFormData, setEditGroupFormData] = useState<GroupFormData>({
@@ -254,7 +256,8 @@ export default function UserManagement() {
     teacher_id: 0,
     curator_id: undefined,
     student_ids: [],
-    is_active: true
+    is_active: true,
+    is_special: false
   });
 
   // Form validation errors
@@ -607,7 +610,8 @@ export default function UserManagement() {
         teacher_id: groupFormData.teacher_id,
         curator_id: groupFormData.curator_id || undefined,
         course_id: groupFormData.course_id || undefined,
-        is_active: groupFormData.is_active
+        is_active: groupFormData.is_active,
+        is_special: groupFormData.is_special
       };
       
       const newGroup = await apiClient.createGroup(groupData);
@@ -656,7 +660,8 @@ export default function UserManagement() {
         teacher_id: editGroupFormData.teacher_id,
         curator_id: editGroupFormData.curator_id || undefined,
         course_id: editGroupFormData.course_id || undefined,
-        is_active: editGroupFormData.is_active
+        is_active: editGroupFormData.is_active,
+        is_special: editGroupFormData.is_special
       };
       
       await apiClient.updateGroup(selectedGroup.id, groupData);
@@ -716,7 +721,8 @@ export default function UserManagement() {
       curator_id: undefined,
       course_id: undefined,
       student_ids: [],
-      is_active: true
+      is_active: true,
+      is_special: false
     });
     setGroupFormErrors({});
   };
@@ -729,7 +735,8 @@ export default function UserManagement() {
       teacher_id: group.teacher_id,
       curator_id: group.curator_id || undefined,
       student_ids: group.students?.map(s => Number(s.id)) || [],
-      is_active: group.is_active
+      is_active: group.is_active,
+      is_special: !!group.is_special
     });
     setShowEditGroupModal(true);
   };
@@ -741,7 +748,8 @@ export default function UserManagement() {
       teacher_id: 0,
       curator_id: undefined,
       student_ids: [],
-      is_active: true
+      is_active: true,
+      is_special: false
     });
     setSelectedGroup(null);
     setEditGroupFormErrors({});
@@ -1972,6 +1980,17 @@ function GroupForm({ formData, setFormData, teachers, curators, students, course
         />
         <Label htmlFor="group_is_active" className="text-sm">
           Active
+        </Label>
+      </div>
+
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="group_is_special"
+          checked={formData.is_special}
+          onCheckedChange={(checked) => setFormData({ ...formData, is_special: checked as boolean })}
+        />
+        <Label htmlFor="group_is_special" className="text-sm">
+          Special group (hide banner, homework and "Your Teacher")
         </Label>
       </div>
     </div>

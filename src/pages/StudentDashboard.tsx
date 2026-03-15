@@ -37,6 +37,7 @@ export default function StudentDashboard({
   const [submissions, setSubmissions] = useState<AssignmentSubmission[]>([]);
   const [isLoadingTodo, setIsLoadingTodo] = useState(true);
   const [showCompleted, setShowCompleted] = useState(false);
+  const [isSpecialGroupStudent, setIsSpecialGroupStudent] = useState(false);
   
   // Daily questions state
   const [dailyQuestionsCompleted, setDailyQuestionsCompleted] = useState(false);
@@ -47,7 +48,19 @@ export default function StudentDashboard({
     loadProgressData();
     loadTodoData();
     loadDailyQuestionsStatus();
+    loadSpecialGroupsState();
   }, []);
+
+  const loadSpecialGroupsState = async () => {
+    try {
+      const myGroups = await apiClient.getMyGroups()
+      const hasOnlySpecialGroups = myGroups.length > 0 && myGroups.every(group => group.is_special)
+      setIsSpecialGroupStudent(hasOnlySpecialGroups)
+    } catch (error) {
+      console.error('Failed to load group flags:', error)
+      setIsSpecialGroupStudent(false)
+    }
+  }
 
   const loadProgressData = async () => {
     try {
@@ -304,6 +317,7 @@ export default function StudentDashboard({
 
   return (
     <div className="space-y-8">
+      {!isSpecialGroupStudent && (
       <Card className="border-0 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-900 dark:to-indigo-900 text-white" data-tour="dashboard-overview">
         <CardHeader className="p-5 sm:p-6">
           <CardTitle className="text-2xl sm:text-3xl">Welcome back, {firstName}!</CardTitle>
@@ -330,6 +344,7 @@ export default function StudentDashboard({
           </div>
         </CardFooter>
       </Card>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-2" data-tour="dashboard-stats">
         <Card className="h-fit">
@@ -413,6 +428,7 @@ export default function StudentDashboard({
           {/* Leaderboard - prominent placement */}
           <StudentLeaderboard />
 
+          {!isSpecialGroupStudent && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -526,9 +542,10 @@ export default function StudentDashboard({
               )}
             </CardContent>
           </Card>
+          )}
 
           {/* Your Teacher Card */}
-          {progressData && progressData.courses && progressData.courses.length > 0 && (
+          {!isSpecialGroupStudent && progressData && progressData.courses && progressData.courses.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

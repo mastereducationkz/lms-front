@@ -223,6 +223,7 @@ export interface Group {
   students?: User[];
   created_at: string;
   is_active: boolean;
+  is_special?: boolean;
   schedule_config?: any;
   current_week?: number;
   max_week?: number;
@@ -294,6 +295,7 @@ export interface CreateGroupRequest {
   curator_id?: number;
   course_id?: number; // Курс, к которому привязана группа
   is_active?: boolean;
+  is_special?: boolean;
 }
 
 export interface UpdateGroupRequest {
@@ -301,6 +303,7 @@ export interface UpdateGroupRequest {
   description?: string;
   teacher_id?: number;
   is_active?: boolean;
+  is_special?: boolean;
 }
 
 export interface CreateUserRequest {
@@ -840,6 +843,7 @@ export interface Group {
   students?: User[];
   created_at: string;
   is_active: boolean;
+  is_special?: boolean;
 }
 
 export interface Enrollment {

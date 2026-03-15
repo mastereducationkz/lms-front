@@ -102,7 +102,8 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
       // Load courses (available to all)
       coursesData = await getCourses();
       
-      setGroups(groupsData.groups || groupsData);
+      const allGroups = groupsData.groups || groupsData;
+      setGroups((allGroups || []).filter((group: Group) => !group.is_special));
       // Handle courses response structure
       const coursesResponse = coursesData as any;
       setCourses(Array.isArray(coursesResponse) ? coursesResponse : (coursesResponse.data || []));
