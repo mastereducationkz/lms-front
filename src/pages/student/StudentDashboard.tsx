@@ -383,7 +383,6 @@ export default function StudentDashboard({
           <StudentLeaderboard />
 
           <Card>
-          <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
