@@ -1030,7 +1030,7 @@ export default function LessonPage() {
     return true;
   };
 
-  const goToNextStep = () => {
+  const goToNextStep = async () => {
     // Check if current step is completed
     if (currentStep && !canProceedToNext()) {
       let message = '';
@@ -1055,6 +1055,12 @@ export default function LessonPage() {
     if (currentStepIndex < steps.length - 1) {
       goToStep(currentStepIndex + 1);
     } else if (nextLessonId) {
+      // Last step edge-case:
+      // when navigating directly to next lesson, ensure current non-optional step
+      // is persisted as completed before route change
+      if (currentStep && !currentStep.is_optional && !isStepCompleted(currentStep)) {
+        await markStepAsVisited(currentStep.id.toString(), 2);
+      }
       setCurrentStepIndex(0);
       navigate(`/course/${courseId}/lesson/${nextLessonId}`);
     }
