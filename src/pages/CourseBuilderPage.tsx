@@ -6,6 +6,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Label } from '../components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../services/api';
 import CourseSidebar from '../components/CourseSidebar.tsx';
@@ -353,6 +354,7 @@ export default function CourseBuilderPage() {
   const [teacherAccessList, setTeacherAccessList] = useState<any[]>([]);
   const [availableTeachers, setAvailableTeachers] = useState<any[]>([]);
   const [isLoadingTeachers, setIsLoadingTeachers] = useState(false);
+  const [isSavingCourseDetails, setIsSavingCourseDetails] = useState(false);
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -654,6 +656,30 @@ export default function CourseBuilderPage() {
       console.error('Failed to save changes:', error);
     }
   };
+
+  const handleSaveCourseDetails = async () => {
+    if (!course || !courseId) return
+    if (isSavingCourseDetails) return
+
+    setIsSavingCourseDetails(true)
+    try {
+      const updatedCourse = await apiClient.updateCourse(courseId, {
+        title: course.title,
+        description: (course as any).description,
+        cover_image_url: (course as any).cover_image_url,
+        release_schedule: (course as any).release_schedule || 'all'
+      })
+
+      setCourse(updatedCourse)
+      setHasUnsavedChanges(false)
+      alert('Course details saved')
+    } catch (error) {
+      console.error('Failed to update course:', error)
+      alert('Failed to save course details')
+    } finally {
+      setIsSavingCourseDetails(false)
+    }
+  }
 
   const toggleModuleExpanded = (moduleId: number | string) => {
     const newExpanded = new Set(expandedModules);
@@ -1429,7 +1455,10 @@ export default function CourseBuilderPage() {
                 <Input
                   id="course-title"
                   value={course.title}
-                  onChange={(e) => setCourse(prev => prev ? { ...prev, title: e.target.value } : null)}
+                  onChange={(e) => {
+                    setCourse(prev => prev ? { ...prev, title: e.target.value } : null)
+                    setHasUnsavedChanges(true)
+                  }}
                   placeholder="Enter course title"
                 />
               </div>
@@ -1438,26 +1467,36 @@ export default function CourseBuilderPage() {
                 <Textarea
                   id="course-description"
                   value={(course as any).description || ''}
-                  onChange={(e) => setCourse(prev => prev ? { ...prev, description: e.target.value } : null)}
+                  onChange={(e) => {
+                    setCourse(prev => prev ? { ...prev, description: e.target.value } : null)
+                    setHasUnsavedChanges(true)
+                  }}
                   placeholder="Describe what students will learn..."
                   rows={3}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="release-schedule">Release schedule</Label>
-                <select
-                  id="release-schedule"
+                <Select
                   value={(course as any).release_schedule || 'all'}
-                  onChange={(e) => setCourse(prev => prev ? { ...prev, release_schedule: e.target.value } : null)}
-                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onValueChange={(value) => {
+                    setCourse(prev => prev ? { ...prev, release_schedule: value } : null)
+                    setHasUnsavedChanges(true)
+                  }}
                 >
-                  <option value="all">All modules open at once</option>
-                  <option value="weekly">Weekly (modules unlock by week from group start)</option>
-                </select>
+                  <SelectTrigger id="release-schedule">
+                    <SelectValue placeholder="Select release schedule" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All modules open at once</SelectItem>
+                    <SelectItem value="weekly">Weekly (modules unlock by week from group start)</SelectItem>
+                  </SelectContent>
+                </Select>
                 <p className="text-sm text-gray-500">For weekly: set start_date in group schedule_config</p>
               </div>
               <div className="flex items-center justify-end gap-2 pt-2">
                 <Button
+                  type="button"
                   variant="outline"
                   onClick={() => {
                     setCourse(prev => prev ? { ...prev, title: prev.title || '', description: (prev as any).description || '' } : prev);
@@ -1466,23 +1505,11 @@ export default function CourseBuilderPage() {
                   Reset
                 </Button>
                 <Button
-                  onClick={async () => {
-                    if (course && courseId) {
-                      try {
-                        await apiClient.updateCourse(courseId, {
-                          title: course.title,
-                          description: (course as any).description,
-                          cover_image_url: (course as any).cover_image_url,
-                          release_schedule: (course as any).release_schedule || 'all'
-                        });
-                        setHasUnsavedChanges(false);
-                      } catch (error) {
-                        console.error('Failed to update course:', error);
-                      }
-                    }
-                  }}
+                  type="button"
+                  disabled={isSavingCourseDetails}
+                  onClick={handleSaveCourseDetails}
                 >
-                  Save changes
+                  {isSavingCourseDetails ? 'Saving...' : 'Save changes'}
                 </Button>
               </div>
             </CardContent>
