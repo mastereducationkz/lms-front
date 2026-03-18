@@ -209,6 +209,7 @@ export interface Course {
   updated_at: string;
   progress?: number; // For student view
   is_linear?: boolean;
+  release_schedule?: 'all' | 'weekly'; // "all" = all open; "weekly" = unlock by week from group start
 }
 
 export interface Group {
@@ -350,6 +351,7 @@ export interface CourseModule {
   created_at: string;
   updated_at: string;
   is_completed?: boolean;
+  week_number?: number | null; // For weekly release: which week (1-based) this module unlocks
 }
 
 // Updated lesson interface without content fields

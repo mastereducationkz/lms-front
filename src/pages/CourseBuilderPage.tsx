@@ -31,6 +31,8 @@ interface ModuleForm {
   title: string;
   description?: string;
   id?: number;
+  week_number?: number | null;
+  order_index?: number;
 }
 
 interface LectureForm {
@@ -324,7 +326,7 @@ export default function CourseBuilderPage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [mods, setMods] = useState<CourseModule[]>([]);
   const [selected, setSelected] = useState<SelectedModule | null>(null);
-  const [modForm, setModForm] = useState<ModuleForm>({ open: false, title: '', description: '' });
+  const [modForm, setModForm] = useState<ModuleForm>({ open: false, title: '', description: '', week_number: undefined });
   const [lecForm, setLecForm] = useState<LectureForm>({ open: false, title: '', type: 'text' });
   const [confirm, setConfirm] = useState<ConfirmDialog>({ open: false, action: null });
   const [confirmStep, setConfirmStep] = useState<1 | 2>(1); // Track confirmation step
@@ -386,6 +388,7 @@ export default function CourseBuilderPage() {
           ...originalModule,
           title: update.title,
           description: update.description,
+          week_number: (update as any).week_number ?? originalModule.week_number,
           isPending: true
         });
       }
@@ -569,7 +572,8 @@ export default function CourseBuilderPage() {
         await apiClient.createModule(courseId, {
           title: module.title,
           description: module.description,
-          order_index: mods.length + i
+          order_index: mods.length + i,
+          week_number: module.week_number ?? undefined
         });
       }
       
@@ -578,7 +582,8 @@ export default function CourseBuilderPage() {
         await apiClient.updateModule(courseId, update.id, {
           title: update.title,
           description: update.description,
-          order_index: update.order_index || 0
+          order_index: update.order_index || 0,
+          week_number: update.week_number ?? undefined
         });
       }
       
@@ -591,7 +596,8 @@ export default function CourseBuilderPage() {
             await apiClient.updateModule(courseId, module.id, {
               title: module.title,
               description: module.description,
-              order_index: i
+              order_index: i,
+              week_number: (module as CourseModule).week_number ?? undefined
             });
           }
         }
@@ -1437,6 +1443,19 @@ export default function CourseBuilderPage() {
                   rows={3}
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="release-schedule">Release schedule</Label>
+                <select
+                  id="release-schedule"
+                  value={(course as any).release_schedule || 'all'}
+                  onChange={(e) => setCourse(prev => prev ? { ...prev, release_schedule: e.target.value } : null)}
+                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All modules open at once</option>
+                  <option value="weekly">Weekly (modules unlock by week from group start)</option>
+                </select>
+                <p className="text-sm text-gray-500">For weekly: set start_date in group schedule_config</p>
+              </div>
               <div className="flex items-center justify-end gap-2 pt-2">
                 <Button
                   variant="outline"
@@ -1453,7 +1472,8 @@ export default function CourseBuilderPage() {
                         await apiClient.updateCourse(courseId, {
                           title: course.title,
                           description: (course as any).description,
-                          cover_image_url: (course as any).cover_image_url
+                          cover_image_url: (course as any).cover_image_url,
+                          release_schedule: (course as any).release_schedule || 'all'
                         });
                         setHasUnsavedChanges(false);
                       } catch (error) {
@@ -1522,7 +1542,7 @@ export default function CourseBuilderPage() {
                 onToggleDropdown={toggleDropdown}
                 onRemoveModule={onRemoveModule}
                 onEditModule={(module) => {
-                  setModForm({ open: true, id: module.id, title: module.title, description: module.description });
+                  setModForm({ open: true, id: module.id, title: module.title, description: module.description, week_number: module.week_number ?? undefined, order_index: module.order_index });
                   setOpenDropdown(null);
                 }}
                 expandedModules={expandedModules}
@@ -1891,7 +1911,7 @@ export default function CourseBuilderPage() {
       {/* Modals and Dialogs */}
       <Dialog
         open={modForm.open}
-        onOpenChange={(open) => { if (!open) setModForm({ open: false, title: '', description: '' }); }}
+        onOpenChange={(open) => { if (!open) setModForm({ open: false, title: '', description: '', week_number: undefined }); }}
       >
         <DialogContent>
           <DialogHeader>
@@ -1920,9 +1940,23 @@ export default function CourseBuilderPage() {
                 rows={3}
               />
             </div>
+            {(course as any)?.release_schedule === 'weekly' && (
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Week number (opens in)</label>
+                <input
+                  type="number"
+                  min={1}
+                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={modForm.week_number ?? ''}
+                  onChange={e => setModForm(f => ({ ...f, week_number: e.target.value ? parseInt(e.target.value, 10) : undefined }))}
+                  placeholder="1 = week 1, 2 = week 2..."
+                />
+                <p className="text-xs text-gray-500 mt-1">Which week (from group start) this module unlocks. Leave empty to use order.</p>
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setModForm({ open: false, title: '', description: '' })}>Cancel</Button>
+            <Button variant="outline" onClick={() => setModForm({ open: false, title: '', description: '', week_number: undefined })}>Cancel</Button>
             <Button onClick={async () => {
           if (!modForm.title.trim()) return;
           
@@ -1934,7 +1968,8 @@ export default function CourseBuilderPage() {
               id: modForm.id,
               title: modForm.title.trim(),
               description: modForm.description?.trim() || '',
-              order_index: existingModule?.order_index || 0
+              order_index: existingModule?.order_index ?? modForm.order_index ?? 0,
+              week_number: modForm.week_number ?? null
             }]);
           } else {
             // Add to pending modules
@@ -1943,12 +1978,13 @@ export default function CourseBuilderPage() {
               title: modForm.title.trim(),
               description: modForm.description?.trim() || '',
               courseId: courseId,
-              isPending: true
+              isPending: true,
+              week_number: modForm.week_number ?? null
             };
             setPendingModules(prev => [...prev, newModule]);
           }
           
-          setModForm({ open: false, title: '', description: '' });
+          setModForm({ open: false, title: '', description: '', week_number: undefined });
           setHasUnsavedChanges(true);
             }}>Save</Button>
           </DialogFooter>
