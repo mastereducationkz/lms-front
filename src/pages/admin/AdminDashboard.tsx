@@ -1,386 +1,441 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import apiClient from '../../services/api';
-import type { AdminDashboard as AdminDashboardType } from '../../types';
-import { 
-  Users, 
-  BookOpen, 
-  GraduationCap, 
-  UserCheck, 
-  Plus,
-  UserPlus,
-  Shield,
-  Activity,
-  BarChart3,
-  Unlock
-} from 'lucide-react';
-import Loader from '../../components/Loader';
-import { Button } from '../../components/ui/button';
+import { useCallback, useEffect, useState } from 'react'
+import type { KeyboardEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { format, parseISO } from 'date-fns'
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
+import apiClient from '../../services/api'
+import type { AdminDashboard as AdminDashboardType, AdminDashboardCharts } from '../../types'
+import Loader from '../../components/Loader'
+import { Button } from '../../components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 
-interface MissingAttendanceReminder {
-  event_id: number;
-  title: string;
-  group_name: string;
-  group_id?: number | null;
-  event_date: string;
-  expected_students: number;
-  recorded_students: number;
+const chartMargin = { top: 8, right: 8, left: -8, bottom: 0 }
+
+const tickDay = (v: string) => {
+  try {
+    return format(parseISO(v), 'd MMM')
+  } catch {
+    return v
+  }
 }
 
+/** Shared look: tighter radius, clean spacing */
+const statCardClass =
+  'rounded-md border border-border bg-card p-5 shadow-sm'
+
+const chartCardClass = 'rounded-md border border-border bg-card shadow-sm overflow-hidden'
+
 export default function AdminDashboard() {
-  const navigate = useNavigate();
-  const [dashboard, setDashboard] = useState<AdminDashboardType | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate()
+  const [dashboard, setDashboard] = useState<AdminDashboardType | null>(null)
+  const [charts, setCharts] = useState<AdminDashboardCharts | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const load = useCallback(async () => {
+    setError(null)
+    setLoading(true)
+    const emptyCharts: AdminDashboardCharts = {
+      registrations_last_14_days: [],
+      homework_submissions_last_14_days: [],
+    }
+    try {
+      const [dashRes, chartRes] = await Promise.allSettled([
+        apiClient.getAdminDashboard(),
+        apiClient.getAdminDashboardCharts(),
+      ])
+      if (dashRes.status === 'fulfilled') {
+        setDashboard(dashRes.value)
+      } else {
+        console.error(dashRes.reason)
+        setDashboard(null)
+        setError('Failed to load dashboard')
+      }
+      if (chartRes.status === 'fulfilled') {
+        setCharts(chartRes.value)
+      } else {
+        console.error(chartRes.reason)
+        setCharts(emptyCharts)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    loadDashboard();
-  }, []);
+    load()
+  }, [load])
 
-  const loadDashboard = async () => {
-    try {
-      setIsLoading(true);
-      const data = await apiClient.getAdminDashboard();
-      setDashboard(data);
-    } catch (error) {
-      console.error('Failed to load admin dashboard:', error);
-    } finally {
-      setIsLoading(false);
+  if (loading) {
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center">
+        <Loader size="lg" animation="spin" color="#2563eb" />
+      </div>
+    )
+  }
+
+  if (error || !dashboard) {
+    return (
+      <div className="max-w-lg mx-auto py-16 text-center text-muted-foreground">
+        <p>{error || 'No data'}</p>
+        <Button variant="outline" className="mt-4" onClick={load}>
+          Retry
+        </Button>
+      </div>
+    )
+  }
+
+  const { stats } = dashboard
+  const s = (n: number | undefined) => n ?? 0
+
+  const chartPayload = charts ?? {
+    registrations_last_14_days: [],
+    homework_submissions_last_14_days: [],
+  }
+
+  const handleCardKeyDown = (path: string) => (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      navigate(path)
     }
-  };
-
-  if (isLoading) {
-    return <Loader size="xl" animation="spin" color="#2563eb" />;
   }
 
-  if (!dashboard) {
-    return <div className="text-center py-8">Failed to load dashboard</div>;
-  }
+  const teacherActive7d = s(stats.teacher_active_last_7_days)
+  const teacherActive30d = s(stats.teacher_active_last_30_days)
+  const teacherGrading7d = s(stats.teachers_who_graded_last_7_days)
+  const homeworkGraded7d = s(stats.homework_graded_last_7_days)
+  const avgTeacherGrading7d = stats.avg_homework_graded_per_active_teacher_last_7_days ?? 0
+  const teacherActivity7dPct = stats.total_teachers > 0
+    ? Math.round((teacherActive7d / stats.total_teachers) * 100)
+    : 0
+  const teacherActivity30dPct = stats.total_teachers > 0
+    ? Math.round((teacherActive30d / stats.total_teachers) * 100)
+    : 0
+  const teacherGrading7dPct = stats.total_teachers > 0
+    ? Math.round((teacherGrading7d / stats.total_teachers) * 100)
+    : 0
+  const pendingOpsTotal = s(stats.pending_homework_to_grade) + s(stats.pending_lesson_requests)
 
-  const { stats, recent_users, recent_groups, recent_courses } = dashboard;
+  const platformKpis = [
+    {
+      label: 'Total users',
+      value: stats.total_users,
+      hint: `${stats.total_students} students`,
+    },
+    {
+      label: 'Teachers',
+      value: stats.total_teachers,
+      hint: `${stats.total_curators} curators`,
+    },
+    {
+      label: 'Courses',
+      value: stats.total_courses,
+      hint: `${stats.total_active_enrollments} active enrollments`,
+    },
+    {
+      label: 'New users (7d)',
+      value: s(stats.recent_registrations),
+      hint: 'Last 7 days',
+    },
+  ]
+
+  const queueWidgets = [
+    {
+      label: 'To grade',
+      sub: 'Homework pending',
+      value: s(stats.pending_homework_to_grade),
+      path: '/homework',
+      ariaLabel: 'Open homework: submissions awaiting grading',
+    },
+    {
+      label: 'Events',
+      sub: 'Next 7 days',
+      value: s(stats.events_in_next_7_days),
+      path: '/admin/events',
+      ariaLabel: 'Open events: scheduled in the next 7 days',
+    },
+  ]
+
+  const teacherEfficiencyData = [
+    {
+      label: 'Active in last 7 days',
+      percent: teacherActivity7dPct,
+      details: `${teacherActive7d}/${stats.total_teachers} teachers`,
+    },
+    {
+      label: 'Active in last 30 days',
+      percent: teacherActivity30dPct,
+      details: `${teacherActive30d}/${stats.total_teachers} teachers`,
+    },
+    {
+      label: 'Checked homework in 7 days',
+      percent: teacherGrading7dPct,
+      details: `${teacherGrading7d} teachers · ${homeworkGraded7d} checks`,
+    },
+  ]
+
+  const operationsLoadData = [
+    { name: 'To grade', value: s(stats.pending_homework_to_grade) },
+    { name: 'Lesson requests', value: s(stats.pending_lesson_requests) },
+  ]
+  const queueMax = Math.max(...queueWidgets.map((w) => w.value), 1)
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-foreground flex items-center">
-            <Shield className="w-7 h-7 sm:w-8 sm:h-8 mr-3 text-blue-600" />
-            Admin Dashboard
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">System overview and management</p>
-        </div>
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-          <Button
-            onClick={() => navigate('/admin/users?tab=1')}
-            variant="outline"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg w-full sm:w-auto"
-            data-tour="groups-section"
-          >
-            <Plus className="w-4 h-4" />
-            Create Group
-          </Button>
-          <Button
-            onClick={() => navigate('/admin/users')}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg w-full sm:w-auto"
-            data-tour="users-management"
-          >
-            <UserPlus className="w-4 h-4" />
-            Add User
-          </Button>
-        </div>
+    <div className="max-w-6xl mx-auto px-6 sm:px-8 py-8 space-y-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {platformKpis.map((k) => (
+          <Card key={k.label} className={statCardClass}>
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground leading-snug">{k.label}</p>
+              <p className="text-2xl font-semibold tabular-nums tracking-tight text-foreground">{k.value}</p>
+              <p className="text-xs text-muted-foreground/90 leading-snug">{k.hint}</p>
+            </div>
+          </Card>
+        ))}
       </div>
 
-      {/* Missing Attendance Reminders */}
-      {stats.missing_attendance_reminders && stats.missing_attendance_reminders.length > 0 && (
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md p-3">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-medium text-yellow-900 dark:text-yellow-300">
-              Attendance Required ({stats.missing_attendance_reminders.length})
-            </h3>
-            <Button
-              onClick={() => navigate('/attendance')}
-              size="sm"
-              variant="outline"
-              className="text-xs h-6 px-2 border-yellow-300 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100 dark:border-yellow-800"
-            >
-              Go to Attendance
-            </Button>
-          </div>
-          <div className="space-y-1.5">
-            {stats.missing_attendance_reminders.slice(0, 5).map((reminder: MissingAttendanceReminder) => (
-              <div key={reminder.event_id} className="flex items-center justify-between text-xs py-1.5 border-b border-yellow-100 dark:border-yellow-800 last:border-0">
-                <div className="flex-1 min-w-0 mr-3">
-                  <p className="text-yellow-900 dark:text-yellow-300 truncate font-medium">{reminder.title}</p>
-                  <p className="text-[11px] text-yellow-700 dark:text-yellow-400">
-                    {reminder.group_name} • {new Date(reminder.event_date).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-[11px] text-yellow-700 dark:text-yellow-400">
-                    {reminder.recorded_students}/{reminder.expected_students}
-                  </span>
-                  <Button
-                    onClick={() => {
-                      if (reminder.group_id) {
-                        navigate(`/attendance?group=${reminder.group_id}`);
-                      } else {
-                        navigate('/attendance');
-                      }
-                    }}
-                    size="sm"
-                    variant="ghost"
-                    className="text-[11px] h-6 px-2 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
-                  >
-                    Mark
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="grid lg:grid-cols-3 gap-4">
+        <Card className={chartCardClass}>
+          <CardHeader className="px-5 pt-5 pb-2 space-y-1">
+            <CardTitle className="text-base font-medium">Teacher efficiency</CardTitle>
+            <CardDescription className="text-sm">
+              7d activity: <span className="font-semibold text-foreground tabular-nums">{teacherActivity7dPct}%</span>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="px-5 pb-5 pt-2 h-[220px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={teacherEfficiencyData} margin={chartMargin}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  width={28}
+                  domain={[0, 100]}
+                  tickFormatter={(v) => `${v}%`}
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  formatter={(value) => `${value}%`}
+                  contentStyle={{
+                    borderRadius: 8,
+                    border: '1px solid hsl(var(--border))',
+                    fontSize: 12,
+                  }}
+                />
+                <Bar dataKey="percent" fill="hsl(var(--primary) / 0.55)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6" data-tour="dashboard-overview">
-        <div className="bg-white dark:bg-card rounded-lg border p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Users</p>
-              <p className="text-3xl font-bold text-blue-600">{stats.total_users}</p>
-            </div>
-            <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-              <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              +{stats.recent_registrations} new this week
-            </p>
-          </div>
-        </div>
+        <Card className={chartCardClass}>
+          <CardHeader className="px-5 pt-5 pb-2 space-y-1">
+            <CardTitle className="text-base font-medium">Operational load</CardTitle>
+            <CardDescription className="text-sm">
+              Pending now: <span className="font-semibold text-foreground tabular-nums">{pendingOpsTotal}</span>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="px-5 pb-5 pt-2 h-[220px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={operationsLoadData} margin={chartMargin}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  width={28}
+                  allowDecimals={false}
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: 8,
+                    border: '1px solid hsl(var(--border))',
+                    fontSize: 12,
+                  }}
+                />
+                <Bar dataKey="value" fill="hsl(217 91% 45% / 0.55)" radius={[4, 4, 0, 0]} maxBarSize={38} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white dark:bg-card rounded-lg border p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Students</p>
-              <p className="text-3xl font-bold text-green-600">{stats.total_students}</p>
-            </div>
-            <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-              <GraduationCap className="w-6 h-6 text-green-600 dark:text-green-400" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {stats.total_active_enrollments} active enrollments
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-card rounded-lg border p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Teachers</p>
-              <p className="text-3xl font-bold text-purple-600">{stats.total_teachers}</p>
-            </div>
-            <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-              <UserCheck className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <p className="text-xs text-gray-500">
-              Managing {stats.total_courses} courses
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-card rounded-lg border p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Courses</p>
-              <p className="text-3xl font-bold text-orange-600">{stats.total_courses}</p>
-            </div>
-            <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-              <BookOpen className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {stats.total_curators} curators
-            </p>
-          </div>
-        </div>
+        <Card className={chartCardClass}>
+          <CardHeader className="px-5 pt-5 pb-2 space-y-1">
+            <CardTitle className="text-base font-medium">Homework checks</CardTitle>
+            <CardDescription className="text-sm">
+              Avg checks/active teacher: <span className="font-semibold text-foreground tabular-nums">{avgTeacherGrading7d.toFixed(1)}</span>
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="px-5 pb-5 pt-2 h-[220px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartPayload.homework_submissions_last_14_days} margin={chartMargin}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={tickDay}
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  width={28}
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={false}
+                  tickLine={false}
+                  allowDecimals={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: 8,
+                    border: '1px solid hsl(var(--border))',
+                    fontSize: 12,
+                  }}
+                  labelFormatter={(l) => tickDay(String(l))}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="count"
+                  stroke="hsl(217 91% 45%)"
+                  fill="hsl(217 91% 45% / 0.12)"
+                  strokeWidth={2}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* Recent Users */}
-        <div className="bg-white dark:bg-card rounded-lg border p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold flex items-center">
-              <Users className="w-5 h-5 mr-2 text-blue-600" />
-              Recent Users
-            </h2>
-            <button
-              onClick={() => navigate('/admin/users')}
-              className="text-sm text-blue-600 hover:text-blue-700"
-            >
-              View All
-            </button>
-          </div>
-          <div className="space-y-3">
-            {recent_users.map((user) => (
-              <div key={user.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-secondary rounded-lg">
-                <div>
-<p className="font-medium text-sm">{user.name}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
-                </div>
-                <span className={`px-2 py-1 text-xs rounded-full ${
-                  user.role === 'admin' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                  user.role === 'teacher' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
-                  user.role === 'curator' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-                  'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                }`}>
-                  {user.role}
-                </span>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        {queueWidgets.map((w) => (
+          <Card
+            key={w.label}
+            role="button"
+            tabIndex={0}
+            aria-label={w.ariaLabel}
+            className={`${statCardClass} cursor-pointer transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`}
+            onClick={() => navigate(w.path)}
+            onKeyDown={handleCardKeyDown(w.path)}
+          >
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground leading-snug">{w.label}</p>
+              <p className="text-xs text-muted-foreground/90 leading-snug">{w.sub}</p>
+              <p className="text-2xl font-semibold tabular-nums tracking-tight text-foreground pt-0.5">{w.value}</p>
+              <div className="h-1.5 w-full rounded-sm bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-primary/70"
+                  style={{ width: `${Math.round((w.value / queueMax) * 100)}%` }}
+                  aria-label={`${w.label}: ${w.value}`}
+                />
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Groups */}
-        <div className="bg-white dark:bg-card rounded-lg border p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold flex items-center">
-              <GraduationCap className="w-5 h-5 mr-2 text-green-600" />
-              Recent Groups
-            </h2>
-            <button
-              onClick={() => navigate('/admin/users')}
-              className="text-sm text-blue-600 hover:text-blue-700"
-            >
-              View All
-            </button>
-          </div>
-          <div className="space-y-3">
-            {recent_groups.map((group) => (
-              <div key={group.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-secondary rounded-lg">
-                <div>
-                  <p className="font-medium text-sm">{group.name}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {group.teacher_name} • {group.student_count} students
-                  </p>
-                </div>
-                <span className={`px-2 py-1 text-xs rounded-full ${
-                  group.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                }`}>
-                  {group.is_active ? 'Active' : 'Inactive'}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Courses */}
-        <div className="bg-white dark:bg-card rounded-lg border p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold flex items-center">
-              <BookOpen className="w-5 h-5 mr-2 text-orange-600" />
-              Recent Courses
-            </h2>
-            <button
-              onClick={() => navigate('/teacher/courses')}
-              className="text-sm text-blue-600 hover:text-blue-700"
-            >
-              View All
-            </button>
-          </div>
-          <div className="space-y-3">
-            {recent_courses.map((course) => (
-              <div key={course.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-secondary rounded-lg">
-                <div>
-                  <p className="font-medium text-sm">{course.title}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {course.teacher_name} • {course.module_count} modules
-                  </p>
-                </div>
-                <span className={`px-2 py-1 text-xs rounded-full ${
-                  course.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-                }`}>
-                  {course.is_active ? 'Active' : 'Draft'}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          </Card>
+        ))}
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white dark:bg-card rounded-lg border p-4 sm:p-6 shadow-sm">
-        <h2 className="text-lg font-semibold mb-4 flex items-center">
-          <Activity className="w-5 h-5 mr-2 text-blue-600" />
-          Quick Actions
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <button
-            onClick={() => navigate('/admin/users')}
-            className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-secondary transition-colors"
-            data-tour="users-management"
-          >
-            <Users className="w-5 h-5 text-blue-600" />
-            <div className="text-left">
-              <p className="font-medium">Manage Users</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Add, edit, or remove users</p>
-            </div>
-          </button>
+      <div className="grid lg:grid-cols-2 gap-4">
+        <Card className={chartCardClass}>
+          <CardHeader className="px-5 pt-5 pb-2 space-y-1">
+            <CardTitle className="text-base font-medium">New registrations</CardTitle>
+            <CardDescription className="text-sm">Accounts created per day · last 14 days</CardDescription>
+          </CardHeader>
+          <CardContent className="px-5 pb-5 pt-2 h-[260px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartPayload.registrations_last_14_days} margin={chartMargin}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={tickDay}
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  width={28}
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={false}
+                  tickLine={false}
+                  allowDecimals={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: 8,
+                    border: '1px solid hsl(var(--border))',
+                    fontSize: 12,
+                  }}
+                  labelFormatter={(l) => tickDay(String(l))}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="count"
+                  stroke="hsl(var(--primary))"
+                  fill="hsl(var(--primary) / 0.12)"
+                  strokeWidth={2}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
 
-          <button
-            onClick={() => navigate('/admin/groups')}
-            className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-secondary transition-colors"
-            data-tour="groups-section"
-          >
-            <GraduationCap className="w-5 h-5 text-green-600" />
-            <div className="text-left">
-              <p className="font-medium">Manage Groups</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Create and organize groups</p>
-            </div>
-          </button>
-
-          <button
-            onClick={() => navigate('/teacher/courses')}
-            className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-secondary transition-colors"
-            data-tour="courses-management"
-          >
-            <BookOpen className="w-5 h-5 text-orange-600" />
-            <div className="text-left">
-              <p className="font-medium">View Courses</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Monitor course activity</p>
-            </div>
-          </button>
-
-          <button
-            onClick={() => navigate('/admin/manual-unlocks')}
-            className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-secondary transition-colors"
-          >
-            <Unlock className="w-5 h-5 text-indigo-600" />
-            <div className="text-left">
-              <p className="font-medium">Manual Unlocks</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Override course progression</p>
-            </div>
-          </button>
-
-          <button
-            onClick={() => navigate('/admin/users?role=student')}
-            className="flex items-center gap-3 p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-secondary transition-colors"
-            data-tour="analytics-nav"
-          >
-            <BarChart3 className="w-5 h-5 text-purple-600" />
-            <div className="text-left">
-              <p className="font-medium">Student Progress</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Track learning analytics</p>
-            </div>
-          </button>
-        </div>
+        <Card className={chartCardClass}>
+          <CardHeader className="px-5 pt-5 pb-2 space-y-1">
+            <CardTitle className="text-base font-medium">Homework submissions</CardTitle>
+            <CardDescription className="text-sm">Submissions received per day · last 14 days</CardDescription>
+          </CardHeader>
+          <CardContent className="px-5 pb-5 pt-2 h-[260px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartPayload.homework_submissions_last_14_days} margin={chartMargin}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  tickFormatter={tickDay}
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  width={28}
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  axisLine={false}
+                  tickLine={false}
+                  allowDecimals={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    borderRadius: 8,
+                    border: '1px solid hsl(var(--border))',
+                    fontSize: 12,
+                  }}
+                  labelFormatter={(l) => tickDay(String(l))}
+                />
+                <Bar dataKey="count" fill="hsl(var(--primary) / 0.35)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       </div>
+
     </div>
-  );
+  )
 }

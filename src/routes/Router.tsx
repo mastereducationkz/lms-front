@@ -34,6 +34,7 @@ import TeacherClassPage from '../pages/TeacherClassPage.tsx';
 import TeacherAttendancePage from '../pages/TeacherAttendancePage.tsx';
 import AdminDashboard from '../pages/admin/AdminDashboard.tsx';
 import AssignmentZeroSubmissions from '../pages/admin/AssignmentZeroSubmissions.tsx';
+import ExamResultsTrackingPage from '../pages/admin/ExamResultsTrackingPage.tsx';
 import QuestionReportsPage from '../pages/admin/QuestionReportsPage.tsx';
 import UserManagement from '../pages/UserManagement.tsx';
 import ManualUnlocksPage from '../pages/admin/ManualUnlocksPage.tsx';
@@ -371,6 +372,14 @@ export default function Router() {
             <ProtectedRoute allowedRoles={['admin']}>
               <AppLayout>
                 <AssignmentZeroSubmissions />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/exam-results-tracking" element={
+            <ProtectedRoute allowedRoles={['admin', 'head_curator', 'head_teacher']}>
+              <AppLayout>
+                <ExamResultsTrackingPage />
               </AppLayout>
             </ProtectedRoute>
           } />

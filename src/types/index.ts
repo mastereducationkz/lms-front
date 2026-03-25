@@ -250,6 +250,16 @@ export interface AdminStats {
   total_courses: number;
   total_active_enrollments: number;
   recent_registrations: number;
+  pending_homework_to_grade?: number;
+  students_without_assignment_zero?: number;
+  open_question_reports?: number;
+  pending_lesson_requests?: number;
+  events_in_next_7_days?: number;
+  teacher_active_last_7_days?: number;
+  teacher_active_last_30_days?: number;
+  teachers_who_graded_last_7_days?: number;
+  homework_graded_last_7_days?: number;
+  avg_homework_graded_per_active_teacher_last_7_days?: number;
   missing_attendance_reminders?: Array<{
     event_id: number;
     title: string;
@@ -273,6 +283,16 @@ export interface AdminDashboard {
     is_active: boolean;
     created_at: string;
   }>;
+}
+
+export interface AdminChartDayPoint {
+  date: string;
+  count: number;
+}
+
+export interface AdminDashboardCharts {
+  registrations_last_14_days: AdminChartDayPoint[];
+  homework_submissions_last_14_days: AdminChartDayPoint[];
 }
 
 export interface UserListResponse {

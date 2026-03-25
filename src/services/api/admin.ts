@@ -1,4 +1,11 @@
-import type { DashboardStats, RecentActivity, AdminDashboard, ManualLessonUnlockCreate, ManualLessonUnlockListResponse } from '../../types';
+import type {
+  DashboardStats,
+  RecentActivity,
+  AdminDashboard,
+  AdminDashboardCharts,
+  ManualLessonUnlockCreate,
+  ManualLessonUnlockListResponse,
+} from '../../types';
 import { api } from './client';
 
 export async function getDashboardStats(groupId?: number, startDate?: string, endDate?: string): Promise<DashboardStats> {
@@ -42,6 +49,15 @@ export async function getAdminDashboard(): Promise<AdminDashboard> {
     return response.data;
   } catch (error) {
     throw new Error('Failed to fetch admin dashboard');
+  }
+}
+
+export async function getAdminDashboardCharts(): Promise<AdminDashboardCharts> {
+  try {
+    const response = await api.get('/admin/dashboard/charts');
+    return response.data;
+  } catch (error) {
+    throw new Error('Failed to fetch admin dashboard charts');
   }
 }
 
