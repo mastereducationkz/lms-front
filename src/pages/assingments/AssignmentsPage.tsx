@@ -288,8 +288,21 @@ export default function AssignmentsPage() {
     }
   };
 
-  // Assignments filtered by hidden only (for building group overview)
-  const assignmentsByHidden = assignments.filter(a => includeHidden || !a.is_hidden);
+  const visibleGroupIds = useMemo(() => {
+    return new Set((groups || []).filter(group => !group.is_over).map(group => group.id))
+  }, [groups])
+
+  const shouldShowAssignmentByGroup = (assignment: AssignmentWithStatus) => {
+    if (isStudentView) return true
+    if (assignment.group_id == null) return true
+    return visibleGroupIds.has(assignment.group_id)
+  }
+
+  // Assignments filtered by hidden and group visibility (for building group overview)
+  const assignmentsByHidden = assignments.filter((assignment) => {
+    if (!shouldShowAssignmentByGroup(assignment)) return false
+    return includeHidden || !assignment.is_hidden
+  })
 
   // Build groups with metrics for overview mode (from assignments + known groups)
   const groupsWithAssignments = useMemo(() => {
@@ -297,6 +310,15 @@ export default function AssignmentsPage() {
     const getGroupKey = (a: AssignmentWithStatus) => a.group_id ?? 'ungrouped';
     const getGroupName = (a: AssignmentWithStatus) =>
       a.group_name || groups.find(g => g.id === a.group_id)?.name || `Group #${a.group_id || 'Unknown'}`;
+
+    for (const group of groups) {
+      if (group.is_over) continue;
+      byGroup.set(group.id, {
+        id: String(group.id),
+        name: group.name,
+        assignments: []
+      });
+    }
 
     for (const a of assignmentsByHidden) {
       const key = getGroupKey(a);
@@ -317,6 +339,7 @@ export default function AssignmentsPage() {
 
   // Filtered assignments for group mode (by group + status)
   const filteredAssignments = assignments.filter(assignment => {
+    if (!shouldShowAssignmentByGroup(assignment)) return false;
     if (!includeHidden && assignment.is_hidden) return false;
     if (effectiveSelectedGroupId !== 'all') {
       if (effectiveSelectedGroupId === 'ungrouped') {
