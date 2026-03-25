@@ -189,7 +189,8 @@ export default function AssignmentsPage() {
     if (user?.role === 'teacher' || user?.role === 'admin' || user?.role === 'curator') {
       try {
         const groupsData = await apiClient.getGroups();
-        setGroups(groupsData);
+        const activeStudyGroups = (groupsData || []).filter((group: any) => !group?.is_over);
+        setGroups(activeStudyGroups);
       } catch (err) {
         console.warn('Failed to load groups:', err);
       }
