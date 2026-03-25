@@ -47,7 +47,7 @@ import { getCourses, getCourse, createCourse, updateCourse, publishCourse, unpub
 import { getCourseModules, createModule, updateModule, deleteModule, fetchModulesByCourse, fetchModuleById, getModuleProgress } from './modules';
 import { getModuleLessons, getLesson, checkLessonAccess, getLessonTyped, createLesson, updateLesson, deleteLesson, splitLesson, getLessonSteps, createStep, getStep, updateStep, deleteStep, reorderSteps, uploadStepAttachment, deleteStepAttachment, fetchLesson, fetchLectureById } from './lessons';
 import { getAssignments, getAssignment, getAssignedLessonsForCourse, createAssignment, updateAssignment, submitAssignment, getMySubmissions, getUnseenGradedCount, markSubmissionSeen, getAssignmentSubmissions, getSubmission, debugSubmissions, debugDeleteSubmission, gradeSubmission, toggleAssignmentVisibility, grantExtension, getAssignmentExtensions, revokeExtension, getMyExtension, getAssignmentStatusForStudent, getAssignmentStudentProgress, allowResubmission, getPendingSubmissions, getPendingSubmissionsMeta, getRecentSubmissions, getTeacherStudentsProgress, autoGradeUnitHomework, getAutoGradeUnitHomeworkPreview } from './assignments';
-import { getAssignmentZeroStatus, getMyAssignmentZeroSubmission, saveAssignmentZeroProgress, submitAssignmentZero, uploadAssignmentZeroScreenshot, getAllAssignmentZeroSubmissions, getAssignmentZeroSubmissionByUser, updateAssignmentZeroPlannedDate, updateAssignmentZeroExamResult, getIeltsDatePromptStatus, touchIeltsDatePrompt } from './assignment-zero';
+import { getAssignmentZeroStatus, getMyAssignmentZeroSubmission, saveAssignmentZeroProgress, submitAssignmentZero, uploadAssignmentZeroScreenshot, getAllAssignmentZeroSubmissions, getAssignmentZeroSubmissionByUser, updateAssignmentZeroPlannedDate, updateAssignmentZeroExamResult, getIeltsDatePromptStatus, touchIeltsDatePrompt, getCuratorUpcomingExamResults, curatorUpdatePlannedExamDate, curatorUpdateExamResult } from './assignment-zero';
 import { markLessonComplete, startLesson, getMyProgress, getCourseProgress, isLessonCompleted, markStepStarted, markStepVisited, getStepProgress, getLessonStepsProgress, getCourseStudentsStepsProgress, getStudentProgressOverview, getStudentProgressOverviewById, getDailyStreak, getStudentProgress, getProgressStudents, markLectureComplete, isLectureCompleted, getCourseProgressLegacy, getCourseStatus } from './progress';
 import { getUnreadMessageCount, fetchThreads, fetchMessages, sendMessage, getAvailableContacts, markMessageAsRead, markAllMessagesAsRead } from './chat';
 import { fetchQuizzes, fetchQuizById, getQuizAttemptsLeft, submitQuiz, saveQuizAttempt, updateQuizAttempt, gradeQuizAttempt, deleteQuizAttempt, getUngradedQuizAttempts, getGradedQuizAttempts, getLessonQuizSummary, getStepQuizAttempts, getCourseQuizAttempts, getCourseQuizAnalytics, getStudentQuizAnalytics } from './quizzes';
@@ -95,6 +95,7 @@ const apiClient = {
   submitAssignmentZero, uploadAssignmentZeroScreenshot,
   getAllAssignmentZeroSubmissions, getAssignmentZeroSubmissionByUser,
   updateAssignmentZeroPlannedDate, updateAssignmentZeroExamResult,
+  getCuratorUpcomingExamResults, curatorUpdatePlannedExamDate, curatorUpdateExamResult,
   getIeltsDatePromptStatus, touchIeltsDatePrompt,
   // Progress
   markLessonComplete, startLesson, getMyProgress, getCourseProgress, isLessonCompleted,

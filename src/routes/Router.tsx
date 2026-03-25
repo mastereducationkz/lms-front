@@ -57,6 +57,7 @@ import { StudentAnalyticsPage } from '../pages/analytics/StudentAnalyticsPage.ts
 import HeadTeacherTeacherDetailsPage from '../pages/HeadTeacherTeacherDetailsPage.tsx';
 import HeadCuratorCuratorPage from '../pages/HeadCuratorCuratorPage.tsx';
 import CuratorTasksPage from '../pages/CuratorTasksPage.tsx';
+import CuratorExamResultsPage from '../pages/CuratorExamResultsPage.tsx';
 import StudentsJournalPage from '../pages/StudentsJournalPage.tsx';
 import StudentProfilePage from '../pages/StudentProfilePage.tsx';
 
@@ -502,6 +503,14 @@ export default function Router() {
             <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator']}>
               <AppLayout>
                 <CuratorTasksPage />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/curator/exam-results" element={
+            <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator']}>
+              <AppLayout>
+                <CuratorExamResultsPage />
               </AppLayout>
             </ProtectedRoute>
           } />

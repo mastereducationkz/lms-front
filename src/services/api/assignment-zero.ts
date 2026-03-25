@@ -51,6 +51,42 @@ export async function updateAssignmentZeroExamResult(data: {
   }
 }
 
+export async function getCuratorUpcomingExamResults(params?: { days?: number }): Promise<any[]> {
+  try {
+    const response = await api.get('/assignment-zero/curator/upcoming', { params })
+    return response.data
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Failed to load upcoming exam results')
+  }
+}
+
+export async function curatorUpdatePlannedExamDate(data: {
+  user_id: number
+  exam_type: 'sat' | 'ielts'
+  planned_test_date: string
+}): Promise<any> {
+  try {
+    const response = await api.patch('/assignment-zero/curator/planned-date', data, { params: { user_id: data.user_id } })
+    return response.data
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Failed to update planned exam date')
+  }
+}
+
+export async function curatorUpdateExamResult(data: {
+  user_id: number
+  exam_type: 'sat' | 'ielts'
+  result_score: string
+  result_test_date: string
+}): Promise<any> {
+  try {
+    const response = await api.patch('/assignment-zero/curator/exam-result', data, { params: { user_id: data.user_id } })
+    return response.data
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Failed to update exam result')
+  }
+}
+
 export async function getIeltsDatePromptStatus(): Promise<{
   is_ielts_student: boolean;
   should_prompt: boolean;

@@ -79,6 +79,7 @@ function getNavigationItems(
     ['/curator/homeworks', ['head_curator', 'curator'].includes(_userRole || '') ? 'Домашние задания' : 'Homework', FileText, 0, ['curator', 'head_curator'], 'homework-analytics-nav', 'curator'],
     ['/curator/leaderboard', ['head_curator', 'curator'].includes(_userRole || '') ? 'Лидерборд' : 'Leaderboard', Trophy, 0, ['curator', 'head_curator'], 'leaderboard-nav', 'curator'],
     ['/curator/tasks', ['head_curator', 'curator'].includes(_userRole || '') ? 'Задачи' : 'Tasks', ClipboardCheck, 0, ['curator', 'head_curator'], 'curator-tasks-nav', 'curator'],
+    ['/curator/exam-results', ['head_curator', 'curator'].includes(_userRole || '') ? 'Результаты экзаменов' : 'Exam results', ClipboardCheck, 0, ['curator', 'head_curator'], 'curator-exam-results-nav', 'curator'],
     ['/curator/students', ['head_curator', 'curator'].includes(_userRole || '') ? 'Журнал' : 'Students', Users, 0, ['curator', 'head_curator'], 'students-journal-nav', 'curator'],
     ['/admin/courses', 'Manage Courses', BookMarked, 0, ['admin'], 'courses-management', 'admin'],
     ['/admin/users', 'Manage Users', Users, 0, ['admin'], 'users-management', 'admin'],
