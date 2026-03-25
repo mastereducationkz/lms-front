@@ -207,49 +207,40 @@ const ExamResultsTrackingPage = () => {
   const pageRows = filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Exam Result Collection</h1>
-        <p className="text-sm text-gray-600 mt-1">
-          Кого и когда нужно спросить о результате экзамена (правило: плановая дата + 13 дней)
-        </p>
-      </div>
-
-      <Card className="border border-gray-200 shadow-sm">
+    <div className="space-y-4">
+      <Card className="border-border shadow-sm">
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Filters</CardTitle>
-          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <CardTitle className="text-sm font-medium">Filters</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by student, group or user ID"
+                placeholder="Search student / group / ID"
                 className="pl-9"
               />
             </div>
-
-            <div className="flex gap-2">
-              <Button variant={statusFilter === 'all' ? 'default' : 'outline'} onClick={() => setStatusFilter('all')}>All</Button>
-              <Button variant={statusFilter === 'pending' ? 'default' : 'outline'} onClick={() => setStatusFilter('pending')}>Pending</Button>
-              <Button variant={statusFilter === 'overdue' ? 'default' : 'outline'} onClick={() => setStatusFilter('overdue')}>Overdue</Button>
-              <Button variant={statusFilter === 'completed' ? 'default' : 'outline'} onClick={() => setStatusFilter('completed')}>Completed</Button>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant={statusFilter === 'all' ? 'default' : 'outline'} onClick={() => setStatusFilter('all')}>All</Button>
+              <Button size="sm" variant={statusFilter === 'pending' ? 'default' : 'outline'} onClick={() => setStatusFilter('pending')}>Pending</Button>
+              <Button size="sm" variant={statusFilter === 'overdue' ? 'default' : 'outline'} onClick={() => setStatusFilter('overdue')}>Overdue</Button>
+              <Button size="sm" variant={statusFilter === 'completed' ? 'default' : 'outline'} onClick={() => setStatusFilter('completed')}>Completed</Button>
             </div>
-
-            <div className="flex gap-2">
-              <Button variant={trackFilter === 'all' ? 'default' : 'outline'} onClick={() => setTrackFilter('all')}>All Tracks</Button>
-              <Button variant={trackFilter === 'sat' ? 'default' : 'outline'} onClick={() => setTrackFilter('sat')}>SAT</Button>
-              <Button variant={trackFilter === 'ielts' ? 'default' : 'outline'} onClick={() => setTrackFilter('ielts')}>IELTS</Button>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant={trackFilter === 'all' ? 'default' : 'outline'} onClick={() => setTrackFilter('all')}>All</Button>
+              <Button size="sm" variant={trackFilter === 'sat' ? 'default' : 'outline'} onClick={() => setTrackFilter('sat')}>SAT</Button>
+              <Button size="sm" variant={trackFilter === 'ielts' ? 'default' : 'outline'} onClick={() => setTrackFilter('ielts')}>IELTS</Button>
             </div>
           </div>
-        </CardHeader>
 
-        <CardContent className="space-y-4">
           {loading ? (
-            <div className="py-12 text-center text-gray-500">Loading tracking data...</div>
+            <div className="py-10 text-center text-sm text-muted-foreground">Loading…</div>
           ) : (
             <>
-              <div className="rounded-xl border border-gray-200 overflow-hidden">
+              <div className="rounded-md border border-border overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -266,8 +257,8 @@ const ExamResultsTrackingPage = () => {
                     {pageRows.map((row) => (
                       <TableRow key={row.key}>
                         <TableCell>
-                          <div className="font-medium text-gray-900">{row.fullName}</div>
-                          <div className="text-xs text-gray-500">ID: {row.userId}</div>
+                          <div className="font-medium text-foreground">{row.fullName}</div>
+                          <div className="text-xs text-muted-foreground">ID: {row.userId}</div>
                         </TableCell>
                         <TableCell>{row.groupName || '-'}</TableCell>
                         <TableCell>
@@ -292,11 +283,11 @@ const ExamResultsTrackingPage = () => {
               </div>
 
               {!pageRows.length && (
-                <div className="py-10 text-center text-gray-500">No data for selected filters</div>
+                <div className="py-10 text-center text-sm text-muted-foreground">No data for selected filters</div>
               )}
 
               <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-muted-foreground">
                   Showing {(currentPage - 1) * pageSize + 1}-{Math.min(currentPage * pageSize, filteredRows.length)} of {filteredRows.length}
                 </div>
                 <div className="flex items-center gap-2">
@@ -304,7 +295,7 @@ const ExamResultsTrackingPage = () => {
                     <ChevronLeft className="w-4 h-4 mr-1" />
                     Prev
                   </Button>
-                  <span className="text-sm text-gray-600">Page {currentPage} / {totalPages}</span>
+                  <span className="text-sm text-muted-foreground">Page {currentPage} / {totalPages}</span>
                   <Button variant="outline" size="sm" disabled={currentPage >= totalPages} onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}>
                     Next
                     <ChevronRight className="w-4 h-4 ml-1" />

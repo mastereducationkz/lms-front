@@ -376,13 +376,15 @@ export default function Router() {
             </ProtectedRoute>
           } />
 
-          <Route path="/exam-results-tracking" element={
+          <Route path="/exam-results" element={
             <ProtectedRoute allowedRoles={['admin', 'head_curator', 'head_teacher']}>
               <AppLayout>
                 <ExamResultsTrackingPage />
               </AppLayout>
             </ProtectedRoute>
           } />
+
+          <Route path="/exam-results-tracking" element={<Navigate to="/exam-results" replace />} />
 
           <Route path="/admin/question-reports" element={
             <ProtectedRoute allowedRoles={['admin', 'teacher']}>
