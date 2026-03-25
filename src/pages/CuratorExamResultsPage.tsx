@@ -5,6 +5,14 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Badge } from '../components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog'
 
 type ExamType = 'sat' | 'ielts'
 type RowStatus = 'pending' | 'overdue' | 'completed'
@@ -27,6 +35,17 @@ const statusBadge: Record<RowStatus, string> = {
   pending: 'border-border text-muted-foreground',
   overdue: 'border-red-200 text-red-700 bg-red-50',
   completed: 'border-green-200 text-green-700 bg-green-50',
+}
+
+const statusLabel: Record<RowStatus, string> = {
+  pending: 'ожидает',
+  overdue: 'просрочено',
+  completed: 'завершено',
+}
+
+const examLabel: Record<ExamType, string> = {
+  sat: 'SAT',
+  ielts: 'IELTS',
 }
 
 const formatDate = (iso: string | null) => {
@@ -126,31 +145,39 @@ export default function CuratorExamResultsPage() {
     }
   }
 
+  const handleDialogOpenChange = (isOpen: boolean) => {
+    if (isOpen) return
+    close()
+  }
+
+  const isDialogOpen = Boolean(editing)
+  const dialogTitle = mode === 'result' ? 'Добавить результат' : 'Перенести дату'
+
   return (
     <div className="space-y-4">
       <div className="flex items-end justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">Exam results (curator)</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">Результаты экзаменов</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Upcoming + overdue follow-ups for your students
+            Ближайшие и просроченные задачи по сбору результатов ваших учеников
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={load} disabled={loading}>
-          Refresh
+          Обновить
         </Button>
       </div>
 
       <Card className="border-border shadow-sm">
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Filters</CardTitle>
+          <CardTitle className="text-sm font-medium">Фильтры</CardTitle>
           <CardDescription className="text-sm">
-            Rows: <span className="font-semibold tabular-nums text-foreground">{filtered.length}</span>
+            Строк: <span className="font-semibold tabular-nums text-foreground">{filtered.length}</span>
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-col gap-3 md:flex-row md:items-center">
             <div className="flex gap-2 items-center">
-              <span className="text-sm text-muted-foreground">Days</span>
+              <span className="text-sm text-muted-foreground">Дней</span>
               <Input
                 value={String(days)}
                 onChange={(e) => setDays(Math.max(1, Math.min(60, Number(e.target.value || 7))))}
@@ -161,14 +188,14 @@ export default function CuratorExamResultsPage() {
             <Input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search student / group / ID"
+              placeholder="Поиск: ученик / группа / ID"
               className="md:max-w-md"
             />
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant={status === 'all' ? 'default' : 'outline'} onClick={() => setStatus('all')}>All</Button>
-              <Button size="sm" variant={status === 'pending' ? 'default' : 'outline'} onClick={() => setStatus('pending')}>Pending</Button>
-              <Button size="sm" variant={status === 'overdue' ? 'default' : 'outline'} onClick={() => setStatus('overdue')}>Overdue</Button>
-              <Button size="sm" variant={status === 'completed' ? 'default' : 'outline'} onClick={() => setStatus('completed')}>Completed</Button>
+              <Button size="sm" variant={status === 'all' ? 'default' : 'outline'} onClick={() => setStatus('all')}>Все</Button>
+              <Button size="sm" variant={status === 'pending' ? 'default' : 'outline'} onClick={() => setStatus('pending')}>Ожидает</Button>
+              <Button size="sm" variant={status === 'overdue' ? 'default' : 'outline'} onClick={() => setStatus('overdue')}>Просрочено</Button>
+              <Button size="sm" variant={status === 'completed' ? 'default' : 'outline'} onClick={() => setStatus('completed')}>Завершено</Button>
             </div>
           </div>
 
@@ -176,26 +203,26 @@ export default function CuratorExamResultsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Student</TableHead>
-                  <TableHead>Group</TableHead>
-                  <TableHead>Exam</TableHead>
-                  <TableHead>Planned</TableHead>
-                  <TableHead>Ask on</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>Ученик</TableHead>
+                  <TableHead>Группа</TableHead>
+                  <TableHead>Экзамен</TableHead>
+                  <TableHead>План</TableHead>
+                  <TableHead>Спросить</TableHead>
+                  <TableHead>Статус</TableHead>
+                  <TableHead className="text-right">Действия</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
                     <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
-                      Loading…
+                      Загрузка…
                     </TableCell>
                   </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
-                      No rows
+                      Нет строк
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -206,19 +233,19 @@ export default function CuratorExamResultsPage() {
                         <div className="text-xs text-muted-foreground">ID: {r.user_id}</div>
                       </TableCell>
                       <TableCell>{r.group_name || '-'}</TableCell>
-                      <TableCell><Badge variant="outline" className="uppercase">{r.exam_type}</Badge></TableCell>
+                      <TableCell><Badge variant="outline" className="uppercase">{examLabel[r.exam_type]}</Badge></TableCell>
                       <TableCell>{formatDate(r.planned_test_date)}</TableCell>
                       <TableCell>{formatDate(r.ask_result_on)}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={statusBadge[r.status]}>{r.status}</Badge>
+                        <Badge variant="outline" className={statusBadge[r.status]}>{statusLabel[r.status]}</Badge>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button size="sm" variant="outline" onClick={() => openReschedule(r)}>
-                            Reschedule
+                            Перенести
                           </Button>
                           <Button size="sm" onClick={() => openResult(r)}>
-                            Add result
+                            Добавить
                           </Button>
                         </div>
                       </TableCell>
@@ -231,42 +258,73 @@ export default function CuratorExamResultsPage() {
         </CardContent>
       </Card>
 
-      {editing && (
-        <Card className="border-border shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">
-              {mode === 'result' ? 'Add result' : 'Reschedule'} · {editing.full_name} · {editing.exam_type.toUpperCase()}
-            </CardTitle>
-            <CardDescription className="text-sm">{editing.group_name}</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            {mode === 'result' ? (
-              <div className="grid md:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Score</p>
-                  <Input value={resultScore} onChange={(e) => setResultScore(e.target.value)} placeholder="e.g. 1450 / 7.0" />
-                </div>
-                <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Test date</p>
-                  <Input value={resultDate} onChange={(e) => setResultDate(e.target.value)} placeholder="YYYY-MM-DD" />
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">New planned test date</p>
-                <Input value={plannedDate} onChange={(e) => setPlannedDate(e.target.value)} placeholder="YYYY-MM-DD" />
-              </div>
-            )}
+      <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
+        <DialogContent className="sm:rounded-md">
+          <DialogHeader>
+            <DialogTitle className="text-base">{dialogTitle}</DialogTitle>
+            <DialogDescription className="text-sm">
+              {editing ? (
+                <span className="text-muted-foreground">
+                  {editing.full_name} · {examLabel[editing.exam_type]} · {editing.group_name || '—'}
+                </span>
+              ) : (
+                <span className="text-muted-foreground">—</span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={close} disabled={saving}>Cancel</Button>
-              <Button onClick={handleSave} disabled={saving}>
-                Save
-              </Button>
+          {editing && mode === 'result' ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Балл</p>
+                <Input
+                  value={resultScore}
+                  onChange={(e) => setResultScore(e.target.value)}
+                  placeholder="Напр. 1450 / 7.0"
+                />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Дата экзамена</p>
+                <Input
+                  value={resultDate}
+                  onChange={(e) => setResultDate(e.target.value)}
+                  placeholder="YYYY-MM-DD"
+                  inputMode="numeric"
+                />
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          ) : editing ? (
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Новая плановая дата</p>
+              <Input
+                value={plannedDate}
+                onChange={(e) => setPlannedDate(e.target.value)}
+                placeholder="YYYY-MM-DD"
+                inputMode="numeric"
+              />
+              <p className="text-xs text-muted-foreground">
+                При переносе результат будет очищен
+              </p>
+            </div>
+          ) : null}
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={close} disabled={saving}>
+              Отмена
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={
+                saving ||
+                !editing ||
+                (mode === 'result' ? !resultScore.trim() || !resultDate : !plannedDate)
+              }
+            >
+              Сохранить
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
