@@ -64,11 +64,15 @@ interface GroupWithDetails extends Group {
 }
 
 interface TeacherGroup {
-  teacher_name: string;
-  teacher_id?: number;
-  students: User[];
-  total_students: number;
-  is_expanded?: boolean;
+  teacher_name: string
+  teacher_id?: number | null
+  students: User[]
+  total_students: number
+  is_expanded?: boolean
+  students_skip?: number
+  students_limit?: number
+  students_total?: number
+  is_loading_students?: boolean
 }
 
 export default function UserManagement() {
@@ -266,11 +270,14 @@ export default function UserManagement() {
   const [editGroupFormErrors, setEditGroupFormErrors] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
-    loadUsers();
-    loadGroups();
+    loadUsers()
+    loadGroups()
+  }, [currentPage, roleFilter, groupFilter, statusFilter, searchQuery])
+
+  useEffect(() => {
     loadTeachersAndCurators();
     loadCourses();
-  }, [currentPage, roleFilter, groupFilter, statusFilter, searchQuery]);
+  }, []);
 
   // Reload groups when group status filter changes
   useEffect(() => {
@@ -290,6 +297,32 @@ export default function UserManagement() {
     try {
       setIsLoading(true);
       setError(null);
+      if (roleFilter === 'student') {
+        const response = await apiClient.getStudentTeacherGroups({
+          skip: (currentPage - 1) * pageSize,
+          limit: pageSize,
+          group_id: groupFilter && groupFilter !== 'all' ? parseInt(groupFilter) : undefined,
+          is_active: statusFilter && statusFilter !== 'all' ? statusFilter === 'true' : undefined,
+          search: searchQuery || undefined,
+        })
+
+        const groups = response.groups.map((g: any) => ({
+          teacher_name: g.teacher_name,
+          teacher_id: g.teacher_id ?? null,
+          students: [],
+          total_students: g.total_students,
+          is_expanded: false,
+          students_skip: 0,
+          students_limit: 20,
+          students_total: 0,
+          is_loading_students: false,
+        }))
+        setTeacherGroups(groups)
+        setUsers([])
+        setTotalUsers(response.total)
+        return
+      }
+
       const params = {
         skip: (currentPage - 1) * pageSize,
         limit: pageSize,
@@ -298,22 +331,14 @@ export default function UserManagement() {
         is_active: statusFilter && statusFilter !== 'all' ? statusFilter === 'true' : undefined,
         search: searchQuery || undefined
       };
-      
+
       const response = await apiClient.getUsers(params);
-      
-      if (response) {
-        const usersData = Array.isArray(response) ? response : (response.users || []);
-        const sortedUsers = [...usersData].sort((a: User, b: User) => 
-          (a.name || a.full_name || '').localeCompare(b.name || b.full_name || '', 'ru')
-        );
-        setUsers(sortedUsers);
-        setTotalUsers(response.total || usersData.length);
-      } else {
-        // Неожиданный формат
-        console.log('Unexpected response format:', response);
-        setUsers([]);
-        setTotalUsers(0);
-      }
+      const usersData = Array.isArray(response) ? response : (response.users || []);
+      const sortedUsers = [...usersData].sort((a: User, b: User) =>
+        (a.name || a.full_name || '').localeCompare(b.name || b.full_name || '', 'ru')
+      );
+      setUsers(sortedUsers);
+      setTotalUsers(response.total || usersData.length);
     } catch (error) {
       console.error('Failed to load users:', error);
       setError('Failed to load users');
@@ -378,56 +403,48 @@ export default function UserManagement() {
     }
   };
 
-  // Group students by teacher when role filter is student and users are loaded
   useEffect(() => {
-    if (users.length > 0 && roleFilter === 'student') {
-      console.log('Grouping students after users loaded...');
-      groupStudentsByTeacher();
-    } else if (roleFilter !== 'student') {
-      console.log('Clearing teacher groups - not student filter');
-      setTeacherGroups([]);
+    if (roleFilter !== 'student') setTeacherGroups([])
+  }, [roleFilter])
+
+  const loadTeacherGroupStudents = async (teacherId: number | null, reset: boolean = false) => {
+    const keyTeacherId = teacherId ?? -1
+    setTeacherGroups((prev) => prev.map((g) => {
+      if ((g.teacher_id ?? null) !== teacherId) return g
+      return { ...g, is_loading_students: true }
+    }))
+
+    try {
+      const group = teacherGroups.find((g) => (g.teacher_id ?? null) === teacherId)
+      const skip = reset ? 0 : (group?.students_skip ?? 0)
+      const limit = group?.students_limit ?? 20
+
+      const response = await apiClient.getStudentsForTeacherGroup(keyTeacherId, {
+        skip,
+        limit,
+        group_id: groupFilter && groupFilter !== 'all' ? parseInt(groupFilter) : undefined,
+        is_active: statusFilter && statusFilter !== 'all' ? statusFilter === 'true' : undefined,
+        search: searchQuery || undefined,
+      })
+
+      setTeacherGroups((prev) => prev.map((g) => {
+        if ((g.teacher_id ?? null) !== teacherId) return g
+        const nextStudents = reset ? response.students : [...g.students, ...response.students]
+        return {
+          ...g,
+          students: nextStudents,
+          students_total: response.total,
+          students_skip: skip + response.students.length,
+          is_loading_students: false,
+        }
+      }))
+    } catch (e) {
+      setTeacherGroups((prev) => prev.map((g) => {
+        if ((g.teacher_id ?? null) !== teacherId) return g
+        return { ...g, is_loading_students: false }
+      }))
     }
-  }, [users, roleFilter]);
-
-  // Function to group students by teacher
-  const groupStudentsByTeacher = () => {
-    const students = users.filter(user => user.role === 'student');
-    console.log('Students for grouping:', students);
-    console.log('All users:', users);
-    const groupsMap = new Map<string, TeacherGroup>();
-    
-    students.forEach(student => {
-      const teacherName = student.teacher_name || 'No Teacher Assigned';
-      
-      if (!groupsMap.has(teacherName)) {
-        groupsMap.set(teacherName, {
-          teacher_name: teacherName,
-          teacher_id: undefined,
-          students: [],
-          total_students: 0,
-          is_expanded: false
-        });
-      }
-      
-      const group = groupsMap.get(teacherName)!;
-      group.students.push(student);
-      group.total_students = group.students.length;
-    });
-    
-    const teacherGroupsArray = Array.from(groupsMap.values()).sort((a, b) => 
-      a.teacher_name.localeCompare(b.teacher_name, 'ru')
-    );
-    
-    // Sort students within each teacher group
-    teacherGroupsArray.forEach(tg => {
-      tg.students.sort((a, b) => 
-        (a.name || a.full_name || '').localeCompare(b.name || b.full_name || '', 'ru')
-      );
-    });
-
-    console.log('Teacher groups:', teacherGroupsArray);
-    setTeacherGroups(teacherGroupsArray);
-  };
+  }
 
   const handleFilterChange = (filter: string, value: string) => {
     const newParams = new URLSearchParams(searchParams);
@@ -915,7 +932,7 @@ export default function UserManagement() {
             <div className="flex items-center justify-between">
               <CardTitle>
                 {roleFilter === 'student' ? 
-                  `Students (${totalUsers})` : 
+                  `Students` : 
                   `Users (${totalUsers})`
                 }
               </CardTitle>
@@ -973,7 +990,7 @@ export default function UserManagement() {
                   </thead>
                   <tbody className="bg-white dark:bg-card divide-y divide-gray-200 dark:divide-border">
                     {roleFilter === 'student' && teacherGroups.length > 0 ? (
-                      // Show grouped students by teacher
+                      // Show paginated teacher groups (server-side)
                       teacherGroups.map((teacherGroup) => (
                         <React.Fragment key={teacherGroup.teacher_name}>
                           {/* Teacher group header */}
@@ -984,11 +1001,15 @@ export default function UserManagement() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => {
-                                    setTeacherGroups(prev => prev.map(group => 
+                                    const nextIsExpanded = !teacherGroup.is_expanded
+                                    setTeacherGroups(prev => prev.map(group =>
                                       group.teacher_name === teacherGroup.teacher_name 
-                                        ? { ...group, is_expanded: !group.is_expanded }
+                                        ? { ...group, is_expanded: nextIsExpanded }
                                         : group
                                     ));
+                                    if (nextIsExpanded && teacherGroup.students.length === 0) {
+                                      loadTeacherGroupStudents(teacherGroup.teacher_id ?? null, true)
+                                    }
                                   }}
                                   className="p-0 h-6 w-6"
                                 >
@@ -1105,6 +1126,26 @@ export default function UserManagement() {
                               </td>
                             </tr>
                           ))}
+
+                          {teacherGroup.is_expanded && (
+                            <tr className="bg-gray-25">
+                              <td className="px-6 py-3" colSpan={5}>
+                                <div className="ml-8 flex items-center justify-between gap-3">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    Showing {teacherGroup.students.length} of {teacherGroup.total_students}
+                                  </span>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={teacherGroup.is_loading_students || teacherGroup.students.length >= teacherGroup.total_students}
+                                    onClick={() => loadTeacherGroupStudents(teacherGroup.teacher_id ?? null, false)}
+                                  >
+                                    {teacherGroup.is_loading_students ? 'Loading…' : 'Load more'}
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
                         </React.Fragment>
                       ))
                     ) : (

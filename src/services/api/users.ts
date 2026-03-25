@@ -1,4 +1,4 @@
-import type { User, UserListResponse, CreateUserRequest, UpdateUserRequest, BulkCreateUsersResponse } from '../../types';
+import type { User, UserListResponse, CreateUserRequest, UpdateUserRequest, BulkCreateUsersResponse, TeacherGroupListResponse, TeacherGroupStudentsResponse } from '../../types';
 import { api } from './client';
 
 export async function getUsers(params?: {
@@ -14,6 +14,36 @@ export async function getUsers(params?: {
     return response.data;
   } catch (error) {
     throw new Error('Failed to fetch users');
+  }
+}
+
+export async function getStudentTeacherGroups(params?: {
+  skip?: number
+  limit?: number
+  group_id?: number
+  is_active?: boolean
+  search?: string
+}): Promise<TeacherGroupListResponse> {
+  try {
+    const response = await api.get('/admin/students/teacher-groups', { params })
+    return response.data
+  } catch (error) {
+    throw new Error('Failed to fetch teacher groups')
+  }
+}
+
+export async function getStudentsForTeacherGroup(teacherId: number, params?: {
+  skip?: number
+  limit?: number
+  group_id?: number
+  is_active?: boolean
+  search?: string
+}): Promise<TeacherGroupStudentsResponse> {
+  try {
+    const response = await api.get(`/admin/students/teacher-groups/${teacherId}`, { params })
+    return response.data
+  } catch (error) {
+    throw new Error('Failed to fetch students for teacher group')
   }
 }
 

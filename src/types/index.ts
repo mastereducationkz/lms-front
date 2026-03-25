@@ -302,6 +302,28 @@ export interface UserListResponse {
   limit: number;
 }
 
+export interface TeacherGroupSummary {
+  teacher_id?: number | null;
+  teacher_name: string;
+  total_students: number;
+}
+
+export interface TeacherGroupListResponse {
+  groups: TeacherGroupSummary[];
+  total: number;
+  skip: number;
+  limit: number;
+}
+
+export interface TeacherGroupStudentsResponse {
+  teacher_id?: number | null;
+  teacher_name: string;
+  students: User[];
+  total: number;
+  skip: number;
+  limit: number;
+}
+
 export interface GroupListResponse {
   groups: Group[];
   total: number;
