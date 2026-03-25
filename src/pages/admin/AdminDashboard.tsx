@@ -115,15 +115,6 @@ export default function AdminDashboard() {
   const teacherGrading7d = s(stats.teachers_who_graded_last_7_days)
   const homeworkGraded7d = s(stats.homework_graded_last_7_days)
   const avgTeacherGrading7d = stats.avg_homework_graded_per_active_teacher_last_7_days ?? 0
-  const teacherActivity7dPct = stats.total_teachers > 0
-    ? Math.round((teacherActive7d / stats.total_teachers) * 100)
-    : 0
-  const teacherActivity30dPct = stats.total_teachers > 0
-    ? Math.round((teacherActive30d / stats.total_teachers) * 100)
-    : 0
-  const teacherGrading7dPct = stats.total_teachers > 0
-    ? Math.round((teacherGrading7d / stats.total_teachers) * 100)
-    : 0
   const pendingOpsTotal = s(stats.pending_homework_to_grade) + s(stats.pending_lesson_requests)
 
   const platformKpis = [
@@ -164,24 +155,20 @@ export default function AdminDashboard() {
       path: '/admin/events',
       ariaLabel: 'Open events: scheduled in the next 7 days',
     },
+    {
+      label: 'Lesson requests',
+      sub: 'Pending',
+      value: s(stats.pending_lesson_requests),
+      path: '/admin/lesson-requests',
+      ariaLabel: 'Open lesson requests',
+    },
   ]
 
   const teacherEfficiencyData = [
-    {
-      label: 'Active in last 7 days',
-      percent: teacherActivity7dPct,
-      details: `${teacherActive7d}/${stats.total_teachers} teachers`,
-    },
-    {
-      label: 'Active in last 30 days',
-      percent: teacherActivity30dPct,
-      details: `${teacherActive30d}/${stats.total_teachers} teachers`,
-    },
-    {
-      label: 'Checked homework in 7 days',
-      percent: teacherGrading7dPct,
-      details: `${teacherGrading7d} teachers · ${homeworkGraded7d} checks`,
-    },
+    { label: 'Total', value: stats.total_teachers },
+    { label: 'Active 7d', value: teacherActive7d },
+    { label: 'Active 30d', value: teacherActive30d },
+    { label: 'Grading 7d', value: teacherGrading7d },
   ]
 
   const operationsLoadData = [
@@ -209,7 +196,7 @@ export default function AdminDashboard() {
           <CardHeader className="px-5 pt-5 pb-2 space-y-1">
             <CardTitle className="text-base font-medium">Teacher efficiency</CardTitle>
             <CardDescription className="text-sm">
-              7d activity: <span className="font-semibold text-foreground tabular-nums">{teacherActivity7dPct}%</span>
+              Active 7d: <span className="font-semibold text-foreground tabular-nums">{teacherActive7d}</span> / {stats.total_teachers}
             </CardDescription>
           </CardHeader>
           <CardContent className="px-5 pb-5 pt-2 h-[220px]">
@@ -224,21 +211,20 @@ export default function AdminDashboard() {
                 />
                 <YAxis
                   width={28}
-                  domain={[0, 100]}
-                  tickFormatter={(v) => `${v}%`}
+                  allowDecimals={false}
                   tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                   axisLine={false}
                   tickLine={false}
                 />
                 <Tooltip
-                  formatter={(value) => `${value}%`}
+                  formatter={(value) => `${value} teachers`}
                   contentStyle={{
                     borderRadius: 8,
                     border: '1px solid hsl(var(--border))',
                     fontSize: 12,
                   }}
                 />
-                <Bar dataKey="percent" fill="hsl(var(--primary) / 0.55)" radius={[4, 4, 0, 0]} maxBarSize={28} />
+                <Bar dataKey="value" fill="hsl(var(--primary) / 0.55)" radius={[4, 4, 0, 0]} maxBarSize={28} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

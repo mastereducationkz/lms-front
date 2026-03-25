@@ -268,7 +268,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
 
   return (
     <aside className={wrapperClass}>
-      <div className={`flex items-center mb-4 ${isCollapsed ? 'justify-center flex-col gap-2' : ''}`}>
+      <div className={`flex items-center mb-6 ${isCollapsed ? 'justify-center flex-col gap-2' : ''}`}>
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : ''}`}>
           <img src={logoIco} alt="Master Education" className="w-7 h-7 sm:w-8 sm:h-8 rounded" />
           {!isCollapsed && (
@@ -287,7 +287,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
         )}
       </div>
       
-      <nav className="flex flex-col flex-1 overflow-y-auto min-h-0">
+      <nav className="flex flex-col flex-1 overflow-y-auto min-h-0 pt-1">
         {buildNavSections(
           getNavigationItems(user?.role, unread, unseenGraded, isSpecialGroupStudent),
           user?.role
