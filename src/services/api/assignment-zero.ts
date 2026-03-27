@@ -1,4 +1,36 @@
+import type { AxiosError } from 'axios';
 import { api } from './client';
+
+const parseDetail = (detail: unknown): string | null => {
+  if (typeof detail === 'string' && detail.trim()) return detail;
+  if (Array.isArray(detail)) {
+    const parts = detail.map((item) => {
+      if (item && typeof item === 'object' && 'msg' in item) {
+        return String((item as { msg?: string }).msg ?? '');
+      }
+      return String(item);
+    });
+    const joined = parts.filter(Boolean).join(', ');
+    return joined || null;
+  }
+  return null;
+};
+
+const getUploadScreenshotErrorMessage = (error: unknown): string => {
+  const ax = error as AxiosError<{ detail?: unknown }>;
+  const fromBody = parseDetail(ax.response?.data?.detail);
+  if (fromBody) return fromBody;
+  if (ax.code === 'ECONNABORTED' || ax.message?.toLowerCase().includes('timeout')) {
+    return 'Request timed out while uploading. Try a smaller image or a faster network.';
+  }
+  if (!ax.response) {
+    return 'No response from server (network, timeout, or upload blocked). Try a smaller file or again later.';
+  }
+  if (ax.response.status === 413) {
+    return 'File is too large for the server (413).';
+  }
+  return 'Failed to upload screenshot';
+};
 
 export async function getAssignmentZeroStatus(): Promise<{
   needs_completion: boolean;
@@ -261,11 +293,11 @@ export async function uploadAssignmentZeroScreenshot(file: File): Promise<{ url:
     const formData = new FormData();
     formData.append('file', file);
     const response = await api.post('/assignment-zero/upload-screenshot', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000,
     });
     return response.data;
-  } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to upload screenshot');
+  } catch (error: unknown) {
+    throw new Error(getUploadScreenshotErrorMessage(error));
   }
 }
 

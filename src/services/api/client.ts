@@ -137,6 +137,16 @@ const api: AxiosInstance = axios.create({
 
 api.interceptors.request.use(
   (config) => {
+    // Let the browser set multipart/form-data with a boundary. Default JSON Content-Type
+    // breaks FormData uploads; setting multipart manually without a boundary also breaks them.
+    if (config.data instanceof FormData) {
+      const headers = config.headers
+      if (headers && typeof (headers as { delete?: (k: string) => void }).delete === 'function') {
+        ;(headers as { delete: (k: string) => void }).delete('Content-Type')
+      } else if (headers && typeof headers === 'object') {
+        delete (headers as Record<string, unknown>)['Content-Type']
+      }
+    }
     const token = tokenManager.getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

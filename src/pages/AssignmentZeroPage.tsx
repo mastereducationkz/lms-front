@@ -863,33 +863,90 @@ export default function AssignmentZeroPage() {
     }));
   };
 
+  const compressImageIfNeeded = async (file: File): Promise<File> => {
+    if (file.type === 'image/gif') return file;
+    if (!file.type.startsWith('image/')) return file;
+
+    const maxSizeBytes = 2 * 1024 * 1024;
+    if (file.size <= maxSizeBytes) return file;
+
+    const imageUrl = URL.createObjectURL(file);
+    try {
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error('Failed to decode image'));
+        image.src = imageUrl;
+      });
+
+      const maxDimension = 1920;
+      const scale = Math.min(1, maxDimension / Math.max(img.width, img.height));
+      const targetWidth = Math.max(1, Math.round(img.width * scale));
+      const targetHeight = Math.max(1, Math.round(img.height * scale));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return file;
+      ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+      const outputType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+      const quality = outputType === 'image/jpeg' ? 0.82 : undefined;
+
+      const compressedBlob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob((blob) => resolve(blob), outputType, quality);
+      });
+
+      if (!compressedBlob || compressedBlob.size >= file.size) return file;
+
+      const compressedName = file.name.replace(/\.[^.]+$/, outputType === 'image/png' ? '.png' : '.jpg');
+      return new File([compressedBlob], compressedName, { type: outputType });
+    } catch {
+      return file;
+    } finally {
+      URL.revokeObjectURL(imageUrl);
+    }
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
+    // Validate file type (Safari/iOS often report empty file.type; rely on extension in that case)
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
+    const ext = file.name.toLowerCase().match(/\.[a-z0-9]+$/)?.[0] ?? '';
+    const extOk = ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext);
+    const typeOk =
+      allowedTypes.includes(file.type) ||
+      ((file.type === '' || file.type === 'application/octet-stream') && extOk);
+    if (!typeOk) {
       toast('Please upload an image file (JPEG, PNG, GIF, or WEBP)', 'error');
+      e.target.value = '';
       return;
     }
 
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       toast('File size must be less than 10MB', 'error');
+      e.target.value = '';
       return;
     }
 
     setUploadingFile(true);
     try {
-      const result = await apiClient.uploadAssignmentZeroScreenshot(file);
+      const fileToUpload = await compressImageIfNeeded(file);
+      const result = await apiClient.uploadAssignmentZeroScreenshot(fileToUpload);
       handleInputChange('screenshot_url', result.url);
       toast('Screenshot uploaded successfully', 'success');
     } catch (error) {
       console.error('Upload failed:', error);
-      toast('Failed to upload screenshot', 'error');
+      const msg = error instanceof Error ? error.message : 'Failed to upload screenshot';
+      toast(msg, 'error');
     } finally {
       setUploadingFile(false);
+      e.target.value = '';
     }
   };
 
