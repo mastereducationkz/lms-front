@@ -422,3 +422,22 @@ export async function createCuratorTaskInstance(params: {
     throw error;
   }
 }
+
+export async function createCuratorTaskInstancesBulk(body: {
+  template_id: number;
+  curator_ids: number[];
+  group_ids?: number[];
+  student_id?: number;
+  due_date?: string;
+  week?: string;
+  program_week?: number;
+  custom_title?: string;
+}): Promise<{ created: number; task_ids: number[] }> {
+  try {
+    const response = await api.post('/curator-tasks/create-instances-bulk', body);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to bulk create curator task instances:', error);
+    throw error;
+  }
+}

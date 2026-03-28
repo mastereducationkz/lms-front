@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../services/api';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { Checkbox } from '../components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '../components/ui/dialog';
 import { Textarea } from '../components/ui/textarea';
 import { Input } from '../components/ui/input';
@@ -285,10 +286,10 @@ export default function CuratorTasksPage() {
   // Add task dialog (head curator only)
   const [addTaskDialogOpen, setAddTaskDialogOpen] = useState(false);
   const [templates, setTemplates] = useState<Array<{ id: number; title: string; scope: string; task_type?: string }>>([]);
-  const [addTaskCuratorId, setAddTaskCuratorId] = useState<number | null>(null);
+  const [addTaskCuratorIds, setAddTaskCuratorIds] = useState<number[]>([]);
   const [addTaskTemplateId, setAddTaskTemplateId] = useState<number | null>(null);
   const [addTaskCustomTitle, setAddTaskCustomTitle] = useState('');
-  const [addTaskGroupId, setAddTaskGroupId] = useState<number | null>(null);
+  const [addTaskGroupIds, setAddTaskGroupIds] = useState<number[]>([]);
   const [addTaskStudentId, setAddTaskStudentId] = useState<number | null>(null);
   const [addTaskDueDate, setAddTaskDueDate] = useState('');
   const [addTaskStudents, setAddTaskStudents] = useState<Array<{ id: number; name: string }>>([]);
@@ -422,63 +423,86 @@ export default function CuratorTasksPage() {
   useEffect(() => {
     if (addTaskDialogOpen && isHeadCurator) {
       apiClient.getCuratorTaskTemplates().then(data => setTemplates(data)).catch(console.error);
-      setAddTaskCuratorId(null);
+      setAddTaskCuratorIds([]);
       setAddTaskTemplateId(null);
       setAddTaskCustomTitle('');
-      setAddTaskGroupId(null);
+      setAddTaskGroupIds([]);
       setAddTaskStudentId(null);
       setAddTaskDueDate('');
     }
   }, [addTaskDialogOpen, isHeadCurator]);
 
   // Load students when add-task group changes
+  const addTaskSingleGroupId = addTaskGroupIds.length === 1 ? addTaskGroupIds[0] : null;
+
   useEffect(() => {
-    if (!addTaskGroupId) {
+    if (addTaskSingleGroupId == null) {
       setAddTaskStudents([]);
       setAddTaskStudentId(null);
       return;
     }
-    apiClient.getGroupStudents(addTaskGroupId).then(data => {
+    apiClient.getGroupStudents(addTaskSingleGroupId).then(data => {
       setAddTaskStudents(data.map((u: { id: number; name: string }) => ({ id: u.id, name: u.name })));
       setAddTaskStudentId(null);
     }).catch(() => setAddTaskStudents([]));
-  }, [addTaskGroupId]);
+  }, [addTaskSingleGroupId]);
 
   const isCustomTemplate = addTaskTemplateId && templates.some(t => t.id === addTaskTemplateId && t.task_type === 'manual');
 
+  const addTaskCombinationCount =
+    addTaskCuratorIds.length * (addTaskGroupIds.length === 0 ? 1 : addTaskGroupIds.length);
+
+  const handleToggleAddTaskCurator = (id: number, checked: boolean | string) => {
+    const on = checked === true;
+    setAddTaskCuratorIds((prev) =>
+      on ? [...new Set([...prev, id])] : prev.filter((x) => x !== id),
+    );
+  };
+
+  const handleToggleAddTaskGroup = (id: number, checked: boolean | string) => {
+    const on = checked === true;
+    setAddTaskGroupIds((prev) =>
+      on ? [...new Set([...prev, id])] : prev.filter((x) => x !== id),
+    );
+  };
+
   const handleAddTask = async () => {
-    if (!addTaskCuratorId || !addTaskTemplateId) {
-      toast('Выберите куратора и шаблон задачи', 'error');
+    if (addTaskCuratorIds.length === 0 || !addTaskTemplateId) {
+      toast('Выберите хотя бы одного куратора и шаблон задачи', 'error');
       return;
     }
     if (isCustomTemplate && !addTaskCustomTitle.trim()) {
       toast('Введите текст задачи для шаблона «Свой»', 'error');
       return;
     }
-    const progWeek = selectedGroup_data?.start_date ? programWeekForIsoWeek(activeIsoWeek, selectedGroup_data.start_date) : null;
+    const progWeekNoGroup =
+      addTaskGroupIds.length === 0 && selectedGroup_data?.start_date
+        ? programWeekForIsoWeek(activeIsoWeek, selectedGroup_data.start_date)
+        : null;
     setAddTaskSaving(true);
     try {
-      await apiClient.createCuratorTaskInstance({
+      const res = await apiClient.createCuratorTaskInstancesBulk({
         template_id: addTaskTemplateId,
-        curator_id: addTaskCuratorId,
-        student_id: addTaskStudentId ?? undefined,
-        group_id: addTaskGroupId ?? undefined,
+        curator_ids: [...new Set(addTaskCuratorIds)],
+        group_ids: addTaskGroupIds.length > 0 ? [...new Set(addTaskGroupIds)] : undefined,
+        student_id: addTaskSingleGroupId != null && addTaskStudentId ? addTaskStudentId : undefined,
         due_date: addTaskDueDate || undefined,
         week: activeIsoWeek,
-        program_week: progWeek ?? undefined,
+        program_week: progWeekNoGroup ?? undefined,
         custom_title: isCustomTemplate ? addTaskCustomTitle.trim() : undefined,
       });
-      toast('Задача создана', 'success');
+      toast(res.created === 1 ? 'Задача создана' : `Создано задач: ${res.created}`, 'success');
       setAddTaskDialogOpen(false);
-      setAddTaskCuratorId(null);
+      setAddTaskCuratorIds([]);
       setAddTaskTemplateId(null);
       setAddTaskCustomTitle('');
-      setAddTaskGroupId(null);
+      setAddTaskGroupIds([]);
       setAddTaskStudentId(null);
       setAddTaskDueDate('');
       loadTasks();
     } catch (e: any) {
-      toast(e?.response?.data?.detail || 'Ошибка создания задачи', 'error');
+      const d = e?.response?.data?.detail;
+      toast(typeof d === 'string' ? d : 'Ошибка создания задачи', 'error');
     } finally {
       setAddTaskSaving(false);
     }
@@ -923,22 +947,45 @@ export default function CuratorTasksPage() {
 
       {/* Add task dialog (head curator only) */}
       <Dialog open={addTaskDialogOpen} onOpenChange={setAddTaskDialogOpen}>
-        <DialogContent className="sm:max-w-[420px]">
+        <DialogContent className="sm:max-w-[480px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-base font-semibold">Добавить задачу куратору</DialogTitle>
-            <DialogDescription>Создайте задачу для выбранного куратора на текущую неделю</DialogDescription>
+            <DialogTitle className="text-base font-semibold">Добавить задачу кураторам</DialogTitle>
+            <DialogDescription>
+              Можно выбрать несколько кураторов и несколько групп — будет создано отдельная задача для каждой пары (все сочетания).
+              Без группы: по одной задаче на каждого выбранного куратора.
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Куратор *</label>
-              <Select value={addTaskCuratorId ? String(addTaskCuratorId) : ''} onValueChange={v => setAddTaskCuratorId(v ? Number(v) : null)}>
-                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Выберите куратора" /></SelectTrigger>
-                <SelectContent>
-                  {curators.map(c => (
-                    <SelectItem key={c.curator_id} value={String(c.curator_id)}>{c.curator_name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs text-gray-500">Кураторы *</label>
+                <button
+                  type="button"
+                  className="text-[10px] text-blue-600 hover:underline"
+                  onClick={() =>
+                    setAddTaskCuratorIds(
+                      addTaskCuratorIds.length === curators.length ? [] : curators.map((c) => c.curator_id),
+                    )
+                  }
+                >
+                  {addTaskCuratorIds.length === curators.length ? 'Снять все' : 'Выбрать всех'}
+                </button>
+              </div>
+              <div className="max-h-32 overflow-y-auto rounded-md border border-gray-200 dark:border-border p-2 space-y-2">
+                {curators.map((c) => (
+                  <label
+                    key={c.curator_id}
+                    className="flex items-center gap-2 text-sm cursor-pointer"
+                  >
+                    <Checkbox
+                      checked={addTaskCuratorIds.includes(c.curator_id)}
+                      onCheckedChange={(ch) => handleToggleAddTaskCurator(c.curator_id, ch)}
+                      aria-label={c.curator_name}
+                    />
+                    <span className="truncate">{c.curator_name}</span>
+                  </label>
+                ))}
+              </div>
             </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">Шаблон задачи *</label>
@@ -963,18 +1010,33 @@ export default function CuratorTasksPage() {
               </div>
             )}
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Группа</label>
-              <Select value={addTaskGroupId ? String(addTaskGroupId) : '__none__'} onValueChange={v => setAddTaskGroupId(v === '__none__' ? null : Number(v))}>
-                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Не выбрана" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Не выбрана</SelectItem>
-                  {groups.map(g => (
-                    <SelectItem key={g.id} value={String(g.id)}>{g.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs text-gray-500">Группы</label>
+                <button
+                  type="button"
+                  className="text-[10px] text-blue-600 hover:underline"
+                  onClick={() => setAddTaskGroupIds([])}
+                >
+                  Без группы
+                </button>
+              </div>
+              <p className="text-[10px] text-gray-400 mb-1.5">
+                Не отмечайте группы — задача без привязки к группе. Ученик можно выбрать только при одной группе.
+              </p>
+              <div className="max-h-32 overflow-y-auto rounded-md border border-gray-200 dark:border-border p-2 space-y-2">
+                {groups.map((g) => (
+                  <label key={g.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox
+                      checked={addTaskGroupIds.includes(g.id)}
+                      onCheckedChange={(ch) => handleToggleAddTaskGroup(g.id, ch)}
+                      aria-label={g.name}
+                    />
+                    <span className="truncate">{g.name}</span>
+                  </label>
+                ))}
+              </div>
             </div>
-            {addTaskGroupId && addTaskStudents.length > 0 && (
+            {addTaskSingleGroupId != null && addTaskStudents.length > 0 && (
               <div>
                 <label className="block text-xs text-gray-500 mb-1">Ученик</label>
                 <Select value={addTaskStudentId ? String(addTaskStudentId) : '__none__'} onValueChange={v => setAddTaskStudentId(v === '__none__' ? null : Number(v))}>
@@ -998,11 +1060,25 @@ export default function CuratorTasksPage() {
               />
             </div>
             <p className="text-xs text-gray-400">Неделя: {getWeekDateRange(activeIsoWeek)}</p>
+            {addTaskCuratorIds.length > 0 && addTaskTemplateId && (
+              <p className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                Будет создано задач: {addTaskCombinationCount}
+              </p>
+            )}
           </div>
           <DialogFooter>
             <Button variant="ghost" size="sm" onClick={() => setAddTaskDialogOpen(false)}>Отмена</Button>
-            <Button size="sm" onClick={handleAddTask} disabled={addTaskSaving || !addTaskCuratorId || !addTaskTemplateId || (isCustomTemplate && !addTaskCustomTitle.trim())}>
-              {addTaskSaving ? 'Создание...' : 'Создать'}
+            <Button
+              size="sm"
+              onClick={handleAddTask}
+              disabled={
+                addTaskSaving ||
+                addTaskCuratorIds.length === 0 ||
+                !addTaskTemplateId ||
+                (isCustomTemplate && !addTaskCustomTitle.trim())
+              }
+            >
+              {addTaskSaving ? 'Создание...' : addTaskCombinationCount > 1 ? `Создать (${addTaskCombinationCount})` : 'Создать'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -425,8 +425,13 @@ export default function HeadCuratorDashboard() {
       {/* Задачи кураторов — только для head_curator */}
       {user?.role === 'head_curator' && (
         <Card className="shadow-sm border-0 overflow-hidden">
-          <CardHeader className="bg-white dark:bg-card flex flex-row items-center justify-between">
-            <CardTitle className="text-lg font-bold">Задачи кураторов</CardTitle>
+          <CardHeader className="bg-white dark:bg-card flex flex-row items-center justify-between gap-4">
+            <div>
+              <CardTitle className="text-lg font-bold">Задачи кураторов</CardTitle>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-xl">
+                Создание задач: страница «Задачи» — кнопка «+ Добавить задачу»; можно выбрать несколько кураторов и несколько групп сразу.
+              </p>
+            </div>
             <Button
               variant="ghost"
               size="sm"
