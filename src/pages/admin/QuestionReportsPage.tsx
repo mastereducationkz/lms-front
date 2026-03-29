@@ -100,6 +100,50 @@ const statusConfig = {
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
+const getOptionText = (opt: any): string =>
+  typeof opt === 'string' ? opt : (opt?.text ?? '')
+
+/** Quiz UI expects numeric index (or index[]) in correct_answer for choice questions — not option text. */
+const resolveCorrectAnswerIndex = (q: any): number => {
+  const opts = q.options || []
+  const ca = q.correct_answer
+  if (typeof ca === 'number' && Number.isFinite(ca) && ca >= 0 && ca < opts.length) {
+    return ca
+  }
+  if (typeof ca === 'string' && ca.trim()) {
+    const ix = opts.findIndex((opt: any) => getOptionText(opt) === ca.trim())
+    if (ix >= 0) return ix
+    const ixLetter = opts.findIndex(
+      (opt: any) => typeof opt === 'object' && opt?.letter && String(opt.letter) === ca.trim()
+    )
+    if (ixLetter >= 0) return ixLetter
+  }
+  if (Array.isArray(ca) && ca.length > 0) {
+    const first = ca[0]
+    if (typeof first === 'number' && first >= 0 && first < opts.length) return first
+    if (typeof first === 'string') {
+      const ix = opts.findIndex((opt: any) => getOptionText(opt) === first.trim())
+      if (ix >= 0) return ix
+    }
+  }
+  return 0
+}
+
+const resolveCorrectAnswerIndices = (q: any): number[] => {
+  const opts = q.options || []
+  const ca = q.correct_answer
+  if (Array.isArray(ca) && ca.length > 0) {
+    if (ca.every((x: unknown) => typeof x === 'number')) {
+      return (ca as number[]).filter((i) => i >= 0 && i < opts.length)
+    }
+    const fromStrings = (ca as string[])
+      .map((s) => opts.findIndex((opt: any) => getOptionText(opt) === String(s).trim()))
+      .filter((i) => i >= 0)
+    if (fromStrings.length > 0) return fromStrings
+  }
+  return [resolveCorrectAnswerIndex(q)]
+}
+
 export default function QuestionReportsPage() {
   const [searchParams] = useSearchParams();
   const [reports, setReports] = useState<QuestionReport[]>([]);
@@ -112,12 +156,15 @@ export default function QuestionReportsPage() {
   // Edit form state
   const [editQuestionText, setEditQuestionText] = useState('');
   const [editCorrectAnswer, setEditCorrectAnswer] = useState<any>('');
+  /** Index (single / media choice) or indices (multiple_choice); must match ChoiceQuestion / stored quiz format */
+  const [editChoiceIndices, setEditChoiceIndices] = useState<number[]>([0]);
   const [editOptions, setEditOptions] = useState<any[]>([]);
   const [editExplanation, setEditExplanation] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const fetchReports = async () => {
-    setLoading(true);
+  const fetchReports = async (opts?: { silent?: boolean }) => {
+    const silent = opts?.silent ?? false
+    if (!silent) setLoading(true)
     try {
       const data = await api.getQuestionErrorReports(statusFilter || undefined);
       setReports(data);
@@ -126,37 +173,24 @@ export default function QuestionReportsPage() {
       console.error('Failed to fetch reports:', error);
       return [];
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
-  // Handle initial load and URL parameter for direct report access
-  useEffect(() => {
-    const reportIdParam = searchParams.get('report');
-    console.log('QuestionReportsPage: URL param report =', reportIdParam);
-    
-    const loadData = async () => {
-      // Always fetch reports first
-      console.log('QuestionReportsPage: Fetching reports...');
-      await fetchReports();
-      
-      // Then open specific report if ID is provided
-      if (reportIdParam) {
-        const reportId = parseInt(reportIdParam, 10);
-        console.log('QuestionReportsPage: Opening report ID', reportId);
-        if (!isNaN(reportId)) {
-          await openReportDetail(reportId);
-        }
-      }
-    };
-    
-    loadData();
-  }, [searchParams.get('report')]);
+  const reportFromUrl = searchParams.get('report')
 
   useEffect(() => {
-    // Refetch when filter changes
-    fetchReports();
-  }, [statusFilter]);
+    const loadData = async () => {
+      await fetchReports()
+      if (reportFromUrl) {
+        const reportId = parseInt(reportFromUrl, 10)
+        if (!isNaN(reportId)) {
+          await openReportDetail(reportId)
+        }
+      }
+    }
+    loadData()
+  }, [statusFilter, reportFromUrl])
 
   const openReportDetail = async (reportId: number) => {
     setDetailLoading(true);
@@ -173,7 +207,9 @@ export default function QuestionReportsPage() {
   const updateStatus = async (reportId: number, newStatus: string) => {
     try {
       await api.updateQuestionErrorReportStatus(reportId, newStatus);
-      fetchReports();
+      setReports((prev) =>
+        prev.map((r) => (r.id === reportId ? { ...r, status: newStatus } : r))
+      )
       if (selectedReport?.report.id === reportId) {
         setSelectedReport(prev => prev ? {
           ...prev,
@@ -190,8 +226,22 @@ export default function QuestionReportsPage() {
     
     const q = selectedReport.question_data;
     setEditQuestionText(q.question_text || '');
-    setEditCorrectAnswer(q.correct_answer || '');
-    setEditOptions(q.options || []);
+    const opts = q.options || []
+    if (opts.length > 0) {
+      if (q.question_type === 'multiple_choice') {
+        setEditChoiceIndices(resolveCorrectAnswerIndices(q))
+        setEditCorrectAnswer('')
+      } else {
+        setEditChoiceIndices([resolveCorrectAnswerIndex(q)])
+        setEditCorrectAnswer('')
+      }
+    } else {
+      setEditChoiceIndices([0])
+      setEditCorrectAnswer(
+        q.correct_answer !== undefined && q.correct_answer !== null ? q.correct_answer : ''
+      )
+    }
+    setEditOptions(opts.length ? opts.map((o: any) => (typeof o === 'string' ? o : { ...o })) : []);
     setEditExplanation(q.explanation || '');
     setShowEditModal(true);
   };
@@ -201,12 +251,24 @@ export default function QuestionReportsPage() {
     
     setSaving(true);
     try {
+      const qType = selectedReport.question_data.question_type
+      let correctPayload: any = editCorrectAnswer
+      if (editOptions.length > 0) {
+        if (qType === 'multiple_choice') {
+          const sorted = [...editChoiceIndices].filter((i) => i >= 0 && i < editOptions.length).sort((a, b) => a - b)
+          correctPayload = sorted.length > 0 ? sorted : [0]
+        } else {
+          const idx = editChoiceIndices[0] ?? 0
+          correctPayload = idx >= 0 && idx < editOptions.length ? idx : 0
+        }
+      }
+
       await api.updateQuestion(
         selectedReport.step.id,
         selectedReport.question_data.id,
         {
           question_text: editQuestionText,
-          correct_answer: editCorrectAnswer,
+          correct_answer: correctPayload,
           options: editOptions,
           explanation: editExplanation,
         }
@@ -670,6 +732,10 @@ export default function QuestionReportsPage() {
                     <div className="space-y-2">
                       {editOptions.map((opt, idx) => {
                         const optText = typeof opt === 'string' ? opt : opt.text;
+                        const isMulti = selectedReport.question_data.question_type === 'multiple_choice'
+                        const isMarked = isMulti
+                          ? editChoiceIndices.includes(idx)
+                          : (editChoiceIndices[0] ?? 0) === idx
                         return (
                           <div key={idx} className="flex items-center gap-2">
                             <span className="font-medium w-6">{String.fromCharCode(65 + idx)}.</span>
@@ -687,19 +753,40 @@ export default function QuestionReportsPage() {
                               }}
                               className="flex-1 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-secondary dark:border-border dark:text-foreground"
                             />
-                            <input
-                              type="radio"
-                              name="correctAnswer"
-                              checked={editCorrectAnswer === optText || editCorrectAnswer === idx}
-                              onChange={() => setEditCorrectAnswer(optText)}
-                              className="w-4 h-4"
-                              title="Set as correct answer"
-                            />
+                            {isMulti ? (
+                              <input
+                                type="checkbox"
+                                checked={isMarked}
+                                onChange={() => {
+                                  setEditChoiceIndices((prev) => {
+                                    if (prev.includes(idx)) return prev.filter((i) => i !== idx)
+                                    return [...prev, idx].sort((a, b) => a - b)
+                                  })
+                                }}
+                                className="w-4 h-4 shrink-0"
+                                title="Mark as correct"
+                                aria-label={`Mark option ${String.fromCharCode(65 + idx)} as correct`}
+                              />
+                            ) : (
+                              <input
+                                type="radio"
+                                name="correctAnswer"
+                                checked={isMarked}
+                                onChange={() => setEditChoiceIndices([idx])}
+                                className="w-4 h-4 shrink-0"
+                                title="Set as correct answer"
+                                aria-label={`Set option ${String.fromCharCode(65 + idx)} as correct answer`}
+                              />
+                            )}
                           </div>
                         );
                       })}
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Select the radio button to mark as correct answer</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {selectedReport.question_data.question_type === 'multiple_choice'
+                        ? 'Check all correct answers'
+                        : 'Select the correct answer (stored as option index for the quiz player)'}
+                    </p>
                   </div>
                 )}
 
@@ -740,7 +827,26 @@ export default function QuestionReportsPage() {
                       variant="ghost" 
                       size="sm" 
                       className="mt-2 text-orange-600"
-                      onClick={() => setEditCorrectAnswer(selectedReport.report.suggested_answer || '')}
+                      onClick={() => {
+                        const sug = (selectedReport.report.suggested_answer || '').trim()
+                        if (!sug) return
+                        if (editOptions.length > 0) {
+                          const matchIdx = editOptions.findIndex(
+                            (o) => getOptionText(o).trim() === sug
+                          )
+                          if (matchIdx >= 0) {
+                            if (selectedReport.question_data.question_type === 'multiple_choice') {
+                              setEditChoiceIndices((prev) =>
+                                [...new Set([...prev, matchIdx])].sort((a, b) => a - b)
+                              )
+                            } else {
+                              setEditChoiceIndices([matchIdx])
+                            }
+                            return
+                          }
+                        }
+                        setEditCorrectAnswer(sug)
+                      }}
                     >
                       Use this as correct answer
                     </Button>
