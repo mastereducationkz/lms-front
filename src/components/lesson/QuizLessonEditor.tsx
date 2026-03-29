@@ -1510,8 +1510,39 @@ export default function QuizLessonEditor({
                           const next: any = { ...draftQuestion };
                           if (val === 'single_choice') {
                             next.question_type = val;
-                            next.correct_answer = typeof draftQuestion.correct_answer === 'number' ? draftQuestion.correct_answer : 0;
+                            if (Array.isArray(draftQuestion.correct_answer)) {
+                              const nums = draftQuestion.correct_answer.filter(
+                                (i: unknown) => typeof i === 'number' && i >= 0
+                              ) as number[];
+                              next.correct_answer = nums.length > 0 ? nums[0] : 0;
+                            } else {
+                              next.correct_answer =
+                                typeof draftQuestion.correct_answer === 'number'
+                                  ? draftQuestion.correct_answer
+                                  : 0;
+                            }
                             // Ensure options exist for single choice
+                            if (!next.options || next.options.length === 0) {
+                              const ts = Date.now().toString();
+                              next.options = [
+                                { id: ts + '_1', text: '', is_correct: false, letter: 'A' },
+                                { id: ts + '_2', text: '', is_correct: false, letter: 'B' },
+                                { id: ts + '_3', text: '', is_correct: false, letter: 'C' },
+                                { id: ts + '_4', text: '', is_correct: false, letter: 'D' },
+                              ];
+                            }
+                          } else if (val === 'multiple_choice') {
+                            next.question_type = val;
+                            if (Array.isArray(draftQuestion.correct_answer)) {
+                              const nums = draftQuestion.correct_answer.filter(
+                                (i: unknown) => typeof i === 'number' && i >= 0
+                              ) as number[];
+                              next.correct_answer = nums.length > 0 ? nums : [0];
+                            } else if (typeof draftQuestion.correct_answer === 'number') {
+                              next.correct_answer = [draftQuestion.correct_answer];
+                            } else {
+                              next.correct_answer = [0];
+                            }
                             if (!next.options || next.options.length === 0) {
                               const ts = Date.now().toString();
                               next.options = [
@@ -1591,6 +1622,7 @@ export default function QuizLessonEditor({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="single_choice">Single choice</SelectItem>
+                          <SelectItem value="multiple_choice">Multiple correct (select all that apply)</SelectItem>
                           <SelectItem value="short_answer">Short answer</SelectItem>
                           <SelectItem value="fill_blank">Fill in the blank</SelectItem>
                           <SelectItem value="text_completion">Text completion</SelectItem>
