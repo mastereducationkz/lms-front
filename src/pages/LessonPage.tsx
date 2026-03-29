@@ -1457,8 +1457,22 @@ export default function LessonPage() {
           if (correctAnswers.includes(userVal)) {
             correctRegular++;
           }
+        } else if (question.question_type === 'multiple_choice') {
+          const correct = Array.isArray(question.correct_answer)
+            ? [...question.correct_answer].map(Number).sort((a, b) => a - b)
+            : [];
+          const user = Array.isArray(answer)
+            ? [...answer].map(Number).sort((a, b) => a - b)
+            : [];
+          const isMatch =
+            correct.length > 0 &&
+            correct.length === user.length &&
+            correct.every((v, i) => v === user[i]);
+          if (isMatch) {
+            correctRegular++;
+          }
         } else {
-          // For other question types, check if answer is correct
+          // single_choice, media_question, matching, etc.
           if (answer !== undefined && answer === question.correct_answer) {
             correctRegular++;
           }

@@ -891,6 +891,11 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 if (q.question_type === 'short_answer' || q.question_type === 'long_text') {
                   return !ans || (ans || '').toString().trim() === '';
                 }
+                if (q.question_type === 'multiple_choice') {
+                  const need = Array.isArray(q.correct_answer) ? q.correct_answer.length : 1;
+                  const selected = Array.isArray(ans) ? ans.length : 0;
+                  return !Array.isArray(ans) || selected !== need;
+                }
                 return ans === undefined;
               })}
               className={`px-8 py-3 rounded-lg text-lg font-semibold transition-all duration-200 ${questions.some(q => {
@@ -908,6 +913,11 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 }
                 if (q.question_type === 'short_answer' || q.question_type === 'long_text') {
                   return !ans || (ans || '').toString().trim() === '';
+                }
+                if (q.question_type === 'multiple_choice') {
+                  const need = Array.isArray(q.correct_answer) ? q.correct_answer.length : 1;
+                  const selected = Array.isArray(ans) ? ans.length : 0;
+                  return !Array.isArray(ans) || selected !== need;
                 }
                 return ans === undefined;
               })
@@ -1274,6 +1284,11 @@ const QuizRenderer = (props: QuizRendererProps) => {
               }
               if (q.question_type === 'short_answer' || q.question_type === 'long_text') {
                 return !ans || (ans || '').toString().trim() === '';
+              }
+              if (q.question_type === 'multiple_choice') {
+                const need = Array.isArray(q.correct_answer) ? q.correct_answer.length : 1;
+                const selected = Array.isArray(ans) ? ans.length : 0;
+                return !Array.isArray(ans) || selected !== need;
               }
               return ans === undefined;
             })()}

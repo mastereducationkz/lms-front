@@ -395,11 +395,26 @@ export default function QuizLessonEditor({
       if (question.matching_pairs?.some(pair => !pair.left.trim() || !pair.right.trim())) {
         errors.push('All matching pairs must have both left and right values');
       }
-    } else if (question.question_type === 'single_choice' || question.question_type === 'multiple_choice' || question.question_type === 'media_question') {
-      // single_choice, multiple_choice, media_question - require options
+    } else if (question.question_type === 'single_choice' || question.question_type === 'media_question') {
       const hasOptionContent = question.options?.some(opt => opt.text.trim());
       if (hasOptionContent && (typeof question.correct_answer !== 'number' || question.correct_answer < 0)) {
         errors.push('Please select a correct answer');
+      }
+      if (!question.options || question.options.length < 2) {
+        errors.push('At least 2 options are required');
+      }
+      if (hasOptionContent && question.options?.some(opt => !opt.text.trim())) {
+        errors.push('All options must have text');
+      }
+    } else if (question.question_type === 'multiple_choice') {
+      const hasOptionContent = question.options?.some(opt => opt.text.trim());
+      const ca = question.correct_answer;
+      const hasValidCorrect =
+        Array.isArray(ca) &&
+        ca.length > 0 &&
+        ca.every((i: unknown) => typeof i === 'number' && i >= 0);
+      if (hasOptionContent && !hasValidCorrect) {
+        errors.push('Please select at least one correct answer');
       }
       if (!question.options || question.options.length < 2) {
         errors.push('At least 2 options are required');
