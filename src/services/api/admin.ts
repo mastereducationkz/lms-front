@@ -173,9 +173,16 @@ export async function getQuestionErrorReportDetail(reportId: number): Promise<an
   }
 }
 
-export async function updateQuestionErrorReportStatus(reportId: number, status: string): Promise<void> {
+export async function updateQuestionErrorReportStatus(
+  reportId: number,
+  status: string,
+  syncSameQuestion: boolean = true
+): Promise<{ success?: boolean; updated_report_ids?: number[]; synced_count?: number }> {
   try {
-    await api.patch(`/questions/error-reports/${reportId}`, null, { params: { status } });
+    const response = await api.patch(`/questions/error-reports/${reportId}`, null, {
+      params: { status, sync_same_question: syncSameQuestion },
+    });
+    return response.data;
   } catch (error) {
     console.error('Failed to update question error report status:', error);
     throw error;

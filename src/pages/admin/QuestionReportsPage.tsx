@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { 
@@ -14,7 +14,8 @@ import {
   X,
   ExternalLink,
   Save,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Layers,
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -89,6 +90,15 @@ interface ReportDetail {
   question_data: any | null;
   question_index: number;
   total_questions: number;
+  sibling_reports?: Array<{
+    id: number;
+    message: string;
+    suggested_answer: string | null;
+    status: string;
+    created_at: string | null;
+    user_name: string;
+    user_email: string | null;
+  }>;
 }
 
 const statusConfig = {
@@ -128,6 +138,9 @@ const resolveCorrectAnswerIndex = (q: any): number => {
   }
   return 0
 }
+
+const reportGroupKey = (r: { step_id?: number | null; question_id: string | number }) =>
+  `${r.step_id ?? 'none'}:${String(r.question_id)}`
 
 const resolveCorrectAnswerIndices = (q: any): number[] => {
   const opts = q.options || []
@@ -204,18 +217,42 @@ export default function QuestionReportsPage() {
     }
   };
 
+  const sameQuestionCounts = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const r of reports) {
+      const k = reportGroupKey(r)
+      m.set(k, (m.get(k) || 0) + 1)
+    }
+    return m
+  }, [reports])
+
+  const selectedSameQuestionTotal = selectedReport
+    ? 1 + (selectedReport.sibling_reports?.length ?? 0)
+    : 0
+
   const updateStatus = async (reportId: number, newStatus: string) => {
     try {
-      await api.updateQuestionErrorReportStatus(reportId, newStatus);
+      const data = await api.updateQuestionErrorReportStatus(reportId, newStatus, true);
+      const ids = data?.updated_report_ids?.length ? data.updated_report_ids : [reportId];
       setReports((prev) =>
-        prev.map((r) => (r.id === reportId ? { ...r, status: newStatus } : r))
-      )
-      if (selectedReport?.report.id === reportId) {
-        setSelectedReport(prev => prev ? {
+        prev.map((r) => (ids.includes(r.id) ? { ...r, status: newStatus } : r))
+      );
+      setSelectedReport((prev) => {
+        if (!prev) return null;
+        const touchesDetail =
+          ids.includes(prev.report.id) ||
+          (prev.sibling_reports || []).some((s) => ids.includes(s.id));
+        if (!touchesDetail) return prev;
+        return {
           ...prev,
-          report: { ...prev.report, status: newStatus }
-        } : null);
-      }
+          report: ids.includes(prev.report.id)
+            ? { ...prev.report, status: newStatus }
+            : prev.report,
+          sibling_reports: (prev.sibling_reports || []).map((s) =>
+            ids.includes(s.id) ? { ...s, status: newStatus } : s
+          ),
+        };
+      });
     } catch (error) {
       console.error('Failed to update status:', error);
     }
@@ -419,7 +456,7 @@ export default function QuestionReportsPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-foreground">Question Error Reports</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">Review and manage student-reported question errors</p>
         </div>
-        <Button onClick={fetchReports} variant="outline" className="gap-2">
+        <Button onClick={() => fetchReports()} variant="outline" className="gap-2">
           <RefreshCw className="w-4 h-4" />
           Refresh
         </Button>
@@ -500,12 +537,21 @@ export default function QuestionReportsPage() {
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusInfo.color}`}>
                           <StatusIcon className="w-3 h-3 inline mr-1" />
                           {statusInfo.label}
                         </span>
                         <span className="text-xs text-gray-500 dark:text-gray-400">#{report.id}</span>
+                        {(sameQuestionCounts.get(reportGroupKey(report)) ?? 1) > 1 && (
+                          <span
+                            className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-indigo-50 text-indigo-800 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-200 dark:border-indigo-800"
+                            title="Several reports for the same question — status changes apply to all"
+                          >
+                            <Layers className="w-3 h-3 shrink-0" />
+                            {sameQuestionCounts.get(reportGroupKey(report))} same Q
+                          </span>
+                        )}
                       </div>
                       <ChevronRight className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                     </div>
@@ -598,6 +644,55 @@ export default function QuestionReportsPage() {
                     </Button>
                   ))}
                 </div>
+
+                {selectedSameQuestionTotal > 1 && (
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 text-sm text-indigo-900 dark:text-indigo-100">
+                    <Layers className="w-4 h-4 shrink-0 mt-0.5" aria-hidden />
+                    <div>
+                      <p className="font-medium">Same question — {selectedSameQuestionTotal} reports</p>
+                      <p className="text-indigo-800/90 dark:text-indigo-200/90 text-xs mt-1">
+                        Status you set here applies to every report for this question on this step (including the previews below).
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {selectedReport.sibling_reports && selectedReport.sibling_reports.length > 0 && (
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                      <Layers className="w-4 h-4 shrink-0" />
+                      Other reports for this question (synced with your status)
+                    </h4>
+                    <div className="space-y-2">
+                      {selectedReport.sibling_reports.map((s) => {
+                        const sInfo = statusConfig[s.status as keyof typeof statusConfig] || statusConfig.pending
+                        return (
+                          <div
+                            key={s.id}
+                            className="border rounded-lg p-3 text-sm bg-slate-50 dark:bg-secondary/50 border-slate-200 dark:border-border"
+                          >
+                            <div className="flex items-center justify-between gap-2 mb-1">
+                              <span className="font-medium text-gray-900 dark:text-foreground">Report #{s.id}</span>
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${sInfo.color}`}>
+                                {sInfo.label}
+                              </span>
+                            </div>
+                            <p className="text-gray-700 dark:text-gray-300 line-clamp-4">{s.message}</p>
+                            <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-2 text-xs text-gray-500 dark:text-gray-400">
+                              <span>{s.user_name}</span>
+                              {s.created_at && <span>{formatDate(s.created_at)}</span>}
+                            </div>
+                            {s.suggested_answer && (
+                              <p className="text-xs text-orange-700 dark:text-orange-300 mt-2 line-clamp-2">
+                                Suggested: {s.suggested_answer}
+                              </p>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {/* Report Info */}
                 <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
