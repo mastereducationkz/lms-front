@@ -69,6 +69,8 @@ export default function AssignmentsPage() {
   const filter = (searchParams.get('tab') as 'all' | 'pending' | 'submitted' | 'graded' | 'overdue') || 'all';
   const selectedGroupId = searchParams.get('group_id') || 'all';
   const [includeHidden, setIncludeHidden] = useState(false);
+  /** Teacher/admin: when true, include groups with is_over (completed cohorts) in lists and homework */
+  const [showCompletedGroups, setShowCompletedGroups] = useState(false);
   const [groupSearch, setGroupSearch] = useState('');
   const [page, setPage] = useState(1);
   const [assignmentStats, setAssignmentStats] = useState<Map<number, AssignmentStats>>(new Map());
@@ -115,6 +117,15 @@ export default function AssignmentsPage() {
       setSearchParams(next, { replace: true });
     }
   }, [isStudentView, searchParams]);
+
+  useEffect(() => {
+    if (!isTeacherView || showCompletedGroups) return;
+    if (selectedGroupId === 'all' || selectedGroupId === 'ungrouped') return;
+    const match = groups.find((g) => String(g.id) === selectedGroupId);
+    if (match?.is_over) {
+      setGroupId('all');
+    }
+  }, [showCompletedGroups, isTeacherView, selectedGroupId, groups]);
 
   // Load submission stats for the selected group when teacher enters group view
   useEffect(() => {
@@ -189,8 +200,8 @@ export default function AssignmentsPage() {
     if (user?.role === 'teacher' || user?.role === 'admin' || user?.role === 'curator') {
       try {
         const groupsData = await apiClient.getGroups();
-        const activeStudyGroups = (groupsData || []).filter((group: any) => !group?.is_over);
-        setGroups(activeStudyGroups);
+        // Keep full list so teachers can toggle completed groups; filter only in UI
+        setGroups(groupsData || []);
       } catch (err) {
         console.warn('Failed to load groups:', err);
       }
@@ -288,9 +299,21 @@ export default function AssignmentsPage() {
     }
   };
 
+  /** Groups that count for homework visibility / overview tiles (teacher respects toggle; curator always active-only) */
+  const groupsInHomeworkScope = useMemo(() => {
+    if (user?.role === 'teacher' || user?.role === 'admin') {
+      return showCompletedGroups ? groups : groups.filter((g) => !g.is_over);
+    }
+    if (user?.role === 'curator') {
+      return groups.filter((g) => !g.is_over);
+    }
+    return groups;
+  }, [groups, showCompletedGroups, user?.role]);
+
   const visibleGroupIds = useMemo(() => {
-    return new Set((groups || []).filter(group => !group.is_over).map(group => group.id))
-  }, [groups])
+    if (isStudentView) return new Set<number>();
+    return new Set((groupsInHomeworkScope || []).map((group) => group.id));
+  }, [groupsInHomeworkScope, isStudentView]);
 
   const shouldShowAssignmentByGroup = (assignment: AssignmentWithStatus) => {
     if (isStudentView) return true
@@ -306,17 +329,17 @@ export default function AssignmentsPage() {
 
   // Build groups with metrics for overview mode (from assignments + known groups)
   const groupsWithAssignments = useMemo(() => {
-    const byGroup = new Map<string | number, { id: string; name: string; assignments: AssignmentWithStatus[] }>();
+    const byGroup = new Map<string | number, { id: string; name: string; assignments: AssignmentWithStatus[]; is_over?: boolean }>();
     const getGroupKey = (a: AssignmentWithStatus) => a.group_id ?? 'ungrouped';
     const getGroupName = (a: AssignmentWithStatus) =>
       a.group_name || groups.find(g => g.id === a.group_id)?.name || `Group #${a.group_id || 'Unknown'}`;
 
-    for (const group of groups) {
-      if (group.is_over) continue;
+    for (const group of groupsInHomeworkScope) {
       byGroup.set(group.id, {
         id: String(group.id),
         name: group.name,
-        assignments: []
+        assignments: [],
+        is_over: group.is_over,
       });
     }
 
@@ -330,7 +353,7 @@ export default function AssignmentsPage() {
       byGroup.get(key)!.assignments.push(a);
     }
     return Array.from(byGroup.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [assignmentsByHidden, groups]);
+  }, [assignmentsByHidden, groupsInHomeworkScope, groups]);
 
   const getAssignmentSortTime = (assignment: AssignmentWithStatus) => {
     const timestamp = Date.parse(assignment.created_at || assignment.due_date || assignment.event_start_datetime || '');
@@ -667,9 +690,21 @@ export default function AssignmentsPage() {
         )}
 
         {isTeacherView && (
-          <div className="flex items-center gap-2 ml-auto">
-            <Checkbox id="show-hidden" checked={includeHidden} onCheckedChange={(checked) => setIncludeHidden(checked === true)} />
-            <label htmlFor="show-hidden" className="text-sm text-gray-600 dark:text-gray-300 cursor-pointer select-none">Show archived</label>
+          <div className="flex flex-wrap items-center gap-4 ml-auto">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="show-completed-groups"
+                checked={showCompletedGroups}
+                onCheckedChange={(checked) => setShowCompletedGroups(checked === true)}
+              />
+              <label htmlFor="show-completed-groups" className="text-sm text-gray-600 dark:text-gray-300 cursor-pointer select-none">
+                Show completed groups
+              </label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox id="show-hidden" checked={includeHidden} onCheckedChange={(checked) => setIncludeHidden(checked === true)} />
+              <label htmlFor="show-hidden" className="text-sm text-gray-600 dark:text-gray-300 cursor-pointer select-none">Show archived</label>
+            </div>
           </div>
         )}
       </div>
@@ -721,9 +756,14 @@ export default function AssignmentsPage() {
                     onClick={() => setGroupId(g.id)}
                     className="bg-white dark:bg-card rounded-lg border border-slate-200 dark:border-border p-4 text-left hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-md transition-all"
                   >
-                    <div className="flex items-center gap-2 mb-3">
+                    <div className="flex items-center gap-2 mb-3 flex-wrap">
                       <Users className="w-4 h-4 text-slate-400 dark:text-gray-500 shrink-0" />
                       <h3 className="font-bold text-slate-900 dark:text-white truncate">{g.name}</h3>
+                      {g.is_over && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-gray-400 shrink-0">
+                          Completed
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">{total} assignment{total !== 1 ? 's' : ''}</div>
                     {isTeacherView ? (
