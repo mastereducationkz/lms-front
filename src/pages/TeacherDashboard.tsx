@@ -17,7 +17,9 @@ import {
   FileText,
   Unlock,
   Activity,
-  Target
+  Target,
+  Wallet,
+  Copy,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -107,6 +109,32 @@ interface AutoGradePreviewItem {
   target_score: number;
 }
 
+interface SalaryBreakdownGroup {
+  group_id: number
+  group_name: string
+  lesson_count: number
+  amount_tenge: number
+  lesson_dates: string[]
+  program_start: string | null
+  program_end: string | null
+}
+
+interface SalaryBreakdownResult {
+  period_start: string
+  period_end: string
+  lesson_rate: number
+  total_lessons: number
+  total_amount_tenge: number
+  groups: SalaryBreakdownGroup[]
+  message_text: string
+  contacts: {
+    telegram: string
+    phone: string
+    telegram_username_link?: string
+    tel_link?: string
+  }
+}
+
 export default function TeacherDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -143,6 +171,18 @@ export default function TeacherDashboard() {
   
   // Weekly Awards Hub state
   const [isWeeklyAwardsOpen, setIsWeeklyAwardsOpen] = useState(false);
+  const [isSalaryDialogOpen, setIsSalaryDialogOpen] = useState(false);
+  const [salaryMonth, setSalaryMonth] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const [salaryInterval, setSalaryInterval] = useState<'first_half' | 'second_half' | 'custom'>('second_half');
+  const [salaryPeriodStart, setSalaryPeriodStart] = useState<string>('');
+  const [salaryPeriodEnd, setSalaryPeriodEnd] = useState<string>('');
+  const [salaryRate, setSalaryRate] = useState<number>(4000);
+  const [salaryResult, setSalaryResult] = useState<SalaryBreakdownResult | null>(null);
+  const [isSalaryLoading, setIsSalaryLoading] = useState(false);
+
   useEffect(() => {
     if (selectedQuizAttempt) {
       console.log('Selected Quiz Attempt:', selectedQuizAttempt);
@@ -240,6 +280,66 @@ export default function TeacherDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    if (!salaryMonth || salaryInterval === 'custom') return;
+    const [yearRaw, monthRaw] = salaryMonth.split('-');
+    const year = Number(yearRaw);
+    const month = Number(monthRaw);
+    if (!year || !month) return;
+
+    const monthStr = String(month).padStart(2, '0');
+    const endDay = new Date(year, month, 0).getDate();
+
+    if (salaryInterval === 'first_half') {
+      setSalaryPeriodStart(`${year}-${monthStr}-01`);
+      setSalaryPeriodEnd(`${year}-${monthStr}-15`);
+      return;
+    }
+
+    setSalaryPeriodStart(`${year}-${monthStr}-16`);
+    setSalaryPeriodEnd(`${year}-${monthStr}-${String(endDay).padStart(2, '0')}`);
+  }, [salaryMonth, salaryInterval]);
+
+  const handleGenerateSalaryBreakdown = async () => {
+    if (!salaryPeriodStart || !salaryPeriodEnd) {
+      toast('Выберите период', 'error');
+      return;
+    }
+    setIsSalaryLoading(true);
+    try {
+      const res = await apiClient.getTeacherSalaryBreakdown({
+        period_start: salaryPeriodStart,
+        period_end: salaryPeriodEnd,
+        lesson_rate: salaryRate,
+      });
+      setSalaryResult(res);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Failed to generate salary breakdown';
+      toast(msg, 'error');
+    } finally {
+      setIsSalaryLoading(false);
+    }
+  };
+
+  const handleCopySalaryMessage = async () => {
+    if (!salaryResult?.message_text) return;
+    try {
+      await navigator.clipboard.writeText(salaryResult.message_text);
+      toast('Текст скопирован', 'success');
+    } catch {
+      toast('Не удалось скопировать текст', 'error');
+    }
+  };
+
+  const handleOpenTelegramWithText = () => {
+    if (!salaryResult?.message_text || !salaryResult?.contacts?.telegram) return;
+    const username = salaryResult.contacts.telegram.replace('@', '').trim();
+    if (!username) return;
+    const text = encodeURIComponent(salaryResult.message_text);
+    const deepLink = `tg://resolve?domain=${username}&text=${text}`;
+    window.open(deepLink, '_blank');
   };
 
   const handleGradeSubmission = async (submission: any) => {
@@ -647,6 +747,16 @@ export default function TeacherDashboard() {
           )}
           {(user?.role === 'admin' || user?.role === 'teacher' || user?.role === 'curator') && (
             <>
+              {(user?.role === 'teacher' || user?.role === 'admin') && (
+                <Button
+                  onClick={() => setIsSalaryDialogOpen(true)}
+                  variant="outline"
+                  className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                >
+                  <Wallet className="w-4 h-4 mr-2" />
+                  Salary Breakdown
+                </Button>
+              )}
               <Button
                 onClick={() => setIsWeeklyAwardsOpen(true)}
                 variant="outline"
@@ -1429,6 +1539,100 @@ export default function TeacherDashboard() {
               {isSubmitting ? 'Saving...' : 'Save Grade'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isSalaryDialogOpen} onOpenChange={setIsSalaryDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Salary Breakdown Generator</DialogTitle>
+            <DialogDescription>
+              Сформируйте расшифровку по урокам за период и сразу скопируйте текст для Telegram.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="salary-month">Месяц</Label>
+              <Input id="salary-month" type="month" value={salaryMonth} onChange={(e) => setSalaryMonth(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="salary-interval">Интервал</Label>
+              <Select
+                value={salaryInterval}
+                onValueChange={(v: 'first_half' | 'second_half' | 'custom') => setSalaryInterval(v)}
+              >
+                <SelectTrigger id="salary-interval">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="first_half">1 - 15</SelectItem>
+                  <SelectItem value="second_half">16 - конец месяца</SelectItem>
+                  <SelectItem value="custom">Свой период</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="salary-period-start">Дата начала</Label>
+              <Input
+                id="salary-period-start"
+                type="date"
+                value={salaryPeriodStart}
+                onChange={(e) => setSalaryPeriodStart(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="salary-period-end">Дата конца</Label>
+              <Input
+                id="salary-period-end"
+                type="date"
+                value={salaryPeriodEnd}
+                onChange={(e) => setSalaryPeriodEnd(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="salary-rate">Ставка за урок (тг)</Label>
+              <Input
+                id="salary-rate"
+                type="number"
+                min={0}
+                value={salaryRate}
+                onChange={(e) => setSalaryRate(Number(e.target.value) || 0)}
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Button onClick={handleGenerateSalaryBreakdown} disabled={isSalaryLoading}>
+              {isSalaryLoading ? 'Генерация...' : 'Сгенерировать'}
+            </Button>
+            <Button variant="outline" onClick={handleCopySalaryMessage} disabled={!salaryResult?.message_text}>
+              <Copy className="w-4 h-4 mr-2" />
+              Копировать текст
+            </Button>
+          </div>
+
+          {salaryResult && (
+            <div className="space-y-3">
+              <div className="text-sm text-gray-600 dark:text-gray-300">
+                Уроков: <span className="font-semibold">{salaryResult.total_lessons}</span> · Итого:{' '}
+                <span className="font-semibold">{salaryResult.total_amount_tenge.toLocaleString()} тг</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {salaryResult.contacts?.telegram_username_link && (
+                  <Button asChild variant="outline" size="sm">
+                    <a href={salaryResult.contacts.telegram_username_link} target="_blank" rel="noreferrer">
+                      Открыть @gauhar107
+                    </a>
+                  </Button>
+                )}
+                <Button variant="outline" size="sm" onClick={handleOpenTelegramWithText}>
+                  Открыть чат с текстом
+                </Button>
+              </div>
+              <Textarea value={salaryResult.message_text} readOnly rows={18} className="font-mono text-xs" />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

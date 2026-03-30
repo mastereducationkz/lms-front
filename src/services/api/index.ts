@@ -61,7 +61,7 @@ import { addFavoriteFlashcard, getFavoriteFlashcards, removeFavoriteFlashcard, r
 import { getGamificationStatus, getBonusAllowance, giveTeacherBonus, getGamificationLeaderboard, getPointHistory, getStudentLeaderboard } from './gamification';
 import { getHeadTeacherManagedCourses, getHeadTeacherCourseTeachers, getHeadTeacherTeacherDetails, getHeadTeacherTeacherFeedbacks, getHeadTeacherTeacherAssignments } from './head-teacher';
 import { getLessonRequests, getMyLessonRequests, getIncomingRequests, createLessonRequest, approveLessonRequest, rejectLessonRequest, confirmLessonRequest, declineLessonRequest, getAvailableTeachers, updateSubstitutionPreference } from './lesson-requests';
-import { getDashboardStats, getRecentActivity, updateStudyTime, getAdminDashboard, getAdminDashboardCharts, getAdminStats, completeStepsForUser, resetStepsForUser, getUserProgressSummary, reportQuestionError, getQuestionErrorReports, getQuestionErrorReportDetail, updateQuestionErrorReportStatus, updateQuestion, manualUnlockLesson, manualLockLesson, getManualUnlocks, getStudentsJournal, getStudentJournalGroups, getStudentProfile } from './admin';
+import { getDashboardStats, getRecentActivity, updateStudyTime, getTeacherSalaryBreakdown, getAdminDashboard, getAdminDashboardCharts, getAdminStats, completeStepsForUser, resetStepsForUser, getUserProgressSummary, reportQuestionError, getQuestionErrorReports, getQuestionErrorReportDetail, updateQuestionErrorReportStatus, updateQuestion, manualUnlockLesson, manualLockLesson, getManualUnlocks, getStudentsJournal, getStudentJournalGroups, getStudentProfile } from './admin';
 import { fetchModules, fetchLectures, createLecture, deleteLecture, updateLecture, fetchLecturesByModule } from './lectures';
 import { getDailyQuestionsStatus, getDailyQuestionsRecommendations, completeDailyQuestions } from './daily-questions';
 
@@ -69,7 +69,7 @@ const apiClient = {
   // Auth
   login, logout, getCurrentUser, updateProfile, isAuthenticated, getCurrentUserSync, completeOnboarding,
   // Dashboard
-  getDashboardStats, getRecentActivity, updateStudyTime,
+  getDashboardStats, getRecentActivity, updateStudyTime, getTeacherSalaryBreakdown,
   // Courses
   getCourses, getCourse, createCourse, updateCourse, publishCourse, unpublishCourse,
   setCourseThumbnailUrl, uploadCourseThumbnail, deleteCourse, enrollInCourse, unenrollFromCourse,

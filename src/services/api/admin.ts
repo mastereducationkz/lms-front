@@ -32,6 +32,45 @@ export async function getRecentActivity(limit: number = 10): Promise<RecentActiv
   }
 }
 
+export async function getTeacherSalaryBreakdown(params: {
+  period_start: string
+  period_end: string
+  lesson_rate?: number
+}): Promise<{
+  teacher_id: number
+  teacher_name: string
+  period_start: string
+  period_end: string
+  lesson_rate: number
+  total_lessons: number
+  total_amount_tenge: number
+  groups: Array<{
+    group_id: number
+    group_name: string
+    lesson_count: number
+    amount_tenge: number
+    lesson_dates: string[]
+    program_start: string | null
+    program_end: string | null
+  }>
+  message_text: string
+  contacts: { telegram: string; phone: string }
+}> {
+  try {
+    const response = await api.get('/dashboard/teacher/salary-breakdown', {
+      params: {
+        period_start: params.period_start,
+        period_end: params.period_end,
+        lesson_rate: params.lesson_rate ?? 4000,
+      },
+      timeout: 60000,
+    })
+    return response.data
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.detail || 'Failed to load salary breakdown')
+  }
+}
+
 export async function updateStudyTime(minutes: number): Promise<any> {
   try {
     const response = await api.post('/dashboard/update-study-time', null, {
