@@ -334,11 +334,13 @@ export default function TeacherDashboard() {
   };
 
   const handleOpenTelegramWithText = () => {
-    if (!salaryResult?.message_text || !salaryResult?.contacts?.telegram) return;
+    if (!salaryResult?.contacts?.telegram) return;
     const username = salaryResult.contacts.telegram.replace('@', '').trim();
     if (!username) return;
-    const text = encodeURIComponent(salaryResult.message_text);
-    const deepLink = `tg://resolve?domain=${username}&text=${text}`;
+    const hasText = Boolean(salaryResult.message_text?.trim());
+    const deepLink = hasText
+      ? `tg://resolve?domain=${username}&text=${encodeURIComponent(salaryResult.message_text)}`
+      : `tg://resolve?domain=${username}`;
     window.open(deepLink, '_blank');
   };
 
@@ -1619,15 +1621,8 @@ export default function TeacherDashboard() {
                 <span className="font-semibold">{salaryResult.total_amount_tenge.toLocaleString()} тг</span>
               </div>
               <div className="flex flex-wrap gap-2">
-                {salaryResult.contacts?.telegram_username_link && (
-                  <Button asChild variant="outline" size="sm">
-                    <a href={salaryResult.contacts.telegram_username_link} target="_blank" rel="noreferrer">
-                      Открыть @gauhar107
-                    </a>
-                  </Button>
-                )}
                 <Button variant="outline" size="sm" onClick={handleOpenTelegramWithText}>
-                  Открыть чат с текстом
+                  Открыть чат в Telegram
                 </Button>
               </div>
               <Textarea value={salaryResult.message_text} readOnly rows={18} className="font-mono text-xs" />
