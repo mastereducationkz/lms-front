@@ -56,6 +56,12 @@ interface AssignmentWithStatus {
   extension_reason?: string;
 }
 
+const isSubmittedLike = (assignment: AssignmentWithStatus) => {
+  if (assignment.status === 'submitted' || assignment.status === 'graded') return true
+  if (assignment.status !== 'overdue') return false
+  return Boolean(assignment.submitted_at || assignment.has_file_submission)
+}
+
 export default function AssignmentsPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -378,7 +384,7 @@ export default function AssignmentsPage() {
     }
     switch (filter) {
       case 'pending': return assignment.status === 'not_submitted';
-      case 'submitted': return assignment.status === 'submitted';
+      case 'submitted': return isSubmittedLike(assignment);
       case 'graded': return assignment.status === 'graded';
       case 'overdue': return assignment.status === 'overdue';
       default: return true;
@@ -477,7 +483,7 @@ export default function AssignmentsPage() {
   const tabCounts = {
     all: countSource.filter(excludeStudentGradedPast).length,
     pending: countSource.filter(a => a.status === 'not_submitted').length,
-    submitted: countSource.filter(a => a.status === 'submitted').length,
+    submitted: countSource.filter(isSubmittedLike).length,
     graded: countSource.filter(a => a.status === 'graded').length,
     overdue: countSource.filter(a => a.status === 'overdue').length
   };
@@ -735,7 +741,7 @@ export default function AssignmentsPage() {
                 const filtered = g.assignments.filter(a => {
                   switch (filter) {
                     case 'pending': return a.status === 'not_submitted';
-                    case 'submitted': return a.status === 'submitted';
+                    case 'submitted': return isSubmittedLike(a);
                     case 'graded': return a.status === 'graded';
                     case 'overdue': return a.status === 'overdue';
                     default: return true;
@@ -747,7 +753,7 @@ export default function AssignmentsPage() {
 
                 // Student-facing stats
                 const pending = g.assignments.filter(a => a.status === 'not_submitted').length;
-                const submitted = g.assignments.filter(a => a.status === 'submitted').length;
+                const submitted = g.assignments.filter(isSubmittedLike).length;
                 const graded = g.assignments.filter(a => a.status === 'graded').length;
 
                 return (

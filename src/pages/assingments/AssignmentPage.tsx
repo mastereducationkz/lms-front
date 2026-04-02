@@ -238,8 +238,12 @@ export default function AssignmentPage() {
   const renderContent = () => {
     if (!assignment) return null;
 
-    // If student has submitted, show status panel first
-    if (submission && (submission.status === 'submitted' || submission.status === 'graded')) {
+    // If student has submitted (including late/overdue), show status panel first
+    const hasSubmission = Boolean(
+      submission &&
+      (submission.status === 'submitted' || submission.status === 'graded' || submission.status === 'overdue')
+    )
+    if (hasSubmission && submission) {
       if (viewMode === 'status') {
         // Calculate effective max score based on completed tasks
         // If student didn't complete bonus tasks, don't count them in max score
