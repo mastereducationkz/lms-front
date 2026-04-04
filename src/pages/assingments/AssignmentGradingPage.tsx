@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../../services/api';
 import { toast } from '../../components/Toast';
-import { ArrowLeft, Download, FileText, Clock, Calendar } from 'lucide-react';
+import { ArrowLeft, Download, FileText, Clock, Calendar, AlertCircle } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -147,7 +147,7 @@ export default function AssignmentGradingPage() {
         </Button>
         <div>
           <h1 className="text-3xl font-bold">Grade Submissions</h1>
-          <p className="text-gray-600">{assignment?.title}</p>
+          <p className="text-muted-foreground">{assignment?.title}</p>
         </div>
       </div>
 
@@ -230,9 +230,9 @@ export default function AssignmentGradingPage() {
           
           <div className="space-y-6 my-4">
             {/* Submission Content View */}
-            <div className="bg-slate-50 p-6 rounded-lg border">
-              <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
-                <FileText className="w-4 h-4 mr-2" />
+            <div className="rounded-lg border border-border bg-slate-50 p-6 text-slate-900 dark:bg-zinc-900 dark:text-zinc-100">
+              <h3 className="mb-4 flex items-center font-semibold text-slate-900 dark:text-zinc-100">
+                <FileText className="mr-2 h-4 w-4" />
                 Student's Work
               </h3>
               
@@ -247,10 +247,10 @@ export default function AssignmentGradingPage() {
               ) : (
                 <div className="space-y-4">
                   {selectedSubmission?.file_url && (
-                    <div className="flex items-center p-3 bg-white rounded border">
-                      <FileText className="w-5 h-5 text-blue-600 mr-3" />
+                    <div className="flex items-center rounded border border-border bg-white p-3 dark:bg-zinc-950">
+                      <FileText className="mr-3 h-5 w-5 text-blue-600" />
                       <div className="flex-1">
-                        <div className="font-medium">{selectedSubmission.submitted_file_name || 'Attached File'}</div>
+                        <div className="font-medium text-slate-900 dark:text-zinc-100">{selectedSubmission.submitted_file_name || 'Attached File'}</div>
                       </div>
                       <a 
                         href={selectedSubmission.file_url} 
@@ -265,20 +265,20 @@ export default function AssignmentGradingPage() {
                   )}
                   
                   {selectedSubmission?.answers?.text && (
-                    <div className="bg-white p-4 rounded border whitespace-pre-wrap">
+                    <div className="whitespace-pre-wrap rounded border border-border bg-white p-4 text-slate-900 dark:bg-zinc-950 dark:text-zinc-100">
                       {selectedSubmission.answers.text}
                     </div>
                   )}
                   
                   {!selectedSubmission?.file_url && !selectedSubmission?.answers?.text && (
-                    <div className="text-gray-500 italic">No content to display.</div>
+                    <div className="italic text-muted-foreground">No content to display.</div>
                   )}
                 </div>
               )}
             </div>
 
             {/* Grading Controls */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border rounded-lg bg-white">
+            <div className="grid grid-cols-1 gap-6 rounded-lg border border-border bg-card p-4 text-card-foreground md:grid-cols-2">
               {assignment?.late_penalty_enabled && selectedSubmission?.is_late && (
                 <div className="md:col-span-2 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800 flex items-start">
                    <AlertCircle className="w-5 h-5 mr-2 text-amber-600 flex-shrink-0" />

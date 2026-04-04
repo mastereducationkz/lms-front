@@ -9,6 +9,7 @@ import { Checkbox } from '../ui/checkbox';
 import apiClient from '../../services/api';
 import { toast } from '../Toast';
 import { compressImage } from '../../utils/imageCompression';
+import { cn } from '../../lib/utils';
 
 interface Task {
   id: string;
@@ -129,7 +130,7 @@ function CourseUnitTaskDisplay({ task, isCompleted, onCompletion, readOnly, stud
       <div className="bg-gray-50 dark:bg-secondary p-3 rounded-md">
         <div className="flex items-center space-x-2 mb-2">
           <BookOpen className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium">{courseData?.title || `Course ${task.content.course_id}`}</span>
+          <span className="font-medium text-slate-900 dark:text-slate-100">{courseData?.title || `Course ${task.content.course_id}`}</span>
         </div>
         <div className="space-y-2 ml-6">
           {lessonsData.length > 0 ? (
@@ -351,7 +352,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
 
         return (
           <div className="space-y-3">
-            <div className="text-sm font-medium">{task.content.question}</div>
+            <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{task.content.question}</div>
             
             {/* Teacher Reference File */}
             {task.content.teacher_file_url && (
@@ -402,7 +403,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                             )}
 
                              {/* File Info Card */}
-                            <div className="flex items-center justify-between p-3 border rounded-lg bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                            <div className="flex items-center justify-between p-3 border rounded-lg bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
                                 <div className="flex items-center space-x-2">
                                 <CheckCircle className="w-4 h-4 text-green-600" />
                                 <span className="text-sm font-medium text-green-800 dark:text-green-400">{file.file_name || `File ${index + 1}`}</span>
@@ -536,7 +537,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
         return (
           <div className="space-y-3">
      
-            <div className="text-sm font-medium">{task.content.question}</div>
+            <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{task.content.question}</div>
             {/* Student Response Label */}
             {readOnly && taskAnswer.text_response && (
               <div className="text-xs text-gray-500 font-medium">Student's Response:</div>
@@ -547,7 +548,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
               placeholder="Type your answer here..."
               rows={4}
               disabled={readOnly}
-              className={readOnly ? "bg-gray-50 dark:bg-secondary" : ""}
+              className={readOnly ? 'bg-gray-50 text-slate-900 dark:bg-secondary dark:text-slate-100' : ''}
             />
             {!readOnly && task.content.max_length && (
               <div className="text-xs text-right text-gray-500">
@@ -556,7 +557,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
             )}
             {/* Keywords hint for teacher grading */}
             {task.content.keywords && task.content.keywords.length > 0 && readOnly && (
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
+              <div className="mt-2 rounded border border-yellow-200 bg-yellow-50 p-2 text-xs text-amber-900 dark:border-yellow-800 dark:bg-yellow-950/80 dark:text-amber-200">
                 <span className="font-medium">Keywords for grading:</span> {task.content.keywords.join(', ')}
               </div>
             )}
@@ -582,7 +583,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                   
                   return (
                     <div key={field.id} className="flex items-center gap-2">
-                      <span className="text-base font-semibold text-gray-700 dark:text-gray-300 min-w-[24px]">{field.label || (fieldIndex + 1)}.</span>
+                      <span className="min-w-[24px] text-base font-semibold text-slate-700 dark:text-slate-300">{field.label || (fieldIndex + 1)}.</span>
                       <div className="relative flex-1">
                         <Input
                           type="text"
@@ -623,13 +624,13 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
       case 'link_task':
         return (
           <div className="space-y-3">
-            <div className="text-sm text-gray-600 dark:text-gray-400">{task.content.link_description}</div>
-            <div className="flex items-center p-3 border rounded-lg bg-secondary/50 dark:bg-secondary border-border">
+            <div className="text-sm text-slate-700 dark:text-slate-300">{task.content.link_description}</div>
+            <div className="flex items-center p-3 border rounded-lg bg-slate-100 dark:bg-secondary border-border">
               <LinkIcon className="w-4 h-4 text-muted-foreground mr-2" />
-              <a href={task.content.url} target="_blank" rel="noopener noreferrer" className="text-foreground hover:underline flex-1 truncate">
+              <a href={task.content.url} target="_blank" rel="noopener noreferrer" className="text-slate-900 dark:text-slate-100 hover:underline flex-1 truncate">
                 {task.content.url}
               </a>
-              <ExternalLink className="w-3 h-3 text-gray-400 ml-2" />
+              <ExternalLink className="w-3 h-3 text-slate-500 dark:text-slate-400 ml-2" />
             </div>
             <div className="flex items-center space-x-2 mt-2">
               <Checkbox 
@@ -638,7 +639,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                 onCheckedChange={(checked) => handleTaskCompletion(task.id, { completed: checked })}
                 disabled={readOnly}
               />
-              <Label htmlFor={`task-${task.id}`}>
+              <Label htmlFor={`task-${task.id}`} className="text-slate-800 dark:text-slate-200 font-normal">
                 I have {task.content.completion_criteria === 'watch' ? 'watched' : 
                         task.content.completion_criteria === 'read' ? 'read' : 
                         task.content.completion_criteria === 'complete' ? 'completed' : 'visited'} this resource
@@ -671,7 +672,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
             )}
             
             {/* Question/Instructions */}
-            <div className="text-sm font-medium">{task.content.question}</div>
+            <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{task.content.question}</div>
             
             {/* Student Response Label */}
             {readOnly && taskAnswer.text_response && (
@@ -685,7 +686,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
               placeholder="Type your answer here..."
               rows={5}
               disabled={readOnly}
-              className={readOnly ? "bg-gray-50 dark:bg-secondary" : ""}
+              className={readOnly ? 'bg-gray-50 text-slate-900 dark:bg-secondary dark:text-slate-100' : ''}
             />
             {!readOnly && task.content.max_length && (
               <div className="text-xs text-right text-gray-500">
@@ -695,7 +696,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
             
             {/* Keywords hint for teacher grading */}
             {task.content.keywords && task.content.keywords.length > 0 && readOnly && (
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
+              <div className="mt-2 rounded border border-yellow-200 bg-yellow-50 p-2 text-xs text-amber-900 dark:border-yellow-800 dark:bg-yellow-950/80 dark:text-amber-200">
                 <span className="font-medium">Keywords for grading:</span> {task.content.keywords.join(', ')}
               </div>
             )}
@@ -721,7 +722,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                   
                   return (
                     <div key={field.id} className="flex items-center gap-2">
-                      <span className="text-base font-semibold text-gray-700 dark:text-gray-300 min-w-[24px]">{field.label || (fieldIndex + 1)}.</span>
+                      <span className="min-w-[24px] text-base font-semibold text-slate-700 dark:text-slate-300">{field.label || (fieldIndex + 1)}.</span>
                       <div className="relative flex-1">
                         <Input
                           type="text"
@@ -813,10 +814,10 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
   return (
     <div className="space-y-6">
       {assignment.content.instructions && (
-        <Card className="bg-secondary/50 dark:bg-secondary border-border">
+        <Card className="border-border bg-secondary/50 dark:bg-secondary">
           <CardContent className="pt-6">
-            <h4 className="font-medium text-foreground mb-2">Instructions</h4>
-            <p className="text-foreground text-sm whitespace-pre-wrap">{assignment.content.instructions}</p>
+            <h4 className="mb-2 font-medium text-slate-900 dark:text-slate-100">Instructions</h4>
+            <p className="whitespace-pre-wrap text-sm text-slate-800 dark:text-slate-200">{assignment.content.instructions}</p>
           </CardContent>
         </Card>
       )}
@@ -839,24 +840,31 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
           const isCompleted = checkTaskCompletion(task);
           
           return (
-            <Card key={task.id} className={`${isCompleted ? "border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-900/10" : ""} ${task.is_optional ? "border-amber-200 dark:border-amber-800" : ""}`}>
+            <Card
+              key={task.id}
+              className={cn(
+                isCompleted &&
+                  'border-green-200 bg-green-50/70 text-slate-900 dark:border-green-700 dark:bg-green-950 dark:text-slate-100',
+                task.is_optional && 'border-amber-200 dark:border-amber-700'
+              )}
+            >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-full ${isCompleted ? 'bg-green-100 dark:bg-green-900/30 text-green-600' : task.is_optional ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-600' : 'bg-gray-100 dark:bg-secondary text-gray-600 dark:text-gray-400'}`}>
+                    <div className={`p-2 rounded-full ${isCompleted ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' : task.is_optional ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300' : 'bg-gray-100 dark:bg-secondary text-gray-600 dark:text-gray-400'}`}>
                       <Icon className="w-5 h-5" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-gray-900 dark:text-foreground">{task.title}</h4>
+                        <h4 className="font-medium text-slate-900 dark:text-slate-100">{task.title}</h4>
                         {task.is_optional && (
-                          <span className="text-xs px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 rounded-full flex items-center gap-1">
+                          <span className="text-xs px-2 py-0.5 bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 rounded-full flex items-center gap-1">
                             <Star className="w-3 h-3" />
                             Bonus
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center space-x-2 text-xs text-gray-500">
+                      <div className="flex items-center space-x-2 text-xs text-slate-600 dark:text-slate-400">
                         <span>Task {index + 1}</span>
                         <span>•</span>
                         <span>{task.is_optional ? `+${task.points} bonus points` : `${task.points} points`}</span>

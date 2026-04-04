@@ -1444,8 +1444,8 @@ export default function TeacherDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 my-4">
             {/* Left side - Submission Content View (2/3 width) */}
             <div className="lg:col-span-2 space-y-4">
-              <div className="bg-slate-50 dark:bg-и p-4 rounded-lg border dark:border-border">
-                <h3 className="font-semibold text-gray-900 dark:text-foreground mb-4 flex items-center">
+              <div className="rounded-lg border border-border bg-slate-50 p-4 text-slate-900 dark:bg-zinc-900 dark:text-zinc-100 dark:border-border">
+                <h3 className="mb-4 flex items-center font-semibold text-slate-900 dark:text-zinc-100">
                     Student's Work
                 </h3>
                 
