@@ -105,8 +105,14 @@ export default function AssignmentsPage() {
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (!user) return
+    void loadGroups()
+  }, [user?.id, user?.role])
+
+  useEffect(() => {
+    if (!user) return
+    void loadAssignments()
+  }, [user?.id, user?.role, selectedGroupId])
 
   useEffect(() => {
     setPage(1);
@@ -193,15 +199,6 @@ export default function AssignmentsPage() {
       });
   }, [isTeacherView, assignments]);
 
-  const loadData = async () => {
-    setLoading(true);
-    await Promise.all([
-      loadAssignments(),
-      loadGroups()
-    ]);
-    setLoading(false);
-  };
-
   const loadGroups = async () => {
     if (user?.role === 'teacher' || user?.role === 'admin' || user?.role === 'curator') {
       try {
@@ -220,12 +217,22 @@ export default function AssignmentsPage() {
       setError('');
       console.log('Loading assignments for user:', user?.id, 'role:', user?.role);
 
-      // For teachers/admins, always load ALL assignments including hidden
-      const params: any = {};
+      const params: Record<string, unknown> = {}
       if (user?.role === 'teacher' || user?.role === 'admin') {
-        params.include_hidden = true;
+        params.include_hidden = true
       }
-      const assignmentData = await apiClient.getAssignments(params);
+      const numericGroupId =
+        /^\d+$/.test(selectedGroupId) ? parseInt(selectedGroupId, 10) : null
+      if (
+        numericGroupId !== null &&
+        (user?.role === 'teacher' || user?.role === 'admin' || user?.role === 'curator')
+      ) {
+        params.group_id = numericGroupId
+        params.limit = 500
+      } else if (user?.role === 'teacher' || user?.role === 'curator' || user?.role === 'admin') {
+        params.limit = 1000
+      }
+      const assignmentData = await apiClient.getAssignments(params)
       console.log('Raw assignment data:', assignmentData);
       
       // Get user's submissions to check status
