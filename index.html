@@ -17,6 +17,43 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      (function () {
+        const RECOVERY_KEY = 'lms_sw_recovery_attempted'
+
+        const handleAssetLoadFailure = function (event) {
+          const target = event && event.target
+          const source = target && target.src ? String(target.src) : ''
+          if (!source || source.indexOf('/assets/index-') === -1) return
+          if (sessionStorage.getItem(RECOVERY_KEY) === '1') return
+
+          sessionStorage.setItem(RECOVERY_KEY, '1')
+
+          const recoverAndReload = async function () {
+            try {
+              if ('serviceWorker' in navigator) {
+                const registrations = await navigator.serviceWorker.getRegistrations()
+                await Promise.all(registrations.map((registration) => registration.unregister()))
+              }
+              if ('caches' in window) {
+                const cacheKeys = await caches.keys()
+                await Promise.all(cacheKeys.map((key) => caches.delete(key)))
+              }
+            } catch (error) {
+              console.error('Failed to recover from stale service worker cache:', error)
+            } finally {
+              const nextUrl = new URL(window.location.href)
+              nextUrl.searchParams.set('sw-recovered', Date.now().toString())
+              window.location.replace(nextUrl.toString())
+            }
+          }
+
+          recoverAndReload()
+        }
+
+        window.addEventListener('error', handleAssetLoadFailure, true)
+      })()
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html> 
