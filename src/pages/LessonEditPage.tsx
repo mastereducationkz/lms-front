@@ -63,6 +63,44 @@ interface LessonSidebarProps {
   onLessonSelect: (lessonId: string) => void;
 }
 
+const videoLanguageMetaPattern = /<!--\s*video_lang_urls:\s*(\{[\s\S]*?\})\s*-->/i
+
+const extractVideoLanguageMeta = (rawContent?: string) => {
+  const content = rawContent || ''
+  const match = content.match(videoLanguageMetaPattern)
+  if (!match) {
+    return {
+      cleanContent: content,
+      videoUrlEn: ''
+    }
+  }
+
+  let videoUrlEn = ''
+  try {
+    const parsed = JSON.parse(match[1])
+    if (parsed && typeof parsed.en === 'string') {
+      videoUrlEn = parsed.en.trim()
+    }
+  } catch (error) {
+    console.error('Failed to parse video language metadata:', error)
+  }
+
+  return {
+    cleanContent: content.replace(videoLanguageMetaPattern, '').trim(),
+    videoUrlEn
+  }
+}
+
+const buildVideoStepContent = (content: string, videoUrlEn: string) => {
+  const cleanContent = content.replace(videoLanguageMetaPattern, '').trim()
+  const normalizedVideoUrlEn = videoUrlEn.trim()
+  if (!normalizedVideoUrlEn) {
+    return cleanContent
+  }
+  const metadata = `<!-- video_lang_urls:${JSON.stringify({ en: normalizedVideoUrlEn })} -->`
+  return `${metadata}\n${cleanContent}`.trim()
+}
+
 
 
 
@@ -379,6 +417,7 @@ export default function LessonEditPage() {
  const [stepContentType, setStepContentType] = useState<'text' | 'video_text' | 'quiz' | 'flashcard' | 'summary'>('text');
   const [stepContent, setStepContent] = useState('');
   const [stepVideoUrl, setStepVideoUrl] = useState('');
+  const [stepVideoUrlEn, setStepVideoUrlEn] = useState('');
   const [stepIsOptional, setStepIsOptional] = useState(false);
   const [stepQuizTitle, setStepQuizTitle] = useState('');
   const [stepQuizQuestions, setStepQuizQuestions] = useState<Question[]>([]);
@@ -518,6 +557,11 @@ export default function LessonEditPage() {
     setStepVideoUrl(value);
     markAsUnsaved();
   };
+
+  const handleStepVideoUrlEnChange = (value: string) => {
+    setStepVideoUrlEn(value)
+    markAsUnsaved()
+  }
   
   const handleStepQuizTitleChange = (value: string) => {
     setStepQuizTitle(value);
@@ -611,7 +655,7 @@ export default function LessonEditPage() {
         } else if (firstStep.content_type === 'video_text') {
         setSelectedTab('video');
           setVideoUrl(firstStep.video_url || '');
-          setLessonContent(firstStep.content_text || '');
+          setLessonContent(extractVideoLanguageMeta(firstStep.content_text).cleanContent);
         }
         
         // Select first step by default
@@ -619,8 +663,10 @@ export default function LessonEditPage() {
         setSelectedStepId(firstStep.id);
         setStepTitle(firstStep.title || 'Step 1');
         setStepContentType(firstStep.content_type);
-        setStepContent(firstStep.content_text || '');
+        const firstStepVideoMeta = extractVideoLanguageMeta(firstStep.content_text);
+        setStepContent(firstStepVideoMeta.cleanContent);
         setStepVideoUrl(firstStep.video_url || '');
+        setStepVideoUrlEn(firstStepVideoMeta.videoUrlEn);
         setStepIsOptional(firstStep.is_optional || false);
         
         if (firstStep.content_type === 'quiz') {
@@ -660,6 +706,7 @@ export default function LessonEditPage() {
         setStepContentType(localDefaultStep.content_type);
         setStepContentType(localDefaultStep.content_type);
         setStepContent(localDefaultStep.content_text || '');
+        setStepVideoUrlEn('');
         setStepIsOptional(false);
         setTimeout(() => setIsLoadingStep(false), 0);
          
@@ -701,6 +748,7 @@ export default function LessonEditPage() {
     setStepContentType(newLocalStep.content_type);
     setStepContent('');
     setStepVideoUrl('');
+    setStepVideoUrlEn('');
     setStepIsOptional(false);
     
     // Initialize quiz with default question if it's a quiz step
@@ -783,8 +831,10 @@ export default function LessonEditPage() {
     setSelectedStepId(step.id);
     setStepTitle(step.title || `Step ${step.order_index || 1}`);
     setStepContentType(step.content_type);
-    setStepContent(step.content_text || '');
+    const stepVideoMeta = extractVideoLanguageMeta(step.content_text);
+    setStepContent(stepVideoMeta.cleanContent);
     setStepVideoUrl(step.video_url || '');
+    setStepVideoUrlEn(stepVideoMeta.videoUrlEn);
     setStepIsOptional(step.is_optional || false);
 
     if (step.content_type === 'quiz') {
@@ -964,7 +1014,7 @@ export default function LessonEditPage() {
         updated.video_url = '';
       } else if (stepContentType === 'video_text') {
         updated.video_url = stepVideoUrl;
-        updated.content_text = stepContent;
+        updated.content_text = buildVideoStepContent(stepContent, stepVideoUrlEn);
       } else if (stepContentType === 'quiz') {
         updated.content_text = JSON.stringify({
           title: stepQuizTitle,
@@ -1004,7 +1054,7 @@ export default function LessonEditPage() {
             updated.video_url = '';
           } else if (stepContentType === 'video_text') {
             updated.video_url = stepVideoUrl;
-            updated.content_text = stepContent;
+            updated.content_text = buildVideoStepContent(stepContent, stepVideoUrlEn);
           } else if (stepContentType === 'quiz') {
             updated.content_text = JSON.stringify({
               title: stepQuizTitle,
@@ -1107,8 +1157,10 @@ export default function LessonEditPage() {
           setSelectedStepId(match.id);
           setStepTitle(match.title);
           setStepContentType(match.content_type as any);
-          setStepContent(match.content_text || '');
+          const matchVideoMeta = extractVideoLanguageMeta(match.content_text);
+          setStepContent(matchVideoMeta.cleanContent);
           setStepVideoUrl(match.video_url || '');
+          setStepVideoUrlEn(matchVideoMeta.videoUrlEn);
           setStepIsOptional(match.is_optional || false);
           
           // Load quiz data if it's a quiz step
@@ -1514,9 +1566,12 @@ export default function LessonEditPage() {
                       <div className="space-y-3">
                     <VideoLessonEditor
                           lessonTitle={stepTitle || lessonTitle}
-                          videoUrl={stepVideoUrl}
-                          onVideoUrlChange={handleStepVideoUrlChange}
-                          onClearUrl={() => handleStepVideoUrlChange('')}
+                          videoUrlRu={stepVideoUrl}
+                          videoUrlEn={stepVideoUrlEn}
+                          onVideoUrlRuChange={handleStepVideoUrlChange}
+                          onVideoUrlEnChange={handleStepVideoUrlEnChange}
+                          onClearUrlRu={() => handleStepVideoUrlChange('')}
+                          onClearUrlEn={() => handleStepVideoUrlEnChange('')}
                           content={stepContent}
                           onContentChange={handleStepContentChange}
                           stepId={selectedStepId && selectedStepId > 0 ? selectedStepId : undefined}

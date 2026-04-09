@@ -9,10 +9,13 @@ import type { StepAttachment } from '../../types';
 
 export interface VideoLessonEditorProps {
   lessonTitle: string;
-  videoUrl: string;
+  videoUrlRu: string;
+  videoUrlEn: string;
   videoError?: string | null;
-  onVideoUrlChange: (url: string) => void;
-  onClearUrl: () => void;
+  onVideoUrlRuChange: (url: string) => void;
+  onVideoUrlEnChange: (url: string) => void;
+  onClearUrlRu: () => void;
+  onClearUrlEn: () => void;
   onVideoError?: (error: string) => void;
   content: string;
   onContentChange: (content: string) => void;
@@ -24,10 +27,13 @@ export interface VideoLessonEditorProps {
 
 export default function VideoLessonEditor({
   lessonTitle,
-  videoUrl,
+  videoUrlRu,
+  videoUrlEn,
   videoError,
-  onVideoUrlChange,
-  onClearUrl,
+  onVideoUrlRuChange,
+  onVideoUrlEnChange,
+  onClearUrlRu,
+  onClearUrlEn,
   onVideoError,
   content,
   onContentChange,
@@ -36,8 +42,19 @@ export default function VideoLessonEditor({
   onAttachmentsChange,
   onTempFilesChange
 }: VideoLessonEditorProps) {
-  const [currentAttachments, setCurrentAttachments] = useState<StepAttachment[]>([]);
-  const [tempFiles, setTempFiles] = useState<File[]>([]);
+  const [currentAttachments, setCurrentAttachments] = useState<StepAttachment[]>([])
+  const [tempFiles, setTempFiles] = useState<File[]>([])
+  const [previewLanguage, setPreviewLanguage] = useState<'ru' | 'en'>('ru')
+
+  useEffect(() => {
+    if (previewLanguage === 'en' && !videoUrlEn && videoUrlRu) {
+      setPreviewLanguage('ru')
+      return
+    }
+    if (previewLanguage === 'ru' && !videoUrlRu && videoUrlEn) {
+      setPreviewLanguage('en')
+    }
+  }, [previewLanguage, videoUrlRu, videoUrlEn])
 
   // Parse attachments when they change
   useEffect(() => {
@@ -114,14 +131,34 @@ export default function VideoLessonEditor({
 
   return (
     <div className="space-y-6">
-      {videoUrl && (
+      {(videoUrlRu || videoUrlEn) && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Video Preview
-          </label>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Video Preview
+            </label>
+            {videoUrlRu && videoUrlEn && (
+              <div className="flex items-center gap-1 rounded-md border border-gray-200 p-1">
+                <button
+                  type="button"
+                  onClick={() => setPreviewLanguage('ru')}
+                  className={`px-2 py-1 text-xs rounded ${previewLanguage === 'ru' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                >
+                  RU
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewLanguage('en')}
+                  className={`px-2 py-1 text-xs rounded ${previewLanguage === 'en' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                >
+                  EN
+                </button>
+              </div>
+            )}
+          </div>
           <YouTubeVideoPlayer
-            url={videoUrl}
-            title={lessonTitle || 'Lesson Video'}
+            url={previewLanguage === 'en' ? videoUrlEn : videoUrlRu}
+            title={`${lessonTitle || 'Lesson Video'} (${previewLanguage.toUpperCase()})`}
             className="w-full"
             onError={onVideoError}
           />
@@ -130,7 +167,7 @@ export default function VideoLessonEditor({
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Video URL (YouTube)
+          Video URL (YouTube, RU)
         </label>
         <div className="flex items-center space-x-2 mb-4">
           <Checkbox 
@@ -156,13 +193,13 @@ export default function VideoLessonEditor({
         <div className="flex gap-2 p-1">
           <Input
             type="url"
-            value={videoUrl}
-            onChange={(e) => onVideoUrlChange(e.target.value)}
+            value={videoUrlRu}
+            onChange={(e) => onVideoUrlRuChange(e.target.value)}
             className="flex-1"
             placeholder="https://www.youtube.com/watch?v=..."
           />
           <button
-            onClick={onClearUrl}
+            onClick={onClearUrlRu}
             className="px-4 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
           >
             Clear
@@ -172,7 +209,32 @@ export default function VideoLessonEditor({
           <p className="text-sm text-red-600 mt-1">{videoError}</p>
         )}
         <p className="text-sm text-gray-500 mt-1">
-          Paste a YouTube video URL to embed it in the lesson
+          Paste a YouTube video URL in Russian
+        </p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Video URL (YouTube, EN)
+        </label>
+        <div className="flex gap-2 p-1">
+          <Input
+            type="url"
+            value={videoUrlEn}
+            onChange={(e) => onVideoUrlEnChange(e.target.value)}
+            className="flex-1"
+            placeholder="https://www.youtube.com/watch?v=..."
+          />
+          <button
+            type="button"
+            onClick={onClearUrlEn}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
+          >
+            Clear
+          </button>
+        </div>
+        <p className="text-sm text-gray-500 mt-1">
+          Paste a YouTube video URL in English
         </p>
       </div>
 

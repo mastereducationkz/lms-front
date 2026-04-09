@@ -69,6 +69,8 @@ export interface Step {
   title: string;
   content_type: 'text' | 'video_text' | 'quiz' | 'flashcard' | 'summary';
   video_url?: string;
+  video_url_en?: string;
+  video_url_ru?: string;
   content_text?: string;
   attachments?: string; // JSON string of StepAttachment[]
   order_index: number;

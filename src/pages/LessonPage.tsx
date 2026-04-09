@@ -133,6 +133,36 @@ const computeQuizContentHash = async (quizJson: string): Promise<string> => {
   }
 };
 
+type StepVideoLanguage = 'ru' | 'en'
+
+const videoLanguageMetaPattern = /<!--\s*video_lang_urls:\s*(\{[\s\S]*?\})\s*-->/i
+
+const extractStepVideoUrls = (step: Step) => {
+  const content = step.content_text || ''
+  const match = content.match(videoLanguageMetaPattern)
+  let metadataEnUrl = ''
+
+  if (match) {
+    try {
+      const parsed = JSON.parse(match[1])
+      if (parsed && typeof parsed.en === 'string') {
+        metadataEnUrl = parsed.en.trim()
+      }
+    } catch (error) {
+      console.error('Failed to parse video language metadata:', error)
+    }
+  }
+
+  return {
+    ru: (step.video_url_ru || step.video_url || '').trim(),
+    en: (step.video_url_en || metadataEnUrl || '').trim()
+  }
+}
+
+const stripVideoLanguageMeta = (content?: string) => {
+  return (content || '').replace(videoLanguageMetaPattern, '').trim()
+}
+
 interface LessonSidebarProps {
   course: Course | null;
   modules: CourseModule[];
@@ -356,6 +386,7 @@ export default function LessonPage() {
   const [loadedStepIds, setLoadedStepIds] = useState<Set<number>>(new Set());
   const [isStepContentLoading, setIsStepContentLoading] = useState(false);
   const [videoProgress, setVideoProgress] = useState<Map<string, number>>(new Map());
+  const [selectedVideoLanguageByStep, setSelectedVideoLanguageByStep] = useState<Map<string, StepVideoLanguage>>(new Map());
   const [quizCompleted, setQuizCompleted] = useState<Map<string, boolean>>(new Map());
   const [furthestStepIndex, setFurthestStepIndex] = useState(0);
 
@@ -1590,6 +1621,13 @@ export default function LessonPage() {
           );
   
         case 'video_text':
+          const stepVideoUrls = extractStepVideoUrls(currentStep)
+          const hasRuVideo = !!stepVideoUrls.ru
+          const hasEnVideo = !!stepVideoUrls.en
+          const defaultVideoLanguage: StepVideoLanguage = hasRuVideo ? 'ru' : 'en'
+          const selectedVideoLanguage = selectedVideoLanguageByStep.get(currentStep.id.toString()) || defaultVideoLanguage
+          const activeVideoUrl = selectedVideoLanguage === 'en' ? stepVideoUrls.en : stepVideoUrls.ru
+          const cleanVideoContentText = stripVideoLanguageMeta(currentStep.content_text)
           return (
             <div ref={textContentRef} className="space-y-4 relative">
               {/* Text Lookup Popover */}
@@ -1602,11 +1640,30 @@ export default function LessonPage() {
                 </div>
               )}
   
-              {currentStep.video_url && (
+              {(hasRuVideo || hasEnVideo) && (
                 <div className="bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
+                  {hasRuVideo && hasEnVideo && (
+                    <div className="flex items-center justify-end gap-2 p-3 border-b border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/40">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">Video language</span>
+                      <Button
+                        variant={selectedVideoLanguage === 'ru' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setSelectedVideoLanguageByStep(prev => new Map(prev).set(currentStep.id.toString(), 'ru'))}
+                      >
+                        RU
+                      </Button>
+                      <Button
+                        variant={selectedVideoLanguage === 'en' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setSelectedVideoLanguageByStep(prev => new Map(prev).set(currentStep.id.toString(), 'en'))}
+                      >
+                        EN
+                      </Button>
+                    </div>
+                  )}
                   <YouTubeVideoPlayer
-                    key={currentStep.id}
-                    url={currentStep.video_url}
+                    key={`${currentStep.id}-${selectedVideoLanguage}`}
+                    url={activeVideoUrl}
                     title={currentStep.title || 'Lesson Video'}
                     className="w-full"
                     onProgress={(progress) => {
@@ -1625,35 +1682,13 @@ export default function LessonPage() {
                   />
                 </div>
               )}
-  
-              {/* Video Progress Indicator */}
-              {currentStep && currentStep.video_url && (
-                <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/40 rounded-lg border border-blue-200 dark:border-blue-900/50">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-blue-800 dark:text-blue-300/80">Video Watch Progress</span>
-                    <span className="text-sm text-blue-600 dark:text-blue-400/80">
-                      {Math.round((videoProgress.get(currentStep.id.toString()) || 0) * 100)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-blue-200 dark:bg-blue-900/40 rounded-full h-2">
-                    <div
-                      className="bg-blue-600 dark:bg-blue-600/70 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${(videoProgress.get(currentStep.id.toString()) || 0) * 100}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-blue-600 dark:text-blue-400/70 mt-2">
-                    You need to watch 90% or more of the video to proceed to the next step
-                  </p>
-                </div>
-              )}
-  
               {renderAttachments(currentStep.attachments)}
   
               {currentStep.content_text && (
                 <div className="prose dark:prose-invert max-w-none">
                   <div dangerouslySetInnerHTML={{ 
                     __html: renderTextWithLatex(
-                      currentStep.content_text.replace(/<p><strong>Watch the explanations for the previous questions<\/strong><\/p>/g, '')
+                      cleanVideoContentText.replace(/<p><strong>Watch the explanations for the previous questions<\/strong><\/p>/g, '')
                     ) 
                   }} />
                 </div>
