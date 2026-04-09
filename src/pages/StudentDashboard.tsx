@@ -8,8 +8,9 @@ import { Checkbox } from "../components/ui/checkbox";
 import { Input } from "../components/ui/input";
 import type { DashboardStats, StudentProgressOverview, Assignment, Event, AssignmentSubmission } from "../types";
 import { Clock, BookOpen, LineChart, CheckCircle, Target, Calendar, FileText, AlertCircle, Video, GraduationCap, MessageCircle } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import apiClient from "../services/api";
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import StudentLeaderboard from "../components/StudentLeaderboard";
@@ -29,6 +30,7 @@ export default function StudentDashboard({
   onGoToAllCourses,
 }: StudentDashboardProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [progressData, setProgressData] = useState<StudentProgressOverview | null>(null);
   const [isLoadingProgress, setIsLoadingProgress] = useState(true);
   
@@ -38,7 +40,8 @@ export default function StudentDashboard({
   const [submissions, setSubmissions] = useState<AssignmentSubmission[]>([]);
   const [isLoadingTodo, setIsLoadingTodo] = useState(true);
   const [showCompleted, setShowCompleted] = useState(false);
-  const [isSpecialGroupStudent, setIsSpecialGroupStudent] = useState(false);
+  /** Result of GET /users/groups/me; null until first fetch completes */
+  const [groupsSpecialChecked, setGroupsSpecialChecked] = useState<boolean | null>(null);
   const [showIeltsPrompt, setShowIeltsPrompt] = useState(false);
   const [isLoadingIeltsPrompt, setIsLoadingIeltsPrompt] = useState(false);
   const [isSavingIeltsPrompt, setIsSavingIeltsPrompt] = useState(false);
@@ -50,6 +53,23 @@ export default function StudentDashboard({
   const [dailyQuestionsCompleted, setDailyQuestionsCompleted] = useState(false);
   const [dailyQuestionsScore, setDailyQuestionsScore] = useState<{ score: number; total: number } | null>(null);
   const [showDailyQuestions, setShowDailyQuestions] = useState(false);
+
+  const isSpecialGroupStudent = useMemo(
+    () => user?.special_group_only_student === true || groupsSpecialChecked === true,
+    [user?.special_group_only_student, groupsSpecialChecked]
+  );
+
+  /** Hide leaderboard / todo / teacher column until we know the student is not special-only (avoids flash). */
+  const hideRestrictedSidePanels = useMemo(() => {
+    if (!user || user.role !== "student") return false;
+    if (user.special_group_only_student === true || groupsSpecialChecked === true) return true;
+    if (
+      user.special_group_only_student === undefined &&
+      groupsSpecialChecked === null
+    )
+      return true;
+    return false;
+  }, [user, groupsSpecialChecked]);
 
   useEffect(() => {
     loadProgressData();
@@ -63,16 +83,23 @@ export default function StudentDashboard({
     try {
       const myGroups = await apiClient.getMyGroups()
       const hasOnlySpecialGroups = myGroups.length > 0 && myGroups.every(group => group.is_special)
-      setIsSpecialGroupStudent(hasOnlySpecialGroups)
+      setGroupsSpecialChecked(hasOnlySpecialGroups)
     } catch (error) {
       console.error('Failed to load group flags:', error)
-      setIsSpecialGroupStudent(false)
+      setGroupsSpecialChecked(false)
     }
   }
 
   const loadIeltsPromptStatus = async () => {
     try {
       setIsLoadingIeltsPrompt(true)
+      const myGroups = await apiClient.getMyGroups()
+      if (myGroups.length > 0 && myGroups.every((g) => g.is_special)) {
+        setShowIeltsPrompt(false)
+        setIeltsCurrentExactDate(null)
+        setIeltsPromptDate('')
+        return
+      }
       const status = await apiClient.getIeltsDatePromptStatus()
       const shouldPrompt = Boolean(status.is_ielts_student && status.should_prompt)
       setShowIeltsPrompt(shouldPrompt)
@@ -566,8 +593,8 @@ export default function StudentDashboard({
 
       </div>
 
-      <div className={`grid grid-cols-1 gap-6 mt-4 ${isSpecialGroupStudent ? "" : "lg:grid-cols-3"}`}>
-        {!isSpecialGroupStudent && (
+      <div className={`grid grid-cols-1 gap-6 mt-4 ${hideRestrictedSidePanels ? "" : "lg:grid-cols-3"}`}>
+        {!hideRestrictedSidePanels && (
           <div className="lg:col-span-1 space-y-6">
             <StudentLeaderboard />
 
@@ -774,24 +801,26 @@ export default function StudentDashboard({
         )}
 
         {/* Right Column - Main Content */}
-        <div className={isSpecialGroupStudent ? "" : "lg:col-span-2"}>
+        <div className={hideRestrictedSidePanels ? "" : "lg:col-span-2"}>
           <Tabs defaultValue="courses" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 h-12 bg-gray-100 dark:bg-secondary">
-              <TabsTrigger 
-                value="courses" 
-                className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:shadow-none"
-              >
-                <BookOpen className="h-4 w-4" />
-                Courses
-              </TabsTrigger>
-              <TabsTrigger 
-                value="activity" 
-                className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:shadow-none"
-              >
-                <LineChart className="h-4 w-4" />
-                Activity
-              </TabsTrigger>
-            </TabsList>
+            {!isSpecialGroupStudent && (
+              <TabsList className="grid w-full grid-cols-2 h-12 bg-gray-100 dark:bg-secondary">
+                <TabsTrigger 
+                  value="courses" 
+                  className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:shadow-none"
+                >
+                  <BookOpen className="h-4 w-4" />
+                  Courses
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="activity" 
+                  className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:shadow-none"
+                >
+                  <LineChart className="h-4 w-4" />
+                  Activity
+                </TabsTrigger>
+              </TabsList>
+            )}
 
         <TabsContent value="courses" className="mt-4">
           {isLoadingProgress ? (
@@ -914,6 +943,7 @@ export default function StudentDashboard({
           )}
         </TabsContent>
 
+        {!isSpecialGroupStudent && (
         <TabsContent value="activity" className="mt-4">
           {isLoadingProgress ? (
             <Card className="border-dashed">
@@ -994,6 +1024,7 @@ export default function StudentDashboard({
             </Card>
           )}
         </TabsContent>
+        )}
       </Tabs>
         </div>
       </div>

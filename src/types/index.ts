@@ -21,6 +21,8 @@ export interface User {
   onboarding_completed_at?: string; // When onboarding was completed
   assignment_zero_completed?: boolean; // Whether student has completed Assignment Zero
   assignment_zero_completed_at?: string; // When Assignment Zero was completed
+  /** From /auth/me: student is only in active special groups (Assignment Zero / homework rules) */
+  special_group_only_student?: boolean;
   created_at: string;
   updated_at: string;
   course_ids?: number[]; // List of course IDs for head teachers
@@ -216,7 +218,7 @@ export interface Group {
   id: number;
   name: string;
   description?: string;
-  teacher_id: number;
+  teacher_id?: number | null;
   teacher_name?: string;
   curator_id?: number;
   curator_name?: string;
@@ -229,6 +231,8 @@ export interface Group {
   schedule_config?: any;
   current_week?: number;
   max_week?: number;
+  max_open_lessons?: number | null;
+  course_id?: number | null;
 }
 
 export interface CourseGroupAccess {
@@ -335,21 +339,26 @@ export interface GroupListResponse {
 export interface CreateGroupRequest {
   name: string;
   description?: string;
-  teacher_id: number;
+  teacher_id?: number | null;
   curator_id?: number;
   course_id?: number; // Курс, к которому привязана группа
   is_active?: boolean;
   is_special?: boolean;
   is_over?: boolean;
+  max_open_lessons?: number;
 }
 
 export interface UpdateGroupRequest {
   name?: string;
   description?: string;
-  teacher_id?: number;
+  teacher_id?: number | null;
+  curator_id?: number;
+  course_id?: number | null;
+  student_ids?: number[];
   is_active?: boolean;
   is_special?: boolean;
   is_over?: boolean;
+  max_open_lessons?: number | null;
 }
 
 export interface CreateUserRequest {

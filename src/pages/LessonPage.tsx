@@ -377,6 +377,7 @@ export default function LessonPage() {
 
   // Ref for text lookup popover
   const textContentRef = useRef<HTMLDivElement>(null);
+  const isSpecialGroupStudent = user?.role === 'student' && user?.special_group_only_student === true;
 
   // Persist sidebar state
   useEffect(() => {
@@ -726,11 +727,12 @@ export default function LessonPage() {
           if (!isMounted) return;
 
           setQuizData(parsedQuizData);
-          setQuestions(parsedQuizData.questions || []);
+          const originalQuestions = parsedQuizData.questions || [];
+          setQuestions(originalQuestions);
 
           // Initialize gap answers map per question
           const init = new Map<string, string[]>();
-          (parsedQuizData.questions || []).forEach((q: any) => {
+          originalQuestions.forEach((q: any) => {
             if (q.question_type === 'fill_blank' || q.question_type === 'text_completion') {
               const text = (q.content_text || q.question_text || '').toString();
               // const gaps = Array.from(text.matchAll(/\[\[(.*?)\]\]/g));
@@ -794,7 +796,7 @@ export default function LessonPage() {
                     // Restore gap answers
                     const newGapAnswers = new Map(init);
 
-                    (parsedQuizData.questions || []).forEach((q: any) => {
+                    originalQuestions.forEach((q: any) => {
                       if ((q.question_type === 'fill_blank' || q.question_type === 'text_completion') && answersMap.has(q.id.toString())) {
                         const savedGapAns = answersMap.get(q.id.toString());
                         console.log(`Restoring gap answer for Q ${q.id}:`, savedGapAns);
@@ -891,8 +893,8 @@ export default function LessonPage() {
              
              // If we have a questionId in the URL, automatically start the quiz and jump to it
              const questionIdParam = searchParams.get('questionId');
-             if (questionIdParam && (parsedQuizData.questions || []).length > 0) {
-               const questionIndex = (parsedQuizData.questions || []).findIndex((q: any) => q.id.toString() === questionIdParam);
+             if (questionIdParam && originalQuestions.length > 0) {
+               const questionIndex = originalQuestions.findIndex((q: any) => q.id.toString() === questionIdParam);
                if (questionIndex >= 0) {
                  const displayMode = parsedQuizData.display_mode || 'one_by_one';
                  if (displayMode === 'all_at_once') {
@@ -1222,7 +1224,7 @@ export default function LessonPage() {
     } else {
       // Save quiz attempt before completing
       const { score, total } = getScore();
-      const scorePercentage = total > 0 ? (score / total) * 100 : 0;
+      const scorePercentage = total > 0 ? (score / total) * 100 : 100;
       saveQuizAttempt(score, total);
 
       // Always show completed state first, regardless of pass/fail or step position
@@ -1242,7 +1244,7 @@ export default function LessonPage() {
 
   const finishQuiz = () => {
     const { score, total } = getScore();
-    const scorePercentage = total > 0 ? (score / total) * 100 : 0;
+    const scorePercentage = total > 0 ? (score / total) * 100 : 100;
     saveQuizAttempt(score, total);
     setQuizState('completed');
 
@@ -1349,7 +1351,8 @@ export default function LessonPage() {
         ? Math.floor((Date.now() - quizStartTime) / 1000)
         : undefined;
 
-      const answersToSave = Array.from(new Map([...quizAnswers, ...gapAnswers]).entries());
+      const combinedAnswers = new Map([...quizAnswers, ...gapAnswers]);
+      const answersToSave = Array.from(combinedAnswers.entries());
       console.log('Saving quiz attempt:', {
         score,
         totalQuestions,
@@ -1360,7 +1363,7 @@ export default function LessonPage() {
 
       // If quiz has long_text questions, it needs teacher grading
       // Otherwise, it's auto-graded
-      const isGraded = !hasLongText;
+      const isGraded = isSpecialGroupStudent ? true : !hasLongText;
 
       // If we have an existing draft, finalize it instead of creating new
       if (quizAttempt?.id && quizAttempt.is_draft) {
@@ -1370,7 +1373,7 @@ export default function LessonPage() {
           is_draft: false,  // Finalize the draft
           total_questions: totalQuestions,  // Update total_questions to include gaps
           correct_answers: score,
-          score_percentage: totalQuestions > 0 ? (score / totalQuestions) * 100 : 0,
+          score_percentage: totalQuestions > 0 ? (score / totalQuestions) * 100 : 100,
           is_graded: isGraded
         });
         setQuizAttempt(savedAttempt);
@@ -1385,7 +1388,7 @@ export default function LessonPage() {
           quiz_title: quizData?.title || 'Quiz',
           total_questions: totalQuestions,
           correct_answers: score,
-          score_percentage: totalQuestions > 0 ? (score / totalQuestions) * 100 : 0,
+          score_percentage: totalQuestions > 0 ? (score / totalQuestions) * 100 : 100,
           answers: JSON.stringify(answersToSave),
           time_spent_seconds: timeSpentSeconds,
           is_graded: isGraded,
@@ -1443,6 +1446,9 @@ export default function LessonPage() {
           }
         });
       } else {
+        if (question.question_type === 'long_text' && isSpecialGroupStudent) {
+          return;
+        }
         regularQuestions++;
         const answer = quizAnswers.get(question.id);
 
@@ -1663,7 +1669,7 @@ export default function LessonPage() {
               </div>
             );
           }
-  
+
           return (
             <div ref={textContentRef} className="relative">
               <TextLookupPopover containerRef={textContentRef} />
@@ -1704,6 +1710,7 @@ export default function LessonPage() {
               quizAttempt={quizAttempt}
               highlightedQuestionId={searchParams.get('questionId') || undefined}
               isTeacher={user?.role === 'teacher' || user?.role === 'admin' || user?.role === 'curator'}
+              isSpecialGroupStudent={isSpecialGroupStudent}
             />
             </div>
           );

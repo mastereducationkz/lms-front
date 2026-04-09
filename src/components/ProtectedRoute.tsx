@@ -52,6 +52,17 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/dashboard" replace />;
   }
 
+  // Special-group-only students must not use Assignment Zero (redirect if they open the URL)
+  if (
+    requireAuth &&
+    isAuthenticated &&
+    user?.role === 'student' &&
+    user?.special_group_only_student &&
+    location.pathname === '/assignment-zero'
+  ) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   // If specific roles are required
   if (requireAuth && allowedRoles && !hasAnyRole(allowedRoles)) {
     return fallback || (
@@ -79,6 +90,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     user?.role === 'student' && 
     !skipAssignmentZeroCheck &&
     user?.assignment_zero_completed === false &&
+    !user?.special_group_only_student &&
     location.pathname !== '/assignment-zero'
   ) {
     return <Navigate to="/assignment-zero" replace />;

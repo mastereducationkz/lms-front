@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { connectSocket } from '../services/socket';
@@ -134,9 +134,20 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
   const [courses, setCourses] = useState<Course[]>([]);
   const [isCoursesExpanded, setIsCoursesExpanded] = useState(false);
   const [isLoadingCourses, setIsLoadingCourses] = useState(false);
-  const [isSpecialGroupStudent, setIsSpecialGroupStudent] = useState(false);
+  const [groupsSpecialChecked, setGroupsSpecialChecked] = useState<boolean | null>(null);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  // Hide restricted student nav items until role-specific special-group state is resolved.
+  const hideRestrictedStudentNav = useMemo(() => {
+    if (!user || user.role !== 'student') return false
+    if (user.special_group_only_student === true || groupsSpecialChecked === true) return true
+    if (
+      user.special_group_only_student === undefined &&
+      groupsSpecialChecked === null
+    ) return true
+    return false
+  }, [user, groupsSpecialChecked]);
   
   // Load unseen graded count for students
   useEffect(() => {
@@ -161,22 +172,27 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
   useEffect(() => {
     const loadSpecialGroupsState = async () => {
       if (user?.role !== 'student') {
-        setIsSpecialGroupStudent(false);
+        setGroupsSpecialChecked(null);
         return;
+      }
+
+      if (user.special_group_only_student === true) {
+        setGroupsSpecialChecked(true)
+        return
       }
 
       try {
         const myGroups = await apiClient.getMyGroups();
         const hasOnlySpecialGroups = myGroups.length > 0 && myGroups.every(group => group.is_special);
-        setIsSpecialGroupStudent(hasOnlySpecialGroups);
+        setGroupsSpecialChecked(hasOnlySpecialGroups);
       } catch (error) {
         console.warn('Failed to load special group flags:', error);
-        setIsSpecialGroupStudent(false);
+        setGroupsSpecialChecked(false);
       }
     };
 
     loadSpecialGroupsState();
-  }, [user?.id, user?.role]);
+  }, [user?.id, user?.role, user?.special_group_only_student]);
   
   useEffect(() => {
     if (!user) return;
@@ -289,7 +305,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
       
       <nav className="flex flex-col flex-1 overflow-y-auto min-h-0 pt-1">
         {buildNavSections(
-          getNavigationItems(user?.role, unread, unseenGraded, isSpecialGroupStudent),
+          getNavigationItems(user?.role, unread, unseenGraded, hideRestrictedStudentNav),
           user?.role
         )
           .map((section) => ({

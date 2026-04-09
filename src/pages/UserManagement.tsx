@@ -55,6 +55,8 @@ interface GroupFormData {
   student_ids: number[];
   is_active: boolean;
   is_special: boolean;
+  /** First N lessons open for special groups with a course (default 1 on backend) */
+  max_open_lessons: number;
 }
 
 interface GroupWithDetails extends Group {
@@ -107,6 +109,7 @@ export default function UserManagement() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
+  const [showCreateSpecialGroupModal, setShowCreateSpecialGroupModal] = useState(false);
   const [showEditGroupModal, setShowEditGroupModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<GroupWithDetails | null>(null);
@@ -249,9 +252,11 @@ export default function UserManagement() {
     description: '',
     teacher_id: 0,
     curator_id: undefined,
+    course_id: undefined,
     student_ids: [],
     is_active: true,
-    is_special: false
+    is_special: false,
+    max_open_lessons: 1
   });
 
   const [editGroupFormData, setEditGroupFormData] = useState<GroupFormData>({
@@ -259,14 +264,29 @@ export default function UserManagement() {
     description: '',
     teacher_id: 0,
     curator_id: undefined,
+    course_id: undefined,
     student_ids: [],
     is_active: true,
-    is_special: false
+    is_special: false,
+    max_open_lessons: 1
+  });
+
+  const [specialGroupFormData, setSpecialGroupFormData] = useState<GroupFormData>({
+    name: '',
+    description: '',
+    teacher_id: 0,
+    curator_id: undefined,
+    course_id: undefined,
+    student_ids: [],
+    is_active: true,
+    is_special: true,
+    max_open_lessons: 1
   });
 
   // Form validation errors
   const [formErrors, setFormErrors] = useState<{ [key: string]: string }>({});
   const [groupFormErrors, setGroupFormErrors] = useState<{ [key: string]: string }>({});
+  const [specialGroupFormErrors, setSpecialGroupFormErrors] = useState<{ [key: string]: string }>({});
   const [editGroupFormErrors, setEditGroupFormErrors] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
@@ -476,16 +496,23 @@ export default function UserManagement() {
     return errors;
   };
 
-  const validateGroupForm = (): { [key: string]: string } => {
+  const validateCreateGroupForm = (data: GroupFormData): { [key: string]: string } => {
     const errors: { [key: string]: string } = {};
-    
-    if (!groupFormData.name.trim()) {
+
+    if (!data.name.trim()) {
       errors.name = 'Group name is required';
     }
-    if (!groupFormData.teacher_id) {
+    if (data.is_special) {
+      if (!data.curator_id) {
+        errors.curator_id = 'Curator is required for special groups';
+      }
+      if (data.course_id && data.max_open_lessons < 1) {
+        errors.max_open_lessons = 'Must be at least 1';
+      }
+    } else if (!data.teacher_id) {
       errors.teacher_id = 'Teacher is required';
     }
-    
+
     return errors;
   };
 
@@ -495,7 +522,14 @@ export default function UserManagement() {
     if (!editGroupFormData.name.trim()) {
       errors.name = 'Group name is required';
     }
-    if (!editGroupFormData.teacher_id) {
+    if (editGroupFormData.is_special) {
+      if (!editGroupFormData.curator_id) {
+        errors.curator_id = 'Curator is required for special groups';
+      }
+      if (editGroupFormData.course_id && editGroupFormData.max_open_lessons < 1) {
+        errors.max_open_lessons = 'Must be at least 1';
+      }
+    } else if (!editGroupFormData.teacher_id) {
       errors.teacher_id = 'Teacher is required';
     }
     
@@ -612,7 +646,7 @@ export default function UserManagement() {
   };
 
   const handleCreateGroup = async () => {
-    const errors = validateGroupForm();
+    const errors = validateCreateGroupForm(groupFormData);
     if (Object.keys(errors).length > 0) {
       setGroupFormErrors(errors);
       toast('Please fix the form errors', 'error');
@@ -624,11 +658,17 @@ export default function UserManagement() {
       const groupData = {
         name: groupFormData.name.trim(),
         description: groupFormData.description?.trim() || undefined,
-        teacher_id: groupFormData.teacher_id,
+        teacher_id: groupFormData.is_special
+          ? (groupFormData.teacher_id > 0 ? groupFormData.teacher_id : undefined)
+          : groupFormData.teacher_id,
         curator_id: groupFormData.curator_id || undefined,
         course_id: groupFormData.course_id || undefined,
         is_active: groupFormData.is_active,
-        is_special: groupFormData.is_special
+        is_special: groupFormData.is_special,
+        max_open_lessons:
+          groupFormData.is_special && groupFormData.course_id
+            ? groupFormData.max_open_lessons
+            : undefined
       };
       
       const newGroup = await apiClient.createGroup(groupData);
@@ -659,6 +699,55 @@ export default function UserManagement() {
     }
   };
 
+  const handleCreateSpecialGroup = async () => {
+    const errors = validateCreateGroupForm(specialGroupFormData);
+    if (Object.keys(errors).length > 0) {
+      setSpecialGroupFormErrors(errors);
+      toast('Please fix the form errors', 'error');
+      return;
+    }
+    setSpecialGroupFormErrors({});
+
+    try {
+      const groupData = {
+        name: specialGroupFormData.name.trim(),
+        description: specialGroupFormData.description?.trim() || undefined,
+        teacher_id:
+          specialGroupFormData.teacher_id > 0 ? specialGroupFormData.teacher_id : undefined,
+        curator_id: specialGroupFormData.curator_id || undefined,
+        course_id: specialGroupFormData.course_id || undefined,
+        is_active: specialGroupFormData.is_active,
+        is_special: true,
+        max_open_lessons:
+          specialGroupFormData.course_id ? specialGroupFormData.max_open_lessons : undefined
+      };
+
+      const newGroup = await apiClient.createGroup(groupData);
+      toast('Special group created successfully', 'success');
+
+      if (specialGroupFormData.student_ids.length > 0) {
+        try {
+          await apiClient.bulkAddStudentsToGroup(newGroup.id, specialGroupFormData.student_ids);
+          toast(`Added ${specialGroupFormData.student_ids.length} students to the group`, 'success');
+        } catch (error) {
+          console.error('Failed to add students to group:', error);
+          toast('Group created but failed to add students', 'error');
+        }
+      }
+
+      setShowCreateSpecialGroupModal(false);
+      resetSpecialGroupForm();
+      loadGroups();
+      loadUsers();
+
+      setScheduleGroupId(newGroup.id);
+      setShowScheduleModal(true);
+    } catch (error) {
+      console.error('Failed to create special group:', error);
+      toast('Failed to create special group', 'error');
+    }
+  };
+
   const handleUpdateGroup = async () => {
     if (!selectedGroup) return;
     
@@ -674,12 +763,18 @@ export default function UserManagement() {
       const groupData = {
         name: editGroupFormData.name.trim(),
         description: editGroupFormData.description?.trim() || undefined,
-        teacher_id: editGroupFormData.teacher_id,
+        teacher_id: editGroupFormData.is_special
+          ? (editGroupFormData.teacher_id > 0 ? editGroupFormData.teacher_id : undefined)
+          : editGroupFormData.teacher_id,
         curator_id: editGroupFormData.curator_id || undefined,
         course_id: editGroupFormData.course_id || undefined,
         student_ids: editGroupFormData.student_ids,
         is_active: editGroupFormData.is_active,
-        is_special: editGroupFormData.is_special
+        is_special: editGroupFormData.is_special,
+        max_open_lessons:
+          editGroupFormData.is_special && editGroupFormData.course_id
+            ? editGroupFormData.max_open_lessons
+            : undefined
       };
       
       await apiClient.updateGroup(selectedGroup.id, groupData);
@@ -740,9 +835,25 @@ export default function UserManagement() {
       course_id: undefined,
       student_ids: [],
       is_active: true,
-      is_special: false
+      is_special: false,
+      max_open_lessons: 1
     });
     setGroupFormErrors({});
+  };
+
+  const resetSpecialGroupForm = () => {
+    setSpecialGroupFormData({
+      name: '',
+      description: '',
+      teacher_id: 0,
+      curator_id: undefined,
+      course_id: undefined,
+      student_ids: [],
+      is_active: true,
+      is_special: true,
+      max_open_lessons: 1
+    });
+    setSpecialGroupFormErrors({});
   };
 
   const openEditGroupModal = (group: GroupWithDetails) => {
@@ -750,11 +861,13 @@ export default function UserManagement() {
     setEditGroupFormData({
       name: group.name,
       description: group.description || '',
-      teacher_id: group.teacher_id,
+      teacher_id: group.teacher_id ?? 0,
       curator_id: group.curator_id || undefined,
+      course_id: group.course_id ?? undefined,
       student_ids: group.students?.map(s => Number(s.id)) || [],
       is_active: group.is_active,
-      is_special: !!group.is_special
+      is_special: !!group.is_special,
+      max_open_lessons: group.max_open_lessons != null && group.max_open_lessons >= 1 ? group.max_open_lessons : 1
     });
     setShowEditGroupModal(true);
   };
@@ -765,9 +878,11 @@ export default function UserManagement() {
       description: '',
       teacher_id: 0,
       curator_id: undefined,
+      course_id: undefined,
       student_ids: [],
       is_active: true,
-      is_special: false
+      is_special: false,
+      max_open_lessons: 1
     });
     setSelectedGroup(null);
     setEditGroupFormErrors({});
@@ -787,7 +902,10 @@ export default function UserManagement() {
         </div>
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <Button
-            onClick={() => setShowCreateGroupModal(true)}
+            onClick={() => {
+              resetGroupForm();
+              setShowCreateGroupModal(true);
+            }}
             variant="outline"
             className="flex items-center gap-2 w-full sm:w-auto"
           >
@@ -1283,11 +1401,25 @@ export default function UserManagement() {
                     Bulk Schedule
                   </Button>
                   <Button
-                    onClick={() => setShowCreateGroupModal(true)}
+                    onClick={() => {
+                      resetGroupForm();
+                      setShowCreateGroupModal(true);
+                    }}
+                    variant="outline"
                     className="flex items-center gap-2"
                   >
                     <Plus className="w-4 h-4" />
                     Create Group
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      resetSpecialGroupForm();
+                      setShowCreateSpecialGroupModal(true);
+                    }}
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Create Special Group
                   </Button>
                 </div>
               </div>
@@ -1509,6 +1641,30 @@ export default function UserManagement() {
           students={students}
           courses={courses}
           errors={groupFormErrors}
+          purpose="standard"
+        />
+      </Modal>
+
+      {/* Create Special Group Modal */}
+      <Modal
+        open={showCreateSpecialGroupModal}
+        onClose={() => {
+          setShowCreateSpecialGroupModal(false);
+          resetSpecialGroupForm();
+        }}
+        title="Create Special Group"
+        onSubmit={handleCreateSpecialGroup}
+        submitText="Create Special Group"
+      >
+        <GroupForm
+          formData={specialGroupFormData}
+          setFormData={setSpecialGroupFormData}
+          teachers={teachers}
+          curators={curators}
+          students={students}
+          courses={courses}
+          errors={specialGroupFormErrors}
+          purpose="special-only"
         />
       </Modal>
 
@@ -1531,6 +1687,7 @@ export default function UserManagement() {
           students={students}
           courses={courses}
           errors={editGroupFormErrors}
+          purpose="standard"
         />
       </Modal>
 
@@ -1841,15 +1998,26 @@ function UserForm({ formData, setFormData, groups, courses, errors = {} }: UserF
 // Group Form Component
 interface GroupFormProps {
   formData: GroupFormData;
-  setFormData: (data: GroupFormData) => void;
+  setFormData: React.Dispatch<React.SetStateAction<GroupFormData>>;
   teachers: User[];
   curators: User[];
   students: User[];
   courses: Course[]; // Добавляем список курсов
   errors?: { [key: string]: string };
+  /** Dedicated special-group create flow: hides “Special group” toggle and shows short help */
+  purpose?: 'standard' | 'special-only';
 }
 
-function GroupForm({ formData, setFormData, teachers, curators, students, courses, errors = {} }: GroupFormProps) {
+function GroupForm({
+  formData,
+  setFormData,
+  teachers,
+  curators,
+  students,
+  courses,
+  errors = {},
+  purpose = 'standard'
+}: GroupFormProps) {
   const [studentSearchQuery, setStudentSearchQuery] = useState('');
 
   // Функция для генерации названия группы
@@ -1859,17 +2027,26 @@ function GroupForm({ formData, setFormData, teachers, curators, students, course
     return `${firstName} - ${suffix}`;
   };
 
-  // Автоматически обновляем название группы при изменении учителя или описания
+  // Auto-generate group name from teacher (default) or curator (special groups)
   React.useEffect(() => {
-    if (formData.teacher_id) {
-      const selectedTeacher = teachers.find(t => Number(t.id) === formData.teacher_id);
+    if (formData.is_special) {
+      if (formData.curator_id) {
+        const curator = curators.find((t) => Number(t.id) === formData.curator_id);
+        if (curator) {
+          const label = curator.name || curator.full_name || 'Curator';
+          const newName = generateGroupName(label, formData.description);
+          setFormData((prev: GroupFormData) => ({ ...prev, name: newName }));
+        }
+      }
+    } else if (formData.teacher_id) {
+      const selectedTeacher = teachers.find((t) => Number(t.id) === formData.teacher_id);
       if (selectedTeacher) {
         const teacherName = selectedTeacher.name || selectedTeacher.full_name;
         const newName = generateGroupName(teacherName, formData.description);
-        setFormData({ ...formData, name: newName });
+        setFormData((prev: GroupFormData) => ({ ...prev, name: newName }));
       }
     }
-  }, [formData.teacher_id, formData.description]);
+  }, [formData.is_special, formData.teacher_id, formData.curator_id, formData.description, teachers, curators]);
 
   const filteredStudents = students.filter(student => {
     const query = studentSearchQuery.trim().toLowerCase();
@@ -1882,18 +2059,37 @@ function GroupForm({ formData, setFormData, teachers, curators, students, course
 
   return (
     <div className="space-y-4">
+      {purpose === 'special-only' ? (
+        <div className="rounded-lg border border-amber-200/80 bg-amber-50/80 px-3 py-2.5 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
+          Special groups use a <strong>curator</strong> instead of a required teacher, have <strong>no homework</strong> for students
+          who only belong to such groups, and can <strong>limit visible lessons</strong> when a course is linked.
+        </div>
+      ) : null}
+
       {/* Сначала выбор учителя и куратора */}
       <div className="grid grid-cols-2 gap-4">
         <div className="p-1">
-          <Label htmlFor="teacher" className="text-sm font-medium">Teacher</Label>
+          <Label htmlFor="teacher" className="text-sm font-medium">
+            {formData.is_special ? 'Teacher (optional)' : 'Teacher'}
+          </Label>
           <Select
-            value={formData.teacher_id?.toString() || ''}
-            onValueChange={(value) => setFormData({ ...formData, teacher_id: parseInt(value) })}
+            value={
+              formData.is_special
+                ? (formData.teacher_id > 0 ? formData.teacher_id.toString() : 'none')
+                : (formData.teacher_id > 0 ? formData.teacher_id.toString() : '')
+            }
+            onValueChange={(value) =>
+              setFormData({
+                ...formData,
+                teacher_id: value && value !== 'none' ? parseInt(value, 10) : 0
+              })
+            }
           >
             <SelectTrigger className={errors.teacher_id ? 'border-red-500' : ''}>
-              <SelectValue placeholder="Select teacher" />
+              <SelectValue placeholder={formData.is_special ? 'No teacher' : 'Select teacher'} />
             </SelectTrigger>
             <SelectContent className="z-[1100]">
+              {formData.is_special && <SelectItem value="none">No teacher</SelectItem>}
               {teachers.map((teacher) => (
                 <SelectItem key={teacher.id} value={teacher.id.toString()}>
                   {teacher.name || teacher.full_name}
@@ -1907,12 +2103,14 @@ function GroupForm({ formData, setFormData, teachers, curators, students, course
         </div>
         
         <div className="p-1">
-          <Label htmlFor="curator" className="text-sm font-medium">Curator</Label>
+          <Label htmlFor="curator" className="text-sm font-medium">
+            Curator{formData.is_special ? ' (required)' : ''}
+          </Label>
           <Select
             value={formData.curator_id?.toString() || 'none'}
             onValueChange={(value) => setFormData({ ...formData, curator_id: value && value !== 'none' ? parseInt(value) : undefined })}
           >
-            <SelectTrigger>
+            <SelectTrigger className={errors.curator_id ? 'border-red-500' : ''}>
               <SelectValue placeholder="No curator" />
             </SelectTrigger>
             <SelectContent className="z-[1100]">
@@ -1924,6 +2122,9 @@ function GroupForm({ formData, setFormData, teachers, curators, students, course
               ))}
             </SelectContent>
           </Select>
+          {errors.curator_id && (
+            <p className="text-red-500 text-xs mt-1">{errors.curator_id}</p>
+          )}
         </div>
       </div>
       
@@ -1950,6 +2151,34 @@ function GroupForm({ formData, setFormData, teachers, curators, students, course
           Select a course to automatically grant this group access
         </p>
       </div>
+
+      {formData.is_special && formData.course_id ? (
+        <div className="p-1">
+          <Label htmlFor="max_open_lessons" className="text-sm font-medium">
+            Open lessons per module (first N units in each module)
+          </Label>
+          <Input
+            id="max_open_lessons"
+            type="number"
+            min={1}
+            className={errors.max_open_lessons ? 'border-red-500' : ''}
+            value={formData.max_open_lessons}
+            onChange={(e) => {
+              const n = parseInt(e.target.value, 10)
+              setFormData({
+                ...formData,
+                max_open_lessons: Number.isFinite(n) && n >= 1 ? n : 1
+              })
+            }}
+          />
+          {errors.max_open_lessons && (
+            <p className="text-red-500 text-xs mt-1">{errors.max_open_lessons}</p>
+          )}
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            In each module, only the first N lessons (by order) are available—the same limit applies separately in every module. No homework for students who only have special access.
+          </p>
+        </div>
+      ) : null}
       
       {/* Затем название группы с автогенерацией */}
       <div className="p-1">
@@ -1961,7 +2190,11 @@ function GroupForm({ formData, setFormData, teachers, curators, students, course
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           required
           className={errors.name ? 'border-red-500' : ''}
-          placeholder="Group name will be auto-generated when teacher is selected"
+          placeholder={
+            purpose === 'special-only'
+              ? 'Auto-filled from curator (you can edit)'
+              : 'Group name will be auto-generated when teacher is selected'
+          }
         />
         {errors.name && (
           <p className="text-red-500 text-xs mt-1">{errors.name}</p>
@@ -2045,16 +2278,25 @@ function GroupForm({ formData, setFormData, teachers, curators, students, course
         </Label>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="group_is_special"
-          checked={formData.is_special}
-          onCheckedChange={(checked) => setFormData({ ...formData, is_special: checked as boolean })}
-        />
-        <Label htmlFor="group_is_special" className="text-sm">
-          Special group (hide banner, homework and "Your Teacher")
-        </Label>
-      </div>
+      {purpose === 'standard' ? (
+        <div className="flex items-center space-x-2">
+          <Checkbox
+            id="group_is_special"
+            checked={formData.is_special}
+            onCheckedChange={(checked) => {
+              const next = checked as boolean
+              setFormData({
+                ...formData,
+                is_special: next,
+                teacher_id: next ? 0 : formData.teacher_id
+              })
+            }}
+          />
+          <Label htmlFor="group_is_special" className="text-sm">
+            Special group (curator required, optional teacher; no homework; limit lessons when a course is linked)
+          </Label>
+        </div>
+      ) : null}
     </div>
   );
 }

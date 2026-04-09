@@ -79,6 +79,7 @@ interface QuizRendererProps {
   quizAttempt?: any;
   highlightedQuestionId?: string;
   isTeacher?: boolean;
+  isSpecialGroupStudent?: boolean;
 }
 
 const QuizRenderer = (props: QuizRendererProps) => {
@@ -110,7 +111,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
     autoFillCorrectAnswers,
     quizAttempt,
     highlightedQuestionId,
-    isTeacher
+    isTeacher,
+    isSpecialGroupStudent = false
   } = props;
 
   const navigate = useNavigate();
@@ -480,7 +482,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
     const stats = getGapStatistics();
     const totalItems = stats.totalGaps + stats.regularQuestions;
     const correctItems = stats.correctGaps + stats.correctRegular;
-    const scorePercentage = totalItems > 0 ? (correctItems / totalItems) * 100 : 0;
+    const scorePercentage = totalItems > 0 ? (correctItems / totalItems) * 100 : 100;
     const isPassed = scorePercentage >= 50;
 
     return (
@@ -623,12 +625,14 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
                   {/* Answer Input Based on Question Type */}
                   {q.question_type === 'long_text' ? (
-                    <LongTextQuestion
-                      question={q}
-                      value={userAnswer}
-                      onChange={(val) => setQuizAnswers(prev => new Map(prev.set(q.id.toString(), val)))}
-                      disabled={feedChecked}
-                    />
+                    <>
+                      <LongTextQuestion
+                        question={q}
+                        value={userAnswer}
+                        onChange={(val) => setQuizAnswers(prev => new Map(prev.set(q.id.toString(), val)))}
+                        disabled={feedChecked}
+                      />
+                    </>
                   ) : (q.question_type === 'short_answer' || q.question_type === 'media_open_question') ? (
                     <ShortAnswerQuestion
                       question={q}
@@ -931,7 +935,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
             const stats = getGapStatistics();
             const totalItems = stats.totalGaps + stats.regularQuestions;
             const correctItems = stats.correctGaps + stats.correctRegular;
-            const scorePercentage = totalItems > 0 ? (correctItems / totalItems) * 100 : 0;
+            const scorePercentage = totalItems > 0 ? (correctItems / totalItems) * 100 : 100;
             const isPassed = scorePercentage >= 50;
 
             return (
@@ -1204,12 +1208,19 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
             {/* Answer Input Based on Question Type */}
             {q.question_type === 'long_text' ? (
-              <LongTextQuestion
-                question={q}
-                value={userAnswer}
-                onChange={(val) => handleQuizAnswer(q.id.toString(), val)}
-                disabled={false}
-              />
+              <>
+                <LongTextQuestion
+                  question={q}
+                  value={userAnswer}
+                  onChange={(val) => handleQuizAnswer(q.id.toString(), val)}
+                  disabled={false}
+                />
+                {isSpecialGroupStudent && (
+                  <p className="mt-2 text-sm text-amber-700 dark:text-amber-400">
+                    This question requires teacher review. Your answer will be saved without grading.
+                  </p>
+                )}
+              </>
             ) : (q.question_type === 'short_answer' || q.question_type === 'media_open_question') ? (
               <ShortAnswerQuestion
                 question={q}
@@ -1568,7 +1579,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
     // Otherwise calculate from correct/total
     const percentage = (quizAttempt && quizAttempt.is_graded && quizAttempt.score_percentage !== undefined)
       ? Math.round(quizAttempt.score_percentage)
-      : (totalItems > 0 ? Math.round((correctItems / totalItems) * 100) : 0);
+      : (totalItems > 0 ? Math.round((correctItems / totalItems) * 100) : 100);
     const isPassed = percentage >= 50;
 
     if (showAllAnswers) {
