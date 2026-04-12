@@ -97,17 +97,69 @@ class TokenManager {
 
 const tokenManager = new TokenManager();
 
-let isRefreshing = false;
-let refreshSubscribers: Array<(token: string) => void> = [];
-let isAuthFailureHandled = false;
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
-function onRefreshed(token: string): void {
-  refreshSubscribers.forEach(callback => callback(token));
-  refreshSubscribers = [];
+type RefreshWaiter = {
+  resolve: (token: string) => void
+  reject: (err: unknown) => void
 }
 
-function addRefreshSubscriber(callback: (token: string) => void): void {
-  refreshSubscribers.push(callback);
+let isRefreshing = false
+let refreshSubscribers: RefreshWaiter[] = []
+let isAuthFailureHandled = false
+
+function onRefreshed(token: string): void {
+  refreshSubscribers.forEach(({ resolve }) => resolve(token))
+  refreshSubscribers = []
+}
+
+function onRefreshFailed(err: unknown): void {
+  refreshSubscribers.forEach(({ reject }) => reject(err))
+  refreshSubscribers = []
+}
+
+function addRefreshSubscriber(waiter: RefreshWaiter): void {
+  refreshSubscribers.push(waiter)
+}
+
+/** Backend down / restarting — do not wipe cookies. */
+function isTransientRefreshFailure(err: unknown): boolean {
+  const e = err as { response?: { status?: number }; code?: string }
+  if (!e?.response) {
+    return true
+  }
+  const s = e.response.status
+  return s === 502 || s === 503 || s === 504 || s === 429
+}
+
+/** Invalid or revoked refresh — user must log in again. */
+function isAuthRefreshRejected(err: unknown): boolean {
+  const e = err as { response?: { status?: number } }
+  const s = e?.response?.status
+  return s === 401 || s === 403
+}
+
+async function postRefreshWithRetries(refreshToken: string) {
+  const delaysMs = [400, 1200, 2500]
+  let lastErr: unknown
+  for (let attempt = 0; attempt < delaysMs.length + 1; attempt++) {
+    try {
+      return await axios.post(
+        `${API_BASE_URL}/auth/refresh`,
+        { refresh_token: refreshToken },
+        { withCredentials: true, timeout: 25000 }
+      )
+    } catch (err) {
+      lastErr = err
+      const canRetry = attempt < delaysMs.length && isTransientRefreshFailure(err)
+      if (canRetry) {
+        await sleep(delaysMs[attempt] ?? 2000)
+        continue
+      }
+      throw err
+    }
+  }
+  throw lastErr
 }
 
 function isAuthEndpoint(url?: string): boolean {
@@ -178,49 +230,57 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       if (isRefreshing) {
-        return new Promise((resolve) => {
-          addRefreshSubscriber((token: string) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            resolve(api(originalRequest));
-          });
-        });
+        return new Promise((resolve, reject) => {
+          addRefreshSubscriber({
+            resolve: (token: string) => {
+              originalRequest.headers.Authorization = `Bearer ${token}`
+              resolve(api(originalRequest))
+            },
+            reject,
+          })
+        })
       }
 
-      isRefreshing = true;
+      isRefreshing = true
 
       try {
-        const refreshToken = tokenManager.getRefreshToken();
+        const refreshToken = tokenManager.getRefreshToken()
         if (!refreshToken) {
-          throw new Error('Missing refresh token');
+          throw new Error('Missing refresh token')
         }
 
-        const response = await axios.post(
-          `${API_BASE_URL}/auth/refresh`,
-          { refresh_token: refreshToken },
-          { withCredentials: true }
-        );
+        const response = await postRefreshWithRetries(refreshToken)
 
-        const { access_token, refresh_token } = response.data;
-        tokenManager.setTokens(access_token, refresh_token);
+        const { access_token, refresh_token } = response.data
+        tokenManager.setTokens(access_token, refresh_token)
 
-        isRefreshing = false;
-        isAuthFailureHandled = false;
-        onRefreshed(access_token);
+        isRefreshing = false
+        isAuthFailureHandled = false
+        onRefreshed(access_token)
 
-        originalRequest.headers.Authorization = `Bearer ${access_token}`;
-        return api(originalRequest);
+        originalRequest.headers.Authorization = `Bearer ${access_token}`
+        return api(originalRequest)
       } catch (refreshError) {
-        isRefreshing = false;
-        refreshSubscribers = [];
-        if (logoutHandler) {
-          try {
-            await logoutHandler();
-          } catch {
-            // Ignore logout handler failures during auth failure handling.
+        isRefreshing = false
+        onRefreshFailed(refreshError)
+
+        const transient = isTransientRefreshFailure(refreshError)
+        const rejected = isAuthRefreshRejected(refreshError)
+
+        if (rejected || (!transient && refreshError instanceof Error && refreshError.message === 'Missing refresh token')) {
+          if (logoutHandler) {
+            try {
+              await logoutHandler()
+            } catch {
+              // Ignore logout handler failures during auth failure handling.
+            }
           }
+          handleAuthFailureOnce()
+        } else {
+          originalRequest._retry = false
         }
-        handleAuthFailureOnce();
-        return Promise.reject(refreshError);
+
+        return Promise.reject(refreshError)
       }
     }
 
