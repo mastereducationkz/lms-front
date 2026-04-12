@@ -192,8 +192,11 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption }: Z
       <div className="relative group">
         <div 
           ref={containerRef}
-          className="overflow-hidden rounded-lg border bg-gray-50"
-          style={{ maxHeight: '500px' }}
+          className={`rounded-lg border bg-gray-50 ${
+            zoom > 1
+              ? 'max-h-[min(90vh,1600px)] overflow-hidden'
+              : 'overflow-visible'
+          }`}
           onMouseDown={handleInlineMouseDown}
           onMouseMove={handleInlineMouseMove}
           onMouseUp={handleInlineMouseUp}
