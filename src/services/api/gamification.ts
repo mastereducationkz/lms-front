@@ -66,8 +66,15 @@ export async function getGamificationLeaderboard(params: {
   try {
     const response = await api.get('/gamification/leaderboard', { params });
     return response.data;
-  } catch (error) {
-    throw new Error('Failed to load gamification leaderboard');
+  } catch (error: any) {
+    const detail = error?.response?.data?.detail;
+    const msg =
+      typeof detail === 'string'
+        ? detail
+        : Array.isArray(detail)
+          ? detail.map((d: { msg?: string }) => d?.msg || '').filter(Boolean).join('; ')
+          : 'Failed to load gamification leaderboard';
+    throw new Error(msg);
   }
 }
 

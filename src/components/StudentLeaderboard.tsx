@@ -109,7 +109,7 @@ export default function StudentLeaderboard() {
       }
       
     } catch (err: any) {
-      setError(err.message || 'Failed to load leaderboard');
+      setError(err?.message || 'Failed to load leaderboard');
       console.error('Leaderboard error:', err);
     } finally {
       setIsLoading(false);
