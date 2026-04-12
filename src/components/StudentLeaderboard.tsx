@@ -31,8 +31,15 @@ interface LeaderboardData {
   steps_to_next_rank: number;
 }
 
+type SelfRankSummary = {
+  rank: number;
+  points: number;
+  pointsToNext: number;
+};
+
 export default function StudentLeaderboard() {
   const [entries, setEntries] = useState<any[]>([]);
+  const [selfRankSummary, setSelfRankSummary] = useState<SelfRankSummary | null>(null);
   const [totalParticipants, setTotalParticipants] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [scope, setScope] = useState<'all' | 'group'>('group');
@@ -87,6 +94,19 @@ export default function StudentLeaderboard() {
       const response = await apiClient.getGamificationLeaderboard(params);
       setEntries(response.entries || []);
       setTotalParticipants(response.total_participants || 0);
+      if (response.self_only) {
+        if (typeof response.my_rank === 'number') {
+          setSelfRankSummary({
+            rank: response.my_rank,
+            points: response.my_points ?? 0,
+            pointsToNext: Math.max(0, response.points_to_next_rank ?? 0),
+          });
+        } else {
+          setSelfRankSummary(null);
+        }
+      } else {
+        setSelfRankSummary(null);
+      }
       
     } catch (err: any) {
       setError(err.message || 'Failed to load leaderboard');
@@ -97,20 +117,28 @@ export default function StudentLeaderboard() {
   };
 
   const getUserRankInfo = () => {
+    if (selfRankSummary) {
+      return {
+        rank: selfRankSummary.rank,
+        points: selfRankSummary.points,
+        pointsToNext: selfRankSummary.pointsToNext,
+        isTop10: selfRankSummary.rank <= 10,
+      };
+    }
     if (!currentUser || entries.length === 0) return null;
-    
+
     const index = entries.findIndex(e => e.user_id === currentUser.id);
-    if (index === -1) return null; // User not in leaderboard
-    
+    if (index === -1) return null;
+
     const entry = entries[index];
     const prevEntry = index > 0 ? entries[index - 1] : null;
-    const pointsToNext = prevEntry ? (prevEntry.points - entry.points) : 0;
-    
+    const pointsToNext = prevEntry ? prevEntry.points - entry.points : 0;
+
     return {
       rank: entry.rank,
       points: entry.points,
-      pointsToNext: pointsToNext,
-      isTop10: entry.rank <= 10
+      pointsToNext,
+      isTop10: entry.rank <= 10,
     };
   };
 

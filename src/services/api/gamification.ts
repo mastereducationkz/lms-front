@@ -58,6 +58,10 @@ export async function getGamificationLeaderboard(params: {
     points: number;
     rank: number;
   }>;
+  self_only?: boolean;
+  my_rank?: number | null;
+  my_points?: number | null;
+  points_to_next_rank?: number | null;
 }> {
   try {
     const response = await api.get('/gamification/leaderboard', { params });
