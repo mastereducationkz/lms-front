@@ -12,7 +12,12 @@ export async function getAllGroups(): Promise<any> {
 
 export async function getGroups(): Promise<Group[]> {
   try {
-    const response = await api.get('/admin/groups');
+    const response = await api.get('/admin/groups', {
+      params: {
+        skip: 0,
+        limit: 1000,
+      },
+    });
     return response.data;
   } catch (error) {
     throw new Error('Failed to fetch groups');
