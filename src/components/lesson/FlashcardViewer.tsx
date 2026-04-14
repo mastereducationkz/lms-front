@@ -246,7 +246,13 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
             >
               <div
                 className="absolute inset-0 p-8 flex flex-col justify-center items-center text-center"
-                style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
+                style={{
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                  opacity: isFlipped ? 0 : 1,
+                  zIndex: isFlipped ? 0 : 2,
+                  transition: 'opacity 220ms ease'
+                }}
               >
                 <div className="space-y-4">
                   <div className="text-sm text-muted-foreground mb-4">Question</div>
@@ -268,7 +274,10 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
                 style={{
                   transform: 'rotateY(180deg)',
                   backfaceVisibility: 'hidden',
-                  WebkitBackfaceVisibility: 'hidden'
+                  WebkitBackfaceVisibility: 'hidden',
+                  opacity: isFlipped ? 1 : 0,
+                  zIndex: isFlipped ? 2 : 0,
+                  transition: 'opacity 220ms ease'
                 }}
               >
                 <div className="space-y-4">
