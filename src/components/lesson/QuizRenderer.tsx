@@ -1680,12 +1680,12 @@ const QuizRenderer = (props: QuizRendererProps) => {
     if (showAllAnswers) {
       return (
         <div className="w-full md:max-w-4xl md:mx-auto space-y-4 md:space-y-6 md:p-4">
-          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/40 py-3 mb-2">
+          <div className="rounded-xl border border-border/60 bg-background/60 px-4 py-4 mb-2">
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-bold text-foreground">Correct Answers</h2>
               <p className="text-muted-foreground">Review your answers below</p>
             </div>
-            <div className="mt-3 flex justify-center gap-2">
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
               <Button
                 onClick={() => setShowAllAnswers(false)}
                 variant="outline"
@@ -1706,6 +1706,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
           <div className="space-y-6">
             {questions.map((q, idx) => {
+              if (q.question_type === 'image_content') return null
+
               const userAnswer = quizAnswers.get(q.id);
               const displayNumber = getQuestionDisplayNumber(idx);
               const questionGaps = (q.question_type === 'fill_blank' || q.question_type === 'text_completion')
