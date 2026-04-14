@@ -173,16 +173,16 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
     <div className="max-w-2xl mx-auto space-y-6 p-4">
       {/* Header */}
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-bold text-gray-900">{flashcardSet.title}</h2>
+        <h2 className="text-2xl font-bold text-foreground">{flashcardSet.title}</h2>
         {flashcardSet.description && (
-          <p className="text-gray-600">{flashcardSet.description}</p>
+          <p className="text-muted-foreground">{flashcardSet.description}</p>
         )}
       </div>
 
       {/* Progress */}
       {flashcardSet?.show_progress && cards.length > 0 && (
         <div className="space-y-2">
-          <div className="flex justify-between text-sm text-gray-600">
+          <div className="flex justify-between text-sm text-muted-foreground">
             <span>Progress: {completedCards.size} / {cards.length}</span>
             <span>{Math.round(progress)}% complete</span>
           </div>
@@ -193,7 +193,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
       {/* Card Counter and Difficulty */}
       {cards.length > 0 && (
         <div className="flex justify-between items-center">
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-muted-foreground">
             Card {currentCardIndex + 1} of {cards.length}
           </div>
           <div className="flex items-center gap-2">
@@ -228,7 +228,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
             {!showingAnswer ? (
               // Front of card
               <div className="space-y-4">
-                <div className="text-sm text-gray-500 mb-4">Question</div>
+                <div className="text-sm text-muted-foreground mb-4">Question</div>
                 {currentCard.front_image_url && (
                   <img 
                     src={currentCard.front_image_url} 
@@ -236,14 +236,14 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
                     className="max-w-full max-h-80 object-contain rounded mb-4"
                   />
                 )}
-                <div className="text-xl font-medium text-gray-900">
+                <div className="text-xl font-medium text-foreground">
                   {currentCard.front_text}
                 </div>
               </div>
             ) : (
               // Back of card
               <div className="space-y-4">
-                <div className="text-sm text-gray-500 mb-4">Answer</div>
+                <div className="text-sm text-muted-foreground mb-4">Answer</div>
                 {currentCard.back_image_url && (
                   <img 
                     src={currentCard.back_image_url} 
@@ -251,7 +251,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
                     className="max-w-full max-h-80 object-contain rounded mb-4"
                   />
                 )}
-                <div className="text-xl font-medium text-gray-900">
+                <div className="text-xl font-medium text-foreground">
                   {currentCard.back_text}
                 </div>
               </div>
