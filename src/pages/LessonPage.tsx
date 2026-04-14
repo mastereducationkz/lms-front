@@ -5,7 +5,6 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { ChevronLeft, ChevronRight, Play, FileText, HelpCircle, ChevronDown, ChevronUp, Lock, Trophy, PanelLeftOpen, PanelLeftClose, SkipForward, Languages } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
-import { Progress } from '../components/ui/progress';
 import apiClient from '../services/api';
 import type { Lesson, Step, Course, CourseModule, StepProgress, StepAttachment } from '../types';
 import YouTubeVideoPlayer from '../components/YouTubeVideoPlayer';
@@ -216,22 +215,6 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
     setExpandedModules(newExpanded);
   };
 
-  // Calculate total progress for the course based on modules data
-  const calculateTotalProgress = () => {
-    if (!modules.length) return 0;
-
-    let totalLessons = 0;
-    let completedLessons = 0;
-
-    modules.forEach(module => {
-      const lessons = module.lessons || [];
-      totalLessons += lessons.length;
-      completedLessons += lessons.filter(l => l.is_completed).length;
-    });
-
-    return totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
-  };
-
   return (
     <div className={`${isCollapsed ? 'w-0 border-none' : 'w-80 border-r'} bg-background border-border/70 h-screen flex flex-col transition-all duration-300 overflow-hidden`}>
       <div className={`p-4 border-b border-border/70 bg-background/90 flex-shrink-0 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
@@ -259,12 +242,6 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
         )}
       </div>
       
-      {!isCollapsed && (
-        <div className="px-6 pb-4 pt-2 bg-background/80">
-           <Progress value={calculateTotalProgress()} className="h-2" />
-        </div>
-      )}
-
       {/* Modules and Lessons - Scrollable */}
       {!isCollapsed && (
       <div className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar bg-background">
@@ -293,8 +270,7 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                           <span className="text-xs text-muted-foreground">{completedInModule}/{lectures.length} lessons</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <Progress value={lectures.length ? (completedInModule / lectures.length) * 100 : 0} className="w-16 h-1" />
+                      <div className="flex items-center gap-1">
                         {isExpanded ?
                           <ChevronUp className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" /> :
                           <ChevronDown className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
@@ -1972,8 +1948,8 @@ export default function LessonPage() {
                 </div>
 
                 {/* Step Content */}
-                <Card className="border-none shadow-none">
-                  <CardContent className="p-4 sm:p-6 border-none">
+                <Card className="border-none shadow-none bg-transparent">
+                  <CardContent className="p-4 sm:p-6 border-none bg-transparent">
                     {currentStep ? (
                       <div className="min-h-[300px] sm:min-h-[400px] border-none">
                         {renderStepContent()}

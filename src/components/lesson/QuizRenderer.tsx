@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { ChevronRight, AlertTriangle, HelpCircle } from 'lucide-react';
 import { renderTextWithLatex } from '../../utils/latex';
 import { applyHighlightsToHtml as applyHighlightsToHtmlShared } from '../../utils/highlightUtils';
+import { parseGap } from '../../utils/gapParser';
 import type { Step } from '../../types';
 import { LongTextQuestion } from './quiz/LongTextQuestion';
 import { ShortAnswerQuestion } from './quiz/ShortAnswerQuestion';
@@ -41,6 +42,7 @@ type QuizQuestion = any;
 type QuizData = any;
 type HighlightColor = 'yellow' | 'pink' | 'blue';
 type TextHighlight = { text: string; color: HighlightColor };
+type ReviewStatusKey = 'correct' | 'incorrect' | 'partial' | 'review';
 
 interface QuizRendererProps {
   quizState: 'title' | 'question' | 'result' | 'completed' | 'feed';
@@ -505,7 +507,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
         {/* Quiz-level Media for Audio/PDF/Text Quizzes */}
         {quizData?.quiz_media_url && (
-          <div className="bg-card rounded-none md:rounded-lg">
+          <div className="bg-transparent">
             {quizData.quiz_media_type === 'audio' ? (
               <AudioPlayer
                 src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + quizData.quiz_media_url}
@@ -550,7 +552,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
             // Special rendering for image_content - just show the image, no question UI
             if (q.question_type === 'image_content') {
               return (
-                <div key={q.id} id={`question-${q.id}`} className="bg-card rounded-none md:rounded-xl border-t border-b md:border border-border/70">
+                <div key={q.id} id={`question-${q.id}`} className="bg-transparent">
                   <div className="p-2 md:p-6 flex flex-col items-center">
                     {q.media_url && (
                       <img
@@ -571,7 +573,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
               <div
                 key={q.id}
                 id={`question-${q.id}`}
-                className="relative overflow-visible bg-card rounded-none md:rounded-xl border-t border-b md:border border-border/70"
+                className="relative overflow-visible bg-transparent"
                 onMouseUp={() => handleTextSelection(q.id.toString())}
                 onClick={handleHighlightedTextClick}
               >
@@ -604,7 +606,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
                   {/* Content Text */}
                   {hasVisibleContent(q.content_text) && q.question_type !== 'text_completion' && q.question_type !== 'fill_blank' && (
-                    <div className="bg-muted/40 p-4 rounded-lg mb-4 border-l-4 border-primary/50">
+                    <div className="bg-muted/40 p-4 rounded-lg mb-4 border border-border/60">
                       <div
                         className="text-foreground/90 prose dark:prose-invert max-w-none select-text"
                         dangerouslySetInnerHTML={{ __html: renderHighlightedLatex(q.id.toString(), q.content_text) }}
@@ -614,7 +616,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
                   {/* Question */}
                   <h3 className="text-lg font-bold text-foreground mb-4 select-text">
-                    <span dangerouslySetInnerHTML={{ __html: renderHighlightedLatex(q.id.toString(), (q.question_text || (q.question_type === 'text_completion' ? 'Fill in the blanks:' : '')).replace(/\[\[([^\]]+)\]\]/g, '[[blank]]')) }} />
+                    <span dangerouslySetInnerHTML={{ __html: renderHighlightedLatex(q.id.toString(), (q.question_text || '').replace(/\[\[([^\]]+)\]\]/g, '[[blank]]')) }} />
                   </h3>
 
                   {/* Answer Input Based on Question Type */}
@@ -1062,7 +1064,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
     if (q.question_type === 'image_content') {
       return (
         <div className="w-full md:max-w-3xl md:mx-auto space-y-4 md:space-y-6 md:p-4">
-          <div className="bg-card rounded-none md:rounded-xl border-t border-b md:border border-border/70">
+          <div className="bg-transparent">
             <div className="p-2 md:p-6 flex flex-col items-center">
               {q.media_url && (
                 <img
@@ -1126,7 +1128,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
         {/* Quiz-level Media for Audio/PDF/Text Quizzes */}
         {quizData?.quiz_media_url && (
-          <div className="bg-card rounded-none md:rounded-lg">
+          <div className="bg-transparent">
             {quizData.quiz_media_type === 'audio' ? (
               <AudioPlayer
                 src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + quizData.quiz_media_url}
@@ -1161,7 +1163,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
         <div
           id={`question-${q.id}`}
-          className="relative overflow-visible bg-card rounded-none md:rounded-xl border-t border-b md:border border-border/70"
+          className="relative overflow-visible bg-transparent"
           onMouseUp={() => handleTextSelection(q.id.toString())}
           onClick={handleHighlightedTextClick}
         >
@@ -1187,7 +1189,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
             {/* Content Text */}
             {hasVisibleContent(q.content_text) && q.question_type !== 'text_completion' && q.question_type !== 'fill_blank' && (
-              <div className="bg-muted/40 p-4 rounded-lg mb-4 border-l-4 border-primary/50">
+              <div className="bg-muted/40 p-4 rounded-lg mb-4 border border-border/60">
                 <div
                   className="text-foreground/90 prose dark:prose-invert max-w-none select-text"
                   dangerouslySetInnerHTML={{ __html: renderHighlightedLatex(q.id.toString(), q.content_text) }}
@@ -1197,7 +1199,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
             {/* Question */}
             <h3 className="text-lg font-bold text-foreground mb-4 select-text">
-              <span dangerouslySetInnerHTML={{ __html: renderHighlightedLatex(q.id.toString(), (q.question_text || (q.question_type === 'text_completion' ? 'Fill in the blanks:' : '')).replace(/\[\[([^\]]+)\]\]/g, '[[blank]]')) }} />
+              <span dangerouslySetInnerHTML={{ __html: renderHighlightedLatex(q.id.toString(), (q.question_text || '').replace(/\[\[([^\]]+)\]\]/g, '[[blank]]')) }} />
             </h3>
 
             {/* Answer Input Based on Question Type */}
@@ -1348,7 +1350,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
         {/* Quiz-level Media for Audio/PDF/Text Quizzes */}
         {quizData?.quiz_media_url && (
-          <div className="bg-card rounded-none md:rounded-lg border-t border-b md:border border-border p-2 md:p-4 mb-4 md:mb-6">
+          <div className="bg-transparent p-2 md:p-4 mb-4 md:mb-6">
             {quizData.quiz_media_type === 'audio' ? (
               <AudioPlayer
                 src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + quizData.quiz_media_url}
@@ -1382,7 +1384,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
         )}
 
         {/* Question Review */}
-        <div className="bg-card rounded-none md:rounded-2xl overflow-hidden border-t border-b md:border border-border">
+        <div className="bg-transparent overflow-hidden">
           <div className="p-3 md:p-8">
             {/* Media Attachment for Media Questions */}
             {(question.question_type === 'media_question' || question.question_type === 'media_open_question') && question.media_url && (
@@ -1404,7 +1406,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
             {/* Content Text / Passage */}
             {hasVisibleContent(question.content_text) && question.question_type !== 'text_completion' && question.question_type !== 'fill_blank' && (
-              <div className="bg-muted/40 p-4 rounded-lg mb-4 border-l-4 border-primary/50">
+              <div className="bg-muted/40 p-4 rounded-lg mb-4 border border-border/60">
                 <div className="text-foreground/90 prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(question.content_text) }} />
               </div>
             )}
@@ -1412,18 +1414,6 @@ const QuizRenderer = (props: QuizRendererProps) => {
             {question.question_type !== 'fill_blank' && question.question_type !== 'text_completion' && (
               <h3 className="text-xl font-bold text-foreground mb-6">
                 <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex(question.question_text.replace(/\[\[.*?\]\]/g, '')) }} />
-              </h3>
-            )}
-
-            {question.question_type === 'fill_blank' && (
-              <h3 className="text-xl font-bold text-foreground mb-6">
-                Fill in the gaps
-              </h3>
-            )}
-
-            {question.question_type === 'text_completion' && (
-              <h3 className="text-xl font-bold text-foreground mb-6">
-                Fill in the blanks
               </h3>
             )}
 
@@ -1504,7 +1494,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
             {/* Explanation */}
             {question.explanation && (
-              <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border-l-4 border-blue-400">
+              <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-700/40">
                 <h5 className="text-lg font-bold text-blue-900 dark:text-blue-400 mb-3 flex items-center gap-2">
                   💡 Explanation
                 </h5>
@@ -1576,12 +1566,142 @@ const QuizRenderer = (props: QuizRendererProps) => {
       : (totalItems > 0 ? Math.round((correctItems / totalItems) * 100) : 100);
     const isPassed = percentage >= 50;
 
+    const getReviewStatusForQuestion = (q: any): { key: ReviewStatusKey; label: string; className: string } => {
+      const currentUserAnswer = quizAnswers.get(q.id);
+      const successClassName = 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-400';
+      const errorClassName = 'border border-rose-500/30 bg-rose-500/10 text-rose-400';
+      const partialClassName = 'border border-amber-500/30 bg-amber-500/10 text-amber-400';
+      const reviewClassName = 'border border-border bg-muted text-muted-foreground';
+
+      if (q.question_type === 'long_text') {
+        return { key: 'review', label: 'Needs review', className: reviewClassName };
+      }
+
+      if (q.question_type === 'short_answer' || q.question_type === 'media_open_question') {
+        const allowedAnswers = (q.correct_answer || '')
+          .toString()
+          .split('|')
+          .map((answer: string) => answer.trim().toLowerCase())
+          .filter((answer: string) => answer.length > 0);
+        const normalizedUserAnswer = (currentUserAnswer || '').toString().trim().toLowerCase();
+        const isCorrectAnswer = allowedAnswers.includes(normalizedUserAnswer);
+        return isCorrectAnswer
+          ? { key: 'correct', label: 'Correct', className: successClassName }
+          : { key: 'incorrect', label: 'Incorrect', className: errorClassName };
+      }
+
+      if (q.question_type === 'single_choice' || q.question_type === 'media_question') {
+        const isCorrectAnswer = currentUserAnswer === q.correct_answer;
+        return isCorrectAnswer
+          ? { key: 'correct', label: 'Correct', className: successClassName }
+          : { key: 'incorrect', label: 'Incorrect', className: errorClassName };
+      }
+
+      if (q.question_type === 'multiple_choice') {
+        const selectedAnswers = Array.isArray(currentUserAnswer) ? [...currentUserAnswer].sort() : [];
+        const expectedAnswers = Array.isArray(q.correct_answer) ? [...q.correct_answer].sort() : [];
+        const overlapCount = selectedAnswers.filter((answer) => expectedAnswers.includes(answer)).length;
+        const isCorrectAnswer = selectedAnswers.length === expectedAnswers.length &&
+          selectedAnswers.every((answer, index) => answer === expectedAnswers[index]);
+
+        if (isCorrectAnswer) {
+          return { key: 'correct', label: 'Correct', className: successClassName };
+        }
+
+        if (overlapCount > 0) {
+          return { key: 'partial', label: 'Partially correct', className: partialClassName };
+        }
+
+        return { key: 'incorrect', label: 'Incorrect', className: errorClassName };
+      }
+
+      if (q.question_type === 'fill_blank' || q.question_type === 'text_completion') {
+        const sourceText = q.content_text || q.question_text || '';
+        const gapTokens = sourceText.match(/\[\[(.*?)\]\]/g) || [];
+        const parsedExpectedAnswers = q.question_type === 'fill_blank'
+          ? gapTokens.map((token: string) => {
+              const parsed = parseGap(token.replace('[[', '').replace(']]', ''), q.gap_separator || ',');
+              return (parsed.correctOption || '').toString();
+            })
+          : [];
+        const expectedAnswersRaw = parsedExpectedAnswers.length > 0
+          ? parsedExpectedAnswers
+          : (Array.isArray(q.correct_answer) ? q.correct_answer : (q.correct_answer ? [q.correct_answer] : []));
+        const expectedAnswers = expectedAnswersRaw.map((answer: any) => (answer || '').toString().trim().toLowerCase());
+        const typedAnswersRaw = gapAnswers.get(q.id.toString()) || [];
+        const typedAnswers = typedAnswersRaw.map((answer) => (answer || '').toString().trim().toLowerCase());
+        const gapsCount = Math.max(expectedAnswers.length, typedAnswers.length);
+        if (gapsCount === 0) {
+          return { key: 'incorrect', label: 'Incorrect', className: errorClassName };
+        }
+
+        let correctGapsCount = 0;
+        for (let gapIndex = 0; gapIndex < gapsCount; gapIndex++) {
+          if (typedAnswers[gapIndex] && typedAnswers[gapIndex] === expectedAnswers[gapIndex]) {
+            correctGapsCount += 1;
+          }
+        }
+
+        if (correctGapsCount === gapsCount) {
+          return { key: 'correct', label: 'Correct', className: successClassName };
+        }
+
+        if (correctGapsCount > 0) {
+          return { key: 'partial', label: `${correctGapsCount}/${gapsCount} correct`, className: partialClassName };
+        }
+
+        return { key: 'incorrect', label: 'Incorrect', className: errorClassName };
+      }
+
+      if (q.question_type === 'matching') {
+        const matchingAnswers = quizAnswers.get(q.id.toString());
+        const asMap = matchingAnswers instanceof Map
+          ? matchingAnswers
+          : new Map<number, number>(
+            Object.entries((matchingAnswers || {}) as Record<string, number>).map(([key, value]) => [Number(key), Number(value)])
+          );
+        const totalPairs = q.matching_pairs?.length || asMap.size || 0;
+        const correctPairsCount = Array.from(asMap.entries()).filter(([leftIdx, rightIdx]) => leftIdx === rightIdx).length;
+
+        if (totalPairs > 0 && correctPairsCount === totalPairs) {
+          return { key: 'correct', label: 'Correct', className: successClassName };
+        }
+
+        if (correctPairsCount > 0) {
+          return { key: 'partial', label: `${correctPairsCount}/${totalPairs} correct`, className: partialClassName };
+        }
+
+        return { key: 'incorrect', label: 'Incorrect', className: errorClassName };
+      }
+
+      return { key: 'review', label: 'Needs review', className: reviewClassName };
+    };
+
     if (showAllAnswers) {
       return (
-        <div className="w-full md:max-w-3xl md:mx-auto space-y-4 md:space-y-6 md:p-4">
-          <div className="text-center space-y-2 mb-6">
-            <h2 className="text-2xl font-bold text-foreground">Correct Answers</h2>
-            <p className="text-muted-foreground">Review your answers below</p>
+        <div className="w-full md:max-w-4xl md:mx-auto space-y-4 md:space-y-6 md:p-4">
+          <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-border/40 py-3 mb-2">
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-bold text-foreground">Correct Answers</h2>
+              <p className="text-muted-foreground">Review your answers below</p>
+            </div>
+            <div className="mt-3 flex justify-center gap-2">
+              <Button
+                onClick={() => setShowAllAnswers(false)}
+                variant="outline"
+                className="px-4 py-2 text-sm"
+              >
+                Back to Results
+              </Button>
+              {!hasLongText && (
+                <Button
+                  onClick={resetQuiz}
+                  className="px-4 py-2 text-sm"
+                >
+                  Retake Quiz
+                </Button>
+              )}
+            </div>
           </div>
 
           <div className="space-y-6">
@@ -1591,17 +1711,18 @@ const QuizRenderer = (props: QuizRendererProps) => {
               const questionGaps = (q.question_type === 'fill_blank' || q.question_type === 'text_completion')
                 ? (q.content_text || q.question_text || '').match(/\[\[(.*?)\]\]/g)?.length || 1
                 : 1;
+              const reviewStatus = getReviewStatusForQuestion(q);
 
               return (
-                <div key={q.id} className="bg-card rounded-none md:rounded-xl border-t border-b md:border border-border/70">
-                  <div className="p-2 md:p-6">
+                <div key={q.id} className="rounded-xl border border-border/60 bg-background/30">
+                  <div className="p-3 md:p-6">
                     {/* Question Number Badge */}
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                        {displayNumber}
-                      </div>
+                    <div className="flex items-center justify-between gap-3 mb-4">
                       <span className="text-sm font-medium text-muted-foreground">
                         Question{questionGaps > 1 ? 's' : ''} {displayNumber}{questionGaps > 1 ? `-${displayNumber + questionGaps - 1}` : ''} of {totalQuestionCount}
+                      </span>
+                      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${reviewStatus.className}`}>
+                        {reviewStatus.label}
                       </span>
                     </div>
 
@@ -1625,14 +1746,14 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
                     {/* Content Text */}
                     {hasVisibleContent(q.content_text) && q.question_type !== 'text_completion' && q.question_type !== 'fill_blank' && (
-                      <div className="bg-muted/40 p-4 rounded-lg mb-4 border-l-4 border-primary/50">
+                      <div className="bg-muted/40 p-4 rounded-lg mb-4 border border-border/60">
                         <div className="text-foreground/90 prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.content_text) }} />
                       </div>
                     )}
 
                     {/* Question */}
                     <h3 className="text-lg font-bold text-foreground mb-4">
-                      <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex((q.question_text || (q.question_type === 'text_completion' ? 'Fill in the blanks:' : '')).replace(/\[\[([^\]]+)\]\]/g, '[[blank]]')) }} />
+                      <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex((q.question_text || '').replace(/\[\[([^\]]+)\]\]/g, '[[blank]]')) }} />
                     </h3>
 
                     {/* Answer Input Based on Question Type - ALWAYS SHOW RESULT */}
@@ -1692,14 +1813,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
             })}
           </div>
 
-          <div className="flex justify-center pt-6 pb-10">
-            <Button
-              onClick={() => setShowAllAnswers(false)}
-              className="px-8 py-3 bg-foreground hover:bg-foreground/90 text-background rounded-lg text-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200"
-            >
-              Back to Results
-            </Button>
-          </div>
+          <div className="pb-8" />
         </div>
       );
     }

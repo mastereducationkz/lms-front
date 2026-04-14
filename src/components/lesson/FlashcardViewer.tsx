@@ -251,6 +251,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
                   WebkitBackfaceVisibility: 'hidden',
                   opacity: isFlipped ? 0 : 1,
                   zIndex: isFlipped ? 0 : 2,
+                  visibility: isFlipped ? 'hidden' : 'visible',
                   transition: 'opacity 220ms ease'
                 }}
               >
@@ -277,6 +278,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
                   WebkitBackfaceVisibility: 'hidden',
                   opacity: isFlipped ? 1 : 0,
                   zIndex: isFlipped ? 2 : 0,
+                  visibility: isFlipped ? 'visible' : 'hidden',
                   transition: 'opacity 220ms ease'
                 }}
               >

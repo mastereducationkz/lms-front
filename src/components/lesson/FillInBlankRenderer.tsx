@@ -68,7 +68,7 @@ export const FillInBlankRenderer: React.FC<FillInBlankRendererProps> = ({
       gapIndex++;
 
       // Create inline container for the select
-      return `<span id="${id}" class="inline-block align-baseline mx-1" style="display: inline-block; vertical-align: baseline;"></span>`;
+      return `<span id="${id}" class="inline-flex align-baseline mx-0.5" style="display: inline-flex; vertical-align: baseline;"></span>`;
     }).join('');
 
     // Set HTML content (without highlights initially)
@@ -119,7 +119,7 @@ export const FillInBlankRenderer: React.FC<FillInBlankRendererProps> = ({
           value.trim().toLowerCase() !== correctAnswer.trim().toLowerCase();
 
         return createPortal(
-          <span key={gap.index} className="inline-flex items-center gap-1">
+          <span key={gap.index} className="inline-flex items-center align-baseline gap-1">
             <Select
               value={value}
               onValueChange={(newValue) => onAnswerChange?.(gap.index, newValue)}
@@ -127,14 +127,14 @@ export const FillInBlankRenderer: React.FC<FillInBlankRendererProps> = ({
             >
               <SelectTrigger
                 className={`
-                  inline-flex items-center justify-between h-auto py-1 px-2 text-sm font-medium border-2 rounded
+                  inline-flex !w-auto w-fit items-center justify-between h-8 py-0.5 px-2 text-sm font-medium border-2 rounded
                   ${disabled ? 'cursor-not-allowed opacity-70 bg-gray-100' : 'cursor-pointer bg-white hover:bg-gray-50'}
                   ${isCorrect ? 'border-green-500 bg-green-50' : ''}
                   ${isIncorrect ? 'border-red-500 bg-red-50' : ''}
                   ${!showCorrectAnswers ? 'border-blue-400' : ''}
                   transition-colors duration-200
                 `.trim().replace(/\s+/g, ' ')}
-                style={{ display: 'inline-flex', width: 'auto', minWidth: '80px' }}
+                style={{ display: 'inline-flex', width: 'auto', minWidth: '52px' }}
               >
                 <SelectValue placeholder={`#${gap.index + 1}`} />
               </SelectTrigger>

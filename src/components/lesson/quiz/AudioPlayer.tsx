@@ -181,7 +181,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   }
 
   return (
-    <div className={`bg-background/80 border border-border/70 rounded-xl px-4 py-3 space-y-2 shadow-sm ${className}`}>
+    <div className={`bg-transparent rounded-xl px-4 py-3 space-y-2 ${className}`}>
       <audio ref={audioRef} src={src} preload="metadata" />
       
       <div className="flex items-center gap-4">

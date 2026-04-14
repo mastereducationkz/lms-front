@@ -1,5 +1,4 @@
 import React from 'react';
-import { CheckCircle } from 'lucide-react';
 import { renderTextWithLatex } from '../../../utils/latex';
 
 interface ChoiceQuestionProps {
@@ -50,8 +49,6 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
     }
   };
 
-  const indicatorShape = isMultiple ? 'rounded' : 'rounded-full';
-
   return (
     <div className="space-y-2">
       {question.options?.map((option: any, optionIndex: number) => {
@@ -89,38 +86,6 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
             className={buttonClass}
           >
             <div className="flex items-start space-x-3">
-              <div
-                className={`w-5 h-5 mt-0.5 ${indicatorShape} border-2 flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
-                  showResult
-                    ? selected
-                      ? correct
-                        ? "bg-green-500 border-green-500"
-                        : "bg-red-500 border-red-500"
-                      : correct && isMultiple
-                        ? "border-emerald-500 bg-emerald-100 dark:bg-emerald-900/40"
-                        : "border-gray-300 bg-white dark:border-gray-600 dark:bg-transparent"
-                    : selected
-                      ? "bg-blue-500 border-blue-500"
-                      : "border-border bg-background"
-                }`}
-              >
-                {showResult ? (
-                  selected ? (
-                    correct ? (
-                      <CheckCircle className="w-3 h-3 text-white" />
-                    ) : (
-                      <div className="text-white text-xs font-bold">✗</div>
-                    )
-                  ) : correct && isMultiple ? (
-                    <CheckCircle className="w-3 h-3 text-emerald-600" />
-                  ) : null
-                ) : isMultiple ? (
-                  selected && <span className="text-white text-[10px] font-bold">✓</span>
-                ) : (
-                  selected && <div className="w-2 h-2 bg-white rounded-full" />
-                )}
-              </div>
-
               <span
                 className={`text-base font-bold flex-shrink-0 ${
                   showResult

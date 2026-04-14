@@ -57,7 +57,7 @@ export const TextCompletionRenderer: React.FC<TextCompletionRendererProps> = ({
             gapIndex++;
 
             // Create inline container for the input
-            return `<span id="${id}" class="inline-block align-baseline mx-1" style="display: inline-block; vertical-align: baseline;"></span>`;
+            return `<span id="${id}" class="inline-flex align-baseline mx-0.5" style="display: inline-flex; vertical-align: baseline;"></span>`;
         }).join('');
 
         // Set HTML content (without highlights initially)
@@ -96,7 +96,7 @@ export const TextCompletionRenderer: React.FC<TextCompletionRendererProps> = ({
                     value.trim().toLowerCase() !== correctAnswer.trim().toLowerCase();
 
                 return createPortal(
-                    <span className="inline-flex items-center gap-1">
+                    <span className="inline-flex items-center align-baseline gap-1">
                         {showNumbering && (
                             <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                                 {gap.index + 1}.
@@ -110,7 +110,7 @@ export const TextCompletionRenderer: React.FC<TextCompletionRendererProps> = ({
                             disabled={disabled}
                             placeholder={showNumbering ? '' : `#${gap.index + 1}`}
                             className={`
-              inline-flex items-center h-auto py-1 px-3 my-1 text-sm font-medium border-2 rounded
+              inline-flex items-center h-8 py-0.5 px-2 text-sm font-medium border-2 rounded
               ${disabled ? 'cursor-not-allowed opacity-70 bg-gray-100' : 'cursor-text bg-white hover:bg-gray-50'}
               ${isCorrect ? 'border-green-500 bg-green-50' : ''}
               ${isIncorrect ? 'border-red-500 bg-red-50' : ''}
@@ -120,8 +120,8 @@ export const TextCompletionRenderer: React.FC<TextCompletionRendererProps> = ({
                             style={{
                                 display: 'inline-flex',
                                 width: 'auto',
-                                minWidth: '100px',
-                                maxWidth: '200px'
+                                minWidth: '52px',
+                                maxWidth: '180px'
                             }}
                         />
                         {isIncorrect && (
