@@ -76,7 +76,7 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
           if (selected) {
             buttonClass += " bg-blue-50 border-blue-400 dark:bg-blue-900/20 dark:border-blue-400";
           } else {
-            buttonClass += " bg-white hover:bg-gray-50 border-gray-200 hover:border-gray-300 dark:bg-transparent dark:hover:bg-gray-800/40 dark:border-gray-700/40 dark:hover:border-gray-600/60";
+            buttonClass += " bg-card hover:bg-accent border-border hover:border-border/80";
           }
         }
 
@@ -101,7 +101,7 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
                         : "border-gray-300 bg-white dark:border-gray-600 dark:bg-transparent"
                     : selected
                       ? "bg-blue-500 border-blue-500"
-                      : "border-gray-300 bg-white dark:border-gray-600 dark:bg-transparent"
+                      : "border-border bg-background"
                 }`}
               >
                 {showResult ? (
@@ -133,7 +133,7 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
                         : "text-gray-600 dark:text-gray-300"
                     : selected
                       ? "text-blue-700 dark:text-blue-400"
-                      : "text-gray-600 dark:text-gray-200"
+                      : "text-muted-foreground"
                 }`}
               >
                 {option.letter}.
@@ -152,8 +152,8 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
                             ? "text-emerald-900 dark:text-emerald-200"
                             : "text-gray-700 dark:text-gray-200"
                         : selected
-                          ? "text-gray-900 dark:text-white"
-                          : "text-gray-700 dark:text-gray-200"
+                          ? "text-foreground"
+                          : "text-foreground/90"
                     }`}
                     dangerouslySetInnerHTML={{ __html: renderTextWithLatex(option.text) }}
                   />
@@ -163,7 +163,7 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
                   <img
                     src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + option.image_url}
                     alt={`Option ${option.letter}`}
-                    className="mt-2 max-h-96 rounded border dark:border-gray-700"
+                    className="mt-2 max-h-96 rounded border border-border"
                   />
                 )}
               </div>

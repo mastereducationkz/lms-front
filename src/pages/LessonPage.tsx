@@ -283,7 +283,7 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                     <button
                       onClick={() => toggleModuleExpanded(module.id.toString())}
                       className={`w-full justify-between p-4 h-auto rounded-none border-b border-border/50 flex items-center text-left group ${lectures.some(lesson => lesson.id.toString() === selectedLessonId)
-                        ? 'bg-accent border-l-4 border-l-primary'
+                        ? 'bg-primary/10 border-l-4 border-l-primary'
                         : 'hover:bg-muted/40'
                         }`}
                     >
@@ -332,7 +332,7 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                                 title={!isAccessible ? "Complete previous lessons to unlock" : ""}
                                 className={`w-full justify-start pl-12 pr-4 py-3 h-auto rounded-none border-b border-border/30 flex items-center gap-3 text-left text-sm ${
                                   isSelected 
-                                    ? 'bg-accent border-l-4 border-l-primary' 
+                                    ? 'bg-primary/10 border-l-4 border-l-primary' 
                                     : isAccessible 
                                       ? 'hover:bg-muted/60' 
                                       : 'opacity-50 cursor-not-allowed'
@@ -342,7 +342,7 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                                   {!isAccessible ? <Lock className="w-4 h-4 text-muted-foreground" /> : getLessonIcon()}
                                 </div>
                                 <div className="flex items-center justify-between w-full min-w-0">
-                                  <span className="truncate">{lecture.title}</span>
+                                  <span className="truncate text-foreground">{lecture.title}</span>
                                   {lecture.is_completed ? (
                                     <span className="ml-2 h-5 px-2 inline-flex items-center rounded bg-accent text-primary border border-primary/20 text-[10px]">✓</span>
                                   ) : null}
@@ -1899,8 +1899,8 @@ export default function LessonPage() {
                 onClick={toggleLookUp}
                 className={`h-9 w-9 p-0 rounded-lg border transition-colors ${
                   isLookUpEnabled 
-                    ? 'text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800' 
-                    : 'bg-white dark:bg-card text-gray-400 dark:text-gray-500 border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    ? 'text-primary bg-primary/10 border-primary/30 hover:bg-primary/15' 
+                    : 'bg-background text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground'
                 }`}
                 title={isLookUpEnabled ? 'Disable Look Up' : 'Enable Look Up'}
               >
@@ -1937,15 +1937,15 @@ export default function LessonPage() {
                             onClick={() => isClickable && goToStep(index)}
                             disabled={!isClickable}
                             title={!isClickable ? 'Завершите предыдущие шаги, чтобы открыть' : step.title || `Шаг ${step.order_index}`}
-                            className={`aspect-square rounded-md text-white p-1 relative shadow-sm transition-all ${
+                            className={`aspect-square rounded-md p-1 relative shadow-sm transition-all ${
                               isClickable ? 'hover:shadow-md cursor-pointer' : 'cursor-not-allowed opacity-50'
                             } ${currentStepIndex === index
-                              ? 'bg-blue-800 ring-2 ring-blue-400'
+                              ? 'bg-primary text-primary-foreground ring-2 ring-primary/40'
                               : isCompleted
-                                ? `bg-green-600 ${isClickable ? 'hover:bg-green-700' : ''}`
+                                ? `bg-emerald-600 text-white ${isClickable ? 'hover:bg-emerald-700' : ''}`
                                 : step.is_optional
-                                  ? `bg-indigo-400 ${isClickable ? 'hover:bg-indigo-500' : ''}`
-                                  : `bg-gray-500 ${isClickable ? 'hover:bg-gray-600' : ''}`
+                                  ? `bg-accent text-accent-foreground border border-border/60 ${isClickable ? 'hover:bg-accent/80' : ''}`
+                                  : `bg-muted text-muted-foreground border border-border/60 ${isClickable ? 'hover:bg-muted/80' : ''}`
                               }`}
                           >
                             {/* Striped overlay for locked steps */}
@@ -1958,7 +1958,7 @@ export default function LessonPage() {
                               />
                             )}
                             <div className="h-full w-full flex flex-col items-start justify-end">
-                              <div className="absolute top-1 left-1 text-[10px] sm:text-[11px] bg-white/20 rounded px-1 py-0.5">
+                              <div className="absolute top-1 left-1 text-[10px] sm:text-[11px] bg-background/70 text-foreground rounded px-1 py-0.5">
                                 {step.order_index}
                               </div>
                               <div className="flex items-center gap-1 opacity-90">
@@ -1980,7 +1980,7 @@ export default function LessonPage() {
                       </div>
                     ) : (
                       <div className="text-center py-12 border-none">
-                        <p className="text-gray-500 dark:text-gray-400">No steps available for this lesson.</p>
+                        <p className="text-muted-foreground">No steps available for this lesson.</p>
                       </div>
                     )}
                   </CardContent>

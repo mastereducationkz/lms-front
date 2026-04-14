@@ -135,8 +135,8 @@ export const MatchingQuestion = ({
       <div className="grid grid-cols-2 gap-6">
         {/* Left side - Terms */}
         <div className="space-y-2">
-          <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3 flex items-center gap-2 dark:text-gray-300">
-            <span className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs dark:bg-gray-700">1</span>
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
+            <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">1</span>
             Left
           </div>
           {pairs.map((pair, leftIdx) => {
@@ -156,11 +156,11 @@ export const MatchingQuestion = ({
                 ? 'border-green-500 bg-green-50 dark:border-green-500 dark:bg-green-900/20' 
                 : status === 'incorrect' 
                   ? 'border-red-500 bg-red-50 dark:border-red-500 dark:bg-red-900/20'
-                  : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-card';
+                  : 'border-border bg-card';
             } else if (isMatched && color) {
               style = `${color.border} ${color.bg}`;
             } else {
-              style = 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50 dark:border-gray-700 dark:bg-card dark:hover:border-blue-500 dark:hover:bg-blue-900/20';
+              style = 'border-border bg-card hover:border-primary/50 hover:bg-accent';
             }
             
             return (
@@ -172,7 +172,7 @@ export const MatchingQuestion = ({
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 flex-1">
                     <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${
-                      isMatched && color ? `${color.badge} ${color.text}` : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                      isMatched && color ? `${color.badge} ${color.text}` : 'bg-muted text-muted-foreground'
                     }`}>
                       {leftIdx + 1}
                     </span>
@@ -192,8 +192,8 @@ export const MatchingQuestion = ({
 
         {/* Right side - Definitions (shuffled) */}
         <div className="space-y-2">
-          <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-3 flex items-center gap-2 dark:text-gray-300">
-            <span className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs dark:bg-gray-700">2</span>
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
+            <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">2</span>
             Right
           </div>
           {shuffledRightIndices.map((originalIdx, displayIdx) => {
@@ -210,13 +210,13 @@ export const MatchingQuestion = ({
                 ? 'border-green-500 bg-green-50' 
                 : status === 'incorrect' 
                   ? 'border-red-500 bg-red-50'
-                  : 'border-gray-200 bg-white';
+                  : 'border-border bg-card';
             } else if (isMatched && color) {
               style = `${color.border} ${color.bg}`;
             } else if (selectedLeft !== null) {
               style = 'border-blue-300 bg-blue-50 hover:border-blue-500 cursor-pointer shadow-sm';
             } else {
-              style = 'border-gray-200 bg-white';
+              style = 'border-border bg-card';
             }
             
             return (
@@ -227,7 +227,7 @@ export const MatchingQuestion = ({
               >
                 <div className="flex items-center gap-3">
                   <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${
-                    isMatched && color ? `${color.badge} ${color.text}` : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                    isMatched && color ? `${color.badge} ${color.text}` : 'bg-muted text-muted-foreground'
                   }`}>
                     {displayLetter}
                   </span>
