@@ -3,7 +3,7 @@ import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { Progress } from '../ui/progress';
 import { Badge } from '../ui/badge';
-import { ChevronLeft, ChevronRight, RotateCcw, CheckCircle, XCircle, Eye, EyeOff, Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RotateCcw, CheckCircle, XCircle, Heart } from 'lucide-react';
 import type { FlashcardSet } from '../../types';
 import { addFavoriteFlashcard, removeFavoriteByCardId, checkIsFavorite } from '../../services/api';
 import { toast } from '../Toast';
@@ -223,57 +223,66 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
 
       {/* Flashcard */}
       <div className="relative">
-        <Card className={`min-h-[300px] cursor-pointer transition-all duration-300 ${isFlipped ? 'transform rotateY-180' : ''}`}>
-          <CardContent className="p-8 flex flex-col justify-center items-center text-center min-h-[300px]">
-            {!showingAnswer ? (
-              // Front of card
-              <div className="space-y-4">
-                <div className="text-sm text-muted-foreground mb-4">Question</div>
-                {currentCard.front_image_url && (
-                  <img 
-                    src={currentCard.front_image_url} 
-                    alt="Front" 
-                    className="max-w-full max-h-80 object-contain rounded mb-4"
-                  />
-                )}
-                <div className="text-xl font-medium text-foreground">
-                  {currentCard.front_text}
+        <Card
+          className="min-h-[300px] cursor-pointer"
+          onClick={handleFlip}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') return
+            event.preventDefault()
+            handleFlip()
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label={showingAnswer ? 'Hide answer' : 'Show answer'}
+        >
+          <CardContent className="p-0 min-h-[300px] [perspective:1200px]">
+            <div
+              className="relative min-h-[300px] w-full rounded-xl transition-transform duration-500 ease-out [transform-style:preserve-3d]"
+              style={{ transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+            >
+              <div
+                className="absolute inset-0 p-8 flex flex-col justify-center items-center text-center [backface-visibility:hidden]"
+              >
+                <div className="space-y-4">
+                  <div className="text-sm text-muted-foreground mb-4">Question</div>
+                  {currentCard.front_image_url && (
+                    <img
+                      src={currentCard.front_image_url}
+                      alt="Front"
+                      className="max-w-full max-h-80 object-contain rounded mb-4"
+                    />
+                  )}
+                  <div className="text-xl font-medium text-foreground">
+                    {currentCard.front_text}
+                  </div>
                 </div>
               </div>
-            ) : (
-              // Back of card
-              <div className="space-y-4">
-                <div className="text-sm text-muted-foreground mb-4">Answer</div>
-                {currentCard.back_image_url && (
-                  <img 
-                    src={currentCard.back_image_url} 
-                    alt="Back" 
-                    className="max-w-full max-h-80 object-contain rounded mb-4"
-                  />
-                )}
-                <div className="text-xl font-medium text-foreground">
-                  {currentCard.back_text}
+
+              <div
+                className="absolute inset-0 p-8 flex flex-col justify-center items-center text-center [backface-visibility:hidden]"
+                style={{ transform: 'rotateY(180deg)' }}
+              >
+                <div className="space-y-4">
+                  <div className="text-sm text-muted-foreground mb-4">Answer</div>
+                  {currentCard.back_image_url && (
+                    <img
+                      src={currentCard.back_image_url}
+                      alt="Back"
+                      className="max-w-full max-h-80 object-contain rounded mb-4"
+                    />
+                  )}
+                  <div className="text-xl font-medium text-foreground">
+                    {currentCard.back_text}
+                  </div>
                 </div>
               </div>
-            )}
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Controls */}
       <div className="space-y-4 items-center content-center">
-        {/* Flip Button */}
-        <div className="text-center ">
-          <Button 
-            onClick={handleFlip}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            {showingAnswer ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            {showingAnswer ? 'Hide Answer' : 'Show Answer'}
-          </Button>
-        </div>
-
         {/* Answer Buttons (only show when answer is visible) */}
         {showingAnswer && (
           <div className="flex justify-center gap-4">

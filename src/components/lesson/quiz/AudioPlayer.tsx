@@ -181,10 +181,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   }
 
   return (
-    <div className={`bg-muted/50 border dark:border-gray-700 rounded-md p-3 space-y-2 ${className}`}>
+    <div className={`bg-background/80 border border-border/70 rounded-xl px-4 py-3 space-y-2 shadow-sm ${className}`}>
       <audio ref={audioRef} src={src} preload="metadata" />
       
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         {/* Play/Pause */}
         <button
           onClick={togglePlay}
@@ -212,14 +212,14 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         </button>
 
         {/* Time display */}
-        <span className="text-sm text-muted-foreground tabular-nums flex-shrink-0">
+        <span className="text-sm text-foreground/90 tabular-nums flex-shrink-0 min-w-[92px]">
           {formatTime(currentTime)} / {formatTime(duration)}
         </span>
 
         {/* Progress bar */}
         <div 
           ref={progressRef}
-          className={`flex-1 relative h-1.5 bg-secondary rounded-full overflow-hidden ${
+          className={`flex-1 relative h-2 bg-muted rounded-full overflow-hidden ${
             isStrictMode ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
           }`}
           onClick={handleSeek}
@@ -234,9 +234,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         <button
           onClick={handleRestart}
           disabled={isStrictMode && playCount >= maxPlays}
-          className={`p-2 rounded-md flex-shrink-0 transition-colors ${
+            className={`p-2 rounded-md flex-shrink-0 transition-colors ${
             !isStrictMode || playCount < maxPlays
-              ? 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+              ? 'text-foreground/70 hover:bg-accent hover:text-accent-foreground'
               : 'text-muted-foreground/50 cursor-not-allowed'
           }`}
           title="Restart"
@@ -249,14 +249,14 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           <button
             onClick={toggleMute}
             onMouseEnter={() => setShowVolume(true)}
-            className="p-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            className="p-2 rounded-md text-foreground/70 hover:bg-accent hover:text-accent-foreground transition-colors"
           >
             {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
           </button>
           
           {showVolume && (
             <div 
-              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-3 bg-popover rounded-md shadow-md border dark:border-gray-700"
+              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-3 bg-popover rounded-md shadow-md border border-border"
               onMouseLeave={() => setShowVolume(false)}
             >
               <div 
