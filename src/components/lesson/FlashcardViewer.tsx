@@ -235,13 +235,18 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
           tabIndex={0}
           aria-label={showingAnswer ? 'Hide answer' : 'Show answer'}
         >
-          <CardContent className="p-0 min-h-[300px] [perspective:1200px]">
+          <CardContent className="p-0 min-h-[300px]" style={{ perspective: '1200px', WebkitPerspective: '1200px' }}>
             <div
-              className="relative min-h-[300px] w-full rounded-xl transition-transform duration-500 ease-out [transform-style:preserve-3d]"
-              style={{ transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+              className="relative min-h-[300px] w-full rounded-xl transition-transform duration-500 ease-out"
+              style={{
+                transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                transformStyle: 'preserve-3d',
+                WebkitTransformStyle: 'preserve-3d'
+              }}
             >
               <div
-                className="absolute inset-0 p-8 flex flex-col justify-center items-center text-center [backface-visibility:hidden]"
+                className="absolute inset-0 p-8 flex flex-col justify-center items-center text-center"
+                style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
               >
                 <div className="space-y-4">
                   <div className="text-sm text-muted-foreground mb-4">Question</div>
@@ -259,8 +264,12 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
               </div>
 
               <div
-                className="absolute inset-0 p-8 flex flex-col justify-center items-center text-center [backface-visibility:hidden]"
-                style={{ transform: 'rotateY(180deg)' }}
+                className="absolute inset-0 p-8 flex flex-col justify-center items-center text-center"
+                style={{
+                  transform: 'rotateY(180deg)',
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden'
+                }}
               >
                 <div className="space-y-4">
                   <div className="text-sm text-muted-foreground mb-4">Answer</div>

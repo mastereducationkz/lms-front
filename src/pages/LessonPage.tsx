@@ -1863,7 +1863,7 @@ export default function LessonPage() {
             <Button variant="ghost" size="icon" onClick={() => navigate(`/course/${courseId}`)} title="Back to Course">
               <ChevronLeft className="w-5 h-5" />
             </Button>
-            <h1 className="font-semibold text-lg truncate max-w-[200px] sm:max-w-md">
+            <h1 className="font-semibold text-base sm:text-lg leading-tight line-clamp-2 break-words max-w-[220px] sm:max-w-2xl">
               {lesson.title}
             </h1>
             {(user?.role === 'teacher' || user?.role === 'admin') && (
