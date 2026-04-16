@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '../ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '../ui/alert-dialog';
 import { ChevronRight, AlertTriangle, HelpCircle } from 'lucide-react';
 import { renderTextWithLatex } from '../../utils/latex';
 import { applyHighlightsToHtml as applyHighlightsToHtmlShared } from '../../utils/highlightUtils';
@@ -157,6 +167,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
   const [reportSuggestedAnswer, setReportSuggestedAnswer] = useState('');
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reportedQuestions, setReportedQuestions] = useState<Set<string>>(new Set());
+  const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
   const [textHighlightsByQuestion, setTextHighlightsByQuestion] = useState<Map<string, TextHighlight[]>>(new Map());
   const [areHighlightsHydrated, setAreHighlightsHydrated] = useState(false);
   const [highlightPalette, setHighlightPalette] = useState<{
@@ -275,6 +286,25 @@ const QuizRenderer = (props: QuizRendererProps) => {
       return next;
     });
   };
+
+  const submitQuizForReview = () => {
+    setFeedChecked(true)
+    finishQuiz()
+  }
+
+  const handleConfirmQuizSubmission = () => {
+    if (!isSpecialGroupStudent) {
+      submitQuizForReview()
+      return
+    }
+
+    setIsSubmitConfirmOpen(true)
+  }
+
+  const handleDialogConfirmSubmission = () => {
+    setIsSubmitConfirmOpen(false)
+    submitQuizForReview()
+  }
 
   const handleTextSelection = (questionId: string) => {
     const selection = window.getSelection();
@@ -867,14 +897,28 @@ const QuizRenderer = (props: QuizRendererProps) => {
           document.body
         )}
 
+        <AlertDialog open={isSubmitConfirmOpen} onOpenChange={setIsSubmitConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Submit task for teacher review?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to submit this task? After submission, it will be sent to your teacher for review.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDialogConfirmSubmission}>
+                Submit task
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* Action Buttons */}
         <div className="flex justify-center pt-4">
           {!feedChecked ? (
             <Button
-              onClick={() => {
-                setFeedChecked(true);
-                finishQuiz();
-              }}
+              onClick={handleConfirmQuizSubmission}
               disabled={questions.some(q => {
                 // Skip image_content - no answer required
                 if (q.question_type === 'image_content') return false;
@@ -1301,7 +1345,9 @@ const QuizRenderer = (props: QuizRendererProps) => {
             })()}
             className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Check Answer
+            {q.question_type === 'short_answer' || q.question_type === 'media_open_question' || q.question_type === 'long_text'
+              ? 'Submit to Teacher'
+              : 'Check Answer'}
           </Button>
         </div>
       </div>
