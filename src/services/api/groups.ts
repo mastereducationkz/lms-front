@@ -1,4 +1,4 @@
-import type { Group, CourseGroupAccess, CreateGroupRequest, UpdateGroupRequest, User } from '../../types';
+import type { Group, CourseGroupAccess, CreateGroupRequest, UpdateGroupRequest, User, CourseType } from '../../types';
 import { api } from './client';
 
 export async function getAllGroups(): Promise<any> {
@@ -10,12 +10,13 @@ export async function getAllGroups(): Promise<any> {
   }
 }
 
-export async function getGroups(): Promise<Group[]> {
+export async function getGroups(params?: { program_type?: CourseType }): Promise<Group[]> {
   try {
     const response = await api.get('/admin/groups', {
       params: {
         skip: 0,
         limit: 1000,
+        ...(params?.program_type ? { program_type: params.program_type } : {}),
       },
     });
     return response.data;

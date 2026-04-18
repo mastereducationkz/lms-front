@@ -8,6 +8,7 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '.
 import CourseCard from './CourseCard.tsx';
 import apiClient from '../services/api';
 import { useAuth } from '../contexts/AuthContext.tsx';
+import type { CourseType } from '../types';
 
 interface CreateCourseModalProps {
   open: boolean;
@@ -29,6 +30,7 @@ export default function CreateCourseModal({ open, onClose, onCreated }: CreateCo
   const [teacherId, setTeacherId] = useState<string>('');
   const [teachers, setTeachers] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
+  const [courseType, setCourseType] = useState<CourseType>('general_english');
 
   const remaining = useMemo(() => Math.max(0, 64 - title.length), [title]);
   const canSubmit = title.trim().length > 0 && title.trim().length <= 64 && !saving;
@@ -58,6 +60,7 @@ export default function CreateCourseModal({ open, onClose, onCreated }: CreateCo
     setThumbnailPreview('');
     setTags('');
     setTeacherId('');
+    setCourseType('general_english');
   };
 
   const handleSubmit = async () => {
@@ -67,6 +70,7 @@ export default function CreateCourseModal({ open, onClose, onCreated }: CreateCo
       const payload: any = {
         title: title.trim(),
         description: description.trim() || undefined,
+        course_type: courseType,
       };
       if (isAdmin && teacherId) payload.teacher_id = Number(teacherId);
 
@@ -145,6 +149,20 @@ export default function CreateCourseModal({ open, onClose, onCreated }: CreateCo
                 </div>
               )}
             </div>
+          </div>
+
+          <div>
+            <Label className="mb-2 block">Тип курса</Label>
+            <Select value={courseType} onValueChange={(v) => setCourseType(v as CourseType)}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="sat">SAT</SelectItem>
+                <SelectItem value="ielts">IELTS</SelectItem>
+                <SelectItem value="general_english">General English</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* 2) Title */}

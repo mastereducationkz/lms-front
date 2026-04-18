@@ -198,6 +198,9 @@ export interface DailyStreakInfo {
 // COURSE TYPES
 // =============================================================================
 
+export type CourseType = 'sat' | 'ielts' | 'general_english'
+export type GroupType = 'group' | 'individual'
+
 export interface Course {
   id: string;
   title: string;
@@ -214,6 +217,7 @@ export interface Course {
   progress?: number; // For student view
   is_linear?: boolean;
   release_schedule?: 'all' | 'weekly'; // "all" = all open; "weekly" = unlock by week from group start
+  course_type?: CourseType;
 }
 
 export interface Group {
@@ -230,6 +234,9 @@ export interface Group {
   is_active: boolean;
   is_special?: boolean;
   is_over?: boolean;
+  group_type?: GroupType;
+  /** SAT / IELTS / General English — дублирует смысл course_type курса, удобно для поиска групп */
+  program_type?: CourseType;
   schedule_config?: any;
   current_week?: number;
   max_week?: number;
@@ -289,6 +296,7 @@ export interface AdminDashboard {
     module_count: number;
     is_active: boolean;
     created_at: string;
+    course_type?: CourseType;
   }>;
 }
 
@@ -347,6 +355,8 @@ export interface CreateGroupRequest {
   is_active?: boolean;
   is_special?: boolean;
   is_over?: boolean;
+  group_type?: GroupType;
+  program_type?: CourseType;
   max_open_lessons?: number;
 }
 
@@ -360,6 +370,8 @@ export interface UpdateGroupRequest {
   is_active?: boolean;
   is_special?: boolean;
   is_over?: boolean;
+  group_type?: GroupType;
+  program_type?: CourseType;
   max_open_lessons?: number | null;
 }
 
@@ -883,26 +895,6 @@ export interface MessageAttachment {
   file_path: string;
   file_size: number;
   file_type: string;
-}
-
-// =============================================================================
-// GROUP TYPES
-// =============================================================================
-
-export interface Group {
-  id: number;
-  name: string;
-  description?: string;
-  teacher_id: number;
-  teacher_name?: string;
-  curator_id?: number;
-  curator_name?: string;
-  student_count: number;
-  students?: User[];
-  created_at: string;
-  is_active: boolean;
-  is_special?: boolean;
-  is_over?: boolean;
 }
 
 export interface Enrollment {

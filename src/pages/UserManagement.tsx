@@ -2,7 +2,41 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '../services/api';
 import { toast } from '../components/Toast';
-import type { User, CreateUserRequest, UpdateUserRequest, Group, Course } from '../types';
+import type { User, CreateUserRequest, UpdateUserRequest, Group, Course, GroupType, CourseType } from '../types';
+
+const GROUP_TYPE_LABELS: Record<GroupType, string> = {
+  group: 'Group',
+  individual: 'Individual',
+}
+
+const COURSE_TYPE_LABELS: Record<CourseType, string> = {
+  sat: 'SAT',
+  ielts: 'IELTS',
+  general_english: 'General English',
+}
+
+/** Если в БД course_type = general_english, но в названии есть IELTS/SAT — показываем и подставляем программу по названию */
+const inferCourseTypeFromTitle = (title: string): CourseType | null => {
+  const t = title.trim()
+  if (!t) return null
+  if (/\bielts\b/i.test(t)) return 'ielts'
+  if (/\bsat\b/i.test(t)) return 'sat'
+  return null
+}
+
+const getEffectiveCourseType = (course: Pick<Course, 'title' | 'course_type'>): CourseType => {
+  const stored = course.course_type as CourseType | undefined
+  if (stored === 'sat' || stored === 'ielts') return stored
+  const inferred = inferCourseTypeFromTitle(course.title || '')
+  if (inferred) return inferred
+  return 'general_english'
+}
+
+const formatCourseOptionLabel = (course: Course) => {
+  const effective = getEffectiveCourseType(course)
+  const tag = COURSE_TYPE_LABELS[effective] ? ` [${COURSE_TYPE_LABELS[effective]}]` : ''
+  return `${course.title}${tag}`
+}
 import { 
   Users, 
   Search, 
@@ -16,6 +50,7 @@ import {
   ChevronDown,
   ChevronRight,
   Copy,
+  MoreHorizontal,
   Calendar as CalendarIcon
 } from 'lucide-react';
 import ScheduleGenerator from '../components/ScheduleGenerator';
@@ -32,6 +67,12 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '../components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../components/ui/dropdown-menu';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Checkbox } from '../components/ui/checkbox';
 
@@ -55,6 +96,10 @@ interface GroupFormData {
   student_ids: number[];
   is_active: boolean;
   is_special: boolean;
+  /** Групповая по умолчанию */
+  group_type: GroupType;
+  /** SAT / IELTS / General English — в БД для поиска (`program_type`) */
+  program_type: CourseType;
   /** First N lessons open for special groups with a course (default 1 on backend) */
   max_open_lessons: number;
 }
@@ -94,7 +139,8 @@ export default function UserManagement() {
   const [statusFilter, setStatusFilter] = useState(searchParams.get('is_active') || 'all');
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [groupStatusFilter, setGroupStatusFilter] = useState<'all' | 'true' | 'false'>('true'); // Default to active groups
-  
+  const [groupProgramFilter, setGroupProgramFilter] = useState<'all' | CourseType>('all')
+
   // Teacher groups for student grouping
   const [teacherGroups, setTeacherGroups] = useState<TeacherGroup[]>([]);
   
@@ -256,6 +302,8 @@ export default function UserManagement() {
     student_ids: [],
     is_active: true,
     is_special: false,
+    group_type: 'group',
+    program_type: 'general_english',
     max_open_lessons: 1
   });
 
@@ -268,6 +316,8 @@ export default function UserManagement() {
     student_ids: [],
     is_active: true,
     is_special: false,
+    group_type: 'group',
+    program_type: 'general_english',
     max_open_lessons: 1
   });
 
@@ -280,6 +330,8 @@ export default function UserManagement() {
     student_ids: [],
     is_active: true,
     is_special: true,
+    group_type: 'group',
+    program_type: 'general_english',
     max_open_lessons: 1
   });
 
@@ -299,10 +351,10 @@ export default function UserManagement() {
     loadCourses();
   }, []);
 
-  // Reload groups when group status filter changes
+  // Reload groups when group status or program filter changes
   useEffect(() => {
     loadGroups();
-  }, [groupStatusFilter]);
+  }, [groupStatusFilter, groupProgramFilter]);
 
   // Update URL params when role filter changes to student by default
   useEffect(() => {
@@ -372,7 +424,9 @@ export default function UserManagement() {
 
   const loadGroups = async () => {
     try {
-      const groupsData = await apiClient.getGroups();
+      const groupsData = await apiClient.getGroups(
+        groupProgramFilter === 'all' ? undefined : { program_type: groupProgramFilter }
+      );
       console.log('Groups data:', groupsData);
       
       // Filter groups by status
@@ -665,6 +719,8 @@ export default function UserManagement() {
         course_id: groupFormData.course_id || undefined,
         is_active: groupFormData.is_active,
         is_special: groupFormData.is_special,
+        group_type: groupFormData.group_type,
+        program_type: groupFormData.program_type,
         max_open_lessons:
           groupFormData.is_special && groupFormData.course_id
             ? groupFormData.max_open_lessons
@@ -718,6 +774,8 @@ export default function UserManagement() {
         course_id: specialGroupFormData.course_id || undefined,
         is_active: specialGroupFormData.is_active,
         is_special: true,
+        group_type: specialGroupFormData.group_type,
+        program_type: specialGroupFormData.program_type,
         max_open_lessons:
           specialGroupFormData.course_id ? specialGroupFormData.max_open_lessons : undefined
       };
@@ -771,6 +829,8 @@ export default function UserManagement() {
         student_ids: editGroupFormData.student_ids,
         is_active: editGroupFormData.is_active,
         is_special: editGroupFormData.is_special,
+        group_type: editGroupFormData.group_type,
+        program_type: editGroupFormData.program_type,
         max_open_lessons:
           editGroupFormData.is_special && editGroupFormData.course_id
             ? editGroupFormData.max_open_lessons
@@ -836,6 +896,8 @@ export default function UserManagement() {
       student_ids: [],
       is_active: true,
       is_special: false,
+      group_type: 'group',
+      program_type: 'general_english',
       max_open_lessons: 1
     });
     setGroupFormErrors({});
@@ -851,6 +913,8 @@ export default function UserManagement() {
       student_ids: [],
       is_active: true,
       is_special: true,
+      group_type: 'group',
+      program_type: 'general_english',
       max_open_lessons: 1
     });
     setSpecialGroupFormErrors({});
@@ -867,6 +931,8 @@ export default function UserManagement() {
       student_ids: group.students?.map(s => Number(s.id)) || [],
       is_active: group.is_active,
       is_special: !!group.is_special,
+      group_type: (group.group_type as GroupType) || 'group',
+      program_type: (group.program_type as CourseType) || 'general_english',
       max_open_lessons: group.max_open_lessons != null && group.max_open_lessons >= 1 ? group.max_open_lessons : 1
     });
     setShowEditGroupModal(true);
@@ -882,6 +948,8 @@ export default function UserManagement() {
       student_ids: [],
       is_active: true,
       is_special: false,
+      group_type: 'group',
+      program_type: 'general_english',
       max_open_lessons: 1
     });
     setSelectedGroup(null);
@@ -901,40 +969,28 @@ export default function UserManagement() {
           <p className="text-gray-600 dark:text-gray-400 mt-1">Manage system users and permissions</p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-          <Button
-            onClick={() => {
-              resetGroupForm();
-              setShowCreateGroupModal(true);
-            }}
-            variant="outline"
-            className="flex items-center gap-2 w-full sm:w-auto"
-          >
-            <Plus className="w-4 h-4" />
-            Create Group
-          </Button>
-          <Button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 w-full sm:w-auto"
-          >
-            <UserPlus className="w-4 h-4" />
-            Add User
-          </Button>
-          <Button
-            onClick={() => setShowBulkAddModal(true)}
-            variant="secondary"
-            className="flex items-center gap-2 w-full sm:w-auto"
-          >
-            <Users className="w-4 h-4" />
-            Bulk Add Students
-          </Button>
-          <Button
-            onClick={() => setShowBulkTextModal(true)}
-            variant="outline"
-            className="flex items-center gap-2 w-full sm:w-auto"
-          >
-            <Upload className="w-4 h-4" />
-            Import from Text
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="flex items-center gap-2 w-full sm:w-auto">
+                <Plus className="w-4 h-4" />
+                Add
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[220px]">
+              <DropdownMenuItem onClick={() => setShowCreateModal(true)}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Add User
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowBulkAddModal(true)}>
+                <Users className="mr-2 h-4 w-4" />
+                Bulk Add Students
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowBulkTextModal(true)}>
+                <Upload className="mr-2 h-4 w-4" />
+                Import from Text
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -1393,52 +1449,74 @@ export default function UserManagement() {
                     <RefreshCw className="w-4 h-4" />
                   </Button>
                   <Button
-                    onClick={() => setShowBulkScheduleModal(true)}
-                    variant="outline"
-                    className="flex items-center gap-2"
-                  >
-                    <Upload className="w-4 h-4" />
-                    Bulk Schedule
-                  </Button>
-                  <Button
                     onClick={() => {
                       resetGroupForm();
                       setShowCreateGroupModal(true);
                     }}
-                    variant="outline"
                     className="flex items-center gap-2"
                   >
                     <Plus className="w-4 h-4" />
                     Create Group
                   </Button>
-                  <Button
-                    onClick={() => {
-                      resetSpecialGroupForm();
-                      setShowCreateSpecialGroupModal(true);
-                    }}
-                    className="flex items-center gap-2"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Create Special Group
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="icon" aria-label="More group actions">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="min-w-[220px]">
+                      <DropdownMenuItem onClick={() => setShowBulkScheduleModal(true)}>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Bulk Schedule
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          resetSpecialGroupForm()
+                          setShowCreateSpecialGroupModal(true)
+                        }}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Create Special Group
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
-              {/* Group Status Filter */}
-              <div className="mt-4">
-                <Label htmlFor="group-status" className="text-sm font-medium">Group Status</Label>
-                <Select
-                  value={groupStatusFilter}
-                  onValueChange={(value: 'all' | 'true' | 'false') => setGroupStatusFilter(value)}
-                >
-                  <SelectTrigger className="mt-2 w-48">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Groups</SelectItem>
-                    <SelectItem value="true">Active</SelectItem>
-                    <SelectItem value="false">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
+              {/* Group Status + program filters */}
+              <div className="mt-4 flex flex-wrap items-end gap-6">
+                <div>
+                  <Label htmlFor="group-status" className="text-sm font-medium">Group Status</Label>
+                  <Select
+                    value={groupStatusFilter}
+                    onValueChange={(value: 'all' | 'true' | 'false') => setGroupStatusFilter(value)}
+                  >
+                    <SelectTrigger id="group-status" className="mt-2 w-48">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Groups</SelectItem>
+                      <SelectItem value="true">Active</SelectItem>
+                      <SelectItem value="false">Inactive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="group-program-filter" className="text-sm font-medium">Программа (поиск в БД)</Label>
+                  <Select
+                    value={groupProgramFilter}
+                    onValueChange={(value: 'all' | CourseType) => setGroupProgramFilter(value)}
+                  >
+                    <SelectTrigger id="group-program-filter" className="mt-2 w-56">
+                      <SelectValue placeholder="Все программы" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Все программы</SelectItem>
+                      <SelectItem value="sat">SAT</SelectItem>
+                      <SelectItem value="ielts">IELTS</SelectItem>
+                      <SelectItem value="general_english">General English</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardHeader>
             
@@ -1448,6 +1526,12 @@ export default function UserManagement() {
                 <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Group Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Group Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Программа
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Teacher
@@ -1476,6 +1560,16 @@ export default function UserManagement() {
                             <div className="text-sm text-gray-500 dark:text-gray-400">{group.description}</div>
                           )}
                         </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 py-1 text-xs rounded-full bg-slate-100 dark:bg-slate-900/40 dark:text-slate-300 text-slate-700">
+                          {GROUP_TYPE_LABELS[(group.group_type as GroupType) || 'group']}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 py-1 text-xs rounded-full bg-amber-100 dark:bg-amber-900/35 dark:text-amber-200 text-amber-900">
+                          {COURSE_TYPE_LABELS[(group.program_type as CourseType) || 'general_english']}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="px-2 py-1 text-xs rounded-full bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400 text-purple-700">
@@ -2048,14 +2142,39 @@ function GroupForm({
     }
   }, [formData.is_special, formData.teacher_id, formData.curator_id, formData.description, teachers, curators]);
 
-  const filteredStudents = students.filter(student => {
-    const query = studentSearchQuery.trim().toLowerCase();
-    if (!query) return true;
+  const resolveProgramTypeFromCourse = (courseId?: number): CourseType => {
+    if (courseId == null) return 'general_english'
+    const c = courses.find((x) => Number(x.id) === courseId)
+    if (!c) return 'general_english'
+    return getEffectiveCourseType(c)
+  }
 
-    const studentName = (student.name || student.full_name || '').toLowerCase();
-    const studentEmail = (student.email || '').toLowerCase();
-    return studentName.includes(query) || studentEmail.includes(query);
-  });
+  React.useEffect(() => {
+    const next = resolveProgramTypeFromCourse(formData.course_id)
+    setFormData((prev) => (prev.program_type === next ? prev : { ...prev, program_type: next }))
+  }, [formData.course_id, courses])
+
+  const displayedStudents = React.useMemo(() => {
+    const query = studentSearchQuery.trim().toLowerCase()
+    const filtered = students.filter((student) => {
+      if (!query) return true
+      const studentName = (student.name || student.full_name || '').toLowerCase()
+      const studentEmail = (student.email || '').toLowerCase()
+      return studentName.includes(query) || studentEmail.includes(query)
+    })
+    return filtered.sort((a, b) => {
+      const idA = Number(a.id)
+      const idB = Number(b.id)
+      const idxA = formData.student_ids.indexOf(idA)
+      const idxB = formData.student_ids.indexOf(idB)
+      const pickedA = idxA >= 0
+      const pickedB = idxB >= 0
+      if (pickedA && pickedB) return idxA - idxB
+      if (pickedA && !pickedB) return -1
+      if (!pickedA && pickedB) return 1
+      return (a.name || a.full_name || '').localeCompare(b.name || b.full_name || '', 'ru')
+    })
+  }, [students, studentSearchQuery, formData.student_ids])
 
   return (
     <div className="space-y-4">
@@ -2141,8 +2260,8 @@ function GroupForm({
           <SelectContent className="z-[1100]">
             <SelectItem value="none">No course</SelectItem>
             {courses.map((course) => (
-              <SelectItem key={course.id} value={course.id.toString()}>
-                {course.title}
+              <SelectItem key={course.id} value={String(course.id)}>
+                {formatCourseOptionLabel(course)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -2218,6 +2337,25 @@ function GroupForm({
           This description will be used in the group name format: "Teacher - Description"
         </p>
       </div>
+
+      <div className="p-1">
+        <Label htmlFor="group_type" className="text-sm font-medium">Group Type</Label>
+        <Select
+          value={formData.group_type}
+          onValueChange={(value: GroupType) => setFormData({ ...formData, group_type: value })}
+        >
+          <SelectTrigger id="group_type" className="mt-1">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent className="z-[1100]">
+            <SelectItem value="group">{GROUP_TYPE_LABELS.group}</SelectItem>
+            <SelectItem value="individual">{GROUP_TYPE_LABELS.individual}</SelectItem>
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          By default, groups are set to Group; use Individual for one-on-one classes.
+        </p>
+      </div>
       
       <div className="p-1">
         <Label className="text-sm font-medium">Students (Optional)</Label>
@@ -2231,24 +2369,25 @@ function GroupForm({
         <div className="mt-2 max-h-40 overflow-y-auto border rounded-md p-2 space-y-2">
           {students.length === 0 ? (
             <p className="text-gray-500 dark:text-gray-400 text-sm">No students available</p>
-          ) : filteredStudents.length === 0 ? (
+          ) : displayedStudents.length === 0 ? (
             <p className="text-gray-500 dark:text-gray-400 text-sm">No students found</p>
           ) : (
-            filteredStudents.map((student) => (
+            displayedStudents.map((student) => (
               <div key={student.id} className="flex items-center space-x-2">
                 <Checkbox
                   id={`student-${student.id}`}
                   checked={formData.student_ids.includes(Number(student.id))}
                   onCheckedChange={(checked) => {
+                    const sid = Number(student.id)
                     if (checked) {
                       setFormData({
                         ...formData,
-                        student_ids: [...formData.student_ids, Number(student.id)]
+                        student_ids: [sid, ...formData.student_ids.filter((id) => id !== sid)]
                       });
                     } else {
                       setFormData({
                         ...formData,
-                        student_ids: formData.student_ids.filter(id => id !== Number(student.id))
+                        student_ids: formData.student_ids.filter(id => id !== sid)
                       });
                     }
                   }}
@@ -2278,25 +2417,6 @@ function GroupForm({
         </Label>
       </div>
 
-      {purpose === 'standard' ? (
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="group_is_special"
-            checked={formData.is_special}
-            onCheckedChange={(checked) => {
-              const next = checked as boolean
-              setFormData({
-                ...formData,
-                is_special: next,
-                teacher_id: next ? 0 : formData.teacher_id
-              })
-            }}
-          />
-          <Label htmlFor="group_is_special" className="text-sm">
-            Special group (curator required, optional teacher; no homework; limit lessons when a course is linked)
-          </Label>
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -2313,15 +2433,34 @@ interface BulkAddStudentsFormProps {
 function BulkAddStudentsForm({ formData, setFormData, groups, students, errors = {} }: BulkAddStudentsFormProps) {
   const [searchTerm, setSearchTerm] = useState("");
   
-  // Filter students based on search term
-  const filteredStudents = students.filter(student => 
-    (student.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-     student.email?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    student.role === 'student' &&
-    student.is_active
-  );
+  const filteredStudents = React.useMemo(
+    () =>
+      students.filter(
+        (student) =>
+          (student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            student.email?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+          student.role === 'student' &&
+          student.is_active
+      ),
+    [students, searchTerm]
+  )
 
-  // Toggle student selection
+  const displayedBulkStudents = React.useMemo(() => {
+    return [...filteredStudents].sort((a, b) => {
+      const idA = Number(a.id)
+      const idB = Number(b.id)
+      const idxA = formData.studentIds.indexOf(idA)
+      const idxB = formData.studentIds.indexOf(idB)
+      const pickedA = idxA >= 0
+      const pickedB = idxB >= 0
+      if (pickedA && pickedB) return idxA - idxB
+      if (pickedA && !pickedB) return -1
+      if (!pickedA && pickedB) return 1
+      return (a.name || a.full_name || '').localeCompare(b.name || b.full_name || '', 'ru')
+    })
+  }, [filteredStudents, formData.studentIds])
+
+  // Toggle student selection (новые выбранные — в начале списка)
   const toggleStudent = (studentId: number) => {
     if (formData.studentIds.includes(studentId)) {
       setFormData({
@@ -2331,20 +2470,20 @@ function BulkAddStudentsForm({ formData, setFormData, groups, students, errors =
     } else {
       setFormData({
         ...formData,
-        studentIds: [...formData.studentIds, studentId]
+        studentIds: [studentId, ...formData.studentIds.filter((id) => id !== studentId)]
       });
     }
   };
 
   // Select all filtered students
   const selectAllFiltered = () => {
-    const newIds = [...formData.studentIds];
-    filteredStudents.forEach(student => {
-      if (!newIds.includes(Number(student.id))) {
-        newIds.push(Number(student.id));
-      }
+    const toAdd = filteredStudents
+      .map((s) => Number(s.id))
+      .filter((id) => !formData.studentIds.includes(id))
+    setFormData({
+      ...formData,
+      studentIds: [...toAdd, ...formData.studentIds]
     });
-    setFormData({ ...formData, studentIds: newIds });
   };
 
   // Deselect all filtered students
@@ -2413,10 +2552,10 @@ function BulkAddStudentsForm({ formData, setFormData, groups, students, errors =
         />
 
         <div className="mt-2 max-h-60 overflow-y-auto border rounded-md p-2 space-y-2">
-          {filteredStudents.length === 0 ? (
+          {displayedBulkStudents.length === 0 ? (
             <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-4">No students found</p>
           ) : (
-            filteredStudents.map((student) => (
+            displayedBulkStudents.map((student) => (
               <div key={student.id} className="flex items-center space-x-2 hover:bg-gray-50 dark:hover:bg-secondary p-1 rounded">
                 <Checkbox
                   id={`bulk-student-${student.id}`}
