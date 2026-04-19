@@ -719,25 +719,42 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
       case 'pdf_text_task':
         return (
           <div className="space-y-3">
-            {/* File Download Link */}
-            {task.content.teacher_file_url && (
-              <div className="flex items-center p-3 bg-secondary/50 dark:bg-secondary rounded-md border border-border">
-                <FileSearch className="w-5 h-5 text-muted-foreground mr-3" />
-                <div className="flex-1">
-                  <div className="text-sm font-medium text-foreground">
-                    {task.content.teacher_file_name || 'Reference File'}
+            {/* Reference File — image preview or download link */}
+            {task.content.teacher_file_url && (() => {
+              const fileUrl = (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + task.content.teacher_file_url
+              const fileName: string = task.content.teacher_file_name || ''
+              const isImage = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(fileName)
+              return (
+                <div className="space-y-2">
+                  {isImage && (
+                    <div className="overflow-hidden rounded-lg border border-border bg-muted">
+                      <img
+                        src={fileUrl}
+                        alt={fileName || 'Reference image'}
+                        className="max-h-[480px] w-full object-contain"
+                        onError={(e) => { e.currentTarget.style.display = 'none' }}
+                      />
+                    </div>
+                  )}
+                  <div className="flex items-center p-3 bg-secondary/50 dark:bg-secondary rounded-md border border-border">
+                    <FileSearch className="w-5 h-5 text-muted-foreground mr-3 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-foreground truncate">
+                        {fileName || 'Reference File'}
+                      </div>
+                      <a
+                        href={fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-foreground hover:underline"
+                      >
+                        Open/Download File
+                      </a>
+                    </div>
                   </div>
-                  <a 
-                    href={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + task.content.teacher_file_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="text-xs text-foreground hover:underline"
-                  >
-                    Open/Download File
-                  </a>
                 </div>
-              </div>
-            )}
+              )
+            })()}
             
             {/* Question/Instructions */}
             <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{task.content.question}</div>

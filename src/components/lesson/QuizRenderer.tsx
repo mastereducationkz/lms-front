@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { Button } from '../ui/button';
 import {
   AlertDialog,
@@ -11,10 +10,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from '../ui/alert-dialog';
-import { ChevronRight, AlertTriangle, HelpCircle } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '../ui/dialog';
+import { ChevronRight, AlertTriangle, HelpCircle, Lock as LockIcon, Lightbulb } from 'lucide-react';
 import { renderTextWithLatex } from '../../utils/latex';
 import { applyHighlightsToHtml as applyHighlightsToHtmlShared } from '../../utils/highlightUtils';
-import { parseGap } from '../../utils/gapParser';
 import type { Step } from '../../types';
 import { LongTextQuestion } from './quiz/LongTextQuestion';
 import { ShortAnswerQuestion } from './quiz/ShortAnswerQuestion';
@@ -27,14 +33,21 @@ import { AudioPlayer } from './quiz/AudioPlayer';
 import { LineChart, Line, XAxis, YAxis, ReferenceLine, ResponsiveContainer, Tooltip } from 'recharts';
 import apiClient from '../../services/api';
 import api from '../../services/api';
+import { toast } from '../Toast';
+import {
+  getAnswerKey,
+  getQuestionStatus,
+  isAnswerComplete
+} from './quiz/scoring';
 
 // Exam mode badge component
 const ExamModeBadge = ({ maxPlays }: { maxPlays: number }) => (
   <div className="flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-lg text-sm font-medium mt-2">
-    <span>🔒</span>
+    <LockIcon className="w-3.5 h-3.5" aria-hidden="true" />
     <span>Exam mode · {maxPlays} plays allowed · No pause or rewind</span>
   </div>
 );
+
 
 // Helper to check if content text has visible content
 const hasVisibleContent = (html: string | undefined | null): boolean => {
@@ -149,14 +162,21 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
   useEffect(() => {
     if (quizState === 'completed' && currentStep) {
+      let cancelled = false;
       apiClient.getStepQuizAttempts(currentStep.id)
         .then((attempts) => {
+          if (cancelled) return;
           const completed = attempts
             .filter((a: any) => !a.is_draft && a.completed_at)
             .sort((a: any, b: any) => new Date(a.completed_at).getTime() - new Date(b.completed_at).getTime());
           setAttemptsHistory(completed);
         })
-        .catch(() => setAttemptsHistory([]));
+        .catch(() => {
+          if (cancelled) return;
+          setAttemptsHistory([]);
+          toast('Failed to load attempt history', 'error');
+        });
+      return () => { cancelled = true; };
     }
   }, [quizState, currentStep?.id]);
 
@@ -398,10 +418,11 @@ const QuizRenderer = (props: QuizRendererProps) => {
     return (
       <div
         data-highlight-palette="true"
-        className="absolute z-20 flex flex-col items-center gap-2 rounded-lg border border-border bg-popover/95 p-2 shadow-lg backdrop-blur-sm"
+        className="absolute z-20 flex flex-col sm:flex-col items-center gap-2 rounded-lg border border-border bg-popover/95 p-2 shadow-lg backdrop-blur-sm"
         style={{
-          right: -56,
-          top: highlightPalette.selectionOffsetY
+          right: 'clamp(-56px, -2vw, 8px)',
+          top: highlightPalette.selectionOffsetY,
+          maxWidth: 'calc(100vw - 16px)'
         }}
       >
         <button
@@ -443,7 +464,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
   // Handle submitting error report
   const submitErrorReport = async () => {
     if (!reportQuestionId || !reportMessage.trim()) return;
-    
+
     setReportSubmitting(true);
     try {
       await api.reportQuestionError(
@@ -456,8 +477,10 @@ const QuizRenderer = (props: QuizRendererProps) => {
       setReportModalOpen(false);
       setReportMessage('');
       setReportSuggestedAnswer('');
+      toast('Report submitted. Thank you!', 'success');
     } catch (error) {
       console.error('Failed to submit error report:', error);
+      toast('Failed to submit report. Please try again.', 'error');
     } finally {
       setReportSubmitting(false);
     }
@@ -557,7 +580,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 />
               ) : (
                 <div className="border border-border rounded-lg bg-muted/50">
-                  <div className="w-full h-[800px] border border-border rounded-lg">
+                  <div className="w-full h-[clamp(400px,70vh,800px)] border border-border rounded-lg">
                     <iframe
                       src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${quizData.quiz_media_url}#toolbar=0&navpanes=0&scrollbar=1`}
                       className="w-full h-full"
@@ -573,7 +596,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
         {/* Questions */}
         <div className="space-y-6">
           {questions.map((q, idx) => {
-            const userAnswer = quizAnswers.get(q.id);
+            const userAnswer = quizAnswers.get(getAnswerKey(q));
             const displayNumber = getQuestionDisplayNumber(idx);
             const questionGaps = (q.question_type === 'fill_blank' || q.question_type === 'text_completion')
               ? (q.content_text || q.question_text || '').match(/\[\[(.*?)\]\]/g)?.length || 1
@@ -730,13 +753,14 @@ const QuizRenderer = (props: QuizRendererProps) => {
                     <button
                       onClick={() => openReportModal(q.id.toString())}
                       disabled={reportedQuestions.has(q.id.toString())}
-                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                      aria-label={reportedQuestions.has(q.id.toString()) ? 'Already reported' : 'Report an error in this question'}
+                      className={`inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] text-xs font-medium rounded-lg transition-colors ${
                         reportedQuestions.has(q.id.toString())
                           ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
                           : 'text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:text-orange-700 dark:hover:text-orange-400'
                       }`}
                     >
-                      <AlertTriangle className="w-3.5 h-3.5" />
+                      <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />
                       {reportedQuestions.has(q.id.toString()) ? 'Reported' : 'Report an Error'}
                     </button>
                   </div>
@@ -746,156 +770,150 @@ const QuizRenderer = (props: QuizRendererProps) => {
           })}
         </div>
 
-        {/* Error Report Modal */}
-        {reportModalOpen && createPortal(
-          <>
-            {/* Backdrop - covers entire screen */}
-            <div 
-              className="fixed inset-0 z-[9998] bg-black/50"
-              onClick={() => {
-                setReportModalOpen(false);
-                setReportMessage('');
-                setReportSuggestedAnswer('');
-              }}
-            />
-            {/* Modal content */}
-            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none">
-              <div className="relative bg-card rounded-xl border border-border shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto pointer-events-auto">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center">
-                    <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-foreground">Report an Error</h3>
+        {/* Error Report Modal (shadcn Dialog: focus trap, Escape, role=dialog) */}
+        <Dialog
+          open={reportModalOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              setReportModalOpen(false);
+              setReportMessage('');
+              setReportSuggestedAnswer('');
+            }
+          }}
+        >
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center">
+                  <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400" aria-hidden="true" />
                 </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Found a mistake in this question? Please describe the error and suggest the correct answer.
-                </p>
-                
-                {/* Error description */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-foreground mb-1">
-                    What's wrong? <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    value={reportMessage}
-                    onChange={(e) => setReportMessage(e.target.value)}
-                    placeholder="Describe the error (e.g., the marked answer is incorrect, there's a typo, the question is unclear)..."
-                    className="w-full h-24 p-3 border border-input rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-background text-foreground"
-                  />
-                </div>
-                
-                {/* Suggested correct answer */}
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-foreground mb-1">
-                    What should be the correct answer?
-                  </label>
-                  {(() => {
-                    const reportedQ = getReportedQuestion();
-                    if (!reportedQ) return null;
-                    
-                    // For choice questions, show options to select
-                    if (reportedQ.question_type === 'single_choice' || reportedQ.question_type === 'media_question') {
-                      return (
-                        <div className="space-y-2">
-                          {(reportedQ.options || []).map((opt: any, idx: number) => (
-                            <label 
-                              key={idx} 
-                              className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                                reportSuggestedAnswer === (opt.text || opt) 
-                                  ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' 
-                                  : 'border-border hover:border-border/80'
-                              }`}
-                            >
-                              <input
-                                type="radio"
-                                name="suggestedAnswer"
-                                value={opt.text || opt}
-                                checked={reportSuggestedAnswer === (opt.text || opt)}
-                                onChange={(e) => setReportSuggestedAnswer(e.target.value)}
-                                className="w-4 h-4 text-orange-600 dark:text-orange-400 focus:ring-orange-500"
-                              />
-                              <span className="text-sm text-foreground" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(opt.text || opt) }} />
-                            </label>
-                          ))}
-                        </div>
-                      );
-                    }
-                    
-                    // For multiple choice, show checkboxes
-                    if (reportedQ.question_type === 'multiple_choice') {
-                      const selectedAnswers = reportSuggestedAnswer ? reportSuggestedAnswer.split('|') : [];
-                      return (
-                        <div className="space-y-2">
-                          {(reportedQ.options || []).map((opt: any, idx: number) => {
-                            const optText = opt.text || opt;
-                            const isSelected = selectedAnswers.includes(optText);
-                            return (
-                              <label 
-                                key={idx} 
-                                className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                                  isSelected 
-                                    ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' 
-                                    : 'border-border hover:border-border/80'
-                                }`}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setReportSuggestedAnswer([...selectedAnswers, optText].join('|'));
-                                    } else {
-                                      setReportSuggestedAnswer(selectedAnswers.filter(a => a !== optText).join('|'));
-                                    }
-                                  }}
-                                  className="w-4 h-4 text-orange-600 dark:text-orange-400 focus:ring-orange-500 rounded"
-                                />
-                                <span className="text-sm text-foreground" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(optText) }} />
-                              </label>
-                            );
-                          })}
-                        </div>
-                      );
-                    }
-                    
-                    // For text-based questions, show text input
-                    return (
-                      <input
-                        type="text"
-                        value={reportSuggestedAnswer}
-                        onChange={(e) => setReportSuggestedAnswer(e.target.value)}
-                        placeholder="Enter the correct answer..."
-                        className="w-full p-3 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-background text-foreground"
-                      />
-                    );
-                  })()}
-                  <p className="text-xs text-muted-foreground mt-1">Optional but helpful for review</p>
-                </div>
-                
-                <div className="flex justify-end gap-3">
-                  <button
-                    onClick={() => {
-                      setReportModalOpen(false);
-                      setReportMessage('');
-                      setReportSuggestedAnswer('');
-                    }}
-                    className="px-4 py-2 text-sm font-medium text-foreground hover:bg-accent rounded-lg transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={submitErrorReport}
-                    disabled={!reportMessage.trim() || reportSubmitting}
-                    className="px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {reportSubmitting ? 'Submitting...' : 'Submit Report'}
-                  </button>
-                </div>
-              </div>
+                Report an Error
+              </DialogTitle>
+              <DialogDescription>
+                Found a mistake in this question? Please describe the error and suggest the correct answer.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="mb-4">
+              <label htmlFor="report-message" className="block text-sm font-medium text-foreground mb-1">
+                What&apos;s wrong? <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                id="report-message"
+                value={reportMessage}
+                onChange={(e) => setReportMessage(e.target.value)}
+                placeholder="Describe the error (e.g., the marked answer is incorrect, there's a typo, the question is unclear)..."
+                className="w-full h-24 p-3 border border-input rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-background text-foreground"
+                aria-required="true"
+              />
             </div>
-          </>,
-          document.body
-        )}
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-foreground mb-1">
+                What should be the correct answer?
+              </label>
+              {(() => {
+                const reportedQ = getReportedQuestion();
+                if (!reportedQ) return null;
+
+                if (reportedQ.question_type === 'single_choice' || reportedQ.question_type === 'media_question') {
+                  return (
+                    <div className="space-y-2" role="radiogroup" aria-label="Suggested correct answer">
+                      {(reportedQ.options || []).map((opt: any, idx: number) => (
+                        <label
+                          key={idx}
+                          className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors min-h-[44px] ${
+                            reportSuggestedAnswer === (opt.text || opt)
+                              ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
+                              : 'border-border hover:border-border/80'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="suggestedAnswer"
+                            value={opt.text || opt}
+                            checked={reportSuggestedAnswer === (opt.text || opt)}
+                            onChange={(e) => setReportSuggestedAnswer(e.target.value)}
+                            className="w-4 h-4 text-orange-600 dark:text-orange-400 focus:ring-orange-500"
+                          />
+                          <span className="text-sm text-foreground" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(opt.text || opt) }} />
+                        </label>
+                      ))}
+                    </div>
+                  );
+                }
+
+                if (reportedQ.question_type === 'multiple_choice') {
+                  const selectedAnswers = reportSuggestedAnswer ? reportSuggestedAnswer.split('|') : [];
+                  return (
+                    <div className="space-y-2" role="group" aria-label="Suggested correct answers">
+                      {(reportedQ.options || []).map((opt: any, idx: number) => {
+                        const optText = opt.text || opt;
+                        const isSelected = selectedAnswers.includes(optText);
+                        return (
+                          <label
+                            key={idx}
+                            className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors min-h-[44px] ${
+                              isSelected
+                                ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
+                                : 'border-border hover:border-border/80'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setReportSuggestedAnswer([...selectedAnswers, optText].join('|'));
+                                } else {
+                                  setReportSuggestedAnswer(selectedAnswers.filter(a => a !== optText).join('|'));
+                                }
+                              }}
+                              className="w-4 h-4 text-orange-600 dark:text-orange-400 focus:ring-orange-500 rounded"
+                            />
+                            <span className="text-sm text-foreground" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(optText) }} />
+                          </label>
+                        );
+                      })}
+                    </div>
+                  );
+                }
+
+                return (
+                  <input
+                    type="text"
+                    value={reportSuggestedAnswer}
+                    onChange={(e) => setReportSuggestedAnswer(e.target.value)}
+                    placeholder="Enter the correct answer..."
+                    className="w-full p-3 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-background text-foreground"
+                  />
+                );
+              })()}
+              <p className="text-xs text-muted-foreground mt-1">Optional but helpful for review</p>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setReportModalOpen(false);
+                  setReportMessage('');
+                  setReportSuggestedAnswer('');
+                }}
+                className="min-h-[44px]"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={submitErrorReport}
+                disabled={!reportMessage.trim() || reportSubmitting}
+                className="bg-orange-600 hover:bg-orange-700 text-white min-h-[44px]"
+              >
+                {reportSubmitting ? 'Submitting...' : 'Submit Report'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <AlertDialog open={isSubmitConfirmOpen} onOpenChange={setIsSubmitConfirmOpen}>
           <AlertDialogContent>
@@ -916,62 +934,26 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
         {/* Action Buttons */}
         <div className="flex justify-center pt-4">
-          {!feedChecked ? (
-            <Button
-              onClick={handleConfirmQuizSubmission}
-              disabled={questions.some(q => {
-                // Skip image_content - no answer required
-                if (q.question_type === 'image_content') return false;
-                
-                const ans = quizAnswers.get(q.id);
-                if (q.question_type === 'fill_blank') {
-                  const gapAns = gapAnswers.get(q.id.toString()) || [];
-                  return gapAns.length === 0 || gapAns.some(v => (v || '').toString().trim() === '');
-                }
-                if (q.question_type === 'text_completion') {
-                  const gapAns = gapAnswers.get(q.id.toString()) || [];
-                  return gapAns.length === 0 || gapAns.some(v => (v || '').toString().trim() === '');
-                }
-                if (q.question_type === 'short_answer' || q.question_type === 'long_text') {
-                  return !ans || (ans || '').toString().trim() === '';
-                }
-                if (q.question_type === 'multiple_choice') {
-                  const need = Array.isArray(q.correct_answer) ? q.correct_answer.length : 1;
-                  const selected = Array.isArray(ans) ? ans.length : 0;
-                  return !Array.isArray(ans) || selected !== need;
-                }
-                return ans === undefined;
-              })}
-              className={`px-8 py-3 rounded-lg text-lg font-semibold transition-all duration-200 ${questions.some(q => {
-                // Skip image_content - no answer required
-                if (q.question_type === 'image_content') return false;
-                
-                const ans = quizAnswers.get(q.id);
-                if (q.question_type === 'fill_blank') {
-                  const gapAns = gapAnswers.get(q.id.toString()) || [];
-                  return gapAns.length === 0 || gapAns.some(v => (v || '').toString().trim() === '');
-                }
-                if (q.question_type === 'text_completion') {
-                  const gapAns = gapAnswers.get(q.id.toString()) || [];
-                  return gapAns.length === 0 || gapAns.some(v => (v || '').toString().trim() === '');
-                }
-                if (q.question_type === 'short_answer' || q.question_type === 'long_text') {
-                  return !ans || (ans || '').toString().trim() === '';
-                }
-                if (q.question_type === 'multiple_choice') {
-                  const need = Array.isArray(q.correct_answer) ? q.correct_answer.length : 1;
-                  const selected = Array.isArray(ans) ? ans.length : 0;
-                  return !Array.isArray(ans) || selected !== need;
-                }
-                return ans === undefined;
-              })
-                ? "bg-muted text-muted-foreground cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700 text-white transition-all"
-              }`}
-            >
-              Check All Answers
-            </Button>
-          ) : (() => {
+          {!feedChecked ? (() => {
+            const incomplete = questions.some(q => {
+              if (q.question_type === 'image_content') return false;
+              const key = getAnswerKey(q);
+              return !isAnswerComplete(q, quizAnswers.get(key), gapAnswers.get(key));
+            });
+            return (
+              <Button
+                onClick={handleConfirmQuizSubmission}
+                disabled={incomplete}
+                className={`px-8 py-3 rounded-lg text-lg font-semibold transition-all duration-200 min-h-[44px] ${
+                  incomplete
+                    ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white transition-all'
+                }`}
+              >
+                Check All Answers
+              </Button>
+            );
+          })() : (() => {
             const stats = getGapStatistics();
             const totalItems = stats.totalGaps + stats.regularQuestions;
             const correctItems = stats.correctGaps + stats.correctRegular;
@@ -1033,31 +1015,14 @@ const QuizRenderer = (props: QuizRendererProps) => {
     // Show beautiful Duolingo-style screen for all modes
     return (
       <div className="min-h-[500px] relative flex items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 -mx-4 -my-4 p-8 rounded-lg overflow-hidden">
-        {/* Logo in bottom-left corner */}
-        <div className="absolute bottom-0 left-0 pointer-events-none z-0">
-          <img
-            src="/logo-half.svg"
-            alt="Logo"
-            className="w-64 h-64 md:w-80 md:h-80 brightness-0 invert"
-          />
+        <div className="absolute bottom-0 left-0 pointer-events-none z-0" aria-hidden="true">
+          <img src="/logo-half.svg" alt="" className="w-64 h-64 md:w-80 md:h-80 brightness-0 invert" />
         </div>
-
-        {/* Logo in bottom-right corner */}
-        <div className="absolute bottom-0 right-0 pointer-events-none z-0">
-          <img
-            src="/logo-half.svg"
-            alt="Logo"
-            className="w-64 h-64 md:w-80 md:h-80 brightness-0 invert scale-x-[-1]"
-          />
+        <div className="absolute bottom-0 right-0 pointer-events-none z-0" aria-hidden="true">
+          <img src="/logo-half.svg" alt="" className="w-64 h-64 md:w-80 md:h-80 brightness-0 invert scale-x-[-1]" />
         </div>
-
-        {/* Logo at top center - showing only bottom half */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0">
-          <img
-            src="/logo.svg"
-            alt="Logo"
-            className="w-80 h-80 md:w-96 md:h-96 brightness-0 invert"
-          />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0" aria-hidden="true">
+          <img src="/logo.svg" alt="" className="w-80 h-80 md:w-96 md:h-96 brightness-0 invert" />
         </div>
 
         <div className="text-center space-y-6 max-w-2xl relative z-10">
@@ -1089,7 +1054,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 className="text-white hover:bg-white/10 mt-2 flex items-center gap-2"
                 title={isTeacher ? "Show Correct Answers" : "Development only: Auto-fill correct answers"}
               >
-                {isTeacher ? <HelpCircle className="w-4 h-4" /> : "🔧"} 
+                {isTeacher ? <HelpCircle className="w-4 h-4" aria-hidden="true" /> : <span aria-hidden="true">🔧</span>} 
                 {isTeacher ? "Show Correct Answers" : "Dev: Fill Answers"}
               </Button>
             )}
@@ -1137,14 +1102,17 @@ const QuizRenderer = (props: QuizRendererProps) => {
       );
     }
 
-    const userAnswer = quizAnswers.get(q.id);
+    const userAnswer = quizAnswers.get(getAnswerKey(q));
     const displayNumber = getQuestionDisplayNumber(currentQuestionIndex);
     const questionGaps = (q.question_type === 'fill_blank' || q.question_type === 'text_completion')
       ? (q.content_text || q.question_text || '').match(/\[\[(.*?)\]\]/g)?.length || 1
       : 1;
 
     return (
-      <div className="w-full md:max-w-3xl md:mx-auto space-y-4 md:space-y-6 md:p-4">
+      <div
+        key={`q-${q.id}`}
+        className="w-full md:max-w-3xl md:mx-auto space-y-4 md:space-y-6 md:p-4 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-200"
+      >
         {/* Header */}
         <div className="text-center space-y-2">
           <h2 className="text-2xl font-bold text-foreground">Quiz Question</h2>
@@ -1159,7 +1127,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
               className="mt-2 text-primary border-primary/30 hover:bg-primary/10 flex items-center gap-2 mx-auto"
               title={isTeacher ? "Show Correct Answers" : "Development only: Auto-fill correct answers"}
             >
-              {isTeacher ? <HelpCircle className="w-3 h-3" /> : "🔧"} 
+              {isTeacher ? <HelpCircle className="w-3 h-3" aria-hidden="true" /> : <span aria-hidden="true">🔧</span>} 
               {isTeacher ? "Show Correct Answers" : "Dev: Fill Answers"}
             </Button>
           )}
@@ -1192,7 +1160,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 />
               ) : (
                 <div className="border border-border rounded-lg bg-muted/50">
-                  <div className="w-full h-[800px] border border-border rounded-lg">
+                  <div className="w-full h-[clamp(400px,70vh,800px)] border border-border rounded-lg">
                     <iframe
                       src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${quizData.quiz_media_url}#toolbar=0&navpanes=0&scrollbar=1`}
                       className="w-full h-full"
@@ -1323,27 +1291,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
         <div className="flex justify-center pt-4">
           <Button
             onClick={checkAnswer}
-            disabled={(() => {
-              const ans = quizAnswers.get(q.id);
-              if (q.question_type === 'fill_blank') {
-                const gapAns = gapAnswers.get(q.id.toString()) || [];
-                return gapAns.length === 0 || gapAns.some(v => (v || '').toString().trim() === '');
-              }
-              if (q.question_type === 'text_completion') {
-                const gapAns = gapAnswers.get(q.id.toString()) || [];
-                return gapAns.length === 0 || gapAns.some(v => (v || '').toString().trim() === '');
-              }
-              if (q.question_type === 'short_answer' || q.question_type === 'long_text') {
-                return !ans || (ans || '').toString().trim() === '';
-              }
-              if (q.question_type === 'multiple_choice') {
-                const need = Array.isArray(q.correct_answer) ? q.correct_answer.length : 1;
-                const selected = Array.isArray(ans) ? ans.length : 0;
-                return !Array.isArray(ans) || selected !== need;
-              }
-              return ans === undefined;
-            })()}
-            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!isAnswerComplete(q, quizAnswers.get(getAnswerKey(q)), gapAnswers.get(getAnswerKey(q)))}
+            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
           >
             {q.question_type === 'short_answer' || q.question_type === 'media_open_question' || q.question_type === 'long_text'
               ? 'Submit to Teacher'
@@ -1416,7 +1365,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 />
               ) : (
                 <div className="border border-border rounded-lg bg-muted/50">
-                  <div className="w-full h-[800px] border border-border rounded-lg">
+                  <div className="w-full h-[clamp(400px,70vh,800px)] border border-border rounded-lg">
                     <iframe
                       src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${quizData.quiz_media_url}#toolbar=0&navpanes=0&scrollbar=1`}
                       className="w-full h-full"
@@ -1542,7 +1491,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
             {question.explanation && (
               <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-700/40">
                 <h5 className="text-lg font-bold text-blue-900 dark:text-blue-400 mb-3 flex items-center gap-2">
-                  💡 Explanation
+                  <Lightbulb className="w-5 h-5" aria-hidden="true" /> Explanation
                 </h5>
                 <div className="text-blue-800 dark:text-blue-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(question.explanation) }} />
               </div>
@@ -1583,7 +1532,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
             Submission Received
           </h1>
           <div className="p-4 md:p-8 rounded-2xl border dark:border-gray-700 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
-             <div className="text-6xl mb-4">📝</div>
+             <div className="text-6xl mb-4" aria-hidden="true">📝</div>
              <h2 className="text-xl font-bold text-yellow-800 dark:text-yellow-400 mb-2">Pending Teacher Review</h2>
              <p className="text-yellow-700 dark:text-yellow-400">
                Your quiz includes long text questions that require manual grading. 
@@ -1623,114 +1572,14 @@ const QuizRenderer = (props: QuizRendererProps) => {
     const isPassed = percentage >= 50;
 
     const getReviewStatusForQuestion = (q: any): { key: ReviewStatusKey; label: string; className: string } => {
-      const currentUserAnswer = quizAnswers.get(q.id);
-      const successClassName = 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-400';
-      const errorClassName = 'border border-rose-500/30 bg-rose-500/10 text-rose-400';
-      const partialClassName = 'border border-amber-500/30 bg-amber-500/10 text-amber-400';
-      const reviewClassName = 'border border-border bg-muted text-muted-foreground';
-
-      if (q.question_type === 'long_text') {
-        return { key: 'review', label: 'Needs review', className: reviewClassName };
-      }
-
-      if (q.question_type === 'short_answer' || q.question_type === 'media_open_question') {
-        const allowedAnswers = (q.correct_answer || '')
-          .toString()
-          .split('|')
-          .map((answer: string) => answer.trim().toLowerCase())
-          .filter((answer: string) => answer.length > 0);
-        const normalizedUserAnswer = (currentUserAnswer || '').toString().trim().toLowerCase();
-        const isCorrectAnswer = allowedAnswers.includes(normalizedUserAnswer);
-        return isCorrectAnswer
-          ? { key: 'correct', label: 'Correct', className: successClassName }
-          : { key: 'incorrect', label: 'Incorrect', className: errorClassName };
-      }
-
-      if (q.question_type === 'single_choice' || q.question_type === 'media_question') {
-        const isCorrectAnswer = currentUserAnswer === q.correct_answer;
-        return isCorrectAnswer
-          ? { key: 'correct', label: 'Correct', className: successClassName }
-          : { key: 'incorrect', label: 'Incorrect', className: errorClassName };
-      }
-
-      if (q.question_type === 'multiple_choice') {
-        const selectedAnswers = Array.isArray(currentUserAnswer) ? [...currentUserAnswer].sort() : [];
-        const expectedAnswers = Array.isArray(q.correct_answer) ? [...q.correct_answer].sort() : [];
-        const overlapCount = selectedAnswers.filter((answer) => expectedAnswers.includes(answer)).length;
-        const isCorrectAnswer = selectedAnswers.length === expectedAnswers.length &&
-          selectedAnswers.every((answer, index) => answer === expectedAnswers[index]);
-
-        if (isCorrectAnswer) {
-          return { key: 'correct', label: 'Correct', className: successClassName };
-        }
-
-        if (overlapCount > 0) {
-          return { key: 'partial', label: 'Partially correct', className: partialClassName };
-        }
-
-        return { key: 'incorrect', label: 'Incorrect', className: errorClassName };
-      }
-
-      if (q.question_type === 'fill_blank' || q.question_type === 'text_completion') {
-        const sourceText = q.content_text || q.question_text || '';
-        const gapTokens = sourceText.match(/\[\[(.*?)\]\]/g) || [];
-        const parsedExpectedAnswers = q.question_type === 'fill_blank'
-          ? gapTokens.map((token: string) => {
-              const parsed = parseGap(token.replace('[[', '').replace(']]', ''), q.gap_separator || ',');
-              return (parsed.correctOption || '').toString();
-            })
-          : [];
-        const expectedAnswersRaw = parsedExpectedAnswers.length > 0
-          ? parsedExpectedAnswers
-          : (Array.isArray(q.correct_answer) ? q.correct_answer : (q.correct_answer ? [q.correct_answer] : []));
-        const expectedAnswers = expectedAnswersRaw.map((answer: any) => (answer || '').toString().trim().toLowerCase());
-        const typedAnswersRaw = gapAnswers.get(q.id.toString()) || [];
-        const typedAnswers = typedAnswersRaw.map((answer) => (answer || '').toString().trim().toLowerCase());
-        const gapsCount = Math.max(expectedAnswers.length, typedAnswers.length);
-        if (gapsCount === 0) {
-          return { key: 'incorrect', label: 'Incorrect', className: errorClassName };
-        }
-
-        let correctGapsCount = 0;
-        for (let gapIndex = 0; gapIndex < gapsCount; gapIndex++) {
-          if (typedAnswers[gapIndex] && typedAnswers[gapIndex] === expectedAnswers[gapIndex]) {
-            correctGapsCount += 1;
-          }
-        }
-
-        if (correctGapsCount === gapsCount) {
-          return { key: 'correct', label: 'Correct', className: successClassName };
-        }
-
-        if (correctGapsCount > 0) {
-          return { key: 'partial', label: `${correctGapsCount}/${gapsCount} correct`, className: partialClassName };
-        }
-
-        return { key: 'incorrect', label: 'Incorrect', className: errorClassName };
-      }
-
-      if (q.question_type === 'matching') {
-        const matchingAnswers = quizAnswers.get(q.id.toString());
-        const asMap = matchingAnswers instanceof Map
-          ? matchingAnswers
-          : new Map<number, number>(
-            Object.entries((matchingAnswers || {}) as Record<string, number>).map(([key, value]) => [Number(key), Number(value)])
-          );
-        const totalPairs = q.matching_pairs?.length || asMap.size || 0;
-        const correctPairsCount = Array.from(asMap.entries()).filter(([leftIdx, rightIdx]) => leftIdx === rightIdx).length;
-
-        if (totalPairs > 0 && correctPairsCount === totalPairs) {
-          return { key: 'correct', label: 'Correct', className: successClassName };
-        }
-
-        if (correctPairsCount > 0) {
-          return { key: 'partial', label: `${correctPairsCount}/${totalPairs} correct`, className: partialClassName };
-        }
-
-        return { key: 'incorrect', label: 'Incorrect', className: errorClassName };
-      }
-
-      return { key: 'review', label: 'Needs review', className: reviewClassName };
+      const key = getAnswerKey(q);
+      const status = getQuestionStatus(
+        q,
+        quizAnswers.get(key),
+        gapAnswers.get(key),
+        { isSpecialGroupStudent }
+      );
+      return { key: status.key as ReviewStatusKey, label: status.label, className: status.className };
     };
 
     if (showAllAnswers) {
@@ -1764,7 +1613,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
             {questions.map((q, idx) => {
               if (q.question_type === 'image_content') return null
 
-              const userAnswer = quizAnswers.get(q.id);
+              const userAnswer = quizAnswers.get(getAnswerKey(q));
               const displayNumber = getQuestionDisplayNumber(idx);
               const questionGaps = (q.question_type === 'fill_blank' || q.question_type === 'text_completion')
                 ? (q.content_text || q.question_text || '').match(/\[\[(.*?)\]\]/g)?.length || 1
@@ -1909,7 +1758,9 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 {percentage}%
               </div>
               <p className="text-lg text-muted-foreground">
-                {displayedCorrectItems} out of {totalItems} {totalItems === 1 ? 'answer' : 'answers'} correct
+                {hasTeacherScore
+                  ? 'Graded by teacher'
+                  : `${displayedCorrectItems} out of ${totalItems} ${totalItems === 1 ? 'answer' : 'answers'} correct`}
               </p>
 
               {scoreDiff !== null && scoreDiff > 0 && (
@@ -1935,20 +1786,27 @@ const QuizRenderer = (props: QuizRendererProps) => {
               )}
             </div>
 
-            <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto">
-              <div className="rounded-lg p-3 bg-muted/50 text-center">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{displayedCorrectItems}</div>
-                <div className="text-base text-muted-foreground">Correct</div>
+            {hasTeacherScore ? (
+              <div className="rounded-lg p-4 bg-muted/50 text-center max-w-sm mx-auto">
+                <div className="text-base text-muted-foreground">Graded by teacher</div>
+                <div className="text-2xl font-bold text-foreground mt-1">{percentage}%</div>
               </div>
-              <div className="rounded-lg p-3 bg-muted/50 text-center">
-                <div className="text-2xl font-bold text-red-500 dark:text-red-400">{displayedIncorrectItems}</div>
-                <div className="text-base text-muted-foreground">Incorrect</div>
+            ) : (
+              <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto">
+                <div className="rounded-lg p-3 bg-muted/50 text-center">
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">{displayedCorrectItems}</div>
+                  <div className="text-base text-muted-foreground">Correct</div>
+                </div>
+                <div className="rounded-lg p-3 bg-muted/50 text-center">
+                  <div className="text-2xl font-bold text-red-500 dark:text-red-400">{displayedIncorrectItems}</div>
+                  <div className="text-base text-muted-foreground">Incorrect</div>
+                </div>
+                <div className="rounded-lg p-3 bg-muted/50 text-center">
+                  <div className="text-2xl font-bold text-foreground">{totalItems}</div>
+                  <div className="text-base text-muted-foreground">Total</div>
+                </div>
               </div>
-              <div className="rounded-lg p-3 bg-muted/50 text-center">
-                <div className="text-2xl font-bold text-foreground">{totalItems}</div>
-                <div className="text-base text-muted-foreground">Total</div>
-              </div>
-            </div>
+            )}
 
             {chartData.length === 1 && (
               <p className="text-base text-muted-foreground text-center">This is your first attempt</p>
@@ -1957,6 +1815,21 @@ const QuizRenderer = (props: QuizRendererProps) => {
             {chartData.length > 1 && (
               <div>
                 <h3 className="text-base font-semibold text-foreground mb-3 text-left">Your attempts</h3>
+                <table className="sr-only">
+                  <caption>Score history across attempts</caption>
+                  <thead>
+                    <tr><th>Attempt</th><th>Date</th><th>Score (%)</th></tr>
+                  </thead>
+                  <tbody>
+                    {chartData.map((row: any) => (
+                      <tr key={row.attempt}>
+                        <td>{row.attempt}</td>
+                        <td>{row.date}</td>
+                        <td>{row.score}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
                 <ResponsiveContainer width="100%" height={160}>
                   <LineChart data={chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                     <XAxis
@@ -2021,16 +1894,14 @@ const QuizRenderer = (props: QuizRendererProps) => {
         )}
 
         <div className="flex flex-col sm:flex-row justify-center gap-3 flex-wrap pt-2">
-          {quizData?.display_mode === 'all_at_once' && (
-            <Button onClick={reviewQuiz} variant="outline">
-              Review Answers
-            </Button>
-          )}
+          <Button onClick={reviewQuiz} variant="outline" className="min-h-[44px]">
+            Review Answers
+          </Button>
 
           {(isPassed || import.meta.env.DEV || isTeacher) && (
             <Button
               onClick={() => setShowAllAnswers(true)}
-              className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white"
+              className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white min-h-[44px]"
             >
               Show Correct Answers
             </Button>
@@ -2070,4 +1941,4 @@ const QuizRenderer = (props: QuizRendererProps) => {
   );
 };
 
-export default QuizRenderer;
+export default React.memo(QuizRenderer);

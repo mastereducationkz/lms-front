@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { ChevronLeft, ChevronRight, Play, FileText, HelpCircle, ChevronDown, ChevronUp, Lock, Trophy, PanelLeftOpen, PanelLeftClose, SkipForward, Languages } from 'lucide-react';
+import { Skeleton } from '../components/ui/skeleton';
+import { ChevronLeft, ChevronRight, Play, FileText, HelpCircle, ChevronDown, ChevronUp, Lock, Trophy, PanelLeftOpen, PanelLeftClose, SkipForward, Languages, Layers, Check, Cloud, CloudOff, Loader2 } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import apiClient from '../services/api';
 import type { Lesson, Step, Course, CourseModule, StepProgress, StepAttachment } from '../types';
@@ -14,6 +15,8 @@ import QuizRenderer from '../components/lesson/QuizRenderer';
 import SummaryStepRenderer from '../components/lesson/SummaryStepRenderer';
 import TextLookupPopover from '../components/lesson/TextLookupPopover';
 import MaintenanceBanner from '../components/MaintenanceBanner';
+import { toast } from '../components/Toast';
+import { gradeQuestion, getAnswerKey } from '../components/lesson/quiz/scoring';
 
 // Utility function to extract correct answers from gap text
 // If an option ends with *, it's the correct answer (without the *)
@@ -365,6 +368,7 @@ export default function LessonPage() {
   const [selectedVideoLanguageByStep, setSelectedVideoLanguageByStep] = useState<Map<string, StepVideoLanguage>>(new Map());
   const [quizCompleted, setQuizCompleted] = useState<Map<string, boolean>>(new Map());
   const [furthestStepIndex, setFurthestStepIndex] = useState(0);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   // Quiz state
   const [quizAnswers, setQuizAnswers] = useState<Map<string, any>>(new Map());
@@ -382,9 +386,27 @@ export default function LessonPage() {
     return saved ? JSON.parse(saved) : false;
   });
 
-  // Ref for text lookup popover
+  // Refs for race-safe operations
   const textContentRef = useRef<HTMLDivElement>(null);
+  const activeStepIdRef = useRef<number | null>(null);
+  const stepLoadAbortRef = useRef<AbortController | null>(null);
+  const pendingDraftCreateRef = useRef<boolean>(false);
+  const cachedHashRef = useRef<{ stepId: number; hash: string } | null>(null);
+  const videoMarkedRef = useRef<Set<number>>(new Set());
   const isSpecialGroupStudent = user?.role === 'student' && user?.special_group_only_student === true;
+
+  const devLog = useCallback((...args: unknown[]) => {
+    if (import.meta.env.DEV) console.log(...args);
+  }, []);
+
+  const orderedSteps = useMemo(() => {
+    return [...steps].sort((a, b) => {
+      const orderA = a.order_index || 0;
+      const orderB = b.order_index || 0;
+      if (orderA === orderB) return Number(a.id) - Number(b.id);
+      return orderA - orderB;
+    });
+  }, [steps]);
 
   // Persist sidebar state
   useEffect(() => {
@@ -440,30 +462,28 @@ export default function LessonPage() {
     }
   }, [lesson, modules]);
 
-  // Sync URL step/stepId parameters with currentStepIndex
+  // Sync URL step/stepId parameters with currentStepIndex (uses orderedSteps so URL/stepper agree)
   useEffect(() => {
-    if (steps.length > 0) {
-      const stepParam = searchParams.get('step');
-      const stepIdParam = searchParams.get('stepId');
-      
-      let targetIndex = 0;
+    if (orderedSteps.length === 0) return;
 
-      if (stepIdParam) {
-        // Try to find step by its unique ID
-        const stepId = parseInt(stepIdParam, 10);
-        const foundIndex = steps.findIndex(s => s.id === stepId);
-        if (foundIndex !== -1) targetIndex = foundIndex;
-      } else if (stepParam) {
-        // Try to find step by its 1-based index
-        const stepNumber = parseInt(stepParam, 10);
-        targetIndex = Math.max(1, Math.min(stepNumber, steps.length)) - 1;
-      }
+    const stepParam = searchParams.get('step');
+    const stepIdParam = searchParams.get('stepId');
 
-      if (targetIndex !== currentStepIndex) {
-        setCurrentStepIndex(targetIndex);
-      }
+    let targetIndex = 0;
+
+    if (stepIdParam) {
+      const stepId = parseInt(stepIdParam, 10);
+      const foundIndex = orderedSteps.findIndex(s => s.id === stepId);
+      if (foundIndex !== -1) targetIndex = foundIndex;
+    } else if (stepParam) {
+      const stepNumber = parseInt(stepParam, 10);
+      targetIndex = Math.max(1, Math.min(stepNumber, orderedSteps.length)) - 1;
     }
-  }, [searchParams, steps, currentStepIndex]);
+
+    if (targetIndex !== currentStepIndex) {
+      setCurrentStepIndex(targetIndex);
+    }
+  }, [searchParams, orderedSteps, currentStepIndex]);
 
   const loadCourseData = async (showLoader = true) => {
     try {
@@ -532,8 +552,9 @@ export default function LessonPage() {
 
       // Handle access check result
       if (!accessCheck.accessible) {
-        setError(accessCheck.reason || 'You cannot access this lesson yet.');
-        alert(accessCheck.reason || 'Please complete previous lessons first.');
+        const reason = accessCheck.reason || 'Please complete previous lessons first.';
+        setError(reason);
+        toast(reason, 'error');
         navigate(`/course/${courseId}`);
         return;
       }
@@ -569,7 +590,7 @@ export default function LessonPage() {
     }
   };
 
-  const markStepAsStarted = async (stepId: string) => {
+  const markStepAsStarted = useCallback(async (stepId: string) => {
     try {
       await apiClient.markStepStarted(stepId);
 
@@ -606,9 +627,9 @@ export default function LessonPage() {
     } catch (error) {
       console.error('Failed to mark step as started:', error);
     }
-  };
+  }, []);
 
-  const markStepAsVisited = async (stepId: string, timeSpent: number = 1) => {
+  const markStepAsVisited = useCallback(async (stepId: string, timeSpent: number = 1) => {
     // Check if already completed locally to avoid redundant requests
     const existingProgress = stepsProgress.find(p => p.step_id === parseInt(stepId));
     if (existingProgress?.status === 'completed') {
@@ -649,67 +670,68 @@ export default function LessonPage() {
         return updated;
       });
 
-      // Check if all steps in current lesson are now completed
-      // If so, reload modules to update is_accessible for lessons unlocked by redirect
       const allStepsCompleted = steps.every(step => {
-        if (step.id.toString() === stepId) {
-          return true; // This step is now completed
-        }
+        if (step.id.toString() === stepId) return true;
         const stepProgress = stepsProgress.find(p => p.step_id === step.id);
         return stepProgress?.status === 'completed';
       });
 
-      console.log('Step completed. All steps done?', allStepsCompleted, 'Lesson has next_lesson_id?', !!lesson?.next_lesson_id);
-
       if (allStepsCompleted) {
-      // Lesson is now complete - reload modules to update sidebar and unlock target
-      console.log('Lesson completed, reloading modules...');
-      loadCourseData(false);
-    }
+        loadCourseData(false);
+      }
     } catch (error) {
       console.error('Failed to mark step as visited:', error);
     }
-  };
+  }, [stepsProgress, steps, courseId, lessonId]);
 
-  const currentStep = steps[currentStepIndex];
+  const currentStep = orderedSteps[currentStepIndex];
 
   // Check if step is completed based on content type
-  const isStepCompleted = (step: Step): boolean => {
+  const isStepCompleted = useCallback((step: Step): boolean => {
     const stepProgress = stepsProgress.find(p => p.step_id === step.id);
     return stepProgress?.status === 'completed';
-  };
+  }, [stepsProgress]);
 
-  // Load step content on demand
+  // Load step content on demand (per-step AbortController; ignore stale responses)
   useEffect(() => {
-    const loadStepContent = async () => {
-      if (!currentStep) return;
-      
-      // If content is already loaded or being loaded, skip
-      if (loadedStepIds.has(currentStep.id) || isStepContentLoading) return;
-      
-      // Check if step actually needs content (some types might not)
-      // But generally we want to ensure we have the full step object
-      
-      try {
-        setIsStepContentLoading(true);
-        console.log(`Loading content for step ${currentStep.id}...`);
-        
-        const fullStep = await apiClient.getStep(currentStep.id.toString());
-        
-        setSteps(prevSteps => 
-          prevSteps.map(s => s.id === fullStep.id ? fullStep : s)
-        );
-        
-        setLoadedStepIds(prev => new Set(prev).add(fullStep.id));
-      } catch (error) {
-        console.error('Failed to load step content:', error);
-      } finally {
-        setIsStepContentLoading(false);
-      }
-    };
+    if (!currentStep) return;
+    if (loadedStepIds.has(currentStep.id)) return;
 
-    loadStepContent();
-  }, [currentStepIndex, currentStep, loadedStepIds, isStepContentLoading]);
+    const stepId = currentStep.id;
+    activeStepIdRef.current = stepId;
+
+    if (stepLoadAbortRef.current) {
+      stepLoadAbortRef.current.abort();
+    }
+    const abort = new AbortController();
+    stepLoadAbortRef.current = abort;
+
+    setIsStepContentLoading(true);
+
+    (async () => {
+      try {
+        devLog(`Loading content for step ${stepId}...`);
+        const fullStep = await apiClient.getStep(stepId.toString());
+        if (abort.signal.aborted) return;
+        if (activeStepIdRef.current !== stepId) return;
+
+        setSteps(prevSteps => prevSteps.map(s => s.id === fullStep.id ? fullStep : s));
+        setLoadedStepIds(prev => new Set(prev).add(fullStep.id));
+      } catch (err) {
+        if ((err as any)?.name === 'CanceledError' || (err as any)?.name === 'AbortError') return;
+        if (abort.signal.aborted) return;
+        console.error('Failed to load step content:', err);
+      } finally {
+        if (activeStepIdRef.current === stepId) {
+          setIsStepContentLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      abort.abort();
+    };
+  }, [currentStep?.id, loadedStepIds, devLog]);
 
   // Mark current step as started when it changes
   useEffect(() => {
@@ -727,6 +749,14 @@ export default function LessonPage() {
 
     if (currentStep?.content_type === 'quiz') {
       setIsQuizReady(false); // Start loading
+      setQuizState('title'); // Reset state immediately so old step's state doesn't bleed in
+      setQuizAnswers(new Map());
+      setGapAnswers(new Map());
+      setFeedChecked(false);
+      setCurrentQuestionIndex(0);
+      setQuizAttempt(null);
+      pendingDraftCreateRef.current = false;
+      cachedHashRef.current = null;
       const loadQuizData = async () => {
         try {
           const parsedQuizData = JSON.parse(currentStep.content_text || '{}');
@@ -757,11 +787,12 @@ export default function LessonPage() {
 
           // Compute current quiz content hash for version comparison
           const currentContentHash = await computeQuizContentHash(currentStep.content_text || '{}');
-          
+          cachedHashRef.current = { stepId: currentStep.id, hash: currentContentHash };
+
           // SERVER-FIRST APPROACH: Check server for existing attempts first
           // localStorage is only used as fallback if server has no data
           let serverAttemptRestored = false;
-          
+
           try {
             const attempts = await apiClient.getStepQuizAttempts(currentStep.id);
 
@@ -769,15 +800,15 @@ export default function LessonPage() {
 
             if (attempts && attempts.length > 0) {
               const lastAttempt = attempts[0]; // Get the most recent attempt
-              console.log('Found server quiz attempt:', lastAttempt);
-              
+              devLog('Found server quiz attempt:', lastAttempt);
+
               // Check if quiz content has changed since this attempt
               const attemptHash = lastAttempt.quiz_content_hash;
               if (attemptHash && attemptHash !== currentContentHash) {
-                console.warn('⚠️ Quiz content changed since last attempt - invalidating old answers');
-                // Don't restore old answers, clear localStorage too
+                devLog('Quiz content changed since last attempt — invalidating old answers');
                 localStorage.removeItem(`quiz_answers_${currentStep.id}`);
                 localStorage.removeItem(`gap_answers_${currentStep.id}`);
+                toast('This quiz was updated. Your previous answers were cleared.', 'info');
                 // Continue with fresh state
               } else {
                 // Quiz unchanged or no hash (legacy attempt), restore answers
@@ -788,9 +819,8 @@ export default function LessonPage() {
                 if (lastAttempt.answers) {
                   try {
                     const savedAnswers = JSON.parse(lastAttempt.answers);
-                    console.log('Parsed saved answers:', savedAnswers);
+                    devLog('Parsed saved answers:', savedAnswers);
 
-                    // Handle both Map-like array [[key, val], ...] and object {key: val} formats
                     let answersMap: Map<string, any>;
                     if (Array.isArray(savedAnswers)) {
                       answersMap = deserializeQuizAnswers(savedAnswers);
@@ -798,17 +828,23 @@ export default function LessonPage() {
                       answersMap = new Map(Object.entries(savedAnswers)) as Map<string, any>;
                     }
 
-                    setQuizAnswers(answersMap);
+                    // Normalize all keys to strings to keep map lookups consistent
+                    const normalizedAnswers = new Map<string, any>();
+                    for (const [key, value] of answersMap.entries()) {
+                      normalizedAnswers.set(String(key), value);
+                    }
+                    setQuizAnswers(normalizedAnswers);
 
                     // Restore gap answers
                     const newGapAnswers = new Map(init);
 
                     originalQuestions.forEach((q: any) => {
-                      if ((q.question_type === 'fill_blank' || q.question_type === 'text_completion') && answersMap.has(q.id.toString())) {
-                        const savedGapAns = answersMap.get(q.id.toString());
-                        console.log(`Restoring gap answer for Q ${q.id}:`, savedGapAns);
+                      const key = getAnswerKey(q);
+                      if ((q.question_type === 'fill_blank' || q.question_type === 'text_completion') && normalizedAnswers.has(key)) {
+                        const savedGapAns = normalizedAnswers.get(key);
+                        devLog(`Restoring gap answer for Q ${q.id}:`, savedGapAns);
                         if (Array.isArray(savedGapAns)) {
-                          newGapAnswers.set(q.id.toString(), savedGapAns);
+                          newGapAnswers.set(key, savedGapAns);
                         }
                       }
                     });
@@ -859,26 +895,29 @@ export default function LessonPage() {
               const localGapAnswers = localStorage.getItem(`gap_answers_${currentStep.id}`);
 
               if (localQuizAnswers || localGapAnswers) {
-                console.log('Restoring from localStorage (server had no data)');
-                
+                devLog('Restoring from localStorage (server had no data)');
+
                 if (localQuizAnswers) {
-                  setQuizAnswers(deserializeQuizAnswers(JSON.parse(localQuizAnswers)));
+                  const parsed = deserializeQuizAnswers(JSON.parse(localQuizAnswers));
+                  const normalized = new Map<string, any>();
+                  for (const [k, v] of parsed.entries()) normalized.set(String(k), v);
+                  setQuizAnswers(normalized);
                 }
                 if (localGapAnswers) {
-                  setGapAnswers(new Map(JSON.parse(localGapAnswers)));
+                  const entries: [string, string[]][] = JSON.parse(localGapAnswers);
+                  setGapAnswers(new Map(entries.map(([k, v]) => [String(k), v])));
                 }
-                
+
                 const displayMode = parsedQuizData.display_mode || 'one_by_one';
                 if (displayMode === 'all_at_once') {
                   setQuizState('feed');
                 } else {
                   setQuizState('title');
                 }
-                
+
                 setIsQuizReady(true);
                 return;
               } else {
-                // No data anywhere, use defaults
                 setGapAnswers(init);
                 setQuizAnswers(new Map());
               }
@@ -938,7 +977,7 @@ export default function LessonPage() {
     return () => {
       isMounted = false;
     };
-  }, [currentStep]);
+  }, [currentStep, searchParams, devLog]);
 
   // Persist quiz progress to localStorage
   useEffect(() => {
@@ -948,7 +987,7 @@ export default function LessonPage() {
     }
   }, [quizAnswers, gapAnswers, currentStep, currentQuestionIndex]);
 
-  // Auto-save quiz progress to server (debounced)
+  // Auto-save quiz progress to server (debounced, race-safe)
   useEffect(() => {
     if (!currentStep?.content_type || currentStep.content_type !== 'quiz') return;
     if (!courseId || !lessonId) return;
@@ -957,215 +996,174 @@ export default function LessonPage() {
 
     const saveToServer = async () => {
       try {
-        // Combine quiz and gap answers, serializing Maps properly
         const combinedAnswers = new Map([...quizAnswers, ...gapAnswers]);
         const answersToSave = serializeQuizAnswers(combinedAnswers);
         const timeSpentSeconds = quizStartTime
           ? Math.floor((Date.now() - quizStartTime) / 1000)
           : undefined;
 
-        // Calculate total questions including gaps (to match getScore logic)
         const { total } = getScore();
 
-        const attemptData = {
-          step_id: parseInt(currentStep.id.toString()),
-          course_id: parseInt(courseId),
-          lesson_id: parseInt(lessonId),
-          quiz_title: quizData?.title || 'Quiz',
-          total_questions: total,  // Use total from getScore to include gaps
-          correct_answers: 0,
-          score_percentage: 0,
-          answers: JSON.stringify(answersToSave),
-          time_spent_seconds: timeSpentSeconds,
-          is_draft: true,
-          current_question_index: currentQuestionIndex
-        };
-
         if (quizAttempt?.id && quizAttempt.is_draft) {
-          // Update existing draft
+          setSaveStatus('saving');
           await apiClient.updateQuizAttempt(quizAttempt.id, {
             answers: JSON.stringify(answersToSave),
             current_question_index: currentQuestionIndex,
             time_spent_seconds: timeSpentSeconds
           });
-          console.log('Quiz draft updated on server');
-        } else if (!quizAttempt) {
-          // Create new draft with content hash for version tracking
-          const contentHash = await computeQuizContentHash(currentStep.content_text || '{}');
-          const draftData = {
-            ...attemptData,
-            quiz_content_hash: contentHash
-          };
-          const savedAttempt = await apiClient.saveQuizAttempt(draftData);
-          setQuizAttempt(savedAttempt);
-          console.log('Quiz draft saved to server');
+          setSaveStatus('saved');
+          devLog('Quiz draft updated on server');
+        } else if (!quizAttempt && !pendingDraftCreateRef.current) {
+          pendingDraftCreateRef.current = true;
+          setSaveStatus('saving');
+          try {
+            // Use cached hash if available to avoid recomputing per save
+            let contentHash = cachedHashRef.current?.stepId === currentStep.id
+              ? cachedHashRef.current.hash
+              : undefined;
+            if (!contentHash) {
+              contentHash = await computeQuizContentHash(currentStep.content_text || '{}');
+              cachedHashRef.current = { stepId: currentStep.id, hash: contentHash };
+            }
+            const draftData = {
+              step_id: parseInt(currentStep.id.toString()),
+              course_id: parseInt(courseId),
+              lesson_id: parseInt(lessonId),
+              quiz_title: quizData?.title || 'Quiz',
+              total_questions: total,
+              correct_answers: 0,
+              score_percentage: 0,
+              answers: JSON.stringify(answersToSave),
+              time_spent_seconds: timeSpentSeconds,
+              is_draft: true,
+              current_question_index: currentQuestionIndex,
+              quiz_content_hash: contentHash
+            };
+            const savedAttempt = await apiClient.saveQuizAttempt(draftData);
+            setQuizAttempt(savedAttempt);
+            setSaveStatus('saved');
+            devLog('Quiz draft saved to server');
+          } finally {
+            pendingDraftCreateRef.current = false;
+          }
         }
       } catch (error) {
         console.error('Failed to auto-save quiz progress:', error);
+        setSaveStatus('error');
       }
     };
 
-    // Debounce: save after 3 seconds of no changes
+    setSaveStatus(prev => (prev === 'saving' ? prev : 'idle'));
     const timer = setTimeout(saveToServer, 3000);
     return () => clearTimeout(timer);
-  }, [quizAnswers, gapAnswers, currentQuestionIndex, currentStep, courseId, lessonId, quizState, quizData, questions.length, quizStartTime, quizAttempt]);
+  }, [quizAnswers, gapAnswers, currentQuestionIndex, currentStep, courseId, lessonId, quizState, quizData, questions.length, quizStartTime, quizAttempt, devLog]);
 
-  // Check if user can proceed to next step
-  const canProceedToNext = (): boolean => {
-    // Teachers and admins can always proceed
-    if (user?.role === 'teacher' || user?.role === 'admin') return true;
-
-    if (!currentStep) return false;
-
-    // Optional steps can always be skipped
-    if (currentStep.is_optional) return true;
+  // Compute proceed reason (or null when allowed)
+  const getProceedBlockReason = useCallback((): string | null => {
+    if (user?.role === 'teacher' || user?.role === 'admin') return null;
+    if (!currentStep) return 'No active step';
+    if (currentStep.is_optional) return null;
 
     const stepId = currentStep.id.toString();
-
-    // Check if already completed in backend/local state
     const stepProgress = stepsProgress.find(p => p.step_id === currentStep.id);
-    if (stepProgress?.status === 'completed') return true;
+    if (stepProgress?.status === 'completed') return null;
 
     if (currentStep.content_type === 'video_text') {
-      // For video steps, check if video is watched 90%+
-      const progress = videoProgress.get(stepId) || 0; // progress is a fraction [0..1]
-      return progress >= 0.9;
-    } else if (currentStep.content_type === 'quiz') {
-      // For quiz steps, check if quiz is completed
-      return quizCompleted.get(stepId) || false;
+      const progress = videoProgress.get(stepId) || 0;
+      if (progress >= 0.9) return null;
+      const pct = Math.round(progress * 100);
+      return `Watch the video to at least 90% to continue (${pct}% watched)`;
     }
+    if (currentStep.content_type === 'quiz') {
+      return quizCompleted.get(stepId) ? null : 'Complete the quiz to continue';
+    }
+    return null;
+  }, [user?.role, currentStep, stepsProgress, videoProgress, quizCompleted]);
 
-    // For other step types, allow proceeding
-    return true;
-  };
+  const canProceedToNext = useCallback((): boolean => getProceedBlockReason() === null, [getProceedBlockReason]);
 
-  const goToNextStep = async () => {
-    // Check if current step is completed
-    if (currentStep && !canProceedToNext()) {
-      let message = '';
-
-      switch (currentStep.content_type) {
-        case 'video_text':
-          const videoProgressValue = videoProgress.get(currentStep.id.toString()) || 0; // fraction [0..1]
-          const progressPercent = Math.round(videoProgressValue * 100);
-          message = `Пожалуйста, досмотрите видео до конца (просмотрено ${progressPercent}%, требуется 90%+) перед переходом к следующему шагу.`;
-          break;
-        case 'quiz':
-          message = 'Пожалуйста, завершите квиз перед переходом к следующему шагу.';
-          break;
-        default:
-          message = 'Пожалуйста, завершите текущий шаг перед переходом к следующему.';
-      }
-
-      alert(message);
+  const goToStep = useCallback((index: number) => {
+    if (index > currentStepIndex && currentStep && !canProceedToNext()) {
+      const reason = getProceedBlockReason() || 'Please complete the current step first';
+      toast(reason, 'info');
       return;
     }
 
-    if (currentStepIndex < steps.length - 1) {
+    if (currentStep && canProceedToNext()) {
+      markStepAsVisited(currentStep.id.toString(), 2);
+    }
+    setCurrentStepIndex(index);
+
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('step', (index + 1).toString());
+    setSearchParams(newSearchParams);
+  }, [currentStepIndex, currentStep, canProceedToNext, getProceedBlockReason, markStepAsVisited, searchParams, setSearchParams]);
+
+  const goToNextStep = useCallback(async () => {
+    if (currentStep && !canProceedToNext()) {
+      const reason = getProceedBlockReason() || 'Please complete the current step first';
+      toast(reason, 'info');
+      return;
+    }
+
+    if (currentStepIndex < orderedSteps.length - 1) {
       goToStep(currentStepIndex + 1);
     } else if (nextLessonId) {
-      // Last step edge-case:
-      // when navigating directly to next lesson, ensure current non-optional step
-      // is persisted as completed before route change
       if (currentStep && !currentStep.is_optional && !isStepCompleted(currentStep)) {
         await markStepAsVisited(currentStep.id.toString(), 2);
       }
       setCurrentStepIndex(0);
       navigate(`/course/${courseId}/lesson/${nextLessonId}`);
     }
-  };
+  }, [currentStep, canProceedToNext, getProceedBlockReason, currentStepIndex, orderedSteps.length, nextLessonId, goToStep, isStepCompleted, markStepAsVisited, navigate, courseId]);
 
-  const goToPreviousStep = () => {
+  const goToPreviousStep = useCallback(() => {
     if (currentStepIndex > 0) {
       goToStep(currentStepIndex - 1);
     }
-  };
-
-  const goToStep = (index: number) => {
-    // Prevent moving forward if current step is not complete
-    if (index > currentStepIndex && currentStep && !canProceedToNext()) {
-      let message = '';
-      switch (currentStep.content_type) {
-        case 'video_text':
-          const videoProgressValue = videoProgress.get(currentStep.id.toString()) || 0;
-          const progressPercent = Math.round(videoProgressValue * 100);
-          message = `Пожалуйста, досмотрите видео до конца (просмотрено ${progressPercent}%, требуется 90%+) перед переходом к следующему шагу.`;
-          break;
-        case 'quiz':
-          message = 'Пожалуйста, завершите квиз перед переходом к следующему шагу.';
-          break;
-        default:
-          message = 'Пожалуйста, завершите текущий шаг перед переходом к следующему.';
-      }
-      alert(message);
-      return;
-    }
-
-    // Mark current step as visited ONLY if it satisfies completion criteria
-    if (currentStep && canProceedToNext()) {
-      markStepAsVisited(currentStep.id.toString(), 2); // 2 minutes for step completion
-    }
-    setCurrentStepIndex(index);
-
-    // Update URL with step parameter (1-based)
-    const newSearchParams = new URLSearchParams(searchParams);
-    newSearchParams.set('step', (index + 1).toString());
-    setSearchParams(newSearchParams);
-  };
+  }, [currentStepIndex, goToStep]);
 
   const skipLesson = async () => {
     if (!lesson) return;
     if (!confirm('Are you sure you want to skip this lesson? It will be marked as completed.')) return;
-    
+
     try {
       await apiClient.markLessonComplete(lesson.id.toString(), 0);
-      // Reload to update status
       loadLessonData();
       loadCourseData(false);
+      toast('Lesson skipped', 'success');
     } catch (err) {
       console.error('Failed to skip lesson:', err);
-      alert('Failed to skip lesson');
+      toast('Failed to skip lesson', 'error');
     }
   };
 
-  // Dev mode: Auto-complete all steps quickly
   const autoCompleteAllSteps = async () => {
-    if (!lesson || !steps.length) return;
-    
-    const confirmMsg = `🚀 DEV MODE: Auto-complete all ${steps.length} steps in this lesson?\n\nThis will:\n✓ Mark all steps as completed\n✓ Auto-fill quiz answers\n✓ Mark lesson as complete\n\n⚠️ This is for development/testing only!`;
-    
+    if (!lesson || !orderedSteps.length) return;
+
+    const confirmMsg = `DEV MODE: Auto-complete all ${orderedSteps.length} steps?\n\nThis is for development/testing only.`;
     if (!confirm(confirmMsg)) return;
-    
+
     try {
-      // Auto-complete all steps
-      for (const step of steps) {
+      for (const step of orderedSteps) {
         const stepId = step.id.toString();
-        
-        // Mark step as visited/completed
         await markStepAsVisited(stepId, 0);
-        
-        // If it's a quiz, auto-complete it
         if (step.content_type === 'quiz') {
           setQuizCompleted(prev => new Map(prev).set(stepId, true));
         }
-        
-        // If it's a video, mark as fully watched
         if (step.content_type === 'video_text') {
           setVideoProgress(prev => new Map(prev).set(stepId, 1.0));
         }
       }
-      
-      // Mark lesson as complete
+
       await apiClient.markLessonComplete(lesson.id.toString(), 0);
-      
-      // Reload data
       await loadLessonData();
       await loadCourseData(false);
-      
-      alert('✅ All steps completed! Lesson marked as done.');
+
+      toast('All steps completed! Lesson marked as done.', 'success');
     } catch (err) {
       console.error('Failed to auto-complete steps:', err);
-      alert('❌ Failed to auto-complete steps');
+      toast('Failed to auto-complete steps', 'error');
     }
   };
 
@@ -1176,7 +1174,7 @@ export default function LessonPage() {
       case 'quiz':
         return <HelpCircle className="w-4 h-4" />;
       case 'flashcard':
-        return <HelpCircle className="w-4 h-4" />; // Using HelpCircle as fallback for BookOpen if not imported, or add BookOpen import
+        return <Layers className="w-4 h-4" />;
       case 'summary':
         return <Trophy className="w-4 h-4" />;
       case 'text':
@@ -1200,9 +1198,9 @@ export default function LessonPage() {
 
 
 
-  const handleQuizAnswer = (questionId: string, answer: any) => {
-    setQuizAnswers(prev => new Map(prev.set(questionId, answer)));
-  };
+  const handleQuizAnswer = useCallback((questionId: string, answer: any) => {
+    setQuizAnswers(prev => new Map(prev.set(String(questionId), answer)));
+  }, []);
 
   const checkAnswer = () => {
     // For long_text questions, skip result screen and go directly to next question
@@ -1308,35 +1306,38 @@ export default function LessonPage() {
       const newGapAnswers = new Map<string, string[]>();
 
       questions.forEach((question: any) => {
+        const key = getAnswerKey(question);
         if (question.question_type === 'fill_blank' || question.question_type === 'text_completion') {
-          // Extract correct answers from gaps
           const text = question.content_text || question.question_text || '';
           const separator = question.gap_separator || ',';
           const correctAnswers = extractCorrectAnswersFromGaps(text, separator);
-          newGapAnswers.set(question.id.toString(), correctAnswers);
+          newGapAnswers.set(key, correctAnswers);
         } else if (question.question_type === 'long_text') {
-          // For long text, fill with sample text
-          newQuizAnswers.set(question.id, 'Sample answer for development testing');
+          newQuizAnswers.set(key, 'Sample answer for development testing');
+        } else if (question.question_type === 'matching') {
+          const pairs = question.matching_pairs || [];
+          const map = new Map<number, number>();
+          pairs.forEach((_p: unknown, idx: number) => map.set(idx, idx));
+          newQuizAnswers.set(key, map);
         } else {
-          // For single_choice, multiple_choice, etc.
-          newQuizAnswers.set(question.id, question.correct_answer);
+          newQuizAnswers.set(key, question.correct_answer);
         }
       });
 
       setQuizAnswers(newQuizAnswers);
       setGapAnswers(newGapAnswers);
-      console.log('✅ Auto-filled correct answers for development');
+      devLog('Auto-filled correct answers for development');
     }
   };
 
-  const getCurrentQuestion = () => {
+  const getCurrentQuestion = useCallback(() => {
     return questions[currentQuestionIndex];
-  };
+  }, [questions, currentQuestionIndex]);
 
-  const getCurrentUserAnswer = () => {
+  const getCurrentUserAnswer = useCallback(() => {
     const question = getCurrentQuestion();
-    return question ? quizAnswers.get(question.id) : undefined;
-  };
+    return question ? quizAnswers.get(getAnswerKey(question)) : undefined;
+  }, [getCurrentQuestion, quizAnswers]);
 
 
   const getScore = () => {
@@ -1359,14 +1360,8 @@ export default function LessonPage() {
         : undefined;
 
       const combinedAnswers = new Map([...quizAnswers, ...gapAnswers]);
-      const answersToSave = Array.from(combinedAnswers.entries());
-      console.log('Saving quiz attempt:', {
-        score,
-        totalQuestions,
-        answersCount: answersToSave.length,
-        hasLongText,
-        sampleAnswers: answersToSave.slice(0, 3)
-      });
+      const answersToSave = serializeQuizAnswers(combinedAnswers);
+      devLog('Saving quiz attempt:', { score, totalQuestions, answersCount: answersToSave.length, hasLongText });
 
       // If quiz has long_text questions, it needs teacher grading
       // Otherwise, it's auto-graded
@@ -1384,7 +1379,7 @@ export default function LessonPage() {
           is_graded: isGraded
         });
         setQuizAttempt(savedAttempt);
-        console.log('Quiz draft finalized successfully');
+        devLog('Quiz draft finalized successfully');
       } else {
         // Create new completed attempt with content hash for version tracking
         const contentHash = await computeQuizContentHash(currentStep.content_text || '{}');
@@ -1405,18 +1400,21 @@ export default function LessonPage() {
 
         const savedAttempt = await apiClient.saveQuizAttempt(attemptData);
         setQuizAttempt(savedAttempt);
-        console.log('Quiz attempt saved successfully');
+        devLog('Quiz attempt saved successfully');
       }
-      
-      // Clear localStorage only after successful server save
+
       localStorage.removeItem(`quiz_answers_${currentStep.id}`);
       localStorage.removeItem(`gap_answers_${currentStep.id}`);
     } catch (error) {
       console.error('Failed to save quiz attempt:', error);
+      toast('Failed to save quiz attempt. Please try again.', 'error');
     }
   };
 
-  // Get detailed gap statistics for display
+  // Detailed gap statistics for display.
+  // Uses the shared `gradeQuestion` helper so QuizRenderer review badges and
+  // these stats stay aligned. Long-text for special-group students is excluded
+  // from regular question count because their long_text answers must be teacher-graded.
   const getGapStatistics = () => {
     let totalGaps = 0;
     let correctGaps = 0;
@@ -1424,73 +1422,27 @@ export default function LessonPage() {
     let correctRegular = 0;
 
     questions.forEach(question => {
-      // Skip image_content - it's not a question, just visual content
       if (question.question_type === 'image_content') return;
-      
+      const key = getAnswerKey(question);
+
       if (question.question_type === 'fill_blank' || question.question_type === 'text_completion') {
-        const userAnswers = gapAnswers.get(question.id.toString()) || [];
-
-        // Extract correct answers from the text using the new utility
-        const text = question.content_text || question.question_text || '';
-        const separator = question.gap_separator || ',';
-        const correctAnswers = extractCorrectAnswersFromGaps(text, separator);
-
-        console.log(`Stats for Q ${question.id}:`, {
-          userAnswers,
-          correctAnswers,
-          userAnswersLen: userAnswers.length,
-          correctAnswersLen: correctAnswers.length
-        });
-
-        const gaps = correctAnswers.length;
-        totalGaps += gaps;
-
-        userAnswers.forEach((userAns, idx) => {
-          if (idx < correctAnswers.length) {
-            const isGapCorrect = (userAns || '').toString().trim().toLowerCase() ===
-              (correctAnswers[idx] || '').toString().trim().toLowerCase();
-            if (isGapCorrect) correctGaps++;
-          }
-        });
-      } else {
-        if (question.question_type === 'long_text' && isSpecialGroupStudent) {
-          return;
-        }
-        regularQuestions++;
-        const answer = quizAnswers.get(question.id);
-
-        // For long_text questions, automatically count as correct if answer is not empty
-        if (question.question_type === 'long_text') {
-          if (answer && answer.toString().trim() !== '') {
-            correctRegular++;
-          }
-        } else if (question.question_type === 'short_answer' || question.question_type === 'media_open_question') {
-          const correctAnswers = (question.correct_answer || '').toString().split('|').map((a: string) => a.trim().toLowerCase()).filter((a: string) => a.length > 0);
-          const userVal = (answer || '').toString().trim().toLowerCase();
-          if (correctAnswers.includes(userVal)) {
-            correctRegular++;
-          }
-        } else if (question.question_type === 'multiple_choice') {
-          const correct = Array.isArray(question.correct_answer)
-            ? [...question.correct_answer].map(Number).sort((a, b) => a - b)
-            : [];
-          const user = Array.isArray(answer)
-            ? [...answer].map(Number).sort((a, b) => a - b)
-            : [];
-          const isMatch =
-            correct.length > 0 &&
-            correct.length === user.length &&
-            correct.every((v, i) => v === user[i]);
-          if (isMatch) {
-            correctRegular++;
-          }
-        } else {
-          // single_choice, media_question, matching, etc.
-          if (answer !== undefined && answer === question.correct_answer) {
-            correctRegular++;
-          }
-        }
+        const provided = gapAnswers.get(key) || [];
+        const result = gradeQuestion(question, undefined, provided);
+        totalGaps += result.totalParts;
+        correctGaps += result.correctParts;
+        return;
       }
+
+      if (question.question_type === 'long_text' && isSpecialGroupStudent) {
+        // Excluded — these are graded by the teacher; counting them locally would
+        // distort the displayed denominator before grading completes.
+        return;
+      }
+
+      regularQuestions++;
+      const answer = quizAnswers.get(key);
+      const result = gradeQuestion(question, answer, undefined, { isSpecialGroupStudent });
+      if (result.isCorrect) correctRegular++;
     });
 
     return { totalGaps, correctGaps, regularQuestions, correctRegular };
@@ -1547,12 +1499,14 @@ export default function LessonPage() {
   const renderStepContent = () => {
     if (!currentStep) return null;
 
-    // Show loader if content is loading or not yet loaded
     if (isStepContentLoading || !loadedStepIds.has(currentStep.id)) {
       return (
-        <div className="flex flex-col items-center justify-center h-64 space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <p className="text-muted-foreground">Loading step content...</p>
+        <div className="space-y-4" aria-busy="true" aria-label="Loading step content">
+          <Skeleton className="h-6 w-2/3" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-11/12" />
+          <Skeleton className="h-4 w-10/12" />
+          <Skeleton className="h-48 w-full" />
         </div>
       );
     }
@@ -1560,7 +1514,7 @@ export default function LessonPage() {
 
 
     const optionalBanner = currentStep.is_optional ? (
-      <div className="bg-indigo-50 dark:bg-indigo-900/20 border-1 border-indigo-200 dark:border-indigo-800 rounded-md p-3 mb-4 flex items-start gap-3">
+      <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-md p-3 mb-4 flex items-start gap-3">
          <div>
             <h4 className="text-sm font-medium text-indigo-800 dark:text-indigo-400">Optional Step</h4>
             <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
@@ -1644,13 +1598,11 @@ export default function LessonPage() {
                     className="w-full"
                     onProgress={(progress) => {
                       setVideoProgress(prev => new Map(prev.set(currentStep.id.toString(), progress)));
-  
-                      // Auto-complete video step when 90%+ is watched
-                      if (progress >= 0.9) {
+                      if (progress >= 0.9 && !videoMarkedRef.current.has(currentStep.id)) {
+                        videoMarkedRef.current.add(currentStep.id);
                         const stepProgress = stepsProgress.find(p => p.step_id === currentStep.id);
                         if (!stepProgress || stepProgress.status !== 'completed') {
-                          // Calculate time spent based on video duration and progress
-                          const timeSpent = Math.ceil(progress * 10); // Estimate time spent in minutes
+                          const timeSpent = Math.ceil(progress * 10);
                           markStepAsVisited(currentStep.id.toString(), timeSpent);
                         }
                       }
@@ -1675,8 +1627,16 @@ export default function LessonPage() {
         case 'quiz':
           if (!isQuizReady) {
             return (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <div className="space-y-4" aria-busy="true" aria-label="Loading quiz">
+                <Skeleton className="h-8 w-1/2" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-32 w-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
               </div>
             );
           }
@@ -1784,8 +1744,18 @@ export default function LessonPage() {
 
   if (isCourseLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      <div className="flex h-screen overflow-hidden bg-background">
+        <div className="hidden md:block w-80 border-r border-border/70 p-4 space-y-3" aria-busy="true">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-8 w-3/4" />
+          <Skeleton className="h-8 w-2/3" />
+          <Skeleton className="h-8 w-3/4" />
+        </div>
+        <div className="flex-1 p-8 space-y-4" aria-busy="true">
+          <Skeleton className="h-10 w-1/3" />
+          <Skeleton className="h-6 w-2/3" />
+          <Skeleton className="h-64 w-full" />
+        </div>
       </div>
     );
   }
@@ -1890,60 +1860,108 @@ export default function LessonPage() {
         <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth custom-scrollbar">
           <div className="max-w-4xl mx-auto pb-20">
             {isLessonLoading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <div className="space-y-4" aria-busy="true" aria-label="Loading lesson">
+                <div className="grid gap-2 grid-cols-6 sm:grid-cols-10 lg:grid-cols-15">
+                  {Array.from({ length: 15 }).map((_, i) => (
+                    <Skeleton key={i} className="aspect-square" />
+                  ))}
+                </div>
+                <Skeleton className="h-8 w-2/3" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+                <Skeleton className="h-64 w-full" />
               </div>
             ) : (
               <>
                 {/* Steps Navigation */}
                 <div className="mb-6">
-                  <div className="grid gap-2 [grid-template-columns:repeat(6,minmax(0,1fr))] sm:[grid-template-columns:repeat(10,minmax(0,1fr))] lg:[grid-template-columns:repeat(15,minmax(0,1fr))]">
-                    {steps
-                      .sort((a, b) => a.order_index - b.order_index)
-                      .map((step, index) => {
-                        const isCompleted = isStepCompleted(step);
+                  <div
+                    role="tablist"
+                    aria-label="Lesson steps"
+                    className="grid gap-2 [grid-template-columns:repeat(6,minmax(0,1fr))] sm:[grid-template-columns:repeat(10,minmax(0,1fr))] lg:[grid-template-columns:repeat(15,minmax(0,1fr))]"
+                  >
+                    {orderedSteps.map((step, index) => {
+                      const isCompleted = isStepCompleted(step);
+                      const isClickable = user?.role !== 'student' || isCompleted || index <= furthestStepIndex;
+                      const isActive = currentStepIndex === index;
 
-                        // Teachers/admins can click on any step
-                        // Students can click on completed steps OR any step up to the furthest step they've reached
-                        const isClickable = user?.role !== 'student' || isCompleted || index <= furthestStepIndex;
+                      const handleStepKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+                        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                          e.preventDefault();
+                          for (let i = index + 1; i < orderedSteps.length; i += 1) {
+                            const candidate = orderedSteps[i];
+                            const candidateClickable = user?.role !== 'student' || isStepCompleted(candidate) || i <= furthestStepIndex;
+                            if (candidateClickable) {
+                              const next = document.getElementById(`step-tab-${candidate.id}`);
+                              next?.focus();
+                              break;
+                            }
+                          }
+                        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                          e.preventDefault();
+                          for (let i = index - 1; i >= 0; i -= 1) {
+                            const prev = document.getElementById(`step-tab-${orderedSteps[i].id}`);
+                            prev?.focus();
+                            break;
+                          }
+                        } else if (e.key === 'Home') {
+                          e.preventDefault();
+                          document.getElementById(`step-tab-${orderedSteps[0].id}`)?.focus();
+                        } else if (e.key === 'End') {
+                          e.preventDefault();
+                          document.getElementById(`step-tab-${orderedSteps[orderedSteps.length - 1].id}`)?.focus();
+                        }
+                      };
 
-                        return (
-                          <button
-                            key={step.id}
-                            onClick={() => isClickable && goToStep(index)}
-                            disabled={!isClickable}
-                            title={!isClickable ? 'Завершите предыдущие шаги, чтобы открыть' : step.title || `Шаг ${step.order_index}`}
-                            className={`aspect-square rounded-md p-1 relative shadow-sm transition-all ${
-                              isClickable ? 'hover:shadow-md cursor-pointer' : 'cursor-not-allowed opacity-50'
-                            } ${currentStepIndex === index
-                              ? 'bg-primary text-primary-foreground ring-2 ring-primary/40'
-                              : isCompleted
-                                ? `bg-emerald-600 text-white ${isClickable ? 'hover:bg-emerald-700' : ''}`
-                                : step.is_optional
-                                  ? `bg-accent text-accent-foreground border border-border/60 ${isClickable ? 'hover:bg-accent/80' : ''}`
-                                  : `bg-muted text-muted-foreground border border-border/60 ${isClickable ? 'hover:bg-muted/80' : ''}`
-                              }`}
-                          >
-                            {/* Striped overlay for locked steps */}
-                            {!isClickable && (
-                              <div 
-                                className="absolute inset-0 rounded-md opacity-30"
-                                style={{
-                                  background: 'repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(0,0,0,0.3) 3px, rgba(0,0,0,0.3) 6px)'
-                                }}
-                              />
-                            )}
-                            <div className="h-full w-full flex flex-col items-start justify-end">
-                              <div className="absolute top-1 left-1 text-[10px] sm:text-[11px] bg-background/70 text-foreground rounded px-1 py-0.5">
-                                {step.order_index}
-                              </div>
-                              <div className="flex items-center gap-1 opacity-90">
-                                {!isClickable ? <Lock className="w-4 h-4" /> : getStepIcon(step)}
-                              </div>
+                      return (
+                        <button
+                          key={step.id}
+                          id={`step-tab-${step.id}`}
+                          role="tab"
+                          aria-current={isActive ? 'step' : undefined}
+                          aria-selected={isActive}
+                          aria-label={`Step ${step.order_index}${step.title ? `: ${step.title}` : ''}${isCompleted ? ' (completed)' : ''}${!isClickable ? ' (locked)' : ''}`}
+                          tabIndex={isActive ? 0 : -1}
+                          onClick={() => isClickable && goToStep(index)}
+                          onKeyDown={handleStepKeyDown}
+                          disabled={!isClickable}
+                          title={!isClickable ? 'Complete previous steps to unlock' : step.title || `Step ${step.order_index}`}
+                          className={`aspect-square rounded-md p-1 relative shadow-sm transition-all min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                            isClickable ? 'hover:shadow-md cursor-pointer' : 'cursor-not-allowed opacity-50'
+                          } ${isActive
+                            ? 'bg-primary text-primary-foreground ring-2 ring-primary/40'
+                            : isCompleted
+                              ? `bg-emerald-600 text-white ${isClickable ? 'hover:bg-emerald-700' : ''}`
+                              : step.is_optional
+                                ? `bg-accent text-accent-foreground border border-border/60 ${isClickable ? 'hover:bg-accent/80' : ''}`
+                                : `bg-muted text-muted-foreground border border-border/60 ${isClickable ? 'hover:bg-muted/80' : ''}`
+                            }`}
+                        >
+                          {!isClickable && (
+                            <div
+                              aria-hidden="true"
+                              className="absolute inset-0 rounded-md opacity-30"
+                              style={{
+                                background: 'repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(0,0,0,0.3) 3px, rgba(0,0,0,0.3) 6px)'
+                              }}
+                            />
+                          )}
+                          {isCompleted && !isActive && (
+                            <div className="absolute top-1 right-1 bg-white/20 rounded-full p-0.5" aria-hidden="true">
+                              <Check className="w-3 h-3 text-white" />
                             </div>
-                          </button>
-                        );
-                      })}
+                          )}
+                          <div className="h-full w-full flex flex-col items-start justify-end">
+                            <div className="absolute top-1 left-1 text-[10px] sm:text-[11px] bg-background/70 text-foreground rounded px-1 py-0.5">
+                              {step.order_index}
+                            </div>
+                            <div className="flex items-center gap-1 opacity-90">
+                              {!isClickable ? <Lock className="w-4 h-4" aria-hidden="true" /> : <span aria-hidden="true">{getStepIcon(step)}</span>}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -1968,39 +1986,43 @@ export default function LessonPage() {
                     variant="outline"
                     onClick={goToPreviousStep}
                     disabled={currentStepIndex === 0}
-                    className="w-full sm:w-auto"
+                    className="w-full sm:w-auto min-h-[44px]"
                   >
-                    <ChevronLeft className="w-4 h-4 mr-2" />
+                    <ChevronLeft className="w-4 h-4 mr-2" aria-hidden="true" />
                     Previous
                   </Button>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground order-[-1] sm:order-none">
-                    <span>Step {currentStep?.order_index ?? currentStepIndex + 1} of {steps.length}</span>
-                    <span className="hidden sm:inline">•</span>
-                    <span>Lesson {lesson.module_id}.{lesson.order_index}</span>
-                    {currentStep?.is_optional && (
-                      <>
-                        <span className="hidden sm:inline">•</span>
-                        <span className="text-blue-600 dark:text-blue-400 font-medium">(Optional)</span>
-                      </>
+                  <div className="flex flex-col items-center gap-1 order-[-1] sm:order-none">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>Step {currentStep?.order_index ?? currentStepIndex + 1} of {orderedSteps.length}</span>
+                      <span className="hidden sm:inline">•</span>
+                      <span>Lesson {lesson.module_id}.{lesson.order_index}</span>
+                      {currentStep?.is_optional && (
+                        <>
+                          <span className="hidden sm:inline">•</span>
+                          <span className="text-blue-600 dark:text-blue-400 font-medium">(Optional)</span>
+                        </>
+                      )}
+                    </div>
+                    {currentStep?.content_type === 'quiz' && saveStatus !== 'idle' && (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground" aria-live="polite">
+                        {saveStatus === 'saving' && (<><Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /><span>Saving…</span></>)}
+                        {saveStatus === 'saved' && (<><Cloud className="w-3 h-3 text-emerald-500" aria-hidden="true" /><span>Saved</span></>)}
+                        {saveStatus === 'error' && (<><CloudOff className="w-3 h-3 text-rose-500" aria-hidden="true" /><span>Save failed</span></>)}
+                      </div>
                     )}
-                    {currentStep && !isStepCompleted(currentStep) && !currentStep.is_optional && (
-                      <>
-                        <span className="hidden sm:inline">•</span>
-                        <span className="text-orange-600 dark:text-orange-400 font-medium">
-                          {currentStep.content_type === 'video_text' ? 'Video not watched enough' :
-                              currentStep.content_type === 'quiz' && !isStepCompleted(currentStep) ? 'Quiz is not complete' :
-                              'Step is not completed'}
-                        </span>
-                      </>
+                    {!canProceedToNext() && getProceedBlockReason() && (
+                      <span className="text-xs text-orange-600 dark:text-orange-400 font-medium" aria-live="polite">
+                        {getProceedBlockReason()}
+                      </span>
                     )}
                   </div>
                   <Button
                     onClick={goToNextStep}
-                    className="w-full sm:w-auto"
+                    className="w-full sm:w-auto min-h-[44px]"
                     disabled={!canProceedToNext()}
                   >
-                    {currentStepIndex < steps.length - 1 ? 'Next' : (nextLessonId ? 'Next Lesson' : 'Next')}
-                    <ChevronRight className="w-4 h-4 ml-2" />
+                    {currentStepIndex < orderedSteps.length - 1 ? 'Next' : (nextLessonId ? 'Next Lesson' : 'Next')}
+                    <ChevronRight className="w-4 h-4 ml-2" aria-hidden="true" />
                   </Button>
                 </div>
               </>

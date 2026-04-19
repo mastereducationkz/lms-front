@@ -166,8 +166,19 @@ export const MatchingQuestion = ({
             return (
               <div
                 key={`left-${leftIdx}`}
+                role="button"
+                tabIndex={disabled ? -1 : 0}
+                aria-pressed={status === 'selected'}
+                aria-label={`Left item ${leftIdx + 1}${isMatched ? `, matched to ${displayLetter}` : ''}${status === 'selected' ? ', selected' : ''}`}
                 onClick={() => handleLeftClick(leftIdx)}
-                className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${style} ${disabled ? 'cursor-not-allowed opacity-75' : ''}`}
+                onKeyDown={(e) => {
+                  if (disabled) return
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    handleLeftClick(leftIdx)
+                  }
+                }}
+                className={`p-4 rounded-xl border-2 transition-all cursor-pointer min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${style} ${disabled ? 'cursor-not-allowed opacity-75' : ''}`}
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 flex-1">
@@ -179,7 +190,7 @@ export const MatchingQuestion = ({
                     <span className="flex-1" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(pair.left) }} />
                   </div>
                   {isMatched && displayLetter && (
-                    <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${color?.badge} ${color?.text}`}>
+                    <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${color?.badge} ${color?.text}`} aria-hidden="true">
                       <span>→</span>
                       <span className="font-bold">{displayLetter}</span>
                     </div>
@@ -219,11 +230,23 @@ export const MatchingQuestion = ({
               style = 'border-border bg-card';
             }
             
+            const isInteractive = !disabled && (selectedLeft !== null || isMatched)
             return (
               <div
                 key={`right-${originalIdx}`}
+                role="button"
+                tabIndex={isInteractive ? 0 : -1}
+                aria-disabled={!isInteractive}
+                aria-label={`Right item ${displayLetter}${isMatched && matchedLeft !== undefined ? `, matched to ${matchedLeft + 1}` : ''}`}
                 onClick={() => handleRightClick(originalIdx)}
-                className={`p-4 rounded-xl border-2 transition-all ${style} ${disabled ? 'cursor-not-allowed opacity-75' : ''} ${selectedLeft === null && !isMatched ? 'cursor-default' : 'cursor-pointer'}`}
+                onKeyDown={(e) => {
+                  if (!isInteractive) return
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    handleRightClick(originalIdx)
+                  }
+                }}
+                className={`p-4 rounded-xl border-2 transition-all min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${style} ${disabled ? 'cursor-not-allowed opacity-75' : ''} ${selectedLeft === null && !isMatched ? 'cursor-default' : 'cursor-pointer'}`}
               >
                 <div className="flex items-center gap-3">
                   <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${
@@ -233,7 +256,7 @@ export const MatchingQuestion = ({
                   </span>
                   <span className="flex-1" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(pair.right) }} />
                   {isMatched && matchedLeft !== undefined && (
-                    <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${color?.badge} ${color?.text}`}>
+                    <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${color?.badge} ${color?.text}`} aria-hidden="true">
                       <span className="font-bold">{matchedLeft + 1}</span>
                       <span>←</span>
                     </div>
