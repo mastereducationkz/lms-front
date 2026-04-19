@@ -1553,8 +1553,12 @@ const QuizRenderer = (props: QuizRendererProps) => {
     // Calculate total "items" (gaps + regular questions)
     const totalItems = stats.totalGaps + stats.regularQuestions;
     const correctItems = stats.correctGaps + stats.correctRegular;
-    
+
+    // Only treat as teacher-graded when the quiz actually has long_text questions
+    // (those require manual review). Auto-graded quizzes have is_graded=true too,
+    // but that doesn't mean a teacher manually assigned the score.
     const hasTeacherScore = Boolean(
+      hasLongText &&
       quizAttempt &&
       quizAttempt.is_graded &&
       quizAttempt.score_percentage !== undefined
