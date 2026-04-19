@@ -1605,11 +1605,21 @@ const QuizRenderer = (props: QuizRendererProps) => {
     const totalItems = stats.totalGaps + stats.regularQuestions;
     const correctItems = stats.correctGaps + stats.correctRegular;
     
+    const hasTeacherScore = Boolean(
+      quizAttempt &&
+      quizAttempt.is_graded &&
+      quizAttempt.score_percentage !== undefined
+    );
+
     // For graded quizzes (especially long text), use the teacher-assigned score
     // Otherwise calculate from correct/total
-    const percentage = (quizAttempt && quizAttempt.is_graded && quizAttempt.score_percentage !== undefined)
+    const percentage = hasTeacherScore
       ? Math.round(quizAttempt.score_percentage)
       : (totalItems > 0 ? Math.round((correctItems / totalItems) * 100) : 100);
+    const displayedCorrectItems = hasTeacherScore && totalItems > 0
+      ? Math.max(0, Math.min(totalItems, Math.round((percentage / 100) * totalItems)))
+      : correctItems;
+    const displayedIncorrectItems = Math.max(0, totalItems - displayedCorrectItems);
     const isPassed = percentage >= 50;
 
     const getReviewStatusForQuestion = (q: any): { key: ReviewStatusKey; label: string; className: string } => {
@@ -1899,7 +1909,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 {percentage}%
               </div>
               <p className="text-lg text-muted-foreground">
-                {correctItems} out of {totalItems} {totalItems === 1 ? 'answer' : 'answers'} correct
+                {displayedCorrectItems} out of {totalItems} {totalItems === 1 ? 'answer' : 'answers'} correct
               </p>
 
               {scoreDiff !== null && scoreDiff > 0 && (
@@ -1927,11 +1937,11 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
             <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto">
               <div className="rounded-lg p-3 bg-muted/50 text-center">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{correctItems}</div>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{displayedCorrectItems}</div>
                 <div className="text-base text-muted-foreground">Correct</div>
               </div>
               <div className="rounded-lg p-3 bg-muted/50 text-center">
-                <div className="text-2xl font-bold text-red-500 dark:text-red-400">{totalItems - correctItems}</div>
+                <div className="text-2xl font-bold text-red-500 dark:text-red-400">{displayedIncorrectItems}</div>
                 <div className="text-base text-muted-foreground">Incorrect</div>
               </div>
               <div className="rounded-lg p-3 bg-muted/50 text-center">
