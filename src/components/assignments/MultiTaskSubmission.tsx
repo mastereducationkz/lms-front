@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react'
+import React from 'react'
 import { BookOpen, FileText, MessageSquare, Link as LinkIcon, CheckCircle, ExternalLink, Upload, X, FileSearch, Star } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader } from '../ui/card';
@@ -203,7 +204,8 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
   const [answers, setAnswers] = useState<Record<string, any>>(
     initialAnswers?.tasks || initialAnswers || {}
   );
-  const [uploading, setUploading] = useState<Record<string, boolean>>({});
+  const [uploading, setUploading] = useState<Record<string, boolean>>({})
+  const [dragOver, setDragOver] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     if (assignment.content && assignment.content.tasks) {
@@ -444,35 +446,101 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
             )}
             
             {/* Upload Area - Always visible if not readonly, to allow adding MORE files */}
-            {!readOnly && (
-                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 text-center">
-                  <input
-                    type="file"
-                    id={`file-${task.id}`}
-                    multiple
-                    onChange={(e) => e.target.files && e.target.files.length > 0 && handleFilesUpload(task.id, e.target.files)}
-                    className="hidden"
-                    accept={(() => {
-                      const types = task.content.allowed_file_types || [];
-                      const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'];
-                      const hasImages = types.some((t: string) => imageExts.includes(t.toLowerCase()));
-                      const extensions = types.map((t: string) => `.${t}`).join(',');
-                      return hasImages ? `image/*,${extensions}` : extensions;
-                    })()}
-                  />
-                  <label htmlFor={`file-${task.id}`} className="cursor-pointer">
-                    <div className="flex flex-col items-center space-y-2">
-                      <Upload className="w-6 h-6 text-gray-400" />
-                      <span className="text-sm text-foreground hover:underline cursor-pointer">
-                        {uploading[task.id] ? 'Uploading...' : (displayFiles.length > 0 ? 'Add Another File' : 'Upload File(s)')}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        Max {task.content.max_file_size_mb}MB per file
-                      </span>
-                    </div>
-                  </label>
-                </div>
-            )}
+            {!readOnly && (() => {
+                const acceptAttr = (() => {
+                  const types: string[] = task.content.allowed_file_types || []
+                  if (types.length === 0) return 'image/*,.pdf'
+                  const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif']
+                  const hasImages = types.some((t) => imageExts.includes(t.toLowerCase()))
+                  const extensions = types.map((t) => `.${t}`).join(',')
+                  return hasImages ? `image/*,${extensions}` : extensions
+                })()
+
+                const handleDragEnter = (e: React.DragEvent) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setDragOver(prev => ({ ...prev, [task.id]: true }))
+                }
+                const handleDragLeave = (e: React.DragEvent) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    setDragOver(prev => ({ ...prev, [task.id]: false }))
+                  }
+                }
+                const handleDragOver = (e: React.DragEvent) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                }
+                const handleDrop = (e: React.DragEvent) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setDragOver(prev => ({ ...prev, [task.id]: false }))
+                  if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    handleFilesUpload(task.id, e.dataTransfer.files)
+                  }
+                }
+
+                const isOver = dragOver[task.id]
+                const isUploading = uploading[task.id]
+                const allowedLabel = (() => {
+                  const types: string[] = task.content.allowed_file_types || []
+                  if (types.length === 0) return 'Images or PDF'
+                  return types.map(t => t.toUpperCase()).join(', ')
+                })()
+
+                return (
+                  <div
+                    className={cn(
+                      'relative rounded-xl border-2 border-dashed transition-colors duration-150',
+                      isOver
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30'
+                        : 'border-border hover:border-muted-foreground/50',
+                      isUploading && 'pointer-events-none opacity-60'
+                    )}
+                    onDragEnter={handleDragEnter}
+                    onDragLeave={handleDragLeave}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                  >
+                    <input
+                      type="file"
+                      id={`file-${task.id}`}
+                      multiple
+                      onChange={(e) => e.target.files && e.target.files.length > 0 && handleFilesUpload(task.id, e.target.files)}
+                      className="hidden"
+                      accept={acceptAttr}
+                    />
+                    <label
+                      htmlFor={`file-${task.id}`}
+                      className="flex cursor-pointer flex-col items-center gap-3 px-6 py-8"
+                      aria-label="Upload files"
+                    >
+                      <div className={cn(
+                        'rounded-full p-3 transition-colors',
+                        isOver ? 'bg-blue-100 dark:bg-blue-900/50' : 'bg-muted'
+                      )}>
+                        <Upload className={cn('w-6 h-6', isOver ? 'text-blue-500' : 'text-muted-foreground')} />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-foreground">
+                          {isUploading
+                            ? 'Uploading…'
+                            : isOver
+                            ? 'Drop files here'
+                            : displayFiles.length > 0
+                            ? 'Drop or click to add more files'
+                            : 'Drop files here or click to browse'}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {allowedLabel}
+                          {task.content.max_file_size_mb ? ` · max ${task.content.max_file_size_mb} MB per file` : ''}
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                )
+            })()}
 
             {/* Answer Fields for Auto-Check */}
             {task.content.answer_fields && task.content.answer_fields.length > 0 && (
