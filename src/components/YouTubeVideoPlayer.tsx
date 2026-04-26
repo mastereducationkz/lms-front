@@ -21,6 +21,7 @@ export default function YouTubeVideoPlayer({
   const playerRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<number>();
   const playerInstanceRef = useRef<any>(null);
+  const playerReadyTimeoutRef = useRef<number>();
   const onProgressRef = useRef<typeof onProgress>();
   const videoInfo = validateAndExtractYouTubeInfo(url);
 
@@ -87,6 +88,15 @@ export default function YouTubeVideoPlayer({
 
       if (playerRef.current && window.YT) {
         try {
+          if (playerReadyTimeoutRef.current) {
+            clearTimeout(playerReadyTimeoutRef.current);
+            playerReadyTimeoutRef.current = undefined;
+          }
+
+          playerReadyTimeoutRef.current = window.setTimeout(() => {
+            onError?.('Unable to initialize YouTube player. Please try opening the video in a new tab.');
+          }, 12000);
+
           playerInstanceRef.current = new window.YT.Player(playerRef.current as any, {
             videoId: videoInfo.video_id,
             width: '100%',
@@ -98,6 +108,14 @@ export default function YouTubeVideoPlayer({
             },
             events: {
               onReady: (event: any) => {
+                if (playerReadyTimeoutRef.current) {
+                  clearTimeout(playerReadyTimeoutRef.current);
+                  playerReadyTimeoutRef.current = undefined;
+                }
+                const iframe = playerRef.current?.querySelector('iframe');
+                if (iframe) {
+                  iframe.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+                }
                 setPlayer(event.target);
               },
               onStateChange: (event: any) => {
@@ -138,6 +156,7 @@ export default function YouTubeVideoPlayer({
 
         } catch (error) {
           console.error('YouTubeVideoPlayer: Error creating player', error);
+          onError?.('Failed to load YouTube player. Please try again or open the video in a new tab.');
         }
       } else {
       }
@@ -150,6 +169,10 @@ export default function YouTubeVideoPlayer({
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = undefined;
+      }
+      if (playerReadyTimeoutRef.current) {
+        clearTimeout(playerReadyTimeoutRef.current);
+        playerReadyTimeoutRef.current = undefined;
       }
       if (playerInstanceRef.current) {
         try {

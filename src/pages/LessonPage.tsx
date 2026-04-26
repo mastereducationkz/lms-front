@@ -365,6 +365,7 @@ export default function LessonPage() {
   const [loadedStepIds, setLoadedStepIds] = useState<Set<number>>(new Set());
   const [isStepContentLoading, setIsStepContentLoading] = useState(false);
   const [videoProgress, setVideoProgress] = useState<Map<string, number>>(new Map());
+  const [videoStepTechErrors, setVideoStepTechErrors] = useState<Map<string, string>>(new Map());
   const [selectedVideoLanguageByStep, setSelectedVideoLanguageByStep] = useState<Map<string, StepVideoLanguage>>(new Map());
   const [quizCompleted, setQuizCompleted] = useState<Map<string, boolean>>(new Map());
   const [furthestStepIndex, setFurthestStepIndex] = useState(0);
@@ -1167,6 +1168,19 @@ export default function LessonPage() {
     }
   };
 
+  const handleSkipVideoStepDueToError = useCallback(async () => {
+    if (!currentStep || currentStep.content_type !== 'video_text') return;
+
+    const confirmed = confirm('Video has a technical issue. Skip this video step and mark it as completed?')
+    if (!confirmed) return;
+
+    const stepId = currentStep.id.toString()
+    videoMarkedRef.current.add(currentStep.id)
+    setVideoProgress(prev => new Map(prev).set(stepId, 1))
+    await markStepAsVisited(stepId, 0)
+    toast('Video step skipped due to technical issue', 'success')
+  }, [currentStep, markStepAsVisited])
+
   const getStepIcon = (step: Step) => {
     switch (step.content_type) {
       case 'video_text':
@@ -1466,6 +1480,7 @@ export default function LessonPage() {
                     src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${attachment.file_url}#toolbar=0&navpanes=0&scrollbar=1`}
                     className="w-full h-96 sm:h-[500px] lg:h-[600px] border-0"
                     title={`Preview of ${attachment.filename}`}
+                    referrerPolicy="strict-origin-when-cross-origin"
                   />
                 )}
 
@@ -1557,6 +1572,7 @@ export default function LessonPage() {
           const defaultVideoLanguage: StepVideoLanguage = hasRuVideo ? 'ru' : 'en'
           const selectedVideoLanguage = selectedVideoLanguageByStep.get(currentStep.id.toString()) || defaultVideoLanguage
           const activeVideoUrl = selectedVideoLanguage === 'en' ? stepVideoUrls.en : stepVideoUrls.ru
+          const currentVideoStepError = videoStepTechErrors.get(currentStep.id.toString())
           const cleanVideoContentText = stripVideoLanguageMeta(currentStep.content_text)
           return (
             <div ref={textContentRef} className="space-y-4 relative">
@@ -1596,6 +1612,15 @@ export default function LessonPage() {
                     url={activeVideoUrl}
                     title={currentStep.title || 'Lesson Video'}
                     className="w-full"
+                    onError={(errorMessage) => {
+                      setVideoStepTechErrors(prev => {
+                        const stepId = currentStep.id.toString()
+                        if (prev.get(stepId) === errorMessage) return prev
+                        const updated = new Map(prev)
+                        updated.set(stepId, errorMessage)
+                        return updated
+                      })
+                    }}
                     onProgress={(progress) => {
                       setVideoProgress(prev => new Map(prev.set(currentStep.id.toString(), progress)));
                       if (progress >= 0.9 && !videoMarkedRef.current.has(currentStep.id)) {
@@ -1608,6 +1633,17 @@ export default function LessonPage() {
                       }
                     }}
                   />
+                </div>
+              )}
+              {currentVideoStepError && (
+                <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
+                  <p className="font-medium">Video technical issue detected</p>
+                  <p className="mt-1">{currentVideoStepError}</p>
+                  <div className="mt-3">
+                    <Button variant="outline" size="sm" onClick={handleSkipVideoStepDueToError}>
+                      Skip this video step
+                    </Button>
+                  </div>
                 </div>
               )}
               {renderAttachments(currentStep.attachments)}
