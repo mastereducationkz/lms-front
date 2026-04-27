@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '../services/api';
+import { toggleCuratorAnalyticsHidden } from '../services/api/admin';
 import { toast } from '../components/Toast';
 import type { User, CreateUserRequest, UpdateUserRequest, Group, Course, GroupType, CourseType } from '../types';
 
@@ -51,7 +52,9 @@ import {
   ChevronRight,
   Copy,
   MoreHorizontal,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  EyeOff,
+  Eye
 } from 'lucide-react';
 import ScheduleGenerator from '../components/ScheduleGenerator';
 import Loader from '../components/Loader';
@@ -681,6 +684,21 @@ export default function UserManagement() {
       toast(errorMessage, 'error');
     }
   };
+
+  const handleToggleAnalyticsHidden = async (user: User) => {
+    try {
+      const updated = await toggleCuratorAnalyticsHidden(Number(user.id))
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_analytics_hidden: updated.is_analytics_hidden } : u))
+      toast(
+        updated.is_analytics_hidden
+          ? `${user.name} скрыт из аналитики и дашборда`
+          : `${user.name} снова виден в аналитике и дашборде`,
+        'success'
+      )
+    } catch (error: any) {
+      toast(error.message || 'Failed to toggle curator visibility', 'error')
+    }
+  }
 
   const handleDeleteGroup = async () => {
     if (!selectedGroup) return;
@@ -1361,14 +1379,36 @@ export default function UserManagement() {
                             )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 text-xs rounded-full ${
-                              user.is_active ? 'bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700' : 'bg-gray-100 dark:bg-gray-800 dark:text-gray-400 text-gray-700'
-                            }`}>
-                              {user.is_active ? 'Active' : 'Inactive'}
-                            </span>
+                            <div className="flex flex-col gap-1">
+                              <span className={`px-2 py-1 text-xs rounded-full w-fit ${
+                                user.is_active ? 'bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700' : 'bg-gray-100 dark:bg-gray-800 dark:text-gray-400 text-gray-700'
+                              }`}>
+                                {user.is_active ? 'Active' : 'Inactive'}
+                              </span>
+                              {(user.role === 'curator' || user.role === 'head_curator') && user.is_analytics_hidden && (
+                                <span className="px-2 py-1 text-xs rounded-full w-fit bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400 text-orange-700">
+                                  Скрыт из аналитики
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div className="flex items-center justify-end gap-2">
+                              {(user.role === 'curator' || user.role === 'head_curator') && (
+                                <Button
+                                  onClick={() => handleToggleAnalyticsHidden(user)}
+                                  variant="ghost"
+                                  size="sm"
+                                  title={user.is_analytics_hidden ? 'Показать в аналитике' : 'Скрыть из аналитики'}
+                                  aria-label={user.is_analytics_hidden ? 'Показать в аналитике' : 'Скрыть из аналитики'}
+                                >
+                                  {user.is_analytics_hidden ? (
+                                    <Eye className="w-4 h-4 text-orange-500" />
+                                  ) : (
+                                    <EyeOff className="w-4 h-4 text-gray-400" />
+                                  )}
+                                </Button>
+                              )}
                               <Button
                                 onClick={() => openEditModal(user)}
                                 variant="ghost"

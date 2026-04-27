@@ -27,6 +27,7 @@ export interface User {
   updated_at: string;
   course_ids?: number[]; // List of course IDs for head teachers
   no_substitutions?: boolean; // Teacher opt-out of substitutions
+  is_analytics_hidden?: boolean; // Curator hidden from analytics/dashboard/leaderboard views
 }
 
 export type UserRole = 'student' | 'teacher' | 'curator' | 'admin' | 'head_curator' | 'head_teacher';

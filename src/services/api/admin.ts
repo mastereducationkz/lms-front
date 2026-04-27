@@ -329,3 +329,12 @@ export async function getStudentProfile(studentId: number): Promise<any> {
     throw error;
   }
 }
+
+export async function toggleCuratorAnalyticsHidden(userId: number): Promise<any> {
+  try {
+    const response = await api.post(`/admin/users/${userId}/toggle-analytics-hidden`);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Failed to toggle curator visibility');
+  }
+}
