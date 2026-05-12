@@ -1,6 +1,8 @@
 import React from 'react';
 import { Search, Filter } from 'lucide-react';
 import { Input } from '../ui/input';
+import { Checkbox } from '../ui/checkbox';
+import { Label } from '../ui/label';
 import {
   Select,
   SelectContent,
@@ -15,6 +17,8 @@ interface HomeworkFiltersProps {
   onSearchChange: (value: string) => void;
   statusFilter: StatusFilter;
   onStatusFilterChange: (value: StatusFilter) => void;
+  showCompletedGroups: boolean;
+  onShowCompletedGroupsChange: (value: boolean) => void;
 }
 
 export const HomeworkFilters: React.FC<HomeworkFiltersProps> = ({
@@ -22,6 +26,8 @@ export const HomeworkFilters: React.FC<HomeworkFiltersProps> = ({
   onSearchChange,
   statusFilter,
   onStatusFilterChange,
+  showCompletedGroups,
+  onShowCompletedGroupsChange,
 }) => {
   return (
     <div className="flex flex-wrap gap-4 items-center bg-card p-4 rounded-lg border">
@@ -51,6 +57,19 @@ export const HomeworkFilters: React.FC<HomeworkFiltersProps> = ({
           <SelectItem value="not_submitted">Не сдано</SelectItem>
         </SelectContent>
       </Select>
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="show-completed-groups"
+          checked={showCompletedGroups}
+          onCheckedChange={(checked) => onShowCompletedGroupsChange(Boolean(checked))}
+        />
+        <Label
+          htmlFor="show-completed-groups"
+          className="text-sm text-muted-foreground cursor-pointer select-none"
+        >
+          Показывать завершенные группы
+        </Label>
+      </div>
     </div>
   );
 };

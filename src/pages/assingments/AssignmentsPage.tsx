@@ -312,13 +312,13 @@ export default function AssignmentsPage() {
     }
   };
 
-  /** Groups that count for homework visibility / overview tiles (teacher respects toggle; curator always active-only) */
+  /** Groups that count for homework visibility / overview tiles */
   const groupsInHomeworkScope = useMemo(() => {
     if (user?.role === 'teacher' || user?.role === 'admin') {
       return showCompletedGroups ? groups : groups.filter((g) => !g.is_over);
     }
     if (user?.role === 'curator') {
-      return groups.filter((g) => !g.is_over);
+      return groups;
     }
     return groups;
   }, [groups, showCompletedGroups, user?.role]);

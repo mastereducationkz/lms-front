@@ -44,6 +44,9 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           )}
           <Users className="w-5 h-5 text-primary" />
           <span className="font-semibold text-lg">{group.group_name}</span>
+          {group.is_over && (
+            <Badge variant="outline">Завершена</Badge>
+          )}
           <Badge variant="secondary">{group.assignments.length} заданий</Badge>
           {totalPending > 0 && (
             <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">

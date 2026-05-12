@@ -73,6 +73,7 @@ export interface AssignmentData {
 export interface GroupData {
   group_id: number;
   group_name: string;
+  is_over?: boolean;
   students_count: number;
   assignments: AssignmentData[];
 }

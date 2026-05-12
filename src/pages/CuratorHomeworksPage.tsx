@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FileText } from 'lucide-react';
 import { toast } from '../components/Toast';
 import api from '../services/api';
@@ -22,6 +22,7 @@ const CuratorHomeworksPage: React.FC = () => {
   const [expandedAssignments, setExpandedAssignments] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [showCompletedGroups, setShowCompletedGroups] = useState(false);
 
   // View dialog state
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -113,6 +114,13 @@ const CuratorHomeworksPage: React.FC = () => {
     }
   };
 
+  const visibleGroups = useMemo(() => {
+    if (showCompletedGroups) {
+      return groups;
+    }
+    return groups.filter((group) => !group.is_over);
+  }, [groups, showCompletedGroups]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -121,12 +129,16 @@ const CuratorHomeworksPage: React.FC = () => {
     );
   }
 
-  if (groups.length === 0) {
+  if (visibleGroups.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
         <FileText className="w-16 h-16 mb-4 opacity-50" />
         <p className="text-lg">Нет домашних заданий</p>
-        <p className="text-sm">Задания ваших групп появятся здесь</p>
+        <p className="text-sm">
+          {groups.length > 0
+            ? 'Включите показ завершенных групп в фильтрах'
+            : 'Задания ваших групп появятся здесь'}
+        </p>
       </div>
     );
   }
@@ -142,10 +154,12 @@ const CuratorHomeworksPage: React.FC = () => {
         onSearchChange={setSearchQuery}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
+        showCompletedGroups={showCompletedGroups}
+        onShowCompletedGroupsChange={setShowCompletedGroups}
       />
 
       <div className="space-y-4">
-        {groups.map((group) => (
+        {visibleGroups.map((group) => (
           <GroupCard
             key={group.group_id}
             group={group}

@@ -172,8 +172,7 @@ export default function AssignmentBuilderPage() {
       const teacherGroups = await apiClient.getTeacherGroups();
       console.log('Loaded teacher groups:', teacherGroups);
 
-      const activeStudyGroups = (teacherGroups || []).filter((group: any) => !group?.is_over);
-      setGroups(activeStudyGroups);
+      setGroups(teacherGroups || []);
     } catch (err) {
       console.error('Failed to load groups:', err);
       setError('Failed to load groups. Please try again.');
