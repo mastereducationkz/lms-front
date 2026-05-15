@@ -23,7 +23,7 @@ export * from './lectures';
 export * from './daily-questions';
 
 // Re-export client utilities for direct access
-export { api, API_BASE_URL } from './client';
+export { api, API_BASE_URL, clearCache } from './client';
 
 // Import all functions to build the apiClient object
 import { login, logout, getCurrentUser, updateProfile, isAuthenticated, getCurrentUserSync, completeOnboarding } from './auth';

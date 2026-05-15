@@ -1,4 +1,15 @@
-import axios, { AxiosInstance } from 'axios';
+import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import {
+  buildCacheKey,
+  clearCache,
+  getCached,
+  getInflight,
+  getTtlForUrl,
+  invalidateForMutation,
+  isCacheableGet,
+  setCached,
+  trackInflight,
+} from './cache';
 
 const RAW_API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 let API_BASE_URL = RAW_API_BASE_URL;
@@ -87,6 +98,7 @@ class TokenManager {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('current_user');
+    clearCache();
   }
 
   isAuthenticated() {
@@ -186,6 +198,76 @@ const api: AxiosInstance = axios.create({
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true,
 });
+
+/**
+ * Install SWR cache hooks on the axios instance.
+ *
+ * GET requests: served from in-memory cache when fresh, deduped while in-flight,
+ * and stored after a successful response.
+ *
+ * Mutating requests (POST/PUT/PATCH/DELETE): pass through unchanged, then
+ * invalidate related cache keys after the response.
+ *
+ * Bypass per call via `{ cache: false }` on the request config; override TTL
+ * with `{ cache: { ttl: ms } }`.
+ */
+type CacheConfig = { cache?: boolean | { ttl?: number } };
+
+const buildSyntheticResponse = <T>(
+  data: T,
+  url: string,
+  config: Record<string, unknown>,
+): AxiosResponse<T> => ({
+  data,
+  status: 200,
+  statusText: 'OK (cache)',
+  headers: {},
+  config: { ...config, url } as never,
+  request: undefined as never,
+});
+
+const originalGet = api.get.bind(api);
+api.get = (async (url: string, config?: Record<string, unknown> & CacheConfig) => {
+  if (!isCacheableGet('get', url, config)) {
+    return originalGet(url, config as never);
+  }
+  const key = buildCacheKey(url, config as never);
+  const cached = getCached(key);
+  if (cached !== undefined) {
+    return buildSyntheticResponse(cached, url, config ?? {});
+  }
+  const inflight = getInflight<AxiosResponse>(key);
+  if (inflight) {
+    return inflight;
+  }
+  const ttl = getTtlForUrl(url, config as never);
+  const promise = originalGet(url, config as never).then((response) => {
+    if (response && response.status >= 200 && response.status < 300) {
+      setCached(key, response.data, ttl);
+    }
+    return response;
+  });
+  return trackInflight(key, promise);
+}) as typeof api.get;
+
+const wrapMutation = <K extends 'post' | 'put' | 'patch' | 'delete'>(method: K) => {
+  const original = (api[method] as (...args: unknown[]) => Promise<AxiosResponse>).bind(api);
+  (api[method] as unknown) = async (...args: unknown[]) => {
+    const response = await original(...args);
+    const url = args[0];
+    if (typeof url === 'string') {
+      invalidateForMutation(url);
+    }
+    return response;
+  };
+};
+
+wrapMutation('post');
+wrapMutation('put');
+wrapMutation('patch');
+wrapMutation('delete');
+
+export { clearCache };
 
 api.interceptors.request.use(
   (config) => {

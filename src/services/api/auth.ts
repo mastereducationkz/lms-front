@@ -1,6 +1,6 @@
 import axios from 'axios';
 import type { User } from '../../types';
-import { api, tokenManager, API_BASE_URL, CookieUtils, setLogoutHandler } from './client';
+import { api, tokenManager, API_BASE_URL, CookieUtils, setLogoutHandler, clearCache } from './client';
 
 let currentUser: User | null = getCurrentUserFromStorage();
 
@@ -65,6 +65,7 @@ export async function logout(): Promise<void> {
   } finally {
     tokenManager.clearTokens();
     currentUser = null;
+    clearCache();
   }
 }
 
