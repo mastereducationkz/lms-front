@@ -142,7 +142,7 @@ const enforceLimit = (): void => {
   }
 }
 
-export const getCached = <T = unknown>(key: string): T | undefined => {
+export const getCached = <T = unknown,>(key: string): T | undefined => {
   const entry = store.get(key)
   if (!entry) return undefined
   if (entry.expiresAt <= Date.now()) {
@@ -161,11 +161,11 @@ export const setCached = (key: string, data: unknown, ttlMs: number): void => {
   enforceLimit()
 }
 
-export const getInflight = <T = unknown>(key: string): Promise<T> | undefined => {
+export const getInflight = <T = unknown,>(key: string): Promise<T> | undefined => {
   return inflight.get(key) as Promise<T> | undefined
 }
 
-export const trackInflight = <T>(key: string, promise: Promise<T>): Promise<T> => {
+export const trackInflight = <T,>(key: string, promise: Promise<T>): Promise<T> => {
   inflight.set(key, promise as Promise<unknown>)
   const cleanup = () => inflight.delete(key)
   promise.then(cleanup, cleanup)

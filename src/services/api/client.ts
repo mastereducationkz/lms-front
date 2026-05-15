@@ -213,7 +213,7 @@ const api: AxiosInstance = axios.create({
  */
 type CacheConfig = { cache?: boolean | { ttl?: number } };
 
-const buildSyntheticResponse = <T>(
+const buildSyntheticResponse = <T,>(
   data: T,
   url: string,
   config: Record<string, unknown>,
@@ -250,7 +250,7 @@ api.get = (async (url: string, config?: Record<string, unknown> & CacheConfig) =
   return trackInflight(key, promise);
 }) as typeof api.get;
 
-const wrapMutation = <K extends 'post' | 'put' | 'patch' | 'delete'>(method: K) => {
+const wrapMutation = <K extends 'post' | 'put' | 'patch' | 'delete',>(method: K) => {
   const original = (api[method] as (...args: unknown[]) => Promise<AxiosResponse>).bind(api);
   (api[method] as unknown) = async (...args: unknown[]) => {
     const response = await original(...args);
