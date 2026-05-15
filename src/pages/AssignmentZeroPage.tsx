@@ -379,11 +379,46 @@ function LikertScale({
 function SavingIndicator({ status }: { status: 'idle' | 'saving' | 'saved' | 'error' }) {
   if (status === 'idle') return null;
 
+  const label =
+    status === 'saving'
+      ? 'Saving…'
+      : status === 'saved'
+        ? 'Saved'
+        : 'Save failed'
+
   return (
-    <div className="fixed top-4 right-4 z-50">
-      
+    <div
+      className="fixed top-4 right-4 z-50 rounded-md border border-border bg-card px-3 py-1.5 text-sm text-foreground shadow-sm"
+      role="status"
+      aria-live="polite"
+    >
+      {label}
     </div>
-  );
+  )
+}
+
+/** Avoid string concatenation bugs if step ever comes from API as a string (e.g. "8" + 1 → "81"). */
+const toAssignmentZeroStep = (raw: unknown): number => {
+  const n = typeof raw === 'number' ? raw : Number(raw)
+  if (!Number.isFinite(n)) return 1
+  return Math.max(1, Math.floor(n))
+}
+
+const normalizeStringArray = (raw: unknown): string[] => {
+  if (Array.isArray(raw)) {
+    return raw.filter((x): x is string => typeof x === 'string')
+  }
+  if (typeof raw === 'string' && raw.trim()) {
+    try {
+      const parsed = JSON.parse(raw) as unknown
+      if (Array.isArray(parsed)) {
+        return parsed.filter((x): x is string => typeof x === 'string')
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  return []
 }
 
 export default function AssignmentZeroPage() {
@@ -447,10 +482,12 @@ export default function AssignmentZeroPage() {
     return steps;
   }, [showSAT, showIELTS]);
   
-  // Get current step ID for conditional rendering
-  const currentStepId = DYNAMIC_STEPS[currentStep - 1]?.id || '';
-  
   const totalSteps = DYNAMIC_STEPS.length;
+  const displayStep =
+    totalSteps >= 1
+      ? Math.min(Math.max(toAssignmentZeroStep(currentStep), 1), totalSteps)
+      : 1;
+  const currentStepId = DYNAMIC_STEPS[displayStep - 1]?.id || '';
 
   const [formData, setFormData] = useState<FormData>({
     full_name: user?.full_name || user?.name || '',
@@ -541,6 +578,14 @@ export default function AssignmentZeroPage() {
 
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
 
+  useEffect(() => {
+    if (totalSteps < 1) return;
+    const next = Math.min(Math.max(toAssignmentZeroStep(currentStep), 1), totalSteps);
+    if (next !== currentStep) {
+      setCurrentStep(next);
+    }
+  }, [currentStep, totalSteps]);
+
   // Check status and load draft on mount
   useEffect(() => {
     checkStatusAndLoadDraft();
@@ -606,7 +651,10 @@ export default function AssignmentZeroPage() {
         previous_sat_score: computedPreviousSatScore || formData.previous_sat_score,
         bluebook_practice_test_5_score: computedBluebookScore || formData.bluebook_practice_test_5_score,
         previous_ielts_score: computedPreviousIeltsScore || formData.previous_ielts_score,
-        last_saved_step: currentStep,
+        last_saved_step: Math.min(
+          Math.max(toAssignmentZeroStep(currentStep), 1),
+          Math.max(1, totalSteps),
+        ),
         // SAT fields
         grammar_punctuation: formData.grammar_punctuation ?? undefined,
         grammar_noun_clauses: formData.grammar_noun_clauses ?? undefined,
@@ -663,7 +711,7 @@ export default function AssignmentZeroPage() {
         setSaveStatus('idle');
       }, 3000);
     }
-  }, [formData, currentStep]);
+  }, [formData, currentStep, totalSteps]);
 
   // Debounced auto-save
   useEffect(() => {
@@ -788,7 +836,7 @@ export default function AssignmentZeroPage() {
             passages_humanities: submission.passages_humanities,
             passages_science: submission.passages_science,
             passages_poetry: submission.passages_poetry,
-            math_topics: submission.math_topics || [],
+            math_topics: normalizeStringArray(submission.math_topics),
             // IELTS fields
             ielts_target_date: submission.ielts_target_date || '',
             has_passed_ielts_before: submission.has_passed_ielts_before || false,
@@ -820,12 +868,15 @@ export default function AssignmentZeroPage() {
             ielts_speaking_pronunciation: submission.ielts_speaking_pronunciation,
             ielts_speaking_part2: submission.ielts_speaking_part2,
             ielts_speaking_part3: submission.ielts_speaking_part3,
-            ielts_weak_topics: submission.ielts_weak_topics || [],
-            additional_comments: submission.additional_comments || '',
+            ielts_weak_topics: normalizeStringArray(submission.ielts_weak_topics),
+            additional_comments:
+              typeof submission.additional_comments === 'string'
+                ? submission.additional_comments
+                : '',
           });
           lastSavedDataRef.current = JSON.stringify(submission);
-          if (status.last_saved_step) {
-            setCurrentStep(status.last_saved_step);
+          if (status.last_saved_step != null && status.last_saved_step !== '') {
+            setCurrentStep(toAssignmentZeroStep(status.last_saved_step));
           }
         } catch (error) {
           console.error('Failed to load draft:', error);
@@ -846,21 +897,31 @@ export default function AssignmentZeroPage() {
   };
 
   const handleMathTopicToggle = (topic: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      math_topics: prev.math_topics.includes(topic)
-        ? prev.math_topics.filter((t) => t !== topic)
-        : [...prev.math_topics, topic],
-    }));
+    setFormData((prev) => {
+      const list = Array.isArray(prev.math_topics)
+        ? prev.math_topics
+        : normalizeStringArray(prev.math_topics);
+      return {
+        ...prev,
+        math_topics: list.includes(topic)
+          ? list.filter((t) => t !== topic)
+          : [...list, topic],
+      };
+    });
   };
 
   const handleIeltsWeakTopicToggle = (topic: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      ielts_weak_topics: prev.ielts_weak_topics.includes(topic)
-        ? prev.ielts_weak_topics.filter((t) => t !== topic)
-        : [...prev.ielts_weak_topics, topic],
-    }));
+    setFormData((prev) => {
+      const list = Array.isArray(prev.ielts_weak_topics)
+        ? prev.ielts_weak_topics
+        : normalizeStringArray(prev.ielts_weak_topics);
+      return {
+        ...prev,
+        ielts_weak_topics: list.includes(topic)
+          ? list.filter((t) => t !== topic)
+          : [...list, topic],
+      };
+    });
   };
 
   const compressImageIfNeeded = async (file: File): Promise<File> => {
@@ -987,13 +1048,18 @@ export default function AssignmentZeroPage() {
   };
 
   const handleNext = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
-    }
+    if (!validateStep(displayStep)) return;
+    setCurrentStep((prev) => {
+      const step = Math.min(Math.max(toAssignmentZeroStep(prev), 1), totalSteps);
+      return Math.min(step + 1, totalSteps);
+    });
   };
 
   const handleBack = () => {
-    setCurrentStep((prev) => Math.max(prev - 1, 1));
+    setCurrentStep((prev) => {
+      const step = Math.min(Math.max(toAssignmentZeroStep(prev), 1), totalSteps);
+      return Math.max(step - 1, 1);
+    });
   };
 
   const handleSubmit = async () => {
@@ -1136,13 +1202,13 @@ export default function AssignmentZeroPage() {
             </Button>
           </div>
           <div className="mt-5 flex items-center justify-between text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-            <span>Step {currentStep} of {totalSteps}</span>
-            <span>{Math.round((currentStep / totalSteps) * 100)}% completed</span>
+            <span>Step {displayStep} of {totalSteps}</span>
+            <span>{Math.round((displayStep / Math.max(1, totalSteps)) * 100)}% completed</span>
           </div>
           <div className="mt-2 h-1.5 bg-slate-200 dark:bg-secondary rounded-full">
             <div
               className="h-full bg-blue-600 rounded-full transition-all duration-300"
-              style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+              style={{ width: `${(displayStep / Math.max(1, totalSteps)) * 100}%` }}
             />
           </div>
         </div>
@@ -1155,19 +1221,19 @@ export default function AssignmentZeroPage() {
               return (
                 <button
                   key={step.id}
-                  onClick={() => stepNumber <= currentStep && setCurrentStep(stepNumber)}
-                  disabled={stepNumber > currentStep}
+                  onClick={() => stepNumber <= displayStep && setCurrentStep(stepNumber)}
+                  disabled={stepNumber > displayStep}
                   className={`flex-shrink-0 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium border transition-all ${
-                    stepNumber === currentStep
+                    stepNumber === displayStep
                       ? 'bg-blue-600 text-white border-blue-600'
-                      : stepNumber < currentStep
+                      : stepNumber < displayStep
                       ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-950/40'
                       : 'bg-white dark:bg-card text-gray-500 dark:text-gray-400 border-slate-200 dark:border-border cursor-not-allowed'
                   }`}
                   title={step.title}
                 >
                   <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-black/10 dark:bg-white/10 text-[11px] font-semibold">
-                    {stepNumber < currentStep ? '✓' : stepNumber}
+                    {stepNumber < displayStep ? '✓' : stepNumber}
                   </span>
                   <span className="whitespace-nowrap">{step.title}</span>
                 </button>
@@ -1175,14 +1241,14 @@ export default function AssignmentZeroPage() {
             })}
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-            Step {currentStep} of {totalSteps}: {DYNAMIC_STEPS[currentStep - 1]?.title}
+            Step {displayStep} of {totalSteps}: {DYNAMIC_STEPS[displayStep - 1]?.title}
           </p>
         </div>
 
         {/* Form Card */}
         <Card className="shadow-sm rounded-2xl border border-slate-200/80 dark:border-border">
           <CardHeader>
-            <CardTitle>{DYNAMIC_STEPS[currentStep - 1]?.title}</CardTitle>
+            <CardTitle>{DYNAMIC_STEPS[displayStep - 1]?.title}</CardTitle>
             <CardDescription>
               {currentStepId === 'personal' && 'Tell us about yourself'}
               {currentStepId === 'account' && (showSAT ? 'Your College Board and platform accounts' : 'Your platform account')}
@@ -1987,7 +2053,7 @@ export default function AssignmentZeroPage() {
 
             {/* Navigation Buttons */}
             <div className="flex justify-between pt-4 border-t dark:border-border">
-              {currentStep > 1 ? (
+              {displayStep > 1 ? (
                 <Button type="button" variant="outline" onClick={handleBack}>
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back
@@ -1996,7 +2062,7 @@ export default function AssignmentZeroPage() {
                 <div />
               )}
 
-              {currentStep < totalSteps ? (
+              {displayStep < totalSteps ? (
                 <Button type="button" onClick={handleNext}>
                   Next <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>

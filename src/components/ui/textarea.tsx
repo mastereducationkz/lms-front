@@ -16,17 +16,19 @@ const Textarea = React.forwardRef<
 
   React.useImperativeHandle(ref, () => innerRef.current as HTMLTextAreaElement);
 
+  const isControlled = value !== undefined
+
   React.useEffect(() => {
     resizeTextareaHeight(innerRef.current);
     // Run after next paint to ensure styles applied
     const id = requestAnimationFrame(() => resizeTextareaHeight(innerRef.current));
-    return () => cancelAnimationFrame(id);
-  }, [value]);
+    return () => cancelAnimationFrame(id)
+  }, [value])
 
   React.useEffect(() => {
     // Initialize height for uncontrolled defaultValue on mount
-    resizeTextareaHeight(innerRef.current);
-  }, []);
+    resizeTextareaHeight(innerRef.current)
+  }, [])
 
   const handleInput = (e: React.FormEvent<HTMLTextAreaElement>) => {
     resizeTextareaHeight(e.currentTarget);
@@ -41,9 +43,10 @@ const Textarea = React.forwardRef<
       )}
       ref={innerRef}
       onInput={handleInput}
-      value={value}
-      defaultValue={defaultValue}
       {...props}
+      {...(isControlled
+        ? { value: value ?? '' }
+        : { defaultValue })}
     />
   )
 })
