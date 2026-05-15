@@ -113,6 +113,38 @@ export default function HeadTeacherDashboardPage() {
   const [sortField, setSortField] = useState<SortField>('checked_homeworks_count');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
+  const getTeacherDetailPath = (courseId: string, teacherId: number) =>
+    `/head-teacher/course/${courseId}/teacher/${teacherId}`
+
+  const openTeacherDetailInNewTab = (courseId: string, teacherId: number) => {
+    if (!courseId) return
+    window.open(getTeacherDetailPath(courseId, teacherId), '_blank', 'noopener,noreferrer')
+  }
+
+  const handleTeacherRowClick = (
+    e: React.MouseEvent<HTMLTableRowElement>,
+    courseId: string,
+    teacherId: number,
+  ) => {
+    if (!courseId) return
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault()
+      openTeacherDetailInNewTab(courseId, teacherId)
+      return
+    }
+    navigate(getTeacherDetailPath(courseId, teacherId))
+  }
+
+  const handleTeacherRowAuxClick = (
+    e: React.MouseEvent<HTMLTableRowElement>,
+    courseId: string,
+    teacherId: number,
+  ) => {
+    if (e.button !== 1 || !courseId) return
+    e.preventDefault()
+    openTeacherDetailInNewTab(courseId, teacherId)
+  }
+
   useEffect(() => {
     loadCourses();
     loadMissingAttendance();
@@ -590,7 +622,8 @@ export default function HeadTeacherDashboardPage() {
                     <TableRow 
                       key={teacher.teacher_id} 
                       className="hover:bg-slate-50/50 dark:hover:bg-secondary/30 transition-colors group cursor-pointer"
-                      onClick={() => navigate(`/head-teacher/course/${selectedCourseId}/teacher/${teacher.teacher_id}`)}
+                      onClick={(e) => handleTeacherRowClick(e, selectedCourseId, teacher.teacher_id)}
+                      onAuxClick={(e) => handleTeacherRowAuxClick(e, selectedCourseId, teacher.teacher_id)}
                     >
                        <TableCell>
                         <div className="flex items-center gap-3">
