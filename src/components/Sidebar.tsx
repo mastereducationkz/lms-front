@@ -74,7 +74,7 @@ function getNavigationItems(
     ['/favorites', 'My Favorites', Heart, 0, ['student'], 'favorites-nav', 'primary'],
     ['/teacher/courses', 'My Courses', BookMarked, 0, ['teacher'], 'courses-nav', 'primary'],
     ['/teacher/class', 'My Class', GraduationCap, 0, ['teacher'], 'students-nav', 'primary'],
-    ['/attendance', 'Attendance', UserCheck, 0, ['teacher'], 'attendance-nav', 'primary'],
+    ['/attendance', 'Attendance', UserCheck, 0, ['teacher', 'head_teacher', 'head_curator'], 'attendance-nav', 'primary'],
     ['/analytics', ['head_curator', 'curator'].includes(_userRole || '') ? 'Аналитика' : 'Analytics', BarChart3, 0, ['teacher', 'curator', 'admin', 'head_curator'], 'analytics-nav', 'primary'],
     ['/curator/homeworks', ['head_curator', 'curator'].includes(_userRole || '') ? 'Домашние задания' : 'Homework', FileText, 0, ['curator', 'head_curator'], 'homework-analytics-nav', 'curator'],
     ['/curator/leaderboard', ['head_curator', 'curator'].includes(_userRole || '') ? 'Лидерборд' : 'Leaderboard', Trophy, 0, ['curator', 'head_curator'], 'leaderboard-nav', 'curator'],

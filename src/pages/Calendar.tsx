@@ -107,7 +107,11 @@ export default function Calendar() {
         fetchedGroups = await getTeacherGroups();
       } else if (user?.role === 'curator') {
         fetchedGroups = await getCuratorGroups();
-      } else if (user?.role === 'admin') {
+      } else if (
+        user?.role === 'admin' ||
+        user?.role === 'head_curator' ||
+        user?.role === 'head_teacher'
+      ) {
         fetchedGroups = await getGroups();
       }
       // Deduplicate if needed and sort

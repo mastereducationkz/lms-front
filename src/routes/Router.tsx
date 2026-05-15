@@ -329,7 +329,7 @@ export default function Router() {
           } />
 
           <Route path="/attendance" element={
-            <ProtectedRoute allowedRoles={['teacher', 'admin']}>
+            <ProtectedRoute allowedRoles={['teacher', 'admin', 'head_teacher', 'head_curator']}>
               <AppLayout>
                 <TeacherAttendancePage />
               </AppLayout>
