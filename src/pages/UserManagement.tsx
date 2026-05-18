@@ -14,20 +14,22 @@ const COURSE_TYPE_LABELS: Record<CourseType, string> = {
   sat: 'SAT',
   ielts: 'IELTS',
   general_english: 'General English',
+  nuet: 'NUET',
 }
 
-/** Если в БД course_type = general_english, но в названии есть IELTS/SAT — показываем и подставляем программу по названию */
+/** Если в БД course_type = general_english, но в названии есть IELTS/SAT/NUET — показываем и подставляем программу по названию */
 const inferCourseTypeFromTitle = (title: string): CourseType | null => {
   const t = title.trim()
   if (!t) return null
   if (/\bielts\b/i.test(t)) return 'ielts'
+  if (/\bnuet\b/i.test(t)) return 'nuet'
   if (/\bsat\b/i.test(t)) return 'sat'
   return null
 }
 
 const getEffectiveCourseType = (course: Pick<Course, 'title' | 'course_type'>): CourseType => {
   const stored = course.course_type as CourseType | undefined
-  if (stored === 'sat' || stored === 'ielts') return stored
+  if (stored === 'sat' || stored === 'ielts' || stored === 'nuet') return stored
   const inferred = inferCourseTypeFromTitle(course.title || '')
   if (inferred) return inferred
   return 'general_english'
@@ -1554,6 +1556,7 @@ export default function UserManagement() {
                       <SelectItem value="sat">SAT</SelectItem>
                       <SelectItem value="ielts">IELTS</SelectItem>
                       <SelectItem value="general_english">General English</SelectItem>
+                      <SelectItem value="nuet">NUET</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -199,7 +199,7 @@ export interface DailyStreakInfo {
 // COURSE TYPES
 // =============================================================================
 
-export type CourseType = 'sat' | 'ielts' | 'general_english'
+export type CourseType = 'sat' | 'ielts' | 'general_english' | 'nuet'
 export type GroupType = 'group' | 'individual'
 
 export interface Course {

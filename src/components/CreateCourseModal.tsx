@@ -161,6 +161,7 @@ export default function CreateCourseModal({ open, onClose, onCreated }: CreateCo
                 <SelectItem value="sat">SAT</SelectItem>
                 <SelectItem value="ielts">IELTS</SelectItem>
                 <SelectItem value="general_english">General English</SelectItem>
+                <SelectItem value="nuet">NUET</SelectItem>
               </SelectContent>
             </Select>
           </div>
