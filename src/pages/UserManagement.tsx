@@ -463,17 +463,25 @@ export default function UserManagement() {
     }
   };
 
+  const sortUsersByName = (list: User[]) =>
+    [...list].sort((a, b) =>
+      (a.name || a.full_name || '').localeCompare(b.name || b.full_name || '', 'ru')
+    );
+
   const loadTeachersAndCurators = async () => {
     try {
-      const response = await apiClient.getUsers({ limit: 1000 });
-      const allUsers = Array.isArray(response) ? response : response.users || [];
-      const teachersList = allUsers.filter((user: User) => user.role === 'teacher' && user.is_active);
-      const curatorsList = allUsers.filter((user: User) => user.role === 'curator' && user.is_active);
-      const studentsList = allUsers.filter((user: User) => user.role === 'student' && user.is_active);
-      
-      setTeachers(teachersList);
-      setCurators(curatorsList);
-      setStudents(studentsList);
+      const [teachersList, curatorsList, studentsResponse] = await Promise.all([
+        apiClient.getAllTeachers(),
+        apiClient.getAllCurators(),
+        apiClient.getUsers({ role: 'student', limit: 1000, is_active: true }),
+      ]);
+      const studentsList = Array.isArray(studentsResponse)
+        ? studentsResponse
+        : studentsResponse.users || [];
+
+      setTeachers(sortUsersByName(teachersList.filter((user: User) => user.is_active)));
+      setCurators(sortUsersByName(curatorsList.filter((user: User) => user.is_active)));
+      setStudents(sortUsersByName(studentsList));
     } catch (error) {
       console.error('Failed to load teachers and curators:', error);
       setTeachers([]);

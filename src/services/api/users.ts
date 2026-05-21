@@ -127,3 +127,12 @@ export async function getAllTeachers(): Promise<User[]> {
     throw new Error('Failed to load teachers');
   }
 }
+
+export async function getAllCurators(): Promise<User[]> {
+  try {
+    const response = await api.get('/admin/users', { params: { role: 'curator', limit: 1000 } });
+    return response.data.users;
+  } catch (error) {
+    throw new Error('Failed to load curators');
+  }
+}
