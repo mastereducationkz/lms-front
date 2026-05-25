@@ -64,7 +64,7 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
         <div className="text-[16px] sm:text-xl font-semibold text-gray-900 dark:text-white">{user?.name}!</div>
       </div>
       <div className="flex items-center gap-3">
-        <WhatsNewButton userRole={user?.role} />
+        {/* <WhatsNewButton userRole={user?.role} /> */}
         {user?.role === 'student' && <PointsDisplay />}
 
         <StreakIcon />
