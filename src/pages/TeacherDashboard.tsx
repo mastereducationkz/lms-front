@@ -832,7 +832,7 @@ export default function TeacherDashboard() {
       {/* Key Stats - Student Dynamics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Pending Reviews - Action Required */}
-        <Card className="shadow-sm border border-gray-200 dark:border-gray-700">
+        <Card className="shadow-sm border border-gray-200 dark:border-border">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Pending Reviews</span>
@@ -852,7 +852,7 @@ export default function TeacherDashboard() {
         </Card>
 
         {/* Activity Rate */}
-        <Card className="shadow-sm border border-gray-200 dark:border-gray-700">
+        <Card className="shadow-sm border border-gray-200 dark:border-border">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Active This Week</span>
@@ -872,7 +872,7 @@ export default function TeacherDashboard() {
         </Card>
 
         {/* Average Score */}
-        <Card className="shadow-sm border border-gray-200 dark:border-gray-700">
+        <Card className="shadow-sm border border-gray-200 dark:border-border">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Score</span>
@@ -888,7 +888,7 @@ export default function TeacherDashboard() {
         </Card>
 
         {/* Overall Progress */}
-        <Card className="shadow-sm border border-gray-200 dark:border-gray-700">
+        <Card className="shadow-sm border border-gray-200 dark:border-border">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Progress</span>
@@ -909,8 +909,8 @@ export default function TeacherDashboard() {
       </div>
 
       {/* Unified Submissions Table */}
-      <Card className="shadow-sm">
-        <CardHeader className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-card rounded-t-xl">
+      <Card className="shadow-sm border border-gray-200 dark:border-border">
+        <CardHeader className="px-6 py-4 border-b border-gray-100 dark:border-border bg-white dark:bg-card rounded-t-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center space-x-2">
               <div>
@@ -953,7 +953,7 @@ export default function TeacherDashboard() {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
-                <thead className="bg-gray-50/80 dark:bg-secondary/50 text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700">
+                <thead className="bg-gray-50/80 dark:bg-secondary/50 text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-border">
                   <tr>
                     <th className="text-left px-6 py-3 font-semibold">Student</th>
                     <th className="text-left px-6 py-3 font-semibold">Type</th>
@@ -964,7 +964,7 @@ export default function TeacherDashboard() {
                     <th className="text-right px-6 py-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                <tbody className="divide-y divide-gray-100 dark:divide-border">
                   {filteredSubmissions.map((submission) => (
                     <tr key={submission.id} className="hover:bg-gray-50/80 dark:hover:bg-secondary/30 transition-colors">
                       <td className="px-6 py-4">
@@ -1093,8 +1093,8 @@ export default function TeacherDashboard() {
       </Card>
 
       {/* Students Progress Table */}
-      <Card className="shadow-sm">
-        <CardHeader className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-card rounded-t-xl">
+      <Card className="shadow-sm border border-gray-200 dark:border-border">
+        <CardHeader className="px-6 py-4 border-b border-gray-100 dark:border-border bg-white dark:bg-card rounded-t-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <CardTitle className="text-lg font-bold text-gray-900 dark:text-foreground">Student Progress</CardTitle>
@@ -1105,7 +1105,7 @@ export default function TeacherDashboard() {
               <div className="flex items-center space-x-2">
                 <Filter className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 <Select value={activeGroup} onValueChange={setActiveGroup}>
-                  <SelectTrigger className="w-[200px]">
+                  <SelectTrigger className="w-[200px] bg-white dark:bg-card border-gray-200 dark:border-border">
                     <SelectValue placeholder="All Students" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1129,7 +1129,7 @@ export default function TeacherDashboard() {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
-                <thead className="bg-gray-50/80 dark:bg-secondary/50 text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-gray-700">
+                <thead className="bg-gray-50/80 dark:bg-secondary/50 text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-border">
                   <tr>
                     <th className="text-left px-6 py-3 font-semibold">Student</th>
                     <th className="text-left px-6 py-3 font-semibold">Group</th>
@@ -1139,7 +1139,7 @@ export default function TeacherDashboard() {
                     <th className="text-left px-6 py-3 font-semibold">Last Activity</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                <tbody className="divide-y divide-gray-100 dark:divide-border">
                   {paginatedStudents.map((student, index) => (
                     <tr key={`${student.student_id}-${student.course_id}-${index}`} className="hover:bg-gray-50/80 dark:hover:bg-secondary/30 transition-colors">
                       <td className="px-6 py-4">
@@ -1175,7 +1175,7 @@ export default function TeacherDashboard() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="space-y-1">
-                          <div className="text-sm font-medium truncate max-w-[150px]" title={student.current_lesson_title}>
+                          <div className="text-sm font-medium text-gray-900 dark:text-foreground truncate max-w-[150px]" title={student.current_lesson_title}>
                             {student.current_lesson_title}
                           </div>
                           {student.current_lesson_id && (
@@ -1215,7 +1215,7 @@ export default function TeacherDashboard() {
           
           {/* Pagination Controls */}
           {filteredStudents.length > studentsPerPage && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-secondary rounded-b-xl">
+            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-border bg-gray-50 dark:bg-secondary rounded-b-xl">
               <div className="text-sm text-gray-500 dark:text-gray-400">
                 Showing {((studentPage - 1) * studentsPerPage) + 1} to {Math.min(studentPage * studentsPerPage, filteredStudents.length)} of {filteredStudents.length} students
               </div>
@@ -1275,7 +1275,7 @@ export default function TeacherDashboard() {
 
               {/* Quiz Reference Material */}
               {selectedQuizAttempt.quiz_media_url && (
-                <div className="mb-6 bg-gray-50 dark:bg-secondary p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                <div className="mb-6 bg-gray-50 dark:bg-secondary p-4 rounded-lg border border-gray-200 dark:border-border">
                   <h4 className="font-semibold mb-3 text-gray-900 dark:text-foreground flex items-center">
                     <BookOpen className="w-4 h-4 mr-2" />
                     Reference Material
@@ -1285,7 +1285,7 @@ export default function TeacherDashboard() {
                     <div className="aspect-[16/9] w-full">
                        <iframe 
                          src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + selectedQuizAttempt.quiz_media_url} 
-                         className="w-full h-full rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-card"
+                         className="w-full h-full rounded border border-gray-200 dark:border-border bg-white dark:bg-card"
                          title="Reference PDF"
                        />
                        <div className="mt-2 text-right">
@@ -1325,10 +1325,10 @@ export default function TeacherDashboard() {
                       <div key={idx} className={`border rounded-lg overflow-hidden ${
                         item.question_type !== 'long_text' 
                           ? (item.is_correct ? 'border-green-200 dark:border-green-800' : 'border-red-200 dark:border-red-800')
-                          : 'border-gray-200 dark:border-gray-700'
+                          : 'border-gray-200 dark:border-border'
                       }`}>
                         {/* Header with Type and Status */}
-                        <div className="p-3 bg-gray-50 dark:bg-secondary border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                        <div className="p-3 bg-gray-50 dark:bg-secondary border-b border-gray-200 dark:border-border flex items-center justify-between">
                           <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Question {idx + 1}</span>
                           <div className="flex gap-2">
                              <span className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 capitalize">
@@ -1346,8 +1346,8 @@ export default function TeacherDashboard() {
 
                         {/* Passage (if exists) */}
                         {item.content_text && (
-                          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                            <p className="text-[14px] font-semibold text-black-600 dark:text-gray-200 bold mb-1">Passage</p>
+                          <div className="p-4 border-b border-gray-200 dark:border-border">
+                            <p className="text-[14px] font-semibold text-gray-800 dark:text-gray-200 mb-1">Passage</p>
                             <div 
                               className="text-gray-800 dark:text-gray-200 prose prose-sm max-w-none text-[14px]"
                               dangerouslySetInnerHTML={{ __html: item.content_text }}
@@ -1356,7 +1356,7 @@ export default function TeacherDashboard() {
                         )}
                         
                         {/* Question Text */}
-                        <div className="p-4 bg-white dark:bg-card border-b border-gray-200 dark:border-gray-700">
+                        <div className="p-4 bg-white dark:bg-card border-b border-gray-200 dark:border-border">
                           <p className="text-gray-900 dark:text-foreground font-medium">{item.question_text}</p>
                         </div>
 
@@ -1444,8 +1444,8 @@ export default function TeacherDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 my-4">
             {/* Left side - Submission Content View (2/3 width) */}
             <div className="lg:col-span-2 space-y-4">
-              <div className="rounded-lg border border-border bg-slate-50 p-4 text-slate-900 dark:bg-zinc-900 dark:text-zinc-100 dark:border-border">
-                <h3 className="mb-4 flex items-center font-semibold text-slate-900 dark:text-zinc-100">
+              <div className="rounded-lg border border-border bg-slate-50 dark:bg-secondary p-4 text-slate-900 dark:text-slate-100">
+                <h3 className="mb-4 flex items-center font-semibold text-slate-900 dark:text-slate-100">
                     Student's Work
                 </h3>
                 
@@ -1460,10 +1460,10 @@ export default function TeacherDashboard() {
                 ) : (
                   <div className="space-y-4">
                     {selectedSubmission?.file_url && (
-                      <div className="flex items-center p-3 bg-white dark:bg-card rounded border border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center p-3 bg-white dark:bg-card rounded border border-gray-200 dark:border-border">
                         <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-3" />
                         <div className="flex-1">
-                          <div className="font-medium">{selectedSubmission.submitted_file_name || 'Attached File'}</div>
+                          <div className="font-medium text-gray-900 dark:text-foreground">{selectedSubmission.submitted_file_name || 'Attached File'}</div>
                         </div>
                         <a 
                            href={(selectedSubmission.file_url.startsWith('http') ? '' : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000')) + selectedSubmission.file_url}
@@ -1478,7 +1478,7 @@ export default function TeacherDashboard() {
                     )}
                     
                     {selectedSubmission?.answers?.text && (
-                      <div className="bg-white dark:bg-card p-4 rounded border border-gray-200 dark:border-gray-700 whitespace-pre-wrap">
+                      <div className="bg-white dark:bg-card p-4 rounded border border-gray-200 dark:border-border whitespace-pre-wrap text-gray-900 dark:text-foreground">
                         {selectedSubmission.answers.text}
                       </div>
                     )}
@@ -1493,7 +1493,7 @@ export default function TeacherDashboard() {
 
             {/* Right side - Grading Controls (1/3 width) */}
             <div className="lg:col-span-1 space-y-4">
-              <div className="bg-white dark:bg-card p-4 border border-gray-200 dark:border-gray-700 rounded-lg sticky top-4">
+              <div className="bg-white dark:bg-card p-4 border border-gray-200 dark:border-border rounded-lg sticky top-4">
                 <h3 className="font-semibold text-gray-900 dark:text-foreground mb-4">Grading</h3>
                 
                 <div className="space-y-4">
@@ -1670,10 +1670,10 @@ export default function TeacherDashboard() {
                 <p className="text-sm font-medium text-gray-900 dark:text-foreground">
                   Eligible submissions: {autoGradePreview.length}
                 </p>
-                <div className="rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="rounded-md border border-gray-200 dark:border-border overflow-hidden">
                   <div className="max-h-72 overflow-y-auto">
                     <table className="min-w-full text-sm">
-                      <thead className="bg-gray-50 dark:bg-secondary/50 border-b border-gray-200 dark:border-gray-700">
+                      <thead className="bg-gray-50 dark:bg-secondary/50 border-b border-gray-200 dark:border-border">
                         <tr>
                           <th className="text-left px-3 py-2 font-medium">Homework</th>
                           <th className="text-left px-3 py-2 font-medium">Student</th>
@@ -1681,7 +1681,7 @@ export default function TeacherDashboard() {
                           <th className="text-left px-3 py-2 font-medium">Score</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                      <tbody className="divide-y divide-gray-100 dark:divide-border">
                         {autoGradePreview.map((item) => (
                           <tr key={item.submission_id}>
                             <td className="px-3 py-2 text-gray-900 dark:text-foreground">{item.assignment_title}</td>

@@ -236,7 +236,7 @@ export default function TeacherClassPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground flex items-center">
-            <GraduationCap className="w-8 h-8 mr-3 text-blue-600" />
+            <GraduationCap className="w-8 h-8 mr-3 text-blue-600 dark:text-blue-400" />
             My Class
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">Manage and monitor your students</p>
@@ -260,11 +260,11 @@ export default function TeacherClassPage() {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="border border-gray-200 dark:border-border">
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Users className="w-6 h-6 text-blue-600" />
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Groups</p>
@@ -274,11 +274,11 @@ export default function TeacherClassPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border border-gray-200 dark:border-border">
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <UserIcon className="w-6 h-6 text-green-600" />
+              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                <UserIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Students</p>
@@ -288,11 +288,11 @@ export default function TeacherClassPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border border-gray-200 dark:border-border">
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <BookOpen className="w-6 h-6 text-purple-600" />
+              <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                <BookOpen className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Students</p>
@@ -302,11 +302,11 @@ export default function TeacherClassPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border border-gray-200 dark:border-border">
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <TrendingUp className="w-6 h-6 text-orange-600" />
+              <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                <TrendingUp className="w-6 h-6 text-orange-600 dark:text-orange-400" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Progress</p>
@@ -318,16 +318,16 @@ export default function TeacherClassPage() {
       </div>
 
       {/* Search */}
-      <Card>
+      <Card className="border border-gray-200 dark:border-border">
         <CardContent className="p-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
             <Input
               type="text"
               placeholder="Search groups or students..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 bg-white dark:bg-card"
             />
           </div>
         </CardContent>
@@ -340,20 +340,21 @@ export default function TeacherClassPage() {
         </div>
       ) : error ? (
         <div className="text-center py-12">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <h3 className="font-semibold text-red-800">Error loading class data</h3>
-            <p className="text-red-600">{error}</p>
-            <button 
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+            <h3 className="font-semibold text-red-800 dark:text-red-400">Error loading class data</h3>
+            <p className="text-red-600 dark:text-red-400">{error}</p>
+            <Button
               onClick={loadTeacherGroups}
-              className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              variant="outline"
+              className="mt-2 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/20"
             >
               Retry
-            </button>
+            </Button>
           </div>
         </div>
       ) : filteredGroups.length === 0 ? (
         <div className="text-center py-12">
-          <GraduationCap className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <GraduationCap className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-foreground mb-2">No groups found</h3>
           <p className="text-gray-600 dark:text-gray-400">
             {searchQuery ? 'No groups or students match your search.' : 'You don\'t have any groups assigned yet.'}
@@ -362,7 +363,7 @@ export default function TeacherClassPage() {
       ) : (
         <div className="space-y-4">
           {filteredGroups.map((group) => (
-            <Card key={group.id}>
+            <Card key={group.id} className="border border-gray-200 dark:border-border">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -379,7 +380,7 @@ export default function TeacherClassPage() {
                       )}
                     </Button>
                     <div>
-                      <CardTitle className="text-lg">{group.name}</CardTitle>
+                      <CardTitle className="text-lg text-gray-900 dark:text-foreground">{group.name}</CardTitle>
                       {group.description && (
                         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{group.description}</p>
                       )}
@@ -400,12 +401,12 @@ export default function TeacherClassPage() {
               
               {group.is_expanded && (
                 <CardContent>
-                  <div className="flex border-b mb-4">
+                  <div className="flex border-b border-gray-200 dark:border-border mb-4">
                     <button
                       onClick={() => handleTabChange(group.id, 'general')}
                       className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
                         (activeTab[group.id] || 'general') === 'general'
-                          ? 'border-blue-600 text-blue-600'
+                          ? 'border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400'
                           : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                       }`}
                     >
@@ -415,7 +416,7 @@ export default function TeacherClassPage() {
                       onClick={() => handleTabChange(group.id, 'weekly')}
                       className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
                         activeTab[group.id] === 'weekly'
-                          ? 'border-blue-600 text-blue-600'
+                          ? 'border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400'
                           : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                       }`}
                     >
@@ -429,7 +430,7 @@ export default function TeacherClassPage() {
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full">
-                          <thead className="bg-gray-50 dark:bg-secondary">
+                          <thead className="bg-gray-50 dark:bg-secondary border-b border-gray-200 dark:border-border">
                             <tr>
                               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                 Student
@@ -463,7 +464,7 @@ export default function TeacherClassPage() {
                                       </div>
                                       <div className="text-sm text-gray-500 dark:text-gray-400">{student.email}</div>
                                       {student.student_id && (
-                                        <div className="text-xs text-gray-400">ID: {student.student_id}</div>
+                                        <div className="text-xs text-gray-400 dark:text-gray-500">ID: {student.student_id}</div>
                                       )}
                                     </div>
                                   </td>
@@ -499,7 +500,7 @@ export default function TeacherClassPage() {
                                   </td>
                                   <td className="px-4 py-4 whitespace-nowrap">
                                     <div className="flex items-center gap-1 text-sm text-gray-900 dark:text-foreground">
-                                      <Clock className="w-4 h-4" />
+                                      <Clock className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                                       {stats?.total_time_spent_minutes || 0} min
                                     </div>
                                     <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -523,7 +524,7 @@ export default function TeacherClassPage() {
                     <div className="space-y-4">
                       {Object.keys(isWeeklyLoading).includes(group.id.toString()) && isWeeklyLoading[group.id] ? (
                         <div className="flex justify-center py-8">
-                          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                          <Loader2 className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400" />
                         </div>
                       ) : (!groupWeeklyLeaderboard[group.id] || groupWeeklyLeaderboard[group.id].length === 0) ? (
                         <div className="text-center py-8 bg-gray-50 dark:bg-secondary rounded-lg">
@@ -535,7 +536,7 @@ export default function TeacherClassPage() {
                           {/* Clean Table Layout */}
                           <div className="overflow-hidden border border-gray-100 dark:border-border rounded-lg">
                             <table className="w-full">
-                              <thead className="bg-gray-50/50 dark:bg-secondary">
+                              <thead className="bg-gray-50/50 dark:bg-secondary border-b border-gray-100 dark:border-border">
                                 <tr>
                                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">Rank</th>
                                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Student</th>
