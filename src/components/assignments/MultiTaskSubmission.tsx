@@ -586,9 +586,9 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                         {showValidation && (
                           <div className="absolute right-2 top-1/2 -translate-y-1/2">
                             {isCorrect ? (
-                              <CheckCircle className="w-4 h-4 text-green-600" />
+                              <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                             ) : (
-                              <X className="w-4 h-4 text-red-600" />
+                              <X className="w-4 h-4 text-red-600 dark:text-red-400" />
                             )}
                           </div>
                         )}
@@ -608,7 +608,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
             <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{task.content.question}</div>
             {/* Student Response Label */}
             {readOnly && taskAnswer.text_response && (
-              <div className="text-xs text-gray-500 font-medium">Student's Response:</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">Student's Response:</div>
             )}
             <Textarea
               value={taskAnswer.text_response || ''}
@@ -619,7 +619,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
               className={readOnly ? 'bg-gray-50 text-slate-900 dark:bg-secondary dark:text-slate-100' : ''}
             />
             {!readOnly && task.content.max_length && (
-              <div className="text-xs text-right text-gray-500">
+              <div className="text-xs text-right text-gray-500 dark:text-gray-400">
                 {(taskAnswer.text_response?.length || 0)} / {task.content.max_length} characters
               </div>
             )}
@@ -674,9 +674,9 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                         {showValidation && (
                           <div className="absolute right-2 top-1/2 -translate-y-1/2">
                             {isCorrect ? (
-                              <CheckCircle className="w-4 h-4 text-green-600" />
+                              <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                             ) : (
-                              <X className="w-4 h-4 text-red-600" />
+                              <X className="w-4 h-4 text-red-600 dark:text-red-400" />
                             )}
                           </div>
                         )}
@@ -761,7 +761,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
             
             {/* Student Response Label */}
             {readOnly && taskAnswer.text_response && (
-              <div className="text-xs text-gray-500 font-medium">Student's Response:</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">Student's Response:</div>
             )}
             
             {/* Text Response */}
@@ -774,7 +774,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
               className={readOnly ? 'bg-gray-50 text-slate-900 dark:bg-secondary dark:text-slate-100' : ''}
             />
             {!readOnly && task.content.max_length && (
-              <div className="text-xs text-right text-gray-500">
+              <div className="text-xs text-right text-gray-500 dark:text-gray-400">
                 {(taskAnswer.text_response?.length || 0)} / {task.content.max_length} characters
               </div>
             )}
@@ -830,9 +830,9 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                         {showValidation && (
                           <div className="absolute right-2 top-1/2 -translate-y-1/2">
                             {isCorrect ? (
-                              <CheckCircle className="w-4 h-4 text-green-600" />
+                              <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                             ) : (
-                              <X className="w-4 h-4 text-red-600" />
+                              <X className="w-4 h-4 text-red-600 dark:text-red-400" />
                             )}
                           </div>
                         )}
@@ -984,13 +984,13 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
         return (
           <div className="flex flex-col items-end gap-2 pt-4">
             {!canSubmit && requiredTasks.length > 0 && (
-              <p className="text-sm text-amber-600">
+              <p className="text-sm text-amber-600 dark:text-amber-400">
                 Complete all required tasks to submit ({completedRequiredCount}/{requiredTasks.length} done)
                 {optionalTasks.length > 0 && ` • ${completedOptionalCount}/${optionalTasks.length} bonus tasks`}
               </p>
             )}
             {canSubmit && optionalTasks.length > 0 && completedOptionalCount < optionalTasks.length && (
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 {completedOptionalCount}/{optionalTasks.length} bonus tasks completed (optional)
               </p>
             )}

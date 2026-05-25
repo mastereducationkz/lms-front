@@ -505,13 +505,13 @@ export default function AssignmentsPage() {
       <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
         {assignment.extended_deadline ? (
           <div className="flex items-center text-green-600 dark:text-green-400">
-            <Calendar className="w-4 h-4 mr-1 text-green-400" />
+            <Calendar className="w-4 h-4 mr-1 text-green-400 dark:text-green-500" />
             <span className="font-medium">{formatToKZTime(assignment.extended_deadline)}</span>
             <span className="ml-1 text-[9px] bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 px-1 rounded border border-green-100 dark:border-green-800 font-bold uppercase tracking-tight">Ext</span>
           </div>
         ) : assignment.due_date ? (
           <div className={`flex items-center ${isOverdue(assignment.due_date) && assignment.status === 'not_submitted' ? 'text-red-600 dark:text-red-400' : ''}`}>
-            <Calendar className={`w-4 h-4 mr-1 ${isOverdue(assignment.due_date) && assignment.status === 'not_submitted' ? 'text-red-400' : 'text-gray-400 dark:text-gray-500'}`} />
+            <Calendar className={`w-4 h-4 mr-1 ${isOverdue(assignment.due_date) && assignment.status === 'not_submitted' ? 'text-red-400 dark:text-red-500' : 'text-gray-400 dark:text-gray-500'}`} />
             <span className="font-medium">{formatToKZTime(assignment.due_date)}</span>
           </div>
         ) : assignment.event_start_datetime ? (

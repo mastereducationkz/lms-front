@@ -62,7 +62,7 @@ export default function LinkTaskEditor({ content, onContentChange }: LinkTaskEdi
             <SelectItem value="complete">Complete activity</SelectItem>
           </SelectContent>
         </Select>
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
           What should students do with this resource?
         </p>
       </div>

@@ -131,8 +131,8 @@ export default function CourseUnitTaskEditor({ content, onContentChange }: Cours
                 onClick={() => setShowAssignedOnly(!showAssignedOnly)}
                 className={`text-xs px-2 py-1 rounded-md transition-colors ${
                   showAssignedOnly 
-                    ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' 
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50' 
+                    : 'bg-gray-100 dark:bg-secondary text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-muted'
                 }`}
               >
                 {showAssignedOnly ? 'Show all' : `${notAssignedCount} not assigned yet`}
@@ -143,23 +143,23 @@ export default function CourseUnitTaskEditor({ content, onContentChange }: Cours
           {/* Summary of assigned vs not assigned */}
           {assignedCount > 0 && !loading && (
             <div className="flex items-center gap-4 text-xs mb-2 px-1">
-              <span className="flex items-center gap-1 text-amber-600">
+              <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
                 <ClipboardCheck className="w-3.5 h-3.5" />
                 {assignedCount} already assigned
               </span>
-              <span className="text-gray-400">•</span>
-              <span className="text-gray-500">
+              <span className="text-gray-400 dark:text-gray-600">•</span>
+              <span className="text-gray-500 dark:text-gray-400">
                 {notAssignedCount} not assigned
               </span>
             </div>
           )}
 
           {loading ? (
-            <div className="text-sm text-gray-500">Loading lessons...</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">Loading lessons...</div>
           ) : lessons.length === 0 ? (
-            <div className="text-sm text-gray-500">No lessons found in this course</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">No lessons found in this course</div>
           ) : (
-            <div className="border rounded-lg divide-y max-h-80 overflow-y-auto">
+            <div className="border dark:border-border rounded-lg divide-y dark:divide-border max-h-80 overflow-y-auto">
               {lessons
                 .filter(lesson => !showAssignedOnly || !assignedLessons[lesson.id])
                 .map(lesson => {
@@ -170,8 +170,8 @@ export default function CourseUnitTaskEditor({ content, onContentChange }: Cours
                   <div
                     key={lesson.id}
                     onClick={() => toggleLesson(lesson.id)}
-                    className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
-                      selectedLessonIds.includes(lesson.id) ? 'bg-blue-50' : ''
+                    className={`p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-secondary transition-colors ${
+                      selectedLessonIds.includes(lesson.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -179,26 +179,26 @@ export default function CourseUnitTaskEditor({ content, onContentChange }: Cours
                         <div className={`w-5 h-5 border-2 rounded flex items-center justify-center ${
                           selectedLessonIds.includes(lesson.id)
                             ? 'bg-blue-600 border-blue-600'
-                            : 'border-gray-300'
+                            : 'border-gray-300 dark:border-gray-600'
                         }`}>
                           {selectedLessonIds.includes(lesson.id) && (
                             <CheckCircle className="w-4 h-4 text-white" />
                           )}
                         </div>
-                        <BookOpen className="w-4 h-4 text-gray-600" />
+                        <BookOpen className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                         <div>
-                          <div className="font-medium text-sm">{lesson.title}</div>
+                          <div className="font-medium text-sm text-foreground">{lesson.title}</div>
                           {lesson.description && (
-                            <div className="text-xs text-gray-500 line-clamp-1">{lesson.description}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{lesson.description}</div>
                           )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         {lesson.duration_minutes > 0 && (
-                          <span className="text-xs text-gray-500">{lesson.duration_minutes} min</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">{lesson.duration_minutes} min</span>
                         )}
                         {isAssigned && (
-                          <span className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5 whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1 text-xs bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-full px-2 py-0.5 whitespace-nowrap">
                             <ClipboardCheck className="w-3 h-3" />
                             assigned
                           </span>
@@ -209,11 +209,11 @@ export default function CourseUnitTaskEditor({ content, onContentChange }: Cours
                     {isAssigned && (
                       <div className="mt-1.5 ml-8 space-y-0.5">
                         {assignments.map((a, idx) => (
-                          <div key={idx} className="text-xs text-amber-600/80 flex items-center gap-1">
+                          <div key={idx} className="text-xs text-amber-600/80 dark:text-amber-400/80 flex items-center gap-1">
                             <span>→</span>
                             <span className="font-medium">{a.assignment_title}</span>
                             {a.group_name && (
-                              <span className="text-amber-500/70">({a.group_name})</span>
+                              <span className="text-amber-500/70 dark:text-amber-500/60">({a.group_name})</span>
                             )}
                           </div>
                         ))}
@@ -225,7 +225,7 @@ export default function CourseUnitTaskEditor({ content, onContentChange }: Cours
             </div>
           )}
           {selectedLessonIds.length > 0 && (
-            <div className="mt-2 text-sm text-gray-600">
+            <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
               Selected: {selectedLessonIds.length} lesson{selectedLessonIds.length !== 1 ? 's' : ''}
             </div>
           )}

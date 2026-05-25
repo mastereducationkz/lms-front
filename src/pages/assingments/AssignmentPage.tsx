@@ -282,8 +282,8 @@ export default function AssignmentPage() {
                 <CardTitle className="flex items-center gap-2">
                   {submission.status === 'graded' ? (
                     <>
-                      <Award className="w-5 h-5 text-green-600" />
-                      <span className="text-green-800">Graded</span>
+                      <Award className="w-5 h-5 text-green-600 dark:text-green-400" />
+                      <span className="text-green-800 dark:text-green-300">Graded</span>
                     </>
                   ) : (
                     <>
@@ -302,7 +302,7 @@ export default function AssignmentPage() {
                     <div className="text-sm text-gray-600 dark:text-gray-400">Your Score</div>
                     <div className="text-3xl font-bold">
                       {submission.status === 'graded' ? (
-                        <span className={(submission.score || 0) >= (effectiveMaxScore * 0.6) ? 'text-green-600' : 'text-red-600'}>
+                        <span className={(submission.score || 0) >= (effectiveMaxScore * 0.6) ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
                           {submission.score || 0}
                         </span>
                       ) : (
@@ -314,7 +314,7 @@ export default function AssignmentPage() {
                   {submission.status === 'graded' && (
                     <div className="text-right">
                       <div className="text-sm text-gray-600 dark:text-gray-400">Percentage</div>
-                      <div className={`text-2xl font-bold ${(submission.score || 0) >= (effectiveMaxScore * 0.6) ? 'text-green-600' : 'text-red-600'}`}>
+                      <div className={`text-2xl font-bold ${(submission.score || 0) >= (effectiveMaxScore * 0.6) ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                         {Math.round(((submission.score || 0) / effectiveMaxScore) * 100)}%
                       </div>
                     </div>
@@ -390,7 +390,7 @@ export default function AssignmentPage() {
                             </div>
                             <div className="flex gap-2">
                                 <Button variant="ghost" size="sm" onClick={() => window.open(file.file_url.startsWith('http') ? file.file_url : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + file.file_url, '_blank')}>
-                                    <ExternalLink className="w-4 h-4 text-gray-500" />
+                                    <ExternalLink className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                                 </Button>
                                 <a
                                 href={file.file_url.startsWith('http') ? file.file_url : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + file.file_url}
@@ -502,7 +502,7 @@ export default function AssignmentPage() {
                     htmlFor="file-upload"
                     className="cursor-pointer flex flex-col items-center justify-center"
                   >
-                    <Upload className="w-12 h-12 text-gray-400 mb-3" />
+                    <Upload className="w-12 h-12 text-gray-400 dark:text-gray-500 mb-3" />
                     <span className="text-lg font-medium text-gray-900 dark:text-foreground mb-1">
                       {files.length > 0 ? 'Add more files' : 'Drop your files here or click to upload'}
                     </span>
@@ -532,7 +532,7 @@ export default function AssignmentPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => removeFile(index)}
-                            className="text-red-600 hover:text-red-800 h-8 w-8 p-0"
+                            className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 h-8 w-8 p-0"
                             >
                                 <X className="w-4 h-4" />
                             </Button>
@@ -546,7 +546,7 @@ export default function AssignmentPage() {
                   <div className="pt-4 border-t space-y-4">
                     <div>
                       <Label className="text-sm font-semibold">Enter Your Answers</Label>
-                      <p className="text-xs text-gray-500 mt-0.5">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                         Fill in your answers below. They will be auto-checked.
                       </p>
                     </div>
@@ -561,7 +561,7 @@ export default function AssignmentPage() {
                               ...prev,
                               [field.id]: e.target.value
                             }))}
-                            className="w-full px-3 py-2 border rounded-md text-sm font-mono focus:outline-none focus:ring-2 focus:ring-ring"
+                            className="w-full px-3 py-2 border rounded-md text-sm font-mono bg-background dark:bg-card dark:border-border focus:outline-none focus:ring-2 focus:ring-ring"
                             placeholder="Enter your answer..."
                           />
                         </div>
@@ -640,7 +640,7 @@ export default function AssignmentPage() {
                   <span className="pr-3 truncate">{assignment.title}</span>
                   {submission && submission.status === 'graded' && (
                     <div className="flex items-center space-x-2 ">
-                      <Award className="w-4 h-4 text-yellow-600" />
+                      <Award className="w-4 h-4 text-yellow-600 dark:text-yellow-500" />
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
                         Score: {submission.score}/{assignment.max_score}
                       </span>
@@ -676,14 +676,14 @@ export default function AssignmentPage() {
         <CardContent>
           <div className="flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
             {assignment.due_date && (
-              <div className={`flex items-center space-x-2 ${isOverdue && !extension ? 'text-red-600' : ''}`}>
+              <div className={`flex items-center space-x-2 ${isOverdue && !extension ? 'text-red-600 dark:text-red-400' : ''}`}>
                 <Calendar className="w-4 h-4" />
                 <span>Due: {new Date(assignment.due_date).toLocaleDateString()}</span>
                 {isOverdue && !extension && <AlertCircle className="w-4 h-4" />}
               </div>
             )}
             {extension && (
-              <div className="flex items-center space-x-2 text-green-600">
+              <div className="flex items-center space-x-2 text-green-600 dark:text-green-400">
                 <Calendar className="w-4 h-4" />
                 <span className="font-semibold">
                   Extended Deadline: {new Date(extension.extended_deadline).toLocaleDateString()} {new Date(extension.extended_deadline).toLocaleTimeString()}

@@ -140,16 +140,16 @@ export default function FileUploadEditor({ content, onContentChange }: FileUploa
         <div className="space-y-2">
           {content.teacher_file_url ? (
             // Display existing uploaded file
-            <div className="flex items-center justify-between p-3 border rounded-lg bg-blue-50 border-blue-200">
+            <div className="flex items-center justify-between p-3 border rounded-lg bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
               <div className="flex items-center space-x-2 flex-1">
-                <FileText className="w-4 h-4 text-blue-600" />
+                <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium text-blue-900">{content.teacher_file_name || 'Reference File'}</span>
+                  <span className="text-sm font-medium text-blue-900 dark:text-blue-300">{content.teacher_file_name || 'Reference File'}</span>
                   <a 
                     href={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + content.teacher_file_url} 
                     target="_blank" 
                     rel="noopener noreferrer" 
-                    className="text-xs text-blue-600 hover:underline"
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                   >
                     View/Download File
                   </a>
@@ -167,18 +167,18 @@ export default function FileUploadEditor({ content, onContentChange }: FileUploa
                     teacher_file: null
                   });
                 }}
-                className="text-red-600 hover:text-red-800"
+                className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
             </div>
           ) : teacherFile ? (
             // Display newly selected file (not yet uploaded)
-            <div className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
+            <div className="flex items-center justify-between p-3 border dark:border-border rounded-lg bg-gray-50 dark:bg-secondary">
               <div className="flex items-center space-x-2">
-                <FileText className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium">{teacherFileName}</span>
-                <span className="text-xs text-gray-500">
+                <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span className="text-sm font-medium text-foreground">{teacherFileName}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
                   ({(teacherFile.size / 1024 / 1024).toFixed(2)} MB)
                 </span>
               </div>
@@ -187,14 +187,14 @@ export default function FileUploadEditor({ content, onContentChange }: FileUploa
                 variant="ghost"
                 size="sm"
                 onClick={removeTeacherFile}
-                className="text-red-600 hover:text-red-800"
+                className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
             </div>
           ) : (
             // No file selected - show upload area
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
               <input
                 type="file"
                 id={uniqueId}
@@ -204,12 +204,12 @@ export default function FileUploadEditor({ content, onContentChange }: FileUploa
               />
               <label htmlFor={uniqueId} className="cursor-pointer">
                 <div className="flex flex-col items-center space-y-2">
-                  <FileText className="w-8 h-8 text-gray-400" />
+                  <FileText className="w-8 h-8 text-gray-400 dark:text-gray-500" />
                   <div>
-                    <span className="text-sm font-medium text-blue-600 hover:text-blue-800">
+                    <span className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
                       Click to upload reference file
                     </span>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       Supported: {fileTypes.map(type => type.label).join(', ')}
                     </p>
                   </div>
@@ -252,7 +252,7 @@ export default function FileUploadEditor({ content, onContentChange }: FileUploa
         <div className="flex items-center justify-between mb-3">
           <div>
             <Label className="text-sm font-semibold">Answer Fields (Auto-Check)</Label>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               Students will enter answers; system will auto-check them.
             </p>
           </div>
@@ -271,7 +271,7 @@ export default function FileUploadEditor({ content, onContentChange }: FileUploa
           <div className="space-y-2">
             {answerFields.map((field: any, index: number) => (
               <div key={field.id} className="flex items-center gap-2">
-                <span className="text-base font-semibold text-gray-700 min-w-[24px]">{index + 1}.</span>
+                <span className="text-base font-semibold text-gray-700 dark:text-gray-300 min-w-[24px]">{index + 1}.</span>
                 <Input
                   type="text"
                   value={field.correct_answer}
@@ -290,7 +290,7 @@ export default function FileUploadEditor({ content, onContentChange }: FileUploa
                   variant="ghost"
                   size="sm"
                   onClick={() => removeAnswerField(index)}
-                  className="h-9 w-9 p-0 text-red-600 hover:text-red-800"
+                  className="h-9 w-9 p-0 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -300,9 +300,9 @@ export default function FileUploadEditor({ content, onContentChange }: FileUploa
         )}
 
         {answerFields.length === 0 && (
-          <div className="text-center py-6 bg-gray-50 border border-dashed rounded-lg">
-            <p className="text-sm text-gray-500">No answer fields added yet</p>
-            <p className="text-xs text-gray-400 mt-1">Click "Add Field" to create an answer field</p>
+          <div className="text-center py-6 bg-gray-50 dark:bg-secondary border border-dashed dark:border-border rounded-lg">
+            <p className="text-sm text-gray-500 dark:text-gray-400">No answer fields added yet</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Click "Add Field" to create an answer field</p>
           </div>
         )}
       </div>

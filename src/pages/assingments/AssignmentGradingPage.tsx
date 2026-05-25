@@ -135,7 +135,7 @@ export default function AssignmentGradingPage() {
   };
 
   if (loading) {
-    return <div className="text-center py-8">Loading...</div>;
+    return <div className="text-center py-8 text-muted-foreground">Loading...</div>;
   }
 
   return (
@@ -146,7 +146,7 @@ export default function AssignmentGradingPage() {
           Back
         </Button>
         <div>
-          <h1 className="text-3xl font-bold">Grade Submissions</h1>
+          <h1 className="text-3xl font-bold text-foreground">Grade Submissions</h1>
           <p className="text-muted-foreground">{assignment?.title}</p>
         </div>
       </div>
@@ -157,7 +157,7 @@ export default function AssignmentGradingPage() {
         </CardHeader>
         <CardContent>
           {submissions.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               No submissions yet.
             </div>
           ) : (
@@ -165,27 +165,27 @@ export default function AssignmentGradingPage() {
               const studentExtension = extensions.find(ext => ext.student_id === parseInt(submission.user_id));
               
               return (
-              <div key={submission.id} className="border rounded-lg p-4 mb-4">
+              <div key={submission.id} className="border dark:border-border rounded-lg p-4 mb-4">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <div className="font-medium text-lg">{submission.user_name || `User ${submission.user_id}`}</div>
-                    <div className="text-sm text-gray-600 flex items-center mt-1">
+                    <div className="font-medium text-lg text-foreground">{submission.user_name || `User ${submission.user_id}`}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center mt-1">
                       <Clock className="w-3 h-3 mr-1" />
                       Submitted: {new Date(submission.submitted_at).toLocaleString()}
                     </div>
                     {studentExtension && (
-                      <div className="text-sm text-green-600 flex items-center mt-1">
+                      <div className="text-sm text-green-600 dark:text-green-400 flex items-center mt-1">
                         <Calendar className="w-3 h-3 mr-1" />
                         Extended Deadline: {new Date(studentExtension.extended_deadline).toLocaleDateString()}
                         {studentExtension.reason && ` - ${studentExtension.reason}`}
                       </div>
                     )}
                     {submission.is_late && (
-                      <div className="text-sm text-amber-600 flex items-center mt-1 font-medium">
+                      <div className="text-sm text-amber-600 dark:text-amber-400 flex items-center mt-1 font-medium">
                         <AlertCircle className="w-3 h-3 mr-1" />
                         Late Submission
                         {assignment?.late_penalty_enabled && (
-                          <span className="ml-1 text-xs text-amber-500">
+                          <span className="ml-1 text-xs text-amber-500 dark:text-amber-500/80">
                             (Penalty Applied: {assignment.late_penalty_multiplier}x)
                           </span>
                         )}
@@ -230,8 +230,8 @@ export default function AssignmentGradingPage() {
           
           <div className="space-y-6 my-4">
             {/* Submission Content View */}
-            <div className="rounded-lg border border-border bg-slate-50 p-6 text-slate-900 dark:bg-zinc-900 dark:text-zinc-100">
-              <h3 className="mb-4 flex items-center font-semibold text-slate-900 dark:text-zinc-100">
+            <div className="rounded-lg border border-border bg-slate-50 dark:bg-secondary p-6 text-slate-900 dark:text-slate-100">
+              <h3 className="mb-4 flex items-center font-semibold text-slate-900 dark:text-slate-100">
                 <FileText className="mr-2 h-4 w-4" />
                 Student's Work
               </h3>
@@ -247,16 +247,16 @@ export default function AssignmentGradingPage() {
               ) : (
                 <div className="space-y-4">
                   {selectedSubmission?.file_url && (
-                    <div className="flex items-center rounded border border-border bg-white p-3 dark:bg-zinc-950">
-                      <FileText className="mr-3 h-5 w-5 text-blue-600" />
+                    <div className="flex items-center rounded border border-border bg-white p-3 dark:bg-card">
+                      <FileText className="mr-3 h-5 w-5 text-blue-600 dark:text-blue-400" />
                       <div className="flex-1">
-                        <div className="font-medium text-slate-900 dark:text-zinc-100">{selectedSubmission.submitted_file_name || 'Attached File'}</div>
+                        <div className="font-medium text-slate-900 dark:text-slate-100">{selectedSubmission.submitted_file_name || 'Attached File'}</div>
                       </div>
                       <a 
                         href={selectedSubmission.file_url} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline text-sm font-medium flex items-center"
+                        className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium flex items-center"
                       >
                         <Download className="w-4 h-4 mr-1" />
                         Download
@@ -265,7 +265,7 @@ export default function AssignmentGradingPage() {
                   )}
                   
                   {selectedSubmission?.answers?.text && (
-                    <div className="whitespace-pre-wrap rounded border border-border bg-white p-4 text-slate-900 dark:bg-zinc-950 dark:text-zinc-100">
+                    <div className="whitespace-pre-wrap rounded border border-border bg-white p-4 text-slate-900 dark:bg-card dark:text-slate-100">
                       {selectedSubmission.answers.text}
                     </div>
                   )}
@@ -280,8 +280,8 @@ export default function AssignmentGradingPage() {
             {/* Grading Controls */}
             <div className="grid grid-cols-1 gap-6 rounded-lg border border-border bg-card p-4 text-card-foreground md:grid-cols-2">
               {assignment?.late_penalty_enabled && selectedSubmission?.is_late && (
-                <div className="md:col-span-2 p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800 flex items-start">
-                   <AlertCircle className="w-5 h-5 mr-2 text-amber-600 flex-shrink-0" />
+                <div className="md:col-span-2 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded text-sm text-amber-800 dark:text-amber-200 flex items-start">
+                   <AlertCircle className="w-5 h-5 mr-2 text-amber-600 dark:text-amber-400 flex-shrink-0" />
                    <div>
                      <p className="font-semibold">Late Submission Penalty</p>
                      <p> This submission was late. A penalty multiplier of <strong>{assignment.late_penalty_multiplier}x</strong> is enabled for this assignment.</p>
@@ -363,8 +363,8 @@ export default function AssignmentGradingPage() {
               />
             </div>
             {extensionStudentId && extensions.find(ext => ext.student_id === extensionStudentId) && (
-              <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                <span className="text-sm text-yellow-800">This student already has an extension</span>
+              <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-950/40 dark:border dark:border-yellow-800 rounded-lg">
+                <span className="text-sm text-yellow-800 dark:text-yellow-200">This student already has an extension</span>
                 <Button
                   variant="destructive"
                   size="sm"

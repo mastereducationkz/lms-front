@@ -189,12 +189,12 @@ export default function MultiTaskEditor({ content, onContentChange }: MultiTaskE
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Tasks ({tasks.length})</h3>
-          <div className="text-sm text-gray-600 flex items-center gap-4">
+          <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-4">
             <span>
-              Required: <span className="font-semibold">{tasks.filter(t => !t.is_optional).reduce((sum, t) => sum + t.points, 0)}</span> pts
+              Required: <span className="font-semibold text-foreground">{tasks.filter(t => !t.is_optional).reduce((sum, t) => sum + t.points, 0)}</span> pts
             </span>
             {tasks.some(t => t.is_optional) && (
-              <span className="text-amber-600">
+              <span className="text-amber-600 dark:text-amber-400">
                 Bonus: <span className="font-semibold">+{tasks.filter(t => t.is_optional).reduce((sum, t) => sum + t.points, 0)}</span> pts
               </span>
             )}
@@ -203,8 +203,8 @@ export default function MultiTaskEditor({ content, onContentChange }: MultiTaskE
 
         {tasks.length === 0 && (
           <Card className="border-dashed">
-            <CardContent className="pt-6 text-center text-gray-500">
-              <FileText className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+            <CardContent className="pt-6 text-center text-gray-500 dark:text-gray-400">
+              <FileText className="w-12 h-12 mx-auto mb-2 text-gray-400 dark:text-gray-500" />
               <p>No tasks yet. Add your first task below.</p>
             </CardContent>
           </Card>
@@ -226,16 +226,16 @@ export default function MultiTaskEditor({ content, onContentChange }: MultiTaskE
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-2 flex-1">
-                    <GripVertical className="w-5 h-5 text-gray-400" />
-                    <Icon className="w-5 h-5 text-blue-600" />
+                    <GripVertical className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                    <Icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-gray-600">Task {index + 1}</span>
-                        <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Task {index + 1}</span>
+                        <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded">
                           {taskTypeInfo?.label}
                         </span>
                         {task.is_optional && (
-                          <span className="text-xs px-2 py-1 bg-amber-100 text-amber-800 rounded flex items-center gap-1">
+                          <span className="text-xs px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 rounded flex items-center gap-1">
                             <Star className="w-3 h-3" />
                             Bonus
                           </span>
@@ -246,7 +246,7 @@ export default function MultiTaskEditor({ content, onContentChange }: MultiTaskE
                         value={task.title}
                         onChange={(e) => updateTask(index, { title: e.target.value })}
                         placeholder="Task title..."
-                        className="mt-1 w-full text-base font-semibold border-none focus:outline-none focus:ring-0 p-0"
+                        className="mt-1 w-full text-base font-semibold border-none focus:outline-none focus:ring-0 p-0 bg-transparent text-foreground"
                       />
                     </div>
                     <div className="flex items-center space-x-3">
@@ -256,24 +256,24 @@ export default function MultiTaskEditor({ content, onContentChange }: MultiTaskE
                           checked={task.is_optional || false}
                           onCheckedChange={(checked) => updateTask(index, { is_optional: !!checked })}
                         />
-                        <span className="text-xs text-amber-700 font-medium">Bonus</span>
+                        <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">Bonus</span>
                       </label>
                       <div className="flex items-center space-x-1">
                         <input
                           type="number"
                           value={task.points}
                           onChange={(e) => updateTask(index, { points: parseInt(e.target.value) || 0 })}
-                          className="w-16 px-2 py-1 text-sm border rounded"
+                          className="w-16 px-2 py-1 text-sm border rounded bg-background dark:bg-card dark:border-border"
                           min="0"
                         />
-                        <span className="text-sm text-gray-600">pts</span>
+                        <span className="text-sm text-gray-600 dark:text-gray-400">pts</span>
                       </div>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         onClick={() => removeTask(index)}
-                        className="text-red-600 hover:text-red-800"
+                        className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -306,7 +306,7 @@ export default function MultiTaskEditor({ content, onContentChange }: MultiTaskE
                 >
                   <Icon className="w-6 h-6 flex-shrink-0" />
                   <span className="text-sm font-medium break-words w-full">{taskType.label}</span>
-                  <span className="text-xs text-gray-500 break-words w-full">{taskType.description}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 break-words w-full">{taskType.description}</span>
                 </Button>
               );
             })}

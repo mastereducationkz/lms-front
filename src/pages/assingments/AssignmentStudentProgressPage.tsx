@@ -318,7 +318,7 @@
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Homework
             </Button>
-            <h1 className="text-3xl font-bold">Student Progress</h1>
+            <h1 className="text-3xl font-bold text-foreground">Student Progress</h1>
           </div>
           <Card>
             <CardContent className="p-6">
@@ -344,7 +344,7 @@
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Homework
             </Button>
-            <h1 className="text-3xl font-bold">Student Progress</h1>
+            <h1 className="text-3xl font-bold text-foreground">Student Progress</h1>
           </div>
           <Card>
             <CardContent className="p-6 text-center">
@@ -365,7 +365,7 @@
               Back to Homework
             </Button>
             <div>
-              <h1 className="text-3xl font-bold">{data.assignment.title}</h1>
+              <h1 className="text-3xl font-bold text-foreground">{data.assignment.title}</h1>
             </div>
           </div>
         </div>
@@ -384,7 +384,7 @@
                 <p className="text-sm text-gray-600 dark:text-gray-400">Due Date</p>
                 <p className="font-medium">
                   {data.assignment.due_date ? (
-                    <span className={`flex items-center ${isOverdue(data.assignment.due_date) ? 'text-red-600' : ''}`}>
+                    <span className={`flex items-center ${isOverdue(data.assignment.due_date) ? 'text-red-600 dark:text-red-400' : ''}`}>
                       <Calendar className="w-4 h-4 mr-1" />
                       {new Date(data.assignment.due_date).toLocaleDateString()}
                       {isOverdue(data.assignment.due_date) && <AlertCircle className="w-4 h-4 ml-1" />}
@@ -432,7 +432,7 @@
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center">
-                <Clock className="w-6 h-6 text-blue-600 mr-2" />
+                <Clock className="w-6 h-6 text-blue-600 dark:text-blue-400 mr-2" />
                 <div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Submitted</div>
                   <div className="text-xl font-bold">{data.summary.submitted}</div>
@@ -444,7 +444,7 @@
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center">
-                <CheckCircle className="w-6 h-6 text-green-600 mr-2" />
+                <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400 mr-2" />
                 <div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Graded</div>
                   <div className="text-xl font-bold">{data.summary.graded}</div>
@@ -456,7 +456,7 @@
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center">
-                <AlertCircle className="w-6 h-6 text-red-600 mr-2" />
+                <AlertCircle className="w-6 h-6 text-red-600 dark:text-red-400 mr-2" />
                 <div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">Overdue</div>
                   <div className="text-xl font-bold">{data.summary.overdue}</div>
@@ -573,7 +573,7 @@
                               <div className="font-medium">{student.name}</div>
                               <div className="text-sm text-gray-600 dark:text-gray-400">{student.email}</div>
                               {studentExtension && (
-                                <div className="text-sm text-green-600 flex items-center mt-1">
+                                <div className="text-sm text-green-600 dark:text-green-400 flex items-center mt-1">
                                   <Calendar className="w-3 h-3 mr-1" />
                                   Extended: {new Date(studentExtension.extended_deadline).toLocaleDateString()}
                                   {studentExtension.reason && ` - ${studentExtension.reason}`}
@@ -587,13 +587,13 @@
                           <TableCell>
                             {student.score !== null ? (
                               <div className="flex items-center gap-2">
-                                <Award className="w-4 h-4 text-green-600" />
+                                <Award className="w-4 h-4 text-green-600 dark:text-green-400" />
                                 <span className="font-medium">
                                   {student.score}/{student.max_score}
                                 </span>
                               </div>
                             ) : (
-                              <span className="text-gray-400">-</span>
+                              <span className="text-gray-400 dark:text-gray-500">-</span>
                             )}
                           </TableCell>
                           <TableCell>
@@ -604,13 +604,13 @@
                                   {new Date(student.submitted_at).toLocaleDateString()}
                                 </div>
                                 {student.is_late && (
-                                  <Badge variant="outline" className="mt-1 w-fit border-amber-500 text-amber-600 px-1 py-0 text-[10px]">
+                                  <Badge variant="outline" className="mt-1 w-fit border-amber-500 dark:border-amber-600 text-amber-600 dark:text-amber-400 px-1 py-0 text-[10px]">
                                     Late
                                   </Badge>
                                 )}
                               </div>
                             ) : (
-                              <span className="text-gray-400">-</span>
+                              <span className="text-gray-400 dark:text-gray-500">-</span>
                             )}
                           </TableCell>
                           {(user?.role === 'teacher' || user?.role === 'admin') && (
@@ -728,7 +728,7 @@
                                                     href={buildFileUrl(file.file_url)} 
                                                     target="_blank" 
                                                     rel="noopener noreferrer"
-                                                    className="text-blue-600 hover:text-blue-800 text-sm underline"
+                                                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm underline"
                                                 >
                                                     Open file in new tab
                                                 </a>
@@ -777,7 +777,7 @@
                                         href={buildFileUrl(selectedSubmission.file_url)} 
                                         target="_blank" 
                                         rel="noopener noreferrer"
-                                        className="text-blue-600 hover:text-blue-800 text-sm underline"
+                                        className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm underline"
                                     >
                                         Open file in new tab
                                     </a>
