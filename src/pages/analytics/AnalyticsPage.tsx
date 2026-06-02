@@ -707,6 +707,7 @@ export default function AnalyticsPage() {
                      <Skeleton className="h-20 w-full" />
                  </div>
               ) : (
+              <>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -875,6 +876,7 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
               )}
+              </>
               )}
             </CardContent>
           </Card>
