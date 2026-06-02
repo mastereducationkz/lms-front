@@ -448,7 +448,7 @@ export default function Router() {
           } />
 
           <Route path="/analytics" element={
-            <ProtectedRoute allowedRoles={['teacher', 'curator', 'admin', 'head_curator']}>
+            <ProtectedRoute allowedRoles={['teacher', 'curator', 'admin', 'head_curator', 'head_teacher']}>
               <AppLayout>
                 <AnalyticsPage />
               </AppLayout>
@@ -456,7 +456,7 @@ export default function Router() {
           } />
 
           <Route path="/analytics/student/:studentId" element={
-            <ProtectedRoute allowedRoles={['teacher', 'curator', 'admin', 'head_curator']}>
+            <ProtectedRoute allowedRoles={['teacher', 'curator', 'admin', 'head_curator', 'head_teacher']}>
               <AppLayout>
                 <StudentAnalyticsPage />
               </AppLayout>

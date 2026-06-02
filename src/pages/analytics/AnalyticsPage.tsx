@@ -110,13 +110,14 @@ export default function AnalyticsPage() {
   const activeTab = searchParams.get('tab') || 'overview';
   const studentSort = (searchParams.get('sort') as 'name' | 'progress' | 'activity') || 'progress';
   const studentSortDir = (searchParams.get('dir') as 'asc' | 'desc') || 'desc';
+  const studentPage = Number(searchParams.get('page') || '1');
+  const studentPageSize = Number(searchParams.get('page_size') || '100');
 
   // Filters State
   const [courses, setCourses] = useState<Course[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   
   // Data State
-  const [rawOverviewData, setRawOverviewData] = useState<any>(null); // Store raw API response
   const [overview, setOverview] = useState<OverviewStats | null>(null);
   const [students, setStudents] = useState<StudentAnalytics[]>([]);
   const [groupsAnalytics, setGroupsAnalytics] = useState<GroupAnalytics[]>([]);
@@ -124,6 +125,7 @@ export default function AnalyticsPage() {
   const [courseLessons, setCourseLessons] = useState<Array<{id: string, title: string}>>([]);
   const [videoMetrics, setVideoMetrics] = useState<VideoMetric[]>([]);
   const [progressHistory, setProgressHistory] = useState<any[]>([]);
+  const [studentsPagination, setStudentsPagination] = useState<{ page: number; page_size: number; total_items: number; total_pages: number } | null>(null);
   const [quizSearch, setQuizSearch] = useState('');
   const [lessonFilter, setLessonFilter] = useState('all');
   
@@ -138,39 +140,53 @@ export default function AnalyticsPage() {
     loadCourses();
   }, []);
 
+  const needsChartData = activeTab === 'overview' || activeTab === 'engagement';
+  const needsQuizData = activeTab === 'quizzes' || activeTab === 'topics' || activeTab === 'overview';
+
   // Effect: Fetch Course Data when Course ID changes
   useEffect(() => {
     if (selectedCourseId) {
-      // 1. Fetch Groups for this course
       fetchCourseGroups(selectedCourseId);
-      // 2. Fetch Overview (High Priority) - fetches ALL students for course
       fetchOverview(selectedCourseId);
-      // 3. Fetch Charts (Lazy)
-      fetchCharts(selectedCourseId);
-      // 4. Fetch Lessons
+      if (needsChartData) {
+        fetchCharts(selectedCourseId, selectedGroupId);
+      }
+      if (needsQuizData) {
+        fetchCourseLessons(selectedCourseId);
+        fetchQuizErrors(selectedCourseId, selectedGroupId, lessonFilter);
+      }
+    }
+  }, [selectedCourseId, needsChartData, needsQuizData, selectedGroupId, lessonFilter]);
+
+  useEffect(() => {
+    if (!selectedCourseId) {
+      return;
+    }
+
+    fetchOverview(selectedCourseId);
+  }, [selectedCourseId, selectedGroupId, studentSort, studentSortDir, studentPage, studentPageSize]);
+
+  // Load chart data only when visible tabs need it
+  useEffect(() => {
+    if (!selectedCourseId || !needsChartData) {
+      return;
+    }
+
+    fetchCharts(selectedCourseId, selectedGroupId);
+  }, [selectedCourseId, selectedGroupId, needsChartData]);
+
+  // Load quiz errors only when quizzes/topics/overview tabs are active
+  useEffect(() => {
+    if (selectedCourseId && selectedGroupId && needsQuizData) {
+      fetchQuizErrors(selectedCourseId, selectedGroupId, lessonFilter);
+    }
+  }, [selectedCourseId, selectedGroupId, lessonFilter, needsQuizData]);
+
+  useEffect(() => {
+    if (selectedCourseId && needsQuizData && courseLessons.length === 0) {
       fetchCourseLessons(selectedCourseId);
     }
-  }, [selectedCourseId]);
-
-  // Effect: Recalculate Stats & Filter Students when Group ID or Raw Data changes
-  // Effect: Recalculate Stats & Filter Students when Group ID or Raw Data changes
-  useEffect(() => {
-    if (rawOverviewData) {
-        processRawData(rawOverviewData, selectedGroupId);
-    }
-    
-    // Group-dependent data fetching
-    if (selectedCourseId && selectedGroupId) {
-         fetchCharts(selectedCourseId, selectedGroupId);
-    }
-  }, [selectedGroupId, rawOverviewData, groups, selectedCourseId]);
-
-  // Separate effect for Quiz Errors to handle lesson filtering at the API level
-  useEffect(() => {
-    if (selectedCourseId && selectedGroupId) {
-        fetchQuizErrors(selectedCourseId, selectedGroupId, lessonFilter);
-    }
-  }, [selectedCourseId, selectedGroupId, lessonFilter]);
+  }, [selectedCourseId, needsQuizData, courseLessons.length]);
 
   // Handlers for URL updates
   const handleCourseChange = (courseId: string) => {
@@ -185,6 +201,7 @@ export default function AnalyticsPage() {
   const handleGroupChange = (groupId: string) => {
       const newParams = new URLSearchParams(searchParams);
       newParams.set('group_id', groupId);
+      newParams.set('page', '1');
       setSearchParams(newParams);
   };
 
@@ -192,6 +209,9 @@ export default function AnalyticsPage() {
       const newParams = new URLSearchParams(searchParams);
       newParams.set('tab', tab);
       setSearchParams(newParams);
+      if (tab !== 'quizzes' && tab !== 'topics') {
+        setLessonFilter('all');
+      }
   };
 
   const handleSortChange = (field: 'name' | 'progress' | 'activity') => {
@@ -202,6 +222,13 @@ export default function AnalyticsPage() {
         newParams.set('sort', field);
         newParams.set('dir', 'desc');
     }
+    newParams.set('page', '1');
+    setSearchParams(newParams);
+  };
+
+  const handlePageChange = (nextPage: number) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('page', String(nextPage));
     setSearchParams(newParams);
   };
 
@@ -248,77 +275,46 @@ export default function AnalyticsPage() {
   const fetchOverview = async (courseId: string) => {
     setLoadingOverview(true);
     try {
-        const data = await apiClient.getCourseAnalyticsOverview(courseId);
-        setRawOverviewData(data); // Store raw data for client-side filtering
-        // Processing happens in useEffect
+        const data = await apiClient.getCourseAnalyticsOverview(courseId, {
+          group_id: selectedGroupId !== 'all' ? selectedGroupId : undefined,
+          page: studentPage,
+          page_size: studentPageSize,
+          sort: studentSort,
+          dir: studentSortDir
+        });
+        setOverview({
+          total_students: data?.engagement?.total_enrolled_students || 0,
+          active_students: data?.student_performance?.filter((student: any) => Boolean(student.last_activity)).length || 0,
+          average_progress: data?.engagement?.average_completion_rate || 0,
+          average_score: data?.student_performance?.length
+            ? data.student_performance.reduce((sum: number, student: any) => sum + (student.assignment_score_percentage || 0), 0) / data.student_performance.length
+            : 0,
+          completion_rate: data?.engagement?.average_completion_rate || 0
+        });
+        const mappedStudents = (data.student_performance || []).map((s: any) => ({
+          student_id: s.student_id,
+          student_name: s.student_name,
+          email: s.email || '',
+          group_ids: s.group_ids || [],
+          group_name: s.group_name,
+          progress_percentage: s.completion_percentage || 0,
+          last_activity: s.last_activity,
+          average_score: s.assignment_score_percentage || s.average_score,
+          current_lesson: s.current_lesson,
+          current_lesson_progress: s.current_lesson_progress,
+          last_test_result: s.last_test_result,
+          completed_assignments: s.completed_assignments,
+          total_assignments: s.total_assignments,
+          time_spent_minutes: s.time_spent_minutes
+        }));
+        setStudents(mappedStudents);
+        setStudentsPagination(data.pagination || null);
     } catch (err) {
         console.error("Failed to fetch overview", err);
         setError("Failed to load overview data. Please refresh the page.")
     } finally {
         setLoadingOverview(false);
     }
-  };
-
-  // Helper to filter and calculate stats locally
-  const processRawData = (data: any, groupId: string) => {
-      let rawStudents = data.student_performance || [];
-
-      // Filter by Group
-      if (groupId !== 'all') {
-           const targetGroup = groups.find(g => String(g.id) === groupId);
-           const targetGroupId = Number(groupId);
-
-           rawStudents = rawStudents.filter((s: any) => {
-             if (Array.isArray(s.group_ids) && s.group_ids.length > 0) {
-               return s.group_ids.includes(targetGroupId);
-             }
-
-             if (!targetGroup) {
-               return false;
-             }
-
-             return s.group_name === targetGroup.name || s.group_name === targetGroup.description;
-           });
-      }
-
-      // Calculate Stats based on FILTERED students
-      const avgScore = rawStudents.length > 0 
-        ? rawStudents.reduce((sum: number, s: any) => sum + (s.assignment_score_percentage || 0), 0) / rawStudents.length 
-        : 0;
-      
-      const avgProgress = rawStudents.length > 0
-        ? rawStudents.reduce((sum: number, s: any) => sum + (s.completion_percentage || 0), 0) / rawStudents.length
-        : 0;
-
-      const activeCount = rawStudents.filter((s: any) => s.last_activity).length;
-
-      setOverview({
-        total_students: rawStudents.length,
-        active_students: activeCount,
-        average_progress: avgProgress,
-        average_score: avgScore,
-        completion_rate: avgProgress, // Usually similar to progress
-      });
-
-      // Map Students for Table
-      const mappedStudents = rawStudents.map((s: any) => ({
-        student_id: s.student_id,
-        student_name: s.student_name,
-        email: s.email || '',
-        group_ids: s.group_ids || [],
-        group_name: s.group_name,
-        progress_percentage: s.completion_percentage || 0,
-        last_activity: s.last_activity,
-        average_score: s.assignment_score_percentage || s.average_score,
-        current_lesson: s.current_lesson,
-        current_lesson_progress: s.current_lesson_progress,
-        last_test_result: s.last_test_result,
-        completed_assignments: s.completed_assignments,
-        total_assignments: s.total_assignments,
-        time_spent_minutes: s.time_spent_minutes
-      }));
-      
-      setStudents(mappedStudents);
   };
 
   const fetchQuizErrors = async (courseId: string, groupId: string, lessonId?: string) => {
@@ -347,15 +343,12 @@ export default function AnalyticsPage() {
   const fetchCharts = async (courseId: string, groupId?: string) => {
       setLoadingCharts(true);
       try {
-          const [videoData, , progressData] = await Promise.all([
+          const [videoData, progressData] = await Promise.all([
             apiClient.getVideoEngagementAnalytics(courseId),
-            apiClient.getQuizPerformanceAnalytics(courseId),
             apiClient.getCourseProgressHistory(courseId, groupId)
           ]);
 
           setVideoMetrics(videoData.video_analytics || []);
-          setProgressHistory(progressData || []);
-          
           setProgressHistory(progressData || []);
 
       } catch (err) {
@@ -398,21 +391,7 @@ export default function AnalyticsPage() {
 
 
   // Derived Data: Sorted Students
-  const sortedStudents = useMemo(() => {
-    return [...students].sort((a, b) => {
-      let cmp = 0;
-      if (studentSort === 'name') {
-        cmp = a.student_name.localeCompare(b.student_name);
-      } else if (studentSort === 'progress') {
-        cmp = a.progress_percentage - b.progress_percentage;
-      } else if (studentSort === 'activity') {
-        const aTime = a.last_activity ? new Date(a.last_activity).getTime() : 0;
-        const bTime = b.last_activity ? new Date(b.last_activity).getTime() : 0;
-        cmp = aTime - bTime;
-      }
-      return studentSortDir === 'desc' ? -cmp : cmp;
-    });
-  }, [students, studentSort, studentSortDir]);
+  const sortedStudents = useMemo(() => students, [students]);
 
   const formatTimeAgo = (dateStr?: string) => {
     if (!dateStr) return 'Never';
@@ -452,7 +431,7 @@ export default function AnalyticsPage() {
   };
 
 
-  if (!user || !['teacher', 'curator', 'admin'].includes(user.role)) {
+  if (!user || !['teacher', 'curator', 'admin', 'head_curator', 'head_teacher'].includes(user.role)) {
     return (
       <div className="p-6">
         <Card>
@@ -716,7 +695,7 @@ export default function AnalyticsPage() {
             <CardHeader>
               <CardTitle>Student Progress Directory</CardTitle>
               <CardDescription>
-                Detailed progress tracking for {students.length} students
+                Detailed progress tracking for {studentsPagination?.total_items ?? students.length} students
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -871,6 +850,31 @@ export default function AnalyticsPage() {
                   )}
                 </TableBody>
               </Table>
+              {studentsPagination && studentsPagination.total_pages > 1 && (
+                <div className="mt-4 flex items-center justify-between border-t border-gray-100 dark:border-border pt-4">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Page {studentsPagination.page} of {studentsPagination.total_pages}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={studentsPagination.page <= 1 || loadingOverview}
+                      onClick={() => handlePageChange(studentsPagination.page - 1)}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={studentsPagination.page >= studentsPagination.total_pages || loadingOverview}
+                      onClick={() => handlePageChange(studentsPagination.page + 1)}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
               )}
             </CardContent>
           </Card>

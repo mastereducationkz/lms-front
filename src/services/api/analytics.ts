@@ -11,9 +11,19 @@ export async function getDetailedStudentAnalytics(studentId: string, courseId?: 
   }
 }
 
-export async function getCourseAnalyticsOverview(courseId: string): Promise<any> {
+export async function getCourseAnalyticsOverview(
+  courseId: string,
+  params?: {
+    group_id?: string
+    page?: number
+    page_size?: number
+    sort?: 'name' | 'progress' | 'activity'
+    dir?: 'asc' | 'desc'
+  }
+): Promise<any> {
   try {
     const response = await api.get(`/analytics/course/${courseId}/overview`, {
+      params,
       timeout: 60000
     });
     return response.data;
