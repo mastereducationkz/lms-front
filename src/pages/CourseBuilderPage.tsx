@@ -302,7 +302,7 @@ const DraggableLesson = ({
           </button>
         )}
         <button 
-          onClick={() => navigate(`/teacher/course/${courseId}/lesson/${lesson?.id}/edit`)} 
+          onClick={() => navigate(`/course/${courseId}/lesson/${lesson?.id}/edit`)} 
           className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-100 rounded"
         >
           Edit

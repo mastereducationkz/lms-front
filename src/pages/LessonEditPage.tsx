@@ -19,6 +19,7 @@ import {
   BookOpen,
   Play,
   Edit3,
+  Eye,
   GripVertical,
   Trophy,
   Scissors
@@ -55,6 +56,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning';
 import UnsavedChangesDialog from '../components/UnsavedChangesDialog';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LessonSidebarProps {
   course: Course | null;
@@ -381,6 +383,7 @@ export default function LessonEditPage() {
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
   const [course, setCourse] = useState<Course | null>(null);
   const [modules, setModules] = useState<CourseModule[]>([]);
   const [lesson, setLesson] = useState<Lesson | null>(null);
@@ -1225,7 +1228,7 @@ export default function LessonEditPage() {
 
   const handleLessonSelect = (newLessonId: string) => {
     if (newLessonId !== lessonId) {
-      navigate(`/teacher/course/${courseId}/lesson/${newLessonId}/edit`);
+      navigate(`/course/${courseId}/lesson/${newLessonId}/edit`);
     }
   };
 
@@ -1368,6 +1371,23 @@ export default function LessonEditPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {user?.role === 'admin' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const params = searchParams.toString()
+                      navigate(
+                        `/course/${courseId}/lesson/${lessonId}${params ? `?${params}` : ''}`
+                      )
+                    }}
+                    title="View lesson as student"
+                    aria-label="View lesson"
+                  >
+                    <Eye className="w-4 h-4 mr-1" />
+                    View
+                  </Button>
+                )}
                 {showSaveSuccess && (
                   <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-md border border-green-200">
                     <CheckCircle className="w-4 h-4" />

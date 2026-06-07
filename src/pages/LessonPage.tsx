@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Skeleton } from '../components/ui/skeleton';
-import { ChevronLeft, ChevronRight, Play, FileText, HelpCircle, ChevronDown, ChevronUp, Lock, Trophy, PanelLeftOpen, PanelLeftClose, SkipForward, Languages, Layers, Check, Cloud, CloudOff, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, FileText, HelpCircle, ChevronDown, ChevronUp, Lock, Trophy, PanelLeftOpen, PanelLeftClose, SkipForward, Languages, Layers, Check, Cloud, CloudOff, Loader2, Pencil } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import apiClient from '../services/api';
 import type { Lesson, Step, Course, CourseModule, StepProgress, StepAttachment } from '../types';
@@ -1873,6 +1873,23 @@ export default function LessonPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            {user?.role === 'admin' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const params = searchParams.toString()
+                  navigate(
+                    `/course/${courseId}/lesson/${lessonId}/edit${params ? `?${params}` : ''}`
+                  )
+                }}
+                title="Edit lesson"
+                aria-label="Edit lesson"
+              >
+                <Pencil className="w-4 h-4 mr-1" />
+                Edit
+              </Button>
+            )}
             {/* Look Up Toggle */}
             {user?.role === 'student' && (
               <Button

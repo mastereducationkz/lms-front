@@ -580,7 +580,7 @@ export default function QuestionReportsPage() {
                     {report.course_info && report.step_info?.step_number && (
                       <div className="flex gap-2 mt-2 pt-2 border-t dark:border-border">
                         <a 
-                          href={`/teacher/course/${report.course_info.id}/lesson/${report.course_info.lesson_id}/edit?step=${report.step_info.step_number}&questionId=${report.question_id}`}
+                          href={`/course/${report.course_info.id}/lesson/${report.course_info.lesson_id}/edit?step=${report.step_info.step_number}&questionId=${report.question_id}`}
                           target="_blank"
                           rel="noopener noreferrer" 
                           className="text-xs text-blue-600 hover:underline flex items-center gap-1"
@@ -743,7 +743,7 @@ export default function QuestionReportsPage() {
                             <ExternalLink className="w-3 h-3" /> View Question
                           </a>
                           <a 
-                            href={`/teacher/course/${selectedReport.course_info.course_id}/lesson/${selectedReport.course_info.lesson_id}/edit?step=${selectedReport.step.step_number}&questionId=${selectedReport.report.question_id}`}
+                            href={`/course/${selectedReport.course_info.course_id}/lesson/${selectedReport.course_info.lesson_id}/edit?step=${selectedReport.step.step_number}&questionId=${selectedReport.report.question_id}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-blue-600 hover:underline bg-white px-2 py-1 rounded border border-blue-200"
