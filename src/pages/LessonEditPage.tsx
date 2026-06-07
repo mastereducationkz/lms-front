@@ -61,9 +61,45 @@ import { useAuth } from '../contexts/AuthContext';
 interface LessonSidebarProps {
   course: Course | null;
   modules: CourseModule[];
+  courseLessons: Lesson[];
   selectedLessonId: string;
   onLessonSelect: (lessonId: string) => void;
 }
+
+const groupLessonsByModule = (lessons: Lesson[]): Map<string, Lesson[]> => {
+  const lecturesMap = new Map<string, Lesson[]>();
+  for (const lesson of lessons) {
+    const moduleId = lesson.module_id.toString();
+    if (!lecturesMap.has(moduleId)) {
+      lecturesMap.set(moduleId, []);
+    }
+    lecturesMap.get(moduleId)!.push(lesson);
+  }
+  return lecturesMap;
+};
+
+const resolveInitialStep = (steps: Step[], searchParams: URLSearchParams): Step | null => {
+  if (steps.length === 0) return null;
+
+  const sortedSteps = [...steps].sort((a, b) => a.order_index - b.order_index);
+  const stepParam = searchParams.get('step');
+  const stepIdParam = searchParams.get('stepId');
+
+  if (stepParam) {
+    const stepNum = parseInt(stepParam, 10);
+    if (!isNaN(stepNum) && stepNum > 0 && stepNum <= sortedSteps.length) {
+      return sortedSteps[stepNum - 1];
+    }
+  }
+
+  if (stepIdParam) {
+    const stepId = parseInt(stepIdParam, 10);
+    const found = steps.find((s) => s.id === stepId);
+    if (found) return found;
+  }
+
+  return sortedSteps[0];
+};
 
 const videoLanguageMetaPattern = /<!--\s*video_lang_urls:\s*(\{[\s\S]*?\})\s*-->/i
 
@@ -106,9 +142,9 @@ const buildVideoStepContent = (content: string, videoUrlEn: string) => {
 
 
 
-const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect }: LessonSidebarProps) => {
+const LessonSidebar = ({ course, modules, courseLessons, selectedLessonId, onLessonSelect }: LessonSidebarProps) => {
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
-  const [moduleLectures, setModuleLectures] = useState<Map<string, Lesson[]>>(new Map());
+  const moduleLectures = useMemo(() => groupLessonsByModule(courseLessons), [courseLessons]);
 
   // Update expanded modules when modules are loaded
   useEffect(() => {
@@ -130,37 +166,6 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect }: Le
       }
     }
   }, [selectedLessonId, modules, moduleLectures]);
-
-  // Load lectures for all modules on component mount
-  useEffect(() => {
-    const loadAllLectures = async () => {
-      try {
-        console.log('Loading lessons for course:', course?.id);
-        // Use optimized endpoint to get all lessons for the course
-        const allLessons = await apiClient.getCourseLessons(course?.id || '');
-        console.log('Loaded lessons:', allLessons);
-        
-        // Group lessons by module
-        const lecturesMap = new Map<string, Lesson[]>();
-        for (const lesson of allLessons) {
-          const moduleId = lesson.module_id.toString();
-          if (!lecturesMap.has(moduleId)) {
-            lecturesMap.set(moduleId, []);
-          }
-          lecturesMap.get(moduleId)!.push(lesson);
-        }
-        
-        console.log('Grouped lessons by module:', lecturesMap);
-        setModuleLectures(lecturesMap);
-      } catch (error) {
-        console.error('Failed to load course lessons:', error);
-      }
-    };
-    
-    if (modules.length > 0 && course?.id) {
-      loadAllLectures();
-    }
-  }, [modules, course?.id]);
 
   const toggleModuleExpanded = (moduleId: string) => {
     const newExpanded = new Set(expandedModules);
@@ -597,133 +602,145 @@ export default function LessonEditPage() {
 
   const loadData = async () => {
     if (!courseId || !lessonId) return;
-    
+
     setIsLoading(true);
+    setSelectedStepId(null);
     try {
-      // Debug: Check authentication
-      const isAuth = apiClient.isAuthenticated();
-      
-      if (!isAuth) {
-        console.error('User is not authenticated');
+      if (!apiClient.isAuthenticated()) {
         throw new Error('Authentication required');
       }
-      
-      // Load course and modules
-      const courseData = await apiClient.getCourse(courseId);
+
+      const [courseData, modulesData, allLessons, lessonData, stepsData] = await Promise.all([
+        apiClient.getCourse(courseId),
+        apiClient.getCourseModules(courseId),
+        apiClient.getCourseLessons(courseId).catch(() => [] as Lesson[]),
+        apiClient.getLesson(lessonId),
+        apiClient.getLessonSteps(lessonId, false),
+      ]);
+
       setCourse(courseData);
-      console.log('Loaded course:', courseData);
-      
-      const modulesData = await apiClient.getCourseModules(courseId);
       setModules(modulesData);
-      console.log('Loaded modules:', modulesData);
-      // Load all lessons of the course for selector
-      try {
-        const allLessons = await apiClient.getCourseLessons(courseId);
-        setCourseLessons(allLessons);
-      } catch (e) {
-        setCourseLessons([]);
-      }
-      
-      // Load lesson with steps
-      const lessonData = await apiClient.getLesson(lessonId);
-      
+      setCourseLessons(allLessons);
       setLesson(lessonData);
       setLessonTitle(lessonData.title);
       setNextLessonId((lessonData as any).next_lesson_id ?? null);
-      
-      // Load steps for this lesson
-      const stepsData = await apiClient.getLessonSteps(lessonId);
       setSteps(stepsData);
-      
-      // Set content type and tab based on first step
-      if (stepsData.length > 0) {
-        const firstStep = stepsData[0];
-        setContentType(firstStep.content_type as LessonContentType);
-      
-      // Map content type to tab and set data based on type
-        if (firstStep.content_type === 'quiz') {
-        setSelectedTab('quiz');
-          try {
-            const quizData = JSON.parse(firstStep.content_text || '{}');
-            setQuizTitle(quizData.title || lessonData.title);
-            setQuizQuestions(quizData.questions || []);
-            setQuizTimeLimit(quizData.time_limit_minutes);
-            setQuizDisplayMode(quizData.display_mode || 'one_by_one');
-          } catch (e) {
-            console.error('Failed to parse quiz data:', e);
-          }
-        } else if (firstStep.content_type === 'text') {
-        setSelectedTab('text');
-          setLessonContent(firstStep.content_text || '');
-        } else if (firstStep.content_type === 'video_text') {
-        setSelectedTab('video');
-          setVideoUrl(firstStep.video_url || '');
-          setLessonContent(extractVideoLanguageMeta(firstStep.content_text).cleanContent);
-        }
-        
-        // Select first step by default
-        setIsLoadingStep(true);
-        setSelectedStepId(firstStep.id);
-        setStepTitle(firstStep.title || 'Step 1');
-        setStepContentType(firstStep.content_type);
-        const firstStepVideoMeta = extractVideoLanguageMeta(firstStep.content_text);
-        setStepContent(firstStepVideoMeta.cleanContent);
-        setStepVideoUrl(firstStep.video_url || '');
-        setStepVideoUrlEn(firstStepVideoMeta.videoUrlEn);
-        setStepIsOptional(firstStep.is_optional || false);
-        
-        if (firstStep.content_type === 'quiz') {
-          try {
-            const quizData = JSON.parse(firstStep.content_text || '{}');
-            setStepQuizTitle(quizData.title || '');
-            setStepQuizQuestions(quizData.questions || []);
-            setStepQuizTimeLimit(quizData.time_limit_minutes);
-            setStepQuizDisplayMode(quizData.display_mode || 'one_by_one');
-            setStepQuizType(quizData.quiz_type || 'regular');
-            setStepQuizMediaUrl(quizData.quiz_media_url || '');
-            setStepQuizMediaType(quizData.quiz_media_type || '');
-            setStepAudioPlaybackMode(quizData.audio_playback_mode || 'flexible');
-          } catch (e) {
-            console.error('Failed to parse quiz data:', e);
-          }
-        }
-        
-        // Reset loading flag after initial load
-        setTimeout(() => setIsLoadingStep(false), 0);
-      } else {
-        // No steps yet, create a default step (local only)
-        const localDefaultStep: Step = {
-          id: -Date.now(),
-          lesson_id: parseInt(lessonId),
-          title: 'Step 1',
-          content_type: 'text' as const,
-          content_text: '',
-          video_url: '',
-          order_index: 1,
-          created_at: new Date().toISOString(),
-        } as unknown as Step;
-        setSteps([localDefaultStep]);
-        setIsLoadingStep(true);
-        setSelectedStepId(localDefaultStep.id);
-        setStepTitle(localDefaultStep.title);
-        setStepContentType(localDefaultStep.content_type);
-        setStepContentType(localDefaultStep.content_type);
-        setStepContent(localDefaultStep.content_text || '');
-        setStepVideoUrlEn('');
-        setStepIsOptional(false);
-        setTimeout(() => setIsLoadingStep(false), 0);
-         
-        // Default to text
-        setSelectedTab('text');
-        setContentType('text' as LessonContentType);
+      setIsLoading(false);
+
+      const initialStep = resolveInitialStep(stepsData, searchParams);
+      if (initialStep) {
+        await loadStepIntoEditor(initialStep);
+        return;
       }
-      
+
+      const localDefaultStep: Step = {
+        id: -Date.now(),
+        lesson_id: parseInt(lessonId),
+        title: 'Step 1',
+        content_type: 'text' as const,
+        content_text: '',
+        video_url: '',
+        order_index: 1,
+        created_at: new Date().toISOString(),
+      } as unknown as Step;
+      setSteps([localDefaultStep]);
+      setSelectedTab('text');
+      setContentType('text' as LessonContentType);
+      await loadStepIntoEditor(localDefaultStep);
     } catch (error) {
       console.error('Failed to load lesson data:', error);
-    } finally {
       setIsLoading(false);
     }
   };
+
+  const applyStepContentToEditor = useCallback((step: Step) => {
+    setSelectedStepId(step.id);
+    setStepTitle(step.title || `Step ${step.order_index || 1}`);
+    setStepContentType(step.content_type);
+    const stepVideoMeta = extractVideoLanguageMeta(step.content_text);
+    setStepContent(stepVideoMeta.cleanContent);
+    setStepVideoUrl(step.video_url || '');
+    setStepVideoUrlEn(stepVideoMeta.videoUrlEn);
+    setStepIsOptional(step.is_optional || false);
+    setContentType(step.content_type as LessonContentType);
+    setSelectedTab(
+      step.content_type === 'quiz' ? 'quiz' : step.content_type === 'text' ? 'text' : 'video'
+    );
+
+    if (step.content_type === 'quiz') {
+      try {
+        const quizData = JSON.parse(step.content_text || '{}');
+        setStepQuizTitle(quizData.title || '');
+        setStepQuizQuestions(quizData.questions || []);
+        setStepQuizTimeLimit(quizData.time_limit_minutes);
+        setStepQuizDisplayMode(quizData.display_mode || 'one_by_one');
+        setStepQuizType(quizData.quiz_type || 'regular');
+        setStepQuizMediaUrl(quizData.quiz_media_url || '');
+        setStepQuizMediaType(quizData.quiz_media_type || '');
+        setStepAudioPlaybackMode(quizData.audio_playback_mode || 'flexible');
+      } catch (e) {
+        console.error('Failed to parse quiz data:', e);
+      }
+    } else {
+      setStepQuizTitle('');
+      setStepQuizQuestions([]);
+      setStepQuizTimeLimit(undefined);
+      setStepQuizDisplayMode('one_by_one');
+      setStepQuizType('regular');
+      setStepQuizMediaUrl('');
+      setStepQuizMediaType('');
+      setStepAudioPlaybackMode('flexible');
+    }
+
+    if (step.content_type === 'flashcard') {
+      try {
+        const flashcardData = JSON.parse(step.content_text || '{}');
+        setStepFlashcardSet({
+          title: flashcardData.title || '',
+          description: flashcardData.description || '',
+          cards: flashcardData.cards || [],
+          study_mode: flashcardData.study_mode || 'sequential',
+          auto_flip: flashcardData.auto_flip || false,
+          show_progress: flashcardData.show_progress !== false,
+        });
+      } catch (e) {
+        console.error('Failed to parse flashcard data:', e);
+        setStepFlashcardSet({
+          title: '',
+          description: '',
+          cards: [],
+          study_mode: 'sequential',
+          auto_flip: false,
+          show_progress: true,
+        });
+      }
+    } else {
+      setStepFlashcardSet({
+        title: '',
+        description: '',
+        cards: [],
+        study_mode: 'sequential',
+        auto_flip: false,
+        show_progress: true,
+      });
+    }
+  }, []);
+
+  const loadStepIntoEditor = useCallback(async (step: Step) => {
+    setIsLoadingStep(true);
+    try {
+      let fullStep = step;
+      if (step.id > 0 && step.content_text == null) {
+        fullStep = await apiClient.getStep(step.id.toString());
+        setSteps((prev) => prev.map((s) => (s.id === fullStep.id ? fullStep : s)));
+      }
+      applyStepContentToEditor(fullStep);
+    } catch (error) {
+      console.error('Failed to load step content:', error);
+    } finally {
+      setIsLoadingStep(false);
+    }
+  }, [applyStepContentToEditor]);
 
   // Steps management functions
   const addNewStep = () => {
@@ -795,111 +812,11 @@ export default function LessonEditPage() {
       return;
     }
     
-    // Actually switch to the step
-    performStepSwitch(step);
+    void loadStepIntoEditor(step);
   };
   
-  // Handle URL step parameter for deep linking
-  useEffect(() => {
-    if (steps.length > 0 && !isLoading) {
-      const stepParam = searchParams.get('step');
-      const questionIdParam = searchParams.get('questionId');
-      
-      if (stepParam) {
-        const stepNum = parseInt(stepParam, 10);
-        if (!isNaN(stepNum) && stepNum > 0) {
-          // Find step by 1-based index (order_index-based)
-          const sortedSteps = [...steps].sort((a, b) => a.order_index - b.order_index);
-          if (stepNum <= sortedSteps.length) {
-            const targetStep = sortedSteps[stepNum - 1];
-            // Only switch if we're not already on this step
-            if (selectedStepId !== targetStep.id) {
-              selectStep(targetStep);
-            }
-          }
-        }
-      } else if (searchParams.get('stepId')) {
-        const sId = parseInt(searchParams.get('stepId')!, 10);
-        const targetStep = steps.find(s => s.id === sId);
-        if (targetStep && selectedStepId !== targetStep.id) {
-          selectStep(targetStep);
-        }
-      }
-    }
-  }, [steps.length, isLoading, searchParams]);
-  
   const performStepSwitch = (step: Step) => {
-    setIsLoadingStep(true); // Prevent marking as unsaved during load
-    
-    setSelectedStepId(step.id);
-    setStepTitle(step.title || `Step ${step.order_index || 1}`);
-    setStepContentType(step.content_type);
-    const stepVideoMeta = extractVideoLanguageMeta(step.content_text);
-    setStepContent(stepVideoMeta.cleanContent);
-    setStepVideoUrl(step.video_url || '');
-    setStepVideoUrlEn(stepVideoMeta.videoUrlEn);
-    setStepIsOptional(step.is_optional || false);
-
-    if (step.content_type === 'quiz') {
-      try {
-        const quizData = JSON.parse(step.content_text || '{}');
-        setStepQuizTitle(quizData.title || '');
-        setStepQuizQuestions(quizData.questions || []);
-        setStepQuizTimeLimit(quizData.time_limit_minutes);
-        setStepQuizDisplayMode(quizData.display_mode || 'one_by_one');
-        setStepQuizType(quizData.quiz_type || 'regular');
-        setStepQuizMediaUrl(quizData.quiz_media_url || '');
-        setStepQuizMediaType(quizData.quiz_media_type || '');
-        setStepAudioPlaybackMode(quizData.audio_playback_mode || 'flexible');
-      } catch (e) {
-        console.error('Failed to parse quiz data:', e);
-      }
-    } else {
-      setStepQuizTitle('');
-      setStepQuizQuestions([]);
-      setStepQuizTimeLimit(undefined);
-      setStepQuizDisplayMode('one_by_one');
-      setStepQuizType('regular');
-      setStepQuizMediaUrl('');
-      setStepQuizMediaType('');
-      setStepAudioPlaybackMode('flexible');
-    }
-
-    if (step.content_type === 'flashcard') {
-      try {
-        const flashcardData = JSON.parse(step.content_text || '{}');
-        setStepFlashcardSet({
-          title: flashcardData.title || '',
-          description: flashcardData.description || '',
-          cards: flashcardData.cards || [],
-          study_mode: flashcardData.study_mode || 'sequential',
-          auto_flip: flashcardData.auto_flip || false,
-          show_progress: flashcardData.show_progress !== false
-        });
-      } catch (e) {
-        console.error('Failed to parse flashcard data:', e);
-        setStepFlashcardSet({
-          title: '',
-          description: '',
-          cards: [],
-          study_mode: 'sequential',
-          auto_flip: false,
-          show_progress: true
-        });
-      }
-    } else {
-      setStepFlashcardSet({
-        title: '',
-        description: '',
-        cards: [],
-        study_mode: 'sequential',
-        auto_flip: false,
-        show_progress: true
-      });
-    }
-    
-    // Reset loading flag after state updates
-    setTimeout(() => setIsLoadingStep(false), 0);
+    void loadStepIntoEditor(step);
   };
 
   const deleteStep = async (stepId: number) => {
@@ -932,10 +849,10 @@ export default function LessonEditPage() {
       const result = await apiClient.splitLesson(courseId, lessonId, stepIndex);
       alert(`Lesson split! New lesson "${result.new_lesson_title}" created with ${result.steps_moved} step(s).`);
       // Reload current lesson (now shorter)
-      const stepsData = await apiClient.getLessonSteps(lessonId);
+      const stepsData = await apiClient.getLessonSteps(lessonId, false);
       setSteps(stepsData);
       if (stepsData.length > 0) {
-        selectStep(stepsData[0]);
+        await loadStepIntoEditor(stepsData[0]);
       } else {
         setSelectedStepId(null);
       }
@@ -974,14 +891,14 @@ export default function LessonEditPage() {
       await apiClient.reorderSteps(lessonId!, stepIds);
 
       // Reload steps to ensure consistency
-      const stepsData = await apiClient.getLessonSteps(lessonId!);
+      const stepsData = await apiClient.getLessonSteps(lessonId!, false);
       setSteps(stepsData);
 
       markAsUnsaved();
     } catch (error) {
       console.error('Failed to reorder steps:', error);
       // Revert on error - reload from backend
-      const stepsData = await apiClient.getLessonSteps(lessonId!);
+      const stepsData = await apiClient.getLessonSteps(lessonId!, false);
       setSteps(stepsData);
       alert('Failed to reorder steps. Please try again.');
     } finally {
@@ -1090,7 +1007,7 @@ export default function LessonEditPage() {
       
       // Sync steps: update existing, create new, delete removed
       // This approach preserves step IDs and therefore student progress
-      const existingSteps = await apiClient.getLessonSteps(lessonId);
+      const existingSteps = await apiClient.getLessonSteps(lessonId, false);
       const existingStepIds = new Set(existingSteps.map(s => s.id));
       
       const orderedLocal = [...mergedSteps].sort((a, b) => a.order_index - b.order_index);
@@ -1108,6 +1025,10 @@ export default function LessonEditPage() {
       const stepIdMapping = new Map<number, number>(); // Maps old temp ID to new real ID
       
       for (const s of orderedLocal) {
+        if (s.id > 0 && s.content_text == null && s.id !== selectedStepId) {
+          continue;
+        }
+
         const payload: Partial<Step> = {
           title: s.title,
           content_type: s.content_type,
@@ -1150,58 +1071,19 @@ export default function LessonEditPage() {
       }
 
       // Reload fresh steps from server and sync selection by order_index
-      const freshSteps = await apiClient.getLessonSteps(lessonId);
+      const freshSteps = await apiClient.getLessonSteps(lessonId, false);
       setSteps(freshSteps);
-      setIsLoadingStep(true); // Prevent marking as unsaved during reload after save
+      setIsLoadingStep(true);
       if (selectedStepId) {
         const prevOrder = orderedLocal.find(s => s.id === selectedStepId)?.order_index || 1;
         const match = freshSteps.find(s => s.order_index === prevOrder) || freshSteps[0];
         if (match) {
-          setSelectedStepId(match.id);
-          setStepTitle(match.title);
-          setStepContentType(match.content_type as any);
-          const matchVideoMeta = extractVideoLanguageMeta(match.content_text);
-          setStepContent(matchVideoMeta.cleanContent);
-          setStepVideoUrl(match.video_url || '');
-          setStepVideoUrlEn(matchVideoMeta.videoUrlEn);
-          setStepIsOptional(match.is_optional || false);
-          
-          // Load quiz data if it's a quiz step
-          if (match.content_type === 'quiz') {
-            try {
-              const quizData = JSON.parse(match.content_text || '{}');
-              setStepQuizTitle(quizData.title || '');
-              setStepQuizQuestions(quizData.questions || []);
-              setStepQuizTimeLimit(quizData.time_limit_minutes);
-              setStepQuizDisplayMode(quizData.display_mode || 'one_by_one');
-              setStepQuizType(quizData.quiz_type || 'regular');
-              setStepQuizMediaUrl(quizData.quiz_media_url || '');
-              setStepQuizMediaType(quizData.quiz_media_type || '');
-              setStepAudioPlaybackMode(quizData.audio_playback_mode || 'flexible');
-            } catch (e) {
-              console.error('Failed to parse quiz data:', e);
-            }
-          }
-          
-          // Load flashcard data if it's a flashcard step
-          if (match.content_type === 'flashcard') {
-            try {
-              const flashcardData = JSON.parse(match.content_text || '{}');
-              setStepFlashcardSet({
-                title: flashcardData.title || '',
-                description: flashcardData.description || '',
-                cards: flashcardData.cards || [],
-                study_mode: flashcardData.study_mode || 'sequential',
-                auto_flip: flashcardData.auto_flip || false,
-                show_progress: flashcardData.show_progress !== false
-              });
-            } catch (e) {
-              console.error('Failed to parse flashcard data:', e);
-            }
-          }
-          
-          setTimeout(() => setIsLoadingStep(false), 0);
+          await loadStepIntoEditor(match);
+        } else {
+          setIsLoadingStep(false);
         }
+      } else {
+        setIsLoadingStep(false);
       }
 
       // Refresh sidebar modules
@@ -1326,7 +1208,7 @@ export default function LessonEditPage() {
   };
 
 
-  if (isLoading) {
+  if (isLoading && !course) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader size="xl" animation="spin" color="#2563eb" />
@@ -1350,6 +1232,7 @@ export default function LessonEditPage() {
       <LessonSidebar
         course={course}
         modules={modules}
+        courseLessons={courseLessons}
         selectedLessonId={lessonId!}
         onLessonSelect={handleLessonSelect}
       />
@@ -1517,7 +1400,11 @@ export default function LessonEditPage() {
               </DndContext>
             </div>
                          <div className="flex-1 overflow-y-auto mt-4">
-               {selectedStepId && (
+               {isLoadingStep ? (
+                 <div className="flex items-center justify-center py-16" aria-busy="true" aria-label="Loading step content">
+                   <Loader size="lg" animation="spin" color="#2563eb" />
+                 </div>
+               ) : selectedStepId && (
                  <div className="space-y-2">
                    <div className="flex items-center gap-2 pb-2 font-medium text-foreground text-lg">
                      <h3>
