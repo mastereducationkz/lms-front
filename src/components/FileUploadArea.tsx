@@ -90,6 +90,29 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
     }
   };
 
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    if (disabled || isUploading) return;
+
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          e.preventDefault();
+          const extension = file.type.split('/')[1]?.replace('jpeg', 'jpg') || 'png';
+          const namedFile = file.name
+            ? file
+            : new File([file], `pasted-image-${Date.now()}.${extension}`, { type: file.type });
+          await handleFileUpload(namedFile);
+          break;
+        }
+      }
+    }
+  };
+
   const getFileIcon = (fileType: string) => {
     switch (fileType.toLowerCase()) {
       case 'pdf':
@@ -120,7 +143,7 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
     <div className="space-y-4">
       {/* Upload Area */}
       <div
-        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
           isDragOver
             ? 'border-blue-400 bg-blue-50'
             : disabled
@@ -130,6 +153,10 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        onPaste={handlePaste}
+        tabIndex={disabled ? -1 : 0}
+        role="button"
+        aria-label="Upload files. Drag and drop, choose files, or paste an image with Ctrl+V."
       >
         <input
           ref={fileInputRef}
@@ -146,6 +173,11 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
             <p className={`text-sm ${disabled ? 'text-gray-400' : 'text-gray-600'}`}>
               {isUploading ? 'Uploading...' : 'Drag and drop files here, or'}
             </p>
+            {!disabled && !isUploading && (
+              <p className="text-xs text-gray-500">
+                Click here and press Ctrl+V to paste an image
+              </p>
+            )}
             <Button
               type="button"
               variant="outline"

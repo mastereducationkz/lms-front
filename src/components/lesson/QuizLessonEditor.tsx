@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import apiClient from '../../services/api';
 import { renderTextWithLatex } from '../../utils/latex';
 import RichTextEditor from '../RichTextEditor';
+import PDFPreview from '../PDFPreview';
 import { Upload, FileText, Image, Plus, Trash2, ChevronUp, ChevronDown, CheckCircle } from 'lucide-react';
 import { FillInBlankRenderer } from './FillInBlankRenderer';
 import { TextCompletionRenderer } from './TextCompletionRenderer';
@@ -90,6 +91,10 @@ export default function QuizLessonEditor({
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
   const [bulkUploadText, setBulkUploadText] = useState('');
   const [bulkUploadErrors, setBulkUploadErrors] = useState<string[]>([]);
+
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+  const isImageMediaUrl = (url: string) => /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+  const getMediaFilename = (url: string) => url.split('/').pop() || 'Uploaded file';
 
   const openAddQuestion = () => {
     const ts = Date.now().toString();
@@ -537,7 +542,7 @@ export default function QuizLessonEditor({
   // Handle paste from clipboard for media
   const handleMediaPaste = React.useCallback(async (
     e: React.ClipboardEvent,
-    onSuccess: (url: string) => void
+    onSuccess: (url: string, mediaType?: 'image' | 'pdf') => void
   ) => {
     const items = e.clipboardData?.items;
     if (!items) return;
@@ -551,7 +556,7 @@ export default function QuizLessonEditor({
           try {
             const result = await uploadQuestionMedia(file);
             if (result?.file_url) {
-              onSuccess(result.file_url);
+              onSuccess(result.file_url, 'image');
             }
           } catch (error) {
             console.error('Error uploading pasted image:', error);
@@ -562,6 +567,28 @@ export default function QuizLessonEditor({
       }
     }
   }, [uploadQuestionMedia]);
+
+  const handleQuestionMediaDrop = React.useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/') && file.type !== 'application/pdf') return;
+
+    const result = await uploadQuestionMedia(file);
+    if (result) {
+      const mediaType = file.type.startsWith('image/') ? 'image' : 'pdf';
+      applyDraftUpdate({
+        media_url: result.file_url,
+        media_type: mediaType
+      });
+    }
+  }, [uploadQuestionMedia, applyDraftUpdate]);
+
+  const handleQuestionMediaPaste = React.useCallback(async (e: React.ClipboardEvent) => {
+    await handleMediaPaste(e, (url, mediaType) => {
+      applyDraftUpdate({
+        media_url: url,
+        media_type: mediaType || 'image'
+      });
+    });
+  }, [handleMediaPaste, applyDraftUpdate]);
 
   const uploadQuizMedia = React.useCallback(async (file: File) => {
     setIsUploadingMedia(true);
@@ -598,6 +625,25 @@ export default function QuizLessonEditor({
       setIsUploadingMedia(false);
     }
   }, [setQuizMediaUrl, setQuizMediaType, setQuizDisplayMode]);
+
+  const handleQuizMediaPaste = React.useCallback(async (e: React.ClipboardEvent) => {
+    if (quizType !== 'pdf') return;
+
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          e.preventDefault();
+          await uploadQuizMedia(file);
+          break;
+        }
+      }
+    }
+  }, [quizType, uploadQuizMedia]);
 
   const analyzeImageFile = React.useCallback(async (file: File, correctAnswers?: string) => {
     setIsAnalyzingImage(true);
@@ -698,6 +744,23 @@ export default function QuizLessonEditor({
       setIsAnalyzingImage(false);
     }
   }, [quizQuestions.length]);
+
+  const handleSatImagePaste = React.useCallback((e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile();
+        if (file) {
+          e.preventDefault();
+          setUploadedFile(file);
+          break;
+        }
+      }
+    }
+  }, []);
 
   const handleSatImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -872,61 +935,87 @@ export default function QuizLessonEditor({
       {(quizType === 'audio' || quizType === 'pdf') && (
         <div className="space-y-3">
           <Label>{quizType === 'audio' ? 'Audio File' : 'Document (PDF or Image)'}</Label>
+          <div
+            className="space-y-3 outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded-lg"
+            onPaste={quizType === 'pdf' ? handleQuizMediaPaste : undefined}
+            tabIndex={quizType === 'pdf' ? 0 : -1}
+            role={quizType === 'pdf' ? 'button' : undefined}
+            aria-label={quizType === 'pdf'
+              ? 'Quiz document upload area. Drag and drop, choose a file, or paste an image with Ctrl+V.'
+              : undefined}
+          >
           {quizMediaUrl ? (
-            <div className="border rounded-lg p-4 bg-gray-50">
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   {quizType === 'audio' ? (
                     <>
-                      🎵 <span className="font-medium">Audio uploaded</span>
+                      <span aria-hidden="true">🎵</span>
+                      <span className="font-medium">Audio uploaded</span>
                     </>
-                  ) : quizMediaType === 'pdf' ? (
+                  ) : isImageMediaUrl(quizMediaUrl) ? (
                     <>
-                      📄 <span className="font-medium">PDF uploaded</span>
+                      <Image className="w-5 h-5 text-blue-600" />
+                      <span className="font-medium">Image uploaded</span>
                     </>
                   ) : (
                     <>
-                      🖼️ <span className="font-medium">Image uploaded</span>
+                      <FileText className="w-5 h-5 text-red-600" />
+                      <span className="font-medium">PDF uploaded</span>
                     </>
                   )}
                 </div>
-                <div className="flex gap-2">
-                  {quizType === 'audio' && (
-                    <audio
-                      controls
-                      src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + quizMediaUrl}
-                      className="max-w-xs"
-                    />
-                  )}
-                  {quizType === 'pdf' && quizMediaType === 'pdf' && (
-                    <a
-                      href={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + quizMediaUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 text-sm"
-                    >
-                      View PDF →
-                    </a>
-                  )}
-                  {quizType === 'pdf' && quizMediaType !== 'pdf' && (
-                    <img
-                      src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + quizMediaUrl}
-                      alt="Quiz reference"
-                      className="max-h-20 rounded"
-                    />
-                  )}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setQuizMediaUrl('');
-                      setQuizMediaType('');
-                    }}
-                  >
-                    Remove
-                  </Button>
-                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setQuizMediaUrl('');
+                    setQuizMediaType('');
+                  }}
+                >
+                  Remove
+                </Button>
               </div>
+
+              {quizType === 'audio' && (
+                <audio
+                  controls
+                  src={backendUrl + quizMediaUrl}
+                  className="w-full max-w-md"
+                />
+              )}
+
+              {quizType === 'pdf' && isImageMediaUrl(quizMediaUrl) && (
+                <div className="relative bg-gray-50 border rounded-lg overflow-hidden">
+                  <div className="aspect-[4/3] relative flex items-center justify-center bg-gray-100">
+                    <img
+                      src={backendUrl + quizMediaUrl}
+                      alt="Quiz reference"
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                  <div className="p-2 bg-white border-t">
+                    <p className="text-xs font-medium text-gray-900 truncate">
+                      {getMediaFilename(quizMediaUrl)}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {quizType === 'pdf' && !isImageMediaUrl(quizMediaUrl) && (
+                <PDFPreview
+                  filename={getMediaFilename(quizMediaUrl)}
+                  fileUrl={quizMediaUrl}
+                  fileSize={0}
+                  showFullPreview={false}
+                />
+              )}
+
+              {quizType === 'pdf' && (
+                <p className="text-xs text-gray-500">
+                  Click this area and press Ctrl+V to replace with a pasted image
+                </p>
+              )}
             </div>
           ) : (
             <div
@@ -955,6 +1044,11 @@ export default function QuizLessonEditor({
                   : 'Drag & drop or click to upload PDF or image (JPG, PNG, etc.)'
                 }
               </div>
+              {quizType === 'pdf' && (
+                <div className="text-xs text-gray-500 mb-3">
+                  Or click here and press Ctrl+V to paste an image
+                </div>
+              )}
               <input
                 type="file"
                 accept={quizType === 'audio' ? 'audio/*' : '.pdf,image/*'}
@@ -976,6 +1070,7 @@ export default function QuizLessonEditor({
               </label>
             </div>
           )}
+          </div>
         </div>
       )}
 
@@ -1660,7 +1755,22 @@ export default function QuizLessonEditor({
                           This will display as an image between questions (e.g., a map for listening exercises). No answer input will be shown.
                         </p>
                       )}
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                      <div
+                        className="border-2 border-dashed border-gray-300 rounded-lg p-4 outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                        onPaste={handleQuestionMediaPaste}
+                        onDrop={async (e) => {
+                          e.preventDefault();
+                          const file = e.dataTransfer.files?.[0];
+                          if (file) {
+                            await handleQuestionMediaDrop(file);
+                          }
+                        }}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDragEnter={(e) => e.preventDefault()}
+                        tabIndex={0}
+                        role="button"
+                        aria-label="Question media upload area. Drag and drop, choose a file, or paste an image with Ctrl+V."
+                      >
                         {draftQuestion.media_url ? (
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
@@ -1672,12 +1782,27 @@ export default function QuizLessonEditor({
                               <span className="text-sm font-medium">Media attached</span>
                             </div>
                             {draftQuestion.media_type === 'image' && (
-                              <img
-                                src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + draftQuestion.media_url}
-                                alt="Question media"
-                                className="max-w-xs max-h-48 object-contain rounded"
+                              <div className="relative bg-gray-50 border rounded-lg overflow-hidden">
+                                <div className="aspect-[4/3] relative flex items-center justify-center bg-gray-100">
+                                  <img
+                                    src={backendUrl + draftQuestion.media_url}
+                                    alt="Question media"
+                                    className="max-w-full max-h-full object-contain"
+                                  />
+                                </div>
+                              </div>
+                            )}
+                            {draftQuestion.media_type === 'pdf' && draftQuestion.media_url && (
+                              <PDFPreview
+                                filename={getMediaFilename(draftQuestion.media_url)}
+                                fileUrl={draftQuestion.media_url}
+                                fileSize={0}
+                                showFullPreview={false}
                               />
                             )}
+                            <p className="text-xs text-gray-500">
+                              Click this area and press Ctrl+V to replace with a pasted image
+                            </p>
                             <Button
                               variant="outline"
                               size="sm"
@@ -1687,38 +1812,13 @@ export default function QuizLessonEditor({
                             </Button>
                           </div>
                         ) : (
-                          <div
-                            className="text-center border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-400 transition-colors"
-                            onDrop={async (e) => {
-                              e.preventDefault();
-                              const file = e.dataTransfer.files?.[0];
-                              if (file && (file.type.startsWith('image/') || file.type === 'application/pdf')) {
-                                const result = await uploadQuestionMedia(file);
-                                if (result) {
-                                  const mediaType = file.type.startsWith('image/') ? 'image' : 'pdf';
-                                  applyDraftUpdate({
-                                    media_url: result.file_url,
-                                    media_type: mediaType
-                                  });
-                                }
-                              }
-                            }}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDragEnter={(e) => e.preventDefault()}
-                            onPaste={(e) => handleMediaPaste(e, (url) => {
-                              applyDraftUpdate({
-                                media_url: url,
-                                media_type: 'image'
-                              });
-                            })}
-                            tabIndex={0}
-                          >
+                          <div className="text-center p-2">
                             <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
                             <div className="text-sm text-gray-600 mb-2">
                               Drag & drop or click to upload PDF or image
                             </div>
                             <div className="text-xs text-gray-500 mb-3">
-                              Or press Ctrl+V to paste from clipboard
+                              Or click this area and press Ctrl+V to paste an image
                             </div>
                             <input
                               type="file"
@@ -1951,7 +2051,7 @@ export default function QuizLessonEditor({
                         <div className="flex items-center justify-between">
                           <Label>Options ({draftQuestion.options?.length || 0})</Label>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500">Drag & drop or click to add images</span>
+                            <span className="text-xs text-gray-500">Click option image area + Ctrl+V to paste</span>
                             <Button
                               type="button"
                               variant="outline"
@@ -1992,12 +2092,6 @@ export default function QuizLessonEditor({
                                 }
                               }}
                               onDragOver={(e) => e.preventDefault()}
-                              onPaste={(e) => handleMediaPaste(e, (url) => {
-                                const options = [...(draftQuestion.options || [])];
-                                options[idx] = { ...options[idx], image_url: url };
-                                applyDraftUpdate({ options });
-                              })}
-                              tabIndex={0}
                             >
                               <div className="flex items-center gap-2">
                                 {draftQuestion.question_type === 'multiple_choice' ? (
@@ -2053,7 +2147,17 @@ export default function QuizLessonEditor({
                               {/* Image Upload Section */}
                               <div className="ml-10">
                                 {opt.image_url ? (
-                                  <div className="relative inline-block">
+                                  <div
+                                    className="relative inline-block outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
+                                    tabIndex={0}
+                                    role="button"
+                                    aria-label={`Option ${idx + 1} image. Click and press Ctrl+V to replace.`}
+                                    onPaste={(e) => handleMediaPaste(e, (url) => {
+                                      const options = [...(draftQuestion.options || [])];
+                                      options[idx] = { ...options[idx], image_url: url };
+                                      applyDraftUpdate({ options });
+                                    })}
+                                  >
                                     <img
                                       src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + opt.image_url}
                                       alt={`Option ${idx + 1}`}
@@ -2072,7 +2176,28 @@ export default function QuizLessonEditor({
                                     </button>
                                   </div>
                                 ) : (
-                                  <label className="cursor-pointer">
+                                  <span
+                                    className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 border border-dashed border-blue-300 rounded px-2 py-1 hover:bg-blue-50 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer"
+                                    tabIndex={0}
+                                    role="button"
+                                    aria-label={`Add image for option ${idx + 1}. Click and press Ctrl+V to paste.`}
+                                    onClick={(e) => {
+                                      const input = e.currentTarget.querySelector('input');
+                                      input?.click();
+                                    }}
+                                    onPaste={(e) => handleMediaPaste(e, (url) => {
+                                      const options = [...(draftQuestion.options || [])];
+                                      options[idx] = { ...options[idx], image_url: url };
+                                      applyDraftUpdate({ options });
+                                    })}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        const input = e.currentTarget.querySelector('input');
+                                        input?.click();
+                                      }
+                                    }}
+                                  >
                                     <input
                                       type="file"
                                       accept="image/*"
@@ -2089,11 +2214,9 @@ export default function QuizLessonEditor({
                                         }
                                       }}
                                     />
-                                    <span className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 border border-dashed border-blue-300 rounded px-2 py-1 hover:bg-blue-50 transition-colors">
-                                      <Image className="w-3 h-3" />
-                                      Add image (or Ctrl+V)
-                                    </span>
-                                  </label>
+                                    <Image className="w-3 h-3" />
+                                    Add image (Ctrl+V)
+                                  </span>
                                 )}
                               </div>
                             </div>
@@ -2409,7 +2532,7 @@ Italy = Rome`}</pre>
                 </p>
 
                 <div 
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center transition-colors"
+                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
                   onDrop={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -2432,6 +2555,10 @@ Italy = Rome`}</pre>
                     e.stopPropagation();
                     e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50');
                   }}
+                  onPaste={handleSatImagePaste}
+                  tabIndex={0}
+                  role="button"
+                  aria-label="Upload SAT import file. Drag and drop, choose a file, or paste an image with Ctrl+V."
                 >
                   <input
                     type="file"
@@ -2449,6 +2576,9 @@ Italy = Rome`}</pre>
                       </div>
                       <div className="text-xs text-gray-500">
                         Supports PDF, PNG, JPG, JPEG, GIF, WEBP
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Or click here and press Ctrl+V to paste an image
                       </div>
                     </div>
                   </label>
