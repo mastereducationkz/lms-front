@@ -13,6 +13,15 @@ interface OnboardingManagerProps {
   children: React.ReactNode;
 }
 
+const shouldDeferOnboardingForAssignmentZero = (user: {
+  role?: string;
+  assignment_zero_completed?: boolean;
+  special_group_only_student?: boolean;
+} | null) =>
+  user?.role === 'student' &&
+  !user?.special_group_only_student &&
+  user?.assignment_zero_completed === false;
+
 export default function OnboardingManager({ children }: OnboardingManagerProps) {
   const { user, updateUser } = useAuth();
   const location = useLocation();
@@ -38,6 +47,14 @@ export default function OnboardingManager({ children }: OnboardingManagerProps) 
     console.log('OnboardingManager state changed:', { showWelcome, showTour });
   }, [showWelcome, showTour]);
 
+  // Hide welcome/tour while student must complete Assignment Zero first
+  useEffect(() => {
+    if (!shouldDeferOnboardingForAssignmentZero(user)) return;
+
+    if (showWelcome) setShowWelcome(false);
+    if (showTour) setShowTour(false);
+  }, [user, showWelcome, showTour]);
+
   useEffect(() => {
     // Определяем дашборды для каждой роли
     const getDashboardPathForRole = (role: string) => {
@@ -55,10 +72,19 @@ export default function OnboardingManager({ children }: OnboardingManagerProps) 
       }
     };
 
+    // Students must finish Assignment Zero before welcome / platform guide
+    if (shouldDeferOnboardingForAssignmentZero(user)) {
+      return;
+    }
+
     // Проверяем, нужно ли показывать онбординг
     if (user && !onboardingShownInSession) {
       const userDashboard = getDashboardPathForRole(user.role);
       const isOnDashboard = location.pathname === userDashboard;
+
+      if (location.pathname === '/assignment-zero') {
+        return;
+      }
       
       if (isOnDashboard) {
         console.log('[OnboardingManager] Onboarding check:', {
@@ -136,7 +162,7 @@ export default function OnboardingManager({ children }: OnboardingManagerProps) 
 
   return (
     <>
-      {showWelcome && user && (
+      {showWelcome && user && !shouldDeferOnboardingForAssignmentZero(user) && (
         <WelcomeScreens 
           userName={userName} 
           userRole={user.role}
@@ -144,7 +170,7 @@ export default function OnboardingManager({ children }: OnboardingManagerProps) 
         />
       )}
       
-      {user && showTour && (
+      {user && showTour && !shouldDeferOnboardingForAssignmentZero(user) && (
         <OnboardingTour
           userRole={user.role}
           steps={[]}

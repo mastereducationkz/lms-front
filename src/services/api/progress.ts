@@ -163,3 +163,69 @@ export function getCourseStatus(_courseId: string): string {
   console.warn('getCourseStatus needs updating to use new API');
   return 'not-started';
 }
+
+export type LessonProgressItem = {
+  lesson_id: number;
+  lesson_title: string;
+  module_title: string;
+  order_index?: number;
+  total_steps: number;
+  completed_steps?: number;
+  completed_students?: number;
+  student_count?: number;
+  completion_percentage: number;
+  is_complete: boolean;
+};
+
+export async function getLessonProgressSummary(params: {
+  course_id: number;
+  user_id?: number;
+  group_id?: number;
+}): Promise<{
+  user?: { id: number; name: string; email: string };
+  course?: { id: number; title: string };
+  group_id?: number;
+  course_id?: number;
+  student_count?: number;
+  overall?: {
+    total_steps: number;
+    completed_steps: number;
+    completion_percentage: number;
+  };
+  lessons: LessonProgressItem[];
+}> {
+  try {
+    const response = await api.get('/progress/lesson-progress-summary', { params });
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Failed to load lesson progress');
+  }
+}
+
+export async function completeLessonsForTarget(data: {
+  course_id: number;
+  lesson_ids: number[];
+  user_id?: number;
+  group_id?: number;
+}): Promise<any> {
+  try {
+    const response = await api.post('/progress/complete-lessons', data);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Failed to complete lessons');
+  }
+}
+
+export async function resetLessonsForTarget(data: {
+  course_id: number;
+  lesson_ids: number[];
+  user_id?: number;
+  group_id?: number;
+}): Promise<any> {
+  try {
+    const response = await api.post('/progress/reset-lessons', data);
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Failed to reset lessons');
+  }
+}
