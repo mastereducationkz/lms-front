@@ -243,6 +243,7 @@ export interface Group {
   max_week?: number;
   max_open_lessons?: number | null;
   course_id?: number | null;
+  course_ids?: number[];
 }
 
 export interface CourseGroupAccess {

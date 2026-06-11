@@ -30,6 +30,21 @@ interface SelectedTarget {
   id: number
   type: TargetType
   name: string
+  courseId?: number
+}
+
+const resolveCourseIdForGroup = (group: Group | undefined, courses: Course[]): string => {
+  if (!group) return ''
+
+  const linkedIds = (group.course_ids?.length ? group.course_ids : group.course_id ? [group.course_id] : [])
+    .map((id: number) => Number(id))
+    .filter((id: number) => Number.isFinite(id))
+
+  if (linkedIds.length === 0) return ''
+
+  const availableIds = new Set(courses.map((course) => Number(course.id)))
+  const matchedId = linkedIds.find((id: number) => availableIds.has(id))
+  return String(matchedId ?? linkedIds[0])
 }
 
 
@@ -104,12 +119,14 @@ export default function ManualUnlocksPage() {
     try {
       setIsLoading(true)
       const usesOwnGroupsOnly = user?.role === 'teacher'
+      const isHeadTeacher = user?.role === 'head_teacher'
+
       const [coursesData, groupsData] = await Promise.all([
-        apiClient.getCourses(),
+        isHeadTeacher ? apiClient.getHeadTeacherManagedCourses() : apiClient.getCourses(),
         usesOwnGroupsOnly ? apiClient.getTeacherGroups() : apiClient.getGroups(),
       ])
 
-      setCourses(coursesData)
+      setCourses(coursesData as Course[])
       setAllGroups(groupsData || [])
     } catch (error) {
       console.error('Failed to load initial data:', error)
@@ -118,6 +135,18 @@ export default function ManualUnlocksPage() {
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (!selectedTarget || selectedTarget.type !== 'group' || courses.length === 0) return
+
+    const group = allGroups.find((g) => Number(g.id) === selectedTarget.id)
+    const courseId = resolveCourseIdForGroup(group, courses)
+    if (!courseId) return
+
+    if (courseId !== selectedCourseId) {
+      setSelectedCourseId(courseId)
+    }
+  }, [selectedTarget, allGroups, courses, selectedCourseId])
 
   const fetchStudents = useCallback(
     async (reset: boolean) => {
@@ -167,8 +196,17 @@ export default function ManualUnlocksPage() {
     return () => window.clearTimeout(timer)
   }, [searchQuery, studentGroupFilter, activeTab, fetchStudents])
 
-  const handleSelectTarget = (target: RecentTarget) => {
-    setSelectedTarget(target)
+  const handleSelectTarget = (target: RecentTarget, linkedGroup?: Group) => {
+    const nextTarget: SelectedTarget = { ...target }
+    if (target.type === 'group') {
+      const group = linkedGroup ?? allGroups.find((g) => Number(g.id) === target.id)
+      const courseId = resolveCourseIdForGroup(group, courses)
+      if (courseId) {
+        nextTarget.courseId = Number(courseId)
+        setSelectedCourseId(courseId)
+      }
+    }
+    setSelectedTarget(nextTarget)
     saveRecentTarget(target)
     setRecentTargets(loadRecentTargets())
   }
@@ -400,6 +438,18 @@ export default function ManualUnlocksPage() {
     return allGroups.filter((g) => g.name.toLowerCase().includes(q))
   }, [groupSearchQuery, allGroups])
 
+  const availableCourses = useMemo(() => {
+    if (!selectedTarget || selectedTarget.type !== 'group') return courses
+
+    const group = allGroups.find((g) => Number(g.id) === selectedTarget.id)
+    const linkedIds = (group?.course_ids?.length ? group.course_ids : group?.course_id ? [group.course_id] : [])
+      .map((id: number) => Number(id))
+
+    if (linkedIds.length === 0) return courses
+
+    return courses.filter((course) => linkedIds.includes(Number(course.id)))
+  }, [courses, selectedTarget, allGroups])
+
   const canSearchStudents =
     studentGroupFilter !== 'all' || searchQuery.trim().length >= 2
 
@@ -592,7 +642,7 @@ export default function ManualUnlocksPage() {
                     name={g.name}
                     sub={`${g.student_count || 0} students`}
                     selected={selectedTarget?.id === Number(g.id) && selectedTarget?.type === 'group'}
-                    onClick={() => handleSelectTarget({ id: Number(g.id), type: 'group', name: g.name })}
+                    onClick={() => handleSelectTarget({ id: Number(g.id), type: 'group', name: g.name }, g)}
                   />
                 ))
               )}
@@ -639,7 +689,7 @@ export default function ManualUnlocksPage() {
                     <SelectValue placeholder="Select a course..." />
                   </SelectTrigger>
                   <SelectContent>
-                    {courses.map((c) => (
+                    {availableCourses.map((c) => (
                       <SelectItem key={c.id} value={c.id.toString()}>{c.title}</SelectItem>
                     ))}
                   </SelectContent>
