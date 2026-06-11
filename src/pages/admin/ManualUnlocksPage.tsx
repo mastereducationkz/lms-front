@@ -215,6 +215,7 @@ export default function ManualUnlocksPage() {
     } catch (error) {
       console.error('Failed to load lesson progress:', error)
       setLessonProgress({})
+      toast('Failed to load unit progress', 'error')
     } finally {
       setIsProgressLoading(false)
     }
