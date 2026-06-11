@@ -103,10 +103,10 @@ export default function ManualUnlocksPage() {
   const loadInitialData = async () => {
     try {
       setIsLoading(true)
-      const isTeacher = user?.role === 'teacher'
+      const usesOwnGroupsOnly = user?.role === 'teacher'
       const [coursesData, groupsData] = await Promise.all([
         apiClient.getCourses(),
-        isTeacher ? apiClient.getTeacherGroups() : apiClient.getGroups(),
+        usesOwnGroupsOnly ? apiClient.getTeacherGroups() : apiClient.getGroups(),
       ])
 
       setCourses(coursesData)

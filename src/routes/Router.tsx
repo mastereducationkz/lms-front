@@ -404,7 +404,7 @@ export default function Router() {
           } />
 
           <Route path="/manual-unlocks" element={
-            <ProtectedRoute allowedRoles={['admin', 'teacher']}>
+            <ProtectedRoute allowedRoles={['admin', 'teacher', 'head_teacher']}>
               <AppLayout>
                 <ManualUnlocksPage />
               </AppLayout>

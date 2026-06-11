@@ -88,7 +88,7 @@ function getNavigationItems(
     ['/admin/question-reports', 'Question Reports', AlertTriangle, 0, ['admin'], 'question-reports-nav', 'admin'],
     ['/admin/lesson-requests', 'Lesson Requests', ArrowLeftRight, 0, ['admin'], 'lesson-requests-nav', 'admin'],
     ['/my-requests', 'My Requests', ArrowLeftRight, 0, ['teacher'], 'my-requests-nav', 'primary'],
-    ['/manual-unlocks', 'Manual Unlocks', Unlock, 0, ['teacher'], 'manual-unlocks-nav', 'primary'],
+    ['/manual-unlocks', 'Manual Unlocks', Unlock, 0, ['teacher', 'head_teacher'], 'manual-unlocks-nav', 'primary'],
     ['/chat', ['head_curator', 'curator'].includes(_userRole || '') ? 'Чат' : 'Chat', MessageCircle, unreadCount, null, 'messages-nav', 'primary'],
   ];
 
