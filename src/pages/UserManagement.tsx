@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '../services/api';
 import { toggleCuratorAnalyticsHidden } from '../services/api/admin';
 import { toast } from '../components/Toast';
-import type { User, CreateUserRequest, UpdateUserRequest, Group, Course, GroupType, CourseType } from '../types';
+import type { User, CreateUserRequest, UpdateUserRequest, UpdateGroupRequest, Group, Course, GroupType, CourseType } from '../types';
 
 const GROUP_TYPE_LABELS: Record<GroupType, string> = {
   group: 'Group',
@@ -125,6 +125,13 @@ interface TeacherGroup {
   students_limit?: number
   students_total?: number
   is_loading_students?: boolean
+}
+
+const sameIdSet = (a: number[], b: number[]) => {
+  if (a.length !== b.length) return false
+  const sortedA = [...a].sort((x, y) => x - y)
+  const sortedB = [...b].sort((x, y) => x - y)
+  return sortedA.every((value, index) => value === sortedB[index])
 }
 
 export default function UserManagement() {
@@ -345,6 +352,8 @@ export default function UserManagement() {
   const [groupFormErrors, setGroupFormErrors] = useState<{ [key: string]: string }>({});
   const [specialGroupFormErrors, setSpecialGroupFormErrors] = useState<{ [key: string]: string }>({});
   const [editGroupFormErrors, setEditGroupFormErrors] = useState<{ [key: string]: string }>({});
+  const [originalEditGroupStudentIds, setOriginalEditGroupStudentIds] = useState<number[]>([]);
+  const [originalUserGroupIds, setOriginalUserGroupIds] = useState<number[]>([]);
 
   useEffect(() => {
     loadUsers()
@@ -662,10 +671,15 @@ export default function UserManagement() {
         student_id: formData.student_id || undefined,
         password: formData.password || undefined,
         is_active: formData.is_active,
-        // Send group_ids for students - the backend will handle the group updates
-        group_ids: formData.role === 'student' ? formData.group_ids : undefined,
         course_ids: formData.role === 'head_teacher' ? formData.course_ids : undefined
       };
+
+      if (
+        formData.role === 'student' &&
+        !sameIdSet(formData.group_ids, originalUserGroupIds)
+      ) {
+        userData.group_ids = formData.group_ids
+      }
       
       await apiClient.updateUser(Number(selectedUser.id), userData);
       toast('User updated successfully', 'success');
@@ -846,7 +860,7 @@ export default function UserManagement() {
     setEditGroupFormErrors({});
 
     try {
-      const groupData = {
+      const groupData: UpdateGroupRequest = {
         name: editGroupFormData.name.trim(),
         description: editGroupFormData.description?.trim() || undefined,
         teacher_id: editGroupFormData.is_special
@@ -854,7 +868,6 @@ export default function UserManagement() {
           : editGroupFormData.teacher_id,
         curator_id: editGroupFormData.curator_id || undefined,
         course_id: editGroupFormData.course_id || undefined,
-        student_ids: editGroupFormData.student_ids,
         is_active: editGroupFormData.is_active,
         is_special: editGroupFormData.is_special,
         group_type: editGroupFormData.group_type,
@@ -864,6 +877,10 @@ export default function UserManagement() {
             ? editGroupFormData.max_open_lessons
             : undefined
       };
+
+      if (!sameIdSet(editGroupFormData.student_ids, originalEditGroupStudentIds)) {
+        groupData.student_ids = editGroupFormData.student_ids
+      }
       
       await apiClient.updateGroup(selectedGroup.id, groupData);
       toast('Group updated successfully', 'success');
@@ -880,7 +897,9 @@ export default function UserManagement() {
 
 
   const openEditModal = (user: User) => {
+    const groupIds = user.group_ids || []
     setSelectedUser(user);
+    setOriginalUserGroupIds(groupIds)
     setFormData({
       name: user.name || user.full_name || '',
       email: user.email,
@@ -888,7 +907,7 @@ export default function UserManagement() {
       student_id: user.student_id || '',
       password: '',
       is_active: user.is_active ?? true,
-      group_ids: user.group_ids || [], // Use group_ids from the user (populated by backend)
+      group_ids: groupIds,
       course_ids: user.course_ids || []
     });
     setShowEditModal(true);
@@ -911,6 +930,7 @@ export default function UserManagement() {
       course_ids: []
     });
     setSelectedUser(null);
+    setOriginalUserGroupIds([])
     setFormErrors({});
   };
 
@@ -948,15 +968,27 @@ export default function UserManagement() {
     setSpecialGroupFormErrors({});
   };
 
-  const openEditGroupModal = (group: GroupWithDetails) => {
+  const openEditGroupModal = async (group: GroupWithDetails) => {
     setSelectedGroup(group);
+    let studentIds = (group.students || []).map((student) => Number(student.id))
+
+    if (studentIds.length === 0 && (group.student_count || 0) > 0) {
+      try {
+        const roster = await apiClient.getGroupStudents(group.id)
+        studentIds = roster.map((student) => Number(student.id))
+      } catch (error) {
+        console.error('Failed to load group students for edit form', error)
+      }
+    }
+
+    setOriginalEditGroupStudentIds(studentIds)
     setEditGroupFormData({
       name: group.name,
       description: group.description || '',
       teacher_id: group.teacher_id ?? 0,
       curator_id: group.curator_id || undefined,
       course_id: group.course_id ?? undefined,
-      student_ids: group.students?.map(s => Number(s.id)) || [],
+      student_ids: studentIds,
       is_active: group.is_active,
       is_special: !!group.is_special,
       group_type: (group.group_type as GroupType) || 'group',
@@ -981,6 +1013,7 @@ export default function UserManagement() {
       max_open_lessons: 1
     });
     setSelectedGroup(null);
+    setOriginalEditGroupStudentIds([])
     setEditGroupFormErrors({});
   };
 
@@ -1651,7 +1684,7 @@ export default function UserManagement() {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
                           <Button
-                            onClick={() => openEditGroupModal(group)}
+                            onClick={() => { void openEditGroupModal(group) }}
                             variant="ghost"
                             size="sm"
                             title="Edit Group"
