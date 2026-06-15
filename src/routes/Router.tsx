@@ -346,7 +346,7 @@ export default function Router() {
           } />
 
           <Route path="/admin/users" element={
-            <ProtectedRoute allowedRoles={['admin']}>
+            <ProtectedRoute allowedRoles={['admin', 'head_curator']}>
               <AppLayout>
                 <UserManagement />
               </AppLayout>

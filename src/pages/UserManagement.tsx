@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../services/api';
 import { toggleCuratorAnalyticsHidden } from '../services/api/admin';
 import { toast } from '../components/Toast';
@@ -136,6 +137,8 @@ const sameIdSet = (a: number[], b: number[]) => {
 
 export default function UserManagement() {
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
+  const isHeadCurator = currentUser?.role === 'head_curator';
   const [searchParams, setSearchParams] = useSearchParams();
   const [users, setUsers] = useState<User[]>([]);
   const [groups, setGroups] = useState<GroupWithDetails[]>([]);
@@ -145,8 +148,8 @@ export default function UserManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20);
   
-  // Filters
-  const [roleFilter, setRoleFilter] = useState(searchParams.get('role') || 'student');
+  // Filters — head_curator always scoped to curators
+  const [roleFilter, setRoleFilter] = useState(isHeadCurator ? 'curator' : (searchParams.get('role') || 'student'));
   const [groupFilter, setGroupFilter] = useState(searchParams.get('group_id') || 'all');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('is_active') || 'all');
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
@@ -293,11 +296,11 @@ export default function UserManagement() {
     setBulkTextResults(null);
   };
   
-  // Form data
+  // Form data — head_curator always creates curators
   const [formData, setFormData] = useState<UserFormData>({
     name: '',
     email: '',
-    role: 'student',
+    role: isHeadCurator ? 'curator' : 'student',
     student_id: '',
     password: '',
     is_active: true,
@@ -1040,16 +1043,20 @@ export default function UserManagement() {
             <DropdownMenuContent align="end" className="min-w-[220px]">
               <DropdownMenuItem onClick={() => setShowCreateModal(true)}>
                 <UserPlus className="mr-2 h-4 w-4" />
-                Add User
+                {isHeadCurator ? 'Add Curator' : 'Add User'}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowBulkAddModal(true)}>
-                <Users className="mr-2 h-4 w-4" />
-                Bulk Add Students
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setShowBulkTextModal(true)}>
-                <Upload className="mr-2 h-4 w-4" />
-                Import from Text
-              </DropdownMenuItem>
+              {!isHeadCurator && (
+                <>
+                  <DropdownMenuItem onClick={() => setShowBulkAddModal(true)}>
+                    <Users className="mr-2 h-4 w-4" />
+                    Bulk Add Students
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowBulkTextModal(true)}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Import from Text
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -1090,12 +1097,18 @@ export default function UserManagement() {
                   <SelectValue placeholder="All Roles" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="student">Student</SelectItem>
-                  <SelectItem value="teacher">Teacher</SelectItem>
-                  <SelectItem value="head_curator">Head Curator</SelectItem>
-                  <SelectItem value="curator">Curator</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
+                  {isHeadCurator ? (
+                    <SelectItem value="curator">Curator</SelectItem>
+                  ) : (
+                    <>
+                      <SelectItem value="all">All Roles</SelectItem>
+                      <SelectItem value="student">Student</SelectItem>
+                      <SelectItem value="teacher">Teacher</SelectItem>
+                      <SelectItem value="head_curator">Head Curator</SelectItem>
+                      <SelectItem value="curator">Curator</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -1156,9 +1169,9 @@ export default function UserManagement() {
         }}
         className="w-full"
       >
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className={`grid w-full ${isHeadCurator ? 'grid-cols-1' : 'grid-cols-2'}`}>
           <TabsTrigger value="0">Users</TabsTrigger>
-          <TabsTrigger value="1">Groups</TabsTrigger>
+          {!isHeadCurator && <TabsTrigger value="1">Groups</TabsTrigger>}
         </TabsList>
         <TabsContent value="0">
           {/* Users Tab Content */}
@@ -2042,12 +2055,18 @@ function UserForm({ formData, setFormData, groups, courses, errors = {} }: UserF
               <SelectValue placeholder="Select role" />
             </SelectTrigger>
             <SelectContent className="z-[1100]">
-              <SelectItem value="student">Student</SelectItem>
-              <SelectItem value="teacher">Teacher</SelectItem>
-              <SelectItem value="head_teacher">Head Teacher</SelectItem>
-              <SelectItem value="head_curator">Head Curator</SelectItem>
-              <SelectItem value="curator">Curator</SelectItem>
-              <SelectItem value="admin">Admin</SelectItem>
+              {isHeadCurator ? (
+                <SelectItem value="curator">Curator</SelectItem>
+              ) : (
+                <>
+                  <SelectItem value="student">Student</SelectItem>
+                  <SelectItem value="teacher">Teacher</SelectItem>
+                  <SelectItem value="head_teacher">Head Teacher</SelectItem>
+                  <SelectItem value="head_curator">Head Curator</SelectItem>
+                  <SelectItem value="curator">Curator</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </>
+              )}
             </SelectContent>
           </Select>
         </div>
