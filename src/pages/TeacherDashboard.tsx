@@ -201,6 +201,120 @@ export default function TeacherDashboard() {
     loadTeacherData();
   }, []);
 
+  const refreshSubmissionsOnly = async () => {
+    try {
+      const pendingData = await apiClient.getPendingSubmissionsMeta(100, 0);
+      const pending = pendingData.pending_submissions || [];
+      setPendingSubmissions(pending);
+      setStats(prev => prev ? { ...prev, pending_submissions: pendingData.total_pending_count || pending.length } : null);
+
+      const recent = await apiClient.getRecentSubmissions(20);
+      setRecentSubmissions(recent);
+    } catch (submissionError) {
+      console.warn('Failed to refresh submissions:', submissionError);
+    }
+  };
+
+  const getAssignmentMaxScore = () => currentAssignment?.max_score || selectedSubmission?.max_score || 100;
+
+  const clampAssignmentScore = (value: number, maxScore = getAssignmentMaxScore()) =>
+    Math.max(0, Math.min(value, maxScore));
+
+  const clampQuizScore = (value: number) => Math.max(0, Math.min(100, value));
+
+  const handleAssignmentQuickScore = (action: 'max' | 'clear' | 'plus10' | 'minus10') => {
+    const maxScore = getAssignmentMaxScore();
+    if (action === 'max') {
+      setGradingScore(maxScore);
+      return;
+    }
+    if (action === 'clear') {
+      setGradingScore('');
+      return;
+    }
+    const current = gradingScore === '' ? 0 : Number(gradingScore);
+    const step = Math.max(1, Math.round(maxScore * 0.1));
+    const next = action === 'plus10' ? current + step : current - step;
+    setGradingScore(clampAssignmentScore(next, maxScore));
+  };
+
+  const handleQuizQuickScore = (action: 'max' | 'clear' | 'plus10' | 'minus10') => {
+    if (action === 'max') {
+      setQuizGradeScore(100);
+      return;
+    }
+    if (action === 'clear') {
+      setQuizGradeScore('');
+      return;
+    }
+    const current = quizGradeScore === '' ? 0 : Number(quizGradeScore);
+    const next = action === 'plus10' ? current + 10 : current - 10;
+    setQuizGradeScore(clampQuizScore(next));
+  };
+
+  const applyAssignmentGradeLocally = (submissionId: number, score: number, feedback: string) => {
+    const maxScore = getAssignmentMaxScore();
+    const wasPending = pendingSubmissions.some(submission => submission.id === submissionId);
+    const baseSubmission = selectedSubmission?.id === submissionId
+      ? selectedSubmission
+      : pendingSubmissions.find(submission => submission.id === submissionId)
+        || recentSubmissions.find(submission => submission.id === submissionId);
+
+    if (!baseSubmission) return;
+
+    const gradedSubmission: Submission = {
+      ...baseSubmission,
+      score,
+      max_score: maxScore,
+      is_graded: true,
+      feedback,
+    };
+
+    setPendingSubmissions(prev => prev.filter(submission => submission.id !== submissionId));
+    setRecentSubmissions(prev => {
+      const withoutCurrent = prev.filter(submission => submission.id !== submissionId);
+      return [gradedSubmission, ...withoutCurrent].slice(0, 20);
+    });
+
+    if (wasPending) {
+      setStats(prev => {
+        if (!prev) return prev;
+        const gradedSubmissions = prev.graded_submissions + 1;
+        const pendingSubmissionsCount = Math.max(0, prev.pending_submissions - 1);
+        return {
+          ...prev,
+          pending_submissions: pendingSubmissionsCount,
+          graded_submissions: gradedSubmissions,
+          grading_progress: prev.total_submissions > 0
+            ? Math.round((gradedSubmissions / prev.total_submissions) * 100)
+            : prev.grading_progress,
+        };
+      });
+    }
+  };
+
+  const applyQuizGradeLocally = (attemptId: number, score: number, feedback: string) => {
+    const sourceAttempt = ungradedQuizAttempts.find(attempt => attempt.id === attemptId)
+      || gradedQuizAttempts.find(attempt => attempt.id === attemptId)
+      || (selectedQuizAttempt?.quiz_attempt_id === attemptId ? selectedQuizAttempt : null);
+
+    if (!sourceAttempt) return;
+
+    const gradedAttempt = {
+      ...sourceAttempt,
+      is_graded: true,
+      score,
+      score_percentage: score,
+      feedback,
+    };
+
+    setUngradedQuizAttempts(prev => prev.filter(attempt => attempt.id !== attemptId));
+    setGradedQuizAttempts(prev => {
+      const withoutCurrent = prev.filter(attempt => attempt.id !== attemptId);
+      return [gradedAttempt, ...withoutCurrent].slice(0, 20);
+    });
+  };
+
   const loadTeacherData = async () => {
     try {
       setLoading(true);
@@ -413,9 +527,9 @@ export default function TeacherDashboard() {
       const draftKey = getAssignmentAutoSaveKey(selectedSubmission.id);
       localStorage.removeItem(draftKey);
       
+      applyAssignmentGradeLocally(selectedSubmission.id, Number(gradingScore), gradingFeedback);
       toast('Submission graded successfully', 'success');
       handleCloseGradingModal();
-      loadTeacherData(); // Refresh list
     } catch (error) {
       toast('Failed to grade submission', 'error');
       console.error('Grading error:', error);
@@ -428,7 +542,7 @@ export default function TeacherDashboard() {
     try {
       await apiClient.allowResubmission(String(submissionId));
       toast('Resubmission allowed', 'info');
-      loadTeacherData();
+      await refreshSubmissionsOnly();
     } catch (error) {
       toast('Failed to allow resubmission', 'error');
       console.error('Resubmission error:', error);
@@ -468,7 +582,7 @@ export default function TeacherDashboard() {
 
       setIsAutoGradeDialogOpen(false);
       setAutoGradePreview([]);
-      loadTeacherData();
+      await refreshSubmissionsOnly();
     } catch (error) {
       toast('Failed to auto-grade homework', 'error');
       console.error('Auto-grade homework error:', error);
@@ -575,9 +689,9 @@ export default function TeacherDashboard() {
       const draftKey = getAutoSaveKey(selectedQuizAttempt.quiz_attempt_id);
       localStorage.removeItem(draftKey);
       
+      applyQuizGradeLocally(selectedQuizAttempt.quiz_attempt_id, Number(quizGradeScore), quizGradeFeedback);
       handleCloseQuizGradeModal();
       toast('Quiz graded successfully', 'success');
-      loadTeacherData();
     } catch (error) {
       toast('Failed to grade quiz', 'error');
       console.error('Quiz grading error:', error);
@@ -589,7 +703,8 @@ export default function TeacherDashboard() {
     try {
       await apiClient.deleteQuizAttempt(attemptId);
       toast('Quiz attempt deleted', 'info');
-      loadTeacherData();
+      setUngradedQuizAttempts(prev => prev.filter(attempt => attempt.id !== attemptId));
+      setGradedQuizAttempts(prev => prev.filter(attempt => attempt.id !== attemptId));
     } catch (error) {
       toast('Failed to delete quiz attempt', 'error');
       console.error('Delete quiz attempt error:', error);
@@ -1405,9 +1520,23 @@ export default function TeacherDashboard() {
                     onChange={(e) => {
                       const val = e.target.value;
                       if (val === '') setQuizGradeScore('');
-                      else setQuizGradeScore(Number(val));
+                      else setQuizGradeScore(clampQuizScore(Number(val)));
                     }}
                   />
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => handleQuizQuickScore('max')}>
+                      100%
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => handleQuizQuickScore('plus10')}>
+                      +10%
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => handleQuizQuickScore('minus10')}>
+                      −10%
+                    </Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => handleQuizQuickScore('clear')}>
+                      Clear
+                    </Button>
+                  </div>
                 </div>
                 
                 <div className="grid gap-2">
@@ -1433,72 +1562,92 @@ export default function TeacherDashboard() {
 
       {/* Assignment Grading Modal */}
       <Dialog open={isGradingModalOpen} onOpenChange={(open) => !open && handleCloseGradingModal()}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Grade Submission</DialogTitle>
-            <DialogDescription>
-              Review the student's work and provide a score and feedback.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 my-4">
-            {/* Left side - Submission Content View (2/3 width) */}
-            <div className="lg:col-span-2 space-y-4">
-              <div className="rounded-lg border border-border bg-slate-50 dark:bg-secondary p-4 text-slate-900 dark:text-slate-100">
-                <h3 className="mb-4 flex items-center font-semibold text-slate-900 dark:text-slate-100">
-                    Student's Work
-                </h3>
-                
-                {currentAssignment?.assignment_type === 'multi_task' && selectedSubmission ? (
-                  <MultiTaskSubmission 
-                    assignment={currentAssignment} 
-                    initialAnswers={selectedSubmission.answers} 
-                    readOnly={true}
-                    onSubmit={() => {}}
-                    studentId={String(selectedSubmission.user_id)}
-                  />
-                ) : (
-                  <div className="space-y-4">
-                    {selectedSubmission?.file_url && (
-                      <div className="flex items-center p-3 bg-white dark:bg-card rounded border border-gray-200 dark:border-border">
-                        <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-3" />
-                        <div className="flex-1">
-                          <div className="font-medium text-gray-900 dark:text-foreground">{selectedSubmission.submitted_file_name || 'Attached File'}</div>
-                        </div>
-                        <a 
-                           href={(selectedSubmission.file_url.startsWith('http') ? '' : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000')) + selectedSubmission.file_url}
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium flex items-center"
-                        >
-                          <Download className="w-4 h-4 mr-1" />
-                          Download
-                        </a>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+          {/* Header */}
+          <div className="flex items-start justify-between px-6 pt-5 pb-4 border-b border-border shrink-0">
+            <div>
+              <DialogTitle className="text-lg font-semibold leading-tight">
+                {currentAssignment?.title || 'Grade Submission'}
+              </DialogTitle>
+              {selectedSubmission && (
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  {selectedSubmission.student_name || selectedSubmission.user_name || 'Student'}
+                  {selectedSubmission.submitted_at && (
+                    <span className="ml-2 text-xs">
+                      · {new Date(selectedSubmission.submitted_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-1 overflow-hidden">
+            {/* Left side - Submission Content (scrollable) */}
+            <div className="flex-1 overflow-y-auto p-6 border-r border-border">
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-3">Student's Work</h3>
+
+              {currentAssignment?.assignment_type === 'multi_task' && selectedSubmission ? (
+                <MultiTaskSubmission
+                  assignment={currentAssignment}
+                  initialAnswers={selectedSubmission.answers}
+                  readOnly={true}
+                  onSubmit={() => {}}
+                  studentId={String(selectedSubmission.user_id)}
+                />
+              ) : (
+                <div className="space-y-3">
+                  {selectedSubmission?.file_url && (
+                    <div className="flex items-center p-3 bg-muted/40 rounded-lg border border-border">
+                      <FileText className="w-5 h-5 text-blue-500 mr-3 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">{selectedSubmission.submitted_file_name || 'Attached File'}</div>
                       </div>
-                    )}
-                    
-                    {selectedSubmission?.answers?.text && (
-                      <div className="bg-white dark:bg-card p-4 rounded border border-gray-200 dark:border-border whitespace-pre-wrap text-gray-900 dark:text-foreground">
-                        {selectedSubmission.answers.text}
-                      </div>
-                    )}
-                    
-                    {!selectedSubmission?.file_url && !selectedSubmission?.answers?.text && currentAssignment?.assignment_type !== 'multi_task' && (
-                      <div className="text-gray-500 dark:text-gray-400 italic">No content to display.</div>
-                    )}
-                  </div>
-                )}
-              </div>
+                      <a
+                        href={(selectedSubmission.file_url.startsWith('http') ? '' : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000')) + selectedSubmission.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium flex items-center shrink-0 ml-3"
+                      >
+                        <Download className="w-4 h-4 mr-1" />
+                        Download
+                      </a>
+                    </div>
+                  )}
+
+                  {selectedSubmission?.answers?.text && (
+                    <div className="bg-muted/40 p-4 rounded-lg border border-border whitespace-pre-wrap text-sm leading-relaxed">
+                      {selectedSubmission.answers.text}
+                    </div>
+                  )}
+
+                  {!selectedSubmission?.file_url && !selectedSubmission?.answers?.text && currentAssignment?.assignment_type !== 'multi_task' && (
+                    <div className="text-muted-foreground italic text-sm">No content to display.</div>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Right side - Grading Controls (1/3 width) */}
-            <div className="lg:col-span-1 space-y-4">
-              <div className="bg-white dark:bg-card p-4 border border-gray-200 dark:border-border rounded-lg sticky top-4">
-                <h3 className="font-semibold text-gray-900 dark:text-foreground mb-4">Grading</h3>
-                
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="gradeScore">Score (Max: {currentAssignment?.max_score})</Label>
+            {/* Right side - Grading Panel */}
+            <div className="w-64 shrink-0 flex flex-col border-l border-border">
+              <div className="flex-1 overflow-y-auto p-4 space-y-5">
+                {/* Score */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium text-foreground">Score</Label>
+                    <span className="text-xs text-muted-foreground">/ {currentAssignment?.max_score ?? 100}</span>
+                  </div>
+
+                  {/* Score input with stepper */}
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleAssignmentQuickScore('minus10')}
+                      className="h-9 w-9 shrink-0 rounded border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center text-base leading-none select-none"
+                      aria-label="Decrease by 10%"
+                    >
+                      −
+                    </button>
                     <Input
                       id="gradeScore"
                       type="number"
@@ -1506,41 +1655,86 @@ export default function TeacherDashboard() {
                       max={currentAssignment?.max_score || 100}
                       value={gradingScore}
                       onChange={(e) => {
-                        const val = e.target.value;
+                        const val = e.target.value
                         if (val === '') {
-                          setGradingScore('');
+                          setGradingScore('')
                         } else {
-                          setGradingScore(Math.min(parseInt(val) || 0, currentAssignment?.max_score || 100));
+                          setGradingScore(clampAssignmentScore(Number(val)))
                         }
                       }}
-                      placeholder="Enter score"
+                      placeholder="—"
+                      className="text-center font-semibold text-base h-9 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
+                    <button
+                      type="button"
+                      onClick={() => handleAssignmentQuickScore('plus10')}
+                      className="h-9 w-9 shrink-0 rounded border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center text-base leading-none select-none"
+                      aria-label="Increase by 10%"
+                    >
+                      +
+                    </button>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="gradeFeedback">Feedback</Label>
-                    <Textarea
-                      id="gradeFeedback"
-                      value={gradingFeedback}
-                      onChange={(e) => setGradingFeedback(e.target.value)}
-                      placeholder="Provide feedback to the student..."
-                      className="min-h-[200px]"
-                      rows={8}
-                    />
+
+                  {/* Subtle progress + percentage */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-foreground/30 rounded-full transition-all duration-150"
+                        style={{ width: gradingScore === '' ? '0%' : `${Math.min(100, (Number(gradingScore) / (currentAssignment?.max_score || 100)) * 100)}%` }}
+                      />
+                    </div>
+                    <span className="text-xs tabular-nums text-muted-foreground w-8 text-right">
+                      {gradingScore === '' ? '—' : `${Math.round((Number(gradingScore) / (currentAssignment?.max_score || 100)) * 100)}%`}
+                    </span>
+                  </div>
+
+                  {/* Quick shortcuts */}
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleAssignmentQuickScore('max')}
+                      className="flex-1 h-7 rounded border border-border text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    >
+                      100%
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAssignmentQuickScore('clear')}
+                      className="flex-1 h-7 rounded border border-border text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    >
+                      Clear
+                    </button>
                   </div>
                 </div>
+
+                {/* Divider */}
+                <div className="border-t border-border" />
+
+                {/* Feedback */}
+                <div className="space-y-2">
+                  <Label htmlFor="gradeFeedback" className="text-sm font-medium text-foreground">Feedback</Label>
+                  <Textarea
+                    id="gradeFeedback"
+                    value={gradingFeedback}
+                    onChange={(e) => setGradingFeedback(e.target.value)}
+                    placeholder="Write feedback for the student..."
+                    className="resize-none text-sm min-h-[140px]"
+                    rows={6}
+                  />
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="p-4 border-t border-border space-y-1.5 shrink-0">
+                <Button className="w-full h-9" onClick={handleSubmitGrade} disabled={isSubmitting}>
+                  {isSubmitting ? 'Saving...' : 'Save Grade'}
+                </Button>
+                <Button variant="ghost" size="sm" className="w-full text-muted-foreground hover:text-foreground" onClick={handleCloseGradingModal}>
+                  Cancel
+                </Button>
               </div>
             </div>
           </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={handleCloseGradingModal}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmitGrade} disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save Grade'}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
