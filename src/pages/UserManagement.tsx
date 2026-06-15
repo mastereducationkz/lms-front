@@ -148,8 +148,7 @@ export default function UserManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20);
   
-  // Filters — head_curator always scoped to curators
-  const [roleFilter, setRoleFilter] = useState(isHeadCurator ? 'curator' : (searchParams.get('role') || 'student'));
+  const [roleFilter, setRoleFilter] = useState(searchParams.get('role') || 'student');
   const [groupFilter, setGroupFilter] = useState(searchParams.get('group_id') || 'all');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('is_active') || 'all');
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
@@ -296,11 +295,10 @@ export default function UserManagement() {
     setBulkTextResults(null);
   };
   
-  // Form data — head_curator always creates curators
   const [formData, setFormData] = useState<UserFormData>({
     name: '',
     email: '',
-    role: isHeadCurator ? 'curator' : 'student',
+    role: 'student',
     student_id: '',
     password: '',
     is_active: true,
@@ -357,6 +355,14 @@ export default function UserManagement() {
   const [editGroupFormErrors, setEditGroupFormErrors] = useState<{ [key: string]: string }>({});
   const [originalEditGroupStudentIds, setOriginalEditGroupStudentIds] = useState<number[]>([]);
   const [originalUserGroupIds, setOriginalUserGroupIds] = useState<number[]>([]);
+
+  // When auth loads and user is head_curator, lock filters and form to curator role
+  useEffect(() => {
+    if (isHeadCurator) {
+      setRoleFilter('curator')
+      setFormData(prev => ({ ...prev, role: 'curator' }))
+    }
+  }, [isHeadCurator])
 
   useEffect(() => {
     loadUsers()
