@@ -1757,6 +1757,7 @@ export default function UserManagement() {
           groups={groups}
           courses={courses}
           errors={formErrors}
+          isHeadCurator={isHeadCurator}
         />
       </Modal>
 
@@ -1774,6 +1775,7 @@ export default function UserManagement() {
           groups={groups}
           courses={courses}
           errors={formErrors}
+          isHeadCurator={isHeadCurator}
         />
 
       </Modal>
@@ -2005,9 +2007,10 @@ interface UserFormProps {
   groups: GroupWithDetails[];
   courses: Course[];
   errors?: { [key: string]: string };
+  isHeadCurator?: boolean;
 }
 
-function UserForm({ formData, setFormData, groups, courses, errors = {} }: UserFormProps) {
+function UserForm({ formData, setFormData, groups, courses, errors = {}, isHeadCurator = false }: UserFormProps) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
