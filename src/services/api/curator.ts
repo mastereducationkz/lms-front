@@ -372,6 +372,7 @@ export async function getAllCuratorTasks(params?: {
   group_id?: number;
   week?: string;
   program_week?: number;
+  due_day?: number;
   limit?: number;
   offset?: number;
 }): Promise<{ total: number; tasks: any[] }> {
@@ -380,6 +381,22 @@ export async function getAllCuratorTasks(params?: {
     return response.data;
   } catch (error) {
     console.error('Failed to get all curator tasks:', error);
+    throw error;
+  }
+}
+
+export async function getAllCuratorTasksDaySummary(params?: {
+  curator_id?: number;
+  status?: string;
+  group_id?: number;
+  week?: string;
+  program_week?: number;
+}): Promise<{ days: Array<{ day: number; total: number; completed: number }> }> {
+  try {
+    const response = await api.get('/curator-tasks/all-tasks/day-summary', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Failed to get curator tasks day summary:', error);
     throw error;
   }
 }

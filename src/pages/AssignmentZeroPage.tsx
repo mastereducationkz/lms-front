@@ -323,6 +323,8 @@ const IELTS_WEAK_TOPICS = [
   'Speaking Part 3 - Abstract discussions',
 ];
 
+const isNuetGroupName = (name: string) => /\bnuet\b/i.test(name);
+
 const LIKERT_SCALE = [
   { value: 1, label: "1 - Don't know" },
   { value: 2, label: '2' },
@@ -437,14 +439,21 @@ export default function AssignmentZeroPage() {
   const [userGroups, setUserGroups] = useState<{ id: number; name: string }[]>([]);
   
   // Determine which questionnaire types to show based on user groups
+  const isNUET = useMemo(
+    () => userGroups.some(g => isNuetGroupName(g.name)),
+    [userGroups],
+  );
+
   const showSAT = useMemo(() => {
+    if (isNUET) return false;
     if (userGroups.length === 0) return true; // Default to SAT if no groups
-    return userGroups.some(g => !g.name.toLowerCase().includes('ielts'));
-  }, [userGroups]);
-  
+    return userGroups.some(g => !g.name.toLowerCase().includes('ielts') && !isNuetGroupName(g.name));
+  }, [userGroups, isNUET]);
+
   const showIELTS = useMemo(() => {
+    if (isNUET) return false;
     return userGroups.some(g => g.name.toLowerCase().includes('ielts'));
-  }, [userGroups]);
+  }, [userGroups, isNUET]);
   
   // Dynamic steps based on user groups
   const DYNAMIC_STEPS = useMemo(() => {
@@ -1252,7 +1261,7 @@ export default function AssignmentZeroPage() {
             <CardDescription>
               {currentStepId === 'personal' && 'Tell us about yourself'}
               {currentStepId === 'account' && (showSAT ? 'Your College Board and platform accounts' : 'Your platform account')}
-              {currentStepId === 'education' && 'Your school and test goals'}
+              {currentStepId === 'education' && (showSAT || showIELTS ? 'Your school and test goals' : 'Your school information')}
               {currentStepId === 'sat_results' && 'Your recent SAT test scores'}
               {currentStepId === 'sat_grammar' && 'Rate your grammar knowledge (1 = Don\'t know, 5 = Mastered)'}
               {currentStepId === 'sat_reading' && 'Rate your reading skills (1 = Don\'t know, 5 = Mastered)'}

@@ -193,6 +193,13 @@ function getWeekDateRange(weekStr: string): string {
   return `${f.getDate()} ${m[f.getMonth()]} – ${l.getDate()} ${m[l.getMonth()]}`;
 }
 
+function getTodayDayIndexInWeek(weekStr: string): number | null {
+  const dates = getWeekDates(weekStr);
+  const today = new Date().toDateString();
+  const idx = dates.findIndex(d => d.toDateString() === today);
+  return idx >= 0 ? idx : null;
+}
+
 function groupTasksForDay(dayTasks: CuratorTask[]): TaskGroup[] {
   const map = new Map<string, CuratorTask[]>();
   for (const t of dayTasks) {
@@ -262,6 +269,8 @@ export default function CuratorTasksPage() {
   const [viewIsoWeekOffset, setViewIsoWeekOffset] = useState(0); // offset from current ISO week when in calendar mode
 
   const [tasks, setTasks] = useState<CuratorTask[]>([]);
+  const [daySummary, setDaySummary] = useState<Array<{ day: number; total: number; completed: number }> | null>(null);
+  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -316,6 +325,13 @@ export default function CuratorTasksPage() {
     const base = getISOWeekString(new Date());
     return viewIsoWeekOffset === 0 ? base : isoWeekAddWeeks(base, viewIsoWeekOffset);
   }, [selectedGroup_data, activeProgramWeek, isCurrentCalendarMode, viewIsoWeekOffset]);
+
+  // Head curator viewing all curators: load one weekday at a time (avoids 200-task Monday-only cap)
+  const useSplitDayLoad = isHeadCurator && selectedCuratorId == null;
+
+  useEffect(() => {
+    setSelectedDayIndex(getTodayDayIndexInWeek(activeIsoWeek) ?? 0);
+  }, [activeIsoWeek, useSplitDayLoad]);
 
   // ─── Load groups ────────────────────────────────────────────────────────────
 
@@ -387,7 +403,7 @@ export default function CuratorTasksPage() {
     try {
       setLoading(true);
       if (isHeadCurator) {
-        const params: any = { limit: 200 };
+        const params: Record<string, unknown> = { limit: 500 };
         if (selectedCuratorId) params.curator_id = selectedCuratorId;
         if (selectedGroupId) params.group_id = selectedGroupId;
         if (filterStatus !== 'all') params.status = filterStatus;
@@ -396,10 +412,23 @@ export default function CuratorTasksPage() {
         } else {
           params.week = activeIsoWeek;
         }
-        const result = await apiClient.getAllCuratorTasks(params);
-        setTasks(result.tasks || []);
+
+        if (useSplitDayLoad) {
+          const summaryParams = { ...params };
+          delete summaryParams.limit;
+          const [summary, result] = await Promise.all([
+            apiClient.getAllCuratorTasksDaySummary(summaryParams),
+            apiClient.getAllCuratorTasks({ ...params, due_day: selectedDayIndex }),
+          ]);
+          setDaySummary(summary.days || []);
+          setTasks(result.tasks || []);
+        } else {
+          setDaySummary(null);
+          const result = await apiClient.getAllCuratorTasks(params);
+          setTasks(result.tasks || []);
+        }
       } else {
-        const params: any = { limit: 200 };
+        const params: Record<string, unknown> = { limit: 200 };
         if (selectedGroupId) params.group_id = selectedGroupId;
         if (filterStatus !== 'all') params.status = filterStatus;
         if (!isCurrentCalendarMode && selectedGroup_data && activeProgramWeek !== null) {
@@ -407,6 +436,7 @@ export default function CuratorTasksPage() {
         } else {
           params.week = activeIsoWeek;
         }
+        setDaySummary(null);
         const result = await apiClient.getCuratorTasks(params);
         setTasks(result.tasks || []);
       }
@@ -415,7 +445,7 @@ export default function CuratorTasksPage() {
     } finally {
       setLoading(false);
     }
-  }, [isHeadCurator, selectedGroupId, selectedCuratorId, selectedGroup_data, activeProgramWeek, activeIsoWeek, filterStatus, isCurrentCalendarMode]);
+  }, [isHeadCurator, selectedGroupId, selectedCuratorId, selectedGroup_data, activeProgramWeek, activeIsoWeek, filterStatus, isCurrentCalendarMode, useSplitDayLoad, selectedDayIndex]);
 
   useEffect(() => { loadTasks(); }, [loadTasks]);
 
@@ -538,7 +568,19 @@ export default function CuratorTasksPage() {
   const groupsByDay = useMemo(() => tasksByDay.map(dayTasks => groupTasksForDay(dayTasks)), [tasksByDay]);
 
   const done = tasks.filter(t => t.status === 'completed').length;
-  const pct = tasks.length > 0 ? Math.round((done / tasks.length) * 100) : 0;
+  const weekTotal = useSplitDayLoad && daySummary
+    ? daySummary.reduce((s, d) => s + d.total, 0)
+    : tasks.length;
+  const weekDone = useSplitDayLoad && daySummary
+    ? daySummary.reduce((s, d) => s + d.completed, 0)
+    : done;
+  const pct = weekTotal > 0 ? Math.round((weekDone / weekTotal) * 100) : 0;
+
+  const handleSelectDay = (dayIdx: number) => {
+    if (useSplitDayLoad && dayIdx !== selectedDayIndex) {
+      setSelectedDayIndex(dayIdx);
+    }
+  };
 
   // ─── Dialog handlers ───────────────────────────────────────────────────────
 
@@ -728,10 +770,13 @@ export default function CuratorTasksPage() {
       </div>
 
       {/* Stats bar */}
-      {tasks.length > 0 && (
+      {(weekTotal > 0 || tasks.length > 0) && (
         <div className="flex items-center gap-4">
           <Progress value={pct} className="flex-1 h-1.5" />
-          <span className="text-xs text-gray-500 tabular-nums whitespace-nowrap">{done} из {tasks.length}</span>
+          <span className="text-xs text-gray-500 tabular-nums whitespace-nowrap">{weekDone} из {weekTotal}</span>
+          {useSplitDayLoad && (
+            <span className="text-[10px] text-gray-400 whitespace-nowrap">день: {DAY_LABELS[selectedDayIndex]}</span>
+          )}
           {!isHeadCurator && (
             <Button onClick={handleGenerate} disabled={generating} size="sm" variant="ghost" className="h-7 px-2.5 text-xs text-gray-400 hover:text-gray-600">
               {generating ? 'Обновление...' : '↻ Перегенерировать'}
@@ -743,7 +788,7 @@ export default function CuratorTasksPage() {
       {/* Board */}
       {loading ? (
         <div className="flex items-center justify-center h-64 text-sm text-gray-400">Загрузка...</div>
-      ) : tasks.length === 0 ? (
+      ) : weekTotal === 0 && tasks.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64 gap-3">
           <p className="text-sm text-gray-400">
             Нет задач {activeProgramWeek ? `на неделю ${activeProgramWeek}` : 'на эту неделю'}
@@ -761,31 +806,76 @@ export default function CuratorTasksPage() {
             const dates = getWeekDates(activeIsoWeek);
             const isToday = dates[dayIdx].toDateString() === new Date().toDateString();
             const dayDate = dates[dayIdx].getDate();
+            const isSelectedDay = !useSplitDayLoad || dayIdx === selectedDayIndex;
+            const dayStats = daySummary?.find(d => d.day === dayIdx);
+            const dayCount = dayStats?.total ?? (isSelectedDay ? dayGroups.length : 0);
 
             return (
               <div key={dayIdx} className="flex flex-col min-h-[300px]">
-                <div className={cn('flex items-center justify-between px-3 py-2.5 rounded-lg mb-2', isToday ? 'bg-gray-900' : 'bg-gray-100')}>
+                <button
+                  type="button"
+                  onClick={() => handleSelectDay(dayIdx)}
+                  disabled={!useSplitDayLoad}
+                  className={cn(
+                    'flex items-center justify-between px-3 py-2.5 rounded-lg mb-2 text-left transition-colors',
+                    useSplitDayLoad && 'cursor-pointer hover:opacity-90',
+                    !useSplitDayLoad && 'cursor-default',
+                    isSelectedDay && useSplitDayLoad ? 'ring-2 ring-gray-900 ring-offset-1' : '',
+                    isToday ? 'bg-gray-900' : 'bg-gray-100',
+                  )}
+                  aria-label={useSplitDayLoad ? `Задачи на ${label}` : undefined}
+                  aria-pressed={useSplitDayLoad ? isSelectedDay : undefined}
+                >
                   <span className={cn('text-xs font-semibold uppercase tracking-wide', isToday ? 'text-white' : 'text-gray-500')}>{label}</span>
-                  <span className={cn('text-xs font-medium', isToday ? 'text-gray-300' : 'text-gray-400')}>{dayDate}</span>
-                </div>
+                  <div className="flex items-center gap-1.5">
+                    {useSplitDayLoad && dayCount > 0 && (
+                      <span className={cn(
+                        'text-[10px] font-medium tabular-nums px-1.5 py-0.5 rounded-full',
+                        isToday ? 'bg-white/20 text-white' : 'bg-gray-200 text-gray-600',
+                      )}>
+                        {dayCount}
+                      </span>
+                    )}
+                    <span className={cn('text-xs font-medium', isToday ? 'text-gray-300' : 'text-gray-400')}>{dayDate}</span>
+                  </div>
+                </button>
                 <div className="flex-1 space-y-2.5">
-                  {(() => {
-                    const mainGroups = dayGroups.filter(g => g.isMain);
-                    const parallelGroups = dayGroups.filter(g => !g.isMain);
-                    const renderGroup = (group: TaskGroup) => group.isGrouped
-                      ? <GroupedCard key={group.key} group={group} onClick={() => openGroupDialog(group)} showCuratorName={isHeadCurator} isMain={group.isMain} />
-                      : <SingleCard key={group.tasks[0].id} task={group.tasks[0]} onClick={() => openSingleDialog(group.tasks[0])} showCuratorName={isHeadCurator} onNavigate={navigate} isMain={group.isMain} />;
-                    return (
-                      <>
-                        {mainGroups.map(renderGroup)}
-                        {mainGroups.length > 0 && parallelGroups.length > 0 && (
-                          <div className="border-t border-dashed border-gray-200 my-1" />
-                        )}
-                        {parallelGroups.map(renderGroup)}
-                      </>
-                    );
-                  })()}
-                  {dayGroups.length === 0 && <div className="flex items-center justify-center min-h-[60px]"><span className="text-[10px] text-gray-300">—</span></div>}
+                  {!isSelectedDay && useSplitDayLoad ? (
+                    <button
+                      type="button"
+                      onClick={() => handleSelectDay(dayIdx)}
+                      className="flex flex-col items-center justify-center min-h-[80px] w-full rounded-lg border border-dashed border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
+                    >
+                      {dayCount > 0 ? (
+                        <>
+                          <span className="text-sm font-medium text-gray-600 tabular-nums">{dayCount}</span>
+                          <span className="text-[10px] text-gray-400 mt-0.5">задач · нажмите</span>
+                        </>
+                      ) : (
+                        <span className="text-[10px] text-gray-300">—</span>
+                      )}
+                    </button>
+                  ) : (
+                    <>
+                      {(() => {
+                        const mainGroups = dayGroups.filter(g => g.isMain);
+                        const parallelGroups = dayGroups.filter(g => !g.isMain);
+                        const renderGroup = (group: TaskGroup) => group.isGrouped
+                          ? <GroupedCard key={group.key} group={group} onClick={() => openGroupDialog(group)} showCuratorName={isHeadCurator} isMain={group.isMain} />
+                          : <SingleCard key={group.tasks[0].id} task={group.tasks[0]} onClick={() => openSingleDialog(group.tasks[0])} showCuratorName={isHeadCurator} onNavigate={navigate} isMain={group.isMain} />;
+                        return (
+                          <>
+                            {mainGroups.map(renderGroup)}
+                            {mainGroups.length > 0 && parallelGroups.length > 0 && (
+                              <div className="border-t border-dashed border-gray-200 my-1" />
+                            )}
+                            {parallelGroups.map(renderGroup)}
+                          </>
+                        );
+                      })()}
+                      {dayGroups.length === 0 && <div className="flex items-center justify-center min-h-[60px]"><span className="text-[10px] text-gray-300">—</span></div>}
+                    </>
+                  )}
                 </div>
               </div>
             );

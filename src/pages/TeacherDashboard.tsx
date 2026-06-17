@@ -78,6 +78,8 @@ interface StudentProgress {
   current_lesson_title: string;
   lesson_progress: number;
   overall_progress: number;
+  completed_modules?: number;
+  total_modules?: number;
   last_activity: string | null;
 }
 
@@ -1249,8 +1251,8 @@ export default function TeacherDashboard() {
                     <th className="text-left px-6 py-3 font-semibold">Student</th>
                     <th className="text-left px-6 py-3 font-semibold">Group</th>
                     <th className="text-left px-6 py-3 font-semibold">Course</th>
-                    <th className="text-left px-6 py-3 font-semibold">Current Lesson</th>
-                    <th className="text-left px-6 py-3 font-semibold">Progress</th>
+                    <th className="text-left px-6 py-3 font-semibold">Current Unit</th>
+                    <th className="text-left px-6 py-3 font-semibold" title="Completed units / total units">Progress</th>
                     <th className="text-left px-6 py-3 font-semibold">Last Activity</th>
                   </tr>
                 </thead>
@@ -1304,13 +1306,19 @@ export default function TeacherDashboard() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center max-w-[160px]">
+                        <div className="flex items-center max-w-[180px]">
                           <div className="flex-1 mr-3">
                             <Progress value={student.overall_progress} className="h-2.5 w-24" />
                           </div>
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-200 w-8">
-                            {student.overall_progress}%
-                          </span>
+                          <div className="text-sm font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">
+                            {student.total_modules != null && student.completed_modules != null ? (
+                              <span title={`${student.completed_modules} of ${student.total_modules} units completed`}>
+                                {student.completed_modules}/{student.total_modules} · {student.overall_progress}%
+                              </span>
+                            ) : (
+                              <span>{student.overall_progress}%</span>
+                            )}
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
