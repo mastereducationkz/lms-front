@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { 
@@ -11,7 +11,9 @@ import {
 import { Input } from '../components/ui/input';
 import { ChevronLeft, ChevronRight, Loader2, Save, Eye, EyeOff } from 'lucide-react';
 import { getCuratorGroups, getWeeklyLessonsWithHwStatus, updateAttendance, updateLeaderboardEntry, updateLeaderboardConfig } from '../services/api';
-import { Group } from '../types';
+import { Group, CourseType } from '../types';
+import { Checkbox } from '../components/ui/checkbox';
+import { Label } from '../components/ui/label';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import { toast } from '../components/Toast';
@@ -177,12 +179,58 @@ const calculateCurrentWeekNumber = (createdAtStr: string) => {
     return diffWeeks + 1;
 };
 
+const PROGRAM_LABELS: Record<CourseType, string> = {
+    sat: 'SAT',
+    ielts: 'IELTS',
+    nuet: 'NUET',
+    general_english: 'General English',
+};
+
+const getGroupProgramType = (group: Group): CourseType => {
+    const stored = group.program_type as CourseType | undefined;
+    if (stored === 'sat' || stored === 'ielts' || stored === 'nuet') return stored;
+
+    const name = group.name || '';
+    if (/\bielts\b/i.test(name)) return 'ielts';
+    if (/\bnuet\b/i.test(name)) return 'nuet';
+    if (/\bsat\b/i.test(name)) return 'sat';
+
+    return stored || 'general_english';
+};
+
+const sortGroupsByCreatedAt = (items: Group[]) =>
+    [...items].sort(
+        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+
+const applyGroupWeek = (group: Group, weekParam: string | null) => {
+    if (weekParam) return parseInt(weekParam, 10);
+    if (group.current_week) return group.current_week;
+    return calculateCurrentWeekNumber(group.created_at);
+};
+
 export default function CuratorLeaderboardPage() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentWeek, setCurrentWeek] = useState(1);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [groups, setGroups] = useState<Group[]>([]);
+  const [hideCompletedGroups, setHideCompletedGroups] = useState(true);
+  const [programFilter, setProgramFilter] = useState<'all' | CourseType>('all');
+  
+  const filteredGroups = useMemo(() => {
+    let result = groups;
+
+    if (hideCompletedGroups) {
+      result = result.filter((group) => !group.is_over);
+    }
+
+    if (programFilter !== 'all') {
+      result = result.filter((group) => getGroupProgramType(group) === programFilter);
+    }
+
+    return sortGroupsByCreatedAt(result);
+  }, [groups, hideCompletedGroups, programFilter]);
   
   // UI states
   const [loading, setLoading] = useState(false);
@@ -211,49 +259,43 @@ export default function CuratorLeaderboardPage() {
   useEffect(() => {
     const loadGroups = async () => {
         try {
-            const myGroups = await getCuratorGroups();
+            const myGroups = sortGroupsByCreatedAt(await getCuratorGroups());
             setGroups(myGroups);
-            
-            // Check for groupId in URL query params
-            const groupIdParam = searchParams.get('groupId');
-            const weekParam = searchParams.get('week');
-            
-            if (groupIdParam && myGroups.length > 0) {
-                const targetGroupId = parseInt(groupIdParam, 10);
-                const targetGroup = myGroups.find(g => g.id === targetGroupId);
-                if (targetGroup) {
-                    setSelectedGroupId(targetGroup.id);
-                    
-                    if (weekParam) {
-                        setCurrentWeek(parseInt(weekParam, 10));
-                    } else if (targetGroup.current_week) {
-                        setCurrentWeek(targetGroup.current_week);
-                    } else {
-                        setCurrentWeek(calculateCurrentWeekNumber(targetGroup.created_at));
-                    }
-                    return;
-                }
-            }
-            
-            // Fallback to first group
-            if (myGroups.length > 0) {
-                const firstGroup = myGroups[0];
-                setSelectedGroupId(firstGroup.id);
-                
-                if (weekParam) {
-                    setCurrentWeek(parseInt(weekParam, 10));
-                } else if (firstGroup.current_week) {
-                    setCurrentWeek(firstGroup.current_week);
-                } else {
-                    setCurrentWeek(calculateCurrentWeekNumber(firstGroup.created_at));
-                }
-            }
         } catch (e) {
             console.error("Failed to load groups", e);
         }
     };
     loadGroups();
-  }, [user]); // Removed searchParams to prevent re-triggering on URL update
+  }, [user]);
+
+  useEffect(() => {
+    if (groups.length === 0) return;
+
+    const weekParam = searchParams.get('week');
+    const groupIdParam = searchParams.get('groupId');
+
+    if (selectedGroupId && filteredGroups.some((group) => group.id === selectedGroupId)) {
+      return;
+    }
+
+    if (groupIdParam) {
+      const fromUrl = filteredGroups.find((group) => group.id === parseInt(groupIdParam, 10));
+      if (fromUrl) {
+        setSelectedGroupId(fromUrl.id);
+        setCurrentWeek(applyGroupWeek(fromUrl, weekParam));
+        return;
+      }
+    }
+
+    if (filteredGroups.length > 0) {
+      const nextGroup = filteredGroups[0];
+      setSelectedGroupId(nextGroup.id);
+      setCurrentWeek(applyGroupWeek(nextGroup, weekParam));
+      return;
+    }
+
+    setSelectedGroupId(null);
+  }, [groups, filteredGroups, hideCompletedGroups, programFilter]);
 
   useEffect(() => {
     if (selectedGroupId) {
@@ -594,7 +636,7 @@ export default function CuratorLeaderboardPage() {
                         </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                        {Array.from({ length: groups.find(g => g.id === selectedGroupId)?.max_week || 52 }, (_, i) => i + 1).map(w => (
+                        {Array.from({ length: filteredGroups.find(g => g.id === selectedGroupId)?.max_week || 52 }, (_, i) => i + 1).map(w => (
                             <SelectItem key={w} value={w.toString()} className="text-xs">
                                 Неделя {w}
                             </SelectItem>
@@ -612,33 +654,74 @@ export default function CuratorLeaderboardPage() {
                 </Button>
             </div>
 
-            <div className=" w-[200px]">
-                <Select 
-                    value={selectedGroupId?.toString() || ''} 
-                    onValueChange={(value) => {
-                        const groupId = Number(value);
-                        setSelectedGroupId(groupId);
-                        const group = groups.find(g => g.id === groupId);
-                        if (group) {
-                            if (group.current_week) {
-                                setCurrentWeek(group.current_week);
-                            } else {
-                                setCurrentWeek(calculateCurrentWeekNumber(group.created_at));
-                            }
-                        }
-                    }}
+            <div className="flex flex-wrap items-center gap-2">
+                <Select
+                    value={programFilter}
+                    onValueChange={(value) => setProgramFilter(value as 'all' | CourseType)}
                 >
-                    <SelectTrigger className="h-8 rounded-md border-gray-300 dark:border-border">
-                        <SelectValue placeholder="Выберите группу" />
+                    <SelectTrigger className="h-8 w-[130px] rounded-md border-gray-300 dark:border-border text-xs">
+                        <SelectValue placeholder="Предмет" />
                     </SelectTrigger>
                     <SelectContent>
-                        {groups.map(g => (
-                            <SelectItem key={g.id} value={g.id.toString()}>
-                                {g.name}
-                            </SelectItem>
-                        ))}
+                        <SelectItem value="all">Все предметы</SelectItem>
+                        <SelectItem value="sat">SAT</SelectItem>
+                        <SelectItem value="ielts">IELTS</SelectItem>
+                        <SelectItem value="nuet">NUET</SelectItem>
+                        <SelectItem value="general_english">General English</SelectItem>
                     </SelectContent>
                 </Select>
+
+                <div className="w-[240px]">
+                    <Select 
+                        value={selectedGroupId?.toString() || ''} 
+                        onValueChange={(value) => {
+                            const groupId = Number(value);
+                            setSelectedGroupId(groupId);
+                            const group = filteredGroups.find(g => g.id === groupId);
+                            if (group) {
+                                setCurrentWeek(
+                                    group.current_week ?? calculateCurrentWeekNumber(group.created_at)
+                                );
+                            }
+                        }}
+                    >
+                        <SelectTrigger className="h-8 rounded-md border-gray-300 dark:border-border">
+                            <SelectValue placeholder="Выберите группу" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {filteredGroups.length === 0 ? (
+                                <SelectItem value="none" disabled>
+                                    Нет групп по фильтру
+                                </SelectItem>
+                            ) : (
+                                filteredGroups.map(g => (
+                                    <SelectItem key={g.id} value={g.id.toString()}>
+                                        <span className="flex items-center gap-2">
+                                            <span>{g.name}</span>
+                                            {g.is_over && (
+                                                <span className="text-[10px] text-muted-foreground">(завершена)</span>
+                                            )}
+                                        </span>
+                                    </SelectItem>
+                                ))
+                            )}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="flex items-center gap-2 px-1">
+                    <Checkbox
+                        id="hide-completed-groups"
+                        checked={hideCompletedGroups}
+                        onCheckedChange={(checked) => setHideCompletedGroups(Boolean(checked))}
+                    />
+                    <Label
+                        htmlFor="hide-completed-groups"
+                        className="text-xs text-muted-foreground cursor-pointer select-none whitespace-nowrap"
+                    >
+                        Скрыть завершённые
+                    </Label>
+                </div>
             </div>
             
             <Button 
@@ -661,7 +744,12 @@ export default function CuratorLeaderboardPage() {
 
       {/* Spreadsheet Table */}
       <div className="border border-gray-300 dark:border-border overflow-x-auto">
-            {loading || !data ? (
+            {filteredGroups.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                    <p className="text-sm">Нет групп по выбранным фильтрам</p>
+                    <p className="text-xs mt-1">Снимите «Скрыть завершённые» или выберите другой предмет</p>
+                </div>
+            ) : loading || !data ? (
                 <Table className="border-collapse w-full text-xs">
                     <TableHeader className="bg-gray-100 dark:bg-secondary sticky top-0 z-30">
                         <TableRow className="h-auto border-b border-gray-300 dark:border-border hover:bg-gray-100 dark:hover:bg-secondary">
