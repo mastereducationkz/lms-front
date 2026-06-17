@@ -39,7 +39,13 @@ export async function getAssignmentZeroStatus(): Promise<{
   message?: string;
   has_draft?: boolean;
   last_saved_step?: number;
-  user_groups?: { id: number; name: string }[];
+  special_group_exempt?: boolean;
+  user_groups?: Array<{
+    id: number;
+    name: string;
+    program_type?: string;
+    is_special?: boolean;
+  }>;
 }> {
   try {
     const response = await api.get('/assignment-zero/status');

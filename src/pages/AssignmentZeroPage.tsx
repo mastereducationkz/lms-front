@@ -323,7 +323,24 @@ const IELTS_WEAK_TOPICS = [
   'Speaking Part 3 - Abstract discussions',
 ];
 
-const isNuetGroupName = (name: string) => /\bnuet\b/i.test(name);
+type CourseProgramType = 'sat' | 'ielts' | 'nuet' | 'general_english';
+
+type UserGroupInfo = {
+  id: number;
+  name: string;
+  program_type?: string;
+  is_special?: boolean;
+};
+
+const resolveGroupProgramType = (group: UserGroupInfo): CourseProgramType => {
+  const stored = (group.program_type || '').toLowerCase();
+  if (stored === 'sat' || stored === 'ielts' || stored === 'nuet') return stored;
+  const name = group.name || '';
+  if (/\bielts\b/i.test(name)) return 'ielts';
+  if (/\bnuet\b/i.test(name)) return 'nuet';
+  if (/\bsat\b/i.test(name)) return 'sat';
+  return 'general_english';
+};
 
 const LIKERT_SCALE = [
   { value: 1, label: "1 - Don't know" },
@@ -436,24 +453,20 @@ export default function AssignmentZeroPage() {
   const lastSavedDataRef = useRef<string>('');
   
   // User groups state
-  const [userGroups, setUserGroups] = useState<{ id: number; name: string }[]>([]);
-  
-  // Determine which questionnaire types to show based on user groups
-  const isNUET = useMemo(
-    () => userGroups.some(g => isNuetGroupName(g.name)),
-    [userGroups],
-  );
+  const [userGroups, setUserGroups] = useState<UserGroupInfo[]>([]);
+  const [groupsLoaded, setGroupsLoaded] = useState(false);
 
+  // Determine which questionnaire sections to show from group program_type (not name heuristics alone)
   const showSAT = useMemo(() => {
-    if (isNUET) return false;
-    if (userGroups.length === 0) return true; // Default to SAT if no groups
-    return userGroups.some(g => !g.name.toLowerCase().includes('ielts') && !isNuetGroupName(g.name));
-  }, [userGroups, isNUET]);
+    if (!groupsLoaded) return false;
+    if (userGroups.length === 0) return true;
+    return userGroups.some(g => resolveGroupProgramType(g) === 'sat');
+  }, [userGroups, groupsLoaded]);
 
   const showIELTS = useMemo(() => {
-    if (isNUET) return false;
-    return userGroups.some(g => g.name.toLowerCase().includes('ielts'));
-  }, [userGroups, isNUET]);
+    if (!groupsLoaded) return false;
+    return userGroups.some(g => resolveGroupProgramType(g) === 'ielts');
+  }, [userGroups, groupsLoaded]);
   
   // Dynamic steps based on user groups
   const DYNAMIC_STEPS = useMemo(() => {
@@ -598,7 +611,7 @@ export default function AssignmentZeroPage() {
   // Check status and load draft on mount
   useEffect(() => {
     checkStatusAndLoadDraft();
-  }, []);
+  }, [user?.special_group_only_student]);
 
   // Helper function to compute previous_sat_score from structured fields
   const computePreviousSatScore = () => {
@@ -743,12 +756,23 @@ export default function AssignmentZeroPage() {
 
   const checkStatusAndLoadDraft = async () => {
     try {
+      if (user?.special_group_only_student) {
+        navigate('/dashboard', { replace: true });
+        return;
+      }
+
       const status = await apiClient.getAssignmentZeroStatus();
-      
+
+      if (status.special_group_exempt) {
+        navigate('/dashboard', { replace: true });
+        return;
+      }
+
       // Set user groups from status
       if (status.user_groups) {
         setUserGroups(status.user_groups);
       }
+      setGroupsLoaded(true);
       
       if (status.completed) {
         setAlreadyCompleted(true);
@@ -893,6 +917,7 @@ export default function AssignmentZeroPage() {
       }
     } catch (error) {
       console.error('Failed to check status:', error);
+      setGroupsLoaded(true);
     } finally {
       setLoading(false);
     }
