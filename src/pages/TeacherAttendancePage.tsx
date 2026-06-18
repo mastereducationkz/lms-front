@@ -20,6 +20,7 @@ import apiClient, { getGroupFullAttendanceMatrix, updateAttendanceBulk, getCurat
 import { useAuth } from '../contexts/AuthContext';
 import { Group } from '../types';
 import { cn } from '../lib/utils';
+import { isAttendanceLockedLesson } from '../lib/attendance';
 import { Skeleton } from '../components/ui/skeleton';
 import {
   Table,
@@ -287,9 +288,7 @@ export default function TeacherAttendancePage() {
       return dt.toLocaleDateString('ru-RU', { weekday: 'short', timeZone: 'Asia/Almaty' });
   };
 
-  const isFutureLesson = (dateStr: string) => {
-      return new Date(dateStr) > new Date();
-  };
+  const isFutureLesson = isAttendanceLockedLesson;
 
   const lastActualLessonId = useMemo(() => {
       if (!data) return null;

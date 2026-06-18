@@ -43,6 +43,7 @@ import {
   ClipboardCheck
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { isAttendanceLockedLesson } from '../lib/attendance';
 
 interface MissedAttendanceItem {
   event_id: number;
@@ -222,7 +223,7 @@ export default function HeadTeacherTeacherDetailsPage() {
     return dt.toLocaleDateString('ru-RU', { weekday: 'short', timeZone: 'Asia/Almaty' });
   };
 
-  const isFutureLesson = (dateStr: string) => new Date(dateStr) > new Date();
+  const isFutureLesson = isAttendanceLockedLesson;
 
   const getAttendanceStatusColor = (status: string) => {
     switch (status) {
