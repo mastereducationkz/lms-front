@@ -89,6 +89,16 @@ export async function getMySubmissions(courseId = null) {
   }
 }
 
+export async function getPreviousHomework(): Promise<any[]> {
+  try {
+    const response = await api.get('/assignments/previous-homework');
+    return response.data || [];
+  } catch (error) {
+    console.warn('Failed to load previous homework:', error);
+    return [];
+  }
+}
+
 export async function getUnseenGradedCount(): Promise<{ count: number }> {
   try {
     const response = await api.get('/assignments/submissions/unseen-graded-count');

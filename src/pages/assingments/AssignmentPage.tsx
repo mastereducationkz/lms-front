@@ -108,6 +108,7 @@ export default function AssignmentPage() {
 
 
   const isOverdue = assignment?.due_date && new Date(assignment.due_date) < new Date();
+  const isReadOnlyPrevious = status?.is_read_only === true;
 
   const getStatusBadgeVariant = () => {
     if (!status) return 'secondary';
@@ -444,7 +445,7 @@ export default function AssignmentPage() {
           assignment={assignment}
           onSubmit={handleMultiTaskSubmit}
           initialAnswers={submission?.answers}
-          readOnly={false}
+          readOnly={isReadOnlyPrevious}
           isSubmitting={submitting}
         />
       );
@@ -629,6 +630,13 @@ export default function AssignmentPage() {
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center text-red-800 dark:text-red-400">
           <AlertCircle className="w-5 h-5 mr-2" />
           {error}
+        </div>
+      )}
+      {isReadOnlyPrevious && (
+        <div className="bg-slate-50 dark:bg-secondary border border-slate-200 dark:border-border rounded-lg p-4 text-sm text-slate-700 dark:text-slate-200">
+          This homework is from a previous group
+          {status?.previous_group_name ? ` (${status.previous_group_name})` : ''}.
+          You can view your submission and grade here, but cannot submit again.
         </div>
       )}
       <Card>

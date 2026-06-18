@@ -54,6 +54,8 @@ interface AssignmentWithStatus {
   has_file_submission?: boolean;
   extended_deadline?: string;
   extension_reason?: string;
+  is_previous?: boolean;
+  previous_group_name?: string;
 }
 
 const isSubmittedLike = (assignment: AssignmentWithStatus) => {
@@ -67,6 +69,7 @@ export default function AssignmentsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [assignments, setAssignments] = useState<AssignmentWithStatus[]>([]);
+  const [previousHomework, setPreviousHomework] = useState<AssignmentWithStatus[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -234,6 +237,11 @@ export default function AssignmentsPage() {
       }
       const assignmentData = await apiClient.getAssignments(params)
       console.log('Raw assignment data:', assignmentData);
+
+      let previousData: AssignmentWithStatus[] = []
+      if (user?.role === 'student') {
+        previousData = await apiClient.getPreviousHomework()
+      }
       
       // Get user's submissions to check status
       let userSubmissions: any[] = [];
@@ -304,6 +312,7 @@ export default function AssignmentsPage() {
 
       console.log('Assignments with status:', assignmentsWithStatus);
       setAssignments(assignmentsWithStatus);
+      setPreviousHomework(previousData);
     } catch (err) {
       console.error('Failed to load assignments:', err);
       setError('Failed to load assignments');
@@ -401,6 +410,21 @@ export default function AssignmentsPage() {
   // Pagination for group mode
   const totalPages = Math.ceil(filteredAssignments.length / PAGE_SIZE) || 1;
   const paginatedAssignments = filteredAssignments.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const filteredPreviousHomework = previousHomework.filter((assignment) => {
+    switch (filter) {
+      case 'pending':
+        return false
+      case 'submitted':
+        return isSubmittedLike(assignment)
+      case 'graded':
+        return assignment.status === 'graded'
+      case 'overdue':
+        return assignment.status === 'overdue'
+      default:
+        return true
+    }
+  })
 
   const selectedGroup = groupsWithAssignments.find(g => g.id === effectiveSelectedGroupId);
 
@@ -535,6 +559,14 @@ export default function AssignmentsPage() {
                                 >
                                   {assignment.title}
                                 </div>
+                                {assignment.is_previous && assignment.previous_group_name && (
+                                  <div className="mt-1">
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded border border-slate-200 dark:border-border text-slate-500 dark:text-gray-400">
+                                      <Archive className="w-3 h-3" />
+                                      {assignment.previous_group_name}
+                                    </span>
+                                  </div>
+                                )}
                                 {assignment.description && (
                                   <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
                                     {assignment.description}
@@ -861,6 +893,38 @@ export default function AssignmentsPage() {
               )}
             </>
         )}
+
+          {isStudentView && filteredPreviousHomework.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 pt-2">
+                <Archive className="w-5 h-5 text-slate-400 dark:text-gray-500" />
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Previous homework</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Homework from groups you were in before. View only — you cannot submit here anymore.
+                  </p>
+                </div>
+              </div>
+              <div className="bg-white dark:bg-card rounded-lg border border-slate-200 dark:border-border overflow-hidden shadow-none">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="bg-white dark:bg-card text-slate-500 dark:text-gray-400 border-b border-slate-100 dark:border-border">
+                      <tr>
+                        <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Homework</th>
+                        <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Due Date</th>
+                        <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Status</th>
+                        <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Grade</th>
+                        <th className="text-right px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-border">
+                      {filteredPreviousHomework.map(assignment => renderAssignmentRow(assignment))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
       </div>
       )}
     </div>

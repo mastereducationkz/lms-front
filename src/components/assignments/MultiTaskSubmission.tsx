@@ -85,13 +85,6 @@ function CourseUnitTaskDisplay({ task, isCompleted, onCompletion, readOnly, stud
       }
       setLessonProgress(progressMap);
       
-      // Auto-complete if all lessons are completed
-      const allCompleted = Object.values(progressMap).every(completed => completed);
-      
-      if (allCompleted && !isCompleted && task.content.lesson_ids?.length > 0) {
-        onCompletion(true);
-      }
-      
     } catch (error) {
       console.error('Failed to fetch course data:', error);
     } finally {
@@ -120,6 +113,7 @@ function CourseUnitTaskDisplay({ task, isCompleted, onCompletion, readOnly, stud
 
   const completedCount = Object.values(lessonProgress).filter(c => c).length;
   const totalCount = task.content.lesson_ids?.length || 0;
+  const allLessonsCompleted = totalCount > 0 && completedCount === totalCount;
 
   return (
     <div className="space-y-3">
@@ -192,6 +186,27 @@ function CourseUnitTaskDisplay({ task, isCompleted, onCompletion, readOnly, stud
               />
             </div>
           </div>
+        )}
+        {!readOnly && allLessonsCompleted && (
+          <div className="mt-3 flex items-start gap-2 rounded-md border border-gray-200 dark:border-border bg-white dark:bg-card p-3">
+            <Checkbox
+              id={`course-unit-confirm-${task.id}`}
+              checked={isCompleted}
+              onCheckedChange={(checked) => onCompletion(checked === true)}
+              aria-label="Confirm unit homework completion"
+            />
+            <Label
+              htmlFor={`course-unit-confirm-${task.id}`}
+              className="text-sm leading-snug text-foreground cursor-pointer"
+            >
+              I confirm I completed these lessons for this homework assignment
+            </Label>
+          </div>
+        )}
+        {!readOnly && !allLessonsCompleted && totalCount > 0 && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Complete all lessons above, then confirm to mark this task done.
+          </p>
         )}
       </div>
     </div>

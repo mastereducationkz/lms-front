@@ -716,7 +716,9 @@ export interface AssignmentStatus {
   late?: boolean;
   score?: number;
   feedback?: string;
-  extended_deadline?: string; // If student has an extension
+  extended_deadline?: string;
+  is_read_only?: boolean;
+  previous_group_name?: string;
 }
 
 // =============================================================================
