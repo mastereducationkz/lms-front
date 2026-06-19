@@ -15,6 +15,10 @@ import { Upload, FileText, Image, Plus, Trash2, ChevronUp, ChevronDown, CheckCir
 import { FillInBlankRenderer } from './FillInBlankRenderer';
 import { TextCompletionRenderer } from './TextCompletionRenderer';
 import { parseGap } from '../../utils/gapParser';
+import {
+  DEFAULT_QUIZ_PASSING_SCORE_OPTIONAL,
+  DEFAULT_QUIZ_PASSING_SCORE_REQUIRED,
+} from '../../utils/quizPassingScore';
 
 export interface QuizLessonEditorProps {
   quizTitle: string;
@@ -36,6 +40,9 @@ export interface QuizLessonEditorProps {
   audioMaxPlays?: number;
   setAudioMaxPlays?: (plays: number) => void;
   highlightedQuestionId?: string;
+  quizPassingScorePercent?: number;
+  setQuizPassingScorePercent?: (value: number | undefined) => void;
+  isOptionalStep?: boolean;
 }
 
 export default function QuizLessonEditor({
@@ -56,6 +63,9 @@ export default function QuizLessonEditor({
   audioPlaybackMode = 'flexible',
   setAudioPlaybackMode,
   highlightedQuestionId,
+  quizPassingScorePercent,
+  setQuizPassingScorePercent,
+  isOptionalStep = false,
 }: QuizLessonEditorProps) {
   // Handle scrolling to highlighted question
   React.useEffect(() => {
@@ -872,6 +882,37 @@ export default function QuizLessonEditor({
             disabled
           />
         </div>
+        {setQuizPassingScorePercent && (
+          <div className="space-y-2">
+            <Label htmlFor="quiz-passing-score">Passing score (%)</Label>
+            <Input
+              id="quiz-passing-score"
+              type="number"
+              min={0}
+              max={100}
+              value={quizPassingScorePercent ?? ''}
+              onChange={(e) => {
+                const raw = e.target.value
+                if (raw === '') {
+                  setQuizPassingScorePercent(undefined)
+                  return
+                }
+                const parsed = Number(raw)
+                if (Number.isNaN(parsed)) return
+                setQuizPassingScorePercent(Math.min(100, Math.max(0, parsed)))
+              }}
+              placeholder={
+                isOptionalStep
+                  ? String(DEFAULT_QUIZ_PASSING_SCORE_OPTIONAL)
+                  : String(DEFAULT_QUIZ_PASSING_SCORE_REQUIRED)
+              }
+            />
+            <p className="text-xs text-muted-foreground">
+              Leave empty for default: {isOptionalStep ? DEFAULT_QUIZ_PASSING_SCORE_OPTIONAL : DEFAULT_QUIZ_PASSING_SCORE_REQUIRED}%
+              {isOptionalStep ? ' (optional step)' : ''}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Quiz Type Selection */}

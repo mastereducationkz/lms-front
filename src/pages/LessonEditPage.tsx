@@ -430,6 +430,7 @@ export default function LessonEditPage() {
   const [stepQuizTitle, setStepQuizTitle] = useState('');
   const [stepQuizQuestions, setStepQuizQuestions] = useState<Question[]>([]);
   const [stepQuizDisplayMode, setStepQuizDisplayMode] = useState<'one_by_one' | 'all_at_once'>('one_by_one');
+  const [stepQuizPassingScorePercent, setStepQuizPassingScorePercent] = useState<number | undefined>(undefined);
   
   // Flashcard state
   const [stepFlashcardSet, setStepFlashcardSet] = useState<FlashcardSet>({
@@ -674,6 +675,11 @@ export default function LessonEditPage() {
         setStepQuizQuestions(quizData.questions || []);
         setStepQuizTimeLimit(quizData.time_limit_minutes);
         setStepQuizDisplayMode(quizData.display_mode || 'one_by_one');
+        setStepQuizPassingScorePercent(
+          typeof quizData.passing_score_percent === 'number'
+            ? quizData.passing_score_percent
+            : undefined
+        );
         setStepQuizType(quizData.quiz_type || 'regular');
         setStepQuizMediaUrl(quizData.quiz_media_url || '');
         setStepQuizMediaType(quizData.quiz_media_type || '');
@@ -686,6 +692,7 @@ export default function LessonEditPage() {
       setStepQuizQuestions([]);
       setStepQuizTimeLimit(undefined);
       setStepQuizDisplayMode('one_by_one');
+      setStepQuizPassingScorePercent(undefined);
       setStepQuizType('regular');
       setStepQuizMediaUrl('');
       setStepQuizMediaType('');
@@ -940,7 +947,10 @@ export default function LessonEditPage() {
           title: stepQuizTitle,
           questions: stepQuizQuestions,
           time_limit_minutes: stepQuizTimeLimit,
-          display_mode: stepQuizDisplayMode
+          display_mode: stepQuizDisplayMode,
+          ...(stepQuizPassingScorePercent != null
+            ? { passing_score_percent: stepQuizPassingScorePercent }
+            : {}),
         });
         updated.video_url = '';
       } else if (stepContentType === 'flashcard') {
@@ -984,7 +994,10 @@ export default function LessonEditPage() {
               quiz_type: stepQuizType,
               quiz_media_url: stepQuizMediaUrl,
               quiz_media_type: stepQuizMediaType,
-              audio_playback_mode: stepAudioPlaybackMode
+              audio_playback_mode: stepAudioPlaybackMode,
+              ...(stepQuizPassingScorePercent != null
+                ? { passing_score_percent: stepQuizPassingScorePercent }
+                : {}),
             });
             updated.video_url = '';
           } else if (stepContentType === 'flashcard') {
@@ -1535,6 +1548,12 @@ export default function LessonEditPage() {
                             setStepAudioPlaybackMode(value);
                             markAsUnsaved();
                           }}
+                          quizPassingScorePercent={stepQuizPassingScorePercent}
+                          setQuizPassingScorePercent={(value) => {
+                            setStepQuizPassingScorePercent(value);
+                            markAsUnsaved();
+                          }}
+                          isOptionalStep={stepIsOptional}
                           highlightedQuestionId={searchParams.get('questionId') || undefined}
                         />
                       </div>

@@ -22,6 +22,7 @@ import { ChevronRight, AlertTriangle, HelpCircle, Lock as LockIcon, Lightbulb } 
 import { renderTextWithLatex } from '../../utils/latex';
 import { applyHighlightsToHtml as applyHighlightsToHtmlShared } from '../../utils/highlightUtils';
 import type { Step } from '../../types';
+import { DEFAULT_QUIZ_PASSING_SCORE_REQUIRED } from '../../utils/quizPassingScore';
 import { LongTextQuestion } from './quiz/LongTextQuestion';
 import { ShortAnswerQuestion } from './quiz/ShortAnswerQuestion';
 import { ChoiceQuestion } from './quiz/ChoiceQuestion';
@@ -104,6 +105,7 @@ interface QuizRendererProps {
   highlightedQuestionId?: string;
   isTeacher?: boolean;
   isSpecialGroupStudent?: boolean;
+  passingScorePercent?: number;
 }
 
 const QuizRenderer = (props: QuizRendererProps) => {
@@ -136,7 +138,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
     quizAttempt,
     highlightedQuestionId,
     isTeacher,
-    isSpecialGroupStudent = false
+    isSpecialGroupStudent = false,
+    passingScorePercent = DEFAULT_QUIZ_PASSING_SCORE_REQUIRED,
   } = props;
 
   // Handle scrolling to highlighted question
@@ -958,14 +961,14 @@ const QuizRenderer = (props: QuizRendererProps) => {
             const totalItems = stats.totalGaps + stats.regularQuestions;
             const correctItems = stats.correctGaps + stats.correctRegular;
             const scorePercentage = totalItems > 0 ? (correctItems / totalItems) * 100 : 100;
-            const isPassed = scorePercentage >= 50;
+            const isPassed = scorePercentage >= passingScorePercent;
 
             return (
               <div className="flex flex-col items-center space-y-4">
                 {!isPassed && (
                   <div className="p-4 bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-lg mb-4">
                     <p className="text-red-900 dark:text-red-400 font-semibold text-center">
-                      Score: {Math.round(scorePercentage)}% (minimum 50% required to continue)
+                      Score: {Math.round(scorePercentage)}% (minimum {passingScorePercent}% required to continue)
                     </p>
                     <p className="text-red-800 dark:text-red-400 text-sm mt-2 text-center">
                       Please try again to improve your score
@@ -1046,6 +1049,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
             <div className="inline-flex items-center justify-center gap-2 text-white text-base md:text-lg">
               <span className="font-medium">{totalQuestionCount} question{totalQuestionCount !== 1 ? 's' : ''}</span>
+              <span className="text-blue-200">• pass {passingScorePercent}%+</span>
             </div>
             {(import.meta.env.DEV || isTeacher) && (
               <Button
@@ -1573,7 +1577,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
       ? Math.max(0, Math.min(totalItems, Math.round((percentage / 100) * totalItems)))
       : correctItems;
     const displayedIncorrectItems = Math.max(0, totalItems - displayedCorrectItems);
-    const isPassed = percentage >= 50;
+    const isPassed = percentage >= passingScorePercent;
 
     const getReviewStatusForQuestion = (q: any): { key: ReviewStatusKey; label: string; className: string } => {
       const key = getAnswerKey(q);
@@ -1785,7 +1789,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
               {!isPassed && (
                 <p className="text-base text-muted-foreground">
-                  Score at least 50% to continue
+                  Score at least {passingScorePercent}% to continue
                 </p>
               )}
             </div>

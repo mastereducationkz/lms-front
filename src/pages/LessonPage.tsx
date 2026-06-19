@@ -17,6 +17,7 @@ import TextLookupPopover from '../components/lesson/TextLookupPopover';
 import MaintenanceBanner from '../components/MaintenanceBanner';
 import { toast } from '../components/Toast';
 import { gradeQuestion, getAnswerKey } from '../components/lesson/quiz/scoring';
+import { isQuizScorePassing, resolveQuizPassingScorePercent } from '../utils/quizPassingScore';
 
 // Utility function to extract correct answers from gap text
 // If an option ends with *, it's the correct answer (without the *)
@@ -873,7 +874,11 @@ export default function LessonPage() {
                 } else {
                   // Completed attempt - show completed state
                   setQuizState('completed');
-                  const passed = lastAttempt.score_percentage >= 50;
+                  const passed = isQuizScorePassing(
+                    lastAttempt.score_percentage,
+                    parsedQuizData,
+                    currentStep.is_optional,
+                  );
                   setQuizCompleted(prev => new Map(prev.set(currentStep.id.toString(), passed)));
                 }
                 
@@ -1251,7 +1256,7 @@ export default function LessonPage() {
 
       // Mark quiz completion status
       if (currentStep) {
-        const passed = scorePercentage >= 50;
+        const passed = isQuizScorePassing(scorePercentage, quizData, currentStep.is_optional);
         setQuizCompleted(prev => new Map(prev.set(currentStep.id.toString(), passed)));
         if (passed) {
           markStepAsVisited(currentStep.id.toString(), 3); // 3 minutes for quiz completion
@@ -1268,7 +1273,7 @@ export default function LessonPage() {
     setQuizState('completed');
 
     if (currentStep) {
-      const passed = scorePercentage >= 50;
+      const passed = isQuizScorePassing(scorePercentage, quizData, currentStep.is_optional);
       setQuizCompleted(prev => new Map(prev.set(currentStep.id.toString(), passed)));
       if (passed) {
         markStepAsVisited(currentStep.id.toString(), 3);
@@ -1533,7 +1538,9 @@ export default function LessonPage() {
          <div>
             <h4 className="text-sm font-medium text-indigo-800 dark:text-indigo-400">Optional Step</h4>
             <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
-              You can skip this step and proceed to the next one without completing it.
+              {currentStep.content_type === 'quiz'
+                ? `You can skip this quiz, but to mark it complete you need at least ${resolveQuizPassingScorePercent(quizData, true)}%.`
+                : 'You can skip this step and proceed to the next one without completing it.'}
             </p>
          </div>
       </div>
@@ -1718,6 +1725,7 @@ export default function LessonPage() {
               highlightedQuestionId={searchParams.get('questionId') || undefined}
               isTeacher={user?.role === 'teacher' || user?.role === 'admin' || user?.role === 'curator'}
               isSpecialGroupStudent={isSpecialGroupStudent}
+              passingScorePercent={resolveQuizPassingScorePercent(quizData, currentStep?.is_optional)}
             />
             </div>
           );
@@ -1973,7 +1981,7 @@ export default function LessonPage() {
                           role="tab"
                           aria-current={isActive ? 'step' : undefined}
                           aria-selected={isActive}
-                          aria-label={`Step ${step.order_index}${step.title ? `: ${step.title}` : ''}${isCompleted ? ' (completed)' : ''}${!isClickable ? ' (locked)' : ''}`}
+                          aria-label={`Step ${step.order_index}${step.title ? `: ${step.title}` : ''}${step.is_optional ? ' (optional)' : ''}${isCompleted ? ' (completed)' : step.is_optional ? ' (not completed)' : ''}${!isClickable ? ' (locked)' : ''}`}
                           tabIndex={isActive ? 0 : -1}
                           onClick={() => isClickable && goToStep(index)}
                           onKeyDown={handleStepKeyDown}
@@ -1986,7 +1994,7 @@ export default function LessonPage() {
                             : isCompleted
                               ? `bg-emerald-600 text-white ${isClickable ? 'hover:bg-emerald-700' : ''}`
                               : step.is_optional
-                                ? `bg-accent text-accent-foreground border border-border/60 ${isClickable ? 'hover:bg-accent/80' : ''}`
+                                ? `bg-amber-50 text-amber-900 border border-amber-200/80 dark:bg-amber-950/35 dark:text-amber-100 dark:border-amber-700/50 ${isClickable ? 'hover:bg-amber-100 dark:hover:bg-amber-900/45' : ''}`
                                 : `bg-muted text-muted-foreground border border-border/60 ${isClickable ? 'hover:bg-muted/80' : ''}`
                             }`}
                         >
