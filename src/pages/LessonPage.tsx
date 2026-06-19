@@ -1989,14 +1989,19 @@ export default function LessonPage() {
                           title={!isClickable ? 'Complete previous steps to unlock' : step.title || `Step ${step.order_index}`}
                           className={`aspect-square rounded-md p-1 relative shadow-sm transition-all min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                             isClickable ? 'hover:shadow-md cursor-pointer' : 'cursor-not-allowed opacity-50'
-                          } ${isActive
-                            ? 'bg-primary text-primary-foreground ring-2 ring-primary/40'
-                            : isCompleted
-                              ? `bg-emerald-600 text-white ${isClickable ? 'hover:bg-emerald-700' : ''}`
+                          } ${
+                            isCompleted
+                              ? `bg-emerald-600 text-white ${isActive ? 'ring-2 ring-emerald-400/60' : ''} ${isClickable ? 'hover:bg-emerald-700' : ''}`
                               : step.is_optional
-                                ? `bg-amber-50 text-amber-900 border border-amber-200/80 dark:bg-amber-950/35 dark:text-amber-100 dark:border-amber-700/50 ${isClickable ? 'hover:bg-amber-100 dark:hover:bg-amber-900/45' : ''}`
-                                : `bg-muted text-muted-foreground border border-border/60 ${isClickable ? 'hover:bg-muted/80' : ''}`
-                            }`}
+                                ? `bg-amber-50 text-amber-900 border border-amber-300/90 dark:bg-amber-950/40 dark:text-amber-100 dark:border-amber-600/60 ${
+                                    isActive
+                                      ? 'ring-2 ring-amber-400/70 border-amber-400 dark:ring-amber-500/60 dark:border-amber-500'
+                                      : ''
+                                  } ${isClickable ? 'hover:bg-amber-100 dark:hover:bg-amber-900/50' : ''}`
+                                : isActive
+                                  ? 'bg-primary text-primary-foreground ring-2 ring-primary/40'
+                                  : `bg-muted text-muted-foreground border border-border/60 ${isClickable ? 'hover:bg-muted/80' : ''}`
+                          }`}
                         >
                           {!isClickable && (
                             <div
