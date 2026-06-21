@@ -26,6 +26,7 @@ import { Checkbox } from '../../components/ui/checkbox';
 import { DateTimePicker } from '../../components/ui/date-time-picker';
 import MultiTaskEditor from '../../components/assignments/MultiTaskEditor';
 import { parseAsUTC, formatInKZ } from '../../lib/datetime';
+import { prepareTeacherGroupList } from '../../lib/groupList';
 
 interface AssignmentFormData {
   title: string;
@@ -172,7 +173,7 @@ export default function AssignmentBuilderPage() {
       const teacherGroups = await apiClient.getTeacherGroups();
       console.log('Loaded teacher groups:', teacherGroups);
 
-      setGroups(teacherGroups || []);
+      setGroups(prepareTeacherGroupList(teacherGroups || []));
     } catch (err) {
       console.error('Failed to load groups:', err);
       setError('Failed to load groups. Please try again.');

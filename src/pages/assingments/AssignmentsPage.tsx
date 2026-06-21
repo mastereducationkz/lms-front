@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/button';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Input } from '../../components/ui/input';
 import { Group } from '../../types';
+import { filterNonCompletedGroups, sortGroupEntriesByLessonTime, sortGroupsByLessonTime } from '../../lib/groupList';
 
 interface AssignmentStats {
   total_students: number;
@@ -324,12 +325,13 @@ export default function AssignmentsPage() {
   /** Groups that count for homework visibility / overview tiles */
   const groupsInHomeworkScope = useMemo(() => {
     if (user?.role === 'teacher' || user?.role === 'admin') {
-      return showCompletedGroups ? groups : groups.filter((g) => !g.is_over);
+      const scoped = showCompletedGroups ? groups : filterNonCompletedGroups(groups);
+      return sortGroupsByLessonTime(scoped);
     }
     if (user?.role === 'curator') {
-      return groups;
+      return sortGroupsByLessonTime(groups);
     }
-    return groups;
+    return sortGroupsByLessonTime(groups);
   }, [groups, showCompletedGroups, user?.role]);
 
   const visibleGroupIds = useMemo(() => {
@@ -374,7 +376,7 @@ export default function AssignmentsPage() {
       }
       byGroup.get(key)!.assignments.push(a);
     }
-    return Array.from(byGroup.values()).sort((a, b) => a.name.localeCompare(b.name));
+    return sortGroupEntriesByLessonTime(Array.from(byGroup.values()), groupsInHomeworkScope);
   }, [assignmentsByHidden, groupsInHomeworkScope, groups]);
 
   const getAssignmentSortTime = (assignment: AssignmentWithStatus) => {

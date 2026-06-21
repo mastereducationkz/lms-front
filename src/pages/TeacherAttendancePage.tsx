@@ -21,6 +21,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Group } from '../types';
 import { cn } from '../lib/utils';
 import { isAttendanceLockedLesson } from '../lib/attendance';
+import { prepareTeacherGroupList } from '../lib/groupList';
 import { Skeleton } from '../components/ui/skeleton';
 import {
   Table,
@@ -106,19 +107,20 @@ export default function TeacherAttendancePage() {
           fetchedGroups = await getCuratorGroups();
       }
       
-      setGroups(fetchedGroups || []);
+      const visibleGroups = prepareTeacherGroupList(fetchedGroups || []);
+      setGroups(visibleGroups);
       
       // Update selected group based on URL or default to first group
       const urlGroupId = searchParams.get('group');
       if (urlGroupId) {
-          const groupExists = fetchedGroups?.find(g => g.id === Number(urlGroupId));
+          const groupExists = visibleGroups.find(g => g.id === Number(urlGroupId));
           if (groupExists) {
               setSelectedGroupId(Number(urlGroupId));
-          } else if (fetchedGroups && fetchedGroups.length > 0) {
-              setSelectedGroupId(fetchedGroups[0].id);
+          } else if (visibleGroups.length > 0) {
+              setSelectedGroupId(visibleGroups[0].id);
           }
-      } else if (fetchedGroups && fetchedGroups.length > 0) {
-        setSelectedGroupId(fetchedGroups[0].id);
+      } else if (visibleGroups.length > 0) {
+        setSelectedGroupId(visibleGroups[0].id);
       }
     } catch (err) {
       console.error('Failed to load groups:', err);
