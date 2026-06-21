@@ -19,9 +19,12 @@ interface CourseUnitTaskEditorProps {
 }
 
 export default function CourseUnitTaskEditor({ content, onContentChange }: CourseUnitTaskEditorProps) {
+  const toCourseIdString = (courseId: unknown) =>
+    courseId != null && courseId !== '' ? String(courseId) : ''
+
   const [courses, setCourses] = useState<any[]>([]);
   const [lessons, setLessons] = useState<any[]>([]);
-  const [selectedCourseId, setSelectedCourseId] = useState(content.course_id || '');
+  const [selectedCourseId, setSelectedCourseId] = useState(() => toCourseIdString(content.course_id));
   const [selectedLessonIds, setSelectedLessonIds] = useState<number[]>(content.lesson_ids || []);
   const [loading, setLoading] = useState(false);
   const [assignedLessons, setAssignedLessons] = useState<Record<number, AssignedLessonInfo[]>>({});
@@ -38,11 +41,25 @@ export default function CourseUnitTaskEditor({ content, onContentChange }: Cours
   }, [selectedCourseId]);
 
   useEffect(() => {
+    if (content.course_id != null && content.course_id !== '') {
+      setSelectedCourseId(toCourseIdString(content.course_id))
+    }
+    if (Array.isArray(content.lesson_ids)) {
+      setSelectedLessonIds(content.lesson_ids)
+    }
+  }, [content.course_id, content.lesson_ids])
+
+  useEffect(() => {
+    const parsedCourseId = selectedCourseId ? Number.parseInt(selectedCourseId, 10) : NaN
+    const resolvedCourseId = Number.isNaN(parsedCourseId)
+      ? (content.course_id != null ? Number(content.course_id) : null)
+      : parsedCourseId
+
     onContentChange({
-      course_id: selectedCourseId ? parseInt(selectedCourseId) : null,
+      course_id: resolvedCourseId,
       lesson_ids: selectedLessonIds
     });
-  }, [selectedCourseId, selectedLessonIds]);
+  }, [selectedCourseId, selectedLessonIds, content.course_id]);
 
   const loadCourses = async () => {
     try {

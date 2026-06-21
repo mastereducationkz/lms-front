@@ -46,19 +46,44 @@ function CourseUnitTaskDisplay({ task, isCompleted, onCompletion, readOnly, stud
   const [lessonsData, setLessonsData] = useState<any[]>([]);
   const [lessonProgress, setLessonProgress] = useState<Record<number, boolean>>({});
   const [loading, setLoading] = useState(true);
+  const [resolvedCourseId, setResolvedCourseId] = useState<number | null>(null);
+
+  const resolveCourseId = async (): Promise<number | null> => {
+    const rawCourseId = task.content?.course_id
+    if (rawCourseId != null && rawCourseId !== '') {
+      const parsed = Number(rawCourseId)
+      return Number.isNaN(parsed) ? null : parsed
+    }
+
+    const firstLessonId = task.content?.lesson_ids?.[0]
+    if (!firstLessonId) return null
+
+    const lesson = await apiClient.getLesson(String(firstLessonId))
+    const courseId = lesson.course_id ?? null
+    return courseId != null ? Number(courseId) : null
+  }
 
   const fetchCourseAndLessons = async () => {
     try {
+      const courseId = await resolveCourseId()
+      setResolvedCourseId(courseId)
+
+      if (!courseId) {
+        setCourseData(null)
+        setLessonsData([])
+        setLessonProgress({})
+        return
+      }
       
       // Fetch course details
-      const course = await apiClient.getCourse(task.content.course_id);
+      const course = await apiClient.getCourse(String(courseId));
       setCourseData(course);
       
       // Fetch all lessons for the course
       // Pass studentId if provided, or 'me' if student is viewing their own assignment
       const fetchStudentId = studentId || (!readOnly ? 'me' : undefined);
       
-      const modules = await apiClient.getCourseModules(task.content.course_id, true, fetchStudentId);
+      const modules = await apiClient.getCourseModules(String(courseId), true, fetchStudentId);
       
       const allLessons: any[] = [];
       
@@ -93,7 +118,7 @@ function CourseUnitTaskDisplay({ task, isCompleted, onCompletion, readOnly, stud
   };
 
   useEffect(() => {
-    if (task.content.course_id && task.content.lesson_ids?.length > 0) {
+    if (task.content.lesson_ids?.length > 0) {
       setLoading(true);
       fetchCourseAndLessons();
     } else {
@@ -125,7 +150,9 @@ function CourseUnitTaskDisplay({ task, isCompleted, onCompletion, readOnly, stud
       <div className="bg-gray-50 dark:bg-secondary p-3 rounded-md">
         <div className="flex items-center space-x-2 mb-2">
           <BookOpen className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium text-slate-900 dark:text-slate-100">{courseData?.title || `Course ${task.content.course_id}`}</span>
+          <span className="font-medium text-slate-900 dark:text-slate-100">
+            {courseData?.title || (resolvedCourseId ? `Course #${resolvedCourseId}` : 'Course not linked')}
+          </span>
         </div>
         <div className="space-y-2 ml-6">
           {lessonsData.length > 0 ? (
@@ -143,12 +170,12 @@ function CourseUnitTaskDisplay({ task, isCompleted, onCompletion, readOnly, stud
                       {lesson.title}
                     </span>
                   </div>
-                  {!readOnly && (
+                  {!readOnly && resolvedCourseId && (
                     <Button 
                       variant="link" 
                       size="sm" 
                       className="h-auto p-0 ml-2" 
-                      onClick={() => window.open(`/course/${task.content.course_id}/lesson/${lesson.id}`, '_blank')}
+                      onClick={() => window.open(`/course/${resolvedCourseId}/lesson/${lesson.id}`, '_blank')}
                     >
                       Go to Lesson <ExternalLink className="w-3 h-3 ml-1" />
                     </Button>
@@ -165,7 +192,7 @@ function CourseUnitTaskDisplay({ task, isCompleted, onCompletion, readOnly, stud
                     variant="link" 
                     size="sm" 
                     className="h-auto p-0" 
-                    onClick={() => window.open(`/course/${task.content.course_id}/lesson/${lessonId}`, '_blank')}
+                    onClick={() => window.open(`/course/${resolvedCourseId}/lesson/${lessonId}`, '_blank')}
                   >
                     Go to Lesson <ExternalLink className="w-3 h-3 ml-1" />
                   </Button>
@@ -443,7 +470,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                                     <ExternalLink className="w-4 h-4 mr-1" />
                                     Open
                                 </Button>
-                                {!readOnly && (
+                                {!readOnly && resolvedCourseId && (
                                     <Button
                                     variant="ghost"
                                     size="sm"

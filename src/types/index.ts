@@ -428,6 +428,7 @@ export interface CourseModule {
 export interface Lesson {
   id: string;
   module_id: string;
+  course_id?: number;
   title: string;
   description: string;
   order_index: number;
