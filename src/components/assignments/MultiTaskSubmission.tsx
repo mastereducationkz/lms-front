@@ -187,7 +187,7 @@ function CourseUnitTaskDisplay({ task, isCompleted, onCompletion, readOnly, stud
             task.content.lesson_ids?.map((lessonId: number) => (
               <div key={lessonId} className="text-sm flex items-center justify-between">
                 <span>Lesson #{lessonId}</span>
-                {!readOnly && (
+                {!readOnly && resolvedCourseId && (
                   <Button 
                     variant="link" 
                     size="sm" 
@@ -470,7 +470,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                                     <ExternalLink className="w-4 h-4 mr-1" />
                                     Open
                                 </Button>
-                                {!readOnly && resolvedCourseId && (
+                                {!readOnly && (
                                     <Button
                                     variant="ghost"
                                     size="sm"
