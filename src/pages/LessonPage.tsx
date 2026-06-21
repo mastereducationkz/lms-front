@@ -564,6 +564,34 @@ export default function LessonPage() {
       setLesson(lessonData);
       setSteps(stepsData);
       setStepsProgress(progressData || []);
+      setQuizCompleted(new Map());
+
+      const optionalQuizSteps = (stepsData as Step[]).filter(
+        (step) => step.is_optional && step.content_type === 'quiz',
+      );
+      if (optionalQuizSteps.length > 0) {
+        void Promise.all(
+          optionalQuizSteps.map(async (step) => {
+            try {
+              const attempts = await apiClient.getStepQuizAttempts(step.id);
+              const completedAttempt = attempts.find((attempt: { is_draft?: boolean }) => !attempt.is_draft);
+              if (!completedAttempt) return null;
+              const passed = isQuizScorePassing(completedAttempt.score_percentage, undefined, true);
+              return passed ? step.id.toString() : null;
+            } catch {
+              return null;
+            }
+          }),
+        ).then((results) => {
+          const completed = new Map<string, boolean>();
+          results.forEach((stepId) => {
+            if (stepId) completed.set(stepId, true);
+          });
+          if (completed.size > 0) {
+            setQuizCompleted(completed);
+          }
+        });
+      }
       
       // Reset loaded steps when lesson changes
       setLoadedStepIds(new Set());
@@ -690,9 +718,25 @@ export default function LessonPage() {
 
   // Check if step is completed based on content type
   const isStepCompleted = useCallback((step: Step): boolean => {
-    const stepProgress = stepsProgress.find(p => p.step_id === step.id);
-    return stepProgress?.status === 'completed';
-  }, [stepsProgress]);
+    const stepProgress = stepsProgress.find(p => p.step_id === step.id)
+
+    if (step.is_optional) {
+      if (step.content_type === 'quiz') {
+        return quizCompleted.get(step.id.toString()) === true
+      }
+      if (stepProgress?.status !== 'completed') return false
+      if (step.content_type === 'video_text') {
+        const progress = videoProgress.get(step.id.toString()) || 0
+        return progress >= 0.9
+      }
+      if (step.content_type === 'flashcard') {
+        return true
+      }
+      return false
+    }
+
+    return stepProgress?.status === 'completed'
+  }, [stepsProgress, quizCompleted, videoProgress])
 
   // Load step content on demand (per-step AbortController; ignore stale responses)
   useEffect(() => {
@@ -1095,15 +1139,20 @@ export default function LessonPage() {
       return;
     }
 
-    if (currentStep && canProceedToNext()) {
-      markStepAsVisited(currentStep.id.toString(), 2);
+    if (
+      currentStep &&
+      canProceedToNext() &&
+      !currentStep.is_optional &&
+      !isStepCompleted(currentStep)
+    ) {
+      markStepAsVisited(currentStep.id.toString(), 2)
     }
     setCurrentStepIndex(index);
 
     const newSearchParams = new URLSearchParams(searchParams);
     newSearchParams.set('step', (index + 1).toString());
     setSearchParams(newSearchParams);
-  }, [currentStepIndex, currentStep, canProceedToNext, getProceedBlockReason, markStepAsVisited, searchParams, setSearchParams]);
+  }, [currentStepIndex, currentStep, canProceedToNext, getProceedBlockReason, markStepAsVisited, isStepCompleted, searchParams, setSearchParams]);
 
   const goToNextStep = useCallback(async () => {
     if (currentStep && !canProceedToNext()) {
@@ -1511,10 +1560,10 @@ export default function LessonPage() {
   };
 
   const handleSummaryLoad = useCallback(() => {
-    if (currentStep && !isStepCompleted(currentStep)) {
-      markStepAsVisited(currentStep.id.toString());
+    if (currentStep && !currentStep.is_optional && !isStepCompleted(currentStep)) {
+      markStepAsVisited(currentStep.id.toString())
     }
-  }, [currentStep, isStepCompleted, markStepAsVisited]);
+  }, [currentStep, isStepCompleted, markStepAsVisited])
 
   const renderStepContent = () => {
     if (!currentStep) return null;
@@ -1629,13 +1678,13 @@ export default function LessonPage() {
                       })
                     }}
                     onProgress={(progress) => {
-                      setVideoProgress(prev => new Map(prev.set(currentStep.id.toString(), progress)));
+                      setVideoProgress(prev => new Map(prev.set(currentStep.id.toString(), progress)))
                       if (progress >= 0.9 && !videoMarkedRef.current.has(currentStep.id)) {
-                        videoMarkedRef.current.add(currentStep.id);
-                        const stepProgress = stepsProgress.find(p => p.step_id === currentStep.id);
+                        videoMarkedRef.current.add(currentStep.id)
+                        const stepProgress = stepsProgress.find(p => p.step_id === currentStep.id)
                         if (!stepProgress || stepProgress.status !== 'completed') {
-                          const timeSpent = Math.ceil(progress * 10);
-                          markStepAsVisited(currentStep.id.toString(), timeSpent);
+                          const timeSpent = Math.ceil(progress * 10)
+                          markStepAsVisited(currentStep.id.toString(), timeSpent)
                         }
                       }
                     }}
