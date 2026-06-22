@@ -49,6 +49,10 @@ interface StudentRow {
     // Manual fields
     curator_hour: number;
     mock_exam: number;
+    sat_math_correct_count?: number | null;
+    sat_math_total_count?: number | null;
+    sat_verbal_correct_count?: number | null;
+    sat_verbal_total_count?: number | null;
     study_buddy: number;
     self_reflection_journal: number;
     weekly_evaluation: number;
@@ -231,6 +235,12 @@ export default function CuratorLeaderboardPage() {
 
     return sortGroupsByCreatedAt(result);
   }, [groups, hideCompletedGroups, programFilter]);
+
+  const selectedGroup = useMemo(
+    () => filteredGroups.find((group) => group.id === selectedGroupId) || null,
+    [filteredGroups, selectedGroupId],
+  );
+  const isSatGroup = selectedGroup ? getGroupProgramType(selectedGroup) === 'sat' : false;
   
   // UI states
   const [loading, setLoading] = useState(false);
@@ -596,6 +606,12 @@ export default function CuratorLeaderboardPage() {
       return { date, dayTime: `${dayCap} ${time}` };
   };
 
+  const renderSectionFraction = (correct?: number | null, total?: number | null) => {
+    if (correct == null) return 'Не сдано';
+    if (total != null && total > 0) return `${correct}/${total}`;
+    return `${correct}`;
+  };
+
   return (
     <div className="p-4 w-full h-full bg-white dark:bg-card space-y-4 rounded">
       {/* Header Controls */}
@@ -827,7 +843,18 @@ export default function CuratorLeaderboardPage() {
                             }
                         </div>
                     </TableHead>
-                    <TableHead className="text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight">Пробный<br/>экзамен</TableHead>
+                    {isSatGroup ? (
+                        <>
+                            <TableHead className="text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight">
+                                SAT Math
+                            </TableHead>
+                            <TableHead className="text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight">
+                                SAT Verbal
+                            </TableHead>
+                        </>
+                    ) : (
+                        <TableHead className="text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight">Пробный<br/>экзамен</TableHead>
+                    )}
                     <TableHead 
                         className={cn("text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-gray-200 dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.study_buddy && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-gray-400 dark:text-gray-500")}
                         onClick={() => toggleColumn('study_buddy')}
@@ -934,15 +961,34 @@ export default function CuratorLeaderboardPage() {
                         <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border h-12", !enabledCols.curator_hour && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
                             <ScoreSelect value={student.curator_hour} max={MAX_SCORES.curator_hour} onChange={(v) => handleManualScoreChange(student.student_id, 'curator_hour', v)} />
                         </TableCell>
-                        <TableCell className="p-0 border-r border-gray-300 dark:border-border h-12">
-                            <div className="w-full h-full flex items-center justify-center text-xs font-medium">
-                                {student.mock_exam > 0 ? (
-                                    <span className="text-gray-900 dark:text-foreground">{student.mock_exam}%</span>
-                                ) : (
-                                    <span className="text-gray-400 italic">Не сдано</span>
-                                )}
-                            </div>
-                        </TableCell>
+                        {isSatGroup ? (
+                            <>
+                                <TableCell className="p-0 border-r border-gray-300 dark:border-border h-12">
+                                    <div className="w-full h-full flex items-center justify-center text-xs font-semibold">
+                                        <span className="text-gray-900 dark:text-foreground">
+                                            {renderSectionFraction(student.sat_math_correct_count, student.sat_math_total_count)}
+                                        </span>
+                                    </div>
+                                </TableCell>
+                                <TableCell className="p-0 border-r border-gray-300 dark:border-border h-12">
+                                    <div className="w-full h-full flex items-center justify-center text-xs font-semibold">
+                                        <span className="text-gray-900 dark:text-foreground">
+                                            {renderSectionFraction(student.sat_verbal_correct_count, student.sat_verbal_total_count)}
+                                        </span>
+                                    </div>
+                                </TableCell>
+                            </>
+                        ) : (
+                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-12">
+                                <div className="w-full h-full flex items-center justify-center text-xs font-medium">
+                                    {student.mock_exam > 0 ? (
+                                        <span className="text-gray-900 dark:text-foreground">{student.mock_exam}%</span>
+                                    ) : (
+                                        <span className="text-gray-400 italic">Не сдано</span>
+                                    )}
+                                </div>
+                            </TableCell>
+                        )}
                         <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border", !enabledCols.study_buddy && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
                             <div className="h-12 w-full">
                                 <AttendanceToggle 

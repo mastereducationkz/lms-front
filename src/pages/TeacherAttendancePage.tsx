@@ -5,16 +5,18 @@ import {
   Loader2,
   Star,
   MousePointerClick,
+  X,
+  ChevronsUpDown,
+  Check,
+  Search,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '../components/ui/select';
 import { Input } from '../components/ui/input';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '../components/ui/popover';
 import { toast } from 'sonner';
 import apiClient, { getGroupFullAttendanceMatrix, updateAttendanceBulk, getCuratorGroups } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -69,6 +71,8 @@ export default function TeacherAttendancePage() {
   
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
+  const [groupComboOpen, setGroupComboOpen] = useState(false);
+  const [groupSearch, setGroupSearch] = useState('');
   
   const [data, setData] = useState<AttendanceData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -107,7 +111,7 @@ export default function TeacherAttendancePage() {
           fetchedGroups = await getCuratorGroups();
       }
       
-      const visibleGroups = prepareTeacherGroupList(fetchedGroups || []);
+      const visibleGroups = prepareTeacherGroupList(fetchedGroups || [], { includeCompleted: true });
       setGroups(visibleGroups);
       
       // Update selected group based on URL or default to first group
@@ -273,10 +277,40 @@ export default function TeacherAttendancePage() {
     }
   };
 
-  const filteredStudents = useMemo(() => 
-    data?.students.filter(s => 
+  const isFutureLesson = isAttendanceLockedLesson;
+
+  const lastActualLessonId = useMemo(() => {
+      if (!data) return null;
+      const pastLessons = data.lessons.filter(l => !isFutureLesson(l.start_datetime));
+      if (pastLessons.length === 0) return null;
+      const last = [...pastLessons].sort((a, b) => 
+          new Date(b.start_datetime).getTime() - new Date(a.start_datetime).getTime()
+      )[0];
+      return last.event_id;
+  }, [data]);
+
+  const filteredStudents = useMemo(() => {
+    if (!data) return []
+    let students = data.students
+
+    if (searchTerm.trim()) {
+      students = students.filter(s =>
         s.student_name.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [], [data, searchTerm]);
+      )
+    }
+
+    return students
+  }, [data, searchTerm]);
+
+  const selectedGroupName = useMemo(
+    () => groups.find(g => g.id === selectedGroupId)?.name ?? '',
+    [groups, selectedGroupId],
+  )
+
+  const filteredGroups = useMemo(() => {
+    const q = groupSearch.trim().toLowerCase()
+    return q ? groups.filter(g => (g.name || '').toLowerCase().includes(q)) : groups
+  }, [groups, groupSearch])
 
   const formatDate = (dateStr: string) => {
       // Backend stores in UTC, convert to Kazakhstan time (GMT+5)
@@ -289,19 +323,6 @@ export default function TeacherAttendancePage() {
       const dt = new Date(dateStr);
       return dt.toLocaleDateString('ru-RU', { weekday: 'short', timeZone: 'Asia/Almaty' });
   };
-
-  const isFutureLesson = isAttendanceLockedLesson;
-
-  const lastActualLessonId = useMemo(() => {
-      if (!data) return null;
-      const pastLessons = data.lessons.filter(l => !isFutureLesson(l.start_datetime));
-      if (pastLessons.length === 0) return null;
-      // Find the one with the latest date
-      const last = [...pastLessons].sort((a, b) => 
-          new Date(b.start_datetime).getTime() - new Date(a.start_datetime).getTime()
-      )[0];
-      return last.event_id;
-  }, [data]);
 
   const getStatusColor = (status: string) => {
       switch (status) {
@@ -340,16 +361,69 @@ export default function TeacherAttendancePage() {
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          <Select value={selectedGroupId?.toString() || ''} onValueChange={(v) => setSelectedGroupId(Number(v))}>
-            <SelectTrigger className="w-full sm:w-[240px] bg-white dark:bg-card border-gray-200 dark:border-border">
-              <SelectValue placeholder="Select group" />
-            </SelectTrigger>
-            <SelectContent>
-              {groups.map(g => (
-                <SelectItem key={g.id} value={g.id.toString()}>{g.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={groupComboOpen} onOpenChange={(open) => {
+            setGroupComboOpen(open)
+            if (!open) setGroupSearch('')
+          }}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={groupComboOpen}
+                className="w-full sm:w-[280px] justify-between bg-white dark:bg-card border-gray-200 dark:border-border font-normal h-9 text-sm"
+              >
+                <span className="truncate text-left">
+                  {selectedGroupName || 'Select group…'}
+                </span>
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-40" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[300px] p-0" align="start">
+              {/* Search input */}
+              <div className="flex items-center border-b border-gray-200 dark:border-border px-3">
+                <Search className="mr-2 h-4 w-4 shrink-0 text-gray-400" />
+                <input
+                  autoFocus
+                  placeholder="Search groups…"
+                  className="flex h-10 w-full bg-transparent py-3 text-sm outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                  value={groupSearch}
+                  onChange={e => setGroupSearch(e.target.value)}
+                />
+                {groupSearch && (
+                  <button onClick={() => setGroupSearch('')} className="text-gray-400 hover:text-gray-600">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+              {/* List */}
+              <div className="max-h-64 overflow-y-auto p-1">
+                {filteredGroups.length === 0 ? (
+                  <p className="py-6 text-center text-sm text-gray-400">No groups found</p>
+                ) : (
+                  filteredGroups.map(g => (
+                    <button
+                      key={g.id}
+                      className={cn(
+                        'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-secondary transition-colors text-left',
+                        selectedGroupId === g.id && 'bg-gray-50 dark:bg-secondary font-medium'
+                      )}
+                      onClick={() => {
+                        setSelectedGroupId(g.id)
+                        setGroupComboOpen(false)
+                        setGroupSearch('')
+                      }}
+                    >
+                      <Check className={cn(
+                        'h-4 w-4 shrink-0 text-blue-600',
+                        selectedGroupId === g.id ? 'opacity-100' : 'opacity-0'
+                      )} />
+                      {g.name}
+                    </button>
+                  ))
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
           
           <Button 
             onClick={loadAttendanceData} 
@@ -377,36 +451,58 @@ export default function TeacherAttendancePage() {
 
       <div className="border border-gray-200 dark:border-border rounded-lg overflow-hidden bg-white dark:bg-card shadow-sm">
         {/* Sub-header / Filters */}
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-4 w-full md:w-auto">
-                <Input 
-                    placeholder="Search students..." 
-                    className="w-full md:w-64 h-9 bg-gray-50/50 dark:bg-secondary border-gray-200 dark:border-border text-sm focus-visible:ring-blue-500/20"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-            </div>
-            
-            <div className="flex items-center gap-6 text-sm">
-                {data && data.lessons.length > 0 && (
-                    <button 
-                        className={cn(
-                          "text-sm font-semibold hover:underline",
-                          lastActualLessonId
-                            ? "text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
-                            : "text-gray-400 dark:text-gray-500 cursor-not-allowed no-underline"
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-border flex flex-col gap-3">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3 flex-wrap">
+                    <div className="relative">
+                        <Input 
+                            placeholder="Search students..." 
+                            className="w-full md:w-64 h-9 bg-gray-50/50 dark:bg-secondary border-gray-200 dark:border-border text-sm focus-visible:ring-blue-500/20 pr-8"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        {searchTerm && (
+                            <button
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                onClick={() => setSearchTerm('')}
+                            >
+                                <X className="w-3.5 h-3.5" />
+                            </button>
                         )}
-                        disabled={!lastActualLessonId}
-                        onClick={() => {
-                            const lastLesson = data.lessons.find((l) => l.event_id === lastActualLessonId);
-                            if (lastLesson) {
-                                markAllPresentForLesson(lastLesson);
-                            }
-                        }}
-                    >
-                        Mark all present
-                    </button>
-                )}
+                    </div>
+
+                    {/* Clear search */}
+                    {searchTerm.trim() && (
+                        <button
+                            className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex items-center gap-1"
+                            onClick={() => setSearchTerm('')}
+                        >
+                            <X className="w-3 h-3" /> Clear
+                        </button>
+                    )}
+                </div>
+                
+                <div className="flex items-center gap-6 text-sm shrink-0">
+                    {data && data.lessons.length > 0 && (
+                        <button 
+                            className={cn(
+                              "text-sm font-semibold hover:underline",
+                              lastActualLessonId
+                                ? "text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                                : "text-gray-400 dark:text-gray-500 cursor-not-allowed no-underline"
+                            )}
+                            disabled={!lastActualLessonId}
+                            onClick={() => {
+                                const lastLesson = data.lessons.find((l) => l.event_id === lastActualLessonId);
+                                if (lastLesson) {
+                                    markAllPresentForLesson(lastLesson);
+                                }
+                            }}
+                        >
+                            Mark all present
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
 
