@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { 
@@ -10,6 +10,7 @@ import {
 } from '../components/ui/select';
 import { Input } from '../components/ui/input';
 import { ChevronLeft, ChevronRight, Loader2, Save, Eye, EyeOff } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { getCuratorGroups, getWeeklyLessonsWithHwStatus, updateAttendance, updateLeaderboardEntry, updateLeaderboardConfig } from '../services/api';
 import { Group, CourseType } from '../types';
 import { Checkbox } from '../components/ui/checkbox';
@@ -38,6 +39,9 @@ interface StudentLessonStatus {
         max_score?: number;
         is_graded?: boolean;
         submission_id?: number;
+        feedback?: string | null;
+        submitted_at?: string | null;
+        graded_at?: string | null;
     } | null;
 }
 
@@ -53,6 +57,12 @@ interface StudentRow {
     sat_math_total_count?: number | null;
     sat_verbal_correct_count?: number | null;
     sat_verbal_total_count?: number | null;
+    sat_math_feedback?: string | null;
+    sat_verbal_feedback?: string | null;
+    sat_math_test_name?: string | null;
+    sat_verbal_test_name?: string | null;
+    sat_math_completed_at?: string | null;
+    sat_verbal_completed_at?: string | null;
     study_buddy: number;
     self_reflection_journal: number;
     weekly_evaluation: number;
@@ -213,6 +223,85 @@ const applyGroupWeek = (group: Group, weekParam: string | null) => {
     return calculateCurrentWeekNumber(group.created_at);
 };
 
+// Inline markdown: **bold**, *italic*, converts to React spans
+const renderInline = (text: string): React.ReactNode[] => {
+  const parts: React.ReactNode[] = []
+  let remaining = text
+  let key = 0
+
+  while (remaining.length > 0) {
+    const boldMatch = remaining.match(/^(.*?)\*\*(.+?)\*\*/)
+    const italicMatch = remaining.match(/^(.*?)\*(.+?)\*/)
+
+    const boldIdx = remaining.indexOf('**')
+    const italicIdx = remaining.indexOf('*')
+
+    if (boldIdx !== -1 && (italicIdx === -1 || boldIdx <= italicIdx)) {
+      const before = remaining.slice(0, boldIdx)
+      if (before) parts.push(<span key={key++}>{before}</span>)
+      const end = remaining.indexOf('**', boldIdx + 2)
+      if (end === -1) { parts.push(<span key={key++}>{remaining}</span>); break }
+      parts.push(<strong key={key++} className="font-semibold text-gray-900 dark:text-foreground">{remaining.slice(boldIdx + 2, end)}</strong>)
+      remaining = remaining.slice(end + 2)
+    } else if (italicIdx !== -1) {
+      const before = remaining.slice(0, italicIdx)
+      if (before) parts.push(<span key={key++}>{before}</span>)
+      const end = remaining.indexOf('*', italicIdx + 1)
+      if (end === -1) { parts.push(<span key={key++}>{remaining}</span>); break }
+      parts.push(<em key={key++} className="italic">{remaining.slice(italicIdx + 1, end)}</em>)
+      remaining = remaining.slice(end + 1)
+    } else {
+      parts.push(<span key={key++}>{remaining}</span>)
+      break
+    }
+  }
+  return parts
+}
+
+const MarkdownContent = ({ children }: { children: string }) => {
+  const lines = children.split('\n')
+  const elements: React.ReactNode[] = []
+  let i = 0
+
+  while (i < lines.length) {
+    const line = lines[i]
+
+    if (line.startsWith('### ')) {
+      elements.push(<h3 key={i} className="text-sm font-bold text-gray-800 dark:text-gray-200 mt-3 mb-1 first:mt-0">{renderInline(line.slice(4))}</h3>)
+    } else if (line.startsWith('## ')) {
+      elements.push(<h2 key={i} className="text-sm font-bold text-gray-900 dark:text-foreground mt-4 mb-1 first:mt-0 border-b border-gray-200 dark:border-border pb-0.5">{renderInline(line.slice(3))}</h2>)
+    } else if (line.startsWith('# ')) {
+      elements.push(<h1 key={i} className="text-base font-bold text-gray-900 dark:text-foreground mt-3 mb-1.5 first:mt-0">{renderInline(line.slice(2))}</h1>)
+    } else if (/^[-*] /.test(line)) {
+      // collect consecutive list items
+      const listItems: React.ReactNode[] = []
+      while (i < lines.length && /^[-*] /.test(lines[i])) {
+        listItems.push(<li key={i} className="leading-relaxed">{renderInline(lines[i].slice(2))}</li>)
+        i++
+      }
+      elements.push(<ul key={`ul-${i}`} className="list-disc list-inside space-y-0.5 mb-2 text-sm text-gray-700 dark:text-gray-300">{listItems}</ul>)
+      continue
+    } else if (/^\d+\. /.test(line)) {
+      const listItems: React.ReactNode[] = []
+      while (i < lines.length && /^\d+\. /.test(lines[i])) {
+        listItems.push(<li key={i} className="leading-relaxed">{renderInline(lines[i].replace(/^\d+\. /, ''))}</li>)
+        i++
+      }
+      elements.push(<ol key={`ol-${i}`} className="list-decimal list-inside space-y-0.5 mb-2 text-sm text-gray-700 dark:text-gray-300">{listItems}</ol>)
+      continue
+    } else if (line.trim() === '' || line === '---') {
+      if (line === '---') elements.push(<hr key={i} className="border-gray-200 dark:border-border my-2" />)
+      // empty line → skip
+    } else {
+      elements.push(<p key={i} className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-1.5 last:mb-0">{renderInline(line)}</p>)
+    }
+
+    i++
+  }
+
+  return <div className="space-y-0.5">{elements}</div>
+}
+
 export default function CuratorLeaderboardPage() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -258,6 +347,35 @@ export default function CuratorLeaderboardPage() {
       extra_points: true,
       curator_hour_date: null as string | null
   });
+
+  // Feedback popups
+  type HwFeedbackModal = {
+    open: boolean;
+    studentName: string;
+    lessonTitle: string;
+    score: number | null;
+    maxScore?: number;
+    feedback: string | null;
+    submittedAt: string | null;
+    gradedAt: string | null;
+  }
+  type SatFeedbackModal = {
+    open: boolean;
+    studentName: string;
+    section: 'math' | 'verbal';
+    testName: string | null;
+    feedback: string | null;
+    correct: number | null;
+    total: number | null;
+    completedAt: string | null;
+  }
+
+  const [hwModal, setHwModal] = useState<HwFeedbackModal>({
+    open: false, studentName: '', lessonTitle: '', score: null, feedback: null, submittedAt: null, gradedAt: null
+  })
+  const [satModal, setSatModal] = useState<SatFeedbackModal>({
+    open: false, studentName: '', section: 'math', testName: null, feedback: null, correct: null, total: null, completedAt: null
+  })
 
   const toggleColumn = (field: keyof typeof enabledCols) => {
       setEnabledCols(prev => ({ ...prev, [field]: !prev[field] }));
@@ -613,6 +731,7 @@ export default function CuratorLeaderboardPage() {
   };
 
   return (
+    <>
     <div className="p-4 w-full h-full bg-white dark:bg-card space-y-4 rounded">
       {/* Header Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4 dark:border-border">
@@ -943,10 +1062,27 @@ export default function CuratorLeaderboardPage() {
                                             />
                                         </div>
                                         <div className="w-1/2 bg-gray-50 dark:bg-secondary flex items-center justify-center p-0">
-                                            <div className={cn(
-                                                "w-full text-center text-[11px]",
-                                                hwStatus?.submitted ? "text-green-700 dark:text-green-400 font-bold" : (hwStatus?.score != null) ? "text-orange-700 dark:text-orange-400 font-medium" : "text-gray-400"
-                                            )}>
+                                            <div
+                                                className={cn(
+                                                    "w-full text-center text-[11px] h-full flex items-center justify-center",
+                                                    hwStatus?.submitted ? "text-green-700 dark:text-green-400 font-bold" : (hwStatus?.score != null) ? "text-orange-700 dark:text-orange-400 font-medium" : "text-gray-400",
+                                                    hwStatus?.submitted && "cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+                                                )}
+                                                onClick={() => {
+                                                    if (!hwStatus?.submitted) return
+                                                    setHwModal({
+                                                        open: true,
+                                                        studentName: student.student_name,
+                                                        lessonTitle: lessonInfo.title || `Lesson ${lessonInfo.lesson_number}`,
+                                                        score: hwStatus.score,
+                                                        maxScore: hwStatus.max_score,
+                                                        feedback: hwStatus.feedback ?? null,
+                                                        submittedAt: hwStatus.submitted_at ?? null,
+                                                        gradedAt: hwStatus.graded_at ?? null,
+                                                    })
+                                                }}
+                                                title={hwStatus?.submitted ? 'Click to see feedback' : undefined}
+                                            >
                                                 {hwStatus?.submitted 
                                                     ? `${hwStatus.score !== null ? hwStatus.score : 'Сдано'}`
                                                     : '-'
@@ -964,14 +1100,56 @@ export default function CuratorLeaderboardPage() {
                         {isSatGroup ? (
                             <>
                                 <TableCell className="p-0 border-r border-gray-300 dark:border-border h-12">
-                                    <div className="w-full h-full flex items-center justify-center text-xs font-semibold">
+                                    <div
+                                        className={cn(
+                                            "w-full h-full flex items-center justify-center text-xs font-semibold transition-colors",
+                                            student.sat_math_correct_count != null
+                                                ? "cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                                : ""
+                                        )}
+                                        onClick={() => {
+                                            if (student.sat_math_correct_count == null) return
+                                            setSatModal({
+                                                open: true,
+                                                studentName: student.student_name,
+                                                section: 'math',
+                                                testName: student.sat_math_test_name ?? null,
+                                                feedback: student.sat_math_feedback ?? null,
+                                                correct: student.sat_math_correct_count ?? null,
+                                                total: student.sat_math_total_count ?? null,
+                                                completedAt: student.sat_math_completed_at ?? null,
+                                            })
+                                        }}
+                                        title={student.sat_math_correct_count != null ? 'Click to see Math feedback' : undefined}
+                                    >
                                         <span className="text-gray-900 dark:text-foreground">
                                             {renderSectionFraction(student.sat_math_correct_count, student.sat_math_total_count)}
                                         </span>
                                     </div>
                                 </TableCell>
                                 <TableCell className="p-0 border-r border-gray-300 dark:border-border h-12">
-                                    <div className="w-full h-full flex items-center justify-center text-xs font-semibold">
+                                    <div
+                                        className={cn(
+                                            "w-full h-full flex items-center justify-center text-xs font-semibold transition-colors",
+                                            student.sat_verbal_correct_count != null
+                                                ? "cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                                : ""
+                                        )}
+                                        onClick={() => {
+                                            if (student.sat_verbal_correct_count == null) return
+                                            setSatModal({
+                                                open: true,
+                                                studentName: student.student_name,
+                                                section: 'verbal',
+                                                testName: student.sat_verbal_test_name ?? null,
+                                                feedback: student.sat_verbal_feedback ?? null,
+                                                correct: student.sat_verbal_correct_count ?? null,
+                                                total: student.sat_verbal_total_count ?? null,
+                                                completedAt: student.sat_verbal_completed_at ?? null,
+                                            })
+                                        }}
+                                        title={student.sat_verbal_correct_count != null ? 'Click to see Verbal feedback' : undefined}
+                                    >
                                         <span className="text-gray-900 dark:text-foreground">
                                             {renderSectionFraction(student.sat_verbal_correct_count, student.sat_verbal_total_count)}
                                         </span>
@@ -1025,5 +1203,109 @@ export default function CuratorLeaderboardPage() {
             )}
       </div>
     </div>
+
+    {/* ── HW Feedback Modal ──────────────────────────────────────── */}
+    <Dialog open={hwModal.open} onOpenChange={(open) => setHwModal(prev => ({ ...prev, open }))}>
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+        {/* Header */}
+        <div className="px-5 pt-5 pb-4 border-b border-gray-100 dark:border-border">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mb-0.5">{hwModal.lessonTitle}</p>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-foreground">{hwModal.studentName}</h2>
+          {hwModal.submittedAt && (
+            <p className="text-xs text-gray-400 mt-1">
+              Submitted {new Date(hwModal.submittedAt).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </p>
+          )}
+        </div>
+
+        {/* Score strip */}
+        {hwModal.score !== null ? (
+          <div className="flex items-center justify-between px-5 py-3 bg-green-50 dark:bg-green-900/20">
+            <span className="text-sm font-semibold text-green-700 dark:text-green-400">
+              {hwModal.score}{hwModal.maxScore != null ? `/${hwModal.maxScore}` : ''} pts
+            </span>
+            {hwModal.gradedAt && (
+              <span className="text-xs text-green-600/70 dark:text-green-500/70">
+                Checked {new Date(hwModal.gradedAt).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })}
+              </span>
+            )}
+          </div>
+        ) : (
+          <div className="px-5 py-3 bg-gray-50 dark:bg-secondary text-xs text-gray-400">
+            Not graded yet
+          </div>
+        )}
+
+        {/* Feedback body */}
+        <div className="px-5 py-4">
+          {hwModal.feedback ? (
+            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+              {hwModal.feedback}
+            </p>
+          ) : (
+            <p className="text-sm text-gray-400 italic">No comment left</p>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* ── SAT Feedback Modal ─────────────────────────────────────── */}
+    <Dialog open={satModal.open} onOpenChange={(open) => setSatModal(prev => ({ ...prev, open }))}>
+      <DialogContent className="sm:max-w-xl p-0 overflow-hidden max-h-[85vh] flex flex-col">
+        {/* Header */}
+        <div className="px-5 pt-5 pb-4 border-b border-gray-100 dark:border-border shrink-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className={cn(
+              "text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded",
+              satModal.section === 'math'
+                ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400"
+                : "bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400"
+            )}>
+              SAT {satModal.section === 'math' ? 'Math' : 'Verbal'}
+            </span>
+            {satModal.completedAt && (
+              <span className="text-xs text-gray-400">
+                {new Date(satModal.completedAt).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+          </div>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-foreground">{satModal.studentName}</h2>
+          {satModal.testName && (
+            <p className="text-xs text-gray-400 mt-0.5">{satModal.testName}</p>
+          )}
+        </div>
+
+        {/* Score strip */}
+        <div className={cn(
+          "flex items-center gap-3 px-5 py-3 shrink-0",
+          satModal.section === 'math'
+            ? "bg-blue-50 dark:bg-blue-900/20"
+            : "bg-purple-50 dark:bg-purple-900/20"
+        )}>
+          <span className={cn(
+            "text-2xl font-bold tabular-nums",
+            satModal.section === 'math' ? "text-blue-700 dark:text-blue-400" : "text-purple-700 dark:text-purple-400"
+          )}>
+            {satModal.correct ?? '—'}
+          </span>
+          <span className="text-gray-400 text-sm">/ {satModal.total ?? '—'}</span>
+          {satModal.correct != null && satModal.total ? (
+            <span className="ml-auto text-sm font-medium text-gray-500 dark:text-gray-400">
+              {Math.round((satModal.correct / satModal.total) * 100)}%
+            </span>
+          ) : null}
+        </div>
+
+        {/* Feedback body */}
+        <div className="px-5 py-4 overflow-y-auto">
+          {satModal.feedback ? (
+            <MarkdownContent>{satModal.feedback}</MarkdownContent>
+          ) : (
+            <p className="text-sm text-gray-400 italic">No feedback available</p>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
