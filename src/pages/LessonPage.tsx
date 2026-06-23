@@ -596,8 +596,9 @@ export default function LessonPage() {
       // Reset loaded steps when lesson changes
       setLoadedStepIds(new Set());
       
-      // Initialize furthestStepIndex based on existing progress
-      // Find the highest step index that has been visited/started
+      // Initialize furthestStepIndex based on existing progress.
+      // Optional steps are transparent barriers: if the step right after
+      // an optional one has been reached, the optional step doesn't cap progress.
       if (stepsData && stepsData.length > 0 && progressData) {
         const sortedSteps = [...stepsData].sort((a: any, b: any) => a.order_index - b.order_index);
         let maxReachedIndex = 0;
@@ -605,6 +606,11 @@ export default function LessonPage() {
           const stepProgress = progressData.find((p: any) => p.step_id === step.id);
           if (stepProgress && (stepProgress.status === 'completed' || stepProgress.status === 'in_progress')) {
             maxReachedIndex = index;
+          }
+          // An optional step between completed steps should not cap furthestStepIndex:
+          // if the step immediately after an optional one has progress, advance past it.
+          if (step.is_optional && index === maxReachedIndex) {
+            maxReachedIndex = index + 1 < sortedSteps.length ? index + 1 : index;
           }
         });
         setFurthestStepIndex(maxReachedIndex);
@@ -701,6 +707,7 @@ export default function LessonPage() {
       });
 
       const allStepsCompleted = steps.every(step => {
+        if (step.is_optional) return true; // optional steps don't block completion
         if (step.id.toString() === stepId) return true;
         const stepProgress = stepsProgress.find(p => p.step_id === step.id);
         return stepProgress?.status === 'completed';
@@ -1992,7 +1999,14 @@ export default function LessonPage() {
                   >
                     {orderedSteps.map((step, index) => {
                       const isCompleted = isStepCompleted(step);
-                      const isClickable = user?.role !== 'student' || isCompleted || index <= furthestStepIndex;
+                      // A step is reachable if it has been completed, or is within
+                      // furthestStepIndex — but optional steps between the current
+                      // furthest and this step don't act as barriers.
+                      const optionalGapSize = orderedSteps
+                        .slice(furthestStepIndex + 1, index)
+                        .filter(s => s.is_optional).length
+                      const effectiveFurthest = furthestStepIndex + optionalGapSize
+                      const isClickable = user?.role !== 'student' || isCompleted || index <= effectiveFurthest + 1;
                       const isActive = currentStepIndex === index;
 
                       const handleStepKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
