@@ -1019,9 +1019,9 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
         const completedRequiredCount = requiredTasks.filter(checkTaskCompletion).length;
         const completedOptionalCount = optionalTasks.filter(checkTaskCompletion).length;
         
-        const allRequiredCompleted = completedRequiredCount === requiredTasks.length && requiredTasks.length > 0;
+        const allRequiredCompleted = requiredTasks.length === 0 || completedRequiredCount === requiredTasks.length;
         const hasOnlyOptionalTasks = requiredTasks.length === 0 && optionalTasks.length > 0;
-        const canSubmit = allRequiredCompleted || (hasOnlyOptionalTasks && completedOptionalCount > 0);
+        const canSubmit = allRequiredCompleted;
         
         return (
           <div className="flex flex-col items-end gap-2 pt-4">
@@ -1031,7 +1031,13 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                 {optionalTasks.length > 0 && ` • ${completedOptionalCount}/${optionalTasks.length} bonus tasks`}
               </p>
             )}
-            {canSubmit && optionalTasks.length > 0 && completedOptionalCount < optionalTasks.length && (
+            {hasOnlyOptionalTasks && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                All tasks are optional — you can submit at any time
+                {completedOptionalCount > 0 && ` (${completedOptionalCount}/${optionalTasks.length} completed)`}
+              </p>
+            )}
+            {!hasOnlyOptionalTasks && canSubmit && optionalTasks.length > 0 && completedOptionalCount < optionalTasks.length && (
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 {completedOptionalCount}/{optionalTasks.length} bonus tasks completed (optional)
               </p>
