@@ -491,11 +491,9 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
             {!readOnly && (() => {
                 const acceptAttr = (() => {
                   const types: string[] = task.content.allowed_file_types || []
-                  if (types.length === 0) return 'image/*,.pdf'
-                  const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif']
-                  const hasImages = types.some((t) => imageExts.includes(t.toLowerCase()))
-                  const extensions = types.map((t) => `.${t}`).join(',')
-                  return hasImages ? `image/*,${extensions}` : extensions
+                  const extensions = types.length > 0 ? types.map((t) => `.${t}`).join(',') : '.pdf'
+                  // Images are always allowed regardless of teacher settings
+                  return `image/*,${extensions}`
                 })()
 
                 const handleDragEnter = (e: React.DragEvent) => {
@@ -527,8 +525,9 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                 const isUploading = uploading[task.id]
                 const allowedLabel = (() => {
                   const types: string[] = task.content.allowed_file_types || []
-                  if (types.length === 0) return 'Images or PDF'
-                  return types.map(t => t.toUpperCase()).join(', ')
+                  const extra = types.filter(t => !['jpg','jpeg','png','gif','webp','heic','heif'].includes(t.toLowerCase()))
+                  if (extra.length === 0) return 'Photos or Images'
+                  return `Photos, Images, ${extra.map(t => t.toUpperCase()).join(', ')}`
                 })()
 
                 return (
