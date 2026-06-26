@@ -11,6 +11,26 @@ import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Check } from 'lucide-react';
 import { connectSocket } from '../services/socket';
 
+const ATTACH_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+
+function ChatAttachment({ fileUrl }: { fileUrl: string }) {
+  const url = fileUrl.startsWith('http') ? fileUrl : `${ATTACH_BACKEND_URL}${fileUrl}`;
+  const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileUrl);
+  if (isImage) {
+    return (
+      <a href={url} target="_blank" rel="noreferrer">
+        <img src={url} alt="attachment" className="max-w-[220px] max-h-[220px] rounded-lg mb-1 object-cover" />
+      </a>
+    );
+  }
+  const fileName = decodeURIComponent(fileUrl.split('/').pop() || 'file');
+  return (
+    <a href={url} target="_blank" rel="noreferrer" className="underline mb-1 break-all block">
+      📎 {fileName}
+    </a>
+  );
+}
+
 export default function ChatPage() {
   const location = useLocation();
   const [threads, setThreads] = useState<MessageThread[]>([]);
@@ -593,6 +613,7 @@ export default function ChatPage() {
                           : 'bg-blue-600 text-white'
                       }`}
                     >
+                      {message.file_url && <ChatAttachment fileUrl={message.file_url} />}
                       <div className="flex items-start gap-2">
                         <span className="flex-1">{message.content}</span>
                         <span className={`text-[10px] whitespace-nowrap mt-auto flex items-center gap-0.5 ${
