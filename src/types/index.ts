@@ -863,6 +863,7 @@ export interface Message {
   sender_name?: string;
   recipient_name?: string;
   content: string;
+  file_url?: string;
   is_read: boolean;
   created_at: string;
 }
