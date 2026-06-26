@@ -111,7 +111,7 @@ export default function TeacherAttendancePage() {
           fetchedGroups = await getCuratorGroups();
       }
       
-      const visibleGroups = prepareTeacherGroupList(fetchedGroups || [], { includeCompleted: true });
+      const visibleGroups = prepareTeacherGroupList(fetchedGroups || []);
       setGroups(visibleGroups);
       
       // Update selected group based on URL or default to first group
