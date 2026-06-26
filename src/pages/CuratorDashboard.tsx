@@ -89,55 +89,6 @@ export default function CuratorDashboard() {
         </div>
       </div>
 
-      {/* Missing Attendance Reminders */}
-      {stats?.missing_attendance_reminders && stats.missing_attendance_reminders.length > 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-medium text-yellow-900 dark:text-yellow-200">
-              Посещаемость не заполнена ({stats.missing_attendance_reminders.length})
-            </h3>
-            <Button
-              onClick={() => navigate('/attendance')}
-              size="sm"
-              variant="outline"
-              className="text-xs h-6 px-2 border-yellow-300 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100"
-            >
-              Перейти к посещаемости
-            </Button>
-          </div>
-          <div className="space-y-1.5">
-            {stats.missing_attendance_reminders.slice(0, 3).map((reminder: any) => (
-              <div key={reminder.event_id} className="flex items-center justify-between text-xs py-1.5 border-b border-yellow-100 last:border-0">
-                <div className="flex-1 min-w-0 mr-3">
-<p className="text-yellow-900 dark:text-yellow-200 truncate font-medium">{reminder.title}</p>
-                                  <p className="text-[11px] text-yellow-700 dark:text-yellow-400">
-                    {reminder.group_name} • {new Date(reminder.event_date).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-<span className="text-[11px] text-yellow-700 dark:text-yellow-400">
-                                    {reminder.recorded_students}/{reminder.expected_students}
-                                  </span>
-                  <Button
-                    onClick={() => {
-                      if (reminder.group_id) {
-                        navigate(`/attendance?group=${reminder.group_id}`);
-                      } else {
-                        navigate('/attendance');
-                      }
-                    }}
-                    size="sm"
-                    variant="ghost"
-                    className="text-[11px] h-6 px-2 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100"
-                  >
-                    Заполнить
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content - Submissions & Progress */}

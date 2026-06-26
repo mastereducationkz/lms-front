@@ -192,6 +192,18 @@ const QuizRenderer = (props: QuizRendererProps) => {
   const [reportedQuestions, setReportedQuestions] = useState<Set<string>>(new Set());
   const [isSubmitConfirmOpen, setIsSubmitConfirmOpen] = useState(false);
   const [textHighlightsByQuestion, setTextHighlightsByQuestion] = useState<Map<string, TextHighlight[]>>(new Map());
+  // Crossed-out answer options: Map<questionId, Set<optionIndex>>
+  const [crossedOutByQuestion, setCrossedOutByQuestion] = useState<Map<string, Set<number>>>(new Map());
+
+  const toggleCrossOut = (questionId: string, optionIndex: number) => {
+    setCrossedOutByQuestion(prev => {
+      const next = new Map(prev)
+      const set = new Set(next.get(questionId) || [])
+      set.has(optionIndex) ? set.delete(optionIndex) : set.add(optionIndex)
+      next.set(questionId, set)
+      return next
+    })
+  }
   const [areHighlightsHydrated, setAreHighlightsHydrated] = useState(false);
   const [highlightPalette, setHighlightPalette] = useState<{
     questionId: string;
@@ -715,6 +727,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
                       onChange={(val) => setQuizAnswers(prev => new Map(prev.set(q.id.toString(), val)))}
                       disabled={feedChecked}
                       showResult={feedChecked}
+                      crossedOut={crossedOutByQuestion.get(q.id.toString())}
+                      onCrossOut={(idx) => toggleCrossOut(q.id.toString(), idx)}
                     />
                   ) : q.question_type === 'matching' ? (
                     <MatchingQuestion
@@ -763,8 +777,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                           : 'text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:text-orange-700 dark:hover:text-orange-400'
                       }`}
                     >
-                      <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />
-                      {reportedQuestions.has(q.id.toString()) ? 'Reported' : 'Report an Error'}
+                      {reportedQuestions.has(q.id.toString()) ? 'Reported' : 'Report'}
                     </button>
                   </div>
                 </div>
