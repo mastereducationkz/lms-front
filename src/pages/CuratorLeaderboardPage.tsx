@@ -9,7 +9,8 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '../components/ui/select';
 import { Input } from '../components/ui/input';
-import { ChevronLeft, ChevronRight, Loader2, Save, Eye, EyeOff } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
+import { ChevronLeft, ChevronRight, Loader2, Save, Eye, EyeOff, Check, ChevronsUpDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { getCuratorGroups, getWeeklyLessonsWithHwStatus, updateAttendance, updateLeaderboardEntry, updateLeaderboardConfig } from '../services/api';
 import { Group, CourseType } from '../types';
@@ -307,6 +308,8 @@ export default function CuratorLeaderboardPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentWeek, setCurrentWeek] = useState(1);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
+  const [groupPickerOpen, setGroupPickerOpen] = useState(false);
+  const [groupQuery, setGroupQuery] = useState('');
   const [groups, setGroups] = useState<Group[]>([]);
   const [hideCompletedGroups, setHideCompletedGroups] = useState(true);
   const [programFilter, setProgramFilter] = useState<'all' | CourseType>('all');
@@ -807,41 +810,66 @@ export default function CuratorLeaderboardPage() {
                 </Select>
 
                 <div className="w-[240px]">
-                    <Select 
-                        value={selectedGroupId?.toString() || ''} 
-                        onValueChange={(value) => {
-                            const groupId = Number(value);
-                            setSelectedGroupId(groupId);
-                            const group = filteredGroups.find(g => g.id === groupId);
-                            if (group) {
-                                setCurrentWeek(
-                                    group.current_week ?? calculateCurrentWeekNumber(group.created_at)
-                                );
-                            }
-                        }}
-                    >
-                        <SelectTrigger className="h-8 rounded-md border-gray-300 dark:border-border">
-                            <SelectValue placeholder="Выберите группу" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {filteredGroups.length === 0 ? (
-                                <SelectItem value="none" disabled>
-                                    Нет групп по фильтру
-                                </SelectItem>
-                            ) : (
-                                filteredGroups.map(g => (
-                                    <SelectItem key={g.id} value={g.id.toString()}>
-                                        <span className="flex items-center gap-2">
-                                            <span>{g.name}</span>
+                    <Popover open={groupPickerOpen} onOpenChange={(open) => { setGroupPickerOpen(open); if (!open) setGroupQuery(''); }}>
+                        <PopoverTrigger asChild>
+                            <button
+                                type="button"
+                                className="flex h-8 w-full items-center justify-between rounded-md border border-gray-300 dark:border-border bg-transparent px-3 text-xs"
+                            >
+                                <span className="truncate">
+                                    {filteredGroups.find((g) => g.id === selectedGroupId)?.name || 'Выберите группу'}
+                                </span>
+                                <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
+                            </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[240px] p-0" align="start">
+                            <div className="p-2 border-b border-gray-200 dark:border-border">
+                                <Input
+                                    autoFocus
+                                    value={groupQuery}
+                                    onChange={(e) => setGroupQuery(e.target.value)}
+                                    placeholder="Поиск группы..."
+                                    className="h-8 text-xs"
+                                />
+                            </div>
+                            <div className="max-h-72 overflow-y-auto py-1">
+                                {(() => {
+                                    const q = groupQuery.trim().toLowerCase();
+                                    const matches = q
+                                        ? filteredGroups.filter((g) => g.name.toLowerCase().includes(q))
+                                        : filteredGroups;
+                                    if (matches.length === 0) {
+                                        return (
+                                            <div className="px-3 py-2 text-xs text-muted-foreground">
+                                                Ничего не найдено
+                                            </div>
+                                        );
+                                    }
+                                    return matches.map((g) => (
+                                        <button
+                                            key={g.id}
+                                            type="button"
+                                            onClick={() => {
+                                                setSelectedGroupId(g.id);
+                                                setCurrentWeek(
+                                                    g.current_week ?? calculateCurrentWeekNumber(g.created_at)
+                                                );
+                                                setGroupPickerOpen(false);
+                                                setGroupQuery('');
+                                            }}
+                                            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-gray-100 dark:hover:bg-secondary"
+                                        >
+                                            <Check className={cn('h-3.5 w-3.5 shrink-0', selectedGroupId === g.id ? 'opacity-100' : 'opacity-0')} />
+                                            <span className="truncate">{g.name}</span>
                                             {g.is_over && (
-                                                <span className="text-[10px] text-muted-foreground">(завершена)</span>
+                                                <span className="ml-auto text-[10px] text-muted-foreground">(завершена)</span>
                                             )}
-                                        </span>
-                                    </SelectItem>
-                                ))
-                            )}
-                        </SelectContent>
-                    </Select>
+                                        </button>
+                                    ));
+                                })()}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
                 </div>
 
                 <div className="flex items-center gap-2 px-1">
