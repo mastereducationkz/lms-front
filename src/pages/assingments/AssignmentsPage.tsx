@@ -88,7 +88,11 @@ export default function AssignmentsPage() {
   const [pendingToGradeByGroup, setPendingToGradeByGroup] = useState<Map<string, number>>(new Map());
 
   // Explicit view flags: students never see teacher UI, even with group_id in URL
-  const isTeacherView = user?.role === 'teacher' || user?.role === 'admin';
+  // Manager layout (group cards, per-group table, submission stats) is shared by
+  // teachers, admins, and head curators. Head curators are read-only.
+  const isManagerView = user?.role === 'teacher' || user?.role === 'admin' || user?.role === 'head_curator';
+  // Write actions (create/edit/archive/copy) are teacher/admin only.
+  const canEdit = user?.role === 'teacher' || user?.role === 'admin';
   const isStudentView = user?.role === 'student';
 
   const setFilter = (tab: string) => {
@@ -135,17 +139,17 @@ export default function AssignmentsPage() {
   }, [isStudentView, searchParams]);
 
   useEffect(() => {
-    if (!isTeacherView || showCompletedGroups) return;
+    if (!isManagerView || showCompletedGroups) return;
     if (selectedGroupId === 'all' || selectedGroupId === 'ungrouped') return;
     const match = groups.find((g) => String(g.id) === selectedGroupId);
     if (match?.is_over) {
       setGroupId('all');
     }
-  }, [showCompletedGroups, isTeacherView, selectedGroupId, groups]);
+  }, [showCompletedGroups, isManagerView, selectedGroupId, groups]);
 
   // Load submission stats for the selected group when teacher enters group view
   useEffect(() => {
-    if (!isTeacherView || selectedGroupId === 'all') return;
+    if (!isManagerView || selectedGroupId === 'all') return;
     const groupAssignments = assignments.filter(a => {
       if (selectedGroupId === 'ungrouped') return a.group_id == null;
       return a.group_id?.toString() === selectedGroupId;
@@ -172,11 +176,11 @@ export default function AssignmentsPage() {
       });
       setStatsLoading(false);
     });
-  }, [selectedGroupId, assignments, isTeacherView]);
+  }, [selectedGroupId, assignments, isManagerView]);
 
   // Load "need grading" counters by group for overview cards (teacher only)
   useEffect(() => {
-    if (!isTeacherView || assignments.length === 0) {
+    if (!isManagerView || assignments.length === 0) {
       setPendingToGradeByGroup(new Map());
       return;
     }
@@ -201,10 +205,15 @@ export default function AssignmentsPage() {
       .catch(() => {
         setPendingToGradeByGroup(new Map());
       });
-  }, [isTeacherView, assignments]);
+  }, [isManagerView, assignments]);
 
   const loadGroups = async () => {
-    if (user?.role === 'teacher' || user?.role === 'admin' || user?.role === 'curator') {
+    if (
+      user?.role === 'teacher' ||
+      user?.role === 'admin' ||
+      user?.role === 'curator' ||
+      user?.role === 'head_curator'
+    ) {
       try {
         const groupsData = await apiClient.getGroups();
         // Keep full list so teachers can toggle completed groups; filter only in UI
@@ -222,18 +231,18 @@ export default function AssignmentsPage() {
       console.log('Loading assignments for user:', user?.id, 'role:', user?.role);
 
       const params: Record<string, unknown> = {}
-      if (user?.role === 'teacher' || user?.role === 'admin') {
+      if (user?.role === 'teacher' || user?.role === 'admin' || user?.role === 'head_curator') {
         params.include_hidden = true
       }
       const numericGroupId =
         /^\d+$/.test(selectedGroupId) ? parseInt(selectedGroupId, 10) : null
       if (
         numericGroupId !== null &&
-        (user?.role === 'teacher' || user?.role === 'admin' || user?.role === 'curator')
+        (user?.role === 'teacher' || user?.role === 'admin' || user?.role === 'curator' || user?.role === 'head_curator')
       ) {
         params.group_id = numericGroupId
         params.limit = 500
-      } else if (user?.role === 'teacher' || user?.role === 'curator' || user?.role === 'admin') {
+      } else if (user?.role === 'teacher' || user?.role === 'curator' || user?.role === 'admin' || user?.role === 'head_curator') {
         params.limit = 1000
       }
       const assignmentData = await apiClient.getAssignments(params)
@@ -324,7 +333,7 @@ export default function AssignmentsPage() {
 
   /** Groups that count for homework visibility / overview tiles */
   const groupsInHomeworkScope = useMemo(() => {
-    if (user?.role === 'teacher' || user?.role === 'admin') {
+    if (user?.role === 'teacher' || user?.role === 'admin' || user?.role === 'head_curator') {
       const scoped = showCompletedGroups ? groups : filterNonCompletedGroups(groups);
       return sortGroupsByLessonTime(scoped);
     }
@@ -578,7 +587,7 @@ export default function AssignmentsPage() {
                             </td>
         {dueDateCell}
 
-        {isTeacherView ? (
+        {isManagerView ? (
           <>
             {/* Lesson */}
             <td className="px-6 py-4 text-gray-500 dark:text-gray-400 text-sm">
@@ -650,15 +659,17 @@ export default function AssignmentsPage() {
 
                             <td className="px-6 py-4 text-right">
                               <div className="flex items-center justify-end gap-1">
-            {isTeacherView ? (
+            {isManagerView ? (
               <>
                 <Button onClick={() => navigate(`/homework/${assignment.id}/progress`)} variant="ghost" size="icon" title="View Progress" className="h-8 w-8 text-slate-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400">
                                       <Eye className="w-4 h-4" />
                                     </Button>
-                <Button onClick={() => navigate(`/homework/new?copyFrom=${assignment.id}`)} variant="ghost" size="icon" title="Copy Assignment" className="h-8 w-8 text-slate-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400">
+                {canEdit && (
+                  <>
+                    <Button onClick={() => navigate(`/homework/new?copyFrom=${assignment.id}`)} variant="ghost" size="icon" title="Copy Assignment" className="h-8 w-8 text-slate-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400">
                                       <Copy className="w-4 h-4" />
                                     </Button>
-                <Button onClick={() => navigate(`/homework/${assignment.id}/edit`)} variant="ghost" size="icon" title="Edit Assignment" className="h-8 w-8 text-slate-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400">
+                    <Button onClick={() => navigate(`/homework/${assignment.id}/edit`)} variant="ghost" size="icon" title="Edit Assignment" className="h-8 w-8 text-slate-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400">
                                       <Edit className="w-4 h-4" />
                                     </Button>
                                     <Button
@@ -677,6 +688,8 @@ export default function AssignmentsPage() {
                                     >
                                       {assignment.is_hidden ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
                                     </Button>
+                  </>
+                )}
                                   </>
                                 ) : (
                                   <Button
@@ -700,7 +713,7 @@ export default function AssignmentsPage() {
         <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white uppercase">
           Homework
         </h1>
-        {isTeacherView ? (
+        {canEdit ? (
           <Button onClick={() => navigate('/homework/new')} variant="default" size="sm">
             Create Homework
           </Button>
@@ -729,14 +742,14 @@ export default function AssignmentsPage() {
           ))}
         </div>
 
-        {!effectiveOverviewMode && selectedGroup && isTeacherView && (
+        {!effectiveOverviewMode && selectedGroup && isManagerView && (
           <Button variant="outline" size="sm" onClick={() => setGroupId('all')} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
             Back to groups
           </Button>
         )}
 
-        {isTeacherView && (
+        {isManagerView && (
           <div className="flex flex-wrap items-center gap-4 ml-auto">
             <div className="flex items-center gap-2">
               <Checkbox
@@ -790,7 +803,7 @@ export default function AssignmentsPage() {
                 });
                 if (filter !== 'all' && filtered.length === 0) return null;
 
-                const toGradeCount = isTeacherView ? (pendingToGradeByGroup.get(g.id) || 0) : 0;
+                const toGradeCount = isManagerView ? (pendingToGradeByGroup.get(g.id) || 0) : 0;
 
                 // Student-facing stats
                 const pending = g.assignments.filter(a => a.status === 'not_submitted').length;
@@ -813,7 +826,7 @@ export default function AssignmentsPage() {
                       )}
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">{total} assignment{total !== 1 ? 's' : ''}</div>
-                    {isTeacherView ? (
+                    {isManagerView ? (
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
                         <span className={`flex items-center gap-1 font-medium ${toGradeCount > 0 ? "text-amber-600 dark:text-amber-400" : "text-gray-400 dark:text-gray-500"}`}>
                           {toGradeCount} to grade
@@ -856,7 +869,7 @@ export default function AssignmentsPage() {
                       <tr>
                         <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Homework</th>
                         <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Due Date</th>
-                        {isTeacherView ? (
+                        {isManagerView ? (
                           <>
                             <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Lesson</th>
                             <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Points</th>
