@@ -112,7 +112,7 @@ export async function resetPassword(token: string, newPassword: string): Promise
     });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Не удалось сбросить пароль');
+    throw new Error(error.response?.data?.detail || 'Failed to reset password');
   }
 }
 
@@ -124,7 +124,7 @@ export async function changePassword(currentPassword: string, newPassword: strin
     });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Не удалось изменить пароль');
+    throw new Error(error.response?.data?.detail || 'Failed to change password');
   }
 }
 

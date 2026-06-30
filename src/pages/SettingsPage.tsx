@@ -84,15 +84,15 @@ export default function SettingsPage() {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pwNew.length < 6) { toast('Пароль должен быть не короче 6 символов', 'error'); return; }
-    if (pwNew !== pwConfirm) { toast('Пароли не совпадают', 'error'); return; }
+    if (pwNew.length < 6) { toast('Password must be at least 6 characters', 'error'); return; }
+    if (pwNew !== pwConfirm) { toast("Passwords don't match", 'error'); return; }
     setPwSaving(true);
     try {
       await changePassword(pwCurrent, pwNew);
-      toast('Пароль успешно изменён', 'success');
+      toast('Password changed successfully', 'success');
       setPwCurrent(''); setPwNew(''); setPwConfirm('');
     } catch (err: any) {
-      toast(err.message || 'Не удалось изменить пароль', 'error');
+      toast(err.message || 'Failed to change password', 'error');
     } finally {
       setPwSaving(false);
     }
@@ -587,25 +587,25 @@ export default function SettingsPage() {
       {/* Change Password Section (all roles) */}
       <Card>
         <CardHeader>
-          <CardTitle>Смена пароля</CardTitle>
-          <CardDescription>Обновите пароль вашего аккаунта.</CardDescription>
+          <CardTitle>Change password</CardTitle>
+          <CardDescription>Update your account password.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleChangePassword} className="space-y-4 max-w-sm">
             <div>
-              <Label htmlFor="pw-current" className="text-sm font-medium">Текущий пароль</Label>
+              <Label htmlFor="pw-current" className="text-sm font-medium">Current password</Label>
               <Input id="pw-current" type="password" required value={pwCurrent} onChange={(e) => setPwCurrent(e.target.value)} className="mt-1.5" />
             </div>
             <div>
-              <Label htmlFor="pw-new" className="text-sm font-medium">Новый пароль</Label>
-              <Input id="pw-new" type="password" required value={pwNew} onChange={(e) => setPwNew(e.target.value)} placeholder="Минимум 6 символов" className="mt-1.5" />
+              <Label htmlFor="pw-new" className="text-sm font-medium">New password</Label>
+              <Input id="pw-new" type="password" required value={pwNew} onChange={(e) => setPwNew(e.target.value)} placeholder="At least 6 characters" className="mt-1.5" />
             </div>
             <div>
-              <Label htmlFor="pw-confirm" className="text-sm font-medium">Повторите новый пароль</Label>
+              <Label htmlFor="pw-confirm" className="text-sm font-medium">Confirm new password</Label>
               <Input id="pw-confirm" type="password" required value={pwConfirm} onChange={(e) => setPwConfirm(e.target.value)} className="mt-1.5" />
             </div>
             <Button type="submit" disabled={pwSaving}>
-              {pwSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Сохранение…</> : 'Сменить пароль'}
+              {pwSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving…</> : 'Change password'}
             </Button>
           </form>
         </CardContent>

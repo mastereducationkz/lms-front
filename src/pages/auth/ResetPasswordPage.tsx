@@ -20,20 +20,20 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     if (loading) return;
     if (password.length < 6) {
-      toast('Пароль должен быть не короче 6 символов', 'error');
+      toast('Password must be at least 6 characters', 'error');
       return;
     }
     if (password !== confirm) {
-      toast('Пароли не совпадают', 'error');
+      toast("Passwords don't match", 'error');
       return;
     }
     setLoading(true);
     try {
       await resetPassword(token, password);
-      toast('Пароль изменён. Войдите с новым паролем.', 'success');
+      toast('Password changed. Sign in with your new password.', 'success');
       navigate('/login', { replace: true });
     } catch (err: any) {
-      toast(err.message || 'Не удалось сбросить пароль', 'error');
+      toast(err.message || 'Failed to reset password', 'error');
     } finally {
       setLoading(false);
     }
@@ -44,24 +44,24 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-1">
           <KeyRound className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          <h1 className="text-lg font-semibold text-foreground">Новый пароль</h1>
+          <h1 className="text-lg font-semibold text-foreground">Set a new password</h1>
         </div>
 
         {!token ? (
           <>
             <p className="text-sm text-muted-foreground mt-2">
-              Ссылка недействительна или устарела. Запросите новую.
+              This link is invalid or has expired. Please request a new one.
             </p>
             <Link to="/forgot-password" className="inline-flex items-center gap-1.5 text-sm text-blue-600 dark:text-blue-400 mt-5 hover:underline">
-              <ArrowLeft className="w-4 h-4" /> Запросить ссылку заново
+              <ArrowLeft className="w-4 h-4" /> Request a new link
             </Link>
           </>
         ) : (
           <>
-            <p className="text-sm text-muted-foreground mb-5">Придумайте новый пароль для вашего аккаунта.</p>
+            <p className="text-sm text-muted-foreground mb-5">Choose a new password for your account.</p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="password" className="text-sm font-medium">Новый пароль</Label>
+                <Label htmlFor="password" className="text-sm font-medium">New password</Label>
                 <Input
                   id="password"
                   type="password"
@@ -69,12 +69,12 @@ export default function ResetPasswordPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Минимум 6 символов"
+                  placeholder="At least 6 characters"
                   className="mt-1.5"
                 />
               </div>
               <div>
-                <Label htmlFor="confirm" className="text-sm font-medium">Повторите пароль</Label>
+                <Label htmlFor="confirm" className="text-sm font-medium">Confirm password</Label>
                 <Input
                   id="confirm"
                   type="password"
@@ -85,11 +85,11 @@ export default function ResetPasswordPage() {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Сохранение…</> : 'Сменить пароль'}
+                {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving…</> : 'Reset password'}
               </Button>
             </form>
             <Link to="/login" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground mt-5 hover:text-foreground">
-              <ArrowLeft className="w-4 h-4" /> Вернуться ко входу
+              <ArrowLeft className="w-4 h-4" /> Back to sign in
             </Link>
           </>
         )}

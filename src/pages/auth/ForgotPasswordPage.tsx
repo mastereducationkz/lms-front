@@ -31,23 +31,22 @@ export default function ForgotPasswordPage() {
         {sent ? (
           <div className="text-center">
             <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-3" />
-            <h1 className="text-lg font-semibold text-foreground">Проверьте почту</h1>
+            <h1 className="text-lg font-semibold text-foreground">Check your email</h1>
             <p className="text-sm text-muted-foreground mt-2">
-              Если аккаунт с адресом <strong>{email}</strong> существует, мы отправили ссылку для сброса пароля.
-              Ссылка действительна 1 час.
+              If an account exists for <strong>{email}</strong>, we've sent a password reset link.
+              The link is valid for 1 hour.
             </p>
             <Link to="/login" className="inline-flex items-center gap-1.5 text-sm text-blue-600 dark:text-blue-400 mt-5 hover:underline">
-              <ArrowLeft className="w-4 h-4" /> Вернуться ко входу
+              <ArrowLeft className="w-4 h-4" /> Back to sign in
             </Link>
           </div>
         ) : (
           <>
             <div className="flex items-center gap-2 mb-1">
-              <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-              <h1 className="text-lg font-semibold text-foreground">Восстановление пароля</h1>
+              <h1 className="text-lg font-semibold text-foreground">Forgot password</h1>
             </div>
             <p className="text-sm text-muted-foreground mb-5">
-              Введите email — мы отправим ссылку для сброса пароля.
+              Enter your email and we'll send you a link to reset your password.
             </p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -64,11 +63,11 @@ export default function ForgotPasswordPage() {
                 />
               </div>
               <Button type="submit" className="w-full" disabled={loading || !email.trim()}>
-                {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Отправка…</> : 'Отправить ссылку'}
+                {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending…</> : 'Send reset link'}
               </Button>
             </form>
             <Link to="/login" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground mt-5 hover:text-foreground">
-              <ArrowLeft className="w-4 h-4" /> Вернуться ко входу
+              <ArrowLeft className="w-4 h-4" /> Back to sign in
             </Link>
           </>
         )}
