@@ -98,6 +98,36 @@ export async function updateProfile(userId: number, profileData: { name?: string
   }
 }
 
+export async function forgotPassword(email: string): Promise<{ detail: string }> {
+  // Unauthenticated; backend always returns a generic success (no user enumeration)
+  const response = await axios.post(`${API_BASE_URL}/auth/forgot-password`, { email });
+  return response.data;
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<{ detail: string }> {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/auth/reset-password`, {
+      token,
+      new_password: newPassword,
+    });
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Не удалось сбросить пароль');
+  }
+}
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<{ detail: string }> {
+  try {
+    const response = await api.post('/auth/change-password', {
+      current_password: currentPassword,
+      new_password: newPassword,
+    });
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Не удалось изменить пароль');
+  }
+}
+
 export function isAuthenticated(): boolean {
   return tokenManager.isAuthenticated();
 }

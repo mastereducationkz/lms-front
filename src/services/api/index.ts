@@ -26,7 +26,7 @@ export * from './daily-questions';
 export { api, API_BASE_URL, clearCache } from './client';
 
 // Import all functions to build the apiClient object
-import { login, logout, getCurrentUser, updateProfile, isAuthenticated, getCurrentUserSync, completeOnboarding } from './auth';
+import { login, logout, getCurrentUser, updateProfile, isAuthenticated, getCurrentUserSync, completeOnboarding, forgotPassword, resetPassword, changePassword } from './auth';
 import { CookieUtils } from './client';
 
 function _setCurrentUser(user: any): void {
@@ -53,7 +53,7 @@ import { getUnreadMessageCount, fetchThreads, fetchMessages, sendMessage, getAva
 import { fetchQuizzes, fetchQuizById, getQuizAttemptsLeft, submitQuiz, saveQuizAttempt, updateQuizAttempt, gradeQuizAttempt, deleteQuizAttempt, getUngradedQuizAttempts, getGradedQuizAttempts, getLessonQuizSummary, getStepQuizAttempts, getCourseQuizAttempts, getCourseQuizAnalytics, getStudentQuizAnalytics } from './quizzes';
 import { getAllEvents, createEvent, createCuratorEvent, updateEvent, deleteEvent, bulkDeleteEvents, createBulkEvents, getMyEvents, getCalendarEvents, getUpcomingEvents, getEventDetails, registerForEvent, unregisterFromEvent, getEventParticipants, updateEventAttendance } from './events';
 import { uploadAssignmentFile, uploadTeacherFile, uploadSubmissionFile, uploadQuestionMedia, downloadFile, getFileUrl, uploadFile } from './uploads';
-import { getUsers, getStudentTeacherGroups, getStudentsForTeacherGroup, updateUser, deactivateUser, assignUserToGroup, bulkAssignUsersToGroup, createUser, bulkCreateUsersFromText, resetUserPassword, getAllTeachers, getAllCurators } from './users';
+import { getUsers, getStudentTeacherGroups, getStudentsForTeacherGroup, updateUser, deactivateUser, bulkSetUsersActive, assignUserToGroup, bulkAssignUsersToGroup, createUser, bulkCreateUsersFromText, resetUserPassword, getAllTeachers, getAllCurators } from './users';
 import { getAllGroups, getGroups, getMyGroups, getTeacherGroups, getCourseGroups, grantCourseAccessToGroup, revokeCourseAccessFromGroup, createGroup, updateGroup, deleteGroup, assignTeacherToGroup, getGroupStudents, addStudentToGroup, removeStudentFromGroup, bulkAddStudentsToGroup } from './groups';
 import { getDetailedStudentAnalytics, getCourseAnalyticsOverview, getVideoEngagementAnalytics, getQuizPerformanceAnalytics, getQuizErrors, getAllStudentsAnalytics, getGroupsAnalytics, getCourseGroupsAnalytics, getCourseProgressHistory, getGroupStudentsAnalytics, getStudentProgressHistory, exportStudentReport, exportGroupReport, exportAllStudentsReport, exportAnalyticsExcel, getStudentDetailedProgress, getStudentSatScores, getStudentLearningPath } from './analytics';
 import { getCuratorPendingSubmissions, getCuratorRecentSubmissions, getCuratorStudentsProgress, getCuratorAssignmentsAnalytics, getCuratorHomeworkByGroup, getCuratorGroups, getGroupSchedule, getGroupLeaderboard, getWeeklyLessonsWithHwStatus, getGroupFullAttendanceMatrix, updateLeaderboardConfig, updateAttendanceBulk, updateLeaderboardEntry, updateAttendance, generateSchedule, getGroupSchedules, bulkScheduleUpload, getCuratorDetails, getCuratorTasks, getCuratorTaskGroups, getCuratorTasksSummary, updateCuratorTask, bulkUpdateCuratorTasks, getCuratorTaskTemplates, seedCuratorTaskTemplates, generateWeeklyTasks, getAllCuratorTasks, getAllCuratorTasksDaySummary, getCuratorsSummary, createCuratorTaskInstance, createCuratorTaskInstancesBulk } from './curator';
@@ -67,7 +67,7 @@ import { getDailyQuestionsStatus, getDailyQuestionsRecommendations, completeDail
 
 const apiClient = {
   // Auth
-  login, logout, getCurrentUser, updateProfile, isAuthenticated, getCurrentUserSync, completeOnboarding,
+  login, logout, getCurrentUser, updateProfile, isAuthenticated, getCurrentUserSync, completeOnboarding, forgotPassword, resetPassword, changePassword,
   // Dashboard
   getDashboardStats, getRecentActivity, updateStudyTime, getTeacherSalaryBreakdown,
   // Courses
@@ -121,7 +121,7 @@ const apiClient = {
   uploadAssignmentFile, uploadTeacherFile, uploadSubmissionFile, uploadQuestionMedia,
   downloadFile, getFileUrl, uploadFile,
   // Users
-  getUsers, updateUser, deactivateUser, assignUserToGroup, bulkAssignUsersToGroup,
+  getUsers, updateUser, deactivateUser, bulkSetUsersActive, assignUserToGroup, bulkAssignUsersToGroup,
   getStudentTeacherGroups, getStudentsForTeacherGroup,
   createUser, bulkCreateUsersFromText, resetUserPassword, getAllTeachers, getAllCurators,
   // Groups

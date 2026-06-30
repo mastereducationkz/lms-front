@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../services/api';
 import { toggleCuratorAnalyticsHidden } from '../services/api/admin';
@@ -50,14 +50,11 @@ import {
   UserPlus,
   RefreshCw,
   Upload,
-  GraduationCap,
-  ChevronDown,
-  ChevronRight,
   Copy,
   MoreHorizontal,
   Calendar as CalendarIcon,
-  EyeOff,
-  Eye
+  Check,
+  X
 } from 'lucide-react';
 import ScheduleGenerator from '../components/ScheduleGenerator';
 import Loader from '../components/Loader';
@@ -81,6 +78,10 @@ import {
 } from '../components/ui/dropdown-menu';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Checkbox } from '../components/ui/checkbox';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { UsersTable } from '../components/users/UsersTable';
+import { BulkActionsBar } from '../components/users/BulkActionsBar';
+import { AddToGroupDialog } from '../components/users/AddToGroupDialog';
 
 interface UserFormData {
   name: string;
@@ -116,18 +117,6 @@ interface GroupWithDetails extends Group {
   students?: User[];
 }
 
-interface TeacherGroup {
-  teacher_name: string
-  teacher_id?: number | null
-  students: User[]
-  total_students: number
-  is_expanded?: boolean
-  students_skip?: number
-  students_limit?: number
-  students_total?: number
-  is_loading_students?: boolean
-}
-
 const sameIdSet = (a: number[], b: number[]) => {
   if (a.length !== b.length) return false
   const sortedA = [...a].sort((x, y) => x - y)
@@ -136,7 +125,6 @@ const sameIdSet = (a: number[], b: number[]) => {
 }
 
 export default function UserManagement() {
-  const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   const isHeadCurator = currentUser?.role === 'head_curator';
   const [searchParams, setSearchParams] = useSearchParams();
@@ -155,9 +143,16 @@ export default function UserManagement() {
   const [groupStatusFilter, setGroupStatusFilter] = useState<'all' | 'true' | 'false'>('true'); // Default to active groups
   const [groupProgramFilter, setGroupProgramFilter] = useState<'all' | CourseType>('all')
 
-  // Teacher groups for student grouping
-  const [teacherGroups, setTeacherGroups] = useState<TeacherGroup[]>([]);
-  
+  // Debounced search (network fires on this; URL/input update immediately)
+  const debouncedSearch = useDebouncedValue(searchQuery, 350);
+
+  // Unfiltered group id → name map (resolves names even for inactive groups)
+  const [allGroupsById, setAllGroupsById] = useState<Map<number, string>>(new Map());
+
+  // Multi-select (current page) + bulk add-to-group dialog
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [showBulkAddToGroup, setShowBulkAddToGroup] = useState(false);
+
   // Teachers and curators for group creation
   const [teachers, setTeachers] = useState<User[]>([]);
   const [curators, setCurators] = useState<User[]>([]);
@@ -166,6 +161,7 @@ export default function UserManagement() {
   
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [sendInviteOnCreate, setSendInviteOnCreate] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
@@ -189,9 +185,10 @@ export default function UserManagement() {
   
   // Bulk text upload state
   const [showBulkTextModal, setShowBulkTextModal] = useState(false);
-  const [bulkTextFormData, setBulkTextFormData] = useState<{ text: string; groupIds: number[] }>({
+  const [bulkTextFormData, setBulkTextFormData] = useState<{ text: string; groupIds: number[]; sendInvites: boolean }>({
     text: '',
-    groupIds: []
+    groupIds: [],
+    sendInvites: true
   });
   const [bulkTextResults, setBulkTextResults] = useState<{
     created: Array<{ user: User; generated_password?: string }>;
@@ -265,7 +262,8 @@ export default function UserManagement() {
       const result = await apiClient.bulkCreateUsersFromText(
         bulkTextFormData.text,
         bulkTextFormData.groupIds.length > 0 ? bulkTextFormData.groupIds : undefined,
-        'student'
+        'student',
+        bulkTextFormData.sendInvites
       );
       
       setBulkTextResults({
@@ -291,7 +289,7 @@ export default function UserManagement() {
   };
 
   const resetBulkTextForm = () => {
-    setBulkTextFormData({ text: '', groupIds: [] });
+    setBulkTextFormData({ text: '', groupIds: [], sendInvites: true });
     setBulkTextResults(null);
   };
   
@@ -367,11 +365,17 @@ export default function UserManagement() {
   useEffect(() => {
     loadUsers()
     loadGroups()
-  }, [currentPage, roleFilter, groupFilter, statusFilter, searchQuery])
+  }, [currentPage, roleFilter, groupFilter, statusFilter, debouncedSearch])
+
+  // Clear page selection whenever the visible set changes
+  useEffect(() => {
+    setSelectedIds(new Set())
+  }, [currentPage, roleFilter, groupFilter, statusFilter, debouncedSearch])
 
   useEffect(() => {
     loadTeachersAndCurators();
     loadCourses();
+    loadAllGroupsMap();
   }, []);
 
   // Reload groups when group status or program filter changes
@@ -392,31 +396,6 @@ export default function UserManagement() {
     try {
       setIsLoading(true);
       setError(null);
-      if (roleFilter === 'student') {
-        const response = await apiClient.getStudentTeacherGroups({
-          skip: (currentPage - 1) * pageSize,
-          limit: pageSize,
-          group_id: groupFilter && groupFilter !== 'all' ? parseInt(groupFilter) : undefined,
-          is_active: statusFilter && statusFilter !== 'all' ? statusFilter === 'true' : undefined,
-          search: searchQuery || undefined,
-        })
-
-        const groups = response.groups.map((g: any) => ({
-          teacher_name: g.teacher_name,
-          teacher_id: g.teacher_id ?? null,
-          students: [],
-          total_students: g.total_students,
-          is_expanded: false,
-          students_skip: 0,
-          students_limit: 20,
-          students_total: 0,
-          is_loading_students: false,
-        }))
-        setTeacherGroups(groups)
-        setUsers([])
-        setTotalUsers(response.total)
-        return
-      }
 
       const params = {
         skip: (currentPage - 1) * pageSize,
@@ -481,6 +460,49 @@ export default function UserManagement() {
     }
   };
 
+  // Unfiltered groups (all statuses/programs) → id→name map for the Groups column
+  const loadAllGroupsMap = async () => {
+    try {
+      const all = await apiClient.getGroups();
+      setAllGroupsById(new Map((all || []).map((g: Group) => [g.id, g.name])));
+    } catch (error) {
+      console.error('Failed to load groups map:', error);
+    }
+  };
+
+  // ── Multi-select helpers ───────────────────────────────────────────────────
+  const toggleSelect = (id: number, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id); else next.delete(id);
+      return next;
+    });
+  };
+  const toggleSelectAll = (checked: boolean) => {
+    setSelectedIds(checked ? new Set(users.map((u) => Number(u.id))) : new Set());
+  };
+
+  const handleBulkSetActive = async (isActive: boolean) => {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    const { ok, failed } = await apiClient.bulkSetUsersActive(ids, isActive);
+    toast(
+      failed === 0
+        ? `${isActive ? 'Активировано' : 'Деактивировано'}: ${ok}`
+        : `Готово: ${ok}, с ошибкой: ${failed}`,
+      failed === 0 ? 'success' : 'error',
+    );
+    setSelectedIds(new Set());
+    loadUsers();
+  };
+
+  const allGroupsList = React.useMemo(
+    () => [...allGroupsById.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'ru')),
+    [allGroupsById],
+  );
+
   const sortUsersByName = (list: User[]) =>
     [...list].sort((a, b) =>
       (a.name || a.full_name || '').localeCompare(b.name || b.full_name || '', 'ru')
@@ -508,49 +530,6 @@ export default function UserManagement() {
     }
   };
 
-  useEffect(() => {
-    if (roleFilter !== 'student') setTeacherGroups([])
-  }, [roleFilter])
-
-  const loadTeacherGroupStudents = async (teacherId: number | null, reset: boolean = false) => {
-    const keyTeacherId = teacherId ?? -1
-    setTeacherGroups((prev) => prev.map((g) => {
-      if ((g.teacher_id ?? null) !== teacherId) return g
-      return { ...g, is_loading_students: true }
-    }))
-
-    try {
-      const group = teacherGroups.find((g) => (g.teacher_id ?? null) === teacherId)
-      const skip = reset ? 0 : (group?.students_skip ?? 0)
-      const limit = group?.students_limit ?? 20
-
-      const response = await apiClient.getStudentsForTeacherGroup(keyTeacherId, {
-        skip,
-        limit,
-        group_id: groupFilter && groupFilter !== 'all' ? parseInt(groupFilter) : undefined,
-        is_active: statusFilter && statusFilter !== 'all' ? statusFilter === 'true' : undefined,
-        search: searchQuery || undefined,
-      })
-
-      setTeacherGroups((prev) => prev.map((g) => {
-        if ((g.teacher_id ?? null) !== teacherId) return g
-        const nextStudents = reset ? response.students : [...g.students, ...response.students]
-        return {
-          ...g,
-          students: nextStudents,
-          students_total: response.total,
-          students_skip: skip + response.students.length,
-          is_loading_students: false,
-        }
-      }))
-    } catch (e) {
-      setTeacherGroups((prev) => prev.map((g) => {
-        if ((g.teacher_id ?? null) !== teacherId) return g
-        return { ...g, is_loading_students: false }
-      }))
-    }
-  }
-
   const handleFilterChange = (filter: string, value: string) => {
     const newParams = new URLSearchParams(searchParams);
     if (value && value !== 'all') {
@@ -560,6 +539,26 @@ export default function UserManagement() {
     }
     setSearchParams(newParams);
     setCurrentPage(1);
+  };
+
+  const defaultRole = isHeadCurator ? 'curator' : 'all';
+  const activeFilterChips = [
+    searchQuery.trim() ? { key: 'search', label: `Поиск: «${searchQuery.trim()}»`, clear: () => { setSearchQuery(''); handleFilterChange('search', ''); } } : null,
+    !isHeadCurator && roleFilter !== 'all' ? { key: 'role', label: `Роль: ${roleFilter}`, clear: () => { setRoleFilter('all'); handleFilterChange('role', 'all'); } } : null,
+    groupFilter !== 'all' ? { key: 'group', label: `Группа: ${allGroupsById.get(Number(groupFilter)) || groupFilter}`, clear: () => { setGroupFilter('all'); handleFilterChange('group_id', 'all'); } } : null,
+    statusFilter !== 'all' ? { key: 'status', label: `Статус: ${statusFilter === 'true' ? 'активные' : 'неактивные'}`, clear: () => { setStatusFilter('all'); handleFilterChange('is_active', 'all'); } } : null,
+  ].filter(Boolean) as { key: string; label: string; clear: () => void }[];
+
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setGroupFilter('all');
+    setStatusFilter('all');
+    if (!isHeadCurator) setRoleFilter(defaultRole);
+    setCurrentPage(1);
+    const newParams = new URLSearchParams(searchParams);
+    ['search', 'group_id', 'is_active'].forEach((k) => newParams.delete(k));
+    if (!isHeadCurator) newParams.delete('role');
+    setSearchParams(newParams);
   };
 
   const validateForm = (): { [key: string]: string } => {
@@ -639,9 +638,10 @@ export default function UserManagement() {
         password: formData.password || undefined,
         is_active: formData.is_active,
         group_ids: formData.role === 'student' && formData.group_ids.length > 0 ? formData.group_ids : undefined,
-        course_ids: formData.role === 'head_teacher' && formData.course_ids.length > 0 ? formData.course_ids : undefined
+        course_ids: formData.role === 'head_teacher' && formData.course_ids.length > 0 ? formData.course_ids : undefined,
+        send_invites: formData.role === 'student' ? sendInviteOnCreate : false
       };
-      
+
       const newUser = await apiClient.createUser(userData);
       toast('User created successfully', 'success');
       
@@ -1162,6 +1162,24 @@ export default function UserManagement() {
               </Select>
             </div>
           </div>
+          {activeFilterChips.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t dark:border-border">
+              <span className="text-xs text-gray-500 dark:text-gray-400">Фильтры:</span>
+              {activeFilterChips.map((chip) => (
+                <button
+                  key={chip.key}
+                  onClick={chip.clear}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40"
+                >
+                  {chip.label}
+                  <X className="w-3 h-3" />
+                </button>
+              ))}
+              <button onClick={clearAllFilters} className="text-xs text-gray-500 dark:text-gray-400 hover:text-foreground underline ml-1">
+                Сбросить всё
+              </button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -1221,290 +1239,35 @@ export default function UserManagement() {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 dark:bg-secondary">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        User
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Role
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Group
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-card divide-y divide-gray-200 dark:divide-border">
-                    {roleFilter === 'student' && teacherGroups.length > 0 ? (
-                      // Show paginated teacher groups (server-side)
-                      teacherGroups.map((teacherGroup) => (
-                        <React.Fragment key={teacherGroup.teacher_name}>
-                          {/* Teacher group header */}
-                          <tr className="hover:bg-gray-50 dark:hover:bg-secondary">
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    const nextIsExpanded = !teacherGroup.is_expanded
-                                    setTeacherGroups(prev => prev.map(group =>
-                                      group.teacher_name === teacherGroup.teacher_name 
-                                        ? { ...group, is_expanded: nextIsExpanded }
-                                        : group
-                                    ));
-                                    if (nextIsExpanded && teacherGroup.students.length === 0) {
-                                      loadTeacherGroupStudents(teacherGroup.teacher_id ?? null, true)
-                                    }
-                                  }}
-                                  className="p-0 h-6 w-6"
-                                >
-                                  {teacherGroup.is_expanded ? (
-                                    <ChevronDown className="w-4 h-4" />
-                                  ) : (
-                                    <ChevronRight className="w-4 h-4" />
-                                  )}
-                                </Button>
-                                <div>
-                                  <div className="text-sm font-medium text-gray-900 dark:text-foreground flex items-center gap-2">
-                                    {teacherGroup.teacher_name}
-                                    <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded-full">
-                                      {teacherGroup.total_students} students
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="px-2 py-1 text-xs rounded-full bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400 text-purple-700">
-                                Teacher Group
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="text-sm text-gray-500 dark:text-gray-400">-</span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700">
-                                Active
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                              <div className="flex items-center justify-end gap-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  title="Expand/Collapse"
-                                  onClick={() => {
-                                    setTeacherGroups(prev => prev.map(group => 
-                                      group.teacher_name === teacherGroup.teacher_name 
-                                        ? { ...group, is_expanded: !group.is_expanded }
-                                        : group
-                                    ));
-                                  }}
-                                >
-                                  {teacherGroup.is_expanded ? (
-                                    <ChevronDown className="w-4 h-4" />
-                                  ) : (
-                                    <ChevronRight className="w-4 h-4" />
-                                  )}
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                          
-                          {/* Student rows when expanded */}
-                          {teacherGroup.is_expanded && teacherGroup.students.map((student) => (
-                            <tr key={student.id || student.email} className="hover:bg-gray-50 dark:hover:bg-secondary bg-gray-25">
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="ml-8">
-                                  <div className="text-sm font-medium text-gray-900 dark:text-foreground">{student.name || student.full_name}</div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400">{student.email}</div>
-                                  {student.student_id && (
-                                    <div className="text-xs text-gray-400">ID: {student.student_id}</div>
-                                  )}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span className="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700">
-                                  student
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                {student.teacher_name || student.curator_name ? (
-                                  <div className="text-sm">
-                                    {student.teacher_name && (
-                                      <div className="text-xs text-gray-500 dark:text-gray-400">👨‍🏫 {student.teacher_name}</div>
-                                    )}
-                                    {student.curator_name && (
-                                      <div className="text-xs text-gray-500 dark:text-gray-400">👨‍💼 {student.curator_name}</div>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <span className="text-sm text-gray-500 dark:text-gray-400">No group</span>
-                                )}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span className={`px-2 py-1 text-xs rounded-full ${
-                                  student.is_active ? 'bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700' : 'bg-gray-100 dark:bg-gray-800 dark:text-gray-400 text-gray-700'
-                                }`}>
-                                  {student.is_active ? 'Active' : 'Inactive'}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <div className="flex items-center justify-end gap-2">
-                                  <Button
-                                    onClick={() => openEditModal(student)}
-                                    variant="ghost"
-                                    size="sm"
-                                    title="Edit User"
-                                  >
-                                    <Edit className="w-4 h-4" />
-                                  </Button>
-                                  <Button
-                                    onClick={() => openDeleteModal(student)}
-                                    variant="ghost"
-                                    size="sm"
-                                    title="Deactivate User"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-
-                          {teacherGroup.is_expanded && (
-                            <tr className="bg-gray-25">
-                              <td className="px-6 py-3" colSpan={5}>
-                                <div className="ml-8 flex items-center justify-between gap-3">
-                                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                                    Showing {teacherGroup.students.length} of {teacherGroup.total_students}
-                                  </span>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={teacherGroup.is_loading_students || teacherGroup.students.length >= teacherGroup.total_students}
-                                    onClick={() => loadTeacherGroupStudents(teacherGroup.teacher_id ?? null, false)}
-                                  >
-                                    {teacherGroup.is_loading_students ? 'Loading…' : 'Load more'}
-                                  </Button>
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
-                      ))
-                    ) : (
-                      // Show regular user list for non-student roles
-                      users?.map((user) => (
-                        <tr key={user.id || user.email} className="hover:bg-gray-50 dark:hover:bg-secondary">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div>
-                              <div className="text-sm font-medium text-gray-900 dark:text-foreground">{user.name || user.full_name}</div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">{user.email}</div>
-                              {user.student_id && (
-                                <div className="text-xs text-gray-400">ID: {user.student_id}</div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 text-xs rounded-full ${
-                              user.role === 'admin' ? 'bg-red-100 dark:bg-red-900/30 dark:text-red-400 text-red-700' :
-                              user.role === 'teacher' ? 'bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400 text-purple-700' :
-                              user.role === 'head_curator' ? 'bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 text-indigo-700' :
-                              user.role === 'curator' ? 'bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 text-blue-700' :
-                              'bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700'
-                            }`}>
-                              {user.role}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {user.teacher_name || user.curator_name ? (
-                              <div className="text-sm">
-                                {user.teacher_name && (
-                                  <div className="text-xs text-gray-500 dark:text-gray-400">👨‍🏫 {user.teacher_name}</div>
-                                )}
-                                {user.curator_name && (
-                                  <div className="text-xs text-gray-500 dark:text-gray-400">👨‍💼 {user.curator_name}</div>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-sm text-gray-500 dark:text-gray-400">No group</span>
-                            )}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex flex-col gap-1">
-                              <span className={`px-2 py-1 text-xs rounded-full w-fit ${
-                                user.is_active ? 'bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700' : 'bg-gray-100 dark:bg-gray-800 dark:text-gray-400 text-gray-700'
-                              }`}>
-                                {user.is_active ? 'Active' : 'Inactive'}
-                              </span>
-                              {(user.role === 'curator' || user.role === 'head_curator') && user.is_analytics_hidden && (
-                                <span className="px-2 py-1 text-xs rounded-full w-fit bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400 text-orange-700">
-                                  Скрыт из аналитики
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex items-center justify-end gap-2">
-                              {(user.role === 'curator' || user.role === 'head_curator') && (
-                                <Button
-                                  onClick={() => handleToggleAnalyticsHidden(user)}
-                                  variant="ghost"
-                                  size="sm"
-                                  title={user.is_analytics_hidden ? 'Показать в аналитике' : 'Скрыть из аналитики'}
-                                  aria-label={user.is_analytics_hidden ? 'Показать в аналитике' : 'Скрыть из аналитики'}
-                                >
-                                  {user.is_analytics_hidden ? (
-                                    <Eye className="w-4 h-4 text-orange-500" />
-                                  ) : (
-                                    <EyeOff className="w-4 h-4 text-gray-400" />
-                                  )}
-                                </Button>
-                              )}
-                              <Button
-                                onClick={() => openEditModal(user)}
-                                variant="ghost"
-                                size="sm"
-                                title="Edit User"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                onClick={() => openDeleteModal(user)}
-                                variant="ghost"
-                                size="sm"
-                                title="Deactivate User"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              {!isHeadCurator && (
+                <BulkActionsBar
+                  count={selectedIds.size}
+                  onClear={() => setSelectedIds(new Set())}
+                  actions={[
+                    { label: 'Добавить в группу', icon: <UserPlus className="w-4 h-4" />, onClick: () => setShowBulkAddToGroup(true) },
+                    { label: 'Активировать', icon: <Check className="w-4 h-4" />, onClick: () => handleBulkSetActive(true) },
+                    { label: 'Деактивировать', icon: <Trash2 className="w-4 h-4" />, variant: 'destructive', onClick: () => handleBulkSetActive(false) },
+                  ]}
+                />
+              )}
+              <UsersTable
+                users={users}
+                groupNameById={allGroupsById}
+                selectable={!isHeadCurator}
+                selectedIds={selectedIds}
+                onToggle={toggleSelect}
+                onToggleAll={toggleSelectAll}
+                onEdit={openEditModal}
+                onDelete={openDeleteModal}
+                onToggleAnalyticsHidden={handleToggleAnalyticsHidden}
+              />
               
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="px-6 py-3 border-t dark:border-border bg-gray-50 dark:bg-secondary">
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-gray-700 dark:text-gray-400">
-                      {roleFilter === 'student' ? 
-                        `Showing ${teacherGroups.length} teacher groups with ${totalUsers} students` :
-                        `Showing ${((currentPage - 1) * pageSize) + 1} to ${Math.min(currentPage * pageSize, totalUsers)} of ${totalUsers} results`
-                      }
+                      {`Showing ${((currentPage - 1) * pageSize) + 1} to ${Math.min(currentPage * pageSize, totalUsers)} of ${totalUsers} results`}
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
@@ -1759,6 +1522,12 @@ export default function UserManagement() {
           errors={formErrors}
           isHeadCurator={isHeadCurator}
         />
+        {formData.role === 'student' && (
+          <label className="flex items-center gap-2 mt-2 px-1 cursor-pointer">
+            <Checkbox checked={sendInviteOnCreate} onCheckedChange={(c) => setSendInviteOnCreate(c === true)} />
+            <span className="text-sm text-gray-700 dark:text-gray-300">Отправить приглашение на почту (логин и пароль)</span>
+          </label>
+        )}
       </Modal>
 
       {/* Edit User Modal */}
@@ -1950,11 +1719,21 @@ export default function UserManagement() {
       </Modal>
       
       {/* Schedule Generator Modal */}
-      <ScheduleGenerator 
+      <ScheduleGenerator
           groupId={scheduleGroupId}
           open={showScheduleModal}
           onOpenChange={setShowScheduleModal}
           onSuccess={() => toast('Schedule updated successfully', 'success')}
+      />
+
+      <AddToGroupDialog
+        open={showBulkAddToGroup}
+        studentIds={[...selectedIds]}
+        groups={allGroupsList}
+        onClose={(changed) => {
+          setShowBulkAddToGroup(false);
+          if (changed) { setSelectedIds(new Set()); loadUsers(); loadAllGroupsMap(); }
+        }}
       />
 
       {/* Bulk Schedule Upload Modal */}
@@ -2011,6 +1790,18 @@ interface UserFormProps {
 }
 
 function UserForm({ formData, setFormData, groups, courses, errors = {}, isHeadCurator = false }: UserFormProps) {
+  const [groupSearch, setGroupSearch] = useState('');
+  const displayedGroups = React.useMemo(() => {
+    const q = groupSearch.trim().toLowerCase();
+    const filtered = (groups || []).filter((g) => !q || g.name.toLowerCase().includes(q));
+    return [...filtered].sort((a, b) => {
+      const sa = formData.group_ids.includes(a.id) ? 0 : 1;
+      const sb = formData.group_ids.includes(b.id) ? 0 : 1;
+      if (sa !== sb) return sa - sb;
+      return a.name.localeCompare(b.name, 'ru');
+    });
+  }, [groups, groupSearch, formData.group_ids]);
+  const selectedGroups = (groups || []).filter((g) => formData.group_ids.includes(g.id));
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
@@ -2080,45 +1871,51 @@ function UserForm({ formData, setFormData, groups, courses, errors = {}, isHeadC
           </Select>
         </div>
         
-        {/* Groups field - checkboxes for multiple selection (students only) */}
+        {/* Groups field — searchable multi-select (students only) */}
         {formData.role === 'student' && (
           <div className="p-1">
-            <Label className="text-sm font-medium">Groups</Label>
-            <div className="mt-2 max-h-40 overflow-y-auto space-y-2 border rounded-md p-3">
-              {groups && groups.length > 0 ? (
-                groups.map((group) => (
-                  <div key={group.id} className="flex items-center space-x-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Groups</Label>
+              <span className="text-xs text-gray-500 dark:text-gray-400">Выбрано: {formData.group_ids.length}</span>
+            </div>
+            {selectedGroups.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {selectedGroups.map((g) => (
+                  <span key={g.id} className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300">
+                    {g.name}
+                    <button type="button" aria-label={`Убрать ${g.name}`} onClick={() => setFormData({ ...formData, group_ids: formData.group_ids.filter((id) => id !== g.id) })}>
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="relative mt-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input value={groupSearch} onChange={(e) => setGroupSearch(e.target.value)} placeholder="Поиск группы…" className="pl-9 h-9" />
+            </div>
+            <div className="mt-2 max-h-48 overflow-y-auto space-y-0.5 border rounded-md p-2">
+              {displayedGroups.length > 0 ? (
+                displayedGroups.map((group) => (
+                  <label key={group.id} htmlFor={`group-${group.id}`} className="flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-muted/60">
                     <Checkbox
                       id={`group-${group.id}`}
                       checked={formData.group_ids.includes(group.id)}
                       onCheckedChange={(checked) => {
-                        if (checked) {
-                          setFormData({
-                            ...formData,
-                            group_ids: [...formData.group_ids, group.id]
-                          });
-                        } else {
-                          setFormData({
-                            ...formData,
-                            group_ids: formData.group_ids.filter(id => id !== group.id)
-                          });
-                        }
+                        setFormData(checked
+                          ? { ...formData, group_ids: [...formData.group_ids, group.id] }
+                          : { ...formData, group_ids: formData.group_ids.filter((id) => id !== group.id) });
                       }}
                     />
-                    <Label htmlFor={`group-${group.id}`} className="text-sm font-normal cursor-pointer">
-                      {group.name}
-                    </Label>
-                  </div>
+                    <span className="text-sm font-normal">{group.name}</span>
+                  </label>
                 ))
               ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400">No groups available</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 px-2 py-1.5">
+                  {groups && groups.length > 0 ? 'Ничего не найдено' : 'No groups available'}
+                </p>
               )}
             </div>
-            {formData.group_ids.length > 0 && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Selected: {formData.group_ids.length} group(s)
-              </p>
-            )}
           </div>
         )}
 
@@ -2165,17 +1962,19 @@ function UserForm({ formData, setFormData, groups, courses, errors = {}, isHeadC
           </div>
         )}
       
-      <div className="p-1">
-        <Label htmlFor="student_id" className="text-sm font-medium">Student ID</Label>
-        <Input
-          id="student_id"
-          type="text"
-          value={formData.student_id || ''}
-          onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
-          placeholder="Optional"
-        />
-      </div>
-      
+      {formData.role === 'student' && (
+        <div className="p-1">
+          <Label htmlFor="student_id" className="text-sm font-medium">Student ID</Label>
+          <Input
+            id="student_id"
+            type="text"
+            value={formData.student_id || ''}
+            onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
+            placeholder="Optional"
+          />
+        </div>
+      )}
+
       <div className="p-1">
         <Label htmlFor="password" className="text-sm font-medium">Password</Label>
         <Input
@@ -2698,8 +2497,8 @@ function BulkAddStudentsForm({ formData, setFormData, groups, students, errors =
 
 // Bulk Text Upload Form Component
 interface BulkTextUploadFormProps {
-  formData: { text: string; groupIds: number[] };
-  setFormData: (data: { text: string; groupIds: number[] }) => void;
+  formData: { text: string; groupIds: number[]; sendInvites: boolean };
+  setFormData: (data: { text: string; groupIds: number[]; sendInvites: boolean }) => void;
   groups: GroupWithDetails[];
   results: {
     created: Array<{ user: User; generated_password?: string }>;
@@ -2742,6 +2541,15 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
           </Button>
         </div>
       </div>
+
+      <label className="flex items-center gap-2 px-1 cursor-pointer">
+        <Checkbox
+          checked={formData.sendInvites}
+          onCheckedChange={(c) => setFormData({ ...formData, sendInvites: c === true })}
+          disabled={isLoading}
+        />
+        <span className="text-sm text-gray-700 dark:text-gray-300">Отправить приглашения на почту (логин и пароль каждому студенту)</span>
+      </label>
 
       <div className="p-1">
         <Label className="text-sm font-medium">Assign to Groups (Optional)</Label>

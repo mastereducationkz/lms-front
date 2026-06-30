@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import { storage } from '../utils/storage';
 import apiClient from '../services/api';
+import { changePassword } from '../services/api/auth';
+import { toast } from '../components/Toast';
 
 interface CourseItem {
   id: number;
@@ -73,6 +75,28 @@ export default function SettingsPage() {
   const [userSearch, setUserSearch] = useState('');
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [showLessons, setShowLessons] = useState(true);
+
+  // Change-password form
+  const [pwCurrent, setPwCurrent] = useState('');
+  const [pwNew, setPwNew] = useState('');
+  const [pwConfirm, setPwConfirm] = useState('');
+  const [pwSaving, setPwSaving] = useState(false);
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pwNew.length < 6) { toast('Пароль должен быть не короче 6 символов', 'error'); return; }
+    if (pwNew !== pwConfirm) { toast('Пароли не совпадают', 'error'); return; }
+    setPwSaving(true);
+    try {
+      await changePassword(pwCurrent, pwNew);
+      toast('Пароль успешно изменён', 'success');
+      setPwCurrent(''); setPwNew(''); setPwConfirm('');
+    } catch (err: any) {
+      toast(err.message || 'Не удалось изменить пароль', 'error');
+    } finally {
+      setPwSaving(false);
+    }
+  };
 
   // Filter users based on search
   const filteredUsers = useMemo(() => {
@@ -560,6 +584,33 @@ export default function SettingsPage() {
         </Card>
       )}
       
+      {/* Change Password Section (all roles) */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Смена пароля</CardTitle>
+          <CardDescription>Обновите пароль вашего аккаунта.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleChangePassword} className="space-y-4 max-w-sm">
+            <div>
+              <Label htmlFor="pw-current" className="text-sm font-medium">Текущий пароль</Label>
+              <Input id="pw-current" type="password" required value={pwCurrent} onChange={(e) => setPwCurrent(e.target.value)} className="mt-1.5" />
+            </div>
+            <div>
+              <Label htmlFor="pw-new" className="text-sm font-medium">Новый пароль</Label>
+              <Input id="pw-new" type="password" required value={pwNew} onChange={(e) => setPwNew(e.target.value)} placeholder="Минимум 6 символов" className="mt-1.5" />
+            </div>
+            <div>
+              <Label htmlFor="pw-confirm" className="text-sm font-medium">Повторите новый пароль</Label>
+              <Input id="pw-confirm" type="password" required value={pwConfirm} onChange={(e) => setPwConfirm(e.target.value)} className="mt-1.5" />
+            </div>
+            <Button type="submit" disabled={pwSaving}>
+              {pwSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Сохранение…</> : 'Сменить пароль'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
       {/* Onboarding Section */}
       <Card>
         <CardHeader>

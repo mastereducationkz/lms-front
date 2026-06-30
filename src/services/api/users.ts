@@ -8,6 +8,7 @@ export async function getUsers(params?: {
   group_id?: number;
   is_active?: boolean;
   search?: string;
+  all_students?: boolean;
 }): Promise<UserListResponse> {
   try {
     const response = await api.get('/admin/users', { params });
@@ -64,6 +65,26 @@ export async function deactivateUser(userId: number): Promise<void> {
   }
 }
 
+/**
+ * Activate or deactivate many users. No bulk endpoint exists, so this loops the
+ * per-user endpoints and tolerates partial failures (e.g. self-deactivation 400).
+ * Returns counts of succeeded/failed operations.
+ */
+export async function bulkSetUsersActive(
+  userIds: number[],
+  isActive: boolean,
+): Promise<{ ok: number; failed: number }> {
+  const results = await Promise.allSettled(
+    userIds.map((id) =>
+      isActive
+        ? updateUser(id, { is_active: true } as UpdateUserRequest)
+        : deactivateUser(id),
+    ),
+  );
+  const failed = results.filter((r) => r.status === 'rejected').length;
+  return { ok: results.length - failed, failed };
+}
+
 export async function assignUserToGroup(userId: number, groupId: number): Promise<void> {
   try {
     await api.post(`/admin/users/${userId}/assign-group`, { group_id: groupId });
@@ -95,14 +116,16 @@ export async function createUser(userData: CreateUserRequest): Promise<{ user: U
 export async function bulkCreateUsersFromText(
   text: string,
   groupIds?: number[],
-  role: string = 'student'
+  role: string = 'student',
+  sendInvites: boolean = true
 ): Promise<BulkCreateUsersResponse> {
   try {
     const response = await api.post('/admin/users/bulk-text', {
       text,
       group_ids: groupIds,
       role,
-      generate_passwords: true
+      generate_passwords: true,
+      send_invites: sendInvites
     });
     return response.data;
   } catch (error: any) {

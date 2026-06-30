@@ -386,6 +386,7 @@ export interface CreateUserRequest {
   group_ids?: number[]; // Multiple groups for students
   is_active?: boolean;
   course_ids?: number[]; // Courses for head teachers
+  send_invites?: boolean; // Email an invite with credentials to created students
 }
 
 export interface UpdateUserRequest {

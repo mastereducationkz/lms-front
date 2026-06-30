@@ -53,6 +53,9 @@ import AnalyticsPage from '../pages/analytics/AnalyticsPage.tsx';
 import FavoriteFlashcardsPage from '../pages/FavoriteFlashcardsPage.tsx';
 import CuratorHomeworksPage from '../pages/CuratorHomeworksPage.tsx';
 import CuratorLeaderboardPage from '../pages/CuratorLeaderboardPage.tsx';
+import CuratorGroupsPage from '../pages/CuratorGroupsPage.tsx';
+import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage.tsx';
+import ResetPasswordPage from '../pages/auth/ResetPasswordPage.tsx';
 import AssignmentZeroPage from '../pages/AssignmentZeroPage';
 import { StudentAnalyticsPage } from '../pages/analytics/StudentAnalyticsPage.tsx';
 import HeadTeacherTeacherDetailsPage from '../pages/HeadTeacherTeacherDetailsPage.tsx';
@@ -87,6 +90,16 @@ export default function Router() {
                 <Route path="/login" element={
                   <ProtectedRoute requireAuth={false}>
                       <LoginPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/forgot-password" element={
+                  <ProtectedRoute requireAuth={false}>
+                      <ForgotPasswordPage />
+                  </ProtectedRoute>
+                } />
+                <Route path="/reset-password" element={
+                  <ProtectedRoute requireAuth={false}>
+                      <ResetPasswordPage />
                   </ProtectedRoute>
                 } />
 
@@ -481,6 +494,14 @@ export default function Router() {
             <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator']}>
               <AppLayout>
                 <CuratorLeaderboardPage />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/curator/groups" element={
+            <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator']}>
+              <AppLayout>
+                <CuratorGroupsPage />
               </AppLayout>
             </ProtectedRoute>
           } />
