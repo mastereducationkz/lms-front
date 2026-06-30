@@ -19,6 +19,21 @@ interface AssignmentStats {
 
 const PAGE_SIZE = 25;
 
+// Head-curator monitor: raw shape from /dashboard/curator/homework-by-group
+interface MonitorAssignmentSummary {
+  total_students: number;
+  submitted: number;
+  graded: number;
+  not_submitted: number;
+  overdue: number;
+}
+interface MonitorGroupRaw {
+  group_id: number;
+  group_name: string;
+  is_over?: boolean;
+  assignments: { summary: MonitorAssignmentSummary }[];
+}
+
 // Helper to format UTC datetime string to Kazakhstan time
 const formatToKZTime = (dateStr: string | undefined) => {
   if (!dateStr) return '-';
@@ -86,6 +101,10 @@ export default function AssignmentsPage() {
   const [assignmentStats, setAssignmentStats] = useState<Map<number, AssignmentStats>>(new Map());
   const [statsLoading, setStatsLoading] = useState(false);
   const [pendingToGradeByGroup, setPendingToGradeByGroup] = useState<Map<string, number>>(new Map());
+
+  // Head-curator monitor overview (read-only student-submission health across all groups)
+  const [monitorRaw, setMonitorRaw] = useState<MonitorGroupRaw[] | null>(null);
+  const [needsAttentionOnly, setNeedsAttentionOnly] = useState(false);
 
   // Explicit view flags: students never see teacher UI, even with group_id in URL
   // Manager layout (group cards, per-group table, submission stats) is shared by
@@ -206,6 +225,21 @@ export default function AssignmentsPage() {
         setPendingToGradeByGroup(new Map());
       });
   }, [isManagerView, assignments]);
+
+  // Head curators monitor (not grade): load real per-group student-submission aggregates
+  useEffect(() => {
+    if (user?.role !== 'head_curator') return;
+    let cancelled = false;
+    setMonitorRaw(null);
+    apiClient.getCuratorHomeworkByGroup()
+      .then((res: { groups?: MonitorGroupRaw[] }) => {
+        if (!cancelled) setMonitorRaw(res?.groups || []);
+      })
+      .catch(() => {
+        if (!cancelled) setMonitorRaw([]);
+      });
+    return () => { cancelled = true; };
+  }, [user?.role]);
 
   const loadGroups = async () => {
     if (
@@ -388,6 +422,60 @@ export default function AssignmentsPage() {
     return sortGroupEntriesByLessonTime(Array.from(byGroup.values()), groupsInHomeworkScope);
   }, [assignmentsByHidden, groupsInHomeworkScope, groups]);
 
+  const isHeadCuratorMonitor = user?.role === 'head_curator';
+
+  // Aggregate student-submission health per group for the monitor overview
+  const monitorGroups = useMemo(() => {
+    if (!monitorRaw) return [];
+    return monitorRaw
+      .filter((g) => g.assignments.length > 0)
+      .filter((g) => showCompletedGroups || !g.is_over)
+      .map((g) => {
+        // Note: summary.submitted already includes graded (status in submitted|graded)
+        let expected = 0, submitted = 0, notSubmitted = 0, overdue = 0;
+        for (const a of g.assignments) {
+          const s = a.summary;
+          expected += s.total_students;
+          submitted += s.submitted;
+          notSubmitted += s.not_submitted;
+          overdue += s.overdue;
+        }
+        return {
+          id: String(g.group_id),
+          name: g.group_name,
+          isOver: !!g.is_over,
+          assignmentsCount: g.assignments.length,
+          expected, submitted, notSubmitted, overdue,
+          rate: expected > 0 ? submitted / expected : 1,
+        };
+      });
+  }, [monitorRaw, showCompletedGroups]);
+
+  const monitorRollup = useMemo(() =>
+    monitorGroups.reduce((acc, g) => {
+      acc.groups += 1;
+      acc.assignments += g.assignmentsCount;
+      acc.expected += g.expected;
+      acc.submitted += g.submitted;
+      acc.notSubmitted += g.notSubmitted;
+      acc.overdue += g.overdue;
+      return acc;
+    }, { groups: 0, assignments: 0, expected: 0, submitted: 0, notSubmitted: 0, overdue: 0 }),
+  [monitorGroups]);
+
+  const monitorVisible = useMemo(() => {
+    let rows = monitorGroups;
+    if (needsAttentionOnly) rows = rows.filter((g) => g.overdue > 0 || g.notSubmitted > 0);
+    const q = groupSearch.trim().toLowerCase();
+    if (q) rows = rows.filter((g) => g.name.toLowerCase().includes(q));
+    return [...rows].sort((a, b) => {
+      if (a.isOver !== b.isOver) return a.isOver ? 1 : -1;
+      if (b.overdue !== a.overdue) return b.overdue - a.overdue;
+      if (b.notSubmitted !== a.notSubmitted) return b.notSubmitted - a.notSubmitted;
+      return a.rate - b.rate;
+    });
+  }, [monitorGroups, needsAttentionOnly, groupSearch]);
+
   const getAssignmentSortTime = (assignment: AssignmentWithStatus) => {
     const timestamp = Date.parse(assignment.created_at || assignment.due_date || assignment.event_start_datetime || '');
     return Number.isNaN(timestamp) ? 0 : timestamp;
@@ -511,6 +599,149 @@ export default function AssignmentsPage() {
             Try Again
           </Button>
         </div>
+      </div>
+    );
+  }
+
+  // ── Head-curator monitor overview ──────────────────────────────────────────
+  if (isHeadCuratorMonitor && effectiveOverviewMode) {
+    const rollupRate = monitorRollup.expected > 0
+      ? Math.round((monitorRollup.submitted / monitorRollup.expected) * 100)
+      : 0;
+    return (
+      <div className="p-8 space-y-6 max-w-7xl mx-auto">
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white uppercase">Homework</h1>
+
+        {monitorRaw === null ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="h-36 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <>
+            {/* Summary rollup */}
+            <div className="flex flex-wrap items-center gap-x-7 gap-y-2 rounded-lg border border-slate-200 dark:border-border bg-white dark:bg-card px-5 py-3">
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-bold text-slate-900 dark:text-white tabular-nums">{monitorRollup.groups}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">groups</span>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-bold text-slate-900 dark:text-white tabular-nums">{monitorRollup.assignments}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">assignments</span>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-bold text-blue-600 dark:text-blue-400 tabular-nums">{rollupRate}%</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">submitted</span>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">{monitorRollup.notSubmitted}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">not submitted</span>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-bold text-red-600 dark:text-red-400 tabular-nums">{monitorRollup.overdue}</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">overdue</span>
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative w-full max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+                <Input
+                  placeholder="Search groups..."
+                  value={groupSearch}
+                  onChange={(e) => setGroupSearch(e.target.value)}
+                  className="pl-9 bg-white dark:bg-card"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setNeedsAttentionOnly((v) => !v)}
+                className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-md border text-sm font-medium transition-colors ${
+                  needsAttentionOnly
+                    ? 'border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+                    : 'border-slate-200 dark:border-border bg-white dark:bg-card text-gray-600 dark:text-gray-300 hover:border-slate-300 dark:hover:border-slate-600'
+                }`}
+              >
+                <AlertCircle className="w-4 h-4" />
+                Needs attention
+              </button>
+              <div className="flex items-center gap-2 ml-auto">
+                <Checkbox
+                  id="show-completed-monitor"
+                  checked={showCompletedGroups}
+                  onCheckedChange={(checked) => setShowCompletedGroups(checked === true)}
+                />
+                <label htmlFor="show-completed-monitor" className="text-sm text-gray-600 dark:text-gray-300 cursor-pointer select-none">
+                  Show completed groups
+                </label>
+              </div>
+            </div>
+
+            {/* Group cards */}
+            {monitorVisible.length === 0 ? (
+              <div className="bg-white dark:bg-card rounded-xl shadow-sm border border-gray-200 dark:border-border p-12 text-center">
+                <ClipboardList className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  {needsAttentionOnly ? 'Everything is on track' : 'No homework yet'}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300">
+                  {needsAttentionOnly
+                    ? 'No groups have overdue or unsubmitted homework right now.'
+                    : 'Homework will appear here once teachers create it.'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {monitorVisible.map((g) => {
+                  const pct = Math.round(g.rate * 100);
+                  const barColor = pct >= 90 ? 'bg-green-500' : pct >= 60 ? 'bg-blue-500' : 'bg-red-500';
+                  return (
+                    <button
+                      key={g.id}
+                      onClick={() => setGroupId(g.id)}
+                      className="bg-white dark:bg-card rounded-lg border border-slate-200 dark:border-border p-4 text-left hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-md transition-all"
+                    >
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                        <Users className="w-4 h-4 text-slate-400 dark:text-gray-500 shrink-0" />
+                        <h3 className="font-bold text-slate-900 dark:text-white truncate">{g.name}</h3>
+                        {g.isOver && (
+                          <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-gray-400 shrink-0">
+                            Completed
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-2.5">
+                        {g.assignmentsCount} assignment{g.assignmentsCount !== 1 ? 's' : ''}
+                      </div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                          <div className={`h-1.5 rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="text-xs font-medium text-gray-600 dark:text-gray-300 tabular-nums whitespace-nowrap">{pct}%</span>
+                      </div>
+                      <div className="text-[11px] text-gray-500 dark:text-gray-400 mb-2.5 tabular-nums">
+                        {g.submitted}/{g.expected} submitted
+                      </div>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
+                        {g.overdue > 0 && (
+                          <span className="font-semibold text-red-600 dark:text-red-400">{g.overdue} overdue</span>
+                        )}
+                        {g.notSubmitted > 0 && (
+                          <span className="font-medium text-amber-600 dark:text-amber-400">{g.notSubmitted} not submitted</span>
+                        )}
+                        {g.overdue === 0 && g.notSubmitted === 0 && (
+                          <span className="font-medium text-green-600 dark:text-green-400">✓ All in</span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
       </div>
     );
   }

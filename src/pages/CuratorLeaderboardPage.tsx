@@ -213,6 +213,49 @@ const getGroupProgramType = (group: Group): CourseType => {
     return stored || 'general_english';
 };
 
+// Leaderboard label: strip the leading "Xxx - " prefix from the group name,
+// then append the teacher's full name. e.g.
+//   "Kamila - IELTS June 10 2026" + "Kamila Baitykova" -> "IELTS June 10 2026 - Kamila Baitykova"
+const formatGroupLabel = (group: Group): string => {
+    const rawName = group.name || '';
+    const sepIndex = rawName.indexOf(' - ');
+    const base = sepIndex !== -1 ? rawName.slice(sepIndex + 3).trim() : rawName.trim();
+    const teacher = (group.teacher_name || '').trim();
+    return teacher ? `${base} - ${teacher}` : base;
+};
+
+// Subject/date portion (label minus leading prefix and minus the program keyword,
+// which is shown as a badge instead). e.g. "June 38 SAT" -> "June 38"
+const getGroupDateText = (group: Group): string => {
+    const rawName = group.name || '';
+    const sepIndex = rawName.indexOf(' - ');
+    let base = sepIndex !== -1 ? rawName.slice(sepIndex + 3).trim() : rawName.trim();
+    const program = getGroupProgramType(group);
+    if (program !== 'general_english') {
+        base = base
+            .replace(new RegExp(`\\b${PROGRAM_LABELS[program]}\\b`, 'i'), '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+    }
+    return base || rawName;
+};
+
+const PROGRAM_BADGE_STYLES: Record<CourseType, string> = {
+    sat: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+    ielts: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+    nuet: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
+    general_english: 'bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-300',
+};
+
+// Russian plural for "групп": 1 группа, 2-4 группы, 5+ групп
+const pluralizeGroups = (n: number): string => {
+    const mod10 = n % 10;
+    const mod100 = n % 100;
+    if (mod10 === 1 && mod100 !== 11) return 'группа';
+    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'группы';
+    return 'групп';
+};
+
 const sortGroupsByCreatedAt = (items: Group[]) =>
     [...items].sort(
         (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -333,6 +376,16 @@ export default function CuratorLeaderboardPage() {
     [filteredGroups, selectedGroupId],
   );
   const isSatGroup = selectedGroup ? getGroupProgramType(selectedGroup) === 'sat' : false;
+
+  // Groups matching the picker search box (matches subject, date, and teacher name)
+  const groupMatches = useMemo(() => {
+    const q = groupQuery.trim().toLowerCase();
+    if (!q) return filteredGroups;
+    return filteredGroups.filter((group) =>
+      group.name.toLowerCase().includes(q) ||
+      formatGroupLabel(group).toLowerCase().includes(q)
+    );
+  }, [filteredGroups, groupQuery]);
   
   // UI states
   const [loading, setLoading] = useState(false);
@@ -809,7 +862,7 @@ export default function CuratorLeaderboardPage() {
                     </SelectContent>
                 </Select>
 
-                <div className="w-[240px]">
+                <div className="w-[300px] md:w-[360px]">
                     <Popover open={groupPickerOpen} onOpenChange={(open) => { setGroupPickerOpen(open); if (!open) setGroupQuery(''); }}>
                         <PopoverTrigger asChild>
                             <button
@@ -817,56 +870,81 @@ export default function CuratorLeaderboardPage() {
                                 className="flex h-8 w-full items-center justify-between rounded-md border border-gray-300 dark:border-border bg-transparent px-3 text-xs"
                             >
                                 <span className="truncate">
-                                    {filteredGroups.find((g) => g.id === selectedGroupId)?.name || 'Выберите группу'}
+                                    {(() => {
+                                        const g = filteredGroups.find((g) => g.id === selectedGroupId);
+                                        return g ? formatGroupLabel(g) : 'Выберите группу';
+                                    })()}
                                 </span>
                                 <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
                             </button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-[240px] p-0" align="start">
+                        <PopoverContent className="w-[300px] md:w-[360px] p-0" align="start">
                             <div className="p-2 border-b border-gray-200 dark:border-border">
                                 <Input
                                     autoFocus
                                     value={groupQuery}
                                     onChange={(e) => setGroupQuery(e.target.value)}
-                                    placeholder="Поиск группы..."
+                                    placeholder="Поиск по предмету, дате или учителю..."
                                     className="h-8 text-xs"
                                 />
                             </div>
-                            <div className="max-h-72 overflow-y-auto py-1">
-                                {(() => {
-                                    const q = groupQuery.trim().toLowerCase();
-                                    const matches = q
-                                        ? filteredGroups.filter((g) => g.name.toLowerCase().includes(q))
-                                        : filteredGroups;
-                                    if (matches.length === 0) {
+                            <div className="flex items-center justify-between px-3 py-1 border-b border-gray-100 dark:border-border">
+                                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                                    {groupMatches.length} {pluralizeGroups(groupMatches.length)}
+                                </span>
+                            </div>
+                            <div className="max-h-72 overflow-y-auto py-0.5">
+                                {groupMatches.length === 0 ? (
+                                    <div className="px-3 py-3 text-xs text-muted-foreground text-center">
+                                        Ничего не найдено
+                                    </div>
+                                ) : (
+                                    groupMatches.map((g) => {
+                                        const program = getGroupProgramType(g);
+                                        const teacher = (g.teacher_name || '').trim();
                                         return (
-                                            <div className="px-3 py-2 text-xs text-muted-foreground">
-                                                Ничего не найдено
-                                            </div>
+                                            <button
+                                                key={g.id}
+                                                type="button"
+                                                onClick={() => {
+                                                    setSelectedGroupId(g.id);
+                                                    setCurrentWeek(
+                                                        g.current_week ?? calculateCurrentWeekNumber(g.created_at)
+                                                    );
+                                                    setGroupPickerOpen(false);
+                                                    setGroupQuery('');
+                                                }}
+                                                className={cn(
+                                                    "flex w-full items-start gap-2 px-3 py-1.5 text-left hover:bg-gray-100 dark:hover:bg-secondary",
+                                                    selectedGroupId === g.id && "bg-blue-50/60 dark:bg-secondary"
+                                                )}
+                                            >
+                                                <Check className={cn('h-3.5 w-3.5 shrink-0 mt-px', selectedGroupId === g.id ? 'opacity-100 text-blue-600 dark:text-blue-400' : 'opacity-0')} />
+                                                <div className="min-w-0 flex-1">
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className={cn(
+                                                            "shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide",
+                                                            PROGRAM_BADGE_STYLES[program]
+                                                        )}>
+                                                            {PROGRAM_LABELS[program]}
+                                                        </span>
+                                                        <span className="truncate text-xs font-medium text-gray-900 dark:text-foreground">
+                                                            {getGroupDateText(g)}
+                                                        </span>
+                                                        {g.is_over && (
+                                                            <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">(завершена)</span>
+                                                        )}
+                                                    </div>
+                                                    {teacher && (
+                                                        <div className="truncate text-[11px] text-muted-foreground leading-tight">
+                                                            {teacher}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </button>
                                         );
-                                    }
-                                    return matches.map((g) => (
-                                        <button
-                                            key={g.id}
-                                            type="button"
-                                            onClick={() => {
-                                                setSelectedGroupId(g.id);
-                                                setCurrentWeek(
-                                                    g.current_week ?? calculateCurrentWeekNumber(g.created_at)
-                                                );
-                                                setGroupPickerOpen(false);
-                                                setGroupQuery('');
-                                            }}
-                                            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs hover:bg-gray-100 dark:hover:bg-secondary"
-                                        >
-                                            <Check className={cn('h-3.5 w-3.5 shrink-0', selectedGroupId === g.id ? 'opacity-100' : 'opacity-0')} />
-                                            <span className="truncate">{g.name}</span>
-                                            {g.is_over && (
-                                                <span className="ml-auto text-[10px] text-muted-foreground">(завершена)</span>
-                                            )}
-                                        </button>
-                                    ));
-                                })()}
+                                    })
+                                )}
                             </div>
                         </PopoverContent>
                     </Popover>
