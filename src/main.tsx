@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import 'katex/dist/katex.min.css';
 import Router from "./routes/Router";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Snowfall from 'react-snowfall';
 
 // Suppress NextStep.js navigation warning for React SPA
@@ -25,6 +26,8 @@ if (!rootElement) throw new Error('Root element not found');
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <Router />
+    <ErrorBoundary>
+      <Router />
+    </ErrorBoundary>
   </React.StrictMode>
 );

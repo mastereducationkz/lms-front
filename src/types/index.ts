@@ -72,6 +72,11 @@ export interface Step {
   video_url?: string;
   video_url_en?: string;
   video_url_ru?: string;
+  // Self-hosted HLS playback (set once the ingest worker finishes). When present,
+  // players stream these instead of embedding YouTube. video_url stays as fallback.
+  hls_url?: string;
+  hls_url_en?: string;
+  video_status?: 'pending' | 'processing' | 'ready' | 'failed' | null;
   content_text?: string;
   attachments?: string; // JSON string of StepAttachment[]
   order_index: number;
