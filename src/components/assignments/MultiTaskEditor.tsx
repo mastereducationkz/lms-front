@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from '../ui/card';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
+import { toast } from '../Toast';
 import CourseUnitTaskEditor from './CourseUnitTaskEditor';
 import TextTaskEditor from './TextTaskEditor';
 import LinkTaskEditor from './LinkTaskEditor';
@@ -70,6 +71,14 @@ export default function MultiTaskEditor({ content, onContentChange }: MultiTaskE
   }, [tasks, instructions]);
 
   const addTask = (taskType: string) => {
+    // Only one "Course Units" task is allowed per assignment. Multiple course-unit
+    // tasks cause a course-resolution collision (the "Null course" bug) where one
+    // of them becomes impossible to complete.
+    if (taskType === 'course_unit' && tasks.some(t => t.task_type === 'course_unit')) {
+      toast('В одном задании можно добавить только один блок «Course Units»', 'error');
+      return;
+    }
+
     const newTask: Task = {
       id: `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       task_type: taskType as any,
@@ -296,17 +305,23 @@ export default function MultiTaskEditor({ content, onContentChange }: MultiTaskE
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {TASK_TYPES.map(taskType => {
               const Icon = taskType.icon;
+              const isCourseUnit = taskType.value === 'course_unit';
+              const courseUnitTaken = isCourseUnit && tasks.some(t => t.task_type === 'course_unit');
               return (
                 <Button
                   key={taskType.value}
                   type="button"
                   variant="outline"
                   onClick={() => addTask(taskType.value)}
-                  className="flex flex-col items-center justify-center h-auto py-4 space-y-2 text-center whitespace-normal"
+                  disabled={courseUnitTaken}
+                  title={courseUnitTaken ? 'Можно добавить только один блок «Course Units»' : undefined}
+                  className="flex flex-col items-center justify-center h-auto py-4 space-y-2 text-center whitespace-normal disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Icon className="w-6 h-6 flex-shrink-0" />
                   <span className="text-sm font-medium break-words w-full">{taskType.label}</span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 break-words w-full">{taskType.description}</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400 break-words w-full">
+                    {courseUnitTaken ? 'Уже добавлен' : taskType.description}
+                  </span>
                 </Button>
               );
             })}
