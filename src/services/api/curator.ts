@@ -55,6 +55,39 @@ export async function getCuratorHomeworkByGroup(groupId?: number): Promise<any> 
   }
 }
 
+export interface StudentHomeworkItem {
+  assignment_id: number;
+  title: string;
+  group_id: number;
+  group_name: string;
+  due_date: string | null;
+  max_score: number;
+  assignment_type: string;
+  content: any | null;
+  status: 'not_submitted' | 'submitted' | 'graded' | 'overdue';
+  submission_id: number | null;
+  score: number | null;
+  submitted_at: string | null;
+  graded_at: string | null;
+  feedback: string | null;
+}
+
+export interface StudentHomeworkResponse {
+  student_id: number;
+  student_name: string;
+  items: StudentHomeworkItem[];
+}
+
+export async function getCuratorStudentHomework(studentId: number): Promise<StudentHomeworkResponse> {
+  try {
+    const response = await api.get(`/dashboard/curator/student/${studentId}/homework`);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to load student homework:', error);
+    throw error;
+  }
+}
+
 export async function getCuratorGroups(): Promise<Group[]> {
   try {
     const response = await api.get('/leaderboard/curator/groups');

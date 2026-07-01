@@ -10,7 +10,8 @@ import {
 } from '../components/ui/select';
 import { Input } from '../components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
-import { ChevronLeft, ChevronRight, Loader2, Save, Eye, EyeOff, Check, ChevronsUpDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Save, Eye, EyeOff, Check, ChevronsUpDown, ClipboardList } from 'lucide-react';
+import { StudentHomeworkDialog } from '../components/leaderboard/StudentHomeworkDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { getCuratorGroups, getWeeklyLessonsWithHwStatus, updateAttendance, updateLeaderboardEntry, updateLeaderboardConfig } from '../services/api';
 import { Group, CourseType } from '../types';
@@ -192,6 +193,28 @@ const calculateCurrentWeekNumber = (createdAtStr: string) => {
     
     const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
     return diffWeeks + 1;
+};
+
+// Monday of a given week number for a group, derived from its created_at.
+const getWeekMonday = (createdAtStr: string, week: number) => {
+    const week1 = new Date(createdAtStr);
+    const day = week1.getDay();
+    const diffToMonday = day === 0 ? 6 : day - 1;
+    week1.setDate(week1.getDate() - diffToMonday);
+    week1.setHours(0, 0, 0, 0);
+    week1.setDate(week1.getDate() + (week - 1) * 7);
+    return week1;
+};
+
+const formatDayMonth = (d: Date) =>
+    d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' }).replace('.', '');
+
+// "01 – 07 июн" range label for a week number.
+const weekRangeLabel = (createdAtStr: string, week: number) => {
+    const start = getWeekMonday(createdAtStr, week);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    return `${formatDayMonth(start)} – ${formatDayMonth(end)}`;
 };
 
 const PROGRAM_LABELS: Record<CourseType, string> = {
@@ -431,6 +454,9 @@ export default function CuratorLeaderboardPage() {
   })
   const [satModal, setSatModal] = useState<SatFeedbackModal>({
     open: false, studentName: '', section: 'math', testName: null, feedback: null, correct: null, total: null, completedAt: null
+  })
+  const [studentHwModal, setStudentHwModal] = useState<{ open: boolean; studentId: number | null; studentName: string }>({
+    open: false, studentId: null, studentName: ''
   })
 
   const toggleColumn = (field: keyof typeof enabledCols) => {
@@ -786,65 +812,49 @@ export default function CuratorLeaderboardPage() {
     return `${correct}`;
   };
 
+  // Week-navigation bounds and the group's "real" current week (based on today).
+  const maxWeek = selectedGroup?.max_week || 52;
+  const realCurrentWeek = selectedGroup
+    ? Math.min(maxWeek, selectedGroup.current_week ?? calculateCurrentWeekNumber(selectedGroup.created_at))
+    : 1;
+  const isViewingCurrentWeek = currentWeek === realCurrentWeek;
+  const viewedRangeLabel = data
+    ? `${formatDayMonth(new Date(data.week_start))} – ${(() => {
+        const end = new Date(data.week_start);
+        end.setDate(end.getDate() + 6);
+        return formatDayMonth(end);
+      })()}`
+    : selectedGroup
+      ? weekRangeLabel(selectedGroup.created_at, currentWeek)
+      : '';
+
   return (
     <>
     <div className="p-4 w-full h-full bg-white dark:bg-card space-y-4 rounded">
       {/* Header Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4 dark:border-border">
-        <div>
-          <h1 className="text-xl font-semibold flex items-center gap-2 text-gray-800 dark:text-foreground">
-            Лидерборд {data && <span className="text-sm font-normal text-gray-500 dark:text-gray-400">(Неделя с {new Date(data.week_start).toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' }).replace('.', '')})</span>}
-          </h1>
+      <div className="flex flex-col gap-3 border-b pb-4 dark:border-border">
+        {/* Row 1: title + save */}
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-xl font-semibold text-gray-800 dark:text-foreground">Лидерборд</h1>
+          <Button
+              onClick={handleSaveChanges}
+              disabled={(!configChanged && changedEntries.size === 0) || isSaving}
+              size="sm"
+              className={cn(
+                  "h-8 transition-colors rounded-md font-medium",
+                  (configChanged || changedEntries.size > 0) ? "bg-green-600 hover:bg-green-700 text-white" : "bg-gray-100 text-gray-400 dark:bg-secondary dark:text-gray-500"
+              )}
+          >
+              {isSaving ? (
+                  <><Loader2 className="w-3 h-3 mr-2 animate-spin" /> Сохранение</>
+              ) : (
+                  <><Save className="w-3 h-3 mr-2" /> Сохранить ({changedEntries.size})</>
+              )}
+          </Button>
         </div>
-        
-        <div className="flex items-center gap-3">
-             <div className="flex items-center border rounded-md overflow-hidden bg-white dark:bg-card dark:border-border h-8">
-                <Button 
-                    variant="ghost" 
-                    size="icon"
-                    className="h-full w-8 rounded-none border-r hover:bg-gray-50 dark:hover:bg-secondary"
-                    onClick={() => setCurrentWeek(Math.max(1, currentWeek - 1))}
-                    disabled={currentWeek <= 1}
-                >
-                    <ChevronLeft className="w-4 h-4" />
-                </Button>
-                
-                <Select 
-                    value={currentWeek.toString()} 
-                    onValueChange={(val) => setCurrentWeek(parseInt(val))}
-                >
-                    <SelectTrigger className="px-4 text-xs font-semibold min-w-[140px] text-center bg-gray-50/50 dark:bg-secondary flex items-center justify-center h-full border-none focus:ring-0 rounded-none shadow-none">
-                        <SelectValue>
-                            {data ? (
-                                 `${new Date(data.week_start).toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' }).replace('.', '')} - ${(() => {
-                                    const end = new Date(data.week_start);
-                                    end.setDate(end.getDate() + 6);
-                                    return end.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' }).replace('.', '');
-                                })()}`
-                            ) : (
-                                `Неделя ${currentWeek}`
-                            )}
-                        </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                        {Array.from({ length: filteredGroups.find(g => g.id === selectedGroupId)?.max_week || 52 }, (_, i) => i + 1).map(w => (
-                            <SelectItem key={w} value={w.toString()} className="text-xs">
-                                Неделя {w}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
 
-                <Button 
-                    variant="ghost" 
-                    size="icon"
-                    className="h-full w-8 rounded-none border-l hover:bg-gray-50 dark:hover:bg-secondary"
-                    onClick={() => setCurrentWeek(currentWeek + 1)}
-                >
-                    <ChevronRight className="w-4 h-4" />
-                </Button>
-            </div>
-
+        {/* Row 2: filters (left) + week navigation (right) */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
                 <Select
                     value={programFilter}
@@ -964,22 +974,71 @@ export default function CuratorLeaderboardPage() {
                     </Label>
                 </div>
             </div>
-            
-            <Button 
-                onClick={handleSaveChanges} 
-                disabled={(!configChanged && changedEntries.size === 0) || isSaving}
-                size="sm"
-                className={cn(
-                    "h-8 transition-colors rounded-md font-medium",
-                    (configChanged || changedEntries.size > 0) ? "bg-green-600 hover:bg-green-700 text-white" : "bg-gray-100 text-gray-400 dark:bg-secondary dark:text-gray-500"
-                )}
-            >
-                {isSaving ? (
-                    <><Loader2 className="w-3 h-3 mr-2 animate-spin" /> Сохранение</>
-                ) : (
-                    <><Save className="w-3 h-3 mr-2" /> Сохранить ({changedEntries.size})</>
-                )}
-            </Button>
+
+            {/* Week navigation */}
+            {selectedGroupId && (
+                <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-stretch rounded-lg border border-gray-200 dark:border-border overflow-hidden bg-white dark:bg-card">
+                        <button
+                            type="button"
+                            onClick={() => setCurrentWeek(Math.max(1, currentWeek - 1))}
+                            disabled={currentWeek <= 1}
+                            title={currentWeek <= 1 ? 'Это первая неделя' : 'Предыдущая неделя'}
+                            className="flex w-8 items-center justify-center border-r border-gray-200 dark:border-border text-gray-500 hover:bg-gray-50 dark:hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                        </button>
+
+                        <Select value={currentWeek.toString()} onValueChange={(val) => setCurrentWeek(parseInt(val))}>
+                            <SelectTrigger className="h-auto min-w-[150px] gap-2 border-none rounded-none px-3 py-1 focus:ring-0 shadow-none bg-transparent hover:bg-gray-50 dark:hover:bg-secondary">
+                                <SelectValue>
+                                    <div className="flex flex-col items-center leading-tight text-center">
+                                        <span className="text-xs font-semibold text-gray-900 dark:text-foreground">
+                                            Неделя {currentWeek}
+                                            <span className="text-gray-400 font-normal"> / {maxWeek}</span>
+                                            {isViewingCurrentWeek && <span className="ml-1 text-[9px] font-bold uppercase text-blue-500 align-middle">сейчас</span>}
+                                        </span>
+                                        <span className="text-[10px] text-gray-400">{viewedRangeLabel}</span>
+                                    </div>
+                                </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent className="max-h-72">
+                                {Array.from({ length: maxWeek }, (_, i) => i + 1).map(w => (
+                                    <SelectItem key={w} value={w.toString()} className="text-xs">
+                                        <span className="flex items-center gap-2">
+                                            <span className="font-medium">Неделя {w}</span>
+                                            {selectedGroup && <span className="text-gray-400">{weekRangeLabel(selectedGroup.created_at, w)}</span>}
+                                            {w === realCurrentWeek && <span className="text-[9px] font-bold uppercase text-blue-500">сейчас</span>}
+                                        </span>
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        <button
+                            type="button"
+                            onClick={() => setCurrentWeek(Math.min(maxWeek, currentWeek + 1))}
+                            disabled={currentWeek >= maxWeek}
+                            title={currentWeek >= maxWeek ? 'Это последняя неделя' : 'Следующая неделя'}
+                            className="flex w-8 items-center justify-center border-l border-gray-200 dark:border-border text-gray-500 hover:bg-gray-50 dark:hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed"
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    {!isViewingCurrentWeek && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs"
+                            onClick={() => setCurrentWeek(realCurrentWeek)}
+                            title="Перейти к текущей неделе"
+                        >
+                            Сейчас
+                        </Button>
+                    )}
+                </div>
+            )}
         </div>
       </div>
 
@@ -1145,7 +1204,15 @@ export default function CuratorLeaderboardPage() {
                         <TableCell className="p-2 sticky left-0 z-30 bg-white dark:bg-card border-r border-gray-300 dark:border-border">
                              <div className="flex items-center gap-2">
                                 <span className="text-[10px] text-gray-400 w-4 text-right font-mono">{index + 1}</span>
-                                <span className="truncate max-w-[150px] font-medium text-gray-900 dark:text-foreground" title={student.student_name}>{student.student_name}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setStudentHwModal({ open: true, studentId: student.student_id, studentName: student.student_name })}
+                                    title={`${student.student_name} — все домашние задания`}
+                                    className="group flex items-center gap-1 truncate max-w-[150px] font-medium text-gray-900 dark:text-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors"
+                                >
+                                    <span className="truncate">{student.student_name}</span>
+                                    <ClipboardList className="w-3 h-3 shrink-0 text-gray-300 group-hover:text-blue-500 dark:text-gray-600 dark:group-hover:text-blue-400" />
+                                </button>
                             </div>
                         </TableCell>
                         
@@ -1412,6 +1479,13 @@ export default function CuratorLeaderboardPage() {
         </div>
       </DialogContent>
     </Dialog>
+
+    <StudentHomeworkDialog
+      open={studentHwModal.open}
+      onOpenChange={(open) => setStudentHwModal(prev => ({ ...prev, open }))}
+      studentId={studentHwModal.studentId}
+      studentName={studentHwModal.studentName}
+    />
     </>
   );
 }
