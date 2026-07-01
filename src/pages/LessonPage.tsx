@@ -9,7 +9,6 @@ import { useSettings } from '../contexts/SettingsContext';
 import apiClient from '../services/api';
 import type { Lesson, Step, Course, CourseModule, StepProgress, StepAttachment } from '../types';
 import YouTubeVideoPlayer from '../components/YouTubeVideoPlayer';
-import HlsVideoPlayer from '../components/HlsVideoPlayer';
 import { renderTextWithLatex } from '../utils/latex';
 import FlashcardViewer from '../components/lesson/FlashcardViewer';
 import QuizRenderer from '../components/lesson/QuizRenderer';
@@ -1638,14 +1637,6 @@ export default function LessonPage() {
           const activeVideoUrl = selectedVideoLanguage === 'en' ? stepVideoUrls.en : stepVideoUrls.ru
           const currentVideoStepError = videoStepTechErrors.get(currentStep.id.toString())
           const cleanVideoContentText = stripVideoLanguageMeta(currentStep.content_text)
-          // Prefer self-hosted HLS once ready; otherwise fall back to YouTube. RU is
-          // gated on video_status; EN is gated on presence of its HLS url.
-          const ruHlsReady = currentStep.video_status === 'ready' || (!!currentStep.hls_url && !currentStep.video_status)
-          const activeHlsUrl = selectedVideoLanguage === 'en'
-            ? currentStep.hls_url_en
-            : (ruHlsReady ? currentStep.hls_url : undefined)
-          const videoProcessing = selectedVideoLanguage !== 'en'
-            && (currentStep.video_status === 'pending' || currentStep.video_status === 'processing')
           const handleVideoError = (errorMessage: string) => {
             setVideoStepTechErrors(prev => {
               const stepId = currentStep.id.toString()
@@ -1699,30 +1690,14 @@ export default function LessonPage() {
                       </Button>
                     </div>
                   )}
-                  {activeHlsUrl ? (
-                    <HlsVideoPlayer
-                      key={`${currentStep.id}-${selectedVideoLanguage}-hls`}
-                      url={activeHlsUrl}
-                      title={currentStep.title || 'Lesson Video'}
-                      className="w-full"
-                      onError={handleVideoError}
-                      onProgress={handleVideoProgress}
-                    />
-                  ) : (
-                    <YouTubeVideoPlayer
-                      key={`${currentStep.id}-${selectedVideoLanguage}`}
-                      url={activeVideoUrl}
-                      title={currentStep.title || 'Lesson Video'}
-                      className="w-full"
-                      onError={handleVideoError}
-                      onProgress={handleVideoProgress}
-                    />
-                  )}
-                  {videoProcessing && (
-                    <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400 bg-white/60 dark:bg-gray-900/30 border-t border-gray-200 dark:border-gray-700">
-                      Оптимизируем видео для быстрой загрузки… пока воспроизводится через YouTube.
-                    </div>
-                  )}
+                  <YouTubeVideoPlayer
+                    key={`${currentStep.id}-${selectedVideoLanguage}`}
+                    url={activeVideoUrl}
+                    title={currentStep.title || 'Lesson Video'}
+                    className="w-full"
+                    onError={handleVideoError}
+                    onProgress={handleVideoProgress}
+                  />
                 </div>
               )}
               {currentVideoStepError && (
