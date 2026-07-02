@@ -11,18 +11,19 @@ import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 
+type RequestType = 'substitution' | 'reschedule' | 'cancel';
+
 export default function SubstitutionRequestPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Parse query params
   const eventId = searchParams.get('event_id') ? Number(searchParams.get('event_id')) : undefined;
   const groupId = searchParams.get('group_id') ? Number(searchParams.get('group_id')) : 0;
   const eventTitle = searchParams.get('title') || 'Lesson';
   const eventDatetime = searchParams.get('datetime') || '';
-  const initialType = (searchParams.get('type') as 'substitution' | 'reschedule') || 'substitution';
+  const initialType = (searchParams.get('type') as RequestType) || 'substitution';
 
-  const [requestType, setRequestType] = useState<'substitution' | 'reschedule'>(initialType);
+  const [requestType, setRequestType] = useState<RequestType>(initialType);
   const [availableTeachers, setAvailableTeachers] = useState<AvailableTeacher[]>([]);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
   const [selectedTeacherIds, setSelectedTeacherIds] = useState<number[]>([]);
@@ -68,7 +69,6 @@ export default function SubstitutionRequestPage() {
   const handleSubmit = async () => {
     try {
       setSubmitting(true);
-      // Convert datetime-local (local time) to ISO UTC for backend
       const newDatetimeIso = requestType === 'reschedule' && newDatetime
         ? new Date(newDatetime).toISOString()
         : undefined;
@@ -91,9 +91,12 @@ export default function SubstitutionRequestPage() {
     }
   };
 
-  const canSubmit = requestType === 'substitution'
-    ? selectedTeacherIds.length > 0
-    : !!newDatetime;
+  const canSubmit =
+    requestType === 'substitution'
+      ? selectedTeacherIds.length > 0
+      : requestType === 'reschedule'
+        ? !!newDatetime
+        : true;
 
   const hasValidParams = eventDatetime && groupId > 0;
 
@@ -104,7 +107,7 @@ export default function SubstitutionRequestPage() {
           <CardHeader className="text-center">
             <CardTitle>Invalid Request</CardTitle>
             <CardDescription>
-              Missing lesson information. Please start from the Calendar and click on an event to create a substitution or reschedule request.
+              Missing lesson information. Please start from the Calendar and click on an event.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center">
@@ -124,7 +127,7 @@ export default function SubstitutionRequestPage() {
           <CardHeader className="text-center">
             <CardTitle>Request Submitted</CardTitle>
             <CardDescription>
-              Your {requestType} request has been sent successfully.
+              Your {requestType} request has been sent to the head teacher for approval.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center gap-2">
@@ -146,10 +149,10 @@ export default function SubstitutionRequestPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">New Request</h1>
-            <p className="text-muted-foreground">Submit a substitution or reschedule request</p>
+            <p className="text-muted-foreground">Cancel, reschedule, or request a substitute</p>
           </div>
           <Button variant="outline" onClick={() => navigate(-1)}>
-            Cancel
+            Back
           </Button>
         </div>
 
@@ -161,12 +164,13 @@ export default function SubstitutionRequestPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <Tabs value={requestType} onValueChange={(v) => setRequestType(v as any)} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+            <Tabs value={requestType} onValueChange={(v) => setRequestType(v as RequestType)} className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="substitution">Substitution</TabsTrigger>
                 <TabsTrigger value="reschedule">Reschedule</TabsTrigger>
+                <TabsTrigger value="cancel">Cancel</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="substitution" className="space-y-4 mt-4">
                 <div className="flex items-center justify-between">
                   <Label>Select Substitute Teachers</Label>
@@ -190,29 +194,24 @@ export default function SubstitutionRequestPage() {
                   <div className="grid gap-2 border rounded-md p-2 max-h-60 overflow-y-auto">
                     {availableTeachers.map(t => (
                       <div key={t.id} className="flex items-center space-x-2 p-2 rounded hover:bg-muted/50 transition-colors">
-                        <Checkbox 
-                          id={`teacher-${t.id}`} 
-                          checked={selectedTeacherIds.includes(t.id)} 
+                        <Checkbox
+                          id={`teacher-${t.id}`}
+                          checked={selectedTeacherIds.includes(t.id)}
                           onCheckedChange={() => toggleTeacher(t.id)}
                         />
                         <div className="grid gap-0.5 leading-none">
                           <label
                             htmlFor={`teacher-${t.id}`}
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                            className="text-sm font-medium leading-none cursor-pointer"
                           >
                             {t.name}
                           </label>
-                          <p className="text-xs text-muted-foreground">
-                            {t.email}
-                          </p>
+                          <p className="text-xs text-muted-foreground">{t.email}</p>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-                <p className="text-xs text-muted-foreground">
-                  The request will be sent to selected teachers. The first one to confirm will take the class.
-                </p>
               </TabsContent>
 
               <TabsContent value="reschedule" className="space-y-4 mt-4">
@@ -224,15 +223,18 @@ export default function SubstitutionRequestPage() {
                     value={newDatetime}
                     onChange={e => setNewDatetime(e.target.value)}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    Time is in your local timezone and will be converted automatically.
-                  </p>
                 </div>
+              </TabsContent>
+
+              <TabsContent value="cancel" className="space-y-4 mt-4">
+                <p className="text-sm text-muted-foreground">
+                  This will send a cancellation request to your head teacher. The lesson will only be cancelled after approval.
+                </p>
               </TabsContent>
             </Tabs>
 
             <div className="space-y-2">
-              <Label htmlFor="reason">Reason (Optional)</Label>
+              <Label htmlFor="reason">Reason {requestType === 'cancel' ? '' : '(Optional)'}</Label>
               <Textarea
                 id="reason"
                 placeholder="Explain why you need this change..."
@@ -242,10 +244,11 @@ export default function SubstitutionRequestPage() {
               />
             </div>
 
-            <Button 
-              className="w-full" 
-              onClick={handleSubmit} 
+            <Button
+              className="w-full"
+              onClick={handleSubmit}
               disabled={submitting || !canSubmit}
+              variant={requestType === 'cancel' ? 'destructive' : 'default'}
             >
               {submitting ? 'Submitting...' : 'Submit Request'}
             </Button>

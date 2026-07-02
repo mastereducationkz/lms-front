@@ -48,6 +48,7 @@ import EditEvent from '../pages/EditEvent.tsx';
 import Calendar from '../pages/Calendar.tsx';
 import SubstitutionRequestPage from '../pages/SubstitutionRequestPage.tsx';
 import MyLessonRequests from '../pages/MyLessonRequests.tsx';
+import HeadTeacherLessonRequestsPage from '../pages/HeadTeacherLessonRequestsPage.tsx';
 import LandingPage from '../pages/LandingPage.tsx';
 import AnalyticsPage from '../pages/analytics/AnalyticsPage.tsx';
 import FavoriteFlashcardsPage from '../pages/FavoriteFlashcardsPage.tsx';
@@ -513,6 +514,14 @@ export default function Router() {
             <ProtectedRoute allowedRoles={['head_teacher', 'admin']}>
               <AppLayout>
                 <HeadTeacherTeacherDetailsPage />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/head-teacher/lesson-requests" element={
+            <ProtectedRoute allowedRoles={['head_teacher']}>
+              <AppLayout>
+                <HeadTeacherLessonRequestsPage />
               </AppLayout>
             </ProtectedRoute>
           } />

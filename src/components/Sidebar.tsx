@@ -88,6 +88,7 @@ function getNavigationItems(
     ['/admin/events', 'Manage Events', Calendar, 0, ['admin'], 'events-management', 'admin'],
     ['/exam-results', 'Exam Results', ClipboardCheck, 0, ['admin', 'head_curator', 'head_teacher'], 'exam-results-tracking-nav', 'admin'],
     ['/admin/question-reports', 'Question Reports', AlertTriangle, 0, ['admin'], 'question-reports-nav', 'admin'],
+    ['/head-teacher/lesson-requests', 'Lesson Requests', ArrowLeftRight, 0, ['head_teacher'], 'head-lesson-requests-nav', 'primary'],
     ['/admin/lesson-requests', 'Lesson Requests', ArrowLeftRight, 0, ['admin'], 'lesson-requests-nav', 'admin'],
     ['/my-requests', 'My Requests', ArrowLeftRight, 0, ['teacher'], 'my-requests-nav', 'primary'],
     ['/manual-unlocks', 'Manual Unlocks', Unlock, 0, ['teacher', 'head_teacher'], 'manual-unlocks-nav', 'primary'],

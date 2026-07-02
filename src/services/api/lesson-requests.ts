@@ -1,6 +1,16 @@
 import type { LessonRequest, CreateLessonRequest, AvailableTeacher } from '../../types';
 import { api } from './client';
 
+export async function getPendingLessonRequests(): Promise<LessonRequest[]> {
+  try {
+    const response = await api.get('/lesson-requests/pending-approval');
+    return response.data;
+  } catch (error) {
+    console.error('Failed to get pending lesson requests:', error);
+    throw error;
+  }
+}
+
 export async function getLessonRequests(status?: string): Promise<LessonRequest[]> {
   try {
     const params = status ? { status_filter: status } : {};

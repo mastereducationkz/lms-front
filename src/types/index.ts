@@ -1208,7 +1208,7 @@ export interface DailyQuestionsStatus {
 
 export interface LessonRequest {
   id: number;
-  request_type: 'substitution' | 'reschedule';
+  request_type: 'substitution' | 'reschedule' | 'cancel';
   status: 'pending' | 'approved' | 'rejected' | 'pending_teacher';
   requester_id: number;
   requester_name?: string;
@@ -1232,7 +1232,7 @@ export interface LessonRequest {
 }
 
 export interface CreateLessonRequest {
-  request_type: 'substitution' | 'reschedule';
+  request_type: 'substitution' | 'reschedule' | 'cancel';
   lesson_schedule_id?: number;
   event_id?: number;
   group_id: number;

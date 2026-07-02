@@ -717,6 +717,22 @@ export default function Calendar() {
                                         >
                                         Reschedule
                                         </button>
+                                        <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const params = new URLSearchParams({
+                                            type: 'cancel',
+                                            event_id: String(event.id),
+                                            group_id: String(event.group_ids?.[0] || 0),
+                                            title: event.title,
+                                            datetime: event.start_datetime,
+                                            });
+                                            navigate(`/lesson-requests/new?${params.toString()}`);
+                                        }}
+                                        className="text-xs font-medium px-3 py-1.5 rounded-md bg-white/60 dark:bg-gray-800/60 hover:bg-white/80 dark:hover:bg-gray-700/80 transition text-red-700 dark:text-red-300"
+                                        >
+                                        Cancel
+                                        </button>
                                     </>
                                 )}
                               </div>
