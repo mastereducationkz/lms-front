@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getMyLessonRequests } from '../services/api';
 import type { LessonRequest } from '../types';
+import { formatInKZ } from '../lib/datetime';
 import { Loader2 } from 'lucide-react';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -18,7 +19,7 @@ const STATUS_META: Record<string, { label: string; dot: string; text: string }> 
 };
 
 const formatDateTime = (value: string) =>
-  new Date(value).toLocaleString(undefined, {
+  formatInKZ(value, {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getAvailableTeachers, createLessonRequest } from '../services/api';
 import { toast } from '../components/Toast';
+import { formatInKZ } from '../lib/datetime';
 import type { AvailableTeacher } from '../types';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
@@ -152,7 +153,7 @@ export default function SubstitutionRequestPage() {
           <CardHeader>
             <CardTitle>{eventTitle}</CardTitle>
             <CardDescription>
-              {eventDatetime ? new Date(eventDatetime).toLocaleString('en-US', { dateStyle: 'long', timeStyle: 'short' }) : 'N/A'}
+              {eventDatetime ? formatInKZ(eventDatetime, { dateStyle: 'long', timeStyle: 'short' }) : 'N/A'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">

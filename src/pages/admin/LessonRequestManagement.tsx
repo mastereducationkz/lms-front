@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import apiClient from '../../services/api';
 import type { LessonRequest } from '../../types';
+import { formatInKZ } from '../../lib/datetime';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Input } from '../../components/ui/input';
@@ -70,10 +71,8 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-  };
+  const formatDate = (dateStr: string) =>
+    formatInKZ(dateStr, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   const statusBadge = (status: string) => {
     switch (status) {
