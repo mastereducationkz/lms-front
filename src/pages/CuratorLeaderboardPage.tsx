@@ -138,17 +138,20 @@ const AttendanceToggle = ({
     onChange: (status: string) => void,
     disabled?: boolean,
 }) => {
-  // Cycle: attended -> late -> missed -> attended
+  // Cycle: attended -> late -> missed -> cancelled -> attended
   const handleCycle = () => {
     if (disabled) return;
     if (initialStatus === 'attended') onChange('late');
     else if (initialStatus === 'late') onChange('missed');
+    else if (initialStatus === 'cancelled') onChange('attended');
+    else if (initialStatus === 'absent' || initialStatus === 'registered' || initialStatus === 'missed') onChange('cancelled');
     else onChange('attended');
   };
 
   const getStatusConfig = () => {
+    if (initialStatus === 'cancelled') return { label: 'Отменён', color: 'bg-slate-400 text-white', title: 'Урок отменён' };
     const s = (initialStatus === 'absent' || initialStatus === 'registered' || initialStatus === 'missed') ? 'missed' : initialStatus;
-    
+
     if (s === 'attended') return { label: 'Был', color: 'bg-emerald-500 text-white', title: 'Был' };
     if (s === 'late') return { label: 'Опоздал', color: 'bg-amber-400 text-gray-900 font-bold', title: 'Опоздал' };
     return { label: 'Не был', color: 'bg-rose-500 text-white', title: 'Не был' };
@@ -602,7 +605,14 @@ export default function CuratorLeaderboardPage() {
       if (enabledCols.self_reflection_journal) maxForWeek += MAX_SCORES.self_reflection_journal;
       if (enabledCols.weekly_evaluation) maxForWeek += MAX_SCORES.weekly_evaluation;
       // extra_points NOT added to maxForWeek
-      
+
+      // Cancelled lessons are excluded from the attendance denominator so a
+      // cancelled lesson never drags a student's percentage down.
+      const cancelledLessons = Object.values(student.lessons).filter(
+          l => l.attendance_status === 'cancelled'
+      ).length;
+      maxForWeek -= cancelledLessons * MAX_SCORES.attendance;
+
       if (maxForWeek === 0) return 0;
       return Math.round((total / maxForWeek) * 100); 
   };

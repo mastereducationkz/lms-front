@@ -1107,7 +1107,7 @@ export interface EventParticipant {
   event_id: number;
   user_id: number;
   user_name?: string;
-  registration_status: 'registered' | 'attended' | 'missed';
+  registration_status: 'registered' | 'attended' | 'late' | 'missed' | 'cancelled';
   registered_at: string;
   attended_at?: string;
 }
@@ -1146,7 +1146,7 @@ export const EVENT_TYPE_COLORS: Record<EventType, string> = {
 export interface EventStudent {
   student_id: number;
   name: string;
-  attendance_status: string; // "attended", "missed", "late", "registered"
+  attendance_status: string; // "attended", "missed", "late", "registered", "cancelled"
   last_updated?: string;
 }
 

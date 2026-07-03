@@ -52,18 +52,10 @@ export default function SubstitutionRequestPage() {
     }
   };
 
+  // Single substitute: the requester names one teacher and the request goes
+  // straight to the head teacher for approval (no substitute confirmation step).
   const toggleTeacher = (id: number) => {
-    setSelectedTeacherIds(prev =>
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
-  };
-
-  const selectAll = () => {
-    if (selectedTeacherIds.length === availableTeachers.length) {
-      setSelectedTeacherIds([]);
-    } else {
-      setSelectedTeacherIds(availableTeachers.map(t => t.id));
-    }
+    setSelectedTeacherIds(prev => (prev.includes(id) ? [] : [id]));
   };
 
   const handleSubmit = async () => {
@@ -173,12 +165,7 @@ export default function SubstitutionRequestPage() {
 
               <TabsContent value="substitution" className="space-y-4 mt-4">
                 <div className="flex items-center justify-between">
-                  <Label>Select Substitute Teachers</Label>
-                  {availableTeachers.length > 0 && (
-                    <Button variant="ghost" size="sm" onClick={selectAll} className="h-6 text-xs">
-                      {selectedTeacherIds.length === availableTeachers.length ? 'Deselect All' : 'Select All'}
-                    </Button>
-                  )}
+                  <Label>Select a substitute teacher</Label>
                 </div>
 
                 {loadingTeachers ? (

@@ -222,8 +222,9 @@ export default function TeacherAttendancePage() {
       if (currentStatus === 'pending') nextStatus = 'attended';
       else if (currentStatus === 'attended') nextStatus = 'late';
       else if (currentStatus === 'late') nextStatus = 'missed';
-      else if (currentStatus === 'missed') nextStatus = 'pending';
-      
+      else if (currentStatus === 'missed') nextStatus = 'cancelled';
+      else if (currentStatus === 'cancelled') nextStatus = 'pending';
+
       updateStudentStatus(studentId, lessonKey, nextStatus);
   };
 
@@ -329,6 +330,7 @@ export default function TeacherAttendancePage() {
           case 'attended': return 'bg-green-200 dark:bg-green-900/40 text-green-700 dark:text-green-400 hover:bg-green-300 dark:hover:bg-green-900/60';
           case 'late': return 'bg-yellow-200 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-500 hover:text-white dark:hover:bg-yellow-900/60';
           case 'missed': return 'bg-rose-500 dark:bg-rose-900/50 text-white dark:text-rose-400 hover:bg-rose-600 dark:hover:bg-rose-900/70';
+          case 'cancelled': return 'bg-slate-400 dark:bg-slate-700 text-white dark:text-slate-200 hover:bg-slate-500 dark:hover:bg-slate-600';
           case 'pending': return 'bg-gray-100/50 dark:bg-secondary text-gray-400 hover:bg-gray-200 dark:hover:bg-secondary/80';
           default: return 'bg-gray-50 dark:bg-secondary text-gray-400 hover:bg-gray-200 dark:hover:bg-secondary/80 border-gray-100 dark:border-border';
       }
@@ -339,6 +341,7 @@ export default function TeacherAttendancePage() {
           case 'attended': return 'Present';
           case 'late': return 'Late';
           case 'missed': return 'Absent';
+          case 'cancelled': return 'Cancelled';
           case 'pending': return '-';
           default: return 'None';
       }

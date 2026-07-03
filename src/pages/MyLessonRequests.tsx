@@ -1,292 +1,151 @@
 import { useState, useEffect } from 'react';
-import { getMyLessonRequests, getIncomingRequests, confirmLessonRequest, declineLessonRequest } from '../services/api';
+import { Link } from 'react-router-dom';
+import { getMyLessonRequests } from '../services/api';
 import type { LessonRequest } from '../types';
-import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '../components/ui/table';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Loader2 } from 'lucide-react';
 
+const TYPE_LABELS: Record<string, string> = {
+  substitution: 'Substitution',
+  reschedule: 'Reschedule',
+  cancel: 'Cancellation',
+};
+
+const STATUS_META: Record<string, { label: string; dot: string; text: string }> = {
+  pending: { label: 'Awaiting approval', dot: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400' },
+  pending_teacher: { label: 'Awaiting teacher', dot: 'bg-blue-500', text: 'text-blue-700 dark:text-blue-400' },
+  approved: { label: 'Approved', dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
+  rejected: { label: 'Rejected', dot: 'bg-rose-500', text: 'text-rose-700 dark:text-rose-400' },
+};
+
+const formatDateTime = (value: string) =>
+  new Date(value).toLocaleString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+
+function StatusPill({ status }: { status: string }) {
+  const meta = STATUS_META[status] ?? { label: status, dot: 'bg-gray-400', text: 'text-muted-foreground' };
+  return (
+    <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${meta.text}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+      {meta.label}
+    </span>
+  );
+}
+
+function RequestDetail({ req }: { req: LessonRequest }) {
+  if (req.request_type === 'reschedule' && req.new_datetime) {
+    return (
+      <span>
+        Moved to <span className="text-foreground font-medium">{formatDateTime(req.new_datetime)}</span>
+      </span>
+    );
+  }
+  if (req.request_type === 'substitution') {
+    const name = req.confirmed_teacher_name || req.substitute_teacher_name
+      || req.substitute_teacher_names?.[0];
+    return name
+      ? <span>Covered by <span className="text-foreground font-medium">{name}</span></span>
+      : <span>No substitute selected</span>;
+  }
+  if (req.reason) return <span>{req.reason}</span>;
+  return <span>—</span>;
+}
+
+function RequestRow({ req }: { req: LessonRequest }) {
+  return (
+    <div className="flex items-start justify-between gap-4 px-5 py-4 hover:bg-muted/40 transition-colors">
+      <div className="min-w-0 space-y-1">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {TYPE_LABELS[req.request_type] ?? req.request_type}
+          </span>
+          <span className="text-muted-foreground/50">·</span>
+          <span className="truncate font-medium">{req.group_name}</span>
+        </div>
+        <div className="text-sm text-muted-foreground">
+          {formatDateTime(req.original_datetime)}
+        </div>
+        <div className="text-sm text-muted-foreground">
+          <RequestDetail req={req} />
+        </div>
+      </div>
+      <div className="shrink-0 pt-1">
+        <StatusPill status={req.status} />
+      </div>
+    </div>
+  );
+}
+
+function Section({ title, requests }: { title: string; requests: LessonRequest[] }) {
+  if (requests.length === 0) return null;
+  return (
+    <section>
+      <div className="mb-2 flex items-baseline gap-2">
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+        <span className="text-sm text-muted-foreground">{requests.length}</span>
+      </div>
+      <div className="divide-y rounded-lg border bg-card">
+        {requests.map((req) => (
+          <RequestRow key={req.id} req={req} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function MyLessonRequests() {
-  const [outgoing, setOutgoing] = useState<LessonRequest[]>([]);
-  const [incoming, setIncoming] = useState<LessonRequest[]>([]);
+  const [requests, setRequests] = useState<LessonRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   useEffect(() => {
-    loadData();
+    (async () => {
+      try {
+        setRequests(await getMyLessonRequests());
+      } catch (error) {
+        console.error('Failed to load requests:', error);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [myReqs, incReqs] = await Promise.all([
-        getMyLessonRequests(),
-        getIncomingRequests(true) // Fetch history
-      ]);
-      setOutgoing(myReqs);
-      setIncoming(incReqs);
-    } catch (error) {
-      console.error('Failed to load requests:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleConfirm = async (id: number) => {
-    try {
-      setActionLoading(id);
-      await confirmLessonRequest(id);
-      await loadData(); // Reload to refresh lists
-    } catch (error) {
-      console.error('Failed to confirm request:', error);
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const handleDecline = async (id: number) => {
-    try {
-      setActionLoading(id);
-      await declineLessonRequest(id);
-      await loadData();
-    } catch (error) {
-      console.error('Failed to decline request:', error);
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-        case 'approved': return <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">Approved</Badge>;
-        case 'rejected': return <Badge variant="destructive">Rejected</Badge>;
-        case 'pending': return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800">Pending Admin</Badge>;
-        case 'pending_teacher': return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800">Waiting for Teacher</Badge>;
-        default: return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
-
-  // Separate incoming into pending (action needed) and history
-  const incomingPending = incoming.filter(r => r.status === 'pending_teacher');
-  const incomingHistory = incoming.filter(r => r.status !== 'pending_teacher');
+  const active = requests.filter((r) => r.status === 'pending' || r.status === 'pending_teacher');
+  const resolved = requests.filter((r) => r.status === 'approved' || r.status === 'rejected');
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[50vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-8 max-w-5xl space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Lesson Requests</h1>
-        <p className="text-muted-foreground mt-1">Manage your substitution and reschedule requests</p>
-      </div>
+    <div className="container mx-auto max-w-3xl space-y-8 py-8">
+      <header>
+        <h1 className="text-2xl font-semibold tracking-tight">My requests</h1>
+        <p className="mt-1 text-muted-foreground">
+          Substitution, reschedule and cancellation requests you've sent to your head teacher.
+        </p>
+      </header>
 
-      <Tabs defaultValue="outgoing" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md mb-8">
-          <TabsTrigger value="outgoing">My Requests</TabsTrigger>
-          <TabsTrigger value="incoming">Incoming Requests</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="outgoing">
-             <Card>
-                <CardHeader className="px-6 py-4 border-b">
-                    <CardTitle className="text-lg">My Outgoing Requests</CardTitle>
-                    <CardDescription>Requests you have sent</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Type</TableHead>
-                                <TableHead>Group</TableHead>
-                                <TableHead>Original Time</TableHead>
-                                <TableHead>Details</TableHead>
-                                <TableHead>Status</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {outgoing.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                                        No outgoing requests found.
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                outgoing.map(req => (
-                                    <TableRow key={req.id}>
-                                        <TableCell className="font-medium capitalize text-muted-foreground">
-                                            {req.request_type}
-                                        </TableCell>
-                                        <TableCell className="font-medium">
-                                            {req.group_name}
-                                        </TableCell>
-                                        <TableCell>
-                                            {new Date(req.original_datetime).toLocaleString()}
-                                        </TableCell>
-                                        <TableCell>
-                                            {req.reason && <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Reason: {req.reason}</div>}
-                                            {req.request_type === 'reschedule' && req.new_datetime && (
-                                                <div className="text-xs">
-                                                    New Time: <span className="font-medium">{new Date(req.new_datetime).toLocaleString()}</span>
-                                                </div>
-                                            )}
-                                            {req.request_type === 'substitution' && (
-                                                <div className="text-xs">
-                                                    {req.confirmed_teacher_name ? (
-                                                        <span className="text-green-600 font-medium">Confirmed: {req.confirmed_teacher_name}</span>
-                                                    ) : (
-                                                        <span className="text-muted-foreground">
-                                                            {req.substitute_teacher_names?.length 
-                                                                ? `Candidates: ${req.substitute_teacher_names.join(', ')}`
-                                                                : 'No candidates selected'}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </TableCell>
-                                        <TableCell>
-                                            {getStatusBadge(req.status)}
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-             </Card>
-        </TabsContent>
-
-        <TabsContent value="incoming" className="space-y-6">
-            {/* Active Requests */}
-            <Card>
-                <CardHeader className="px-6 py-4 border-b bg-blue-50/30 dark:bg-blue-900/10">
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <CardTitle className="text-lg text-blue-800 dark:text-blue-400">New Opportunities</CardTitle>
-                            <CardDescription>Substitution requests requiring your action</CardDescription>
-                        </div>
-                        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800">
-                            {incomingPending.length} New
-                        </Badge>
-                    </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Requester</TableHead>
-                                <TableHead>Group</TableHead>
-                                <TableHead>Time</TableHead>
-                                <TableHead>Reason</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                             {incomingPending.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                                        No new requests at the moment.
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                incomingPending.map(req => (
-                                    <TableRow key={req.id}>
-                                        <TableCell className="font-medium">
-                                            {req.requester_name}
-                                        </TableCell>
-                                        <TableCell>
-                                            {req.group_name}
-                                        </TableCell>
-                                        <TableCell>
-                                            {new Date(req.original_datetime).toLocaleString()}
-                                        </TableCell>
-                                        <TableCell className="max-w-[200px] truncate" title={req.reason || ''}>
-                                            {req.reason || '-'}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex justify-end gap-2">
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="sm"
-                                                    onClick={() => handleDecline(req.id)}
-                                                    disabled={actionLoading === req.id}
-                                                    className="h-8 text-xs text-muted-foreground hover:text-red-600 hover:bg-red-50"
-                                                >
-                                                    Decline
-                                                </Button>
-                                                <Button 
-                                                    size="sm"
-                                                    onClick={() => handleConfirm(req.id)}
-                                                    disabled={actionLoading === req.id}
-                                                    className="h-8 text-xs bg-blue-600 hover:bg-blue-700"
-                                                >
-                                                    {actionLoading === req.id && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                                                    Accept
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-
-            {/* History */}
-            {incomingHistory.length > 0 && (
-                <Card>
-                    <CardHeader className="px-6 py-4 border-b">
-                        <CardTitle className="text-lg">Accepted Requests</CardTitle>
-                        <CardDescription>Substitutions you have accepted</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Requester</TableHead>
-                                    <TableHead>Group</TableHead>
-                                    <TableHead>Time</TableHead>
-                                    <TableHead>Status</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {incomingHistory.map(req => (
-                                    <TableRow key={req.id}>
-                                        <TableCell className="font-medium text-muted-foreground">
-                                            {req.requester_name}
-                                        </TableCell>
-                                        <TableCell>
-                                            {req.group_name}
-                                        </TableCell>
-                                        <TableCell>
-                                            {new Date(req.original_datetime).toLocaleString()}
-                                        </TableCell>
-                                        <TableCell>
-                                            {getStatusBadge(req.status)}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-            )}
-        </TabsContent>
-      </Tabs>
+      {requests.length === 0 ? (
+        <div className="rounded-lg border border-dashed bg-card px-6 py-16 text-center">
+          <p className="font-medium">No requests yet</p>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+            Open a lesson in your <Link to="/calendar" className="text-foreground underline underline-offset-4">calendar</Link> to
+            request a substitute, reschedule, or cancellation.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          <Section title="Awaiting approval" requests={active} />
+          <Section title="Resolved" requests={resolved} />
+        </div>
+      )}
     </div>
   );
 }

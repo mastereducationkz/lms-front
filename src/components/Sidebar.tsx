@@ -65,7 +65,8 @@ function getNavigationItems(
   _userRole: string | undefined,
   unreadCount: number,
   unseenGradedCount: number = 0,
-  isSpecialGroupStudent: boolean = false
+  isSpecialGroupStudent: boolean = false,
+  lessonRequestCount: number = 0
 ): NavItemTuple[] {
   const allItems: NavItemTuple[] = [
     ['/dashboard', ['head_curator', 'curator'].includes(_userRole || '') ? 'Дашборд' : 'Dashboard', Home, 0, null, 'dashboard-nav', 'primary'],
@@ -88,9 +89,9 @@ function getNavigationItems(
     ['/admin/events', 'Manage Events', Calendar, 0, ['admin'], 'events-management', 'admin'],
     ['/exam-results', 'Exam Results', ClipboardCheck, 0, ['admin', 'head_curator', 'head_teacher'], 'exam-results-tracking-nav', 'admin'],
     ['/admin/question-reports', 'Question Reports', AlertTriangle, 0, ['admin'], 'question-reports-nav', 'admin'],
-    ['/head-teacher/lesson-requests', 'Lesson Requests', ArrowLeftRight, 0, ['head_teacher'], 'head-lesson-requests-nav', 'primary'],
-    ['/admin/lesson-requests', 'Lesson Requests', ArrowLeftRight, 0, ['admin'], 'lesson-requests-nav', 'admin'],
-    ['/my-requests', 'My Requests', ArrowLeftRight, 0, ['teacher'], 'my-requests-nav', 'primary'],
+    ['/head-teacher/lesson-requests', 'Lesson Requests', ArrowLeftRight, lessonRequestCount, ['head_teacher'], 'head-lesson-requests-nav', 'primary'],
+    ['/admin/lesson-requests', 'Lesson Requests', ArrowLeftRight, lessonRequestCount, ['admin'], 'lesson-requests-nav', 'admin'],
+    ['/my-requests', 'My Requests', ArrowLeftRight, lessonRequestCount, ['teacher'], 'my-requests-nav', 'primary'],
     ['/manual-unlocks', 'Manual Unlocks', Unlock, 0, ['teacher', 'head_teacher'], 'manual-unlocks-nav', 'primary'],
     ['/chat', ['head_curator', 'curator'].includes(_userRole || '') ? 'Чат' : 'Chat', MessageCircle, unreadCount, null, 'messages-nav', 'primary'],
   ];
@@ -133,6 +134,7 @@ interface SidebarProps {
 export default function Sidebar({ variant = 'desktop', isCollapsed = false, onToggle }: SidebarProps) {
   const [unread, setUnread] = useState(0);
   const [unseenGraded, setUnseenGraded] = useState(0);
+  const [lessonRequestCount, setLessonRequestCount] = useState(0);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [isCoursesExpanded, setIsCoursesExpanded] = useState(false);
@@ -169,6 +171,28 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
     
     // Refresh every 30 seconds
     const interval = setInterval(loadUnseenGradedCount, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  // Load pending lesson-request count for the sidebar badge.
+  // Teacher: their own requests still awaiting a decision.
+  // Head teacher / admin: requests awaiting their approval.
+  useEffect(() => {
+    if (!user || !['teacher', 'head_teacher', 'admin'].includes(user.role)) return;
+
+    const loadLessonRequestCount = async () => {
+      try {
+        const reqs = user.role === 'teacher'
+          ? await apiClient.getMyLessonRequests('pending')
+          : await apiClient.getPendingLessonRequests();
+        setLessonRequestCount(reqs.length);
+      } catch (error) {
+        console.warn('Failed to load lesson request count:', error);
+      }
+    };
+
+    loadLessonRequestCount();
+    const interval = setInterval(loadLessonRequestCount, 30000);
     return () => clearInterval(interval);
   }, [user]);
 
@@ -308,7 +332,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
       
       <nav className="flex flex-col flex-1 overflow-y-auto min-h-0 pt-1">
         {buildNavSections(
-          getNavigationItems(user?.role, unread, unseenGraded, hideRestrictedStudentNav),
+          getNavigationItems(user?.role, unread, unseenGraded, hideRestrictedStudentNav, lessonRequestCount),
           user?.role
         )
           .map((section) => ({
