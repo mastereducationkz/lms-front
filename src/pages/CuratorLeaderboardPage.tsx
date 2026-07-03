@@ -65,6 +65,23 @@ interface StudentRow {
     sat_verbal_test_name?: string | null;
     sat_math_completed_at?: string | null;
     sat_verbal_completed_at?: string | null;
+    ielts_listening_band?: number | null;
+    ielts_reading_band?: number | null;
+    ielts_writing_band?: number | null;
+    ielts_speaking_band?: number | null;
+    ielts_overall_band?: number | null;
+    ielts_listening_test_name?: string | null;
+    ielts_reading_test_name?: string | null;
+    ielts_writing_test_name?: string | null;
+    ielts_writing_feedback?: { task1?: string | null; task2?: string | null } | null;
+    ielts_speaking_feedback?: {
+        fluencyCoherence?: string | null;
+        lexicalResource?: string | null;
+        grammaticalRange?: string | null;
+        pronunciation?: string | null;
+        overall?: string | null;
+    } | null;
+    ielts_weekly_set_title?: string | null;
     study_buddy: number;
     self_reflection_journal: number;
     weekly_evaluation: number;
@@ -402,6 +419,7 @@ export default function CuratorLeaderboardPage() {
     [filteredGroups, selectedGroupId],
   );
   const isSatGroup = selectedGroup ? getGroupProgramType(selectedGroup) === 'sat' : false;
+  const isIeltsGroup = selectedGroup ? getGroupProgramType(selectedGroup) === 'ielts' : false;
 
   // Groups matching the picker search box (matches subject, date, and teacher name)
   const groupMatches = useMemo(() => {
@@ -457,6 +475,9 @@ export default function CuratorLeaderboardPage() {
   })
   const [satModal, setSatModal] = useState<SatFeedbackModal>({
     open: false, studentName: '', section: 'math', testName: null, feedback: null, correct: null, total: null, completedAt: null
+  })
+  const [ieltsModal, setIeltsModal] = useState<{ open: boolean; student: StudentRow | null }>({
+    open: false, student: null
   })
   const [studentHwModal, setStudentHwModal] = useState<{ open: boolean; studentId: number | null; studentName: string }>({
     open: false, studentId: null, studentName: ''
@@ -822,6 +843,14 @@ export default function CuratorLeaderboardPage() {
     return `${correct}`;
   };
 
+  // IELTS bands are conventionally rendered with one decimal: 7.0, 7.5
+  const formatBand = (band?: number | null) => (band == null ? '—' : band.toFixed(1));
+
+  const hasIeltsData = (s: StudentRow) =>
+    s.ielts_listening_band != null || s.ielts_reading_band != null ||
+    s.ielts_writing_band != null || s.ielts_speaking_band != null ||
+    s.ielts_overall_band != null;
+
   // Week-navigation bounds and the group's "real" current week (based on today).
   const maxWeek = selectedGroup?.max_week || 52;
   const realCurrentWeek = selectedGroup
@@ -1146,6 +1175,8 @@ export default function CuratorLeaderboardPage() {
                                 SAT Verbal
                             </TableHead>
                         </>
+                    ) : isIeltsGroup ? (
+                        <TableHead className="text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight">IELTS</TableHead>
                     ) : (
                         <TableHead className="text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight">Пробный<br/>экзамен</TableHead>
                     )}
@@ -1339,6 +1370,30 @@ export default function CuratorLeaderboardPage() {
                                     </div>
                                 </TableCell>
                             </>
+                        ) : isIeltsGroup ? (
+                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-12">
+                                <div
+                                    className={cn(
+                                        "w-full h-full flex items-center justify-center text-xs font-semibold transition-colors",
+                                        hasIeltsData(student)
+                                            ? "cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                                            : ""
+                                    )}
+                                    onClick={() => {
+                                        if (!hasIeltsData(student)) return
+                                        setIeltsModal({ open: true, student })
+                                    }}
+                                    title={hasIeltsData(student) ? 'Click to see IELTS results and feedback' : undefined}
+                                >
+                                    {student.ielts_overall_band != null ? (
+                                        <span className="text-gray-900 dark:text-foreground">{formatBand(student.ielts_overall_band)}</span>
+                                    ) : hasIeltsData(student) ? (
+                                        <span className="text-gray-500 dark:text-gray-400">—</span>
+                                    ) : (
+                                        <span className="text-gray-400 italic">Не сдано</span>
+                                    )}
+                                </div>
+                            </TableCell>
                         ) : (
                             <TableCell className="p-0 border-r border-gray-300 dark:border-border h-12">
                                 <div className="w-full h-full flex items-center justify-center text-xs font-medium">
@@ -1487,6 +1542,115 @@ export default function CuratorLeaderboardPage() {
             <p className="text-sm text-gray-400 italic">No feedback available</p>
           )}
         </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* ── IELTS Feedback Modal ───────────────────────────────────── */}
+    <Dialog open={ieltsModal.open} onOpenChange={(open) => setIeltsModal(prev => ({ ...prev, open }))}>
+      <DialogContent className="sm:max-w-xl p-0 overflow-hidden max-h-[85vh] flex flex-col">
+        {ieltsModal.student && (() => {
+          const s = ieltsModal.student;
+          const bands: { label: string; value?: number | null }[] = [
+            { label: 'Listening', value: s.ielts_listening_band },
+            { label: 'Reading', value: s.ielts_reading_band },
+            { label: 'Writing', value: s.ielts_writing_band },
+            { label: 'Speaking', value: s.ielts_speaking_band },
+          ];
+          const writingFb = s.ielts_writing_feedback;
+          const speakingFb = s.ielts_speaking_feedback;
+          const speakingCriteria: { label: string; text?: string | null }[] = [
+            { label: 'Fluency & Coherence', text: speakingFb?.fluencyCoherence },
+            { label: 'Lexical Resource', text: speakingFb?.lexicalResource },
+            { label: 'Grammatical Range & Accuracy', text: speakingFb?.grammaticalRange },
+            { label: 'Pronunciation', text: speakingFb?.pronunciation },
+            { label: 'Overall', text: speakingFb?.overall },
+          ];
+          const hasWritingFb = Boolean(writingFb?.task1 || writingFb?.task2);
+          const hasSpeakingFb = speakingCriteria.some(c => c.text);
+          return (
+            <>
+              {/* Header */}
+              <div className="px-5 pt-5 pb-4 border-b border-gray-100 dark:border-border shrink-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400">
+                    IELTS
+                  </span>
+                  {s.ielts_weekly_set_title && (
+                    <span className="text-xs text-gray-400">{s.ielts_weekly_set_title}</span>
+                  )}
+                </div>
+                <h2 className="text-base font-semibold text-gray-900 dark:text-foreground">{s.student_name}</h2>
+              </div>
+
+              {/* Band strip */}
+              <div className="flex items-center gap-2 px-5 py-3 bg-emerald-50 dark:bg-emerald-900/20 shrink-0">
+                {bands.map(b => (
+                  <div key={b.label} className="flex flex-col items-center flex-1">
+                    <span className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">{b.label.slice(0, 1)}</span>
+                    <span className={cn(
+                      "text-sm font-bold tabular-nums",
+                      b.value != null ? "text-emerald-700 dark:text-emerald-400" : "text-gray-400"
+                    )} title={b.label}>
+                      {formatBand(b.value)}
+                    </span>
+                  </div>
+                ))}
+                <div className="flex flex-col items-center flex-1 border-l border-emerald-200 dark:border-emerald-800 pl-2">
+                  <span className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Overall</span>
+                  <span className={cn(
+                    "text-2xl font-bold tabular-nums",
+                    s.ielts_overall_band != null ? "text-emerald-700 dark:text-emerald-400" : "text-gray-400"
+                  )}>
+                    {formatBand(s.ielts_overall_band)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Feedback body */}
+              <div className="px-5 py-4 overflow-y-auto space-y-5">
+                {hasWritingFb && (
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
+                      Writing feedback{s.ielts_writing_test_name ? ` · ${s.ielts_writing_test_name}` : ''}
+                    </h3>
+                    <div className="space-y-3">
+                      {writingFb?.task1 && (
+                        <div>
+                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Task 1</p>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{writingFb.task1}</p>
+                        </div>
+                      )}
+                      {writingFb?.task2 && (
+                        <div>
+                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Task 2</p>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{writingFb.task2}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {hasSpeakingFb && (
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
+                      Speaking feedback
+                    </h3>
+                    <div className="space-y-3">
+                      {speakingCriteria.filter(c => c.text).map(c => (
+                        <div key={c.label}>
+                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">{c.label}</p>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{c.text}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {!hasWritingFb && !hasSpeakingFb && (
+                  <p className="text-sm text-gray-400 italic">No feedback available</p>
+                )}
+              </div>
+            </>
+          );
+        })()}
       </DialogContent>
     </Dialog>
 
