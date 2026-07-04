@@ -15,6 +15,10 @@ import { StudentHomeworkDialog } from '../components/leaderboard/StudentHomework
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { getCuratorGroups, getWeeklyLessonsWithHwStatus, updateAttendance, updateLeaderboardEntry, updateLeaderboardConfig } from '../services/api';
 import { Group, CourseType } from '../types';
+import {
+  PROGRAM_LABELS, PROGRAM_BADGE_STYLES, getGroupProgramType,
+  formatGroupLabel, getGroupDateText, pluralizeGroups, sortGroupsByCreatedAt,
+} from '../lib/groupPicker';
 import { Checkbox } from '../components/ui/checkbox';
 import { Label } from '../components/ui/label';
 import { useAuth } from '../contexts/AuthContext';
@@ -237,72 +241,9 @@ const weekRangeLabel = (createdAtStr: string, week: number) => {
     return `${formatDayMonth(start)} – ${formatDayMonth(end)}`;
 };
 
-const PROGRAM_LABELS: Record<CourseType, string> = {
-    sat: 'SAT',
-    ielts: 'IELTS',
-    nuet: 'NUET',
-    general_english: 'General English',
-};
-
-const getGroupProgramType = (group: Group): CourseType => {
-    const stored = group.program_type as CourseType | undefined;
-    if (stored === 'sat' || stored === 'ielts' || stored === 'nuet') return stored;
-
-    const name = group.name || '';
-    if (/\bielts\b/i.test(name)) return 'ielts';
-    if (/\bnuet\b/i.test(name)) return 'nuet';
-    if (/\bsat\b/i.test(name)) return 'sat';
-
-    return stored || 'general_english';
-};
-
-// Leaderboard label: strip the leading "Xxx - " prefix from the group name,
-// then append the teacher's full name. e.g.
-//   "Kamila - IELTS June 10 2026" + "Kamila Baitykova" -> "IELTS June 10 2026 - Kamila Baitykova"
-const formatGroupLabel = (group: Group): string => {
-    const rawName = group.name || '';
-    const sepIndex = rawName.indexOf(' - ');
-    const base = sepIndex !== -1 ? rawName.slice(sepIndex + 3).trim() : rawName.trim();
-    const teacher = (group.teacher_name || '').trim();
-    return teacher ? `${base} - ${teacher}` : base;
-};
-
-// Subject/date portion (label minus leading prefix and minus the program keyword,
-// which is shown as a badge instead). e.g. "June 38 SAT" -> "June 38"
-const getGroupDateText = (group: Group): string => {
-    const rawName = group.name || '';
-    const sepIndex = rawName.indexOf(' - ');
-    let base = sepIndex !== -1 ? rawName.slice(sepIndex + 3).trim() : rawName.trim();
-    const program = getGroupProgramType(group);
-    if (program !== 'general_english') {
-        base = base
-            .replace(new RegExp(`\\b${PROGRAM_LABELS[program]}\\b`, 'i'), '')
-            .replace(/\s{2,}/g, ' ')
-            .trim();
-    }
-    return base || rawName;
-};
-
-const PROGRAM_BADGE_STYLES: Record<CourseType, string> = {
-    sat: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-    ielts: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-    nuet: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
-    general_english: 'bg-gray-100 text-gray-600 dark:bg-gray-700/50 dark:text-gray-300',
-};
-
-// Russian plural for "групп": 1 группа, 2-4 группы, 5+ групп
-const pluralizeGroups = (n: number): string => {
-    const mod10 = n % 10;
-    const mod100 = n % 100;
-    if (mod10 === 1 && mod100 !== 11) return 'группа';
-    if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'группы';
-    return 'групп';
-};
-
-const sortGroupsByCreatedAt = (items: Group[]) =>
-    [...items].sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
+// Group-picker helpers (PROGRAM_LABELS, getGroupProgramType, formatGroupLabel,
+// getGroupDateText, PROGRAM_BADGE_STYLES, pluralizeGroups, sortGroupsByCreatedAt)
+// are shared with the Attendance page — see ../lib/groupPicker.
 
 const applyGroupWeek = (group: Group, weekParam: string | null) => {
     if (weekParam) return parseInt(weekParam, 10);

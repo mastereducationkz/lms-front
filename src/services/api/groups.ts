@@ -34,9 +34,17 @@ export async function getMyGroups(): Promise<Group[]> {
   }
 }
 
-export async function getTeacherGroups(): Promise<Group[]> {
+export async function getTeacherGroups(
+  limit: number = 100,
+  includeStudents: boolean = true,
+): Promise<Group[]> {
   try {
-    const response = await api.get('/admin/groups');
+    // /admin/groups defaults to limit=100 and embeds full student lists. Callers
+    // that only need the group list (e.g. a picker) can pass a high limit and
+    // includeStudents=false to fetch every group without the heavy student payload.
+    const response = await api.get('/admin/groups', {
+      params: { limit, include_students: includeStudents },
+    });
     return response.data;
   } catch (error) {
     throw new Error('Failed to fetch teacher groups');

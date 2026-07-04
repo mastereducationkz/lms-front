@@ -17,13 +17,21 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '../components/ui/popover';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '../components/ui/select';
+import { Checkbox } from '../components/ui/checkbox';
+import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
 import apiClient, { getGroupFullAttendanceMatrix, updateAttendanceBulk, getCuratorGroups } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import { Group } from '../types';
+import { Group, CourseType } from '../types';
 import { cn } from '../lib/utils';
 import { isAttendanceLockedLesson } from '../lib/attendance';
-import { prepareTeacherGroupList } from '../lib/groupList';
+import {
+  PROGRAM_LABELS, PROGRAM_BADGE_STYLES, getGroupProgramType,
+  formatGroupLabel, getGroupDateText, pluralizeGroups, sortGroupsByCreatedAt,
+} from '../lib/groupPicker';
 import { Skeleton } from '../components/ui/skeleton';
 import {
   Table,
@@ -73,6 +81,8 @@ export default function TeacherAttendancePage() {
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [groupComboOpen, setGroupComboOpen] = useState(false);
   const [groupSearch, setGroupSearch] = useState('');
+  const [programFilter, setProgramFilter] = useState<'all' | CourseType>('all');
+  const [hideCompletedGroups, setHideCompletedGroups] = useState(true);
   
   const [data, setData] = useState<AttendanceData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -106,25 +116,26 @@ export default function TeacherAttendancePage() {
       setLoading(true);
       let fetchedGroups;
       try {
-          fetchedGroups = await apiClient.getTeacherGroups();
+          // Fetch every group (high limit) without the heavy per-group student payload —
+          // the picker only needs group metadata.
+          fetchedGroups = await apiClient.getTeacherGroups(1000, false);
       } catch (e) {
           fetchedGroups = await getCuratorGroups();
       }
-      
-      const visibleGroups = prepareTeacherGroupList(fetchedGroups || []);
-      setGroups(visibleGroups);
-      
-      // Update selected group based on URL or default to first group
+
+      // Keep the full list (including completed groups); filtering is handled by
+      // the picker's program filter + "hide completed" toggle, same as the leaderboard.
+      const allGroups = sortGroupsByCreatedAt(fetchedGroups || []);
+      setGroups(allGroups);
+
+      // Default selection: URL group if present, otherwise the first non-completed
+      // group (falling back to the first group overall).
       const urlGroupId = searchParams.get('group');
-      if (urlGroupId) {
-          const groupExists = visibleGroups.find(g => g.id === Number(urlGroupId));
-          if (groupExists) {
-              setSelectedGroupId(Number(urlGroupId));
-          } else if (visibleGroups.length > 0) {
-              setSelectedGroupId(visibleGroups[0].id);
-          }
-      } else if (visibleGroups.length > 0) {
-        setSelectedGroupId(visibleGroups[0].id);
+      const defaultGroup = allGroups.find(g => !g.is_over) || allGroups[0];
+      if (urlGroupId && allGroups.some(g => g.id === Number(urlGroupId))) {
+          setSelectedGroupId(Number(urlGroupId));
+      } else if (defaultGroup) {
+          setSelectedGroupId(defaultGroup.id);
       }
     } catch (err) {
       console.error('Failed to load groups:', err);
@@ -308,10 +319,22 @@ export default function TeacherAttendancePage() {
     [groups, selectedGroupId],
   )
 
+  // Program filter + hide-completed, then subject/date/teacher search — same as the leaderboard.
   const filteredGroups = useMemo(() => {
-    const q = groupSearch.trim().toLowerCase()
-    return q ? groups.filter(g => (g.name || '').toLowerCase().includes(q)) : groups
-  }, [groups, groupSearch])
+    let result = groups;
+    if (hideCompletedGroups) result = result.filter(g => !g.is_over);
+    if (programFilter !== 'all') result = result.filter(g => getGroupProgramType(g) === programFilter);
+    return sortGroupsByCreatedAt(result);
+  }, [groups, hideCompletedGroups, programFilter]);
+
+  const groupMatches = useMemo(() => {
+    const q = groupSearch.trim().toLowerCase();
+    if (!q) return filteredGroups;
+    return filteredGroups.filter(g =>
+      (g.name || '').toLowerCase().includes(q) ||
+      formatGroupLabel(g).toLowerCase().includes(q)
+    );
+  }, [filteredGroups, groupSearch]);
 
   const formatDate = (dateStr: string) => {
       // Backend stores in UTC, convert to Kazakhstan time (GMT+5)
@@ -364,6 +387,19 @@ export default function TeacherAttendancePage() {
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <Select value={programFilter} onValueChange={(value) => setProgramFilter(value as 'all' | CourseType)}>
+            <SelectTrigger className="h-9 w-full sm:w-[140px] text-sm">
+              <SelectValue placeholder="Subject" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All subjects</SelectItem>
+              <SelectItem value="sat">SAT</SelectItem>
+              <SelectItem value="ielts">IELTS</SelectItem>
+              <SelectItem value="nuet">NUET</SelectItem>
+              <SelectItem value="general_english">General English</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Popover open={groupComboOpen} onOpenChange={(open) => {
             setGroupComboOpen(open)
             if (!open) setGroupSearch('')
@@ -381,13 +417,13 @@ export default function TeacherAttendancePage() {
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-40" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[300px] p-0" align="start">
+            <PopoverContent className="w-[320px] p-0" align="start">
               {/* Search input */}
               <div className="flex items-center border-b border-gray-200 dark:border-border px-3">
                 <Search className="mr-2 h-4 w-4 shrink-0 text-gray-400" />
                 <input
                   autoFocus
-                  placeholder="Search groups…"
+                  placeholder="Search by subject, date or teacher…"
                   className="flex h-10 w-full bg-transparent py-3 text-sm outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   value={groupSearch}
                   onChange={e => setGroupSearch(e.target.value)}
@@ -398,35 +434,67 @@ export default function TeacherAttendancePage() {
                   </button>
                 )}
               </div>
+              <div className="flex items-center justify-between px-3 py-1 border-b border-gray-100 dark:border-border">
+                <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                  {groupMatches.length} {pluralizeGroups(groupMatches.length)}
+                </span>
+              </div>
               {/* List */}
-              <div className="max-h-64 overflow-y-auto p-1">
-                {filteredGroups.length === 0 ? (
+              <div className="max-h-72 overflow-y-auto py-0.5">
+                {groupMatches.length === 0 ? (
                   <p className="py-6 text-center text-sm text-gray-400">No groups found</p>
                 ) : (
-                  filteredGroups.map(g => (
-                    <button
-                      key={g.id}
-                      className={cn(
-                        'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-secondary transition-colors text-left',
-                        selectedGroupId === g.id && 'bg-gray-50 dark:bg-secondary font-medium'
-                      )}
-                      onClick={() => {
-                        setSelectedGroupId(g.id)
-                        setGroupComboOpen(false)
-                        setGroupSearch('')
-                      }}
-                    >
-                      <Check className={cn(
-                        'h-4 w-4 shrink-0 text-blue-600',
-                        selectedGroupId === g.id ? 'opacity-100' : 'opacity-0'
-                      )} />
-                      {g.name}
-                    </button>
-                  ))
+                  groupMatches.map(g => {
+                    const program = getGroupProgramType(g);
+                    const teacher = (g.teacher_name || '').trim();
+                    return (
+                      <button
+                        key={g.id}
+                        className={cn(
+                          'flex w-full items-start gap-2 px-3 py-1.5 text-left hover:bg-gray-100 dark:hover:bg-secondary transition-colors',
+                          selectedGroupId === g.id && 'bg-blue-50/60 dark:bg-secondary'
+                        )}
+                        onClick={() => {
+                          setSelectedGroupId(g.id)
+                          setGroupComboOpen(false)
+                          setGroupSearch('')
+                        }}
+                      >
+                        <Check className={cn('h-3.5 w-3.5 shrink-0 mt-px', selectedGroupId === g.id ? 'opacity-100 text-blue-600' : 'opacity-0')} />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className={cn('shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide', PROGRAM_BADGE_STYLES[program])}>
+                              {PROGRAM_LABELS[program]}
+                            </span>
+                            <span className="truncate text-xs font-medium text-gray-900 dark:text-foreground">
+                              {getGroupDateText(g)}
+                            </span>
+                            {g.is_over && (
+                              <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">(completed)</span>
+                            )}
+                          </div>
+                          {teacher && (
+                            <div className="truncate text-[11px] text-muted-foreground leading-tight">{teacher}</div>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })
                 )}
               </div>
             </PopoverContent>
           </Popover>
+
+          <div className="flex items-center gap-2 px-1">
+            <Checkbox
+              id="att-hide-completed-groups"
+              checked={hideCompletedGroups}
+              onCheckedChange={(checked) => setHideCompletedGroups(Boolean(checked))}
+            />
+            <Label htmlFor="att-hide-completed-groups" className="text-xs text-muted-foreground cursor-pointer select-none whitespace-nowrap">
+              Hide completed
+            </Label>
+          </div>
           
           <Button 
             onClick={loadAttendanceData} 
