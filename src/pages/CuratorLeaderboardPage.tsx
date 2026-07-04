@@ -603,8 +603,8 @@ export default function CuratorLeaderboardPage() {
   };
 
   const handleAttendanceChange = (studentId: number, lessonNumber: string, status: string) => {
-      // Security check
-      if (user?.role === 'curator') return;
+      // Security check — curators and head teachers view attendance here but don't edit it.
+      if (user?.role === 'curator' || user?.role === 'head_teacher') return;
       
       // Status: "attended" or "absent" (from toggles)
       // Map to 10 or 0

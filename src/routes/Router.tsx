@@ -492,7 +492,7 @@ export default function Router() {
           } />
 
           <Route path="/curator/leaderboard" element={
-            <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator']}>
+            <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator', 'head_teacher']}>
               <AppLayout>
                 <CuratorLeaderboardPage />
               </AppLayout>
