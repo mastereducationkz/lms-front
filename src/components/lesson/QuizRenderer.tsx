@@ -555,7 +555,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
     if (!questions || questions.length === 0) return null;
 
     return (
-      <div className="w-full md:max-w-3xl md:mx-auto space-y-4 md:space-y-6 md:p-4">
+      <div className="w-full md:max-w-3xl md:mx-auto space-y-4 md:space-y-6 md:p-4 pb-24">
         {/* Header */}
         <div className="text-center space-y-2">
           <h2 className="text-2xl font-bold text-foreground">Quick Practice</h2>
@@ -964,37 +964,73 @@ const QuizRenderer = (props: QuizRendererProps) => {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Action Buttons */}
-        <div className="flex justify-center pt-4">
-          {!feedChecked ? (() => {
-            const unansweredQuestions = questions.filter(q => {
-              if (q.question_type === 'image_content') return false;
-              const key = getAnswerKey(q);
-              return !isAnswerComplete(q, quizAnswers.get(key), gapAnswers.get(key));
-            });
-            const incomplete = unansweredQuestions.length > 0;
-            return (
-              <Button
-                onClick={() => {
-                  if (incomplete) {
-                    // Reveal the red highlights and jump to the first unanswered question
-                    setShowValidationErrors(true);
-                    const firstUnanswered = unansweredQuestions[0];
-                    if (firstUnanswered) {
-                      const el = document.getElementById(`question-${firstUnanswered.id}`);
-                      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        {/* Bluebook-style question navigator + check button */}
+        {!feedChecked ? (() => {
+          const answerable = questions.filter(q => q.question_type !== 'image_content');
+          const unansweredQuestions = answerable.filter(q => {
+            const key = getAnswerKey(q);
+            return !isAnswerComplete(q, quizAnswers.get(key), gapAnswers.get(key));
+          });
+          const incomplete = unansweredQuestions.length > 0;
+          const answeredCount = answerable.length - unansweredQuestions.length;
+          return (
+            <div className="fixed bottom-0 left-0 right-0 md:left-[var(--quiz-nav-left)] z-30 border-t border-border bg-background px-3 md:px-6 py-2">
+              <div className="flex items-center gap-2 md:gap-3">
+                <span className="hidden sm:inline text-xs font-medium text-muted-foreground whitespace-nowrap">
+                  {answeredCount}/{answerable.length}
+                </span>
+                <div className="flex-1 min-w-0 flex flex-nowrap gap-1.5 overflow-x-auto py-1 scrollbar-thin">
+                  {answerable.map((q, i) => {
+                    const key = getAnswerKey(q);
+                    const answered = isAnswerComplete(q, quizAnswers.get(key), gapAnswers.get(key));
+                    return (
+                      <button
+                        key={q.id}
+                        type="button"
+                        onClick={() => {
+                          document.getElementById(`question-${q.id}`)
+                            ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }}
+                        title={answered ? `Question ${i + 1} — answered` : `Question ${i + 1} — not answered`}
+                        className={`shrink-0 w-7 h-7 rounded-md text-xs font-semibold flex items-center justify-center border transition-colors ${
+                          answered
+                            ? 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700'
+                            : `bg-transparent border-dashed ${
+                                showValidationErrors
+                                  ? 'border-red-500 text-red-500'
+                                  : 'border-muted-foreground/50 text-muted-foreground'
+                              } hover:border-blue-400`
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
+                    );
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (incomplete) {
+                      // Reveal the red highlights and jump to the first unanswered question
+                      setShowValidationErrors(true);
+                      document.getElementById(`question-${unansweredQuestions[0].id}`)
+                        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      return;
                     }
-                    return;
-                  }
-                  setShowValidationErrors(false);
-                  handleConfirmQuizSubmission();
-                }}
-                className="px-8 py-3 rounded-lg text-lg font-semibold transition-all duration-200 min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                Check All Answers
-              </Button>
-            );
-          })() : (() => {
+                    setShowValidationErrors(false);
+                    handleConfirmQuizSubmission();
+                  }}
+                  className="shrink-0 whitespace-nowrap text-xs sm:text-sm font-medium border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-500"
+                >
+                  Check Answers
+                </Button>
+              </div>
+            </div>
+          );
+        })() : (
+        <div className="flex justify-center pt-4">
+          {(() => {
             const stats = getGapStatistics();
             const totalItems = stats.totalGaps + stats.regularQuestions;
             const correctItems = stats.correctGaps + stats.correctRegular;
@@ -1048,6 +1084,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
             );
           })()}
         </div>
+        )}
       </div>
     );
   };

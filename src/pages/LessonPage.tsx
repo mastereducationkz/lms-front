@@ -1881,7 +1881,10 @@ export default function LessonPage() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div
+      className="flex h-screen overflow-hidden bg-background"
+      style={{ ['--quiz-nav-left' as any]: isSidebarCollapsed ? '0px' : '20rem' }}
+    >
       {/* Sidebar - Hidden on mobile, visible on desktop */}
       <div className="hidden md:block">
         <LessonSidebar
