@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '../ui/dialog';
-import { ChevronRight, AlertTriangle, HelpCircle, Lock as LockIcon, Lightbulb, AlertCircle } from 'lucide-react';
+import { ChevronRight, ChevronDown, ChevronUp, AlertTriangle, HelpCircle, Lock as LockIcon, Lightbulb, AlertCircle } from 'lucide-react';
 import { renderTextWithLatex } from '../../utils/latex';
 import { applyHighlightsToHtml as applyHighlightsToHtmlShared } from '../../utils/highlightUtils';
 import type { Step } from '../../types';
@@ -167,6 +167,24 @@ const QuizRenderer = (props: QuizRendererProps) => {
   // still unanswered, highlight those questions in red instead of silently
   // keeping the button disabled.
   const [showValidationErrors, setShowValidationErrors] = useState(false);
+
+  // Lets the student collapse the bottom question-navigator bar out of the way.
+  // Persisted so the preference survives across questions/lessons.
+  const [isQuizNavCollapsed, setIsQuizNavCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('quizNavCollapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('quizNavCollapsed', String(isQuizNavCollapsed));
+    } catch {
+      // ignore (e.g. private browsing storage quota)
+    }
+  }, [isQuizNavCollapsed]);
 
   useEffect(() => {
     if (quizState === 'completed' && currentStep) {
@@ -554,6 +572,26 @@ const QuizRenderer = (props: QuizRendererProps) => {
   const renderQuizFeed = () => {
     if (!questions || questions.length === 0) return null;
 
+    const answerableQuestions = questions.filter(q => q.question_type !== 'image_content');
+    const unansweredQuestions = answerableQuestions.filter(q => {
+      const key = getAnswerKey(q);
+      return !isAnswerComplete(q, quizAnswers.get(key), gapAnswers.get(key));
+    });
+    const isQuizIncomplete = unansweredQuestions.length > 0;
+    const answeredCount = answerableQuestions.length - unansweredQuestions.length;
+
+    const handleCheckAnswersClick = () => {
+      if (isQuizIncomplete) {
+        // Reveal the red highlights and jump to the first unanswered question
+        setShowValidationErrors(true);
+        document.getElementById(`question-${unansweredQuestions[0].id}`)
+          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      setShowValidationErrors(false);
+      handleConfirmQuizSubmission();
+    };
+
     return (
       <div className="w-full md:max-w-3xl md:mx-auto space-y-4 md:space-y-6 md:p-4 pb-24">
         {/* Header */}
@@ -802,6 +840,19 @@ const QuizRenderer = (props: QuizRendererProps) => {
           })}
         </div>
 
+        {/* In-flow Check Answers button — always reachable at the end of the quiz,
+            even if the sticky bottom navigator is collapsed. */}
+        {!feedChecked && (
+          <div className="flex justify-center pt-2">
+            <Button
+              onClick={handleCheckAnswersClick}
+              className="px-8 py-3 rounded-lg text-lg font-semibold min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Check Answers
+            </Button>
+          </div>
+        )}
+
         {/* Error Report Modal (shadcn Dialog: focus trap, Escape, role=dialog) */}
         <Dialog
           open={reportModalOpen}
@@ -964,71 +1015,79 @@ const QuizRenderer = (props: QuizRendererProps) => {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Bluebook-style question navigator + check button */}
-        {!feedChecked ? (() => {
-          const answerable = questions.filter(q => q.question_type !== 'image_content');
-          const unansweredQuestions = answerable.filter(q => {
-            const key = getAnswerKey(q);
-            return !isAnswerComplete(q, quizAnswers.get(key), gapAnswers.get(key));
-          });
-          const incomplete = unansweredQuestions.length > 0;
-          const answeredCount = answerable.length - unansweredQuestions.length;
-          return (
-            <div className="fixed bottom-0 left-0 right-0 md:left-[var(--quiz-nav-left)] z-30 border-t border-border bg-background px-3 md:px-6 py-2">
-              <div className="flex items-center gap-2 md:gap-3">
-                <span className="hidden sm:inline text-xs font-medium text-muted-foreground whitespace-nowrap">
-                  {answeredCount}/{answerable.length}
-                </span>
-                <div className="flex-1 min-w-0 flex flex-nowrap gap-1.5 overflow-x-auto py-1 scrollbar-thin">
-                  {answerable.map((q, i) => {
-                    const key = getAnswerKey(q);
-                    const answered = isAnswerComplete(q, quizAnswers.get(key), gapAnswers.get(key));
-                    return (
-                      <button
-                        key={q.id}
-                        type="button"
-                        onClick={() => {
-                          document.getElementById(`question-${q.id}`)
-                            ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }}
-                        title={answered ? `Question ${i + 1} — answered` : `Question ${i + 1} — not answered`}
-                        className={`shrink-0 w-7 h-7 rounded-md text-xs font-semibold flex items-center justify-center border transition-colors ${
-                          answered
-                            ? 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700'
-                            : `bg-transparent border-dashed ${
-                                showValidationErrors
-                                  ? 'border-red-500 text-red-500'
-                                  : 'border-muted-foreground/50 text-muted-foreground'
-                              } hover:border-blue-400`
-                        }`}
-                      >
-                        {i + 1}
-                      </button>
-                    );
-                  })}
+        {/* Bluebook-style question navigator (progress overview + jump-to-question) */}
+        {!feedChecked ? (
+            <div className="fixed bottom-0 left-0 right-0 md:left-[var(--quiz-nav-left)] z-30 border-t border-border bg-background">
+              {isQuizNavCollapsed ? (
+                <div className="flex justify-center px-3 py-1">
+                  <button
+                    type="button"
+                    onClick={() => setIsQuizNavCollapsed(false)}
+                    title="Show question navigator"
+                    className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <ChevronUp className="w-3.5 h-3.5" />
+                    {answeredCount}/{answerableQuestions.length} answered
+                  </button>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (incomplete) {
-                      // Reveal the red highlights and jump to the first unanswered question
-                      setShowValidationErrors(true);
-                      document.getElementById(`question-${unansweredQuestions[0].id}`)
-                        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      return;
-                    }
-                    setShowValidationErrors(false);
-                    handleConfirmQuizSubmission();
-                  }}
-                  className="shrink-0 whitespace-nowrap text-xs sm:text-sm font-medium border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-500"
-                >
-                  Check Answers
-                </Button>
-              </div>
+              ) : (
+                <div className="px-3 md:px-6 py-2">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsQuizNavCollapsed(true)}
+                      title="Hide question navigator"
+                      className="shrink-0 p-1 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                    </button>
+                    <span className="hidden sm:inline text-xs font-medium text-muted-foreground whitespace-nowrap">
+                      {answeredCount}/{answerableQuestions.length}
+                    </span>
+                    <div
+                      className="flex-1 min-w-0 flex flex-nowrap gap-2 overflow-x-auto py-1 scrollbar-thin"
+                      style={{ justifyContent: 'safe center' }}
+                    >
+                      {answerableQuestions.map((q, i) => {
+                        const key = getAnswerKey(q);
+                        const answered = isAnswerComplete(q, quizAnswers.get(key), gapAnswers.get(key));
+                        return (
+                          <button
+                            key={q.id}
+                            type="button"
+                            onClick={() => {
+                              document.getElementById(`question-${q.id}`)
+                                ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }}
+                            title={answered ? `Question ${i + 1} — answered` : `Question ${i + 1} — not answered`}
+                            className={`shrink-0 w-9 h-9 rounded-md text-sm font-semibold flex items-center justify-center border transition-colors ${
+                              answered
+                                ? 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700'
+                                : `bg-transparent border-dashed ${
+                                    showValidationErrors
+                                      ? 'border-red-500 text-red-500'
+                                      : 'border-muted-foreground/50 text-muted-foreground'
+                                  } hover:border-blue-400`
+                            }`}
+                          >
+                            {i + 1}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCheckAnswersClick}
+                      className="shrink-0 whitespace-nowrap text-xs sm:text-sm font-medium border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-500"
+                    >
+                      Check Answers
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
-          );
-        })() : (
+        ) : (
         <div className="flex justify-center pt-4">
           {(() => {
             const stats = getGapStatistics();
