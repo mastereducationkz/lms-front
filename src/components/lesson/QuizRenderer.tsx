@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '../ui/dialog';
-import { ChevronRight, AlertTriangle, HelpCircle, Lock as LockIcon, Lightbulb } from 'lucide-react';
+import { ChevronRight, AlertTriangle, HelpCircle, Lock as LockIcon, Lightbulb, AlertCircle } from 'lucide-react';
 import { renderTextWithLatex } from '../../utils/latex';
 import { applyHighlightsToHtml as applyHighlightsToHtmlShared } from '../../utils/highlightUtils';
 import type { Step } from '../../types';
@@ -162,6 +162,11 @@ const QuizRenderer = (props: QuizRendererProps) => {
   
   // State for quiz attempts history (used on completed screen)
   const [attemptsHistory, setAttemptsHistory] = useState<any[]>([]);
+
+  // When the student presses "Check All Answers" while some questions are
+  // still unanswered, highlight those questions in red instead of silently
+  // keeping the button disabled.
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
 
   useEffect(() => {
     if (quizState === 'completed' && currentStep) {
@@ -613,6 +618,9 @@ const QuizRenderer = (props: QuizRendererProps) => {
           {questions.map((q, idx) => {
             const userAnswer = quizAnswers.get(getAnswerKey(q));
             const displayNumber = getQuestionDisplayNumber(idx);
+            const isUnanswered = q.question_type !== 'image_content' && !feedChecked &&
+              !isAnswerComplete(q, quizAnswers.get(getAnswerKey(q)), gapAnswers.get(getAnswerKey(q)));
+            const showUnansweredError = showValidationErrors && isUnanswered;
             const questionGaps = (q.question_type === 'fill_blank' || q.question_type === 'text_completion')
               ? (q.content_text || q.question_text || '').match(/\[\[(.*?)\]\]/g)?.length || 1
               : 1;
@@ -641,12 +649,20 @@ const QuizRenderer = (props: QuizRendererProps) => {
               <div
                 key={q.id}
                 id={`question-${q.id}`}
-                className="relative overflow-visible bg-transparent"
+                className={`relative overflow-visible bg-transparent rounded-xl transition-all ${
+                  showUnansweredError ? 'ring-2 ring-red-500 ring-offset-2 ring-offset-background' : ''
+                }`}
                 onMouseUp={() => handleTextSelection(q.id.toString())}
                 onClick={handleHighlightedTextClick}
               >
                 {renderHighlightPalette(q.id.toString())}
                 <div className="p-2 md:p-6">
+                  {showUnansweredError && (
+                    <div className="mb-3 flex items-center gap-2 text-sm font-medium text-red-600 dark:text-red-400">
+                      <AlertCircle className="w-4 h-4" />
+                      <span>Please answer this question</span>
+                    </div>
+                  )}
                   {/* Question Number Badge */}
                   <div className="flex items-center gap-3 mb-4">
                     <span className="text-sm font-medium text-muted-foreground">
@@ -951,20 +967,29 @@ const QuizRenderer = (props: QuizRendererProps) => {
         {/* Action Buttons */}
         <div className="flex justify-center pt-4">
           {!feedChecked ? (() => {
-            const incomplete = questions.some(q => {
+            const unansweredQuestions = questions.filter(q => {
               if (q.question_type === 'image_content') return false;
               const key = getAnswerKey(q);
               return !isAnswerComplete(q, quizAnswers.get(key), gapAnswers.get(key));
             });
+            const incomplete = unansweredQuestions.length > 0;
             return (
               <Button
-                onClick={handleConfirmQuizSubmission}
-                disabled={incomplete}
-                className={`px-8 py-3 rounded-lg text-lg font-semibold transition-all duration-200 min-h-[44px] ${
-                  incomplete
-                    ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white transition-all'
-                }`}
+                onClick={() => {
+                  if (incomplete) {
+                    // Reveal the red highlights and jump to the first unanswered question
+                    setShowValidationErrors(true);
+                    const firstUnanswered = unansweredQuestions[0];
+                    if (firstUnanswered) {
+                      const el = document.getElementById(`question-${firstUnanswered.id}`);
+                      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    return;
+                  }
+                  setShowValidationErrors(false);
+                  handleConfirmQuizSubmission();
+                }}
+                className="px-8 py-3 rounded-lg text-lg font-semibold transition-all duration-200 min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white"
               >
                 Check All Answers
               </Button>
