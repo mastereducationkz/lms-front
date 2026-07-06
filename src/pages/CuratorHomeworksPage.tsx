@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FileText, Search, Users, AlertCircle, ArrowLeft, Calendar } from 'lucide-react';
 import { toast } from '../components/Toast';
 import api from '../services/api';
-import {
-  StudentsTable,
-  ViewDialog,
-} from '../components/curator-homeworks';
 import { Input } from '../components/ui/input';
 import { Checkbox } from '../components/ui/checkbox';
 import { Label } from '../components/ui/label';
@@ -16,20 +13,15 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '../components/ui/table';
-import { Dialog, DialogContent } from '../components/ui/dialog';
-import type {
-  GroupData,
-  AssignmentData,
-  StudentProgress,
-  StatusFilter,
-  SubmissionDetails,
-} from '../components/curator-homeworks';
+import type { GroupData } from '../components/curator-homeworks';
 
 interface GroupStat {
   group: GroupData;
   id: number;
   name: string;
   isOver: boolean;
+  teacherId: number | null;
+  teacherName: string | null;
   assignmentsCount: number;
   expected: number;
   submitted: number;
@@ -37,13 +29,6 @@ interface GroupStat {
   overdue: number;
   rate: number;
 }
-
-const formatDueDate = (dateString: string | null): string => {
-  if (!dateString) return '—';
-  return new Date(dateString).toLocaleDateString('ru-RU', {
-    day: '2-digit', month: 'short', year: 'numeric',
-  });
-};
 
 const formatDueShort = (dateString: string | null): string => {
   if (!dateString) return '—';
@@ -53,26 +38,16 @@ const formatDueShort = (dateString: string | null): string => {
 };
 
 const CuratorHomeworksPage: React.FC = () => {
+  const navigate = useNavigate();
   const [groups, setGroups] = useState<GroupData[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Overview controls
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [groupSearch, setGroupSearch] = useState('');
+  const [selectedTeacherId, setSelectedTeacherId] = useState<number | 'all'>('all');
   const [needsAttentionOnly, setNeedsAttentionOnly] = useState(false);
   const [showCompletedGroups, setShowCompletedGroups] = useState(false);
-
-  // Assignment-detail popup
-  const [detailAssignment, setDetailAssignment] = useState<AssignmentData | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-
-  // Submission view dialog
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [viewStudent, setViewStudent] = useState<StudentProgress | null>(null);
-  const [viewAssignment, setViewAssignment] = useState<AssignmentData | null>(null);
-  const [submissionDetails, setSubmissionDetails] = useState<SubmissionDetails | null>(null);
-  const [loadingSubmission, setLoadingSubmission] = useState(false);
 
   useEffect(() => {
     fetchHomeworks();
@@ -92,44 +67,8 @@ const CuratorHomeworksPage: React.FC = () => {
     }
   };
 
-  const fetchSubmissionDetails = async (assignmentId: number, submissionId: number) => {
-    try {
-      setLoadingSubmission(true);
-      const details = await api.getSubmission(assignmentId.toString(), submissionId.toString());
-      setSubmissionDetails(details);
-    } catch (error) {
-      console.error('Error fetching submission details:', error);
-      toast('Не удалось загрузить детали работы', 'error');
-      setSubmissionDetails(null);
-    } finally {
-      setLoadingSubmission(false);
-    }
-  };
-
-  const handleViewStudent = (student: StudentProgress, assignment: AssignmentData) => {
-    setViewStudent(student);
-    setViewAssignment(assignment);
-    setViewDialogOpen(true);
-    setSubmissionDetails(null);
-    if (student.submission_id) {
-      fetchSubmissionDetails(assignment.id, student.submission_id);
-    }
-  };
-
-  const handleCloseViewDialog = (open: boolean) => {
-    setViewDialogOpen(open);
-    if (!open) setSubmissionDetails(null);
-  };
-
   const openGroup = (id: number) => {
     setSelectedGroupId(id);
-    setDetailAssignment(null);
-  };
-
-  const openAssignment = (a: AssignmentData) => {
-    setDetailAssignment(a);
-    setSearchQuery('');
-    setStatusFilter('all');
   };
 
   // Aggregate student-submission health per group (summary.submitted already includes graded)
@@ -147,11 +86,25 @@ const CuratorHomeworksPage: React.FC = () => {
         id: g.group_id,
         name: g.group_name,
         isOver: !!g.is_over,
+        teacherId: g.teacher_id ?? null,
+        teacherName: g.teacher_name ?? null,
         assignmentsCount: g.assignments.length,
         expected, submitted, notSubmitted, overdue,
         rate: expected > 0 ? submitted / expected : 1,
       };
     });
+  }, [groups]);
+
+  // Distinct teachers across the loaded groups (for the teacher filter)
+  const teacherOptions = useMemo(() => {
+    const byId = new Map<number, string>();
+    for (const g of groups) {
+      if (g.teacher_id != null && !byId.has(g.teacher_id)) {
+        byId.set(g.teacher_id, g.teacher_name || `Учитель #${g.teacher_id}`);
+      }
+    }
+    return Array.from(byId, ([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
   }, [groups]);
 
   const scopeGroups = useMemo(
@@ -174,6 +127,7 @@ const CuratorHomeworksPage: React.FC = () => {
 
   const overviewGroups = useMemo(() => {
     let rows = scopeGroups;
+    if (selectedTeacherId !== 'all') rows = rows.filter((s) => s.teacherId === selectedTeacherId);
     if (needsAttentionOnly) rows = rows.filter((s) => s.overdue > 0 || s.notSubmitted > 0);
     const q = groupSearch.trim().toLowerCase();
     if (q) rows = rows.filter((s) => s.name.toLowerCase().includes(q));
@@ -186,7 +140,7 @@ const CuratorHomeworksPage: React.FC = () => {
       if (b.notSubmitted !== a.notSubmitted) return b.notSubmitted - a.notSubmitted;
       return a.rate - b.rate;
     });
-  }, [scopeGroups, needsAttentionOnly, groupSearch]);
+  }, [scopeGroups, selectedTeacherId, needsAttentionOnly, groupSearch]);
 
   const selected = useMemo(
     () => groupStats.find((s) => s.id === selectedGroupId) || null,
@@ -226,6 +180,9 @@ const CuratorHomeworksPage: React.FC = () => {
           <div className="flex items-center gap-2 min-w-0">
             <Users className="w-5 h-5 text-primary shrink-0" />
             <h1 className="text-xl font-bold truncate">{selected.name}</h1>
+            {selected.teacherName && (
+              <span className="text-sm text-muted-foreground truncate">· {selected.teacherName}</span>
+            )}
             {selected.isOver && (
               <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border text-muted-foreground shrink-0">
                 Завершена
@@ -263,11 +220,11 @@ const CuratorHomeworksPage: React.FC = () => {
                 <TableBody>
                   {sortedAssignments.map((a) => {
                     const s = a.summary;
-                    const pct = s.total_students > 0 ? Math.round((s.submitted / s.total_students) * 100) : 0;
+                    const rowPct = s.total_students > 0 ? Math.round((s.submitted / s.total_students) * 100) : 0;
                     return (
                       <TableRow
                         key={a.id}
-                        onClick={() => openAssignment(a)}
+                        onClick={() => navigate(`/homework/${a.id}`)}
                         className="cursor-pointer hover:bg-muted/50"
                       >
                         <TableCell className="py-2">
@@ -284,7 +241,7 @@ const CuratorHomeworksPage: React.FC = () => {
                           <div className="space-y-1 min-w-[150px]">
                             <div className="flex items-center gap-2">
                               <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                                <div className="h-1.5 rounded-full bg-blue-500" style={{ width: `${pct}%` }} />
+                                <div className="h-1.5 rounded-full bg-blue-500" style={{ width: `${rowPct}%` }} />
                               </div>
                               <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
                                 {s.submitted}/{s.total_students}
@@ -306,78 +263,6 @@ const CuratorHomeworksPage: React.FC = () => {
             </div>
           </div>
         )}
-
-        {/* Assignment-detail popup */}
-        <Dialog open={detailAssignment !== null} onOpenChange={(open) => { if (!open) setDetailAssignment(null); }}>
-          <DialogContent className="max-w-3xl p-0 overflow-hidden max-h-[88vh] flex flex-col">
-            {detailAssignment && (
-              <>
-                <div className="px-6 pt-5 pb-4 border-b">
-                  <div className="flex items-start gap-3">
-                    <FileText className="w-5 h-5 text-blue-500 mt-0.5 shrink-0" />
-                    <div className="min-w-0">
-                      <h2 className="text-base font-semibold truncate">{detailAssignment.title}</h2>
-                      <p className="text-xs text-muted-foreground">
-                        {detailAssignment.course_title} · Срок: {formatDueDate(detailAssignment.due_date)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-x-5 gap-y-1 mt-3 text-sm">
-                    <span><b>{detailAssignment.summary.submitted}</b>/{detailAssignment.summary.total_students} <span className="text-muted-foreground">сдано</span></span>
-                    {detailAssignment.summary.not_submitted > 0 && (
-                      <span className="text-amber-600 dark:text-amber-400"><b>{detailAssignment.summary.not_submitted}</b> не сдано</span>
-                    )}
-                    {detailAssignment.summary.overdue > 0 && (
-                      <span className="text-red-600 dark:text-red-400"><b>{detailAssignment.summary.overdue}</b> просрочено</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="px-6 py-3 border-b flex flex-wrap gap-3 items-center">
-                  <div className="relative flex-1 min-w-[180px]">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Поиск по имени студента..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9 h-9"
-                    />
-                  </div>
-                  <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-                    <SelectTrigger className="w-[170px] h-9">
-                      <SelectValue placeholder="Статус" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Все</SelectItem>
-                      <SelectItem value="submitted">На проверке</SelectItem>
-                      <SelectItem value="graded">Оценено</SelectItem>
-                      <SelectItem value="not_submitted">Не сдано</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="overflow-y-auto px-2 py-1">
-                  <StudentsTable
-                    students={detailAssignment.students}
-                    assignment={detailAssignment}
-                    searchQuery={searchQuery}
-                    statusFilter={statusFilter}
-                    onViewStudent={(student) => handleViewStudent(student, detailAssignment)}
-                  />
-                </div>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        <ViewDialog
-          open={viewDialogOpen}
-          onOpenChange={handleCloseViewDialog}
-          student={viewStudent}
-          assignment={viewAssignment}
-          submissionDetails={submissionDetails}
-          isLoading={loadingSubmission}
-        />
       </div>
     );
   }
@@ -430,6 +315,22 @@ const CuratorHomeworksPage: React.FC = () => {
                 className="pl-9 bg-card"
               />
             </div>
+            {teacherOptions.length > 0 && (
+              <Select
+                value={selectedTeacherId === 'all' ? 'all' : String(selectedTeacherId)}
+                onValueChange={(v) => setSelectedTeacherId(v === 'all' ? 'all' : Number(v))}
+              >
+                <SelectTrigger className="w-[220px] h-9 bg-card">
+                  <SelectValue placeholder="Учитель" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Все учителя</SelectItem>
+                  {teacherOptions.map((t) => (
+                    <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
             <button
               type="button"
               onClick={() => setNeedsAttentionOnly((v) => !v)}
@@ -481,6 +382,9 @@ const CuratorHomeworksPage: React.FC = () => {
                         </span>
                       )}
                     </div>
+                    {g.teacherName && (
+                      <div className="text-xs text-muted-foreground mb-1 truncate">{g.teacherName}</div>
+                    )}
                     <div className="text-xs text-muted-foreground mb-2.5">{g.assignmentsCount} заданий</div>
                     {empty ? (
                       <div className="text-xs text-muted-foreground italic">Нет заданий</div>

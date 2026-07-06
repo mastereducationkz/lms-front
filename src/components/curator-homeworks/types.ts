@@ -74,6 +74,8 @@ export interface GroupData {
   group_id: number;
   group_name: string;
   is_over?: boolean;
+  teacher_id?: number | null;
+  teacher_name?: string | null;
   students_count: number;
   assignments: AssignmentData[];
 }

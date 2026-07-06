@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { NextStepProvider } from 'nextstepjs';
 import { AuthProvider } from '../contexts/AuthContext.tsx';
-import { useAuth } from '../contexts/AuthContext';
 import { SettingsProvider } from '../contexts/SettingsContext';
 import { ThemeProvider } from '../components/ThemeProvider.tsx';
 import { Toaster } from '../components/Toast';
@@ -65,11 +64,6 @@ import CuratorTasksPage from '../pages/CuratorTasksPage.tsx';
 import CuratorExamResultsPage from '../pages/CuratorExamResultsPage.tsx';
 import StudentsJournalPage from '../pages/StudentsJournalPage.tsx';
 import StudentProfilePage from '../pages/StudentProfilePage.tsx';
-
-function CuratorHomeworksRoute() {
-  const { user } = useAuth();
-  return user?.role === 'head_curator' ? <AssignmentsPage /> : <CuratorHomeworksPage />;
-}
 
 export default function Router() {
   
@@ -484,9 +478,9 @@ export default function Router() {
           } />
 
           <Route path="/curator/homeworks" element={
-            <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator']}>
+            <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator', 'head_teacher']}>
               <AppLayout>
-                <CuratorHomeworksRoute />
+                <CuratorHomeworksPage />
               </AppLayout>
             </ProtectedRoute>
           } />
