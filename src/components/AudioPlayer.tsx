@@ -58,61 +58,26 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className }) => {
     setCurrentTime(0);
     setDuration(null);
 
-    // While we run the "seek to a huge time to force duration" trick, ignore
-    // timeupdate so the label doesn't flash a garbage (clamped) currentTime.
-    let fixing = false;
-    let fixHandler: (() => void) | null = null;
-
-    const applyDurationIfFinite = (): boolean => {
+    const applyDurationIfFinite = () => {
       const d = audio.duration;
       if (isFinite(d) && !isNaN(d) && d > 0) {
         setDuration(d);
-        return true;
-      }
-      return false;
-    };
-
-    const handleLoadedMetadata = () => {
-      if (applyDurationIfFinite()) return;
-      // Infinity/NaN duration (typical of MediaRecorder webm blobs without a
-      // duration in their metadata). Best-effort: force the browser to compute
-      // it by seeking far past the end. This resolves immediately for locally
-      // available blobs; for remote files it may not, so we ALSO resolve the
-      // duration lazily via `durationchange` once playback starts (below) and
-      // never block Play on it.
-      fixing = true;
-      const fix = () => {
-        audio.removeEventListener('timeupdate', fix);
-        fixHandler = null;
-        fixing = false;
-        try {
-          audio.currentTime = 0;
-        } catch {
-          /* not seekable yet — ignore */
-        }
-        setCurrentTime(0);
-        applyDurationIfFinite();
-      };
-      fixHandler = fix;
-      audio.addEventListener('timeupdate', fix);
-      try {
-        audio.currentTime = 1e101;
-      } catch {
-        fixing = false;
-        fixHandler = null;
-        audio.removeEventListener('timeupdate', fix);
       }
     };
 
-    // Fires when the browser finally learns the real duration — including part
-    // way through playback for webm blobs whose metadata lacked it. This is the
-    // reliable fallback that makes the total time appear as the clip plays.
-    const handleDurationChange = () => {
-      if (!fixing) applyDurationIfFinite();
-    };
+    // NOTE: we deliberately do NOT do the "seek to a huge time to force the
+    // duration" trick here. For MediaRecorder .webm blobs (no duration in
+    // metadata) that seek moves the playhead to the end and often can't be
+    // reset, so pressing Play starts from the end and produces silence. We keep
+    // playback rock-solid instead: play from 0, and let the browser report the
+    // real duration via `durationchange` (it does, at latest by the end of the
+    // first play-through). Until then the total shows `--:--`, which is
+    // harmless — Play always works.
+    const handleLoadedMetadata = () => applyDurationIfFinite();
+    const handleDurationChange = () => applyDurationIfFinite();
 
     const handleTimeUpdate = () => {
-      if (!fixing) setCurrentTime(audio.currentTime);
+      setCurrentTime(audio.currentTime);
     };
 
     const handleEnded = () => {
@@ -137,9 +102,6 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className }) => {
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
-      if (fixHandler) {
-        audio.removeEventListener('timeupdate', fixHandler);
-      }
     };
   }, [src]);
 
