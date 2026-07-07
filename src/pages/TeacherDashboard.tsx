@@ -323,16 +323,35 @@ export default function TeacherDashboard() {
       setLoading(true);
       setError('');
 
-      // Load teacher dashboard stats
-      const dashboardData = await apiClient.getDashboardStats();
-      const statsAny = (dashboardData as any)?.stats || {};
-      
+      // Fire all dashboard requests in PARALLEL (they are independent). Running
+      // them sequentially made the page wait for the sum of every call; in
+      // parallel the wait is just the slowest single call.
+      const [
+        dashboardRes,
+        pendingRes,
+        recentRes,
+        studentsRes,
+        ungradedRes,
+        gradedRes,
+      ] = await Promise.allSettled([
+        apiClient.getDashboardStats(),
+        apiClient.getPendingSubmissionsMeta(100, 0),
+        apiClient.getRecentSubmissions(20),
+        apiClient.getTeacherStudentsProgress(),
+        apiClient.getUngradedQuizAttempts(),
+        apiClient.getGradedQuizAttempts(),
+      ]);
+
+      const statsAny = (dashboardRes.status === 'fulfilled' ? (dashboardRes.value as any)?.stats : {}) || {};
+      const pendingData = pendingRes.status === 'fulfilled' ? pendingRes.value : { pending_submissions: [], total_pending_count: 0 };
+      const pending = pendingData.pending_submissions || [];
+
       const teacherStats: TeacherStats = {
         total_courses: statsAny.total_courses ?? 0,
         total_students: statsAny.total_students ?? 0,
         active_students: statsAny.active_students ?? 0,
         avg_student_progress: statsAny.avg_student_progress ?? 0,
-        pending_submissions: 0,
+        pending_submissions: pendingData.total_pending_count || pending.length,
         recent_enrollments: statsAny.recent_enrollments ?? 0,
         avg_completion_rate: statsAny.avg_completion_rate ?? 0,
         avg_student_score: statsAny.avg_student_score ?? 0,
@@ -343,53 +362,15 @@ export default function TeacherDashboard() {
       };
 
       setStats(teacherStats);
+      setPendingSubmissions(pending);
+      setRecentSubmissions(recentRes.status === 'fulfilled' ? recentRes.value : []);
+      setStudentsProgress(studentsRes.status === 'fulfilled' ? studentsRes.value : []);
+      setUngradedQuizAttempts(ungradedRes.status === 'fulfilled' ? ungradedRes.value : []);
+      setGradedQuizAttempts(gradedRes.status === 'fulfilled' ? gradedRes.value : []);
 
-      // Load pending submissions
-      try {
-        const pendingData = await apiClient.getPendingSubmissionsMeta(100, 0);
-        const pending = pendingData.pending_submissions || [];
-        setPendingSubmissions(pending);
-        setStats(prev => prev ? { ...prev, pending_submissions: pendingData.total_pending_count || pending.length } : null);
-      } catch (submissionError) {
-        console.warn('Failed to load submissions:', submissionError);
-        setPendingSubmissions([]);
-      }
-
-      // Load recent submissions (fetch more to build history)
-      try {
-        const recent = await apiClient.getRecentSubmissions(20);
-        setRecentSubmissions(recent);
-      } catch (recentError) {
-        console.warn('Failed to load recent submissions:', recentError);
-        setRecentSubmissions([]);
-      }
-
-      // Load students progress
-      try {
-        const studentsData = await apiClient.getTeacherStudentsProgress();
-        setStudentsProgress(studentsData);
-      } catch (progressError) {
-        console.warn('Failed to load students progress:', progressError);
-        setStudentsProgress([]);
-      }
-
-      // Load ungraded quiz attempts
-      try {
-        const quizAttempts = await apiClient.getUngradedQuizAttempts();
-        setUngradedQuizAttempts(quizAttempts);
-      } catch (quizError) {
-        console.warn('Failed to load ungraded quiz attempts:', quizError);
-        setUngradedQuizAttempts([]);
-      }
-
-      // Load graded quiz attempts
-      try {
-        const gradedAttempts = await apiClient.getGradedQuizAttempts();
-        setGradedQuizAttempts(gradedAttempts);
-      } catch (gradedError) {
-        console.warn('Failed to load graded quiz attempts:', gradedError);
-        setGradedQuizAttempts([]);
-      }
+      [dashboardRes, pendingRes, recentRes, studentsRes, ungradedRes, gradedRes]
+        .filter((r) => r.status === 'rejected')
+        .forEach((r) => console.warn('Dashboard load: a request failed:', (r as PromiseRejectedResult).reason));
 
     } catch (err) {
       setError('Failed to load teacher dashboard data');
