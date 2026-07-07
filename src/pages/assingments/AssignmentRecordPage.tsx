@@ -5,6 +5,7 @@ import { toast } from '../../components/Toast';
 import { ArrowLeft, Mic, Square, RotateCcw, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
+import { AudioPlayer } from '../../components/AudioPlayer';
 import type { Assignment } from '../../types/index';
 
 type RecorderState = 'idle' | 'requesting' | 'recording' | 'stopped';
@@ -331,7 +332,7 @@ export default function AssignmentRecordPage() {
 
               {recorderState === 'stopped' && recordedUrl && (
                 <div className="w-full space-y-4">
-                  <audio controls src={recordedUrl} className="w-full" />
+                  <AudioPlayer src={recordedUrl} />
                   <div className="flex flex-col sm:flex-row gap-3">
                     <Button
                       onClick={reRecord}

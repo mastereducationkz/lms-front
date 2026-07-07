@@ -23,6 +23,7 @@ import { Textarea } from '../../components/ui/textarea.tsx';
 import { Label } from '../../components/ui/label.tsx';
 import MultiTaskSubmission from '../../components/assignments/MultiTaskSubmission.tsx';
 import { compressImage } from '../../utils/imageCompression';
+import { AudioPlayer } from '../../components/AudioPlayer';
 
 function resolveFileUrl(url: string): string {
   if (!url) return url;
@@ -389,7 +390,7 @@ export default function AssignmentPage() {
               </CardHeader>
               <CardContent>
                 {submission.file_url ? (
-                  <audio controls src={resolveFileUrl(submission.file_url)} className="w-full" />
+                  <AudioPlayer src={resolveFileUrl(submission.file_url)} />
                 ) : (
                   <div className="text-gray-500 dark:text-gray-400 italic">No recording found.</div>
                 )}

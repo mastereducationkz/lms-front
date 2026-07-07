@@ -9,6 +9,7 @@ import {
 import { Button } from '../ui/button';
 import { StatusBadge } from './StatusBadge';
 import { FileText, Download, Loader2, CheckCircle, ExternalLink, Link as LinkIcon } from 'lucide-react';
+import { AudioPlayer, isAudioUrl } from '../AudioPlayer';
 import type { StudentProgress, AssignmentData, SubmissionDetails } from './types';
 
 interface ViewDialogProps {
@@ -146,24 +147,35 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                     {/* File upload */}
                     {task.task_type === 'file_task' && (
                       taskAnswer.file_url ? (
-                        <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950 rounded border border-green-200 dark:border-green-800">
-                          <div className="flex items-center">
-                            <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
-                            <span className="text-sm font-medium">{taskAnswer.file_name || 'Загруженный файл'}</span>
+                        <div className="space-y-2">
+                          {isAudioUrl(taskAnswer.file_url || taskAnswer.file_name) && (
+                            <AudioPlayer
+                              src={
+                                taskAnswer.file_url.startsWith('http')
+                                  ? taskAnswer.file_url
+                                  : `${backendUrl}${taskAnswer.file_url}`
+                              }
+                            />
+                          )}
+                          <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950 rounded border border-green-200 dark:border-green-800">
+                            <div className="flex items-center">
+                              <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
+                              <span className="text-sm font-medium">{taskAnswer.file_name || 'Загруженный файл'}</span>
+                            </div>
+                            <a
+                              href={
+                                taskAnswer.file_url.startsWith('http')
+                                  ? taskAnswer.file_url
+                                  : `${backendUrl}${taskAnswer.file_url}`
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline text-sm flex items-center"
+                            >
+                              <Download className="w-4 h-4 mr-1" />
+                              Скачать
+                            </a>
                           </div>
-                          <a
-                            href={
-                              taskAnswer.file_url.startsWith('http')
-                                ? taskAnswer.file_url
-                                : `${backendUrl}${taskAnswer.file_url}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline text-sm flex items-center"
-                          >
-                            <Download className="w-4 h-4 mr-1" />
-                            Скачать
-                          </a>
                         </div>
                       ) : (
                         <p className="text-sm text-muted-foreground italic">Файл не загружен</p>
@@ -197,8 +209,20 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
     const hasTaskCompletions = !isMultiTask && 
       Object.keys(answers).some(key => key.startsWith('task_'));
 
+    const resolvedFileUrl = submissionDetails.file_url
+      ? submissionDetails.file_url.startsWith('http')
+        ? submissionDetails.file_url
+        : `${backendUrl}${submissionDetails.file_url}`
+      : null;
+    const isAudio = isAudioUrl(submissionDetails.file_url || submissionDetails.submitted_file_name);
+
     return (
       <div className="space-y-4">
+        {/* Audio submission - inline player */}
+        {hasFile && isAudio && resolvedFileUrl && (
+          <AudioPlayer src={resolvedFileUrl} />
+        )}
+
         {/* File attachment */}
         {hasFile && (
           <div className="flex items-center p-3 bg-muted rounded-lg border">
@@ -209,11 +233,7 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
               </div>
             </div>
             <a
-              href={
-                submissionDetails.file_url!.startsWith('http')
-                  ? submissionDetails.file_url
-                  : `${backendUrl}${submissionDetails.file_url}`
-              }
+              href={resolvedFileUrl!}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 hover:underline text-sm font-medium flex items-center"

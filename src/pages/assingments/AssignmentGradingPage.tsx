@@ -12,6 +12,7 @@ import { Input } from '../../components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import type { Assignment, Submission, AssignmentExtension } from '../../types/index';
 import MultiTaskSubmission from '../../components/assignments/MultiTaskSubmission';
+import { AudioPlayer } from '../../components/AudioPlayer';
 
 const AUDIO_FILE_EXTENSIONS = ['webm', 'ogg', 'mp4', 'm4a', 'mp3', 'mpeg', 'wav', 'x-m4a', 'aac'];
 
@@ -261,7 +262,7 @@ export default function AssignmentGradingPage() {
                 />
               ) : isAudioSubmission(assignment, selectedSubmission) && selectedSubmission?.file_url ? (
                 <div className="space-y-4">
-                  <audio controls src={resolveFileUrl(selectedSubmission.file_url)} className="w-full" />
+                  <AudioPlayer src={resolveFileUrl(selectedSubmission.file_url)} />
                 </div>
               ) : (
                 <div className="space-y-4">

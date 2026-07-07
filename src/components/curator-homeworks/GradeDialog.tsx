@@ -12,6 +12,7 @@ import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { FileText, Download, Loader2 } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
+import { AudioPlayer, isAudioUrl } from '../AudioPlayer';
 import type { StudentProgress, AssignmentData, SubmissionDetails } from './types';
 
 interface GradeDialogProps {
@@ -74,8 +75,20 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
       );
     }
 
+    const resolvedFileUrl = submissionDetails.file_url
+      ? submissionDetails.file_url.startsWith('http')
+        ? submissionDetails.file_url
+        : `${backendUrl}${submissionDetails.file_url}`
+      : null;
+    const isAudio = isAudioUrl(submissionDetails.file_url || submissionDetails.submitted_file_name);
+
     return (
       <div className="space-y-4">
+        {/* Audio submission - inline player */}
+        {resolvedFileUrl && isAudio && (
+          <AudioPlayer src={resolvedFileUrl} />
+        )}
+
         {/* File attachment */}
         {submissionDetails.file_url && (
           <div className="flex items-center p-3 bg-white dark:bg-card rounded-lg border dark:border-border">
@@ -86,11 +99,7 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
               </div>
             </div>
             <a
-              href={
-                submissionDetails.file_url.startsWith('http')
-                  ? submissionDetails.file_url
-                  : `${backendUrl}${submissionDetails.file_url}`
-              }
+              href={resolvedFileUrl!}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 hover:underline text-sm font-medium flex items-center"
