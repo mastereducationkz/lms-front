@@ -58,6 +58,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className }) => {
     setCurrentTime(0);
     setDuration(null);
 
+    let fixDurationHandler: (() => void) | null = null;
+
     const handleLoadedMetadata = () => {
       const rawDuration = audio.duration;
       if (isFinite(rawDuration) && !isNaN(rawDuration)) {
@@ -69,13 +71,15 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className }) => {
       // a duration in their metadata) — force the browser to compute it.
       const fixDuration = () => {
         audio.removeEventListener('timeupdate', fixDuration);
+        fixDurationHandler = null;
         audio.currentTime = 0;
         setCurrentTime(0);
         if (isFinite(audio.duration) && !isNaN(audio.duration)) {
           setDuration(audio.duration);
         }
       };
-      audio.addEventListener('timeupdate', fixDuration);
+      fixDurationHandler = fixDuration;
+      audio.addEventListener('timeupdate', fixDurationHandler);
       audio.currentTime = 1e101;
     };
 
@@ -103,6 +107,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className }) => {
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
+      if (fixDurationHandler) {
+        audio.removeEventListener('timeupdate', fixDurationHandler);
+      }
     };
   }, [src]);
 
@@ -141,7 +148,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className }) => {
       <button
         type="button"
         onClick={togglePlay}
-        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
+        disabled={duration === null}
+        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
         aria-label={isPlaying ? 'Pause' : 'Play'}
       >
         {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="ml-0.5 h-4 w-4" />}

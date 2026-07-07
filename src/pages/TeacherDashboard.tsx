@@ -37,6 +37,7 @@ import {
 } from '../components/ui/dialog';
 import { Textarea } from '../components/ui/textarea';
 import MultiTaskSubmission from '../components/assignments/MultiTaskSubmission';
+import { AudioPlayer, isAudioUrl } from '../components/AudioPlayer';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { WeeklyAwardsHub } from '../components/gamification/WeeklyAwardsHub';
@@ -1621,6 +1622,13 @@ export default function TeacherDashboard() {
                         Download
                       </a>
                     </div>
+                  )}
+
+                  {selectedSubmission?.file_url && isAudioUrl(selectedSubmission.file_url || selectedSubmission.submitted_file_name) && (
+                    <AudioPlayer
+                      src={(selectedSubmission.file_url.startsWith('http') ? '' : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000')) + selectedSubmission.file_url}
+                      className="mt-2"
+                    />
                   )}
 
                   {selectedSubmission?.answers?.text && (

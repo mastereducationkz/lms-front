@@ -24,6 +24,7 @@
   import { Textarea } from '../../components/ui/textarea';
   import { Label } from '../../components/ui/label';
   import MultiTaskSubmission from '../../components/assignments/MultiTaskSubmission';
+  import { AudioPlayer, isAudioUrl } from '../../components/AudioPlayer';
   import type { AssignmentExtension } from '../../types/index';
 
   // Import API_BASE_URL from api service
@@ -716,17 +717,19 @@
                                              </div>
                                         ) : /\.(jpg|jpeg|png|gif|webp)$/i.test(file.file_name || '') ? (
                                             <div className="mt-2 border rounded overflow-hidden max-h-[200px]">
-                                                <img 
-                                                    src={buildFileUrl(file.file_url)} 
+                                                <img
+                                                    src={buildFileUrl(file.file_url)}
                                                     alt={file.file_name}
                                                     className="w-full h-full object-contain"
                                                 />
                                             </div>
+                                        ) : isAudioUrl(file.file_url || file.file_name || file.submitted_file_name) ? (
+                                            <AudioPlayer src={buildFileUrl(file.file_url)} className="mt-2" />
                                         ) : (
                                             <div className="mt-2">
-                                                <a 
-                                                    href={buildFileUrl(file.file_url)} 
-                                                    target="_blank" 
+                                                <a
+                                                    href={buildFileUrl(file.file_url)}
+                                                    target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm underline"
                                                 >
@@ -769,13 +772,19 @@
                                     </div>
                                     </div>
                                 )}
-                                
-                                {/* For non-PDF files, show a link */}
-                                {!selectedSubmission.submitted_file_name?.toLowerCase().endsWith('.pdf') && (
+
+                                {/* Audio player for audio submissions */}
+                                {isAudioUrl(selectedSubmission.file_url || selectedSubmission.submitted_file_name) && (
+                                    <AudioPlayer src={buildFileUrl(selectedSubmission.file_url)} className="mt-2" />
+                                )}
+
+                                {/* For non-PDF, non-audio files, show a link */}
+                                {!selectedSubmission.submitted_file_name?.toLowerCase().endsWith('.pdf') &&
+                                 !isAudioUrl(selectedSubmission.file_url || selectedSubmission.submitted_file_name) && (
                                     <div className="mt-2">
-                                    <a 
-                                        href={buildFileUrl(selectedSubmission.file_url)} 
-                                        target="_blank" 
+                                    <a
+                                        href={buildFileUrl(selectedSubmission.file_url)}
+                                        target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm underline"
                                     >

@@ -69,3 +69,38 @@ Not pushed (per instructions).
 4. **Student submitted-audio view (`AssignmentPage`)**: as a student who already submitted an audio assignment, view "My Submission" — confirm the player shows correct duration (not `0:01`) and plays back correctly.
 5. **Record page preview (`AssignmentRecordPage`) — the original bug**: as a student, record a new audio answer, stop recording — confirm the preview player immediately shows the **correct** duration (not `0:01`/`Infinity`), that the seek bar is draggable once duration resolves, and that Re-record/Submit still work as before.
 6. **Cross-browser**: repeat the record-page check in both Chrome (webm/opus) and Safari (mp4/m4a) since MediaRecorder codec support differs — confirm duration resolves correctly in both.
+
+---
+
+## Follow-up (2026-07-07): duration-listener cleanup bug + wiring into the real (rendered) grading modals
+
+### Problem discovered
+
+1. **`AudioPlayer.tsx` cleanup bug**: the one-shot `fixDuration` `timeupdate` listener registered inside `handleLoadedMetadata` (for the Infinity/NaN-duration webm workaround) was never referenced outside that closure, so the effect's cleanup function couldn't remove it. If the *same* `AudioPlayer` instance is reused with a new `src` (component not unmounted — e.g. switching between submissions/tasks without the dialog closing), a stale `fixDuration` from the previous audio could still be attached and fire on the new audio's `timeupdate`, forcing `currentTime = 0` and racing the new duration fix.
+2. **`GradeDialog.tsx` is dead code**: it's not imported/rendered anywhere in the app. The actual grading modals a teacher/curator sees are inline JSX in `TeacherDashboard.tsx` and `AssignmentStudentProgressPage.tsx`. Neither of those had the `AudioPlayer` wired in — audio submissions there only ever showed a plain Download link/button.
+
+### Fix 1 — `src/components/AudioPlayer.tsx`
+
+- Added an effect-scoped `let fixDurationHandler: (() => void) | null = null;`.
+- `handleLoadedMetadata` now assigns `fixDurationHandler = fixDuration;` before `addEventListener('timeupdate', fixDurationHandler)`.
+- `fixDuration` itself now removes its own listener and clears `fixDurationHandler = null` right after resetting `currentTime`/reading the resolved duration, so it is truly one-shot and idempotent.
+- The effect's cleanup now also does `if (fixDurationHandler) audio.removeEventListener('timeupdate', fixDurationHandler);`, guaranteeing no stale listener survives a `src` change or unmount.
+- Minor/optional: the play/pause button is now `disabled` while `duration === null`, avoiding a play-at-tail flash during the duration-fix window (matches the existing seek-bar `disabled` state).
+
+### Fix 2 — wired `AudioPlayer`/`isAudioUrl` into the real, rendered grading modals
+
+- **`src/pages/TeacherDashboard.tsx`** (submission-review modal, "Student's Work" file card, ~line 1608): imported `AudioPlayer`/`isAudioUrl` from `../components/AudioPlayer`; added an `<AudioPlayer>` right below the existing file card + Download link (Download kept unchanged), shown when `isAudioUrl(selectedSubmission.file_url || selectedSubmission.submitted_file_name)`. URL resolved identically to the existing Download `href` (`file_url.startsWith('http') ? file_url : backendUrl + file_url`).
+- **`src/pages/assingments/AssignmentStudentProgressPage.tsx`** (submission review, "Submitted Files" section): imported `AudioPlayer`/`isAudioUrl` from `../../components/AudioPlayer`.
+  - Multi-file list (`selectedSubmission.answers.files.map(...)`): the per-file preview branch (PDF / image / "open file" link) now has a new `isAudioUrl(file.file_url || file.file_name || file.submitted_file_name)` branch that renders `<AudioPlayer src={buildFileUrl(file.file_url)} className="mt-2" />` in place of the generic "Open file in new tab" link (the file's Download button above is unchanged/kept).
+  - Legacy single-file fallback (`selectedSubmission.file_url`): added an `isAudioUrl(selectedSubmission.file_url || selectedSubmission.submitted_file_name)` check that renders `<AudioPlayer src={buildFileUrl(selectedSubmission.file_url)} className="mt-2" />` alongside the PDF-preview branch, and updated the "non-PDF" link condition to also exclude the audio case (so audio files get the player instead of a bare "Open file in new tab" link). Download button above unchanged.
+- `GradeDialog.tsx`/`ViewDialog.tsx` left as-is (already have the player from the prior commit; harmless dead code, not rendered anywhere).
+
+### Build result
+
+`npm run build` succeeded — Vite client build (`✓ 4295 modules transformed`, `✓ built in 21.96s`) and the PWA service-worker build both completed with no errors (only the pre-existing "chunks larger than 500kB" size-warning, unrelated to this change).
+
+### Commit
+
+`fix(homework): audio player in the real grading modals + one-shot duration-listener cleanup`
+
+Not pushed (per instructions).
