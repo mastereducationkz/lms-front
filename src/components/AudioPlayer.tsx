@@ -126,7 +126,11 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className }) => {
       }
     };
     probe.addEventListener('loadedmetadata', onProbeMeta);
-    probe.src = src;
+    // IMPORTANT: give the probe a DISTINCT url so the browser treats it as a
+    // separate media resource. Otherwise aborting the probe (src='') on cleanup
+    // can tear down the shared resource the audible player is using and stall
+    // its playback. The extra query param is ignored by the file server.
+    probe.src = src + (src.includes('?') ? '&' : '?') + '_dp=1';
 
     return () => {
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
@@ -138,6 +142,20 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className }) => {
       cleanupProbe();
     };
   }, [src]);
+
+  // Drive the progress thumb from a rAF loop while playing, so it moves
+  // smoothly and keeps tracking even if `timeupdate` is throttled.
+  useEffect(() => {
+    if (!isPlaying) return;
+    let raf = 0;
+    const tick = () => {
+      const audio = audioRef.current;
+      if (audio) setCurrentTime(audio.currentTime);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [isPlaying]);
 
   const togglePlay = () => {
     const audio = audioRef.current;
