@@ -56,6 +56,8 @@ export default function AssignmentRecordPage() {
   const chunksRef = useRef<Blob[]>([]);
   const mimeTypeRef = useRef<string>('');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recordedUrlRef = useRef<string>('');
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
     if (!id) return;
@@ -93,6 +95,7 @@ export default function AssignmentRecordPage() {
   // Clean up on unmount: stop any active stream/timer and revoke the object URL.
   useEffect(() => {
     return () => {
+      isMountedRef.current = false;
       stopTimer();
       stopStream();
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
@@ -102,8 +105,9 @@ export default function AssignmentRecordPage() {
           // Ignore errors while tearing down on unmount.
         }
       }
-      if (recordedUrl) {
-        URL.revokeObjectURL(recordedUrl);
+      if (recordedUrlRef.current) {
+        URL.revokeObjectURL(recordedUrlRef.current);
+        recordedUrlRef.current = '';
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -135,6 +139,17 @@ export default function AssignmentRecordPage() {
         const finalMimeType = mimeTypeRef.current || recorder.mimeType || 'audio/webm';
         const blob = new Blob(chunksRef.current, { type: finalMimeType });
         const url = URL.createObjectURL(blob);
+
+        if (!isMountedRef.current) {
+          // Component already unmounted; don't touch state, just clean up the URL.
+          URL.revokeObjectURL(url);
+          return;
+        }
+
+        if (recordedUrlRef.current) {
+          URL.revokeObjectURL(recordedUrlRef.current);
+        }
+        recordedUrlRef.current = url;
         setRecordedBlob(blob);
         setRecordedUrl(url);
         setRecorderState('stopped');
@@ -169,8 +184,9 @@ export default function AssignmentRecordPage() {
   };
 
   const reRecord = () => {
-    if (recordedUrl) {
-      URL.revokeObjectURL(recordedUrl);
+    if (recordedUrlRef.current) {
+      URL.revokeObjectURL(recordedUrlRef.current);
+      recordedUrlRef.current = '';
     }
     setRecordedBlob(null);
     setRecordedUrl('');
