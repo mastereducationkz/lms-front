@@ -100,7 +100,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className }) => {
       if (!probe) return;
       probe.removeEventListener('loadedmetadata', onProbeMeta);
       probe.removeEventListener('timeupdate', onProbeSeek);
-      probe.src = '';
+      // Deliberately do NOT set `probe.src = ''`: for a same-URL resource that
+      // abort can tear down the media the audible player is still using and
+      // stall it. Just drop our reference and let it be garbage-collected.
       probe = null;
     };
     const onProbeSeek = () => {
@@ -126,11 +128,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className }) => {
       }
     };
     probe.addEventListener('loadedmetadata', onProbeMeta);
-    // IMPORTANT: give the probe a DISTINCT url so the browser treats it as a
-    // separate media resource. Otherwise aborting the probe (src='') on cleanup
-    // can tear down the shared resource the audible player is using and stall
-    // its playback. The extra query param is ignored by the file server.
-    probe.src = src + (src.includes('?') ? '&' : '?') + '_dp=1';
+    // Same URL as the audible player (a cache-buster query breaks S3-signed
+    // serving). Safe because we never abort the probe — see cleanupProbe.
+    probe.src = src;
 
     return () => {
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
