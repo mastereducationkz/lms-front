@@ -15,6 +15,7 @@ import ModulePage from '../pages/ModulePage.tsx';
 import LecturePage from '../pages/LecturePage.tsx';
 import AssignmentsPage from '../pages/assingments/AssignmentsPage.tsx';
 import AssignmentPage from '../pages/assingments/AssignmentPage.tsx';
+import AssignmentRecordPage from '../pages/assingments/AssignmentRecordPage.tsx';
 import AssignmentBuilderPage from '../pages/assingments/AssignmentBuilderPage.tsx';
 import AssignmentGradingPage from '../pages/assingments/AssignmentGradingPage.tsx';
 import AssignmentStudentProgressPage from '../pages/assingments/AssignmentStudentProgressPage.tsx';
@@ -180,6 +181,14 @@ export default function Router() {
             <ProtectedRoute>
               <AppLayout>
                 <AssignmentPage />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/homework/:id/record" element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <AppLayout>
+                <AssignmentRecordPage />
               </AppLayout>
             </ProtectedRoute>
           } />

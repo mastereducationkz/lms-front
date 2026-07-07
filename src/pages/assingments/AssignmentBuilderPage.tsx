@@ -276,6 +276,16 @@ export default function AssignmentBuilderPage() {
       });
   };
 
+  const handleTypeChange = (newType: string) => {
+    setFormData(prev => ({
+      ...prev,
+      assignment_type: newType,
+      // Reset content since each type expects a different content shape.
+      content: {},
+      correct_answers: {}
+    }));
+  };
+
   const handleContentChange = (content: any) => {
     setFormData(prev => {
       const updates: any = { content };
@@ -462,14 +472,21 @@ export default function AssignmentBuilderPage() {
 
   const renderAssignmentTypeEditor = () => {
     if (formData.assignment_type === 'multi_task') {
-      return <MultiTaskEditor 
-        content={formData.content} 
+      return <MultiTaskEditor
+        content={formData.content}
         onContentChange={handleContentChange}
       />;
     }
-    
-    return <FileUploadEditor 
-      content={formData.content} 
+
+    if (formData.assignment_type === 'audio') {
+      return <AudioAssignmentEditor
+        content={formData.content}
+        onContentChange={handleContentChange}
+      />;
+    }
+
+    return <FileUploadEditor
+      content={formData.content}
       correct_answers={formData.correct_answers}
       onContentChange={handleContentChange}
       onCorrectAnswersChange={handleCorrectAnswersChange}
@@ -566,6 +583,30 @@ export default function AssignmentBuilderPage() {
                     onChange={(e) => handleInputChange('description', e.target.value)}
                     placeholder="Enter homework description"
                   />
+                </div>
+
+                <div>
+                  <Label htmlFor="homework-type">
+                    Homework Type
+                  </Label>
+                  <Select
+                    value={formData.assignment_type}
+                    onValueChange={handleTypeChange}
+                    disabled={isEditing && formData.assignment_type !== 'multi_task' && formData.assignment_type !== 'audio'}
+                  >
+                    <SelectTrigger id="homework-type">
+                      <SelectValue placeholder="Select homework type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="multi_task">Multi-Task Assignment</SelectItem>
+                      <SelectItem value="audio">Audio Recording</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {formData.assignment_type === 'audio' && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Students record a voice message and submit it for you to listen to and grade.
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -778,6 +819,45 @@ export default function AssignmentBuilderPage() {
           </div>
         </div>
       </form>
+    </div>
+  );
+}
+
+function AudioAssignmentEditor({
+  content,
+  onContentChange
+}: {
+  content: any;
+  onContentChange: (content: any) => void;
+}) {
+  const [question, setQuestion] = useState(content.question || '');
+
+  // Sync state with props when content loads asynchronously (e.g. editing an existing assignment).
+  useEffect(() => {
+    if (content.question && !question) setQuestion(content.question);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [content]);
+
+  useEffect(() => {
+    onContentChange({ question });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [question]);
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <Label htmlFor="question-audio">Prompt *</Label>
+        <Textarea
+          id="question-audio"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder="What should the student talk about? E.g. 'Describe your weekend in 1-2 minutes.'"
+        />
+      </div>
+      <p className="text-sm text-gray-500 dark:text-gray-400">
+        Students will record a voice message answering this prompt on a dedicated recording page.
+        No answer options or file types are needed — you grade the recording directly.
+      </p>
     </div>
   );
 }

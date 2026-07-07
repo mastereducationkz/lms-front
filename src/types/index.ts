@@ -667,6 +667,7 @@ export type AssignmentType =
   | 'essay'
   | 'coding'
   | 'multi_task'
+  | 'audio'
   | 'mixed';
 
 export type QuestionType =

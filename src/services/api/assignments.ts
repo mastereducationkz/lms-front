@@ -9,6 +9,30 @@ export async function getAssignments(params = {}) {
   }
 }
 
+function extensionForAudioMimeType(mimeType: string): string {
+  if (mimeType.includes('webm')) return 'webm';
+  if (mimeType.includes('mp4')) return 'm4a';
+  if (mimeType.includes('ogg')) return 'ogg';
+  if (mimeType.includes('wav')) return 'wav';
+  if (mimeType.includes('mpeg') || mimeType.includes('mp3')) return 'mp3';
+  return 'webm';
+}
+
+export async function uploadAssignmentAudio(file: Blob | File): Promise<{ url: string; filename: string }> {
+  try {
+    const mimeType = file.type || 'audio/webm';
+    const filename = file instanceof File ? file.name : `recording.${extensionForAudioMimeType(mimeType)}`;
+    const formData = new FormData();
+    formData.append('file', file, filename);
+    const response = await api.post('/assignments/upload-audio', formData, {
+      timeout: 120000,
+    });
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Failed to upload audio recording');
+  }
+}
+
 export async function getAssignment(assignmentId: string): Promise<any> {
   try {
     console.log('Fetching assignment with ID:', assignmentId);

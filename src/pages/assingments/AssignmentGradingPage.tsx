@@ -13,6 +13,21 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import type { Assignment, Submission, AssignmentExtension } from '../../types/index';
 import MultiTaskSubmission from '../../components/assignments/MultiTaskSubmission';
 
+const AUDIO_FILE_EXTENSIONS = ['webm', 'ogg', 'mp4', 'm4a', 'mp3', 'mpeg', 'wav', 'x-m4a', 'aac'];
+
+function resolveFileUrl(url: string): string {
+  if (!url) return url;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + url;
+}
+
+function isAudioSubmission(assignment: Assignment | null, submission: Submission | null | undefined): boolean {
+  if (!submission?.file_url) return false;
+  if (assignment?.assignment_type === 'audio') return true;
+  const ext = submission.file_url.split('.').pop()?.toLowerCase().split('?')[0] || '';
+  return AUDIO_FILE_EXTENSIONS.includes(ext);
+}
+
 export default function AssignmentGradingPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -237,13 +252,17 @@ export default function AssignmentGradingPage() {
               </h3>
               
               {assignment?.assignment_type === 'multi_task' && selectedSubmission ? (
-                <MultiTaskSubmission 
-                  assignment={assignment} 
-                  initialAnswers={selectedSubmission.answers} 
+                <MultiTaskSubmission
+                  assignment={assignment}
+                  initialAnswers={selectedSubmission.answers}
                   readOnly={true}
                   onSubmit={() => {}}
                   studentId={String(selectedSubmission.user_id)}
                 />
+              ) : isAudioSubmission(assignment, selectedSubmission) && selectedSubmission?.file_url ? (
+                <div className="space-y-4">
+                  <audio controls src={resolveFileUrl(selectedSubmission.file_url)} className="w-full" />
+                </div>
               ) : (
                 <div className="space-y-4">
                   {selectedSubmission?.file_url && (

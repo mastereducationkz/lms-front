@@ -12,7 +12,8 @@ import {
   Download,
   Award,
   ExternalLink,
-  X
+  X,
+  Mic
 } from 'lucide-react';
 import type { Assignment, AssignmentStatus, Submission } from '../../types/index.ts';
 import { Button } from '../../components/ui/button.tsx';
@@ -22,6 +23,12 @@ import { Textarea } from '../../components/ui/textarea.tsx';
 import { Label } from '../../components/ui/label.tsx';
 import MultiTaskSubmission from '../../components/assignments/MultiTaskSubmission.tsx';
 import { compressImage } from '../../utils/imageCompression';
+
+function resolveFileUrl(url: string): string {
+  if (!url) return url;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + url;
+}
 
 export default function AssignmentPage() {
   const { id } = useParams<{ id: string }>();
@@ -375,6 +382,19 @@ export default function AssignmentPage() {
               readOnly={true}
               isSubmitting={submitting}
             />
+          ) : assignment.assignment_type === 'audio' ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Submission</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {submission.file_url ? (
+                  <audio controls src={resolveFileUrl(submission.file_url)} className="w-full" />
+                ) : (
+                  <div className="text-gray-500 dark:text-gray-400 italic">No recording found.</div>
+                )}
+              </CardContent>
+            </Card>
           ) : (
             <Card>
               <CardHeader>
@@ -448,6 +468,30 @@ export default function AssignmentPage() {
           readOnly={isReadOnlyPrevious}
           isSubmitting={submitting}
         />
+      );
+    }
+
+    // Handle Audio Recording Assignments
+    if (assignment.assignment_type === 'audio') {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle>Instructions</CardTitle>
+            <CardDescription>
+              {assignment.content?.question || assignment.description}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={() => navigate(`/homework/${assignment.id}/record`)}
+              disabled={isReadOnlyPrevious}
+              className="w-full sm:w-auto"
+            >
+              <Mic className="w-4 h-4 mr-2" />
+              Record Audio
+            </Button>
+          </CardContent>
+        </Card>
       );
     }
 
