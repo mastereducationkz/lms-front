@@ -58,33 +58,61 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className }) => {
     setCurrentTime(0);
     setDuration(null);
 
-    let fixDurationHandler: (() => void) | null = null;
+    // While we run the "seek to a huge time to force duration" trick, ignore
+    // timeupdate so the label doesn't flash a garbage (clamped) currentTime.
+    let fixing = false;
+    let fixHandler: (() => void) | null = null;
+
+    const applyDurationIfFinite = (): boolean => {
+      const d = audio.duration;
+      if (isFinite(d) && !isNaN(d) && d > 0) {
+        setDuration(d);
+        return true;
+      }
+      return false;
+    };
 
     const handleLoadedMetadata = () => {
-      const rawDuration = audio.duration;
-      if (isFinite(rawDuration) && !isNaN(rawDuration)) {
-        setDuration(rawDuration);
-        return;
-      }
-
-      // Infinity/NaN duration (typical of MediaRecorder webm blobs without
-      // a duration in their metadata) — force the browser to compute it.
-      const fixDuration = () => {
-        audio.removeEventListener('timeupdate', fixDuration);
-        fixDurationHandler = null;
-        audio.currentTime = 0;
-        setCurrentTime(0);
-        if (isFinite(audio.duration) && !isNaN(audio.duration)) {
-          setDuration(audio.duration);
+      if (applyDurationIfFinite()) return;
+      // Infinity/NaN duration (typical of MediaRecorder webm blobs without a
+      // duration in their metadata). Best-effort: force the browser to compute
+      // it by seeking far past the end. This resolves immediately for locally
+      // available blobs; for remote files it may not, so we ALSO resolve the
+      // duration lazily via `durationchange` once playback starts (below) and
+      // never block Play on it.
+      fixing = true;
+      const fix = () => {
+        audio.removeEventListener('timeupdate', fix);
+        fixHandler = null;
+        fixing = false;
+        try {
+          audio.currentTime = 0;
+        } catch {
+          /* not seekable yet — ignore */
         }
+        setCurrentTime(0);
+        applyDurationIfFinite();
       };
-      fixDurationHandler = fixDuration;
-      audio.addEventListener('timeupdate', fixDurationHandler);
-      audio.currentTime = 1e101;
+      fixHandler = fix;
+      audio.addEventListener('timeupdate', fix);
+      try {
+        audio.currentTime = 1e101;
+      } catch {
+        fixing = false;
+        fixHandler = null;
+        audio.removeEventListener('timeupdate', fix);
+      }
+    };
+
+    // Fires when the browser finally learns the real duration — including part
+    // way through playback for webm blobs whose metadata lacked it. This is the
+    // reliable fallback that makes the total time appear as the clip plays.
+    const handleDurationChange = () => {
+      if (!fixing) applyDurationIfFinite();
     };
 
     const handleTimeUpdate = () => {
-      setCurrentTime(audio.currentTime);
+      if (!fixing) setCurrentTime(audio.currentTime);
     };
 
     const handleEnded = () => {
@@ -96,6 +124,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className }) => {
     const handlePause = () => setIsPlaying(false);
 
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('durationchange', handleDurationChange);
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('play', handlePlay);
@@ -103,12 +132,13 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className }) => {
 
     return () => {
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('durationchange', handleDurationChange);
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
-      if (fixDurationHandler) {
-        audio.removeEventListener('timeupdate', fixDurationHandler);
+      if (fixHandler) {
+        audio.removeEventListener('timeupdate', fixHandler);
       }
     };
   }, [src]);
@@ -148,8 +178,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className }) => {
       <button
         type="button"
         onClick={togglePlay}
-        disabled={duration === null}
-        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90"
         aria-label={isPlaying ? 'Pause' : 'Play'}
       >
         {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="ml-0.5 h-4 w-4" />}
