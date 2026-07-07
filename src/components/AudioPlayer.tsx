@@ -65,14 +65,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className }) => {
       }
     };
 
-    // NOTE: we deliberately do NOT do the "seek to a huge time to force the
-    // duration" trick here. For MediaRecorder .webm blobs (no duration in
-    // metadata) that seek moves the playhead to the end and often can't be
-    // reset, so pressing Play starts from the end and produces silence. We keep
-    // playback rock-solid instead: play from 0, and let the browser report the
-    // real duration via `durationchange` (it does, at latest by the end of the
-    // first play-through). Until then the total shows `--:--`, which is
-    // harmless — Play always works.
+    // The AUDIBLE player is never seeked (seeking a MediaRecorder .webm to force
+    // its missing duration moves the playhead to the end and can't reliably be
+    // reset, which made Play produce silence). So playback always starts from 0.
     const handleLoadedMetadata = () => applyDurationIfFinite();
     const handleDurationChange = () => applyDurationIfFinite();
 
@@ -95,6 +90,44 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className }) => {
     audio.addEventListener('play', handlePlay);
     audio.addEventListener('pause', handlePause);
 
+    // Duration probe: a DETACHED <audio> we CAN safely seek to force the browser
+    // to compute a webm's missing duration, without disturbing the audible
+    // player's playhead. Once it resolves, the seek bar has a real max and moves.
+    let probe: HTMLAudioElement | null = new Audio();
+    probe.preload = 'metadata';
+
+    const cleanupProbe = () => {
+      if (!probe) return;
+      probe.removeEventListener('loadedmetadata', onProbeMeta);
+      probe.removeEventListener('timeupdate', onProbeSeek);
+      probe.src = '';
+      probe = null;
+    };
+    const onProbeSeek = () => {
+      if (!probe) return;
+      probe.removeEventListener('timeupdate', onProbeSeek);
+      const d = probe.duration;
+      if (isFinite(d) && !isNaN(d) && d > 0) setDuration(d);
+      cleanupProbe();
+    };
+    const onProbeMeta = () => {
+      if (!probe) return;
+      const d = probe.duration;
+      if (isFinite(d) && !isNaN(d) && d > 0) {
+        setDuration(d);
+        cleanupProbe();
+        return;
+      }
+      probe.addEventListener('timeupdate', onProbeSeek);
+      try {
+        probe.currentTime = 1e101;
+      } catch {
+        cleanupProbe();
+      }
+    };
+    probe.addEventListener('loadedmetadata', onProbeMeta);
+    probe.src = src;
+
     return () => {
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('durationchange', handleDurationChange);
@@ -102,6 +135,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className }) => {
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
+      cleanupProbe();
     };
   }, [src]);
 
