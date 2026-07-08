@@ -105,7 +105,7 @@ function TimeGroup({ value, label, minDigits = 2 }: { value: number; label: stri
 /** Colon separator between countdown units (aligned with the tile row). */
 function UnitSeparator() {
   return (
-    <span className="flex h-[2.9rem] sm:h-[4.5rem] items-center text-xl sm:text-4xl font-bold text-white/35">:</span>
+    <span className="flex h-[4.75rem] sm:h-[4.5rem] items-center text-4xl font-bold text-white/35">:</span>
   );
 }
 

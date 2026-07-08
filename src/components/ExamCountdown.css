@@ -4,10 +4,11 @@
    like a mechanical departures board. Each half renders the full glyph in a
    200%-tall inner box that is clipped to show only its half. */
 .fc {
-  /* phone-first sizing; scales up at sm */
-  --w: 2rem;
-  --h: 2.9rem;
-  --fs: 1.6rem;
+  /* phones show only days:hrs (4 tiles), so tiles can be large here;
+     at sm the full days:hrs:min:sec shows, so tiles are a touch smaller. */
+  --w: 3.5rem;
+  --h: 4.75rem;
+  --fs: 3.2rem;
   --seam: rgba(0, 0, 0, 0.3);
   position: relative;
   display: inline-block;
