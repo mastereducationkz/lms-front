@@ -229,10 +229,13 @@ export default function ExamCountdown({ tileColor }: { tileColor?: string }) {
               <TimeGroup value={dd} label="days" />
               <UnitSeparator />
               <TimeGroup value={hh} label="hrs" />
-              <UnitSeparator />
-              <TimeGroup value={mm} label="min" />
-              <UnitSeparator />
-              <TimeGroup value={ss} label="sec" />
+              {/* minutes & seconds only from sm up; phones show days : hrs */}
+              <div className="hidden items-start gap-1.5 sm:flex sm:gap-2">
+                <UnitSeparator />
+                <TimeGroup value={mm} label="min" />
+                <UnitSeparator />
+                <TimeGroup value={ss} label="sec" />
+              </div>
             </div>
             <div className="mt-2 text-[11px] font-semibold uppercase tracking-[0.13em] text-white/55">
               until {examLabel} · {formatDate(info!.target_date!)}
