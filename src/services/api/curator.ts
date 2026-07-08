@@ -60,6 +60,7 @@ export interface StudentHomeworkItem {
   title: string;
   group_id: number;
   group_name: string;
+  program_type?: string | null;
   due_date: string | null;
   max_score: number;
   assignment_type: string;
