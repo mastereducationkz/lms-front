@@ -6,6 +6,24 @@ import type { StudentHomeworkItem } from '../../services/api/curator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { StatusBadge, ViewDialog } from '../curator-homeworks';
 import type { StudentProgress, AssignmentData, SubmissionDetails } from '../curator-homeworks';
+import { PROGRAM_LABELS } from '../../lib/groupPicker';
+import type { CourseType } from '../../types';
+import { cn } from '../../lib/utils';
+
+// Canonical program order for the filter tabs.
+const PROGRAM_ORDER: CourseType[] = ['sat', 'ielts', 'nuet', 'general_english'];
+
+// Resolve an item's program from its group's program_type, falling back to
+// keyword detection in the group name (mirrors groupPicker.getGroupProgramType).
+const programOfItem = (item: StudentHomeworkItem): CourseType => {
+  const stored = item.program_type as CourseType | undefined;
+  if (stored === 'sat' || stored === 'ielts' || stored === 'nuet') return stored;
+  const name = item.group_name || '';
+  if (/\bielts\b/i.test(name)) return 'ielts';
+  if (/\bnuet\b/i.test(name)) return 'nuet';
+  if (/\bsat\b/i.test(name)) return 'sat';
+  return stored || 'general_english';
+};
 
 interface StudentHomeworkDialogProps {
   open: boolean;
@@ -61,6 +79,7 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<StudentHomeworkItem[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [activeProgram, setActiveProgram] = useState<CourseType | 'all'>('all');
 
   // Detail (reused ViewDialog) state
   const [viewOpen, setViewOpen] = useState(false);
@@ -75,6 +94,7 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
     setLoading(true);
     setError(null);
     setItems([]);
+    setActiveProgram('all');
     getCuratorStudentHomework(studentId)
       .then((res) => {
         if (!cancelled) setItems(res.items || []);
@@ -90,10 +110,23 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
     };
   }, [open, studentId]);
 
-  // Show a group column only when the student has assignments from >1 group.
+  // Distinct programs (courses) the student has homework in, in canonical order.
+  // Tabs only appear when the student studies >1 course at once (e.g. SAT + IELTS).
+  const programs = useMemo(() => {
+    const present = new Set(items.map(programOfItem));
+    return PROGRAM_ORDER.filter((p) => present.has(p));
+  }, [items]);
+  const showProgramTabs = programs.length > 1;
+
+  const visibleItems = useMemo(
+    () => (activeProgram === 'all' ? items : items.filter((i) => programOfItem(i) === activeProgram)),
+    [items, activeProgram],
+  );
+
+  // Show a group column only when the visible rows span >1 group.
   const showGroupColumn = useMemo(
-    () => new Set(items.map((i) => i.group_id)).size > 1,
-    [items],
+    () => new Set(visibleItems.map((i) => i.group_id)).size > 1,
+    [visibleItems],
   );
 
   const handleRowClick = async (item: StudentHomeworkItem) => {
@@ -124,6 +157,33 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
             </DialogTitle>
           </DialogHeader>
 
+          {showProgramTabs && (
+            <div className="flex items-center gap-1 px-5 pt-2 border-b border-gray-100 dark:border-border overflow-x-auto shrink-0">
+              {(['all' as const, ...programs]).map((p) => {
+                const active = activeProgram === p;
+                const label = p === 'all' ? 'Все' : PROGRAM_LABELS[p];
+                const count = p === 'all'
+                  ? items.length
+                  : items.filter((i) => programOfItem(i) === p).length;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setActiveProgram(p)}
+                    className={cn(
+                      'px-3 py-2 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors',
+                      active
+                        ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                        : 'border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200',
+                    )}
+                  >
+                    {label} <span className="text-xs opacity-60">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           <div className="overflow-y-auto px-5 py-4">
             {loading ? (
               <div className="flex items-center justify-center py-12 text-muted-foreground">
@@ -146,7 +206,7 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((item) => {
+                  {visibleItems.map((item) => {
                     const clickable = item.submission_id != null;
                     return (
                       <tr
