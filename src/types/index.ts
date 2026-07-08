@@ -358,7 +358,7 @@ export interface CreateGroupRequest {
   description?: string;
   teacher_id?: number | null;
   curator_id?: number;
-  course_id?: number; // Курс, к которому привязана группа
+  course_id: number; // Курс, к которому привязана группа (обязателен при создании)
   is_active?: boolean;
   is_special?: boolean;
   is_over?: boolean;

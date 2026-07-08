@@ -586,6 +586,9 @@ export default function UserManagement() {
     if (!data.name.trim()) {
       errors.name = 'Group name is required';
     }
+    if (!data.course_id) {
+      errors.course_id = 'Course is required';
+    }
     if (data.is_special) {
       if (!data.curator_id) {
         errors.curator_id = 'Curator is required for special groups';
@@ -767,7 +770,7 @@ export default function UserManagement() {
           ? (groupFormData.teacher_id > 0 ? groupFormData.teacher_id : undefined)
           : groupFormData.teacher_id,
         curator_id: groupFormData.curator_id || undefined,
-        course_id: groupFormData.course_id || undefined,
+        course_id: groupFormData.course_id!, // required — validateCreateGroupForm guarantees it is set
         is_active: groupFormData.is_active,
         is_special: groupFormData.is_special,
         group_type: groupFormData.group_type,
@@ -822,7 +825,7 @@ export default function UserManagement() {
         teacher_id:
           specialGroupFormData.teacher_id > 0 ? specialGroupFormData.teacher_id : undefined,
         curator_id: specialGroupFormData.curator_id || undefined,
-        course_id: specialGroupFormData.course_id || undefined,
+        course_id: specialGroupFormData.course_id!, // required — validateCreateGroupForm guarantees it is set
         is_active: specialGroupFormData.is_active,
         is_special: true,
         group_type: specialGroupFormData.group_type,
@@ -1655,7 +1658,7 @@ export default function UserManagement() {
           students={students}
           courses={courses}
           errors={editGroupFormErrors}
-          purpose="standard"
+          purpose="edit"
         />
       </Modal>
 
@@ -2010,7 +2013,7 @@ interface GroupFormProps {
   courses: Course[]; // Добавляем список курсов
   errors?: { [key: string]: string };
   /** Dedicated special-group create flow: hides “Special group” toggle and shows short help */
-  purpose?: 'standard' | 'special-only';
+  purpose?: 'standard' | 'special-only' | 'edit';
 }
 
 function GroupForm({
@@ -2087,6 +2090,10 @@ function GroupForm({
     })
   }, [students, studentSearchQuery, formData.student_ids])
 
+  // Course is mandatory when creating a group (both standard and special);
+  // the edit form keeps it optional so an existing group's course isn't forced.
+  const courseRequired = purpose !== 'edit';
+
   return (
     <div className="space-y-4">
       {purpose === 'special-only' ? (
@@ -2160,16 +2167,18 @@ function GroupForm({
       
       {/* Выбор курса */}
       <div className="p-1">
-        <Label htmlFor="course" className="text-sm font-medium">Course (Optional)</Label>
+        <Label htmlFor="course" className="text-sm font-medium">
+          {courseRequired ? 'Course' : 'Course (Optional)'}
+        </Label>
         <Select
           value={formData.course_id?.toString() || 'none'}
           onValueChange={(value) => setFormData({ ...formData, course_id: value && value !== 'none' ? parseInt(value) : undefined })}
         >
-          <SelectTrigger>
-            <SelectValue placeholder="No course" />
+          <SelectTrigger className={errors.course_id ? 'border-red-500' : ''}>
+            <SelectValue placeholder={courseRequired ? 'Select a course' : 'No course'} />
           </SelectTrigger>
           <SelectContent className="z-[1100]">
-            <SelectItem value="none">No course</SelectItem>
+            {!courseRequired && <SelectItem value="none">No course</SelectItem>}
             {courses.map((course) => (
               <SelectItem key={course.id} value={String(course.id)}>
                 {formatCourseOptionLabel(course)}
@@ -2177,9 +2186,13 @@ function GroupForm({
             ))}
           </SelectContent>
         </Select>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          Select a course to automatically grant this group access
-        </p>
+        {errors.course_id ? (
+          <p className="text-red-500 text-xs mt-1">{errors.course_id}</p>
+        ) : (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Select a course to automatically grant this group access
+          </p>
+        )}
       </div>
 
       {formData.is_special && formData.course_id ? (
