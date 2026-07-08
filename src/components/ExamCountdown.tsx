@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarClock, Pencil, GraduationCap } from "lucide-react";
 import apiClient from "../services/api";
 import type { ExamCountdown as ExamCountdownData, ExamKind } from "../services/api/assignment-zero";
 import { Button } from "./ui/button";
@@ -245,7 +244,7 @@ export default function ExamCountdown({ tileColor }: { tileColor?: string }) {
               onClick={openModal}
               className="mt-1 inline-flex items-center gap-1 text-[11px] text-sky-300 underline-offset-2 hover:text-sky-200 hover:underline"
             >
-              <Pencil className="h-3 w-3" /> Change date
+              Change date
             </button>
           </>
         ) : targetMs != null ? (
@@ -257,13 +256,12 @@ export default function ExamCountdown({ tileColor }: { tileColor?: string }) {
               onClick={openModal}
               className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-sky-300 underline-offset-2 hover:text-sky-200 hover:underline"
             >
-              <Pencil className="h-3 w-3" /> Change date
+              Change date
             </button>
           </>
         ) : (
           <>
-            <CalendarClock className="mx-auto h-6 w-6 text-sky-300" />
-            <div className="mt-1.5 text-sm font-medium leading-snug text-white">
+            <div className="text-sm font-medium leading-snug text-white">
               Set your {examLabel} exam date
             </div>
             <div className="mt-0.5 text-[11px] text-white/60">Add it to see your countdown</div>
@@ -281,10 +279,7 @@ export default function ExamCountdown({ tileColor }: { tileColor?: string }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <GraduationCap className="h-5 w-5 text-blue-600" />
-              Your {examLabel} test date
-            </DialogTitle>
+            <DialogTitle>Your {examLabel} test date</DialogTitle>
             <DialogDescription>
               {active === "sat"
                 ? "The SAT is held on fixed official test dates. Pick the date you're registered for."

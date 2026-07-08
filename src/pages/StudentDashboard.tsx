@@ -7,7 +7,7 @@ import { Badge } from "../components/ui/badge";
 import { Checkbox } from "../components/ui/checkbox";
 import { Input } from "../components/ui/input";
 import type { DashboardStats, StudentProgressOverview, Assignment, Event, AssignmentSubmission } from "../types";
-import { Clock, BookOpen, LineChart, CheckCircle, Target, Calendar, FileText, AlertCircle, Video, GraduationCap, MessageCircle, Palette } from "lucide-react";
+import { Clock, BookOpen, LineChart, CheckCircle, Target, Calendar, FileText, AlertCircle, Video, GraduationCap, MessageCircle } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
 
 // Dashboard hero background presets (all dark so white text + the flip board stay legible).
@@ -75,10 +75,9 @@ export default function StudentDashboard({
           type="button"
           aria-label="Change banner color"
           title="Banner color"
-          className="inline-flex items-center text-white/60 transition-colors hover:text-white"
-        >
-          <Palette className="h-4 w-4" />
-        </button>
+          className="h-5 w-5 rounded-full ring-2 ring-white/60 transition hover:ring-white"
+          style={{ background: heroThemeCss }}
+        />
       </PopoverTrigger>
       <PopoverContent align="end" className="w-auto p-3">
         <p className="mb-2 text-xs font-medium text-muted-foreground">Banner color</p>
