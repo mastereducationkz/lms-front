@@ -64,16 +64,36 @@ export async function getMyAssignmentZeroSubmission(): Promise<any> {
   }
 }
 
+export type ExamKind = 'sat' | 'ielts';
+
+export interface ExamInfo {
+  target_date: string | null; // ISO date
+  days_left: number | null;
+  source: 'planned' | 'nearest_official' | null;
+  can_edit: boolean;
+}
+
+export interface ExamCountdown {
+  applicable: boolean;
+  available_exams: ExamKind[];
+  default_exam: ExamKind | null;
+  exams: Partial<Record<ExamKind, ExamInfo>>;
+  sat_official_dates?: string[]; // upcoming official SAT dates (ISO)
+}
+
+export async function getExamCountdown(): Promise<ExamCountdown> {
+  const response = await api.get('/assignment-zero/exam-countdown');
+  return response.data;
+}
+
 export async function updateAssignmentZeroPlannedDate(data: {
   exam_type: 'sat' | 'ielts';
   planned_test_date: string;
 }): Promise<any> {
-  try {
-    const response = await api.patch('/assignment-zero/planned-date', data);
-    return response.data;
-  } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to update planned exam date');
-  }
+  // Let the original axios error propagate so callers can read response.status
+  // (e.g. 404 = no Assignment Zero submission yet).
+  const response = await api.patch('/assignment-zero/planned-date', data);
+  return response.data;
 }
 
 export async function updateAssignmentZeroExamResult(data: {

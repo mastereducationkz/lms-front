@@ -7,7 +7,23 @@ import { Badge } from "../components/ui/badge";
 import { Checkbox } from "../components/ui/checkbox";
 import { Input } from "../components/ui/input";
 import type { DashboardStats, StudentProgressOverview, Assignment, Event, AssignmentSubmission } from "../types";
-import { Clock, BookOpen, LineChart, CheckCircle, Target, Calendar, FileText, AlertCircle, Video, GraduationCap, MessageCircle } from "lucide-react";
+import { Clock, BookOpen, LineChart, CheckCircle, Target, Calendar, FileText, AlertCircle, Video, GraduationCap, MessageCircle, Palette } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
+
+// Dashboard hero background presets (all dark so white text + the flip board stay legible).
+// `tile` is an opaque, banner-tinted color for the flip-clock digits (must be
+// opaque so the folding flap hides the digit behind it without ghosting).
+const HERO_THEMES: { key: string; label: string; css: string; tile: string }[] = [
+  { key: "blue", label: "Blue", css: "linear-gradient(to right, #3b6ff0, #6366f1)", tile: "#2c3488" },
+  { key: "teal", label: "Teal", css: "linear-gradient(to bottom, #0d9488, #0f766e)", tile: "#0a4a44" },
+  { key: "emerald", label: "Emerald", css: "linear-gradient(to bottom, #059669, #047857)", tile: "#0a4733" },
+  { key: "violet", label: "Violet", css: "linear-gradient(to bottom, #7c3aed, #6d28d9)", tile: "#3f2280" },
+  { key: "slate", label: "Slate", css: "linear-gradient(to bottom, #334155, #0f172a)", tile: "#111a2b" },
+  { key: "midnight", label: "Midnight", css: "linear-gradient(to bottom, #1e3a8a, #0f1a3f)", tile: "#152a60" },
+  { key: "indigo", label: "Indigo", css: "linear-gradient(to bottom, #312e81, #1e1b4b)", tile: "#221f56" },
+  { key: "plum", label: "Plum", css: "linear-gradient(to bottom, #9f1239, #4c0519)", tile: "#4a0f26" },
+  { key: "graphite", label: "Graphite", css: "linear-gradient(to bottom, #1f2937, #030712)", tile: "#141a24" },
+];
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -15,6 +31,7 @@ import apiClient from "../services/api";
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import StudentLeaderboard from "../components/StudentLeaderboard";
 import DailyQuestionsPopup from '../components/DailyQuestionsPopup';
+import ExamCountdown from "../components/ExamCountdown";
 
 interface StudentDashboardProps {
   firstName: string;
@@ -31,6 +48,59 @@ export default function StudentDashboard({
 }: StudentDashboardProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // Student-chosen hero banner color (persisted per user in localStorage).
+  const heroThemeKey = `dashboard_hero_theme_${user?.id ?? "me"}`;
+  const [heroTheme, setHeroTheme] = useState<string>(() => {
+    try {
+      return localStorage.getItem(heroThemeKey) || "blue";
+    } catch {
+      return "blue";
+    }
+  });
+  const activeHeroTheme = HERO_THEMES.find((t) => t.key === heroTheme) ?? HERO_THEMES[0];
+  const heroThemeCss = activeHeroTheme.css;
+  const applyHeroTheme = (key: string) => {
+    setHeroTheme(key);
+    try {
+      localStorage.setItem(heroThemeKey, key);
+    } catch {
+      /* ignore storage errors */
+    }
+  };
+  const bannerColorPicker = (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="Change banner color"
+          title="Banner color"
+          className="inline-flex items-center text-white/60 transition-colors hover:text-white"
+        >
+          <Palette className="h-4 w-4" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-auto p-3">
+        <p className="mb-2 text-xs font-medium text-muted-foreground">Banner color</p>
+        <div className="grid grid-cols-4 gap-2">
+          {HERO_THEMES.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => applyHeroTheme(t.key)}
+              title={t.label}
+              aria-label={t.label}
+              className={`h-8 w-8 rounded-full ring-2 ring-offset-2 ring-offset-background transition ${
+                heroTheme === t.key ? "ring-foreground" : "ring-transparent hover:ring-border"
+              }`}
+              style={{ background: t.css }}
+            />
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+
   const [progressData, setProgressData] = useState<StudentProgressOverview | null>(null);
   const [isLoadingProgress, setIsLoadingProgress] = useState(true);
   
@@ -489,7 +559,10 @@ export default function StudentDashboard({
         </Card>
       )}
 
-      <Card className="border-0 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-900 dark:to-indigo-900 text-white" data-tour="dashboard-overview">
+      <Card className="relative border-0 text-white overflow-hidden" style={{ background: heroThemeCss }} data-tour="dashboard-overview">
+        <div className="absolute right-4 top-4 z-10">{bannerColorPicker}</div>
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0 flex-1">
         <CardHeader className="p-5 sm:p-6">
           <CardTitle className="text-2xl sm:text-3xl">Welcome back, {firstName}!</CardTitle>
           <CardDescription className="text-white/80 text-sm sm:text-base">
@@ -514,6 +587,11 @@ export default function StudentDashboard({
             </Button>
           </div>
         </CardFooter>
+        </div>
+        <div className="px-5 pb-5 lg:py-4 lg:pr-14 lg:pl-0 flex justify-center lg:justify-end shrink-0">
+          <ExamCountdown tileColor={activeHeroTheme.tile} />
+        </div>
+        </div>
       </Card>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-2" data-tour="dashboard-stats">

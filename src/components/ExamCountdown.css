@@ -1,0 +1,107 @@
+/* Split-flap flip-clock digit.
+   A tile is two stacked halves (top/bottom). On change, the OLD top half folds
+   down (fc-top) while the NEW bottom half unfolds up (fc-bottom), so it reads
+   like a mechanical departures board. Each half renders the full glyph in a
+   200%-tall inner box that is clipped to show only its half. */
+.fc {
+  /* phone-first sizing; scales up at sm */
+  --w: 2rem;
+  --h: 2.9rem;
+  --fs: 1.6rem;
+  --seam: rgba(0, 0, 0, 0.3);
+  position: relative;
+  display: inline-block;
+  width: var(--w);
+  height: var(--h);
+  border-radius: 10px;
+  perspective: 460px;
+  color: #fff;
+}
+
+@media (min-width: 640px) {
+  .fc {
+    --w: 3.1rem;
+    --h: 4.5rem;
+    --fs: 2.9rem;
+  }
+}
+
+.fc__half {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  overflow: hidden;
+  /* Opaque so the folding flap fully hides the digit behind it (no ghosting).
+     Tinted to the banner via --fc-tile, set on the widget root. */
+  background: var(--fc-tile, #141824);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+}
+
+.fc__top {
+  top: 0;
+  border-radius: 10px 10px 0 0;
+  border-bottom: 1px solid var(--seam);
+}
+
+.fc__bottom {
+  bottom: 0;
+  border-radius: 0 0 10px 10px;
+}
+
+.fc__inner {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 200%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--fs);
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.fc__top .fc__inner {
+  top: 0;
+}
+
+.fc__bottom .fc__inner {
+  bottom: 0;
+}
+
+.fc__flip-top {
+  z-index: 3;
+  transform-origin: 50% 100%;
+  animation: fcFoldDown var(--fc-half, 0.2s) ease-in forwards;
+}
+
+.fc__flip-bottom {
+  z-index: 3;
+  transform-origin: 50% 0%;
+  transform: rotateX(90deg);
+  animation: fcUnfold var(--fc-half, 0.2s) ease-out var(--fc-half, 0.2s) forwards;
+}
+
+@keyframes fcFoldDown {
+  to {
+    transform: rotateX(-90deg);
+  }
+}
+
+@keyframes fcUnfold {
+  from {
+    transform: rotateX(90deg);
+  }
+  to {
+    transform: rotateX(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fc__flip-top,
+  .fc__flip-bottom {
+    display: none;
+  }
+}
