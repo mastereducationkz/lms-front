@@ -9,6 +9,7 @@ import {
   ChevronsUpDown,
   Check,
   Search,
+  Pencil,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -23,7 +24,7 @@ import {
 import { Checkbox } from '../components/ui/checkbox';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
-import apiClient, { getGroupFullAttendanceMatrix, updateAttendanceBulk, getCuratorGroups } from '../services/api';
+import apiClient, { getGroupFullAttendanceMatrix, updateAttendanceBulk, setLessonTopic, getCuratorGroups } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Group, CourseType } from '../types';
 import { cn } from '../lib/utils';
@@ -53,6 +54,7 @@ interface LessonMeta {
     lesson_number: number;
     event_id: number;
     title: string;
+    topic?: string | null;
     start_datetime: string;
 }
 
@@ -100,6 +102,14 @@ export default function TeacherAttendancePage() {
     studentName: string;
     currentScore: number;
   }>({ open: false, studentId: null, lessonKey: null, studentName: '', currentScore: 0 });
+
+  // Lesson topic edit modal state
+  const [topicModal, setTopicModal] = useState<{
+    open: boolean;
+    lesson: LessonMeta | null;
+    value: string;
+  }>({ open: false, lesson: null, value: '' });
+  const [savingTopic, setSavingTopic] = useState(false);
 
   useEffect(() => {
     loadGroups();
@@ -378,6 +388,44 @@ export default function TeacherAttendancePage() {
       });
   };
 
+  const openTopicModal = (lesson: LessonMeta) => {
+      setTopicModal({ open: true, lesson, value: lesson.topic ?? '' });
+  };
+
+  const saveTopic = async () => {
+      if (!topicModal.lesson || !selectedGroupId) return;
+      const lesson = topicModal.lesson;
+      const nextTopic = topicModal.value.trim();
+      setSavingTopic(true);
+      try {
+          const res = await setLessonTopic({
+              group_id: selectedGroupId,
+              event_id: lesson.event_id,
+              topic: nextTopic || null,
+          });
+          // Update the lesson column in place. The event may have been materialized
+          // server-side, so adopt the returned (real) event_id.
+          setData(prev => {
+              if (!prev) return prev;
+              return {
+                  ...prev,
+                  lessons: prev.lessons.map(l =>
+                      l.event_id === lesson.event_id
+                          ? { ...l, topic: res.topic, event_id: res.event_id }
+                          : l
+                  ),
+              };
+          });
+          toast.success(res.topic ? 'Topic saved' : 'Topic cleared');
+          setTopicModal({ open: false, lesson: null, value: '' });
+      } catch (err) {
+          console.error('Failed to save lesson topic:', err);
+          toast.error('Failed to save topic');
+      } finally {
+          setSavingTopic(false);
+      }
+  };
+
   return (
     <div className="p-8 space-y-8 max-w-[1600px] mx-auto min-h-screen text-gray-900 dark:text-foreground font-sans">
       {/* Header - Aligned with AnalyticsPage */}
@@ -639,6 +687,20 @@ export default function TeacherAttendancePage() {
                                                 Future
                                               </span>
                                             )}
+                                            <button
+                                                type="button"
+                                                onClick={(e) => { e.stopPropagation(); openTopicModal(lesson); }}
+                                                className="mt-1 flex items-center gap-1 max-w-[100px] group/topic cursor-pointer"
+                                                title={lesson.topic ? `Тема: ${lesson.topic} (нажмите, чтобы изменить)` : 'Добавить тему урока'}
+                                            >
+                                                <Pencil className="h-2.5 w-2.5 shrink-0 text-gray-400 group-hover/topic:text-blue-500" />
+                                                <span className={cn(
+                                                    "truncate text-[9px] normal-case font-normal",
+                                                    lesson.topic ? "text-gray-600 dark:text-gray-300" : "text-gray-300 dark:text-gray-600 italic"
+                                                )}>
+                                                    {lesson.topic || 'Тема'}
+                                                </span>
+                                            </button>
                                         </div>
                                     </TableHead>
                                 );
@@ -788,6 +850,43 @@ export default function TeacherAttendancePage() {
               className="bg-yellow-500 hover:bg-yellow-600"
             >
               Save Score
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Lesson topic edit modal */}
+      <Dialog open={topicModal.open} onOpenChange={(open) => !open && setTopicModal({ open: false, lesson: null, value: '' })}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Тема урока</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            {topicModal.lesson && (
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {topicModal.lesson.title}
+              </p>
+            )}
+            <Input
+              autoFocus
+              maxLength={200}
+              placeholder="Например: Present Perfect Tense"
+              value={topicModal.value}
+              onChange={(e) => setTopicModal(prev => ({ ...prev, value: e.target.value }))}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !savingTopic) saveTopic(); }}
+            />
+            <p className="text-xs text-gray-400">Оставьте поле пустым, чтобы удалить тему.</p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setTopicModal({ open: false, lesson: null, value: '' })}
+              disabled={savingTopic}
+            >
+              Отмена
+            </Button>
+            <Button onClick={saveTopic} disabled={savingTopic}>
+              {savingTopic ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Сохранить'}
             </Button>
           </DialogFooter>
         </DialogContent>

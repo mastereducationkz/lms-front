@@ -9,6 +9,7 @@ import { Button } from '../components/ui/button';
 interface AttendanceRecord {
   event_id: number;
   event_title: string;
+  event_topic: string | null;
   event_date: string;
   status: string;
   activity_score: number | null;
@@ -379,7 +380,7 @@ export default function StudentProfilePage() {
               <tbody>
                 {attendance.records.map(r => (
                   <tr key={r.event_id} className="border-b border-gray-100 last:border-0">
-                    <td className="px-4 py-3 text-gray-800">{r.event_title}</td>
+                    <td className="px-4 py-3 text-gray-800">{r.event_topic ? `${r.event_title} — ${r.event_topic}` : r.event_title}</td>
                     <td className="px-4 py-3 text-gray-500">{formatDate(r.event_date)}</td>
                     <td className="px-4 py-3">{attendanceStatusBadge(r.status)}</td>
                     <td className="px-4 py-3 text-gray-600">

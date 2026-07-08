@@ -186,6 +186,15 @@ export async function updateAttendanceBulk(data: {
   }
 }
 
+export async function setLessonTopic(data: {
+  group_id: number;
+  event_id: number;
+  topic: string | null;
+}): Promise<{ status: string; event_id: number; topic: string | null }> {
+  const response = await api.post('/leaderboard/curator/lesson-topic', data);
+  return response.data;
+}
+
 export async function updateLeaderboardEntry(data: {
   user_id: number;
   group_id: number;
