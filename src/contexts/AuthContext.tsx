@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import apiClient from "../services/api";
 import type { User, UserRole } from '../types';
+import { clearOidcSession, isOidcSession } from '../services/oidc';
 
 interface AuthContextType {
   // State
@@ -97,11 +98,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = async (): Promise<void> => {
+    const wasOidc = isOidcSession();
     try {
       await apiClient.logout();
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      // Stop IdP silent-renew so it can't re-inject a token after logout.
+      if (wasOidc) {
+        try { await clearOidcSession(); } catch { /* best-effort */ }
+      }
       setUser(null);
       setError(null);
     }

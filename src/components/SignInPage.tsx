@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { Input } from './ui/input';
+import { isOidcConfigured, startOidcLogin } from '../services/oidc';
 
 
 // --- TYPE DEFINITIONS ---
@@ -135,6 +136,26 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                 {loading ? 'Signing In...' : 'Sign In'}
               </button>
             </form>
+
+            {isOidcConfigured() && (
+              <div className="animate-element animate-delay-700 mt-5">
+                <div className="flex items-center gap-3">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground">или</span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void startOidcLogin();
+                  }}
+                  disabled={loading}
+                  className="mt-4 w-full rounded border border-input bg-background py-2 font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Продолжить с Master Education
+                </button>
+              </div>
+            )}
 
             {onBackToHome && (
               <div className="animate-element animate-delay-950 mt-4 text-center">
