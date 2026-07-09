@@ -1162,6 +1162,9 @@ export default function CuratorLeaderboardPage() {
                             <TableHead className="text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight">
                                 {examLabel} Verbal
                             </TableHead>
+                            <TableHead className="text-center font-semibold p-2 w-24 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight">
+                                {examLabel} Total
+                            </TableHead>
                         </>
                     ) : isIeltsGroup ? (
                         <TableHead className="text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight">IELTS</TableHead>
@@ -1362,6 +1365,15 @@ export default function CuratorLeaderboardPage() {
                                                     title={wsTip ?? (verbalHasData ? 'Click to see Verbal feedback' : undefined)}
                                                 >
                                                     {renderExamSectionContent(ws?.verbal_scaled, student.sat_verbal_correct_count, student.sat_verbal_total_count)}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-12">
+                                                <div className="w-full h-full flex items-center justify-center" title={wsTip}>
+                                                    {ws?.total != null ? (
+                                                        <span className="text-sm font-bold text-gray-900 dark:text-foreground tabular-nums">{ws.total}</span>
+                                                    ) : (
+                                                        <span className="text-gray-300 dark:text-gray-600">—</span>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                         </>
