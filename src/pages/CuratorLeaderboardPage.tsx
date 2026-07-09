@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popove
 import { ChevronLeft, ChevronRight, Loader2, Save, Eye, EyeOff, Check, ChevronsUpDown, ClipboardList } from 'lucide-react';
 import { StudentHomeworkDialog } from '../components/leaderboard/StudentHomeworkDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { getCuratorGroups, getWeeklyLessonsWithHwStatus, updateAttendance, updateLeaderboardEntry, updateLeaderboardConfig } from '../services/api';
+import { getCuratorGroups, getWeeklyLessonsWithHwStatus, updateAttendance, updateLeaderboardEntry, updateLeaderboardConfig, setGroupWeekOffset } from '../services/api';
 import { Group, CourseType } from '../types';
 import {
   PROGRAM_LABELS, PROGRAM_BADGE_STYLES, getGroupProgramType,
@@ -347,6 +347,8 @@ export default function CuratorLeaderboardPage() {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentWeek, setCurrentWeek] = useState(1);
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [savingOffset, setSavingOffset] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [groupPickerOpen, setGroupPickerOpen] = useState(false);
   const [groupQuery, setGroupQuery] = useState('');
@@ -378,6 +380,31 @@ export default function CuratorLeaderboardPage() {
   // SAT and NUET share the Math/Verbal section columns (with scaled weekly-set scores).
   const showExamSections = isSatGroup || isNuetGroup;
   const examLabel = isNuetGroup ? 'NUET' : 'SAT';
+
+  // Keep the local week-offset editor in sync with the selected group.
+  useEffect(() => {
+    setWeekOffset(selectedGroup?.weekly_set_week_offset ?? 0);
+  }, [selectedGroup?.id, selectedGroup?.weekly_set_week_offset]);
+
+  // Persist the per-group NUET week offset, then refetch so the corrected weeks show.
+  const saveWeekOffset = async (next: number) => {
+    if (!selectedGroupId) return;
+    const clamped = Math.max(0, Math.min(52, Number.isFinite(next) ? next : 0));
+    setWeekOffset(clamped);
+    setSavingOffset(true);
+    try {
+      const res = await setGroupWeekOffset({ group_id: selectedGroupId, offset: clamped });
+      setGroups(prev => prev.map(g =>
+        g.id === selectedGroupId ? { ...g, weekly_set_week_offset: res.weekly_set_week_offset } : g));
+      toast('Смещение недели сохранено', 'success');
+      await loadLeaderboard();
+    } catch (err) {
+      console.error('Failed to save week offset:', err);
+      toast('Не удалось сохранить смещение', 'error');
+    } finally {
+      setSavingOffset(false);
+    }
+  };
 
   // Groups matching the picker search box (matches subject, date, and teacher name)
   const groupMatches = useMemo(() => {
@@ -1063,6 +1090,30 @@ export default function CuratorLeaderboardPage() {
                         >
                             Сейчас
                         </Button>
+                    )}
+
+                    {isNuetGroup && (
+                        <div
+                            className="flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-card px-2 h-8"
+                            title="Смещение недели для NUET: контентная неделя = неделя − смещение. Укажите, если группа стартовала с середины недели (напр. 1)."
+                        >
+                            <span className="text-[10px] text-gray-500 dark:text-gray-400 whitespace-nowrap">Смещение</span>
+                            <input
+                                type="number"
+                                min={0}
+                                max={52}
+                                value={weekOffset}
+                                disabled={savingOffset}
+                                onChange={(e) => setWeekOffset(Math.max(0, Math.min(52, parseInt(e.target.value) || 0)))}
+                                onBlur={(e) => {
+                                    const v = Math.max(0, Math.min(52, parseInt(e.target.value) || 0));
+                                    if (v !== (selectedGroup?.weekly_set_week_offset ?? 0)) saveWeekOffset(v);
+                                }}
+                                onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                                className="w-10 text-center text-xs bg-transparent outline-none text-gray-900 dark:text-foreground"
+                            />
+                            {savingOffset && <Loader2 className="w-3 h-3 animate-spin text-gray-400" />}
+                        </div>
                     )}
                 </div>
             )}

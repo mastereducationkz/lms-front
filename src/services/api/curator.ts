@@ -187,6 +187,14 @@ export async function updateAttendanceBulk(data: {
   }
 }
 
+export async function setGroupWeekOffset(data: {
+  group_id: number;
+  offset: number;
+}): Promise<{ status: string; group_id: number; weekly_set_week_offset: number }> {
+  const response = await api.post('/leaderboard/curator/group-week-offset', data);
+  return response.data;
+}
+
 export async function setLessonTopic(data: {
   group_id: number;
   event_id: number;

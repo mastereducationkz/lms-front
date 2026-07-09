@@ -243,6 +243,8 @@ export interface Group {
   group_type?: GroupType;
   /** SAT / IELTS / General English — дублирует смысл course_type курса, удобно для поиска групп */
   program_type?: CourseType;
+  /** Shifts leaderboard week → NUET content week (content_week = week − offset) for mid-week starts */
+  weekly_set_week_offset?: number;
   schedule_config?: any;
   current_week?: number;
   max_week?: number;
