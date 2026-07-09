@@ -846,6 +846,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
           <div className="flex justify-center pt-2">
             <Button
               onClick={handleCheckAnswersClick}
+              disabled={isQuizIncomplete}
+              title={isQuizIncomplete ? `Ответьте на все вопросы (${answeredCount}/${answerableQuestions.length})` : undefined}
               className="px-8 py-3 rounded-lg text-lg font-semibold min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white"
             >
               Check Answers
@@ -1079,6 +1081,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
                       variant="outline"
                       size="sm"
                       onClick={handleCheckAnswersClick}
+                      disabled={isQuizIncomplete}
+                      title={isQuizIncomplete ? `Ответьте на все вопросы (${answeredCount}/${answerableQuestions.length})` : undefined}
                       className="shrink-0 whitespace-nowrap text-xs sm:text-sm font-medium border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-500"
                     >
                       Check Answers
