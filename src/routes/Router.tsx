@@ -57,6 +57,7 @@ import CuratorLeaderboardPage from '../pages/CuratorLeaderboardPage.tsx';
 import CuratorGroupsPage from '../pages/CuratorGroupsPage.tsx';
 import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage.tsx';
 import ResetPasswordPage from '../pages/auth/ResetPasswordPage.tsx';
+import OidcCallbackPage from '../pages/auth/OidcCallbackPage.tsx';
 import AssignmentZeroPage from '../pages/AssignmentZeroPage';
 import { StudentAnalyticsPage } from '../pages/analytics/StudentAnalyticsPage.tsx';
 import HeadTeacherTeacherDetailsPage from '../pages/HeadTeacherTeacherDetailsPage.tsx';
@@ -98,6 +99,8 @@ export default function Router() {
                       <ResetPasswordPage />
                   </ProtectedRoute>
                 } />
+                {/* SSO Phase 2 — OIDC (Zitadel) PKCE callback */}
+                <Route path="/auth/callback" element={<OidcCallbackPage />} />
 
           {/* Assignment Zero - Self-Assessment for new students */}
           <Route path="/assignment-zero" element={
