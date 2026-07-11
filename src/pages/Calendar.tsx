@@ -228,6 +228,7 @@ export default function Calendar() {
     return utcDate.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
+      hour12: false, // 24-hour format
       timeZone: 'Asia/Almaty' // Kazakhstan timezone (GMT+5)
     });
   };
@@ -640,6 +641,21 @@ export default function Calendar() {
                                   ) : (
                                     <span className="truncate">{event.location}</span>
                                   )}
+                                </div>
+                              )}
+
+                              {event.meeting_url && (
+                                <div className="flex items-center gap-2 overflow-hidden">
+                                  <Video className="w-4 h-4 opacity-75 flex-shrink-0" />
+                                  <a
+                                    href={event.meeting_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="hover:underline truncate underline-offset-4 font-medium"
+                                  >
+                                    Join / Войти
+                                  </a>
                                 </div>
                               )}
 

@@ -106,6 +106,24 @@ export default function StudentDashboard({
   // Todo list state
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
+  // Upcoming webinar-type events (office hours / speaking clubs) for the announcement card.
+  const [webinars, setWebinars] = useState<Event[]>([]);
+  const webinarAnnouncementKey = `dashboard_webinar_announcement_dismissed_${user?.id ?? "me"}`;
+  const [webinarAnnouncementDismissed, setWebinarAnnouncementDismissed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(webinarAnnouncementKey) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const dismissWebinarAnnouncement = () => {
+    setWebinarAnnouncementDismissed(true);
+    try {
+      localStorage.setItem(webinarAnnouncementKey, "1");
+    } catch {
+      /* ignore */
+    }
+  };
   const [submissions, setSubmissions] = useState<AssignmentSubmission[]>([]);
   const [isLoadingTodo, setIsLoadingTodo] = useState(true);
   const [showCompleted, setShowCompleted] = useState(false);
@@ -321,15 +339,19 @@ export default function StudentDashboard({
     try {
       setIsLoadingTodo(true);
       
-      // Load assignments, events, and submissions in parallel
-      const [assignmentsData, eventsData, submissionsData] = await Promise.all([
+      // Load assignments, events, and submissions in parallel.
+      // Webinars are fetched separately so office hours / clubs always surface
+      // for the announcement card (not crowded out by the general limit).
+      const [assignmentsData, eventsData, webinarsData, submissionsData] = await Promise.all([
         apiClient.getAssignments({ is_active: true }),
         apiClient.getMyEvents({ upcoming_only: true, limit: 10 }),
+        apiClient.getMyEvents({ upcoming_only: true, event_type: 'webinar', limit: 20 }),
         apiClient.getMySubmissions()
       ]);
-      
+
       setAssignments(assignmentsData || []);
       setEvents(eventsData || []);
+      setWebinars(webinarsData || []);
       setSubmissions(submissionsData || []);
     } catch (error) {
       console.error('Failed to load todo data:', error);
@@ -512,8 +534,90 @@ export default function StudentDashboard({
 
 
 
+  // Deduplicate recurring webinars by title (keep earliest upcoming occurrence)
+  // and format their weekly slot in Kazakhstan time (24-hour).
+  const uniqueWebinars = useMemo(() => {
+    const byTitle = new Map<string, Event>();
+    for (const ev of webinars) {
+      const existing = byTitle.get(ev.title);
+      if (!existing || new Date(ev.start_datetime) < new Date(existing.start_datetime)) {
+        byTitle.set(ev.title, ev);
+      }
+    }
+    return Array.from(byTitle.values()).sort(
+      (a, b) => new Date(a.start_datetime).getTime() - new Date(b.start_datetime).getTime()
+    );
+  }, [webinars]);
+
+  const formatWebinarSlot = (ev: Event) => {
+    const start = new Date(ev.start_datetime);
+    const end = new Date(ev.end_datetime);
+    const tz = { timeZone: 'Asia/Almaty' } as const;
+    const weekday = start.toLocaleDateString('en-US', { weekday: 'short', ...tz });
+    const t = (d: Date) =>
+      d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false, ...tz });
+    return `${weekday} ${t(start)}–${t(end)}`;
+  };
+
   return (
     <div className="space-y-8">
+      {!webinarAnnouncementDismissed && uniqueWebinars.length > 0 && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5 text-primary" />
+                <CardTitle className="text-base">New weekly sessions</CardTitle>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={dismissWebinarAnnouncement}
+              >
+                Hide
+              </Button>
+            </div>
+            <CardDescription>
+              Free weekly office hours and speaking clubs are now on your calendar — join live using the links below.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {uniqueWebinars.map((ev) => (
+              <div
+                key={ev.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-background px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <div className="font-medium text-sm truncate">{ev.title}</div>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>{formatWebinarSlot(ev)}</span>
+                  </div>
+                </div>
+                {ev.meeting_url && (
+                  <Button asChild size="sm" variant="secondary">
+                    <a href={ev.meeting_url} target="_blank" rel="noopener noreferrer">
+                      <Video className="mr-1.5 h-4 w-4" /> Join
+                    </a>
+                  </Button>
+                )}
+              </div>
+            ))}
+            <div className="pt-1">
+              <Button
+                variant="link"
+                size="sm"
+                className="h-auto p-0 text-xs"
+                onClick={() => navigate('/calendar')}
+              >
+                View full calendar →
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {!isLoadingIeltsPrompt && showIeltsPrompt && (
         <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30">
           <CardHeader>
