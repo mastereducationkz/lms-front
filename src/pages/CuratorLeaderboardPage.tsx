@@ -92,6 +92,8 @@ interface StudentRow {
     ielts_listening_test_name?: string | null;
     ielts_reading_test_name?: string | null;
     ielts_writing_test_name?: string | null;
+    ielts_listening_feedback?: string | null;
+    ielts_reading_feedback?: string | null;
     ielts_writing_feedback?: { task1?: string | null; task2?: string | null } | null;
     ielts_speaking_feedback?: {
         fluencyCoherence?: string | null;
@@ -1679,6 +1681,11 @@ export default function CuratorLeaderboardPage() {
           ];
           const hasWritingFb = Boolean(writingFb?.task1 || writingFb?.task2);
           const hasSpeakingFb = speakingCriteria.some(c => c.text);
+          const examFeedbacks: { label: string; text?: string | null; testName?: string | null }[] = [
+            { label: 'Listening', text: s.ielts_listening_feedback, testName: s.ielts_listening_test_name },
+            { label: 'Reading', text: s.ielts_reading_feedback, testName: s.ielts_reading_test_name },
+          ];
+          const hasExamFb = examFeedbacks.some(f => f.text);
           return (
             <>
               {/* Header */}
@@ -1720,6 +1727,14 @@ export default function CuratorLeaderboardPage() {
 
               {/* Feedback body */}
               <div className="px-5 py-4 overflow-y-auto space-y-5">
+                {examFeedbacks.filter(f => f.text).map(f => (
+                  <div key={f.label}>
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
+                      {f.label} feedback{f.testName ? ` · ${f.testName}` : ''}
+                    </h3>
+                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{f.text}</p>
+                  </div>
+                ))}
                 {hasWritingFb && (
                   <div>
                     <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
@@ -1756,7 +1771,7 @@ export default function CuratorLeaderboardPage() {
                     </div>
                   </div>
                 )}
-                {!hasWritingFb && !hasSpeakingFb && (
+                {!hasExamFb && !hasWritingFb && !hasSpeakingFb && (
                   <p className="text-sm text-gray-400 italic">No feedback available</p>
                 )}
               </div>
