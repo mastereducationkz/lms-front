@@ -63,6 +63,12 @@ export const SignInPage: React.FC<SignInPageProps> = ({
   loading = false,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
+  // SSO ("Continue with Master Education") is the primary path. The email/password form is the
+  // only path when SSO isn't configured (local dev), otherwise it's revealed on demand as a
+  // reversible break-glass fallback — the backend still accepts both.
+  const oidcEnabled = isOidcConfigured();
+  const [showPasswordLogin, setShowPasswordLogin] = useState(false);
+  const passwordFormVisible = !oidcEnabled || showPasswordLogin;
 
   return (
     <div className="h-[100dvh] flex flex-col md:flex-row font-geist w-[100dvw]">
@@ -79,81 +85,101 @@ export const SignInPage: React.FC<SignInPageProps> = ({
               </div>
             )}
 
-            <form className="space-y-5" onSubmit={onSignIn}>
-              <div className="animate-element animate-delay-300">
-                <label className="text-sm font-medium text-muted-foreground">Email Address</label>
-                <GlassInputWrapper>
-                  <Input 
-                    name="email" 
-                    type="email" 
-                    placeholder="Enter your email address" 
-                    className="w-full bg-white dark:bg-card text-lg p-4 focus:outline-none " 
-                    required
-                    disabled={loading}
-                  />
-                </GlassInputWrapper>
-              </div>
-
-              <div className="animate-element animate-delay-400">
-                <label className="text-sm font-medium text-muted-foreground">Password</label>
-                <GlassInputWrapper>
-                  <div className="relative">
-                    <Input 
-                      name="password" 
-                      type={showPassword ? 'text' : 'password'} 
-                      placeholder="Enter your password" 
-                      className="w-full bg-white dark:bg-card text-lg p-4 focus:outline-none" 
-                      required
-                      disabled={loading}
-                    />
-                    <button 
-                      type="button" 
-                      onClick={() => setShowPassword(!showPassword)} 
-                      className="absolute inset-y-0 right-3 flex items-center"
-                      disabled={loading}
-                    >
-                      {showPassword ? <EyeOff className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors" /> : <Eye className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors" />}
-                    </button>
-                  </div>
-                </GlassInputWrapper>
-              </div>
-
-              <div className="animate-element animate-delay-500 flex items-center justify-between text-sm">
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" name="rememberMe" className="custom-checkbox" disabled={loading} />
-                  <span className="text-foreground/90">Keep me signed in</span>
-                </label>
-                <Link to="/forgot-password" className="text-primary hover:underline">
-                  Forgot your password?
-                </Link>
-              </div>
-
-              <button 
-                type="submit" 
-                disabled={loading}
-                className="animate-element animate-delay-600 w-full rounded bg-primary py-2 font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Signing In...' : 'Sign In'}
-              </button>
-            </form>
-
-            {isOidcConfigured() && (
-              <div className="animate-element animate-delay-700 mt-5">
-                <div className="flex items-center gap-3">
-                  <div className="h-px flex-1 bg-border" />
-                  <span className="text-xs uppercase tracking-wide text-muted-foreground">или</span>
-                  <div className="h-px flex-1 bg-border" />
-                </div>
+            {/* Primary path: Continue with Master Education (SSO). */}
+            {oidcEnabled && (
+              <div className="animate-element animate-delay-300 flex flex-col gap-3">
                 <button
                   type="button"
                   onClick={() => {
                     void startOidcLogin();
                   }}
                   disabled={loading}
-                  className="mt-4 w-full rounded border border-input bg-background py-2 font-medium text-foreground transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+                  className="w-full rounded bg-primary py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Продолжить с Master Education
                 </button>
+                {!passwordFormVisible && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordLogin(true)}
+                    disabled={loading}
+                    className="self-center text-sm text-muted-foreground underline transition-colors hover:text-foreground"
+                  >
+                    Другие способы входа
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Email/password — the only path when SSO isn't configured, otherwise revealed on
+                demand as a break-glass fallback. The backend still accepts both. */}
+            {passwordFormVisible && (
+              <div className="animate-element animate-delay-400 flex flex-col gap-5">
+                {oidcEnabled && (
+                  <div className="flex items-center gap-3">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-xs uppercase tracking-wide text-muted-foreground">или по паролю</span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+                )}
+
+                <form className="space-y-5" onSubmit={onSignIn}>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Email Address</label>
+                    <GlassInputWrapper>
+                      <Input
+                        name="email"
+                        type="email"
+                        placeholder="Enter your email address"
+                        className="w-full bg-white dark:bg-card text-lg p-4 focus:outline-none "
+                        required
+                        disabled={loading}
+                      />
+                    </GlassInputWrapper>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">Password</label>
+                    <GlassInputWrapper>
+                      <div className="relative">
+                        <Input
+                          name="password"
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Enter your password"
+                          className="w-full bg-white dark:bg-card text-lg p-4 focus:outline-none"
+                          required
+                          disabled={loading}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute inset-y-0 right-3 flex items-center"
+                          disabled={loading}
+                        >
+                          {showPassword ? <EyeOff className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors" /> : <Eye className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors" />}
+                        </button>
+                      </div>
+                    </GlassInputWrapper>
+                  </div>
+
+                  <div className="flex items-center justify-between text-sm">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input type="checkbox" name="rememberMe" className="custom-checkbox" disabled={loading} />
+                      <span className="text-foreground/90">Keep me signed in</span>
+                    </label>
+                    <Link to="/forgot-password" className="text-primary hover:underline">
+                      Forgot your password?
+                    </Link>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className={`w-full rounded py-2 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${oidcEnabled ? 'border border-input bg-background text-foreground hover:bg-accent' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}
+                  >
+                    {loading ? 'Signing In...' : 'Sign In'}
+                  </button>
+                </form>
               </div>
             )}
 
