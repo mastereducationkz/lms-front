@@ -258,6 +258,14 @@ const weekRangeLabel = (createdAtStr: string, week: number) => {
     return `${formatDayMonth(start)} – ${formatDayMonth(end)}`;
 };
 
+// The date leaderboard weeks are numbered from. The backend anchors week 1 to
+// the group's first class event (week1_start), which can trail created_at by
+// weeks — created_at is only a fallback for groups with no events yet.
+// week1_start is date-only; suffix a local-midnight time so new Date() doesn't
+// parse it as UTC and slide it to Sunday for viewers west of UTC.
+const groupWeekAnchor = (group: Group) =>
+    group.week1_start ? `${group.week1_start}T00:00:00` : group.created_at;
+
 // Group-picker helpers (PROGRAM_LABELS, getGroupProgramType, formatGroupLabel,
 // getGroupDateText, PROGRAM_BADGE_STYLES, pluralizeGroups, sortGroupsByCreatedAt)
 // are shared with the Attendance page — see ../lib/groupPicker.
@@ -265,7 +273,7 @@ const weekRangeLabel = (createdAtStr: string, week: number) => {
 const applyGroupWeek = (group: Group, weekParam: string | null) => {
     if (weekParam) return parseInt(weekParam, 10);
     if (group.current_week) return group.current_week;
-    return calculateCurrentWeekNumber(group.created_at);
+    return calculateCurrentWeekNumber(groupWeekAnchor(group));
 };
 
 // Inline markdown: **bold**, *italic*, converts to React spans
@@ -876,7 +884,7 @@ export default function CuratorLeaderboardPage() {
   // Week-navigation bounds and the group's "real" current week (based on today).
   const maxWeek = selectedGroup?.max_week || 52;
   const realCurrentWeek = selectedGroup
-    ? Math.min(maxWeek, selectedGroup.current_week ?? calculateCurrentWeekNumber(selectedGroup.created_at))
+    ? Math.min(maxWeek, selectedGroup.current_week ?? calculateCurrentWeekNumber(groupWeekAnchor(selectedGroup)))
     : 1;
   const isViewingCurrentWeek = currentWeek === realCurrentWeek;
   const viewedRangeLabel = data
@@ -886,7 +894,7 @@ export default function CuratorLeaderboardPage() {
         return formatDayMonth(end);
       })()}`
     : selectedGroup
-      ? weekRangeLabel(selectedGroup.created_at, currentWeek)
+      ? weekRangeLabel(groupWeekAnchor(selectedGroup), currentWeek)
       : '';
 
   return (
@@ -980,7 +988,7 @@ export default function CuratorLeaderboardPage() {
                                                 onClick={() => {
                                                     setSelectedGroupId(g.id);
                                                     setCurrentWeek(
-                                                        g.current_week ?? calculateCurrentWeekNumber(g.created_at)
+                                                        g.current_week ?? calculateCurrentWeekNumber(groupWeekAnchor(g))
                                                     );
                                                     setGroupPickerOpen(false);
                                                     setGroupQuery('');
@@ -1068,7 +1076,7 @@ export default function CuratorLeaderboardPage() {
                                     <SelectItem key={w} value={w.toString()} className="text-xs">
                                         <span className="flex items-center gap-2">
                                             <span className="font-medium">Неделя {w}</span>
-                                            {selectedGroup && <span className="text-gray-400">{weekRangeLabel(selectedGroup.created_at, w)}</span>}
+                                            {selectedGroup && <span className="text-gray-400">{weekRangeLabel(groupWeekAnchor(selectedGroup), w)}</span>}
                                             {w === realCurrentWeek && <span className="text-[9px] font-bold uppercase text-blue-500">сейчас</span>}
                                         </span>
                                     </SelectItem>

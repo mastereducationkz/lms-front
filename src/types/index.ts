@@ -248,6 +248,8 @@ export interface Group {
   schedule_config?: any;
   current_week?: number;
   max_week?: number;
+  /** Monday of the first class event — the anchor leaderboard weeks are numbered from */
+  week1_start?: string | null;
   max_open_lessons?: number | null;
   course_id?: number | null;
   course_ids?: number[];
