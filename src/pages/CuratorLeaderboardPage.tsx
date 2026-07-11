@@ -77,7 +77,9 @@ interface StudentRow {
     sat_verbal_correct_count?: number | null;
     sat_verbal_total_count?: number | null;
     sat_math_feedback?: string | null;
+    sat_math_feedback_ru?: string | null;
     sat_verbal_feedback?: string | null;
+    sat_verbal_feedback_ru?: string | null;
     sat_math_test_name?: string | null;
     sat_verbal_test_name?: string | null;
     sat_math_completed_at?: string | null;
@@ -450,6 +452,7 @@ export default function CuratorLeaderboardPage() {
     section: 'math' | 'verbal';
     testName: string | null;
     feedback: string | null;
+    feedbackRu: string | null;
     correct: number | null;
     total: number | null;
     completedAt: string | null;
@@ -463,8 +466,10 @@ export default function CuratorLeaderboardPage() {
     open: false, studentName: '', lessonTitle: '', score: null, feedback: null, submittedAt: null, gradedAt: null
   })
   const [satModal, setSatModal] = useState<SatFeedbackModal>({
-    open: false, studentName: '', section: 'math', testName: null, feedback: null, correct: null, total: null, completedAt: null
+    open: false, studentName: '', section: 'math', testName: null, feedback: null, feedbackRu: null, correct: null, total: null, completedAt: null
   })
+  // Language shown in the SAT feedback modal; Russian (curator-facing) wins when available
+  const [satFeedbackLang, setSatFeedbackLang] = useState<'ru' | 'en'>('ru')
   const [ieltsModal, setIeltsModal] = useState<{ open: boolean; student: StudentRow | null }>({
     open: false, student: null
   })
@@ -1370,12 +1375,14 @@ export default function CuratorLeaderboardPage() {
                                                     )}
                                                     onClick={() => {
                                                         if (!mathHasData) return
+                                                        setSatFeedbackLang(student.sat_math_feedback_ru ? 'ru' : 'en')
                                                         setSatModal({
                                                             open: true,
                                                             studentName: student.student_name,
                                                             section: 'math',
                                                             testName: student.sat_math_test_name ?? null,
                                                             feedback: student.sat_math_feedback ?? null,
+                                                            feedbackRu: student.sat_math_feedback_ru ?? null,
                                                             correct: student.sat_math_correct_count ?? null,
                                                             total: student.sat_math_total_count ?? null,
                                                             completedAt: student.sat_math_completed_at ?? ws?.completed_at ?? null,
@@ -1398,12 +1405,14 @@ export default function CuratorLeaderboardPage() {
                                                     )}
                                                     onClick={() => {
                                                         if (!verbalHasData) return
+                                                        setSatFeedbackLang(student.sat_verbal_feedback_ru ? 'ru' : 'en')
                                                         setSatModal({
                                                             open: true,
                                                             studentName: student.student_name,
                                                             section: 'verbal',
                                                             testName: student.sat_verbal_test_name ?? null,
                                                             feedback: student.sat_verbal_feedback ?? null,
+                                                            feedbackRu: student.sat_verbal_feedback_ru ?? null,
                                                             correct: student.sat_verbal_correct_count ?? null,
                                                             total: student.sat_verbal_total_count ?? null,
                                                             completedAt: student.sat_verbal_completed_at ?? ws?.completed_at ?? null,
@@ -1616,8 +1625,31 @@ export default function CuratorLeaderboardPage() {
 
         {/* Feedback body */}
         <div className="px-5 py-4 overflow-y-auto">
-          {satModal.feedback ? (
-            <MarkdownContent>{satModal.feedback}</MarkdownContent>
+          {satModal.feedback || satModal.feedbackRu ? (
+            <>
+              {satModal.feedback && satModal.feedbackRu && (
+                <div className="flex items-center gap-1 mb-3">
+                  {([['ru', 'Русский'], ['en', 'English']] as const).map(([lang, label]) => (
+                    <button
+                      key={lang}
+                      type="button"
+                      onClick={() => setSatFeedbackLang(lang)}
+                      className={cn(
+                        "px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors",
+                        satFeedbackLang === lang
+                          ? "bg-gray-900 text-white dark:bg-foreground dark:text-background"
+                          : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-secondary dark:text-gray-400 dark:hover:bg-secondary/80"
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <MarkdownContent>
+                {(satFeedbackLang === 'ru' ? (satModal.feedbackRu ?? satModal.feedback) : (satModal.feedback ?? satModal.feedbackRu))!}
+              </MarkdownContent>
+            </>
           ) : (
             <p className="text-sm text-gray-400 italic">No feedback available</p>
           )}
