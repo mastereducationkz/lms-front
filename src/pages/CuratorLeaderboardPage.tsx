@@ -63,6 +63,14 @@ interface WeeklySet {
     completed_at?: string | null;
 }
 
+interface IeltsSpeakingFeedback {
+    fluencyCoherence?: string | null;
+    lexicalResource?: string | null;
+    grammaticalRange?: string | null;
+    pronunciation?: string | null;
+    overall?: string | null;
+}
+
 interface StudentRow {
     student_id: number;
     student_name: string;
@@ -93,15 +101,13 @@ interface StudentRow {
     ielts_reading_test_name?: string | null;
     ielts_writing_test_name?: string | null;
     ielts_listening_feedback?: string | null;
+    ielts_listening_feedback_ru?: string | null;
     ielts_reading_feedback?: string | null;
+    ielts_reading_feedback_ru?: string | null;
     ielts_writing_feedback?: { task1?: string | null; task2?: string | null } | null;
-    ielts_speaking_feedback?: {
-        fluencyCoherence?: string | null;
-        lexicalResource?: string | null;
-        grammaticalRange?: string | null;
-        pronunciation?: string | null;
-        overall?: string | null;
-    } | null;
+    ielts_writing_feedback_ru?: { task1?: string | null; task2?: string | null } | null;
+    ielts_speaking_feedback?: IeltsSpeakingFeedback | null;
+    ielts_speaking_feedback_ru?: IeltsSpeakingFeedback | null;
     ielts_weekly_set_title?: string | null;
     study_buddy: number;
     self_reflection_journal: number;
@@ -480,6 +486,9 @@ export default function CuratorLeaderboardPage() {
   })
   // Language shown in the SAT feedback modal; Russian (curator-facing) wins when available
   const [satFeedbackLang, setSatFeedbackLang] = useState<'ru' | 'en'>('ru')
+  // Same for the IELTS feedback modal; translation is best-effort per field,
+  // so Russian mode falls back to the English text wherever the Russian is null
+  const [ieltsFeedbackLang, setIeltsFeedbackLang] = useState<'ru' | 'en'>('ru')
   const [ieltsModal, setIeltsModal] = useState<{ open: boolean; student: StudentRow | null }>({
     open: false, student: null
   })
@@ -880,6 +889,16 @@ export default function CuratorLeaderboardPage() {
     s.ielts_listening_band != null || s.ielts_reading_band != null ||
     s.ielts_writing_band != null || s.ielts_speaking_band != null ||
     s.ielts_overall_band != null;
+
+  const hasIeltsEnFeedback = (s: StudentRow) =>
+    Boolean(s.ielts_listening_feedback || s.ielts_reading_feedback ||
+      s.ielts_writing_feedback?.task1 || s.ielts_writing_feedback?.task2 ||
+      (s.ielts_speaking_feedback && Object.values(s.ielts_speaking_feedback).some(Boolean)));
+
+  const hasIeltsRuFeedback = (s: StudentRow) =>
+    Boolean(s.ielts_listening_feedback_ru || s.ielts_reading_feedback_ru ||
+      s.ielts_writing_feedback_ru?.task1 || s.ielts_writing_feedback_ru?.task2 ||
+      (s.ielts_speaking_feedback_ru && Object.values(s.ielts_speaking_feedback_ru).some(Boolean)));
 
   // Week-navigation bounds and the group's "real" current week (based on today).
   const maxWeek = selectedGroup?.max_week || 52;
@@ -1461,6 +1480,7 @@ export default function CuratorLeaderboardPage() {
                                     )}
                                     onClick={() => {
                                         if (!hasIeltsData(student)) return
+                                        setIeltsFeedbackLang(hasIeltsRuFeedback(student) ? 'ru' : 'en')
                                         setIeltsModal({ open: true, student })
                                     }}
                                     title={hasIeltsData(student) ? 'Click to see IELTS results and feedback' : undefined}
@@ -1678,22 +1698,33 @@ export default function CuratorLeaderboardPage() {
             { label: 'Writing', value: s.ielts_writing_band },
             { label: 'Speaking', value: s.ielts_speaking_band },
           ];
+          // Russian is best-effort per field — fall back to the English text
+          // wherever the translation is missing.
+          const ru = ieltsFeedbackLang === 'ru';
+          const pick = (en?: string | null, ruText?: string | null) => (ru ? (ruText ?? en) : en);
           const writingFb = s.ielts_writing_feedback;
+          const writingFbRu = s.ielts_writing_feedback_ru;
           const speakingFb = s.ielts_speaking_feedback;
+          const speakingFbRu = s.ielts_speaking_feedback_ru;
           const speakingCriteria: { label: string; text?: string | null }[] = [
-            { label: 'Fluency & Coherence', text: speakingFb?.fluencyCoherence },
-            { label: 'Lexical Resource', text: speakingFb?.lexicalResource },
-            { label: 'Grammatical Range & Accuracy', text: speakingFb?.grammaticalRange },
-            { label: 'Pronunciation', text: speakingFb?.pronunciation },
-            { label: 'Overall', text: speakingFb?.overall },
+            { label: 'Fluency & Coherence', text: pick(speakingFb?.fluencyCoherence, speakingFbRu?.fluencyCoherence) },
+            { label: 'Lexical Resource', text: pick(speakingFb?.lexicalResource, speakingFbRu?.lexicalResource) },
+            { label: 'Grammatical Range & Accuracy', text: pick(speakingFb?.grammaticalRange, speakingFbRu?.grammaticalRange) },
+            { label: 'Pronunciation', text: pick(speakingFb?.pronunciation, speakingFbRu?.pronunciation) },
+            { label: 'Overall', text: pick(speakingFb?.overall, speakingFbRu?.overall) },
           ];
-          const hasWritingFb = Boolean(writingFb?.task1 || writingFb?.task2);
+          const writingTasks: { label: string; text?: string | null }[] = [
+            { label: 'Task 1', text: pick(writingFb?.task1, writingFbRu?.task1) },
+            { label: 'Task 2', text: pick(writingFb?.task2, writingFbRu?.task2) },
+          ];
+          const hasWritingFb = writingTasks.some(t => t.text);
           const hasSpeakingFb = speakingCriteria.some(c => c.text);
           const examFeedbacks: { label: string; text?: string | null; testName?: string | null }[] = [
-            { label: 'Listening', text: s.ielts_listening_feedback, testName: s.ielts_listening_test_name },
-            { label: 'Reading', text: s.ielts_reading_feedback, testName: s.ielts_reading_test_name },
+            { label: 'Listening', text: pick(s.ielts_listening_feedback, s.ielts_listening_feedback_ru), testName: s.ielts_listening_test_name },
+            { label: 'Reading', text: pick(s.ielts_reading_feedback, s.ielts_reading_feedback_ru), testName: s.ielts_reading_test_name },
           ];
           const hasExamFb = examFeedbacks.some(f => f.text);
+          const showLangToggle = hasIeltsRuFeedback(s) && hasIeltsEnFeedback(s);
           return (
             <>
               {/* Header */}
@@ -1735,6 +1766,25 @@ export default function CuratorLeaderboardPage() {
 
               {/* Feedback body */}
               <div className="px-5 py-4 overflow-y-auto space-y-5">
+                {showLangToggle && (
+                  <div className="flex items-center gap-1">
+                    {([['ru', 'Русский'], ['en', 'English']] as const).map(([lang, label]) => (
+                      <button
+                        key={lang}
+                        type="button"
+                        onClick={() => setIeltsFeedbackLang(lang)}
+                        className={cn(
+                          "px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors",
+                          ieltsFeedbackLang === lang
+                            ? "bg-gray-900 text-white dark:bg-foreground dark:text-background"
+                            : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-secondary dark:text-gray-400 dark:hover:bg-secondary/80"
+                        )}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {examFeedbacks.filter(f => f.text).map(f => (
                   <div key={f.label}>
                     <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
@@ -1749,18 +1799,12 @@ export default function CuratorLeaderboardPage() {
                       Writing feedback{s.ielts_writing_test_name ? ` · ${s.ielts_writing_test_name}` : ''}
                     </h3>
                     <div className="space-y-3">
-                      {writingFb?.task1 && (
-                        <div>
-                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Task 1</p>
-                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{writingFb.task1}</p>
+                      {writingTasks.filter(t => t.text).map(t => (
+                        <div key={t.label}>
+                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">{t.label}</p>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{t.text}</p>
                         </div>
-                      )}
-                      {writingFb?.task2 && (
-                        <div>
-                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Task 2</p>
-                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{writingFb.task2}</p>
-                        </div>
-                      )}
+                      ))}
                     </div>
                   </div>
                 )}
