@@ -155,12 +155,8 @@ export default function WeeklyTopStudentsPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground flex items-center gap-2">
-            <Trophy className="h-6 w-6 text-amber-500" />
             Weekly Top Students
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Composite activity ranking — homework, course progress, study time, and points combined.
-          </p>
         </div>
         <Button onClick={handleExport} disabled={exporting || loading} variant="outline">
           {exporting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
