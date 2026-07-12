@@ -98,16 +98,31 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                 >
                   Продолжить с Master Education
                 </button>
-                {!passwordFormVisible && (
+                <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm">
                   <button
                     type="button"
-                    onClick={() => setShowPasswordLogin(true)}
+                    onClick={() => {
+                      void startOidcLogin({ selectAccount: true });
+                    }}
                     disabled={loading}
-                    className="self-center text-sm text-muted-foreground underline transition-colors hover:text-foreground"
+                    className="text-muted-foreground underline transition-colors hover:text-foreground"
                   >
-                    Другие способы входа
+                    Войти под другим аккаунтом
                   </button>
-                )}
+                  {!passwordFormVisible && (
+                    <>
+                      <span className="text-muted-foreground/50">·</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowPasswordLogin(true)}
+                        disabled={loading}
+                        className="text-muted-foreground underline transition-colors hover:text-foreground"
+                      >
+                        Другие способы входа
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
             )}
 
