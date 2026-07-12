@@ -47,14 +47,52 @@ function manager(): UserManager {
   return _manager
 }
 
+// --- "Continue as X": remember the last Master Education account across ALL *.mastereducation.kz
+// platforms (lms/sat/ielts/crm) via a shared cookie, so a returning user gets a personalized
+// button everywhere after signing in once anywhere. Non-sensitive display hint only (name+email);
+// the real auth is still the OIDC flow. ------------------------------------------------------------
+const LAST_ACCOUNT_COOKIE = 'me_last_account'
+
+function lastAccountCookieDomain(): string {
+  // Share across every mastereducation.kz subdomain; host-only elsewhere (e.g. localhost).
+  return window.location.hostname.endsWith('mastereducation.kz') ? '; domain=.mastereducation.kz' : ''
+}
+
+export function setLastAccount(acct: { name?: string | null; email?: string | null }): void {
+  const email = (acct.email || '').trim()
+  const name = (acct.name || '').trim()
+  if (!email && !name) return
+  try {
+    const value = encodeURIComponent(JSON.stringify({ name, email }))
+    const secure = window.location.protocol === 'https:' ? '; Secure' : ''
+    document.cookie = `${LAST_ACCOUNT_COOKIE}=${value}; path=/${lastAccountCookieDomain()}; max-age=${60 * 60 * 24 * 180}; SameSite=Lax${secure}`
+  } catch {
+    /* cookies unavailable — non-fatal */
+  }
+}
+
+export function getLastAccount(): { name: string; email: string } | null {
+  try {
+    const m = document.cookie.match(/(?:^|;\s*)me_last_account=([^;]*)/)
+    if (!m) return null
+    const o = JSON.parse(decodeURIComponent(m[1])) as { name?: unknown; email?: unknown }
+    const name = typeof o.name === 'string' ? o.name : ''
+    const email = typeof o.email === 'string' ? o.email : ''
+    return name || email ? { name, email } : null
+  } catch {
+    return null
+  }
+}
+
 /** Redirect the browser to the IdP to begin an Authorization-Code + PKCE login. */
-export async function startOidcLogin(opts?: { selectAccount?: boolean }): Promise<void> {
-  // Default: reuse an existing Zitadel session (fast, one click). The "switch account" link passes
-  // { selectAccount: true } to force Zitadel's account chooser (existing session(s) + "add another
-  // account") via prompt=select_account (Zitadel Technical Advisory a10000).
-  await manager().signinRedirect(
-    opts?.selectAccount ? { extraQueryParams: { prompt: 'select_account' } } : undefined
-  )
+export async function startOidcLogin(opts?: { selectAccount?: boolean; loginHint?: string }): Promise<void> {
+  // Default: reuse an existing Zitadel session (fast, one click). `selectAccount` forces Zitadel's
+  // account chooser (prompt=select_account, Advisory a10000); `loginHint` pre-selects a specific
+  // account (the "Continue as X" returning-user path).
+  const extra: Record<string, string> = {}
+  if (opts?.selectAccount) extra.prompt = 'select_account'
+  if (opts?.loginHint) extra.login_hint = opts.loginHint
+  await manager().signinRedirect(Object.keys(extra).length ? { extraQueryParams: extra } : undefined)
 }
 
 /**
@@ -70,6 +108,8 @@ export async function completeOidcLogin(): Promise<OidcUser> {
   tokenManager.setTokens(user.access_token, '')
   try {
     localStorage.setItem(OIDC_MARKER, '1')
+    const p = (user.profile || {}) as { name?: string; email?: string; preferred_username?: string }
+    setLastAccount({ name: p.name, email: p.email || p.preferred_username })
   } catch {
     /* storage unavailable — non-fatal */
   }

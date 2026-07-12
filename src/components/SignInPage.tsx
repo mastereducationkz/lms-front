@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { Input } from './ui/input';
-import { isOidcConfigured, startOidcLogin } from '../services/oidc';
+import { isOidcConfigured, startOidcLogin, getLastAccount } from '../services/oidc';
 
 
 // --- TYPE DEFINITIONS ---
@@ -69,6 +69,9 @@ export const SignInPage: React.FC<SignInPageProps> = ({
   const oidcEnabled = isOidcConfigured();
   const [showPasswordLogin, setShowPasswordLogin] = useState(false);
   const passwordFormVisible = !oidcEnabled || showPasswordLogin;
+  // "Continue as X": if the user signed in via Master Education before (on any of our platforms),
+  // personalize the primary button and pre-select that account via login_hint.
+  const lastAccount = oidcEnabled ? getLastAccount() : null;
 
   return (
     <div className="h-[100dvh] flex flex-col md:flex-row font-geist w-[100dvw]">
@@ -91,12 +94,17 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    void startOidcLogin();
+                    void startOidcLogin(lastAccount?.email ? { loginHint: lastAccount.email } : undefined);
                   }}
                   disabled={loading}
-                  className="w-full rounded bg-primary py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                  title={lastAccount ? (lastAccount.email || lastAccount.name) : undefined}
+                  className="w-full rounded bg-primary px-4 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Продолжить с Master Education
+                  {lastAccount ? (
+                    <span className="block truncate">Продолжить с аккаунтом {lastAccount.name || lastAccount.email}</span>
+                  ) : (
+                    'Продолжить с Master Education'
+                  )}
                 </button>
                 <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm">
                   <button
