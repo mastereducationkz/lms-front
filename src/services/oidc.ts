@@ -49,7 +49,9 @@ function manager(): UserManager {
 
 /** Redirect the browser to the IdP to begin an Authorization-Code + PKCE login. */
 export async function startOidcLogin(): Promise<void> {
-  await manager().signinRedirect()
+  // prompt=select_account => Zitadel shows the account chooser (existing session(s) + "add another
+  // account") instead of silently reusing a single session (Zitadel Technical Advisory a10000).
+  await manager().signinRedirect({ extraQueryParams: { prompt: 'select_account' } })
 }
 
 /**
