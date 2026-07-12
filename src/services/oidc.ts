@@ -36,6 +36,9 @@ function manager(): UserManager {
       response_type: 'code', // oidc-client-ts uses PKCE (S256) automatically for code flow
       scope,
       automaticSilentRenew: true, // refresh-token silent renew keeps the Bearer fresh
+      // Zitadel id_tokens don't carry name/email by default, so pull the profile from userinfo —
+      // this is what populates user.profile.{name,email} for the "Continue as X" hint.
+      loadUserInfo: true,
       userStore: new WebStorageStateStore({ store: window.localStorage }),
     })
     // Whenever the IdP token is (re)issued — initial login or a silent renew — mirror the
