@@ -204,6 +204,38 @@ export async function exportAnalyticsExcel(courseId: number, groupId?: number): 
   }
 }
 
+export interface WeeklyTopStudentsParams {
+  week_start?: string; // YYYY-MM-DD (any date in the target Almaty week)
+  program_type?: string;
+  group_id?: number;
+  curator_id?: number;
+  teacher_id?: number;
+  limit?: number;
+}
+
+export async function getWeeklyTopStudents(params: WeeklyTopStudentsParams = {}): Promise<any> {
+  try {
+    const response = await api.get('/admin/weekly-top-students', { params });
+    return response.data;
+  } catch (error) {
+    console.error('Failed to get weekly top students:', error);
+    throw error;
+  }
+}
+
+export async function exportWeeklyTopStudents(params: WeeklyTopStudentsParams = {}): Promise<Blob> {
+  try {
+    const response = await api.get('/admin/weekly-top-students/export', {
+      params,
+      responseType: 'blob',
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Failed to export weekly top students:', error);
+    throw error;
+  }
+}
+
 export async function getStudentDetailedProgress(studentId: string, courseId?: string): Promise<any> {
   try {
     const params = courseId ? { course_id: courseId } : {};

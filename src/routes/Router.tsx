@@ -37,6 +37,7 @@ import AdminDashboard from '../pages/admin/AdminDashboard.tsx';
 import AssignmentZeroSubmissions from '../pages/admin/AssignmentZeroSubmissions.tsx';
 import ExamResultsTrackingPage from '../pages/admin/ExamResultsTrackingPage.tsx';
 import QuestionReportsPage from '../pages/admin/QuestionReportsPage.tsx';
+import WeeklyTopStudentsPage from '../pages/admin/WeeklyTopStudentsPage.tsx';
 import UserManagement from '../pages/UserManagement.tsx';
 import ManualUnlocksPage from '../pages/admin/ManualUnlocksPage.tsx';
 import LessonRequestManagement from '../pages/admin/LessonRequestManagement.tsx';
@@ -375,6 +376,14 @@ export default function Router() {
             <ProtectedRoute allowedRoles={['admin', 'head_curator']}>
               <AppLayout>
                 <UserManagement />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/weekly-top-students" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AppLayout>
+                <WeeklyTopStudentsPage />
               </AppLayout>
             </ProtectedRoute>
           } />
