@@ -44,25 +44,11 @@ export default defineConfig({
       },
     }),
   ],
-  build: {
-    // Split heavy vendors into their own long-lived cacheable chunks so a route that doesn't
-    // use them never pays for them, and so an app-code change doesn't bust the vendor cache.
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (!id.includes('node_modules')) return undefined;
-          if (id.includes('recharts') || id.includes('d3-') || id.includes('victory-vendor')) return 'charts';
-          if (id.includes('react-quill') || id.includes('/quill')) return 'editor';
-          if (id.includes('katex')) return 'katex';
-          if (id.includes('hls.js')) return 'hls';
-          if (id.includes('socket.io') || id.includes('engine.io')) return 'socket';
-          if (id.includes('/motion') || id.includes('framer-motion')) return 'motion';
-          if (id.includes('/react-dom/') || id.includes('/react/') || id.includes('/scheduler/') || id.includes('react-router')) return 'react-vendor';
-          return undefined;
-        },
-      },
-    },
-  },
+  // NOTE: no manual `manualChunks`. Route-level React.lazy (see src/routes/Router.tsx) already
+  // keeps the initial download small, and Rollup's automatic chunking splits shared vendors while
+  // guaranteeing correct chunk evaluation order. A hand-rolled split that put React in its own
+  // chunk separate from recharts broke module init at runtime ("can't access property forwardRef
+  // of undefined") because the charts chunk evaluated before React was defined — don't reintroduce it.
   resolve: {
     extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
     alias: [
