@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { connectSocket } from '../services/socket';
+import { useVisiblePolling } from '../hooks/useVisiblePolling';
 import apiClient from '../services/api';
 import logoIco from '../assets/masteredlogo-ico.ico';
 import { 
@@ -157,47 +158,32 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
     return false
   }, [user, groupsSpecialChecked]);
   
-  // Load unseen graded count for students
-  useEffect(() => {
-    if (!user || user.role !== 'student') return;
-    
-    const loadUnseenGradedCount = async () => {
-      try {
-        const result = await apiClient.getUnseenGradedCount();
-        setUnseenGraded(result.count);
-      } catch (error) {
-        console.warn('Failed to load unseen graded count:', error);
-      }
-    };
-    
-    loadUnseenGradedCount();
-    
-    // Refresh every 30 seconds
-    const interval = setInterval(loadUnseenGradedCount, 30000);
-    return () => clearInterval(interval);
-  }, [user]);
+  // Load unseen graded count for students. Polls only while the tab is visible (see hook).
+  useVisiblePolling(
+    () => {
+      apiClient.getUnseenGradedCount()
+        .then((result) => setUnseenGraded(result.count))
+        .catch((error) => console.warn('Failed to load unseen graded count:', error));
+    },
+    60000,
+    !!user && user.role === 'student',
+  );
 
-  // Load pending lesson-request count for the sidebar badge.
-  // Teacher: their own requests still awaiting a decision.
-  // Head teacher / admin: requests awaiting their approval.
-  useEffect(() => {
-    if (!user || !['teacher', 'head_teacher', 'admin'].includes(user.role)) return;
-
-    const loadLessonRequestCount = async () => {
-      try {
-        const reqs = user.role === 'teacher'
-          ? await apiClient.getMyLessonRequests('pending')
-          : await apiClient.getPendingLessonRequests();
-        setLessonRequestCount(reqs.length);
-      } catch (error) {
-        console.warn('Failed to load lesson request count:', error);
-      }
-    };
-
-    loadLessonRequestCount();
-    const interval = setInterval(loadLessonRequestCount, 30000);
-    return () => clearInterval(interval);
-  }, [user]);
+  // Pending lesson-request count for the sidebar badge. Teacher: their own requests still awaiting
+  // a decision. Head teacher / admin: requests awaiting their approval. Visible-tab polling only.
+  useVisiblePolling(
+    () => {
+      if (!user) return;
+      const req = user.role === 'teacher'
+        ? apiClient.getMyLessonRequests('pending')
+        : apiClient.getPendingLessonRequests();
+      req
+        .then((reqs) => setLessonRequestCount(reqs.length))
+        .catch((error) => console.warn('Failed to load lesson request count:', error));
+    },
+    60000,
+    !!user && ['teacher', 'head_teacher', 'admin'].includes(user.role),
+  );
 
   useEffect(() => {
     const loadSpecialGroupsState = async () => {

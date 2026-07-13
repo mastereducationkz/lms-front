@@ -174,6 +174,20 @@ async function postRefreshWithRetries(refreshToken: string) {
   throw lastErr
 }
 
+/**
+ * OIDC sessions keep no LMS refresh token (the LMS /auth/refresh only understands its own HS256
+ * tokens). When such a session's access token expires, renew it via the IdP instead of dead-ending.
+ * Dynamically imported to avoid a static import cycle (oidc.ts imports tokenManager from here).
+ */
+async function tryOidcSilentRenew(): Promise<string | null> {
+  try {
+    const mod = await import('../oidc')
+    return await mod.trySilentRenewAccessToken()
+  } catch {
+    return null
+  }
+}
+
 function isAuthEndpoint(url?: string): boolean {
   if (!url) return false;
   return (
@@ -328,6 +342,16 @@ api.interceptors.response.use(
       try {
         const refreshToken = tokenManager.getRefreshToken()
         if (!refreshToken) {
+          // No LMS refresh token: for an OIDC session, renew through the IdP and retry.
+          const oidcToken = await tryOidcSilentRenew()
+          if (oidcToken) {
+            tokenManager.setTokens(oidcToken, '')
+            isRefreshing = false
+            isAuthFailureHandled = false
+            onRefreshed(oidcToken)
+            originalRequest.headers.Authorization = `Bearer ${oidcToken}`
+            return api(originalRequest)
+          }
           throw new Error('Missing refresh token')
         }
 

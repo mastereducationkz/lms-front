@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { NextStepProvider } from 'nextstepjs';
 import { AuthProvider } from '../contexts/AuthContext.tsx';
@@ -7,66 +8,79 @@ import { Toaster } from '../components/Toast';
 import OnboardingManager from '../components/OnboardingManager.tsx';
 import ProtectedRoute from '../components/ProtectedRoute.tsx';
 import AppLayout from '../layouts/AppLayout.tsx';
-import LoginPage from '../pages/LoginPage.tsx';
-import DashboardPage from '../pages/DashboardPage.tsx';
-import CoursesPage from '../pages/CoursesPage.tsx';
-import CourseOverviewPage from '../pages/CourseOverviewPage.tsx';
-import ModulePage from '../pages/ModulePage.tsx';
-import LecturePage from '../pages/LecturePage.tsx';
-import AssignmentsPage from '../pages/assingments/AssignmentsPage.tsx';
-import AssignmentPage from '../pages/assingments/AssignmentPage.tsx';
-import AssignmentRecordPage from '../pages/assingments/AssignmentRecordPage.tsx';
-import AssignmentBuilderPage from '../pages/assingments/AssignmentBuilderPage.tsx';
-import AssignmentGradingPage from '../pages/assingments/AssignmentGradingPage.tsx';
-import AssignmentStudentProgressPage from '../pages/assingments/AssignmentStudentProgressPage.tsx';
-import ChatPage from '../pages/ChatPage.tsx';
-import TeacherDashboard from '../pages/TeacherDashboard.tsx';
+import Loader from '../components/Loader';
 
-import QuizzesPage from '../pages/QuizzesPage.tsx';
-import QuizPage from '../pages/QuizPage.tsx';
-import ProfilePage from '../pages/ProfilePage.tsx';
-import SettingsPage from '../pages/SettingsPage.tsx';
-import TeacherCoursesPage from '../pages/TeacherCoursesPage.tsx';
-import CourseBuilderPage from '../pages/CourseBuilderPage.tsx';
-import CreateCourseWizard from '../pages/CreateCourseWizard.tsx';
-// TeacherCoursePage functionality moved to CourseBuilderPage
-import LessonEditPage from '../pages/LessonEditPage.tsx';
-import TeacherClassPage from '../pages/TeacherClassPage.tsx';
-import TeacherAttendancePage from '../pages/TeacherAttendancePage.tsx';
-import AdminDashboard from '../pages/admin/AdminDashboard.tsx';
-import AssignmentZeroSubmissions from '../pages/admin/AssignmentZeroSubmissions.tsx';
-import ExamResultsTrackingPage from '../pages/admin/ExamResultsTrackingPage.tsx';
-import QuestionReportsPage from '../pages/admin/QuestionReportsPage.tsx';
-import WeeklyTopStudentsPage from '../pages/admin/WeeklyTopStudentsPage.tsx';
-import UserManagement from '../pages/UserManagement.tsx';
-import ManualUnlocksPage from '../pages/admin/ManualUnlocksPage.tsx';
-import LessonRequestManagement from '../pages/admin/LessonRequestManagement.tsx';
-import LessonPage from '../pages/LessonPage.tsx';
-import CourseProgressPage from '../pages/CourseProgressPage.tsx';
-import EventManagement from '../pages/EventManagement.tsx';
-import CreateEvent from '../pages/CreateEvent.tsx';
-import EditEvent from '../pages/EditEvent.tsx';
-import Calendar from '../pages/Calendar.tsx';
-import SubstitutionRequestPage from '../pages/SubstitutionRequestPage.tsx';
-import MyLessonRequests from '../pages/MyLessonRequests.tsx';
-import HeadTeacherLessonRequestsPage from '../pages/HeadTeacherLessonRequestsPage.tsx';
-import LandingPage from '../pages/LandingPage.tsx';
-import AnalyticsPage from '../pages/analytics/AnalyticsPage.tsx';
-import FavoriteFlashcardsPage from '../pages/FavoriteFlashcardsPage.tsx';
-import CuratorHomeworksPage from '../pages/CuratorHomeworksPage.tsx';
-import CuratorLeaderboardPage from '../pages/CuratorLeaderboardPage.tsx';
-import CuratorGroupsPage from '../pages/CuratorGroupsPage.tsx';
-import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage.tsx';
-import ResetPasswordPage from '../pages/auth/ResetPasswordPage.tsx';
-import OidcCallbackPage from '../pages/auth/OidcCallbackPage.tsx';
-import AssignmentZeroPage from '../pages/AssignmentZeroPage';
-import { StudentAnalyticsPage } from '../pages/analytics/StudentAnalyticsPage.tsx';
-import HeadTeacherTeacherDetailsPage from '../pages/HeadTeacherTeacherDetailsPage.tsx';
-import HeadCuratorCuratorPage from '../pages/HeadCuratorCuratorPage.tsx';
-import CuratorTasksPage from '../pages/CuratorTasksPage.tsx';
-import CuratorExamResultsPage from '../pages/CuratorExamResultsPage.tsx';
-import StudentsJournalPage from '../pages/StudentsJournalPage.tsx';
-import StudentProfilePage from '../pages/StudentProfilePage.tsx';
+// Pages are code-split with React.lazy so the initial download is a small app shell plus only
+// the chunk for the current route. Previously all ~59 pages were eagerly imported into a single
+// 3.4 MB bundle that every user downloaded on first load regardless of route. Structural pieces
+// above (providers, AppLayout shell, ProtectedRoute) stay eager since they load on every route.
+const LoginPage = lazy(() => import('../pages/LoginPage.tsx'));
+const DashboardPage = lazy(() => import('../pages/DashboardPage.tsx'));
+const CoursesPage = lazy(() => import('../pages/CoursesPage.tsx'));
+const CourseOverviewPage = lazy(() => import('../pages/CourseOverviewPage.tsx'));
+const ModulePage = lazy(() => import('../pages/ModulePage.tsx'));
+const LecturePage = lazy(() => import('../pages/LecturePage.tsx'));
+const AssignmentsPage = lazy(() => import('../pages/assingments/AssignmentsPage.tsx'));
+const AssignmentPage = lazy(() => import('../pages/assingments/AssignmentPage.tsx'));
+const AssignmentRecordPage = lazy(() => import('../pages/assingments/AssignmentRecordPage.tsx'));
+const AssignmentBuilderPage = lazy(() => import('../pages/assingments/AssignmentBuilderPage.tsx'));
+const AssignmentGradingPage = lazy(() => import('../pages/assingments/AssignmentGradingPage.tsx'));
+const AssignmentStudentProgressPage = lazy(() => import('../pages/assingments/AssignmentStudentProgressPage.tsx'));
+const ChatPage = lazy(() => import('../pages/ChatPage.tsx'));
+const TeacherDashboard = lazy(() => import('../pages/TeacherDashboard.tsx'));
+const QuizzesPage = lazy(() => import('../pages/QuizzesPage.tsx'));
+const QuizPage = lazy(() => import('../pages/QuizPage.tsx'));
+const ProfilePage = lazy(() => import('../pages/ProfilePage.tsx'));
+const SettingsPage = lazy(() => import('../pages/SettingsPage.tsx'));
+const TeacherCoursesPage = lazy(() => import('../pages/TeacherCoursesPage.tsx'));
+const CourseBuilderPage = lazy(() => import('../pages/CourseBuilderPage.tsx'));
+const CreateCourseWizard = lazy(() => import('../pages/CreateCourseWizard.tsx'));
+const LessonEditPage = lazy(() => import('../pages/LessonEditPage.tsx'));
+const TeacherClassPage = lazy(() => import('../pages/TeacherClassPage.tsx'));
+const TeacherAttendancePage = lazy(() => import('../pages/TeacherAttendancePage.tsx'));
+const AdminDashboard = lazy(() => import('../pages/admin/AdminDashboard.tsx'));
+const AssignmentZeroSubmissions = lazy(() => import('../pages/admin/AssignmentZeroSubmissions.tsx'));
+const ExamResultsTrackingPage = lazy(() => import('../pages/admin/ExamResultsTrackingPage.tsx'));
+const QuestionReportsPage = lazy(() => import('../pages/admin/QuestionReportsPage.tsx'));
+const WeeklyTopStudentsPage = lazy(() => import('../pages/admin/WeeklyTopStudentsPage.tsx'));
+const UserManagement = lazy(() => import('../pages/UserManagement.tsx'));
+const ManualUnlocksPage = lazy(() => import('../pages/admin/ManualUnlocksPage.tsx'));
+const LessonRequestManagement = lazy(() => import('../pages/admin/LessonRequestManagement.tsx'));
+const LessonPage = lazy(() => import('../pages/LessonPage.tsx'));
+const CourseProgressPage = lazy(() => import('../pages/CourseProgressPage.tsx'));
+const EventManagement = lazy(() => import('../pages/EventManagement.tsx'));
+const CreateEvent = lazy(() => import('../pages/CreateEvent.tsx'));
+const EditEvent = lazy(() => import('../pages/EditEvent.tsx'));
+const Calendar = lazy(() => import('../pages/Calendar.tsx'));
+const SubstitutionRequestPage = lazy(() => import('../pages/SubstitutionRequestPage.tsx'));
+const MyLessonRequests = lazy(() => import('../pages/MyLessonRequests.tsx'));
+const HeadTeacherLessonRequestsPage = lazy(() => import('../pages/HeadTeacherLessonRequestsPage.tsx'));
+const LandingPage = lazy(() => import('../pages/LandingPage.tsx'));
+const AnalyticsPage = lazy(() => import('../pages/analytics/AnalyticsPage.tsx'));
+const FavoriteFlashcardsPage = lazy(() => import('../pages/FavoriteFlashcardsPage.tsx'));
+const CuratorHomeworksPage = lazy(() => import('../pages/CuratorHomeworksPage.tsx'));
+const CuratorLeaderboardPage = lazy(() => import('../pages/CuratorLeaderboardPage.tsx'));
+const CuratorGroupsPage = lazy(() => import('../pages/CuratorGroupsPage.tsx'));
+const ForgotPasswordPage = lazy(() => import('../pages/auth/ForgotPasswordPage.tsx'));
+const ResetPasswordPage = lazy(() => import('../pages/auth/ResetPasswordPage.tsx'));
+const OidcCallbackPage = lazy(() => import('../pages/auth/OidcCallbackPage.tsx'));
+const AssignmentZeroPage = lazy(() => import('../pages/AssignmentZeroPage'));
+const StudentAnalyticsPage = lazy(() =>
+  import('../pages/analytics/StudentAnalyticsPage.tsx').then((m) => ({ default: m.StudentAnalyticsPage }))
+);
+const HeadTeacherTeacherDetailsPage = lazy(() => import('../pages/HeadTeacherTeacherDetailsPage.tsx'));
+const HeadCuratorCuratorPage = lazy(() => import('../pages/HeadCuratorCuratorPage.tsx'));
+const CuratorTasksPage = lazy(() => import('../pages/CuratorTasksPage.tsx'));
+const CuratorExamResultsPage = lazy(() => import('../pages/CuratorExamResultsPage.tsx'));
+const StudentsJournalPage = lazy(() => import('../pages/StudentsJournalPage.tsx'));
+const StudentProfilePage = lazy(() => import('../pages/StudentProfilePage.tsx'));
+
+// Fallback shown while a route chunk is fetched.
+const RouteFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+    <Loader size="xl" animation="spin" color="#2563eb" />
+  </div>
+);
 
 export default function Router() {
   
@@ -78,6 +92,7 @@ export default function Router() {
           <SettingsProvider>
             <NextStepProvider>
               <OnboardingManager>
+                <Suspense fallback={<RouteFallback />}>
                 <Routes>
                   <Route path="/" element={
                     <ProtectedRoute requireAuth={false}>
@@ -593,6 +608,7 @@ export default function Router() {
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
+                </Suspense>
             </OnboardingManager>
           </NextStepProvider>
         </SettingsProvider>

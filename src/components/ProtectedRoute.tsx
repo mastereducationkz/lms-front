@@ -21,16 +21,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { loading, isAuthenticated, hasAnyRole, user } = useAuth();
   const location = useLocation();
 
-  console.log('ProtectedRoute:', {
-    path: location.pathname,
-    requireAuth,
-    allowedRoles,
-    isAuthenticated,
-    userRole: user?.role,
-    loading,
-    hasAccess: allowedRoles ? hasAnyRole(allowedRoles) : true
-  });
-
   // Show loading while checking authentication, but only for protected routes
   if (loading && requireAuth) {
     return (

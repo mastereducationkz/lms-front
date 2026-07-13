@@ -4,7 +4,7 @@ import './index.css';
 import 'katex/dist/katex.min.css';
 import Router from "./routes/Router";
 import ErrorBoundary from "./components/ErrorBoundary";
-import Snowfall from 'react-snowfall';
+import { registerPwa } from "./services/pwa";
 
 // Suppress NextStep.js navigation warning for React SPA
 // This runs before React mounts to catch the warning early
@@ -31,3 +31,6 @@ ReactDOM.createRoot(rootElement).render(
     </ErrorBoundary>
   </React.StrictMode>
 );
+
+// Register the PWA service worker with a user-driven update prompt (no mid-session takeover).
+registerPwa();

@@ -119,6 +119,24 @@ export async function completeOidcLogin(): Promise<OidcUser> {
   return user
 }
 
+/**
+ * Renew the IdP access token on demand (used by the API interceptor when a request 401s and
+ * there is no LMS refresh token to fall back on — the OIDC path). Uses the stored refresh token
+ * (offline_access) so it needs no iframe. On success the addUserLoaded handler above mirrors the
+ * fresh token into tokenManager; we also return it so the caller can retry immediately.
+ * Returns null when this isn't an OIDC session or the renew fails (caller then ends the session).
+ */
+export async function trySilentRenewAccessToken(): Promise<string | null> {
+  if (!isOidcConfigured() || !isOidcSession()) return null
+  try {
+    const user = await manager().signinSilent()
+    return user?.access_token ?? null
+  } catch (error) {
+    console.warn('OIDC silent renew failed:', error)
+    return null
+  }
+}
+
 export function isOidcSession(): boolean {
   try {
     return localStorage.getItem(OIDC_MARKER) === '1'

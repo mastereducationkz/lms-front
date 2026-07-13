@@ -24,8 +24,13 @@
 
         const handleAssetLoadFailure = function (event) {
           const target = event && event.target
-          const source = target && target.src ? String(target.src) : ''
+          const source = target && (target.src || target.href) ? String(target.src || target.href) : ''
           if (!source || source.indexOf('/assets/index-') === -1) return
+          // Only a service-worker-controlled page can be serving a STALE precached shell whose
+          // asset hashes no longer exist on the server. With no controller, a failed asset is a
+          // plain network blip — nuking all caches + reloading would not fix it and risks
+          // wiping a healthy install on flaky connections. Bail out in that case.
+          if (!('serviceWorker' in navigator) || !navigator.serviceWorker.controller) return
           if (sessionStorage.getItem(RECOVERY_KEY) === '1') return
 
           sessionStorage.setItem(RECOVERY_KEY, '1')

@@ -72,6 +72,17 @@ export async function logout(): Promise<void> {
 // Register logout handler for token refresh interceptor
 setLogoutHandler(logout);
 
+/**
+ * Error thrown by getCurrentUser that preserves enough of the HTTP failure for
+ * callers (AuthContext) to distinguish a genuine auth rejection (401/403 → log the
+ * user out) from a transient/network/5xx blip (keep the session, retry). Collapsing
+ * these into a bare Error is what caused valid sessions to be wiped on a backend hiccup.
+ */
+export type AuthRequestError = Error & {
+  status?: number;
+  isNetworkError: boolean;
+};
+
 export async function getCurrentUser(): Promise<User> {
   try {
     const response = await api.get('/auth/me');
@@ -85,7 +96,10 @@ export async function getCurrentUser(): Promise<User> {
       : status === 401
         ? 'Unauthorized'
         : detail || 'Failed to get current user';
-    throw new Error(message);
+    const wrapped = new Error(message) as AuthRequestError;
+    wrapped.status = status;
+    wrapped.isNetworkError = isNetwork;
+    throw wrapped;
   }
 }
 

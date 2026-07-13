@@ -23,13 +23,23 @@ function getAccessTokenFromCookie(): string | null {
 export function connectSocket(): Socket {
   const token = getAccessTokenFromCookie();
 
-  // If an existing socket has a different token, rebuild the connection
+  // Reuse the existing socket whenever the token still matches — whether it is already
+  // connected OR still connecting/reconnecting. Previously, a socket that existed but was
+  // not yet `.connected` fell through and `io(..., forceNew:true)` spawned a SECOND socket,
+  // orphaning the first (which kept its own reconnection loop + listeners running). Three
+  // components call connectSocket() together on mount, so that leaked one socket per mount.
   if (socket) {
     const currentAuthToken = (socket as any)?.auth?.token ?? null;
     if (currentAuthToken !== token) {
+      // Token changed (login/refresh/logout) — tear the old one down and rebuild below.
       try { socket.disconnect(); } catch {}
       socket = null;
-    } else if (socket.connected) {
+    } else {
+      // Same token: hand back the single shared instance. If it was fully stopped (not
+      // actively (re)connecting), nudge it back to life instead of building a new one.
+      if (!socket.connected && !socket.active) {
+        try { socket.connect(); } catch {}
+      }
       return socket;
     }
   }

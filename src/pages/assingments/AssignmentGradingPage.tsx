@@ -56,11 +56,15 @@ export default function AssignmentGradingPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const assignmentData = await apiClient.getAssignment(id!);
+      // These three requests are independent — fetch them in parallel instead of a serial
+      // waterfall so total latency is the slowest one, not the sum of all three.
+      const [assignmentData, submissionsData, extensionsData] = await Promise.all([
+        apiClient.getAssignment(id!),
+        apiClient.getAssignmentSubmissions(id!),
+        apiClient.getAssignmentExtensions(id!),
+      ]);
       setAssignment(assignmentData);
-      const submissionsData = await apiClient.getAssignmentSubmissions(id!);
       setSubmissions(submissionsData);
-      const extensionsData = await apiClient.getAssignmentExtensions(id!);
       setExtensions(extensionsData);
     } catch (error) {
       toast('Failed to load data', 'error');

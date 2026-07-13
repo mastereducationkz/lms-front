@@ -130,17 +130,17 @@
         console.log('Loading assignment progress for ID:', id);
         setLoading(true);
         setError('');
-        const progressData = await apiClient.getAssignmentStudentProgress(id!);
-        console.log('Received progress data:', progressData);
+        // Fetch the (fatal) progress roster and the (non-fatal) extensions in parallel instead
+        // of sequentially; extensions failing must not fail the whole page, so it's caught inline.
+        const [progressData, extensionsData] = await Promise.all([
+          apiClient.getAssignmentStudentProgress(id!),
+          apiClient.getAssignmentExtensions(id!).catch((err) => {
+            console.warn('Failed to load extensions:', err);
+            return null;
+          }),
+        ]);
         setData(progressData);
-        
-        // Load extensions
-        try {
-          const extensionsData = await apiClient.getAssignmentExtensions(id!);
-          setExtensions(extensionsData);
-        } catch (err) {
-          console.warn('Failed to load extensions:', err);
-        }
+        if (extensionsData) setExtensions(extensionsData);
       } catch (err: any) {
         console.error('Failed to load assignment progress:', err);
         setError(err.message || 'Failed to load assignment progress');
@@ -199,10 +199,10 @@
       try {
         setLoadingSubmission(true);
         setGradingDialog({ open: true, submissionId });
-        // Fetch submissions and find the one we need
-        const submissions = await apiClient.getAssignmentSubmissions(id!);
-        const sub = submissions.find((s: any) => s.id === submissionId) || null;
-        
+        // Fetch just this one submission instead of the whole group's list (which re-ran the
+        // submissions N+1 on every grade-dialog open).
+        const sub = await apiClient.getSubmission(id!, String(submissionId));
+
         setSelectedSubmission(sub);
         setScoreInput(sub?.score != null ? String(sub.score) : '');
         setFeedbackInput(sub?.feedback || '');

@@ -54,22 +54,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
   }, []);
 
+  // A failed /auth/me should only end the session when the credentials are genuinely
+  // rejected (401/403). Network errors, timeouts and 5xx/429 are transient — the backend
+  // may just be slow or restarting (rapid reloads make this more likely) — and must NOT
+  // wipe the user's cookies, or a brief hiccup logs everyone out.
+  const isGenuineAuthRejection = (err: unknown): boolean => {
+    const status = (err as { status?: number } | null)?.status;
+    return status === 401 || status === 403;
+  };
+
   const initializeAuth = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Check if user is authenticated
-      if (apiClient.isAuthenticated()) {
-        // Get current user info
-        const currentUser = await apiClient.getCurrentUser();
-        setUser(currentUser);
-        apiClient.setCurrentUser(currentUser);
+      if (!apiClient.isAuthenticated()) {
+        return;
       }
-    } catch (error) {
-      console.error('Auth initialization failed:', error);
-      // If getting current user fails, clear tokens
-      await logout();
+
+      // Retry transient failures with backoff so a short backend blip (or a reload storm)
+      // doesn't drop a valid session. Give up only on a genuine auth rejection.
+      const backoffMs = [0, 1000, 2000, 4000];
+      let lastError: unknown;
+      for (let attempt = 0; attempt < backoffMs.length; attempt++) {
+        if (backoffMs[attempt] > 0) {
+          await new Promise((r) => setTimeout(r, backoffMs[attempt]));
+        }
+        try {
+          const currentUser = await apiClient.getCurrentUser();
+          setUser(currentUser);
+          apiClient.setCurrentUser(currentUser);
+          return;
+        } catch (err) {
+          lastError = err;
+          if (isGenuineAuthRejection(err)) {
+            // Credentials are invalid/revoked — the request interceptor has already
+            // cleared tokens and redirected; clear local user state to match.
+            await logout();
+            return;
+          }
+          // Transient — fall through to the next retry.
+        }
+      }
+
+      // All retries exhausted on a transient error: keep the session (tokens intact) and
+      // surface a soft error instead of logging out. A later reload or action can recover.
+      console.error('Auth initialization failed after retries (session preserved):', lastError);
+      setError('Could not reach the server. Please check your connection and reload.');
     } finally {
       setLoading(false);
     }
@@ -123,7 +154,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error) {
       console.error('Failed to refresh user:', error);
-      await logout();
+      // Only end the session on a genuine auth rejection; keep it on transient errors.
+      if (isGenuineAuthRejection(error)) {
+        await logout();
+      }
     }
   };
 

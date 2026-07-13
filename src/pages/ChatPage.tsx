@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { Check } from 'lucide-react';
 import { connectSocket } from '../services/socket';
+import { useVisiblePolling } from '../hooks/useVisiblePolling';
 
 const ATTACH_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
@@ -147,11 +148,9 @@ export default function ChatPage() {
     };
   }, [activePartnerId]);
 
-  // Автообновление списка разговоров
-  useEffect(() => {
-    const interval = setInterval(loadThreads, 10000);
-    return () => clearInterval(interval);
-  }, []);
+  // Автообновление списка разговоров: только пока вкладка активна (realtime идёт через сокеты,
+  // это лишь запасной поллинг), интервал увеличен 10s → 30s чтобы не долбить бэкенд.
+  useVisiblePolling(() => { void loadThreads(); }, 30000);
 
   // Автоскролл к последнему сообщению
   useEffect(() => {
