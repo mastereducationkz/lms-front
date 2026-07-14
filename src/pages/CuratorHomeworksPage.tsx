@@ -42,6 +42,17 @@ const CuratorHomeworksPage: React.FC = () => {
   const [groups, setGroups] = useState<GroupData[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Navigate to an assignment, but honour Ctrl/Cmd/middle-click by opening a new
+  // tab (table rows can't be real <a> tags, so we replicate the native behaviour).
+  const openAssignment = (e: React.MouseEvent, id: number) => {
+    if (e.metaKey || e.ctrlKey || e.button === 1) {
+      e.preventDefault();
+      window.open(`/homework/${id}`, '_blank', 'noopener');
+      return;
+    }
+    navigate(`/homework/${id}`);
+  };
+
   // Overview controls
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [groupSearch, setGroupSearch] = useState('');
@@ -224,7 +235,8 @@ const CuratorHomeworksPage: React.FC = () => {
                     return (
                       <TableRow
                         key={a.id}
-                        onClick={() => navigate(`/homework/${a.id}`)}
+                        onClick={(e) => openAssignment(e, a.id)}
+                        onAuxClick={(e) => { if (e.button === 1) openAssignment(e, a.id); }}
                         className="cursor-pointer hover:bg-muted/50"
                       >
                         <TableCell className="py-2">
