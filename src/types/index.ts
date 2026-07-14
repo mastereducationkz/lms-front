@@ -30,7 +30,7 @@ export interface User {
   is_analytics_hidden?: boolean; // Curator hidden from analytics/dashboard/leaderboard views
 }
 
-export type UserRole = 'student' | 'teacher' | 'curator' | 'admin' | 'head_curator' | 'head_teacher';
+export type UserRole = 'student' | 'teacher' | 'curator' | 'admin' | 'head_curator' | 'head_teacher' | 'parent';
 
 // =============================================================================
 // AUTH TYPES
@@ -395,6 +395,7 @@ export interface CreateUserRequest {
   group_ids?: number[]; // Multiple groups for students
   is_active?: boolean;
   course_ids?: number[]; // Courses for head teachers
+  child_ids?: number[]; // Student ids to link when role === 'parent'
   send_invites?: boolean; // Email an invite with credentials to created students
 }
 

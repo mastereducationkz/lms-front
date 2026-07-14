@@ -86,12 +86,13 @@ import { AddToGroupDialog } from '../components/users/AddToGroupDialog';
 interface UserFormData {
   name: string;
   email: string;
-  role: 'student' | 'teacher' | 'curator' | 'admin' | 'head_curator' | 'head_teacher';
+  role: 'student' | 'teacher' | 'curator' | 'admin' | 'head_curator' | 'head_teacher' | 'parent';
   student_id?: string;
   password?: string;
   is_active: boolean;
   group_ids: number[]; // Multiple groups for students
   course_ids: number[]; // Multiple courses for head teachers
+  child_ids: number[]; // Linked students when role === 'parent'
 }
 
 interface GroupFormData {
@@ -301,7 +302,8 @@ export default function UserManagement() {
     password: '',
     is_active: true,
     group_ids: [],
-    course_ids: []
+    course_ids: [],
+    child_ids: []
   });
 
   const [groupFormData, setGroupFormData] = useState<GroupFormData>({
@@ -642,6 +644,7 @@ export default function UserManagement() {
         is_active: formData.is_active,
         group_ids: formData.role === 'student' && formData.group_ids.length > 0 ? formData.group_ids : undefined,
         course_ids: formData.role === 'head_teacher' && formData.course_ids.length > 0 ? formData.course_ids : undefined,
+        child_ids: formData.role === 'parent' && formData.child_ids.length > 0 ? formData.child_ids : undefined,
         send_invites: formData.role === 'student' ? sendInviteOnCreate : false
       };
 
@@ -920,7 +923,8 @@ export default function UserManagement() {
       password: '',
       is_active: user.is_active ?? true,
       group_ids: groupIds,
-      course_ids: user.course_ids || []
+      course_ids: user.course_ids || [],
+      child_ids: []
     });
     setShowEditModal(true);
   };
@@ -939,7 +943,8 @@ export default function UserManagement() {
       password: '',
       is_active: true,
       group_ids: [],
-      course_ids: []
+      course_ids: [],
+      child_ids: []
     });
     setSelectedUser(null);
     setOriginalUserGroupIds([])
@@ -1522,6 +1527,7 @@ export default function UserManagement() {
           setFormData={setFormData}
           groups={groups}
           courses={courses}
+          students={students}
           errors={formErrors}
           isHeadCurator={isHeadCurator}
         />
@@ -1546,6 +1552,7 @@ export default function UserManagement() {
           setFormData={setFormData}
           groups={groups}
           courses={courses}
+          students={students}
           errors={formErrors}
           isHeadCurator={isHeadCurator}
         />
@@ -1788,12 +1795,14 @@ interface UserFormProps {
   setFormData: (data: UserFormData) => void;
   groups: GroupWithDetails[];
   courses: Course[];
+  students: User[];
   errors?: { [key: string]: string };
   isHeadCurator?: boolean;
 }
 
-function UserForm({ formData, setFormData, groups, courses, errors = {}, isHeadCurator = false }: UserFormProps) {
+function UserForm({ formData, setFormData, groups, courses, students, errors = {}, isHeadCurator = false }: UserFormProps) {
   const [groupSearch, setGroupSearch] = useState('');
+  const [childSearch, setChildSearch] = useState('');
   const displayedGroups = React.useMemo(() => {
     const q = groupSearch.trim().toLowerCase();
     const filtered = (groups || []).filter((g) => !q || g.name.toLowerCase().includes(q));
@@ -1805,6 +1814,20 @@ function UserForm({ formData, setFormData, groups, courses, errors = {}, isHeadC
     });
   }, [groups, groupSearch, formData.group_ids]);
   const selectedGroups = (groups || []).filter((g) => formData.group_ids.includes(g.id));
+  // Child (student) picker for the parent role — reuses the already-loaded `students` list.
+  const displayedChildren = React.useMemo(() => {
+    const q = childSearch.trim().toLowerCase();
+    const filtered = (students || []).filter(
+      (s) => !q || (s.name || '').toLowerCase().includes(q) || (s.email || '').toLowerCase().includes(q)
+    );
+    return [...filtered].sort((a, b) => {
+      const sa = formData.child_ids.includes(Number(a.id)) ? 0 : 1;
+      const sb = formData.child_ids.includes(Number(b.id)) ? 0 : 1;
+      if (sa !== sb) return sa - sb;
+      return (a.name || '').localeCompare(b.name || '', 'ru');
+    });
+  }, [students, childSearch, formData.child_ids]);
+  const selectedChildren = (students || []).filter((s) => formData.child_ids.includes(Number(s.id)));
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
@@ -1845,12 +1868,13 @@ function UserForm({ formData, setFormData, groups, courses, errors = {}, isHeadC
             value={formData.role}
             onValueChange={(value) => {
               const newRole = value as any;
-              setFormData({ 
-                ...formData, 
+              setFormData({
+                ...formData,
                 role: newRole,
                 // Clear groups if role is not student
                 group_ids: newRole === 'student' ? formData.group_ids : [],
-                course_ids: newRole === 'head_teacher' ? formData.course_ids : []
+                course_ids: newRole === 'head_teacher' ? formData.course_ids : [],
+                child_ids: newRole === 'parent' ? formData.child_ids : []
               });
             }}
           >
@@ -1868,6 +1892,7 @@ function UserForm({ formData, setFormData, groups, courses, errors = {}, isHeadC
                   <SelectItem value="head_curator">Head Curator</SelectItem>
                   <SelectItem value="curator">Curator</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="parent">Parent</SelectItem>
                 </>
               )}
             </SelectContent>
@@ -1964,7 +1989,58 @@ function UserForm({ formData, setFormData, groups, courses, errors = {}, isHeadC
             )}
           </div>
         )}
-      
+
+        {/* Children field — searchable multi-select of students (parent only) */}
+        {formData.role === 'parent' && (
+          <div className="p-1">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">Children (students)</Label>
+              <span className="text-xs text-gray-500 dark:text-gray-400">Выбрано: {formData.child_ids.length}</span>
+            </div>
+            {selectedChildren.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mt-2">
+                {selectedChildren.map((s) => (
+                  <span key={s.id} className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300">
+                    {s.name}
+                    <button type="button" aria-label={`Убрать ${s.name}`} onClick={() => setFormData({ ...formData, child_ids: formData.child_ids.filter((id) => id !== Number(s.id)) })}>
+                      <X className="w-3 h-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="relative mt-2">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input value={childSearch} onChange={(e) => setChildSearch(e.target.value)} placeholder="Поиск студента по имени или email…" className="pl-9 h-9" />
+            </div>
+            <div className="mt-2 max-h-48 overflow-y-auto space-y-0.5 border rounded-md p-2">
+              {displayedChildren.length > 0 ? (
+                displayedChildren.map((s) => {
+                  const sid = Number(s.id);
+                  return (
+                    <label key={s.id} htmlFor={`child-${s.id}`} className="flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer hover:bg-muted/60">
+                      <Checkbox
+                        id={`child-${s.id}`}
+                        checked={formData.child_ids.includes(sid)}
+                        onCheckedChange={(checked) => {
+                          setFormData(checked
+                            ? { ...formData, child_ids: [...formData.child_ids, sid] }
+                            : { ...formData, child_ids: formData.child_ids.filter((id) => id !== sid) });
+                        }}
+                      />
+                      <span className="text-sm font-normal">{s.name}{s.email ? <span className="text-gray-400"> · {s.email}</span> : null}</span>
+                    </label>
+                  );
+                })
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400 px-2 py-1.5">
+                  {students && students.length > 0 ? 'Ничего не найдено' : 'No students available'}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
       {formData.role === 'student' && (
         <div className="p-1">
           <Label htmlFor="student_id" className="text-sm font-medium">Student ID</Label>
