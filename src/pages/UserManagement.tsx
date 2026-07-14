@@ -355,6 +355,7 @@ export default function UserManagement() {
   const [editGroupFormErrors, setEditGroupFormErrors] = useState<{ [key: string]: string }>({});
   const [originalEditGroupStudentIds, setOriginalEditGroupStudentIds] = useState<number[]>([]);
   const [originalUserGroupIds, setOriginalUserGroupIds] = useState<number[]>([]);
+  const [originalChildIds, setOriginalChildIds] = useState<number[]>([]);
 
   // When auth loads and user is head_curator, lock filters and form to curator role
   useEffect(() => {
@@ -697,8 +698,18 @@ export default function UserManagement() {
       }
       
       await apiClient.updateUser(Number(selectedUser.id), userData);
+
+      // Sync parent↔child links (add newly selected, remove unchecked).
+      if (formData.role === 'parent') {
+        const pid = Number(selectedUser.id);
+        const added = formData.child_ids.filter((id) => !originalChildIds.includes(id));
+        const removed = originalChildIds.filter((id) => !formData.child_ids.includes(id));
+        if (added.length) await apiClient.linkParentChildren(pid, added);
+        await Promise.all(removed.map((sid) => apiClient.unlinkParentChild(pid, sid)));
+      }
+
       toast('User updated successfully', 'success');
-      
+
       setShowEditModal(false);
       resetForm();
       loadUsers();
@@ -911,10 +922,23 @@ export default function UserManagement() {
   };
 
 
-  const openEditModal = (user: User) => {
+  const openEditModal = async (user: User) => {
     const groupIds = user.group_ids || []
     setSelectedUser(user);
     setOriginalUserGroupIds(groupIds)
+
+    // Preload linked children for parents so the picker reflects current state.
+    let childIds: number[] = [];
+    if (user.role === 'parent') {
+      try {
+        const kids = await apiClient.getParentChildren(Number(user.id));
+        childIds = kids.map((k) => k.id);
+      } catch {
+        childIds = [];
+      }
+    }
+    setOriginalChildIds(childIds);
+
     setFormData({
       name: user.name || user.full_name || '',
       email: user.email,
@@ -924,7 +948,7 @@ export default function UserManagement() {
       is_active: user.is_active ?? true,
       group_ids: groupIds,
       course_ids: user.course_ids || [],
-      child_ids: []
+      child_ids: childIds
     });
     setShowEditModal(true);
   };
@@ -948,6 +972,7 @@ export default function UserManagement() {
     });
     setSelectedUser(null);
     setOriginalUserGroupIds([])
+    setOriginalChildIds([])
     setFormErrors({});
   };
 

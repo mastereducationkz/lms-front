@@ -113,6 +113,20 @@ export async function createUser(userData: CreateUserRequest): Promise<{ user: U
   }
 }
 
+// ---- Parent ↔ child links (admin) ----
+export async function getParentChildren(parentId: number): Promise<Array<{ id: number; name: string; email?: string; group_name?: string }>> {
+  const response = await api.get(`/admin/parents/${parentId}/children`);
+  return response.data;
+}
+
+export async function linkParentChildren(parentId: number, childIds: number[]): Promise<void> {
+  await api.post(`/admin/parents/${parentId}/children`, { child_ids: childIds });
+}
+
+export async function unlinkParentChild(parentId: number, studentId: number): Promise<void> {
+  await api.delete(`/admin/parents/${parentId}/children/${studentId}`);
+}
+
 export async function bulkCreateUsersFromText(
   text: string,
   groupIds?: number[],
