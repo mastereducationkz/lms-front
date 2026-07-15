@@ -1,16 +1,38 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
-// import SummaryCard from '../components/SummaryCard';
-// import CourseCard from '../components/CourseCard';
-import StudentDashboard from './StudentDashboard';
-import TeacherDashboard from './TeacherDashboard.tsx';
-import AdminDashboard from './admin/AdminDashboard.tsx';
-import HeadCuratorDashboard from './HeadCuratorDashboard.tsx';
-import HeadTeacherDashboardPage from './HeadTeacherDashboardPage.tsx';
 import apiClient from "../services/api";
 import Skeleton from '../components/Skeleton.tsx';
 import type { DashboardStats, Course, User } from '../types';
+
+// Each role dashboard is lazy so a user only downloads the chunk for their own
+// role (TeacherDashboard/AdminDashboard/HeadCuratorDashboard pull in recharts —
+// eagerly importing all five made every role pay for all of them on first load).
+const StudentDashboard = lazy(() => import('./StudentDashboard'));
+const TeacherDashboard = lazy(() => import('./TeacherDashboard.tsx'));
+const AdminDashboard = lazy(() => import('./admin/AdminDashboard.tsx'));
+const HeadCuratorDashboard = lazy(() => import('./HeadCuratorDashboard.tsx'));
+const HeadTeacherDashboardPage = lazy(() => import('./HeadTeacherDashboardPage.tsx'));
+
+function DashboardChunkFallback() {
+  return (
+    <div className="space-y-8">
+      <div>
+        <Skeleton className="h-8 w-80 mb-2" />
+        <Skeleton className="h-5 w-96" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="card p-6">
+            <Skeleton className="h-16 w-16 mb-4" />
+            <Skeleton className="h-8 w-20 mb-2" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 interface DashboardData {
   user?: User;
@@ -30,23 +52,35 @@ export default function DashboardPage() {
 
   // Role-based dashboards - Return early BEFORE loading generic student stats
   if (user?.role === 'admin') {
-    return <AdminDashboard />;
+    return (
+      <Suspense fallback={<DashboardChunkFallback />}>
+        <AdminDashboard />
+      </Suspense>
+    );
   }
-  
-  if (user?.role === 'curator') {
-    return <HeadCuratorDashboard />;
+
+  if (user?.role === 'curator' || user?.role === 'head_curator') {
+    return (
+      <Suspense fallback={<DashboardChunkFallback />}>
+        <HeadCuratorDashboard />
+      </Suspense>
+    );
   }
-  
-  if (user?.role === 'head_curator') {
-    return <HeadCuratorDashboard />;
-  }
-  
+
   if (user?.role === 'head_teacher') {
-    return <HeadTeacherDashboardPage />;
+    return (
+      <Suspense fallback={<DashboardChunkFallback />}>
+        <HeadTeacherDashboardPage />
+      </Suspense>
+    );
   }
-  
+
   if (isTeacher()) {
-    return <TeacherDashboard />;
+    return (
+      <Suspense fallback={<DashboardChunkFallback />}>
+        <TeacherDashboard />
+      </Suspense>
+    );
   }
 
   // Load data only for students or if valid role not caught above (fallback)
@@ -129,11 +163,13 @@ export default function DashboardPage() {
   const stats = dashboardData?.stats || {} as DashboardStats;
 
   return (
-    <StudentDashboard
-      firstName={firstName}
-      stats={stats}
-      onContinueCourse={(id: string) => navigate(`/course/${id}`)}
-      onGoToAllCourses={() => navigate('/courses')}
-    />
+    <Suspense fallback={<DashboardChunkFallback />}>
+      <StudentDashboard
+        firstName={firstName}
+        stats={stats}
+        onContinueCourse={(id: string) => navigate(`/course/${id}`)}
+        onGoToAllCourses={() => navigate('/courses')}
+      />
+    </Suspense>
   );
 }
