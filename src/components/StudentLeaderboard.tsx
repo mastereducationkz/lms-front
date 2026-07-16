@@ -76,6 +76,10 @@ export default function StudentLeaderboard() {
       }
     } catch (err) {
       console.error('Failed to load user info:', err);
+      // Without this the card is stuck on the skeleton forever: currentUser
+      // never gets set, so loadLeaderboard never runs and isLoading stays true.
+      setError('Failed to load leaderboard');
+      setIsLoading(false);
     }
   };
 
@@ -144,7 +148,7 @@ export default function StudentLeaderboard() {
 
   const myRankInfo = getUserRankInfo();
 
-  if (isLoading && !currentUser) {
+  if (isLoading && !currentUser && !error) {
     return (
       <Card>
         <CardHeader className="pb-2">
@@ -214,7 +218,7 @@ export default function StudentLeaderboard() {
         {error ? (
           <div className="text-center py-4 text-red-500 text-sm">
             {error}
-            <Button variant="link" size="sm" onClick={() => loadLeaderboard()} className="text-blue-500">Retry</Button>
+            <Button variant="link" size="sm" onClick={() => (currentUser ? loadLeaderboard() : loadUserAndGroups())} className="text-blue-500">Retry</Button>
           </div>
         ) : (
           <>
