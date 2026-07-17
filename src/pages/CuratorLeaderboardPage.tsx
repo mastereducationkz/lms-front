@@ -33,6 +33,7 @@ interface LessonMeta {
     homework?: {
         id: number;
         title: string;
+        max_score?: number | null;
     };
 }
 
@@ -1352,10 +1353,13 @@ export default function CuratorLeaderboardPage() {
                                             />
                                         </div>
                                         <div className="w-1/2 bg-gray-50 dark:bg-secondary flex items-center justify-center p-0">
+                                            {(() => {
+                                                const hwMax = hwStatus?.max_score ?? lessonInfo.homework?.max_score ?? null;
+                                                return (
                                             <div
                                                 className={cn(
                                                     "w-full text-center text-[11px] h-full flex items-center justify-center",
-                                                    hwStatus?.submitted ? "text-green-700 dark:text-green-400 font-bold" : (hwStatus?.score != null) ? "text-orange-700 dark:text-orange-400 font-medium" : "text-gray-400",
+                                                    hwStatus?.submitted ? "text-green-700 dark:text-green-400 font-bold" : "text-gray-400",
                                                     hwStatus?.submitted && "cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
                                                 )}
                                                 onClick={() => {
@@ -1365,19 +1369,33 @@ export default function CuratorLeaderboardPage() {
                                                         studentName: student.student_name,
                                                         lessonTitle: lessonInfo.title || `Lesson ${lessonInfo.lesson_number}`,
                                                         score: hwStatus.score,
-                                                        maxScore: hwStatus.max_score,
+                                                        maxScore: hwStatus.max_score ?? lessonInfo.homework?.max_score ?? undefined,
                                                         feedback: hwStatus.feedback ?? null,
                                                         submittedAt: hwStatus.submitted_at ?? null,
                                                         gradedAt: hwStatus.graded_at ?? null,
                                                     })
                                                 }}
-                                                title={hwStatus?.submitted ? 'Click to see feedback' : undefined}
+                                                title={hwStatus?.submitted ? 'Нажмите, чтобы увидеть фидбэк' : (lessonInfo.homework?.title || undefined)}
                                             >
-                                                {hwStatus?.submitted 
-                                                    ? `${hwStatus.score !== null ? hwStatus.score : 'Сдано'}`
-                                                    : '-'
-                                                }
+                                                {hwStatus?.submitted ? (
+                                                    hwStatus.score !== null ? (
+                                                        <span className="flex flex-col items-center leading-none">
+                                                            <span>{hwStatus.score}{hwMax ? `/${hwMax}` : ''}</span>
+                                                            {hwMax && hwMax > 0 ? (
+                                                                <span className="text-[10px] font-normal text-gray-400 mt-0.5">
+                                                                    {Math.round((hwStatus.score / hwMax) * 100)}%
+                                                                </span>
+                                                            ) : null}
+                                                        </span>
+                                                    ) : 'Сдано'
+                                                ) : lessonInfo.homework ? (
+                                                    <span className="text-rose-500 dark:text-rose-400 font-medium leading-tight">Не<br/>выполнено</span>
+                                                ) : (
+                                                    <span className="text-gray-300 dark:text-gray-600 italic leading-tight">Не<br/>задано</span>
+                                                )}
                                             </div>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                 </TableCell>
