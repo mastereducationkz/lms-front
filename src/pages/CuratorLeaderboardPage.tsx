@@ -136,6 +136,7 @@ interface LeaderboardData {
 // Configuration
 const MAX_SCORES = {
     attendance: 10,
+    homework: 10, // each assigned HW is normalized to this weight
     curator_hour: 20,
     mock_exam: 100,
     study_buddy: 15, // 0 (no) or 15 (yes)
@@ -586,22 +587,31 @@ export default function CuratorLeaderboardPage() {
     }
   };
 
+  // Normalized HW contribution: score/max × 10 so a 30-point HW weighs the
+  // same as a 10-point one. Max comes from the submission, falling back to
+  // the assignment meta; a missing/zero max contributes nothing.
+  const hwContribution = (lessonKey: string, hw: StudentLessonStatus['homework_status']) => {
+    if (!hw || hw.score === null || hw.score === undefined) return 0;
+    const metaMax = data?.lessons.find(l => l.lesson_number.toString() === lessonKey)?.homework?.max_score;
+    const max = hw.max_score ?? metaMax ?? 0;
+    if (!max || max <= 0) return 0;
+    return (hw.score / max) * MAX_SCORES.homework;
+  };
+
   const calculateTotal = (student: StudentRow) => {
     if (!data) return 0;
-    
+
     // Sum HW and Attendance from dynamic lessons
     let lessonsTotal = 0;
-    Object.values(student.lessons).forEach(lesson => {
+    Object.entries(student.lessons).forEach(([lessonKey, lesson]) => {
         // Attendance
         if (lesson.attendance_status === 'attended') {
             lessonsTotal += MAX_SCORES.attendance;
         }
-        // Homework
-        if (lesson.homework_status && lesson.homework_status.score !== null) {
-            lessonsTotal += lesson.homework_status.score;
-        }
+        // Homework — normalized to MAX_SCORES.homework
+        lessonsTotal += hwContribution(lessonKey, lesson.homework_status);
     });
-    
+
     // Manual Columns
     const curatorHour = enabledCols.curator_hour ? student.curator_hour : 0;
     const mockExam = student.mock_exam; // Always enabled logic-wise
@@ -609,28 +619,22 @@ export default function CuratorLeaderboardPage() {
     const journal = enabledCols.self_reflection_journal ? student.self_reflection_journal : 0;
     const weeklyEval = enabledCols.weekly_evaluation ? student.weekly_evaluation : 0;
     const extraPoints = enabledCols.extra_points ? student.extra_points : 0;
-        
-    return lessonsTotal + curatorHour + mockExam + studyBuddy + journal + weeklyEval + extraPoints;
+
+    const total = lessonsTotal + curatorHour + mockExam + studyBuddy + journal + weeklyEval + extraPoints;
+    return Math.round(total * 10) / 10;
   };
   
   const calculatePercent = (student: StudentRow) => {
       if (!data) return 0;
       const total = calculateTotal(student);
       
-      // Calculate Max Possible
-      // Dynamic lessons count
-      // Per lesson: Attendance (10) + HW (if exists, assume 15 or max_score?)
-      // Backend didn't return max score for HW meta, but usage implies 15 usually?
-      // Wait, assignment has max_score.
-      // Let's assume standard 15 for now or sum up actual max scores if available.
-      // In student lesson status we have `max_score`. But for total possible we need to know theoretical max.
-      // For general % calculation, let's assume 15 for HW if HW exists.
-      
+      // Each assigned HW is worth MAX_SCORES.homework in the denominator;
+      // unsubmitted HW stays in the denominator (it was assigned).
       let maxLessons = 0;
       data.lessons.forEach(meta => {
           maxLessons += MAX_SCORES.attendance; // 10
           if (meta.homework) {
-              maxLessons += 15; // Assume 15 for consistency with previous config
+              maxLessons += MAX_SCORES.homework; // 10, normalized
           }
       });
       
