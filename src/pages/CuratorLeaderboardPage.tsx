@@ -21,6 +21,7 @@ import {
 } from '../lib/groupPicker';
 import { Checkbox } from '../components/ui/checkbox';
 import { Label } from '../components/ui/label';
+import { parseAsUTC } from '../lib/datetime';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import { toast } from '../components/Toast';
@@ -842,8 +843,10 @@ export default function CuratorLeaderboardPage() {
 
 
   const formatDateParts = (dateStr: string) => {
-      // Backend stores in UTC, convert to Kazakhstan time (GMT+5)
-      const dt = new Date(dateStr);
+      // Backend stores in UTC, convert to Kazakhstan time (GMT+5).
+      // parseAsUTC appends "Z" when missing — new Date() would otherwise
+      // treat a naive string as browser-local and skip the conversion.
+      const dt = parseAsUTC(dateStr);
       // Date: 03 фев
       const date = dt.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short', timeZone: 'Asia/Almaty' }).replace('.', '');
       // DayTime: Пн 19:00

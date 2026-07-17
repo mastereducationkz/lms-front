@@ -44,6 +44,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { isAttendanceLockedLesson } from '../lib/attendance';
+import { parseAsUTC } from '../lib/datetime';
 
 interface MissedAttendanceItem {
   event_id: number;
@@ -214,12 +215,12 @@ export default function HeadTeacherTeacherDetailsPage() {
   };
 
   const formatAttendanceDate = (dateStr: string) => {
-    const dt = new Date(dateStr);
+    const dt = parseAsUTC(dateStr);
     return dt.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', timeZone: 'Asia/Almaty' });
   };
 
   const formatAttendanceDay = (dateStr: string) => {
-    const dt = new Date(dateStr);
+    const dt = parseAsUTC(dateStr);
     return dt.toLocaleDateString('ru-RU', { weekday: 'short', timeZone: 'Asia/Almaty' });
   };
 

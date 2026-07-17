@@ -29,6 +29,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Group, CourseType } from '../types';
 import { cn } from '../lib/utils';
 import { isAttendanceLockedLesson } from '../lib/attendance';
+import { parseAsUTC } from '../lib/datetime';
 import {
   PROGRAM_LABELS, PROGRAM_BADGE_STYLES, getGroupProgramType,
   formatGroupLabel, getGroupDateText, pluralizeGroups, sortGroupsByCreatedAt,
@@ -348,13 +349,13 @@ export default function TeacherAttendancePage() {
 
   const formatDate = (dateStr: string) => {
       // Backend stores in UTC, convert to Kazakhstan time (GMT+5)
-      const dt = new Date(dateStr);
+      const dt = parseAsUTC(dateStr);
       return dt.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', timeZone: 'Asia/Almaty' });
   };
 
   const formatDay = (dateStr: string) => {
       // Backend stores in UTC, convert to Kazakhstan time (GMT+5)
-      const dt = new Date(dateStr);
+      const dt = parseAsUTC(dateStr);
       return dt.toLocaleDateString('ru-RU', { weekday: 'short', timeZone: 'Asia/Almaty' });
   };
 
