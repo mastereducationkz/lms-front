@@ -102,6 +102,7 @@ interface StudentRow {
     ielts_listening_test_name?: string | null;
     ielts_reading_test_name?: string | null;
     ielts_writing_test_name?: string | null;
+    ielts_speaking_test_name?: string | null;
     ielts_listening_feedback?: string | null;
     ielts_listening_feedback_ru?: string | null;
     ielts_reading_feedback?: string | null;
@@ -1836,7 +1837,7 @@ export default function CuratorLeaderboardPage() {
                 {hasSpeakingFb && (
                   <div>
                     <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
-                      Speaking feedback
+                      Speaking feedback{s.ielts_speaking_test_name ? ` · ${s.ielts_speaking_test_name}` : ''}
                     </h3>
                     <div className="space-y-3">
                       {speakingCriteria.filter(c => c.text).map(c => (
