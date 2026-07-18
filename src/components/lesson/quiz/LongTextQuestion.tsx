@@ -13,6 +13,8 @@ export const LongTextQuestion: React.FC<LongTextQuestionProps> = ({
   onChange,
   disabled
 }) => {
+  const currentLength = (value || '').length;
+
   return (
     <div className="space-y-4">
       <textarea
@@ -20,12 +22,16 @@ export const LongTextQuestion: React.FC<LongTextQuestionProps> = ({
         onChange={(e) => onChange(e.target.value)}
         placeholder="Enter your detailed answer here..."
         className="w-full h-48 p-4 bg-background border-2 border-input rounded-lg focus:border-primary focus:outline-none resize-vertical text-foreground"
-        maxLength={question.expected_length || 1000}
         disabled={disabled}
       />
-      {question.expected_length && (
+      {/* expected_length is a guideline for the student, NOT a hard cap — do not block typing */}
+      {question.expected_length ? (
         <div className="text-sm text-muted-foreground text-right">
-          {(value || '').length} / {question.expected_length} characters
+          {currentLength} characters (suggested ~{question.expected_length})
+        </div>
+      ) : (
+        <div className="text-sm text-muted-foreground text-right">
+          {currentLength} characters
         </div>
       )}
     </div>
