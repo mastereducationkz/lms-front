@@ -3,10 +3,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { clearCache } from '../../services/api';
 import { Clock } from 'lucide-react';
 
-// Contact link reused from the landing page footer (src/components/landing/Footer.tsx),
-// which lists info@mastereducation.kz as the support contact (no mailto/tel link exists
-// there today — this wraps the same address as a mailto: link).
-const CONTACT_HREF = 'mailto:info@mastereducation.kz';
+// Sales-team WhatsApp: expired trial prospects reach out here to be set up with full access.
+// wa.me click-to-chat wants the number in international format with no "+", spaces, or dashes.
+const CONTACT_HREF = 'https://wa.me/77071064065';
 
 const TrialExpiredPanel: React.FC = () => {
   const { logout } = useAuth();

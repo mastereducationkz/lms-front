@@ -23,6 +23,7 @@ import {
   ChevronDown,
   Copy,
   Check,
+  Trash2,
 } from 'lucide-react'
 import type { Course, CourseModule, TrialAccess, TrialCreateRequest, TrialUpdateRequest } from '../../types'
 
@@ -65,23 +66,188 @@ function formatCountdown(expiresAt: string, now: number): string {
   return `in ${hours}h ${minutes}m`
 }
 
+/** One course + its unlocked lessons within a (possibly multi-course) grant. `key` is a stable local id. */
+interface CourseSelection {
+  key: string
+  courseId: string
+  lessonIds: Set<number>
+}
+
 interface TrialFormState {
   email: string
   name: string
   note: string
-  courseId: string
-  lessonIds: Set<number>
+  selections: CourseSelection[] // create: 1+ course blocks; edit: exactly one (course locked)
   deadline: string
 }
+
+// Local-only unique key for React lists (not sent to the server).
+let _selKey = 0
+const makeSelection = (courseId = '', lessonIds: number[] = []): CourseSelection => ({
+  key: `sel-${_selKey++}`,
+  courseId,
+  lessonIds: new Set(lessonIds),
+})
 
 const emptyForm = (): TrialFormState => ({
   email: '',
   name: '',
   note: '',
-  courseId: '',
-  lessonIds: new Set(),
+  selections: [makeSelection()],
   deadline: defaultDeadline(),
 })
+
+/**
+ * One course block in the grant form: a course picker plus its lesson tree. Loads its own
+ * modules lazily whenever its course changes, so multiple blocks each fetch independently.
+ */
+function CourseSelectionBlock({
+  selection,
+  courses,
+  disabledCourseIds,
+  lockCourse,
+  canRemove,
+  onChangeCourse,
+  onToggleLesson,
+  onToggleModule,
+  onRemove,
+}: {
+  selection: CourseSelection
+  courses: Course[]
+  disabledCourseIds: Set<string>
+  lockCourse: boolean
+  canRemove: boolean
+  onChangeCourse: (courseId: string) => void
+  onToggleLesson: (lessonId: number) => void
+  onToggleModule: (lessonIds: number[], checked: boolean) => void
+  onRemove: () => void
+}) {
+  const [modules, setModules] = useState<CourseModule[]>([])
+  const [loading, setLoading] = useState(false)
+  const [expanded, setExpanded] = useState<Record<number, boolean>>({})
+
+  useEffect(() => {
+    let cancelled = false
+    if (!selection.courseId) {
+      setModules([])
+      return
+    }
+    setLoading(true)
+    apiClient
+      .getCourseModules(selection.courseId, true)
+      .then((data) => {
+        if (cancelled) return
+        setModules(data)
+        const exp: Record<number, boolean> = {}
+        data.forEach((m) => {
+          exp[Number(m.id)] = true
+        })
+        setExpanded(exp)
+      })
+      .catch(() => {
+        if (!cancelled) toast('Failed to load course units', 'error')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [selection.courseId])
+
+  return (
+    <div className="border rounded-lg p-3 space-y-2">
+      <div className="flex items-end gap-2">
+        <div className="flex-1 space-y-1">
+          <Label className="text-xs">Course</Label>
+          <Select value={selection.courseId} onValueChange={onChangeCourse} disabled={lockCourse}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a course..." />
+            </SelectTrigger>
+            <SelectContent>
+              {courses.map((c) => (
+                <SelectItem key={c.id} value={c.id.toString()} disabled={disabledCourseIds.has(c.id.toString())}>
+                  {c.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        {canRemove && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="text-gray-400 hover:text-red-600"
+            title="Remove course"
+            onClick={onRemove}
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        )}
+      </div>
+
+      <div className="space-y-1">
+        <Label className="text-xs">Lessons ({selection.lessonIds.size} selected)</Label>
+        <div className="border rounded-lg max-h-56 overflow-y-auto">
+          {loading ? (
+            <div className="py-8 flex justify-center">
+              <Loader size="sm" />
+            </div>
+          ) : !selection.courseId ? (
+            <p className="text-sm text-gray-400 text-center py-8">Select a course first</p>
+          ) : modules.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-8">No units in this course</p>
+          ) : (
+            modules.map((module) => {
+              const moduleId = Number(module.id)
+              const lessons = module.lessons || []
+              const allChecked = lessons.length > 0 && lessons.every((l) => selection.lessonIds.has(Number(l.id)))
+              const isOpen = expanded[moduleId] ?? true
+              return (
+                <div key={module.id} className="border-b last:border-b-0">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-gray-50">
+                    <Checkbox
+                      checked={allChecked}
+                      onCheckedChange={(checked) =>
+                        onToggleModule(lessons.map((l) => Number(l.id)), checked === true)
+                      }
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setExpanded((prev) => ({ ...prev, [moduleId]: !isOpen }))}
+                      className="flex-1 flex items-center justify-between text-left"
+                    >
+                      <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                        {module.title}
+                      </span>
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 text-gray-400 transition-transform ${isOpen ? '' : '-rotate-90'}`}
+                      />
+                    </button>
+                  </div>
+                  {isOpen &&
+                    lessons.map((lesson) => (
+                      <label
+                        key={lesson.id}
+                        className="flex items-center gap-2 px-3 py-1.5 pl-8 text-sm hover:bg-gray-50 cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={selection.lessonIds.has(Number(lesson.id))}
+                          onCheckedChange={() => onToggleLesson(Number(lesson.id))}
+                        />
+                        {lesson.title}
+                      </label>
+                    ))}
+                </div>
+              )
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function TrialAccessPage() {
   const [trials, setTrials] = useState<TrialAccess[]>([])
@@ -90,9 +256,6 @@ export default function TrialAccessPage() {
   const [now, setNow] = useState(() => Date.now())
 
   const [courses, setCourses] = useState<Course[]>([])
-  const [modules, setModules] = useState<CourseModule[]>([])
-  const [modulesLoading, setModulesLoading] = useState(false)
-  const [expandedModules, setExpandedModules] = useState<Record<number, boolean>>({})
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<TrialAccess | null>(null)
@@ -131,32 +294,9 @@ export default function TrialAccessPage() {
     return () => window.clearInterval(id)
   }, [])
 
-  const loadModules = useCallback(async (courseId: string) => {
-    if (!courseId) {
-      setModules([])
-      return
-    }
-    setModulesLoading(true)
-    try {
-      const data = await apiClient.getCourseModules(courseId, true)
-      setModules(data)
-      const expanded: Record<number, boolean> = {}
-      data.forEach((m) => {
-        expanded[Number(m.id)] = true
-      })
-      setExpandedModules(expanded)
-    } catch (error) {
-      console.error('Failed to load course structure:', error)
-      toast('Failed to load course units', 'error')
-    } finally {
-      setModulesLoading(false)
-    }
-  }, [])
-
   const openCreateDialog = () => {
     setEditing(null)
     setForm(emptyForm())
-    setModules([])
     setCreateResult(null)
     setDialogOpen(true)
   }
@@ -167,13 +307,11 @@ export default function TrialAccessPage() {
       email: trial.user_email,
       name: trial.user_name,
       note: trial.prospect_note || '',
-      courseId: String(trial.course_id),
-      lessonIds: new Set(trial.lesson_ids),
+      selections: [makeSelection(String(trial.course_id), trial.lesson_ids)],
       deadline: toLocalInputValue(parseAsUTC(trial.expires_at)),
     })
     setCreateResult(null)
     setDialogOpen(true)
-    loadModules(String(trial.course_id))
   }
 
   const closeDialog = () => {
@@ -182,43 +320,66 @@ export default function TrialAccessPage() {
     setCreateResult(null)
   }
 
-  const handleCourseChange = (courseId: string) => {
-    setForm((f) => ({ ...f, courseId, lessonIds: new Set() }))
-    loadModules(courseId)
+  // --- per-course-block form mutations -----------------------------------------
+  const addSelection = () => {
+    setForm((f) => ({ ...f, selections: [...f.selections, makeSelection()] }))
   }
 
-  const toggleLesson = (lessonId: number) => {
-    setForm((f) => {
-      const next = new Set(f.lessonIds)
-      if (next.has(lessonId)) next.delete(lessonId)
-      else next.add(lessonId)
-      return { ...f, lessonIds: next }
-    })
+  const removeSelection = (key: string) => {
+    setForm((f) => ({ ...f, selections: f.selections.filter((s) => s.key !== key) }))
   }
 
-  const toggleModuleLessons = (module: CourseModule, checked: boolean) => {
-    setForm((f) => {
-      const next = new Set(f.lessonIds)
-      for (const lesson of module.lessons || []) {
-        const id = Number(lesson.id)
-        if (checked) next.add(id)
-        else next.delete(id)
-      }
-      return { ...f, lessonIds: next }
-    })
+  const changeSelectionCourse = (key: string, courseId: string) => {
+    setForm((f) => ({
+      ...f,
+      // Switching a block's course clears that block's lessons (they belonged to the old course).
+      selections: f.selections.map((s) => (s.key === key ? { ...s, courseId, lessonIds: new Set<number>() } : s)),
+    }))
   }
 
-  const toggleModuleExpanded = (moduleId: number) => {
-    setExpandedModules((prev) => ({ ...prev, [moduleId]: !prev[moduleId] }))
+  const toggleLessonIn = (key: string, lessonId: number) => {
+    setForm((f) => ({
+      ...f,
+      selections: f.selections.map((s) => {
+        if (s.key !== key) return s
+        const next = new Set(s.lessonIds)
+        if (next.has(lessonId)) next.delete(lessonId)
+        else next.add(lessonId)
+        return { ...s, lessonIds: next }
+      }),
+    }))
+  }
+
+  const toggleModuleIn = (key: string, lessonIds: number[], checked: boolean) => {
+    setForm((f) => ({
+      ...f,
+      selections: f.selections.map((s) => {
+        if (s.key !== key) return s
+        const next = new Set(s.lessonIds)
+        for (const id of lessonIds) {
+          if (checked) next.add(id)
+          else next.delete(id)
+        }
+        return { ...s, lessonIds: next }
+      }),
+    }))
   }
 
   const validate = (): string | null => {
     if (!editing) {
       if (!form.email.trim() || !EMAIL_RE.test(form.email.trim())) return 'Enter a valid email address'
       if (!form.name.trim()) return 'Enter a name'
-      if (!form.courseId) return 'Select a course'
     }
-    if (form.lessonIds.size === 0) return 'Select at least one lesson'
+    if (form.selections.length === 0) return 'Add at least one course'
+    const chosen = form.selections.map((s) => s.courseId).filter(Boolean)
+    if (chosen.length !== form.selections.length) return 'Select a course for each block'
+    if (new Set(chosen).size !== chosen.length) return 'Each course can only be added once'
+    for (const s of form.selections) {
+      if (s.lessonIds.size === 0) {
+        const title = courses.find((c) => c.id.toString() === s.courseId)?.title || 'each course'
+        return `Select at least one lesson for ${title}`
+      }
+    }
     if (!form.deadline) return 'Select a deadline'
     return null
   }
@@ -239,7 +400,7 @@ export default function TrialAccessPage() {
       if (editing) {
         const payload: TrialUpdateRequest = {
           expires_at: expiresAt,
-          lesson_ids: Array.from(form.lessonIds),
+          lesson_ids: Array.from(form.selections[0].lessonIds),
           prospect_note: form.note.trim() || undefined,
         }
         await apiClient.updateTrial(editing.id, payload)
@@ -250,14 +411,17 @@ export default function TrialAccessPage() {
         const payload: TrialCreateRequest = {
           email: form.email.trim(),
           name: form.name.trim(),
-          course_id: Number(form.courseId),
-          lesson_ids: Array.from(form.lessonIds),
+          courses: form.selections.map((s) => ({
+            course_id: Number(s.courseId),
+            lesson_ids: Array.from(s.lessonIds),
+          })),
           expires_at: expiresAt,
           prospect_note: form.note.trim() || undefined,
         }
         const res = await apiClient.createTrial(payload)
         setCreateResult({ password: res.generated_password })
-        toast('Trial granted', 'success')
+        const n = payload.courses.length
+        toast(`Trial granted for ${n} course${n > 1 ? 's' : ''}`, 'success')
         load()
       }
     } catch (error: any) {
@@ -540,77 +704,41 @@ export default function TrialAccessPage() {
                 />
               </div>
 
-              <div className="space-y-1">
-                <Label>Course</Label>
-                <Select value={form.courseId} onValueChange={handleCourseChange} disabled={!!editing}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a course..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {courses.map((c) => (
-                      <SelectItem key={c.id} value={c.id.toString()}>
-                        {c.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1">
-                <Label>Lessons ({form.lessonIds.size} selected)</Label>
-                <div className="border rounded-lg max-h-64 overflow-y-auto">
-                  {modulesLoading ? (
-                    <div className="py-8 flex justify-center">
-                      <Loader size="sm" />
-                    </div>
-                  ) : !form.courseId ? (
-                    <p className="text-sm text-gray-400 text-center py-8">Select a course first</p>
-                  ) : modules.length === 0 ? (
-                    <p className="text-sm text-gray-400 text-center py-8">No units in this course</p>
-                  ) : (
-                    modules.map((module) => {
-                      const moduleId = Number(module.id)
-                      const lessons = module.lessons || []
-                      const allChecked = lessons.length > 0 && lessons.every((l) => form.lessonIds.has(Number(l.id)))
-                      const isOpen = expandedModules[moduleId] ?? true
-                      return (
-                        <div key={module.id} className="border-b last:border-b-0">
-                          <div className="flex items-center gap-2 px-3 py-2 bg-gray-50">
-                            <Checkbox
-                              checked={allChecked}
-                              onCheckedChange={(checked) => toggleModuleLessons(module, checked === true)}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => toggleModuleExpanded(moduleId)}
-                              className="flex-1 flex items-center justify-between text-left"
-                            >
-                              <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                                {module.title}
-                              </span>
-                              <ChevronDown
-                                className={`w-3.5 h-3.5 text-gray-400 transition-transform ${isOpen ? '' : '-rotate-90'}`}
-                              />
-                            </button>
-                          </div>
-                          {isOpen &&
-                            lessons.map((lesson) => (
-                              <label
-                                key={lesson.id}
-                                className="flex items-center gap-2 px-3 py-1.5 pl-8 text-sm hover:bg-gray-50 cursor-pointer"
-                              >
-                                <Checkbox
-                                  checked={form.lessonIds.has(Number(lesson.id))}
-                                  onCheckedChange={() => toggleLesson(Number(lesson.id))}
-                                />
-                                {lesson.title}
-                              </label>
-                            ))}
-                        </div>
-                      )
-                    })
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>{editing ? 'Course & lessons' : 'Courses & lessons'}</Label>
+                  {!editing && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 gap-1 text-xs"
+                      onClick={addSelection}
+                      disabled={form.selections.length >= courses.length}
+                    >
+                      <Plus className="w-3 h-3" />
+                      Add course
+                    </Button>
                   )}
                 </div>
+                {form.selections.map((sel) => (
+                  <CourseSelectionBlock
+                    key={sel.key}
+                    selection={sel}
+                    courses={courses}
+                    disabledCourseIds={
+                      new Set(
+                        form.selections.filter((s) => s.key !== sel.key && s.courseId).map((s) => s.courseId)
+                      )
+                    }
+                    lockCourse={!!editing}
+                    canRemove={!editing && form.selections.length > 1}
+                    onChangeCourse={(courseId) => changeSelectionCourse(sel.key, courseId)}
+                    onToggleLesson={(lessonId) => toggleLessonIn(sel.key, lessonId)}
+                    onToggleModule={(lessonIds, checked) => toggleModuleIn(sel.key, lessonIds, checked)}
+                    onRemove={() => removeSelection(sel.key)}
+                  />
+                ))}
               </div>
 
               <div className="space-y-1">

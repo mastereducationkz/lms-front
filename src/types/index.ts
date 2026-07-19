@@ -847,11 +847,15 @@ export interface TrialAccess {
   revoked_at?: string;
 }
 
+export interface TrialCourseSelection {
+  course_id: number;
+  lesson_ids: number[];
+}
+
 export interface TrialCreateRequest {
   email: string;
   name: string;
-  course_id: number;
-  lesson_ids: number[];
+  courses: TrialCourseSelection[]; // one or more courses, each with its unlocked lessons
   expires_at: string; // ISO
   prospect_note?: string;
   send_invite?: boolean;

@@ -2,7 +2,8 @@ import type { TrialAccess, TrialCreateRequest, TrialUpdateRequest } from '../../
 import { api } from './client';
 
 export interface TrialCreateResponse {
-  trial: TrialAccess;
+  trials: TrialAccess[]; // one grant per course
+  trial?: TrialAccess; // legacy alias (= trials[0])
   generated_password: string | null;
 }
 
