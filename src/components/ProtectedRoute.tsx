@@ -3,6 +3,8 @@ import { useAuth } from '../contexts/AuthContext';
 import type { UserRole } from '../types';
 import Loader from './Loader';
 import TrialExpiredPanel from './trial/TrialExpiredPanel';
+import TrialBanner from './trial/TrialBanner';
+import { parseAsUTC } from '../lib/datetime';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -89,14 +91,29 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Trial prospects: once no active grant remains, lock the app behind the upsell panel.
   // Scoped to role === 'student' && is_trial so it never affects non-trial users.
+  // trial_expires_at is a naive-UTC string from the backend — parseAsUTC, not new Date(),
+  // or the gate fires hours early/late depending on the browser's UTC offset.
   if (
     requireAuth &&
     isAuthenticated &&
     user?.role === 'student' &&
     user?.is_trial &&
-    (!user?.trial_expires_at || new Date(user.trial_expires_at).getTime() <= Date.now())
+    (!user?.trial_expires_at || parseAsUTC(user.trial_expires_at).getTime() <= Date.now())
   ) {
     return <TrialExpiredPanel />;
+  }
+
+  // Authenticated success path: mount the trial countdown banner here (not in AppLayout)
+  // so it shows on EVERY protected route, including the few that render without AppLayout
+  // (e.g. /course/:courseId/lesson/:lessonId). TrialBanner null-guards itself, so it
+  // renders nothing (and sets no timers) for non-trial users.
+  if (requireAuth && isAuthenticated) {
+    return (
+      <>
+        <TrialBanner />
+        {children}
+      </>
+    );
   }
 
   return children;

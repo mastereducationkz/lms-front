@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { parseAsUTC } from '../../lib/datetime';
 import { Clock } from 'lucide-react';
 
 function formatRemaining(ms: number): string {
@@ -12,8 +13,10 @@ function formatRemaining(ms: number): string {
 const TrialBanner: React.FC = () => {
   const { user, refreshUser } = useAuth();
 
+  // trial_expires_at is a naive-UTC string from the backend — parseAsUTC, not new Date(),
+  // or the countdown drifts by the browser's UTC offset.
   const deadline = user?.is_trial && user?.trial_expires_at
-    ? new Date(user.trial_expires_at).getTime()
+    ? parseAsUTC(user.trial_expires_at).getTime()
     : null;
 
   const [now, setNow] = useState(() => Date.now());

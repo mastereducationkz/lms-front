@@ -6,7 +6,6 @@ import PlatformUpdatesModal from '../components/PlatformUpdatesModal.tsx';
 import DailyQuestionsPopup from '../components/DailyQuestionsPopup.tsx';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import apiClient from '../services/api';
-import TrialBanner from '../components/trial/TrialBanner.tsx';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -129,7 +128,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </div>
         )}
         <Topbar onOpenSidebar={() => setMobileOpen(true)} />
-        <TrialBanner />
         <div className="p-4 sm:p-6 lg:p-8">
           {children}
         </div>
