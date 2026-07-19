@@ -488,6 +488,19 @@ export default function TrialAccessPage() {
     [trials, statusFilter]
   )
 
+  // A prospect with a multi-course grant has one row per course. Group those rows under a
+  // single prospect so it reads as "one student, N courses" instead of looking like duplicate
+  // students. Preserves the backend order (first appearance of each prospect wins).
+  const groups = useMemo(() => {
+    const byUser = new Map<number, TrialAccess[]>()
+    for (const t of visible) {
+      const arr = byUser.get(t.user_id)
+      if (arr) arr.push(t)
+      else byUser.set(t.user_id, [t])
+    }
+    return Array.from(byUser.values())
+  }, [visible])
+
   if (loading) {
     return (
       <div className="h-[80vh] flex items-center justify-center">
@@ -550,14 +563,26 @@ export default function TrialAccessPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {visible.map((trial) => {
+                {groups.flatMap((group, groupIndex) =>
+                  group.map((trial, rowIndex) => {
                   const isBusy = busyTrialId === trial.id
                   const isTerminal = trial.status === 'revoked' || trial.status === 'converted'
+                  const isFirstOfGroup = rowIndex === 0
                   return (
-                    <TableRow key={trial.id}>
+                    <TableRow
+                      key={trial.id}
+                      className={isFirstOfGroup && groupIndex > 0 ? 'border-t-2 border-t-gray-200' : ''}
+                    >
                       <TableCell>
-                        <p className="font-medium text-gray-900">{trial.user_name}</p>
-                        <p className="text-xs text-gray-400">{trial.user_email}</p>
+                        {isFirstOfGroup && (
+                          <>
+                            <p className="font-medium text-gray-900">{trial.user_name}</p>
+                            <p className="text-xs text-gray-400">{trial.user_email}</p>
+                            {group.length > 1 && (
+                              <p className="text-xs text-gray-400 mt-0.5">{group.length} courses</p>
+                            )}
+                          </>
+                        )}
                       </TableCell>
                       <TableCell>{trial.course_title}</TableCell>
                       <TableCell>{trial.lesson_ids.length}</TableCell>
@@ -626,7 +651,8 @@ export default function TrialAccessPage() {
                       </TableCell>
                     </TableRow>
                   )
-                })}
+                  })
+                )}
               </TableBody>
             </Table>
           )}
