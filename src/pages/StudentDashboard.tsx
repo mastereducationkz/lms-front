@@ -32,6 +32,8 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import StudentLeaderboard from "../components/StudentLeaderboard";
 import DailyQuestionsPopup from '../components/DailyQuestionsPopup';
 import ExamCountdown from "../components/ExamCountdown";
+import SampleBadge from "../components/trial/SampleBadge";
+import { TRIAL_SAMPLE_SESSIONS, TRIAL_SAMPLE_TASKS } from "../data/trialSampleData";
 
 interface StudentDashboardProps {
   firstName: string;
@@ -618,6 +620,53 @@ export default function StudentDashboard({
         </Card>
       )}
 
+      {/* Trial prospects have no group, so they never have real webinars to
+          show here — render curated sample sessions instead so the widget
+          demos well. Never shown to non-trial users, never shown once real
+          webinars exist. */}
+      {user?.is_trial && !webinarAnnouncementDismissed && uniqueWebinars.length === 0 && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardHeader className="pb-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5 text-primary" />
+                <CardTitle className="text-base flex items-center">
+                  New weekly sessions
+                  <SampleBadge />
+                </CardTitle>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={dismissWebinarAnnouncement}
+              >
+                Hide
+              </Button>
+            </div>
+            <CardDescription>
+              Free weekly office hours and speaking clubs are available to enrolled students — here's a preview of what's on the calendar.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {TRIAL_SAMPLE_SESSIONS.map((session) => (
+              <div
+                key={session.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-background px-3 py-2"
+              >
+                <div className="min-w-0">
+                  <div className="font-medium text-sm truncate">{session.title}</div>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>{session.day} {session.time}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {!isLoadingIeltsPrompt && showIeltsPrompt && (
         <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30">
           <CardHeader>
@@ -784,6 +833,10 @@ export default function StudentDashboard({
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     Todo list
+                    {user?.is_trial &&
+                      !isLoadingTodo &&
+                      relevantAssignments.length === 0 &&
+                      relevantEvents.length === 0 && <SampleBadge />}
                   </div>
                   <div className="flex items-center space-x-2">
                     <Checkbox
@@ -877,6 +930,25 @@ export default function StudentDashboard({
                                 </Badge>
                               </>
                             )}
+                          </div>
+                        ))
+                      ) : user?.is_trial ? (
+                        // Trial prospects have no group/enrollment rows, so real
+                        // assignments/events are always empty here — show curated
+                        // sample tasks so the widget demos well.
+                        TRIAL_SAMPLE_TASKS.map((task) => (
+                          <div
+                            key={task.id}
+                            className="flex items-center gap-3 p-2 border border-border rounded-lg"
+                          >
+                            <FileText className="h-4 w-4 text-gray-500" />
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-sm truncate">{task.title}</div>
+                              <div className="text-xs text-gray-500">{task.subtitle}</div>
+                            </div>
+                            <Badge className={`text-xs ${task.badgeClassName}`}>
+                              {task.badgeLabel}
+                            </Badge>
                           </div>
                         ))
                       ) : (
