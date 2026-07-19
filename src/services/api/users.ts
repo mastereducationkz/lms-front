@@ -9,6 +9,7 @@ export async function getUsers(params?: {
   is_active?: boolean;
   search?: string;
   all_students?: boolean;
+  is_trial?: boolean;
 }): Promise<UserListResponse> {
   try {
     const response = await api.get('/admin/users', { params });

@@ -140,6 +140,7 @@ export default function UserManagement() {
   const [roleFilter, setRoleFilter] = useState(searchParams.get('role') || 'student');
   const [groupFilter, setGroupFilter] = useState(searchParams.get('group_id') || 'all');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('is_active') || 'all');
+  const [trialFilter, setTrialFilter] = useState(searchParams.get('is_trial') || 'all');
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [groupStatusFilter, setGroupStatusFilter] = useState<'all' | 'true' | 'false'>('true'); // Default to active groups
   const [groupProgramFilter, setGroupProgramFilter] = useState<'all' | CourseType>('all')
@@ -368,12 +369,12 @@ export default function UserManagement() {
   useEffect(() => {
     loadUsers()
     loadGroups()
-  }, [currentPage, roleFilter, groupFilter, statusFilter, debouncedSearch])
+  }, [currentPage, roleFilter, groupFilter, statusFilter, trialFilter, debouncedSearch])
 
   // Clear page selection whenever the visible set changes
   useEffect(() => {
     setSelectedIds(new Set())
-  }, [currentPage, roleFilter, groupFilter, statusFilter, debouncedSearch])
+  }, [currentPage, roleFilter, groupFilter, statusFilter, trialFilter, debouncedSearch])
 
   useEffect(() => {
     loadTeachersAndCurators();
@@ -406,6 +407,7 @@ export default function UserManagement() {
         role: roleFilter && roleFilter !== 'all' ? roleFilter : undefined,
         group_id: groupFilter && groupFilter !== 'all' ? parseInt(groupFilter) : undefined,
         is_active: statusFilter && statusFilter !== 'all' ? statusFilter === 'true' : undefined,
+        is_trial: trialFilter === 'true' ? true : undefined,
         search: searchQuery || undefined
       };
 
@@ -550,16 +552,18 @@ export default function UserManagement() {
     !isHeadCurator && roleFilter !== 'all' ? { key: 'role', label: `Роль: ${roleFilter}`, clear: () => { setRoleFilter('all'); handleFilterChange('role', 'all'); } } : null,
     groupFilter !== 'all' ? { key: 'group', label: `Группа: ${allGroupsById.get(Number(groupFilter)) || groupFilter}`, clear: () => { setGroupFilter('all'); handleFilterChange('group_id', 'all'); } } : null,
     statusFilter !== 'all' ? { key: 'status', label: `Статус: ${statusFilter === 'true' ? 'активные' : 'неактивные'}`, clear: () => { setStatusFilter('all'); handleFilterChange('is_active', 'all'); } } : null,
+    trialFilter === 'true' ? { key: 'trial', label: 'Только пробные', clear: () => { setTrialFilter('all'); handleFilterChange('is_trial', 'all'); } } : null,
   ].filter(Boolean) as { key: string; label: string; clear: () => void }[];
 
   const clearAllFilters = () => {
     setSearchQuery('');
     setGroupFilter('all');
     setStatusFilter('all');
+    setTrialFilter('all');
     if (!isHeadCurator) setRoleFilter(defaultRole);
     setCurrentPage(1);
     const newParams = new URLSearchParams(searchParams);
-    ['search', 'group_id', 'is_active'].forEach((k) => newParams.delete(k));
+    ['search', 'group_id', 'is_active', 'is_trial'].forEach((k) => newParams.delete(k));
     if (!isHeadCurator) newParams.delete('role');
     setSearchParams(newParams);
   };
@@ -1104,7 +1108,7 @@ export default function UserManagement() {
       {/* Filters */}
       <Card>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
               <Label htmlFor="search" className="text-sm font-medium">Search</Label>
               <div className="relative mt-2">
@@ -1191,6 +1195,25 @@ export default function UserManagement() {
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="true">Active</SelectItem>
                   <SelectItem value="false">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="trial" className="text-sm font-medium">Trial</Label>
+              <Select
+                value={trialFilter}
+                onValueChange={(value) => {
+                  setTrialFilter(value);
+                  handleFilterChange('is_trial', value);
+                }}
+              >
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="All Users" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Users</SelectItem>
+                  <SelectItem value="true">Trial Only</SelectItem>
                 </SelectContent>
               </Select>
             </div>

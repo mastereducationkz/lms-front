@@ -97,7 +97,14 @@ export function UsersTable({
                 )}
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-foreground">{user.name || user.full_name}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-foreground flex items-center gap-2">
+                      {user.name || user.full_name}
+                      {user.is_trial && (
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-amber-100 dark:bg-amber-900/35 dark:text-amber-200 text-amber-900">
+                          Trial
+                        </span>
+                      )}
+                    </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">{user.email}</div>
                     {user.student_id && <div className="text-xs text-gray-400">ID: {user.student_id}</div>}
                   </div>
