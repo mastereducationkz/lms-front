@@ -1,6 +1,13 @@
-import { Edit, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Edit, Trash2, Eye, EyeOff, UploadCloud } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu';
 import type { User } from '../../types';
 
 interface UsersTableProps {
@@ -15,6 +22,10 @@ interface UsersTableProps {
   onEdit?: (u: User) => void;
   onDelete?: (u: User) => void;
   onToggleAnalyticsHidden?: (u: User) => void;
+  /** Provision a student onto an external platform (SAT/NUET or IELTS). Student rows only. */
+  onProvisionPlatform?: (u: User, platform: 'ielts' | 'sat') => void;
+  /** ids currently being provisioned (disable the row's control + show progress). */
+  provisioningIds?: Set<number>;
 }
 
 const roleBadgeClass = (role: string) =>
@@ -62,6 +73,8 @@ export function UsersTable({
   onEdit,
   onDelete,
   onToggleAnalyticsHidden,
+  onProvisionPlatform,
+  provisioningIds,
 }: UsersTableProps) {
   const allChecked = selectable && users.length > 0 && users.every((u) => selectedIds?.has(Number(u.id)));
   const th = 'px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider';
@@ -131,6 +144,29 @@ export function UsersTable({
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <div className="flex items-center justify-end gap-2">
+                    {user.role === 'student' && onProvisionPlatform && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="Создать аккаунт на платформе (SAT/IELTS)"
+                            disabled={provisioningIds?.has(Number(user.id))}
+                          >
+                            <UploadCloud className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Создать аккаунт</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => onProvisionPlatform(user, 'ielts')}>
+                            IELTS
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onProvisionPlatform(user, 'sat')}>
+                            SAT / NUET
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                     {isCuratorRow && onToggleAnalyticsHidden && (
                       <Button onClick={() => onToggleAnalyticsHidden(user)} variant="ghost" size="sm" title={user.is_analytics_hidden ? 'Показать в аналитике' : 'Скрыть из аналитики'}>
                         {user.is_analytics_hidden ? <Eye className="w-4 h-4 text-orange-500" /> : <EyeOff className="w-4 h-4 text-gray-400" />}

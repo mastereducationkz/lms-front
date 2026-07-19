@@ -338,3 +338,26 @@ export async function toggleCuratorAnalyticsHidden(userId: number): Promise<any>
     throw new Error(error.response?.data?.detail || 'Failed to toggle curator visibility');
   }
 }
+
+export interface ProvisionPlatformResult {
+  ok: boolean;
+  outcome: 'created' | 'exists';
+  platform: string;
+  product?: string | null;
+  detail: string;
+  memberships_relinked: number;
+}
+
+/** Provision a student onto SAT/NUET or IELTS (LMS equivalent of the CRM «Создать аккаунт» button).
+ *  Idempotent; the backend derives the SAT product from the student's groups and re-links memberships. */
+export async function provisionUserToPlatform(
+  userId: number,
+  platform: 'ielts' | 'sat',
+): Promise<ProvisionPlatformResult> {
+  try {
+    const response = await api.post(`/admin/users/${userId}/provision-platform`, { platform });
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Не удалось создать аккаунт на платформе');
+  }
+}

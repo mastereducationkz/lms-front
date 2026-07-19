@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../services/api';
-import { toggleCuratorAnalyticsHidden } from '../services/api/admin';
+import { toggleCuratorAnalyticsHidden, provisionUserToPlatform } from '../services/api/admin';
 import { toast } from '../components/Toast';
 import type { User, CreateUserRequest, UpdateUserRequest, UpdateGroupRequest, Group, Course, GroupType, CourseType } from '../types';
 
@@ -170,6 +170,7 @@ export default function UserManagement() {
   const [showCreateSpecialGroupModal, setShowCreateSpecialGroupModal] = useState(false);
   const [showEditGroupModal, setShowEditGroupModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [provisioningIds, setProvisioningIds] = useState<Set<number>>(new Set());
   const [selectedGroup, setSelectedGroup] = useState<GroupWithDetails | null>(null);
   const [showBulkAddModal, setShowBulkAddModal] = useState(false);
   const [bulkAddFormData, setBulkAddFormData] = useState<{ groupId: number | null; studentIds: number[] }>({
@@ -754,6 +755,26 @@ export default function UserManagement() {
     }
   }
 
+  const handleProvisionPlatform = async (user: User, platform: 'ielts' | 'sat') => {
+    const id = Number(user.id)
+    const label = platform === 'ielts' ? 'IELTS' : 'SAT/NUET'
+    setProvisioningIds(prev => new Set(prev).add(id))
+    try {
+      const result = await provisionUserToPlatform(id, platform)
+      const verb = result.outcome === 'created' ? 'создан' : 'уже существует'
+      const linked = result.memberships_relinked > 0 ? `, привязан к ${result.memberships_relinked} группам` : ''
+      toast(`${label}: аккаунт ${verb}${linked} — ${user.name}`, 'success')
+    } catch (error: any) {
+      toast(error.message || `Не удалось создать аккаунт ${label}`, 'error')
+    } finally {
+      setProvisioningIds(prev => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
+    }
+  }
+
   const handleDeleteGroup = async () => {
     if (!selectedGroup) return;
     
@@ -1316,6 +1337,8 @@ export default function UserManagement() {
                 onEdit={openEditModal}
                 onDelete={openDeleteModal}
                 onToggleAnalyticsHidden={handleToggleAnalyticsHidden}
+                onProvisionPlatform={handleProvisionPlatform}
+                provisioningIds={provisioningIds}
               />
               
               {/* Pagination */}
