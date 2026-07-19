@@ -2,6 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import type { UserRole } from '../types';
 import Loader from './Loader';
+import TrialExpiredPanel from './trial/TrialExpiredPanel';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -84,6 +85,18 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     location.pathname !== '/assignment-zero'
   ) {
     return <Navigate to="/assignment-zero" replace />;
+  }
+
+  // Trial prospects: once no active grant remains, lock the app behind the upsell panel.
+  // Scoped to role === 'student' && is_trial so it never affects non-trial users.
+  if (
+    requireAuth &&
+    isAuthenticated &&
+    user?.role === 'student' &&
+    user?.is_trial &&
+    (!user?.trial_expires_at || new Date(user.trial_expires_at).getTime() <= Date.now())
+  ) {
+    return <TrialExpiredPanel />;
   }
 
   return children;
