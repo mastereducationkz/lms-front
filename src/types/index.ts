@@ -28,6 +28,8 @@ export interface User {
   course_ids?: number[]; // List of course IDs for head teachers
   no_substitutions?: boolean; // Teacher opt-out of substitutions
   is_analytics_hidden?: boolean; // Curator hidden from analytics/dashboard/leaderboard views
+  is_trial?: boolean; // Sales-prospect trial account (see /trial-access admin page)
+  trial_expires_at?: string; // Earliest active trial deadline; absent/undefined => no active trial
 }
 
 export type UserRole = 'student' | 'teacher' | 'curator' | 'admin' | 'head_curator' | 'head_teacher' | 'parent';
@@ -826,6 +828,39 @@ export interface ManualLessonUnlockCreate {
 export interface ManualLessonUnlockListResponse {
   unlocks: ManualLessonUnlock[];
   total: number;
+}
+
+export interface TrialAccess {
+  id: number;
+  user_id: number;
+  user_email: string;
+  user_name: string;
+  course_id: number;
+  course_title: string;
+  lesson_ids: number[];
+  expires_at: string;
+  status: 'active' | 'expired' | 'revoked' | 'converted';
+  granted_by?: number;
+  granted_by_name?: string;
+  prospect_note?: string;
+  created_at?: string;
+  revoked_at?: string;
+}
+
+export interface TrialCreateRequest {
+  email: string;
+  name: string;
+  course_id: number;
+  lesson_ids: number[];
+  expires_at: string; // ISO
+  prospect_note?: string;
+  send_invite?: boolean;
+}
+
+export interface TrialUpdateRequest {
+  expires_at?: string;
+  lesson_ids?: number[];
+  prospect_note?: string;
 }
 
 // =============================================================================

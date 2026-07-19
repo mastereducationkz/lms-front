@@ -11,6 +11,7 @@ export * from './quizzes';
 export * from './events';
 export * from './uploads';
 export * from './users';
+export * from './trials';
 export * from './groups';
 export * from './analytics';
 export * from './curator';
@@ -54,6 +55,7 @@ import { fetchQuizzes, fetchQuizById, getQuizAttemptsLeft, submitQuiz, saveQuizA
 import { getAllEvents, createEvent, createCuratorEvent, updateEvent, deleteEvent, bulkDeleteEvents, createBulkEvents, getMyEvents, getCalendarEvents, getUpcomingEvents, getEventDetails, registerForEvent, unregisterFromEvent, getEventParticipants, updateEventAttendance } from './events';
 import { uploadAssignmentFile, uploadTeacherFile, uploadSubmissionFile, uploadQuestionMedia, downloadFile, getFileUrl, uploadFile } from './uploads';
 import { getUsers, getStudentTeacherGroups, getStudentsForTeacherGroup, updateUser, deactivateUser, bulkSetUsersActive, assignUserToGroup, bulkAssignUsersToGroup, createUser, bulkCreateUsersFromText, resetUserPassword, getAllTeachers, getAllCurators, getParentChildren, linkParentChildren, unlinkParentChild } from './users';
+import { createTrial, getTrials, updateTrial, revokeTrial, resendTrialInvite, convertTrial } from './trials';
 import { getAllGroups, getGroups, getMyGroups, getTeacherGroups, getCourseGroups, grantCourseAccessToGroup, revokeCourseAccessFromGroup, createGroup, updateGroup, deleteGroup, assignTeacherToGroup, getGroupStudents, addStudentToGroup, removeStudentFromGroup, bulkAddStudentsToGroup } from './groups';
 import { getDetailedStudentAnalytics, getCourseAnalyticsOverview, getVideoEngagementAnalytics, getQuizPerformanceAnalytics, getQuizErrors, getAllStudentsAnalytics, getGroupsAnalytics, getCourseGroupsAnalytics, getCourseProgressHistory, getGroupStudentsAnalytics, getStudentProgressHistory, exportStudentReport, exportGroupReport, exportAllStudentsReport, exportAnalyticsExcel, getStudentDetailedProgress, getStudentSatScores, getStudentLearningPath } from './analytics';
 import { getCuratorPendingSubmissions, getCuratorRecentSubmissions, getCuratorStudentsProgress, getCuratorAssignmentsAnalytics, getCuratorHomeworkByGroup, getCuratorGroups, getGroupSchedule, getGroupLeaderboard, getWeeklyLessonsWithHwStatus, getGroupFullAttendanceMatrix, updateLeaderboardConfig, updateAttendanceBulk, setLessonTopic, updateLeaderboardEntry, updateAttendance, generateSchedule, getGroupSchedules, bulkScheduleUpload, getCuratorDetails, getCuratorTasks, getCuratorTaskGroups, getCuratorTasksSummary, updateCuratorTask, bulkUpdateCuratorTasks, getCuratorTaskTemplates, seedCuratorTaskTemplates, generateWeeklyTasks, getAllCuratorTasks, getAllCuratorTasksDaySummary, getCuratorsSummary, createCuratorTaskInstance, createCuratorTaskInstancesBulk } from './curator';
@@ -125,6 +127,8 @@ const apiClient = {
   getStudentTeacherGroups, getStudentsForTeacherGroup,
   createUser, bulkCreateUsersFromText, resetUserPassword, getAllTeachers, getAllCurators,
   getParentChildren, linkParentChildren, unlinkParentChild,
+  // Trials
+  createTrial, getTrials, updateTrial, revokeTrial, resendTrialInvite, convertTrial,
   // Groups
   getAllGroups, getGroups, getMyGroups, getTeacherGroups, getCourseGroups,
   grantCourseAccessToGroup, revokeCourseAccessFromGroup,
