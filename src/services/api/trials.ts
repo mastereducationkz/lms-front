@@ -6,12 +6,18 @@ export interface TrialCreateResponse {
   generated_password: string | null;
 }
 
+/** Surface the backend's error `detail` (e.g. 409 conflict messages) when present. */
+function rethrow(error: unknown, fallback: string): never {
+  const detail = (error as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
+  throw new Error(typeof detail === 'string' ? detail : fallback);
+}
+
 export async function createTrial(data: TrialCreateRequest): Promise<TrialCreateResponse> {
   try {
     const response = await api.post('/trials/', data);
     return response.data;
   } catch (error) {
-    throw new Error('Failed to create trial');
+    rethrow(error, 'Failed to create trial');
   }
 }
 
@@ -24,7 +30,7 @@ export async function getTrials(params?: {
     const response = await api.get('/trials/', { params });
     return response.data;
   } catch (error) {
-    throw new Error('Failed to fetch trials');
+    rethrow(error, 'Failed to fetch trials');
   }
 }
 
@@ -33,7 +39,7 @@ export async function updateTrial(id: number, data: TrialUpdateRequest): Promise
     const response = await api.patch(`/trials/${id}`, data);
     return response.data;
   } catch (error) {
-    throw new Error('Failed to update trial');
+    rethrow(error, 'Failed to update trial');
   }
 }
 
@@ -42,7 +48,7 @@ export async function revokeTrial(id: number): Promise<TrialAccess> {
     const response = await api.post(`/trials/${id}/revoke`);
     return response.data;
   } catch (error) {
-    throw new Error('Failed to revoke trial');
+    rethrow(error, 'Failed to revoke trial');
   }
 }
 
@@ -51,7 +57,7 @@ export async function resendTrialInvite(id: number): Promise<{ sent: boolean }> 
     const response = await api.post(`/trials/${id}/resend-invite`);
     return response.data;
   } catch (error) {
-    throw new Error('Failed to resend trial invite');
+    rethrow(error, 'Failed to resend trial invite');
   }
 }
 
@@ -60,6 +66,6 @@ export async function convertTrial(id: number): Promise<TrialAccess> {
     const response = await api.post(`/trials/${id}/convert`);
     return response.data;
   } catch (error) {
-    throw new Error('Failed to convert trial');
+    rethrow(error, 'Failed to convert trial');
   }
 }
