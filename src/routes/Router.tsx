@@ -45,6 +45,7 @@ const QuestionReportsPage = lazy(() => import('../pages/admin/QuestionReportsPag
 const WeeklyTopStudentsPage = lazy(() => import('../pages/admin/WeeklyTopStudentsPage.tsx'));
 const UserManagement = lazy(() => import('../pages/UserManagement.tsx'));
 const ManualUnlocksPage = lazy(() => import('../pages/admin/ManualUnlocksPage.tsx'));
+const TrialAccessPage = lazy(() => import('../pages/admin/TrialAccessPage.tsx'));
 const LessonRequestManagement = lazy(() => import('../pages/admin/LessonRequestManagement.tsx'));
 const LessonPage = lazy(() => import('../pages/LessonPage.tsx'));
 const CourseProgressPage = lazy(() => import('../pages/CourseProgressPage.tsx'));
@@ -457,6 +458,14 @@ export default function Router() {
             <ProtectedRoute allowedRoles={['admin', 'teacher', 'head_teacher']}>
               <AppLayout>
                 <ManualUnlocksPage />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/trial-access" element={
+            <ProtectedRoute allowedRoles={['admin', 'head_curator']}>
+              <AppLayout>
+                <TrialAccessPage />
               </AppLayout>
             </ProtectedRoute>
           } />

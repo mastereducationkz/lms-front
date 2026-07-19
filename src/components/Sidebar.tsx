@@ -29,6 +29,7 @@ import {
   AlertTriangle,
   Unlock,
   ArrowLeftRight,
+  Timer,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Course } from '../types';
@@ -97,6 +98,7 @@ function getNavigationItems(
     ['/admin/lesson-requests', 'Lesson Requests', ArrowLeftRight, lessonRequestCount, ['admin'], 'lesson-requests-nav', 'admin'],
     ['/my-requests', 'My Requests', ArrowLeftRight, lessonRequestCount, ['teacher'], 'my-requests-nav', 'primary'],
     ['/manual-unlocks', 'Manual Unlocks', Unlock, 0, ['teacher', 'head_teacher'], 'manual-unlocks-nav', 'primary'],
+    ['/trial-access', 'Trial Access', Timer, 0, ['admin', 'head_curator'], 'trial-access-nav', 'admin'],
     ['/chat', ['head_curator', 'curator'].includes(_userRole || '') ? 'Чат' : 'Chat', MessageCircle, unreadCount, null, 'messages-nav', 'primary'],
   ];
 
