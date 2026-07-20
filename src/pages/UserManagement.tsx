@@ -1635,6 +1635,7 @@ export default function UserManagement() {
           students={students}
           errors={formErrors}
           isHeadCurator={isHeadCurator}
+          isEdit
         />
 
       </Modal>
@@ -1878,15 +1879,17 @@ interface UserFormProps {
   students: User[];
   errors?: { [key: string]: string };
   isHeadCurator?: boolean;
+  isEdit?: boolean;
 }
 
-function UserForm({ formData, setFormData, groups, courses, students, errors = {}, isHeadCurator = false }: UserFormProps) {
+function UserForm({ formData, setFormData, groups, courses, students, errors = {}, isHeadCurator = false, isEdit = false }: UserFormProps) {
   const [groupSearch, setGroupSearch] = useState('');
   const [childSearch, setChildSearch] = useState('');
-  // Password starts read-only so the browser/password-manager can't autofill it with a
-  // stray credential (which would be sent as an unintended password change). It becomes
-  // editable only when the admin actually focuses it to set a new password.
-  const [passwordEditable, setPasswordEditable] = useState(false);
+  // In edit mode the password field is hidden behind an explicit "set new password"
+  // action: with no field rendered, the browser/password-manager can't autofill a stray
+  // credential (which was being sent as an unintended password change and failing the
+  // policy). It's revealed only when the admin deliberately chooses to change it.
+  const [changePassword, setChangePassword] = useState(false);
   const displayedGroups = React.useMemo(() => {
     const q = groupSearch.trim().toLowerCase();
     const filtered = (groups || []).filter((g) => !q || g.name.toLowerCase().includes(q));
@@ -2140,16 +2143,36 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
 
       <div className="p-1">
         <Label htmlFor="password" className="text-sm font-medium">Password</Label>
-        <Input
-          id="password"
-          type="password"
-          autoComplete="new-password"
-          readOnly={!passwordEditable}
-          onFocus={() => setPasswordEditable(true)}
-          value={formData.password || ''}
-          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-          placeholder="Leave empty for auto-generation"
-        />
+        {isEdit && !changePassword ? (
+          <button
+            type="button"
+            className="mt-1 block text-sm text-blue-600 hover:underline"
+            onClick={() => setChangePassword(true)}
+          >
+            Set a new password
+          </button>
+        ) : (
+          <>
+            <Input
+              id="password"
+              type="password"
+              autoComplete="new-password"
+              autoFocus={isEdit}
+              value={formData.password || ''}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              placeholder={isEdit ? 'New password (min 8 chars, 1 digit)' : 'Leave empty for auto-generation'}
+            />
+            {isEdit && (
+              <button
+                type="button"
+                className="mt-1 block text-xs text-gray-500 hover:underline"
+                onClick={() => { setChangePassword(false); setFormData({ ...formData, password: '' }); }}
+              >
+                Cancel password change
+              </button>
+            )}
+          </>
+        )}
         {errors.password && (
           <p className="mt-1 text-xs text-red-600">{errors.password}</p>
         )}
