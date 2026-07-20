@@ -584,7 +584,15 @@ export default function UserManagement() {
         errors.email = 'Please enter a valid email address';
       }
     }
-    
+
+    // Password is optional (empty = keep current / auto-generate on create), but when
+    // provided it must satisfy the backend policy: >= 8 chars and at least one digit.
+    if (formData.password) {
+      if (formData.password.length < 8 || !/\d/.test(formData.password)) {
+        errors.password = 'Пароль должен быть не короче 8 символов и содержать хотя бы одну цифру';
+      }
+    }
+
     return errors;
   };
 
@@ -718,9 +726,10 @@ export default function UserManagement() {
       setShowEditModal(false);
       resetForm();
       loadUsers();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to update user:', error);
-      toast('Failed to update user', 'error');
+      const detail = error?.response?.data?.detail;
+      toast(typeof detail === 'string' && detail ? detail : 'Failed to update user', 'error');
     }
   };
 
@@ -2130,10 +2139,14 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
         <Input
           id="password"
           type="password"
+          autoComplete="new-password"
           value={formData.password || ''}
           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
           placeholder="Leave empty for auto-generation"
         />
+        {errors.password && (
+          <p className="mt-1 text-xs text-red-600">{errors.password}</p>
+        )}
       </div>
       
       <div className="flex items-center space-x-2">
