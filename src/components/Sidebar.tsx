@@ -30,7 +30,7 @@ import {
   Unlock,
   ArrowLeftRight,
   Timer,
-  LifeBuoy,
+  Headset,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Course } from '../types';
@@ -101,7 +101,7 @@ function getNavigationItems(
     ['/manual-unlocks', 'Manual Unlocks', Unlock, 0, ['teacher', 'head_teacher'], 'manual-unlocks-nav', 'primary'],
     ['/trial-access', 'Trial Access', Timer, 0, ['admin', 'head_curator'], 'trial-access-nav', 'admin'],
     ['/chat', ['head_curator', 'curator'].includes(_userRole || '') ? 'Чат' : 'Chat', MessageCircle, unreadCount, null, 'messages-nav', 'primary'],
-    ['https://support.mastereducation.kz', ['head_curator', 'curator'].includes(_userRole || '') ? 'Поддержка' : 'Support', LifeBuoy, 0, null, 'support-nav', 'primary'],
+    ['https://support.mastereducation.kz', ['head_curator', 'curator'].includes(_userRole || '') ? 'Поддержка' : 'Support', Headset, 0, null, 'support-nav', 'primary'],
   ];
 
   if (_userRole === 'student' && isSpecialGroupStudent) {
