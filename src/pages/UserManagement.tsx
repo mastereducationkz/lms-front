@@ -1883,6 +1883,10 @@ interface UserFormProps {
 function UserForm({ formData, setFormData, groups, courses, students, errors = {}, isHeadCurator = false }: UserFormProps) {
   const [groupSearch, setGroupSearch] = useState('');
   const [childSearch, setChildSearch] = useState('');
+  // Password starts read-only so the browser/password-manager can't autofill it with a
+  // stray credential (which would be sent as an unintended password change). It becomes
+  // editable only when the admin actually focuses it to set a new password.
+  const [passwordEditable, setPasswordEditable] = useState(false);
   const displayedGroups = React.useMemo(() => {
     const q = groupSearch.trim().toLowerCase();
     const filtered = (groups || []).filter((g) => !q || g.name.toLowerCase().includes(q));
@@ -2140,6 +2144,8 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
           id="password"
           type="password"
           autoComplete="new-password"
+          readOnly={!passwordEditable}
+          onFocus={() => setPasswordEditable(true)}
           value={formData.password || ''}
           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
           placeholder="Leave empty for auto-generation"
