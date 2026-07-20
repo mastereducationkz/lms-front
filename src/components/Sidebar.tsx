@@ -30,6 +30,7 @@ import {
   Unlock,
   ArrowLeftRight,
   Timer,
+  LifeBuoy,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Course } from '../types';
@@ -100,6 +101,7 @@ function getNavigationItems(
     ['/manual-unlocks', 'Manual Unlocks', Unlock, 0, ['teacher', 'head_teacher'], 'manual-unlocks-nav', 'primary'],
     ['/trial-access', 'Trial Access', Timer, 0, ['admin', 'head_curator'], 'trial-access-nav', 'admin'],
     ['/chat', ['head_curator', 'curator'].includes(_userRole || '') ? 'Чат' : 'Chat', MessageCircle, unreadCount, null, 'messages-nav', 'primary'],
+    ['https://support.mastereducation.kz', ['head_curator', 'curator'].includes(_userRole || '') ? 'Поддержка' : 'Support', LifeBuoy, 0, null, 'support-nav', 'primary'],
   ];
 
   if (_userRole === 'student' && isSpecialGroupStudent) {
@@ -403,6 +405,33 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                     );
                   }
 
+                  // External links (e.g. the standalone Support platform) render as a plain
+                  // anchor opening in a new tab, but keep the same structure/classes as the
+                  // internal NavLink items so they're visually identical.
+                  if (to.startsWith('http')) {
+                    return (
+                      <a
+                        key={to}
+                        href={to}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-tour={dataTour}
+                        className={`flex items-center rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-secondary transition-colors
+                 py-2.5 text-sm leading-snug ${isCollapsed ? 'justify-center px-2' : 'px-4'}`}
+                      >
+                        <Icon className={`w-5 h-5 shrink-0 opacity-70 ${isCollapsed ? '' : 'mr-3'}`} />
+                        {!isCollapsed && (
+                          <>
+                            <span className="flex-1 min-w-0 text-gray-800 dark:text-gray-200 text-sm">{label}</span>
+                            {badge > 0 && (
+                              <span className="ml-2 text-xs bg-red-600 text-white rounded-full px-2 py-0.5">{badge}</span>
+                            )}
+                          </>
+                        )}
+                      </a>
+                    );
+                  }
+
                   return (
                     <NavLink
                       key={to}
@@ -410,7 +439,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                       end={to === '/courses' || to === '/teacher/courses'}
                       data-tour={dataTour}
                       className={({ isActive }) =>
-                        `flex items-center rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-secondary transition-colors 
+                        `flex items-center rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-secondary transition-colors
                  py-2.5 text-sm leading-snug ${isActive ? 'nav-link-active' : ''} ${isCollapsed ? 'justify-center px-2' : 'px-4'}`
                       }
                     >
