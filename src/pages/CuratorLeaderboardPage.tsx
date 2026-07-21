@@ -181,14 +181,18 @@ const AttendanceToggle = ({
     initialStatus,
     onChange,
     disabled = false,
+    isFuture = false,
 }: {
     initialStatus: string,
     onChange: (status: string) => void,
     disabled?: boolean,
+    // The lesson hasn't happened yet (start_datetime is in the future). A future
+    // lesson can't be "Не был", so we show a neutral pending cell and block editing.
+    isFuture?: boolean,
 }) => {
   // Cycle: attended -> late -> missed -> cancelled -> attended
   const handleCycle = () => {
-    if (disabled) return;
+    if (disabled || isFuture) return;
     if (initialStatus === 'attended') onChange('late');
     else if (initialStatus === 'late') onChange('missed');
     else if (initialStatus === 'cancelled') onChange('attended');
@@ -200,22 +204,27 @@ const AttendanceToggle = ({
     if (initialStatus === 'cancelled') return { label: 'Отменён', color: 'bg-slate-400 text-white', title: 'Урок отменён' };
     const s = (initialStatus === 'absent' || initialStatus === 'registered' || initialStatus === 'missed') ? 'missed' : initialStatus;
 
+    // A lesson that hasn't happened yet shouldn't read as "Не был" — the backend
+    // just defaults an unmarked lesson to "missed". Show a neutral "—" instead.
+    if (isFuture && s === 'missed') return { label: '—', color: 'bg-gray-100 text-gray-400 dark:bg-secondary dark:text-gray-500', title: 'Занятие ещё не прошло' };
+
     if (s === 'attended') return { label: 'Был', color: 'bg-emerald-500 text-white', title: 'Был' };
     if (s === 'late') return { label: 'Опоздал', color: 'bg-amber-400 text-gray-900 font-bold', title: 'Опоздал' };
     return { label: 'Не был', color: 'bg-rose-500 text-white', title: 'Не был' };
   };
 
   const config = getStatusConfig();
-  
+  const nonInteractive = disabled || isFuture;
+
   return (
-    <div 
+    <div
         onClick={handleCycle}
         className={cn(
             "flex items-center justify-center w-full h-full text-[11px] font-bold transition-all select-none",
             config.color,
-            disabled ? "cursor-default brightness-[0.9] grayscale-[0.2]" : "cursor-pointer active:brightness-95 hover:brightness-105"
+            nonInteractive ? "cursor-default brightness-[0.9] grayscale-[0.2]" : "cursor-pointer active:brightness-95 hover:brightness-105"
         )}
-        title={disabled ? `Статус: ${config.title} (Только просмотр)` : `Статус: ${config.title}. Нажмите для переключения.`}
+        title={isFuture ? config.title : (disabled ? `Статус: ${config.title} (Только просмотр)` : `Статус: ${config.title}. Нажмите для переключения.`)}
     >
         <span className="flex items-center gap-1">
             <span className="text-[10px] uppercase">{config.label}</span>
@@ -1354,10 +1363,11 @@ export default function CuratorLeaderboardPage() {
                                 <TableCell key={`cell-${lessonKey}`} className="p-0 border-r border-gray-300 dark:border-border">
                                     <div className="flex w-full h-12 items-stretch">
                                         <div className="w-1/2 border-r border-gray-300 dark:border-border">
-                                            <AttendanceToggle 
+                                            <AttendanceToggle
                                                 initialStatus={status}
                                                 onChange={(newStatus) => handleAttendanceChange(student.student_id, lessonKey, newStatus)}
                                                 disabled={user?.role === 'curator'}
+                                                isFuture={parseAsUTC(lessonInfo.start_datetime).getTime() > Date.now()}
                                             />
                                         </div>
                                         <div className="w-1/2 bg-gray-50 dark:bg-secondary flex items-center justify-center p-0">
