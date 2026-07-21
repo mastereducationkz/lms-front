@@ -72,3 +72,28 @@ export async function markAllMessagesAsRead(partnerId: string) {
     console.warn('Failed to mark all messages as read:', error);
   }
 }
+
+export async function fetchGroupThreads() {
+  try {
+    const response = await api.get('/messages/groups');
+    return response.data;
+  } catch (error) {
+    console.warn('Failed to load group threads:', error);
+    return [];
+  }
+}
+
+export async function fetchGroupMessages(conversationId: number | string): Promise<any[]> {
+  try {
+    const response = await api.get(`/messages/groups/${conversationId}`);
+    return response.data;
+  } catch (error) {
+    console.warn('Failed to load group messages:', error);
+    return [];
+  }
+}
+
+export async function sendGroupMessage(conversationId: number | string, content: string, fileUrl?: string): Promise<any> {
+  const response = await api.post(`/messages/groups/${conversationId}`, { content, file_url: fileUrl });
+  return response.data;
+}

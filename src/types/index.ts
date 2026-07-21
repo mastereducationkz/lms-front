@@ -924,6 +924,25 @@ export interface SendMessageRequest {
   content: string;
 }
 
+export interface GroupMessage {
+  id: number;
+  conversation_id: number;
+  from_user_id: number;
+  sender_name: string;
+  content: string;
+  file_url?: string;
+  created_at: string;
+}
+
+export interface GroupThread {
+  id: number;
+  group_id: number;
+  kind: string; // 'class' | 'parents'
+  title: string;
+  last_message: GroupMessage | null;
+  unread_count: number;
+}
+
 export interface AvailableContact {
   user_id: number;
   name: string;
