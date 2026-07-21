@@ -317,6 +317,7 @@ export interface TeacherTodayGroup {
   group_name: string;
   has_homework_today: boolean;
   assignments: { id: number; title: string }[];
+  last_assigned_at: string | null;
 }
 export interface TeacherTodayHomework {
   date: string;

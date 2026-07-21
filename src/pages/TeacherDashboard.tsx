@@ -1038,11 +1038,16 @@ export default function TeacherDashboard() {
                   <tr>
                     <th className="text-left px-6 py-3 font-semibold">Group</th>
                     <th className="text-left px-6 py-3 font-semibold">Homework</th>
+                    <th className="text-left px-6 py-3 font-semibold">Last assigned</th>
                   </tr>
                 </thead>
                 <tbody>
                   {todayHw.groups.map((g) => (
-                    <tr key={g.group_id} className="border-b border-gray-100 dark:border-border last:border-0">
+                    <tr
+                      key={g.group_id}
+                      onClick={() => navigate(`/homework/new/group/${g.group_id}`)}
+                      className="border-b border-gray-100 dark:border-border last:border-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-secondary/40 transition-colors"
+                    >
                       <td className="px-6 py-3 font-medium text-gray-900 dark:text-foreground whitespace-nowrap">{g.group_name}</td>
                       <td className="px-6 py-3">
                         {g.has_homework_today ? (
@@ -1050,6 +1055,13 @@ export default function TeacherDashboard() {
                         ) : (
                           <span className="text-rose-500 dark:text-rose-400">Not assigned today</span>
                         )}
+                      </td>
+                      <td className="px-6 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                        {g.last_assigned_at
+                          ? new Date(g.last_assigned_at).toLocaleDateString(undefined, {
+                              month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+                            })
+                          : '—'}
                       </td>
                     </tr>
                   ))}
