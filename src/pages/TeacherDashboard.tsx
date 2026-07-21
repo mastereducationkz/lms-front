@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/api';
+import type { TeacherTodayHomework } from '../services/api';
 import { toast } from '../components/Toast';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -20,6 +21,7 @@ import {
   Target,
   Wallet,
   Copy,
+  AlertCircle,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -147,6 +149,7 @@ export default function TeacherDashboard() {
   const [ungradedQuizAttempts, setUngradedQuizAttempts] = useState<any[]>([]);
   const [gradedQuizAttempts, setGradedQuizAttempts] = useState<any[]>([]);
   const [studentsProgress, setStudentsProgress] = useState<StudentProgress[]>([]);
+  const [todayHw, setTodayHw] = useState<TeacherTodayHomework | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [activeTab, setActiveTab] = useState('pending');
@@ -333,6 +336,7 @@ export default function TeacherDashboard() {
         studentsRes,
         ungradedRes,
         gradedRes,
+        todayRes,
       ] = await Promise.allSettled([
         apiClient.getDashboardStats(),
         apiClient.getPendingSubmissionsMeta(100, 0),
@@ -340,7 +344,10 @@ export default function TeacherDashboard() {
         apiClient.getTeacherStudentsProgress(),
         apiClient.getUngradedQuizAttempts(),
         apiClient.getGradedQuizAttempts(),
+        apiClient.getTeacherTodayHomework(),
       ]);
+
+      setTodayHw(todayRes.status === 'fulfilled' ? (todayRes.value as TeacherTodayHomework) : null);
 
       const statsAny = (dashboardRes.status === 'fulfilled' ? (dashboardRes.value as any)?.stats : {}) || {};
       const pendingData = pendingRes.status === 'fulfilled' ? pendingRes.value : { pending_submissions: [], total_pending_count: 0 };
@@ -877,6 +884,51 @@ export default function TeacherDashboard() {
           )}
         </div>
       </div>
+
+      {/* Today's homework coverage — did I assign to every group today? */}
+      {todayHw && todayHw.total_groups > 0 && (
+        <div className="card p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-foreground flex items-center gap-2">
+              <ClipboardCheck className="w-4 h-4" /> ДЗ за сегодня
+            </h3>
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              Задано {todayHw.assigned_count}/{todayHw.total_groups}
+              {todayHw.missing_count > 0 && (
+                <span className="text-rose-600 dark:text-rose-400"> · без ДЗ: {todayHw.missing_count}</span>
+              )}
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {todayHw.groups.map((g) => (
+              <div
+                key={g.group_id}
+                className={`rounded-md border p-2.5 text-sm ${
+                  g.has_homework_today
+                    ? 'border-emerald-200 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-900/10'
+                    : 'border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-900/10'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 font-medium text-gray-900 dark:text-foreground">
+                  {g.has_homework_today ? (
+                    <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+                  )}
+                  <span className="truncate">{g.group_name}</span>
+                </div>
+                {g.has_homework_today ? (
+                  <p className="mt-1 text-xs text-gray-600 dark:text-gray-400 truncate">
+                    {g.assignments.map((a) => a.title).join(', ')}
+                  </p>
+                ) : (
+                  <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">Сегодня ДЗ не задано</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Missing Attendance Reminders */}
       {stats?.missing_attendance_reminders && stats.missing_attendance_reminders.length > 0 && (

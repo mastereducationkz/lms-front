@@ -312,6 +312,26 @@ export async function getRecentSubmissions(limit: number = 10) {
   }
 }
 
+export interface TeacherTodayGroup {
+  group_id: number;
+  group_name: string;
+  has_homework_today: boolean;
+  assignments: { id: number; title: string }[];
+}
+export interface TeacherTodayHomework {
+  date: string;
+  total_groups: number;
+  assigned_count: number;
+  missing_count: number;
+  groups: TeacherTodayGroup[];
+}
+
+// End-of-day coverage: the teacher's active groups and whether each got homework today.
+export async function getTeacherTodayHomework(): Promise<TeacherTodayHomework> {
+  const response = await api.get('/assignments/teacher/today');
+  return response.data;
+}
+
 export async function getTeacherStudentsProgress() {
   try {
     const response = await api.get('/dashboard/teacher/students-progress');
