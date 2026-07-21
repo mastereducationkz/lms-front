@@ -149,6 +149,7 @@ export default function TeacherDashboard() {
   const [gradedQuizAttempts, setGradedQuizAttempts] = useState<any[]>([]);
   const [studentsProgress, setStudentsProgress] = useState<StudentProgress[]>([]);
   const [todayHw, setTodayHw] = useState<TeacherTodayHomework | null>(null);
+  const [hwSortDir, setHwSortDir] = useState<'desc' | 'asc'>('desc'); // Last assigned: newest first by default
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [activeTab, setActiveTab] = useState('pending');
@@ -1038,11 +1039,26 @@ export default function TeacherDashboard() {
                   <tr>
                     <th className="text-left px-6 py-3 font-semibold">Group</th>
                     <th className="text-left px-6 py-3 font-semibold">Homework</th>
-                    <th className="text-left px-6 py-3 font-semibold">Last assigned</th>
+                    <th
+                      className="text-left px-6 py-3 font-semibold cursor-pointer select-none hover:text-gray-900 dark:hover:text-foreground"
+                      onClick={() => setHwSortDir((d) => (d === 'desc' ? 'asc' : 'desc'))}
+                      title="Sort by last assigned date"
+                    >
+                      Last assigned {hwSortDir === 'desc' ? '↓' : '↑'}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {todayHw.groups.map((g) => (
+                  {[...todayHw.groups]
+                    .sort((a, b) => {
+                      const ta = a.last_assigned_at ? new Date(a.last_assigned_at).getTime() : null;
+                      const tb = b.last_assigned_at ? new Date(b.last_assigned_at).getTime() : null;
+                      if (ta === null && tb === null) return 0;
+                      if (ta === null) return 1; // groups never assigned always sink to the bottom
+                      if (tb === null) return -1;
+                      return hwSortDir === 'desc' ? tb - ta : ta - tb;
+                    })
+                    .map((g) => (
                     <tr
                       key={g.group_id}
                       onClick={() => navigate(`/homework/new/group/${g.group_id}`)}
