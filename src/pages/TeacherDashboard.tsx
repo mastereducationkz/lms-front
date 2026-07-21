@@ -21,7 +21,6 @@ import {
   Target,
   Wallet,
   Copy,
-  AlertCircle,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -885,50 +884,6 @@ export default function TeacherDashboard() {
         </div>
       </div>
 
-      {/* Today's homework coverage — did I assign to every group today? */}
-      {todayHw && todayHw.total_groups > 0 && (
-        <div className="card p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-foreground flex items-center gap-2">
-              <ClipboardCheck className="w-4 h-4" /> ДЗ за сегодня
-            </h3>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              Задано {todayHw.assigned_count}/{todayHw.total_groups}
-              {todayHw.missing_count > 0 && (
-                <span className="text-rose-600 dark:text-rose-400"> · без ДЗ: {todayHw.missing_count}</span>
-              )}
-            </span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {todayHw.groups.map((g) => (
-              <div
-                key={g.group_id}
-                className={`rounded-md border p-2.5 text-sm ${
-                  g.has_homework_today
-                    ? 'border-emerald-200 dark:border-emerald-900/40 bg-emerald-50 dark:bg-emerald-900/10'
-                    : 'border-rose-200 dark:border-rose-900/40 bg-rose-50 dark:bg-rose-900/10'
-                }`}
-              >
-                <div className="flex items-center gap-1.5 font-medium text-gray-900 dark:text-foreground">
-                  {g.has_homework_today ? (
-                    <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
-                  )}
-                  <span className="truncate">{g.group_name}</span>
-                </div>
-                {g.has_homework_today ? (
-                  <p className="mt-1 text-xs text-gray-600 dark:text-gray-400 truncate">
-                    {g.assignments.map((a) => a.title).join(', ')}
-                  </p>
-                ) : (
-                  <p className="mt-1 text-xs text-rose-600 dark:text-rose-400">Сегодня ДЗ не задано</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Missing Attendance Reminders */}
       {stats?.missing_attendance_reminders && stats.missing_attendance_reminders.length > 0 && (
@@ -1058,6 +1013,39 @@ export default function TeacherDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Today's homework coverage — compact table, under the stat widgets */}
+      {todayHw && todayHw.total_groups > 0 && (
+        <div className="card p-3">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">Today's Homework</h3>
+            <span className="text-[11px] text-gray-500 dark:text-gray-400">
+              Assigned {todayHw.assigned_count}/{todayHw.total_groups}
+              {todayHw.missing_count > 0 && (
+                <span className="text-rose-600 dark:text-rose-400"> · missing: {todayHw.missing_count}</span>
+              )}
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <tbody>
+                {todayHw.groups.map((g) => (
+                  <tr key={g.group_id} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
+                    <td className="py-1 pr-3 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">{g.group_name}</td>
+                    <td className="py-1 text-right">
+                      {g.has_homework_today ? (
+                        <span className="text-emerald-600 dark:text-emerald-400">{g.assignments.map((a) => a.title).join(', ')}</span>
+                      ) : (
+                        <span className="text-rose-500 dark:text-rose-400">Not assigned today</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Unified Submissions Table */}
       <Card className="shadow-sm border border-gray-200 dark:border-border">
