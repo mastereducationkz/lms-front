@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, FormEvent } from 'react';
 import { useLocation } from 'react-router-dom';
-import { isAuthenticated, fetchThreads, fetchMessages, getAvailableContacts, sendMessage, getCurrentUser } from "../services/api";
-import type { MessageThread, Message, AvailableContact, User } from '../types';
+import { isAuthenticated, fetchThreads, fetchMessages, getAvailableContacts, sendMessage, getCurrentUser, fetchGroupThreads, fetchGroupMessages, sendGroupMessage } from "../services/api";
+import type { MessageThread, Message, AvailableContact, User, GroupThread } from '../types';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
@@ -36,6 +36,8 @@ export default function ChatPage() {
   const location = useLocation();
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [activePartnerId, setActivePartnerId] = useState<number | null>(null);
+  const [groupThreads, setGroupThreads] = useState<GroupThread[]>([]);
+  const [activeGroupConvId, setActiveGroupConvId] = useState<number | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState<string>('');
   const [availableContacts, setAvailableContacts] = useState<AvailableContact[]>([]);
@@ -50,6 +52,7 @@ export default function ChatPage() {
   useEffect(() => {
     loadCurrentUser();
     loadThreads();
+    void loadGroupThreads();
     loadAvailableContacts();
   }, []);
 
@@ -107,11 +110,29 @@ export default function ChatPage() {
       updateUnreadCount();
     };
 
+    const onGroupMessageNew = (payload: any) => {
+      if (payload.conversation_id === activeGroupConvId) {
+        setMessages(prev => prev.some(m => m.id === payload.id) ? prev : [...prev, payload]);
+      }
+      void loadGroupThreads();
+    };
+
+    const onGroupThreadsUpdate = () => {
+      void loadGroupThreads();
+    };
+
+    const onGroupUnreadUpdate = () => {
+      void loadGroupThreads();
+    };
+
     socket.on('message:new', onMessageNew);
     socket.on('message:updated', onMessageUpdated);
     socket.on('message:bulk-updated', onMessageBulkUpdated);
     socket.on('threads:update', onThreadsUpdate);
     socket.on('unread:update', onUnreadUpdate);
+    socket.on('group:message:new', onGroupMessageNew);
+    socket.on('group:threads:update', onGroupThreadsUpdate);
+    socket.on('group:unread:update', onGroupUnreadUpdate);
 
     return () => {
       socket.off('message:new', onMessageNew);
@@ -119,8 +140,11 @@ export default function ChatPage() {
       socket.off('message:bulk-updated', onMessageBulkUpdated);
       socket.off('threads:update', onThreadsUpdate);
       socket.off('unread:update', onUnreadUpdate);
+      socket.off('group:message:new', onGroupMessageNew);
+      socket.off('group:threads:update', onGroupThreadsUpdate);
+      socket.off('group:unread:update', onGroupUnreadUpdate);
     };
-  }, [activePartnerId]);
+  }, [activePartnerId, activeGroupConvId]);
 
   // Загрузка сообщений при смене активного партнера
   useEffect(() => {
@@ -150,7 +174,7 @@ export default function ChatPage() {
 
   // Автообновление списка разговоров: только пока вкладка активна (realtime идёт через сокеты,
   // это лишь запасной поллинг), интервал увеличен 10s → 30s чтобы не долбить бэкенд.
-  useVisiblePolling(() => { void loadThreads(); }, 30000);
+  useVisiblePolling(() => { void loadThreads(); void loadGroupThreads(); }, 30000);
 
   // Автоскролл к последнему сообщению
   useEffect(() => {
@@ -163,6 +187,15 @@ export default function ChatPage() {
       setThreads(threadsData);
     } catch (error) {
       console.error('Failed to load threads:', error);
+    }
+  };
+
+  const loadGroupThreads = async () => {
+    try {
+      const data = await fetchGroupThreads();
+      setGroupThreads(data);
+    } catch (error) {
+      console.error('Failed to load group threads:', error);
     }
   };
 
@@ -186,20 +219,30 @@ export default function ChatPage() {
 
   const handleSendMessage = async (e: FormEvent) => {
     e.preventDefault();
-    if (!text.trim() || !activePartnerId) return;
-    
+    if (!text.trim() || (!activePartnerId && !activeGroupConvId)) return;
+
     setIsLoading(true);
     try {
       const optimistic = text.trim();
       setText('');
       const socket = connectSocket();
-      if (socket && socket.connected) {
-        socket.emit('message:send', { to_user_id: activePartnerId, content: optimistic });
-      } else {
-        await sendMessage(String(activePartnerId), optimistic);
+
+      if (activeGroupConvId) {
+        if (socket && socket.connected) {
+          socket.emit('group:message:send', { conversation_id: activeGroupConvId, content: optimistic });
+        } else {
+          await sendGroupMessage(activeGroupConvId, optimistic);
+        }
+        void loadGroupThreads();
+      } else if (activePartnerId) {
+        if (socket && socket.connected) {
+          socket.emit('message:send', { to_user_id: activePartnerId, content: optimistic });
+        } else {
+          await sendMessage(String(activePartnerId), optimistic);
+        }
+        await loadThreads();
+        updateUnreadCount();
       }
-      await loadThreads();
-      updateUnreadCount();
     } catch (error) {
       console.error('Failed to send message:', error);
     } finally {
@@ -208,6 +251,7 @@ export default function ChatPage() {
   };
 
   const startNewChat = async (contact: AvailableContact) => {
+    setActiveGroupConvId(null);
     setActivePartnerId(contact.user_id);
     setShowNewChatDialog(false);
     
@@ -226,6 +270,24 @@ export default function ChatPage() {
     
     // Обновляем счетчик непрочитанных сообщений в сайдбаре
     updateUnreadCount();
+  };
+
+  const openGroup = async (conv: GroupThread) => {
+    setActivePartnerId(null);
+    setActiveGroupConvId(conv.id);
+    setShowNewChatDialog(false);
+
+    const msgs: any[] = await fetchGroupMessages(conv.id);
+    // Group endpoint already returns oldest→newest: do NOT reverse (unlike the DM endpoint).
+    setMessages(msgs);
+
+    const socket = connectSocket();
+    if (socket && socket.connected) {
+      socket.emit('group:read', { conversation_id: conv.id });
+    }
+
+    setGroupThreads(prev => prev.map(t => t.id === conv.id ? { ...t, unread_count: 0 } : t));
+    await loadThreads();
   };
 
   const getActivePartner = () => {
@@ -519,6 +581,48 @@ export default function ChatPage() {
             </div>
           )}
           
+          {groupThreads.length > 0 && (
+            <div className="space-y-1">
+              <p className="px-3 pt-3 pb-1 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
+                Группы
+              </p>
+              {groupThreads.map(conv => (
+                <div
+                  key={conv.id}
+                  className={`flex items-center space-x-3 p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                    activeGroupConvId === conv.id ? 'bg-blue-50 dark:bg-blue-900/20 border-r-2 border-blue-500 dark:border-blue-800' : ''
+                  }`}
+                  onClick={() => openGroup(conv)}
+                >
+                  <div className="relative">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback>{getInitials(conv.title)}</AvatarFallback>
+                    </Avatar>
+                    {conv.unread_count > 0 && (
+                      <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
+                        {conv.unread_count}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium truncate">{conv.title}</p>
+                      {conv.last_message?.created_at && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {formatTime(conv.last_message.created_at)}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                      {conv.last_message?.content || ''}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {threads.length === 0 && !activePartnerId ? (
             <div className="p-4 text-center text-gray-500 dark:text-gray-400">
               <p className="text-sm">No active conversations</p>
@@ -534,7 +638,7 @@ export default function ChatPage() {
                   className={`flex items-center space-x-3 p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${
                     activePartnerId === thread.partner_id ? 'bg-blue-50 dark:bg-blue-900/20 border-r-2 border-blue-500 dark:border-blue-800' : ''
                   }`}
-                  onClick={() => setActivePartnerId(thread.partner_id)}
+                  onClick={() => { setActiveGroupConvId(null); setActivePartnerId(thread.partner_id); }}
                 >
                   <div className="relative">
                     <Avatar className="h-10 w-10">
@@ -572,7 +676,9 @@ export default function ChatPage() {
       <Card className="lg:col-span-8 flex flex-col min-h-0 order-last lg:order-none">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg font-semibold">
-            {getActivePartnerName()}
+            {activeGroupConvId
+              ? (groupThreads.find(t => t.id === activeGroupConvId)?.title || 'Group')
+              : getActivePartnerName()}
           </CardTitle>
           {activePartnerId && (
             <div className="flex items-center space-x-2 mt-2">
@@ -588,55 +694,95 @@ export default function ChatPage() {
           <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 bg-gray-50 dark:bg-gray-800">
             {messages.length === 0 ? (
               <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-                {activePartnerId ? (
-                  currentUser?.role === 'student' ? 
-                    'Start your conversation' : 
+                {activePartnerId || activeGroupConvId ? (
+                  currentUser?.role === 'student' ?
+                    'Start your conversation' :
                     'Start conversation'
                 ) : (
-                  currentUser?.role === 'student' ? 
-                    'Select a conversation or click "Contact" to start a new chat' : 
+                  currentUser?.role === 'student' ?
+                    'Select a conversation or click "Contact" to start a new chat' :
                     'Select a chat to start conversation'
                 )}
               </div>
             ) : (
-              messages.map(message => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.from_user_id === activePartnerId ? 'justify-start' : 'justify-end'}`}
-                >
-                  <div className={`max-w-[85%] sm:max-w-[70%]`}>
+              messages.map(message => {
+                // Групповые сообщения: своё определяем по currentUser (from_user_id — number, User.id — string),
+                // без чекмарок прочтения (у GroupMessage нет is_read) и с именем отправителя над чужими бабблами.
+                if (activeGroupConvId) {
+                  const gMsg = message as any;
+                  const isMine = gMsg.from_user_id === Number(currentUser?.id);
+                  return (
                     <div
-                      className={`px-3 py-2 rounded-xl text-sm ${
-                        message.from_user_id === activePartnerId
-                          ? 'bg-white dark:bg-card border dark:border-gray-700 shadow-sm'
-                          : 'bg-blue-600 text-white'
-                      }`}
+                      key={gMsg.id}
+                      className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
                     >
-                      {message.file_url && <ChatAttachment fileUrl={message.file_url} />}
-                      <div className="flex items-start gap-2">
-                        <span className="flex-1">{message.content}</span>
-                        <span className={`text-[10px] whitespace-nowrap mt-auto flex items-center gap-0.5 ${
-                          message.from_user_id === activePartnerId ? 'text-gray-500 dark:text-gray-400' : 'text-blue-100'
-                        }`}>
-                          {formatTime(message.created_at)}
-                          {message.from_user_id !== activePartnerId && (
-                            <span className="relative inline-flex items-center text-white">
-                              {message.is_read ? (
-                                <>
-                                  <Check className="w-3 h-3" strokeWidth={2.5} />
-                                  <Check className="w-3 h-3 -ml-1.5" strokeWidth={2.5} />
-                                </>
-                              ) : (
-                                <Check className="w-3 h-3" strokeWidth={2.5} />
-                              )}
+                      <div className="max-w-[85%] sm:max-w-[70%]">
+                        {!isMine && (
+                          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5 px-1">
+                            {gMsg.sender_name}
+                          </p>
+                        )}
+                        <div
+                          className={`px-3 py-2 rounded-xl text-sm ${
+                            isMine
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-white dark:bg-card border dark:border-gray-700 shadow-sm'
+                          }`}
+                        >
+                          {gMsg.file_url && <ChatAttachment fileUrl={gMsg.file_url} />}
+                          <div className="flex items-start gap-2">
+                            <span className="flex-1">{gMsg.content}</span>
+                            <span className={`text-[10px] whitespace-nowrap mt-auto ${
+                              isMine ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
+                            }`}>
+                              {formatTime(gMsg.created_at)}
                             </span>
-                          )}
-                        </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.from_user_id === activePartnerId ? 'justify-start' : 'justify-end'}`}
+                  >
+                    <div className={`max-w-[85%] sm:max-w-[70%]`}>
+                      <div
+                        className={`px-3 py-2 rounded-xl text-sm ${
+                          message.from_user_id === activePartnerId
+                            ? 'bg-white dark:bg-card border dark:border-gray-700 shadow-sm'
+                            : 'bg-blue-600 text-white'
+                        }`}
+                      >
+                        {message.file_url && <ChatAttachment fileUrl={message.file_url} />}
+                        <div className="flex items-start gap-2">
+                          <span className="flex-1">{message.content}</span>
+                          <span className={`text-[10px] whitespace-nowrap mt-auto flex items-center gap-0.5 ${
+                            message.from_user_id === activePartnerId ? 'text-gray-500 dark:text-gray-400' : 'text-blue-100'
+                          }`}>
+                            {formatTime(message.created_at)}
+                            {message.from_user_id !== activePartnerId && (
+                              <span className="relative inline-flex items-center text-white">
+                                {message.is_read ? (
+                                  <>
+                                    <Check className="w-3 h-3" strokeWidth={2.5} />
+                                    <Check className="w-3 h-3 -ml-1.5" strokeWidth={2.5} />
+                                  </>
+                                ) : (
+                                  <Check className="w-3 h-3" strokeWidth={2.5} />
+                                )}
+                              </span>
+                            )}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
             <div ref={messagesEndRef} />
           </div>
@@ -648,7 +794,7 @@ export default function ChatPage() {
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Type a message..."
-                disabled={!activePartnerId || isLoading}
+                disabled={(!activePartnerId && !activeGroupConvId) || isLoading}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
@@ -656,9 +802,9 @@ export default function ChatPage() {
                   }
                 }}
               />
-              <Button 
-                type="submit" 
-                disabled={!text.trim() || !activePartnerId || isLoading}
+              <Button
+                type="submit"
+                disabled={!text.trim() || (!activePartnerId && !activeGroupConvId) || isLoading}
                 size="sm"
               >
                 {isLoading ? 'Sending...' : 'Send'}
