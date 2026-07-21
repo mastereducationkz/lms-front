@@ -7,6 +7,7 @@ export * from './assignments';
 export * from './assignment-zero';
 export * from './progress';
 export * from './chat';
+export * from './parents';
 export * from './quizzes';
 export * from './events';
 export * from './uploads';

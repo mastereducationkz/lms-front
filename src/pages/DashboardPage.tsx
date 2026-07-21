@@ -13,6 +13,7 @@ const TeacherDashboard = lazy(() => import('./TeacherDashboard.tsx'));
 const AdminDashboard = lazy(() => import('./admin/AdminDashboard.tsx'));
 const HeadCuratorDashboard = lazy(() => import('./HeadCuratorDashboard.tsx'));
 const HeadTeacherDashboardPage = lazy(() => import('./HeadTeacherDashboardPage.tsx'));
+const ParentDashboard = lazy(() => import('./ParentDashboard.tsx'));
 
 function DashboardChunkFallback() {
   return (
@@ -71,6 +72,16 @@ export default function DashboardPage() {
     return (
       <Suspense fallback={<DashboardChunkFallback />}>
         <HeadTeacherDashboardPage />
+      </Suspense>
+    );
+  }
+
+  // Parents aren't students — the student stats endpoint 403s for them. Show a
+  // dedicated parent view (children + chat) instead of the broken fallback.
+  if (user?.role === 'parent') {
+    return (
+      <Suspense fallback={<DashboardChunkFallback />}>
+        <ParentDashboard />
       </Suspense>
     );
   }
