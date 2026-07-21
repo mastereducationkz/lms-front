@@ -1014,37 +1014,50 @@ export default function TeacherDashboard() {
         </Card>
       </div>
 
-      {/* Today's homework coverage — compact table, under the stat widgets */}
+      {/* Today's homework coverage — same Card/table style as the widgets below */}
       {todayHw && todayHw.total_groups > 0 && (
-        <div className="card p-3">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300">Today's Homework</h3>
-            <span className="text-[11px] text-gray-500 dark:text-gray-400">
-              Assigned {todayHw.assigned_count}/{todayHw.total_groups}
-              {todayHw.missing_count > 0 && (
-                <span className="text-rose-600 dark:text-rose-400"> · missing: {todayHw.missing_count}</span>
-              )}
-            </span>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <tbody>
-                {todayHw.groups.map((g) => (
-                  <tr key={g.group_id} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
-                    <td className="py-1 pr-3 font-medium text-gray-900 dark:text-gray-100 whitespace-nowrap">{g.group_name}</td>
-                    <td className="py-1 text-right">
-                      {g.has_homework_today ? (
-                        <span className="text-emerald-600 dark:text-emerald-400">{g.assignments.map((a) => a.title).join(', ')}</span>
-                      ) : (
-                        <span className="text-rose-500 dark:text-rose-400">Not assigned today</span>
-                      )}
-                    </td>
+        <Card className="shadow-sm border border-gray-200 dark:border-border">
+          <CardHeader className="px-6 py-4 border-b border-gray-100 dark:border-border bg-white dark:bg-card rounded-t-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <CardTitle className="text-lg font-bold text-gray-900 dark:text-foreground">Today's Homework</CardTitle>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Groups you assigned homework to today</p>
+              </div>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                Assigned {todayHw.assigned_count}/{todayHw.total_groups}
+                {todayHw.missing_count > 0 && (
+                  <span className="text-rose-600 dark:text-rose-400"> · missing: {todayHw.missing_count}</span>
+                )}
+              </span>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-50/80 dark:bg-secondary/50 text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-border">
+                  <tr>
+                    <th className="text-left px-6 py-3 font-semibold">Group</th>
+                    <th className="text-left px-6 py-3 font-semibold">Homework</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                </thead>
+                <tbody>
+                  {todayHw.groups.map((g) => (
+                    <tr key={g.group_id} className="border-b border-gray-100 dark:border-border last:border-0">
+                      <td className="px-6 py-3 font-medium text-gray-900 dark:text-foreground whitespace-nowrap">{g.group_name}</td>
+                      <td className="px-6 py-3">
+                        {g.has_homework_today ? (
+                          <span className="text-emerald-600 dark:text-emerald-400">{g.assignments.map((a) => a.title).join(', ')}</span>
+                        ) : (
+                          <span className="text-rose-500 dark:text-rose-400">Not assigned today</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Unified Submissions Table */}
