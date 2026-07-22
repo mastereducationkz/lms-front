@@ -83,13 +83,22 @@ export default function AssignmentBuilderPage() {
   useEffect(() => {
     loadGroups();
     if (groupId) {
-      setFormData(prev => ({ 
-        ...prev, 
+      setFormData(prev => ({
+        ...prev,
         group_id: parseInt(groupId),
         group_ids: [parseInt(groupId)]
       }));
     }
   }, [groupId]);
+
+  // Ensure the "Link to Class" list is loaded for every selected group, however it was
+  // selected — a deep link (/homework/new/group/:id) or edit/copy sets group_ids
+  // programmatically, without going through handleGroupToggle. loadEventsForGroup is
+  // idempotent (it skips groups already cached), so this is safe to run on any change.
+  useEffect(() => {
+    (formData.group_ids || []).forEach((gid: number) => loadEventsForGroup(gid));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.group_ids]);
 
   useEffect(() => {
     if (assignmentId) {
