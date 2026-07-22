@@ -839,6 +839,22 @@ export default function TeacherDashboard() {
     );
   }
 
+  // Attendance-required rolled up per group (one row per group, not per lesson).
+  const attendanceGroups = (() => {
+    const map = new Map<number, { group_id: number; group_name: string; count: number; oldest: string }>();
+    for (const r of stats?.missing_attendance_reminders ?? []) {
+      const key = r.group_id ?? -1;
+      const existing = map.get(key);
+      if (existing) {
+        existing.count += 1;
+        if (r.event_date && new Date(r.event_date) < new Date(existing.oldest)) existing.oldest = r.event_date;
+      } else {
+        map.set(key, { group_id: r.group_id ?? -1, group_name: r.group_name || '—', count: 1, oldest: r.event_date });
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => b.count - a.count);
+  })();
+
   return (
     <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -896,7 +912,9 @@ export default function TeacherDashboard() {
                 <p className="text-sm text-gray-500 dark:text-gray-400">Classes that ended without attendance recorded</p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-sm text-rose-600 dark:text-rose-400">{stats.missing_attendance_reminders.length} missing</span>
+                <span className="text-sm text-rose-600 dark:text-rose-400">
+                  {attendanceGroups.length} groups · {stats.missing_attendance_reminders.length} lessons
+                </span>
                 <Button onClick={() => navigate('/attendance')} size="sm" variant="outline" className="text-xs h-7">
                   Go to Attendance
                 </Button>
@@ -908,24 +926,22 @@ export default function TeacherDashboard() {
               <table className="min-w-full text-sm">
                 <thead className="bg-gray-50/80 dark:bg-secondary/50 text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-border">
                   <tr>
-                    <th className="text-left px-6 py-3 font-semibold">Lesson</th>
                     <th className="text-left px-6 py-3 font-semibold">Group</th>
-                    <th className="text-left px-6 py-3 font-semibold">Date</th>
-                    <th className="text-left px-6 py-3 font-semibold">Recorded</th>
+                    <th className="text-left px-6 py-3 font-semibold">Lessons missing</th>
+                    <th className="text-left px-6 py-3 font-semibold">Oldest</th>
                     <th className="text-right px-6 py-3 font-semibold">Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {stats.missing_attendance_reminders.map((reminder) => (
+                  {attendanceGroups.map((g) => (
                     <tr
-                      key={reminder.event_id}
-                      onClick={() => navigate(reminder.group_id ? `/attendance?group=${reminder.group_id}` : '/attendance')}
+                      key={g.group_id}
+                      onClick={() => navigate(g.group_id > 0 ? `/attendance?group=${g.group_id}` : '/attendance')}
                       className="border-b border-gray-100 dark:border-border last:border-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-secondary/40 transition-colors"
                     >
-                      <td className="px-6 py-3 font-medium text-gray-900 dark:text-foreground">{reminder.title}</td>
-                      <td className="px-6 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{reminder.group_name}</td>
-                      <td className="px-6 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{new Date(reminder.event_date).toLocaleDateString()}</td>
-                      <td className="px-6 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{reminder.recorded_students}/{reminder.expected_students}</td>
+                      <td className="px-6 py-3 font-medium text-gray-900 dark:text-foreground">{g.group_name}</td>
+                      <td className="px-6 py-3 text-rose-600 dark:text-rose-400 font-semibold">{g.count}</td>
+                      <td className="px-6 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{g.oldest ? new Date(g.oldest).toLocaleDateString() : '—'}</td>
                       <td className="px-6 py-3 text-right text-rose-600 dark:text-rose-400 font-medium">Mark</td>
                     </tr>
                   ))}
