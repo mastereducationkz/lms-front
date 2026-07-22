@@ -902,56 +902,6 @@ export default function TeacherDashboard() {
       </div>
 
 
-      {/* Attendance Required — table styled like Today's Homework */}
-      {stats?.missing_attendance_reminders && stats.missing_attendance_reminders.length > 0 && (
-        <Card className="shadow-sm border border-gray-200 dark:border-border">
-          <CardHeader className="px-6 py-4 border-b border-gray-100 dark:border-border bg-white dark:bg-card rounded-t-xl">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div>
-                <CardTitle className="text-lg font-bold text-gray-900 dark:text-foreground">Attendance Required</CardTitle>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Classes that ended without attendance recorded</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-rose-600 dark:text-rose-400">
-                  {attendanceGroups.length} groups · {stats.missing_attendance_reminders.length} lessons
-                </span>
-                <Button onClick={() => navigate('/attendance')} size="sm" variant="outline" className="text-xs h-7">
-                  Go to Attendance
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="bg-gray-50/80 dark:bg-secondary/50 text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-border">
-                  <tr>
-                    <th className="text-left px-6 py-3 font-semibold">Group</th>
-                    <th className="text-left px-6 py-3 font-semibold">Lessons missing</th>
-                    <th className="text-left px-6 py-3 font-semibold">Oldest</th>
-                    <th className="text-right px-6 py-3 font-semibold">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {attendanceGroups.map((g) => (
-                    <tr
-                      key={g.group_id}
-                      onClick={() => navigate(g.group_id > 0 ? `/attendance?group=${g.group_id}` : '/attendance')}
-                      className="border-b border-gray-100 dark:border-border last:border-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-secondary/40 transition-colors"
-                    >
-                      <td className="px-6 py-3 font-medium text-gray-900 dark:text-foreground">{g.group_name}</td>
-                      <td className="px-6 py-3 text-rose-600 dark:text-rose-400 font-semibold">{g.count}</td>
-                      <td className="px-6 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{g.oldest ? new Date(g.oldest).toLocaleDateString() : '—'}</td>
-                      <td className="px-6 py-3 text-right text-rose-600 dark:text-rose-400 font-medium">Mark</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Key Stats - Student Dynamics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Pending Reviews - Action Required */}
@@ -1095,6 +1045,56 @@ export default function TeacherDashboard() {
                             })
                           : '—'}
                       </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Attendance Required — table, under Today's Homework */}
+      {stats?.missing_attendance_reminders && stats.missing_attendance_reminders.length > 0 && (
+        <Card className="shadow-sm border border-gray-200 dark:border-border">
+          <CardHeader className="px-6 py-4 border-b border-gray-100 dark:border-border bg-white dark:bg-card rounded-t-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <CardTitle className="text-lg font-bold text-gray-900 dark:text-foreground">Attendance Required</CardTitle>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Classes that ended without attendance recorded</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-rose-600 dark:text-rose-400">
+                  {attendanceGroups.length} groups · {stats.missing_attendance_reminders.length} lessons
+                </span>
+                <Button onClick={() => navigate('/attendance')} size="sm" variant="outline" className="text-xs h-7">
+                  Go to Attendance
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-50/80 dark:bg-secondary/50 text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-border">
+                  <tr>
+                    <th className="text-left px-6 py-3 font-semibold">Group</th>
+                    <th className="text-left px-6 py-3 font-semibold">Lessons missing</th>
+                    <th className="text-left px-6 py-3 font-semibold">Oldest</th>
+                    <th className="text-right px-6 py-3 font-semibold">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {attendanceGroups.map((g) => (
+                    <tr
+                      key={g.group_id}
+                      onClick={() => navigate(g.group_id > 0 ? `/attendance?group=${g.group_id}` : '/attendance')}
+                      className="border-b border-gray-100 dark:border-border last:border-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-secondary/40 transition-colors"
+                    >
+                      <td className="px-6 py-3 font-medium text-gray-900 dark:text-foreground">{g.group_name}</td>
+                      <td className="px-6 py-3 text-rose-600 dark:text-rose-400 font-semibold">{g.count}</td>
+                      <td className="px-6 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{g.oldest ? new Date(g.oldest).toLocaleDateString() : '—'}</td>
+                      <td className="px-6 py-3 text-right text-rose-600 dark:text-rose-400 font-medium">Mark</td>
                     </tr>
                   ))}
                 </tbody>
