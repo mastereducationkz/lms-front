@@ -154,22 +154,30 @@ export default function HeadTeacherDashboardPage() {
 
   useEffect(() => {
     loadCourses();
-    loadHwTeachers();
-    loadAttendanceGaps();
   }, []);
 
-  const loadAttendanceGaps = async () => {
+  // The date-range filter also scopes the Teacher Oversight tables. A single day is
+  // a click that leaves `to` undefined → treat it as [from, from].
+  useEffect(() => {
+    if (!dateRange?.from) return;
+    const start = format(dateRange.from, 'yyyy-MM-dd');
+    const end = format(dateRange.to ?? dateRange.from, 'yyyy-MM-dd');
+    loadAttendanceGaps(start, end);
+    loadHwTeachers(start, end);
+  }, [dateRange]);
+
+  const loadAttendanceGaps = async (start?: string, end?: string) => {
     try {
-      const res = await apiClient.getHeadTeacherAttendanceGaps();
+      const res = await apiClient.getHeadTeacherAttendanceGaps(start, end);
       setAttendanceGaps(res.teachers || []);
     } catch (error) {
       console.error('Failed to load attendance gaps:', error);
     }
   };
 
-  const loadHwTeachers = async () => {
+  const loadHwTeachers = async (start?: string, end?: string) => {
     try {
-      const res = await apiClient.getHeadTeacherHwGapsByTeacher();
+      const res = await apiClient.getHeadTeacherHwGapsByTeacher(start, end);
       setHwTeachers(res.teachers || []);
     } catch (error) {
       console.error('Failed to load homework gaps:', error);
@@ -182,11 +190,12 @@ export default function HeadTeacherDashboardPage() {
   };
 
   useEffect(() => {
-    if (selectedCourseId && dateRange?.from && dateRange?.to) {
+    if (selectedCourseId && dateRange?.from) {
+      const end = dateRange.to ?? dateRange.from;
       loadTeachersData(
         parseInt(selectedCourseId),
-        dateRange.from.toISOString().split('T')[0],
-        dateRange.to.toISOString().split('T')[0]
+        format(dateRange.from, 'yyyy-MM-dd'),
+        format(end, 'yyyy-MM-dd')
       );
     }
   }, [selectedCourseId, dateRange]);

@@ -160,9 +160,13 @@ export interface AttendanceGapTeacher {
 }
 
 // Head-teacher attendance oversight grouped by teacher -> group (active groups only).
-export async function getHeadTeacherAttendanceGaps(): Promise<{ teachers: AttendanceGapTeacher[] }> {
+// startDate/endDate are inclusive Almaty calendar dates (YYYY-MM-DD); omit for all-time.
+export async function getHeadTeacherAttendanceGaps(startDate?: string, endDate?: string): Promise<{ teachers: AttendanceGapTeacher[] }> {
   try {
-    const response = await api.get('/dashboard/head-teacher/attendance-gaps');
+    const params: Record<string, string> = {};
+    if (startDate) params.start_date = startDate;
+    if (endDate) params.end_date = endDate;
+    const response = await api.get('/dashboard/head-teacher/attendance-gaps', { params });
     return response.data;
   } catch (error) {
     console.warn('Failed to load attendance gaps:', error);
@@ -173,12 +177,15 @@ export async function getHeadTeacherAttendanceGaps(): Promise<{ teachers: Attend
 // Head-teacher homework oversight grouped by teacher -> group (groups that had a
 // class lesson today but no homework assigned today). Same shape as attendance gaps
 // so the dashboard renders both through one table.
-export async function getHeadTeacherHwGapsByTeacher(): Promise<{ date: string; teachers: AttendanceGapTeacher[] }> {
+export async function getHeadTeacherHwGapsByTeacher(startDate?: string, endDate?: string): Promise<{ start_date?: string; end_date?: string; teachers: AttendanceGapTeacher[] }> {
   try {
-    const response = await api.get('/assignments/head-teacher/hw-gaps-by-teacher');
+    const params: Record<string, string> = {};
+    if (startDate) params.start_date = startDate;
+    if (endDate) params.end_date = endDate;
+    const response = await api.get('/assignments/head-teacher/hw-gaps-by-teacher', { params });
     return response.data;
   } catch (error) {
     console.warn('Failed to load homework gaps by teacher:', error);
-    return { date: '', teachers: [] };
+    return { teachers: [] };
   }
 }
