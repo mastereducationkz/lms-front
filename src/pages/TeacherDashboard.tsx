@@ -886,54 +886,54 @@ export default function TeacherDashboard() {
       </div>
 
 
-      {/* Missing Attendance Reminders */}
+      {/* Attendance Required — table styled like Today's Homework */}
       {stats?.missing_attendance_reminders && stats.missing_attendance_reminders.length > 0 && (
-        <div className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-900/40 rounded-md p-3">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-medium text-yellow-900 dark:text-yellow-500/80">
-              Attendance Required ({stats.missing_attendance_reminders.length})
-            </h3>
-            <Button
-              onClick={() => navigate('/attendance')}
-              size="sm"
-              variant="outline"
-              className="text-xs h-6 px-2 border-yellow-300 dark:border-yellow-900/40 text-yellow-700 dark:text-yellow-500/80 hover:bg-yellow-100 dark:hover:bg-yellow-900/20"
-            >
-              Go to Attendance
-            </Button>
-          </div>
-          <div className="space-y-1.5">
-            {stats.missing_attendance_reminders.slice(0, 3).map((reminder) => (
-              <div key={reminder.event_id} className="flex items-center justify-between text-xs py-1.5 border-b border-yellow-100 dark:border-yellow-900/30 last:border-0">
-                <div className="flex-1 min-w-0 mr-3">
-                  <p className="text-yellow-900 dark:text-gray-200 truncate font-medium">{reminder.title}</p>
-                  <p className="text-[11px] text-yellow-700 dark:text-gray-400">
-                    {reminder.group_name} • {new Date(reminder.event_date).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-[11px] text-yellow-700 dark:text-gray-400">
-                    {reminder.recorded_students}/{reminder.expected_students}
-                  </span>
-                  <Button
-                    onClick={() => {
-                      if (reminder.group_id) {
-                        navigate(`/attendance?group=${reminder.group_id}`);
-                      } else {
-                        navigate('/attendance');
-                      }
-                    }}
-                    size="sm"
-                    variant="ghost"
-                    className="text-[11px] h-6 px-2 text-yellow-700 dark:text-gray-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/20"
-                  >
-                    Mark
-                  </Button>
-                </div>
+        <Card className="shadow-sm border border-gray-200 dark:border-border">
+          <CardHeader className="px-6 py-4 border-b border-gray-100 dark:border-border bg-white dark:bg-card rounded-t-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <CardTitle className="text-lg font-bold text-gray-900 dark:text-foreground">Attendance Required</CardTitle>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Classes that ended without attendance recorded</p>
               </div>
-            ))}
-          </div>
-        </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-rose-600 dark:text-rose-400">{stats.missing_attendance_reminders.length} missing</span>
+                <Button onClick={() => navigate('/attendance')} size="sm" variant="outline" className="text-xs h-7">
+                  Go to Attendance
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gray-50/80 dark:bg-secondary/50 text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-border">
+                  <tr>
+                    <th className="text-left px-6 py-3 font-semibold">Lesson</th>
+                    <th className="text-left px-6 py-3 font-semibold">Group</th>
+                    <th className="text-left px-6 py-3 font-semibold">Date</th>
+                    <th className="text-left px-6 py-3 font-semibold">Recorded</th>
+                    <th className="text-right px-6 py-3 font-semibold">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.missing_attendance_reminders.map((reminder) => (
+                    <tr
+                      key={reminder.event_id}
+                      onClick={() => navigate(reminder.group_id ? `/attendance?group=${reminder.group_id}` : '/attendance')}
+                      className="border-b border-gray-100 dark:border-border last:border-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-secondary/40 transition-colors"
+                    >
+                      <td className="px-6 py-3 font-medium text-gray-900 dark:text-foreground">{reminder.title}</td>
+                      <td className="px-6 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{reminder.group_name}</td>
+                      <td className="px-6 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{new Date(reminder.event_date).toLocaleDateString()}</td>
+                      <td className="px-6 py-3 text-gray-600 dark:text-gray-400 whitespace-nowrap">{reminder.recorded_students}/{reminder.expected_students}</td>
+                      <td className="px-6 py-3 text-right text-rose-600 dark:text-rose-400 font-medium">Mark</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Key Stats - Student Dynamics */}
