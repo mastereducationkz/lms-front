@@ -97,6 +97,7 @@ export default function HeadTeacherDashboardPage() {
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [teachersData, setTeachersData] = useState<CourseTeachersData | null>(null);
   const [missingAttendance, setMissingAttendance] = useState<MissingAttendanceReminder[]>([]);
+  const [hwGaps, setHwGaps] = useState<{ group_id: number; group_name: string }[]>([]);
   
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
@@ -148,7 +149,17 @@ export default function HeadTeacherDashboardPage() {
   useEffect(() => {
     loadCourses();
     loadMissingAttendance();
+    loadHwGaps();
   }, []);
+
+  const loadHwGaps = async () => {
+    try {
+      const res = await apiClient.getHeadTeacherHwGapsToday();
+      setHwGaps(res.groups || []);
+    } catch (error) {
+      console.error('Failed to load homework gaps:', error);
+    }
+  };
 
   useEffect(() => {
     if (selectedCourseId && dateRange?.from && dateRange?.to) {
@@ -381,6 +392,40 @@ export default function HeadTeacherDashboardPage() {
                         Mark
                       </Button>
                     </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Homework Not Assigned Today — subject groups that had a lesson today but no HW */}
+      {hwGaps.length > 0 && (
+        <div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400 flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-4 mb-2">
+                <h3 className="text-sm font-semibold text-rose-900 dark:text-rose-300">
+                  Homework Not Assigned Today ({hwGaps.length})
+                </h3>
+              </div>
+              <p className="text-xs text-rose-700 dark:text-rose-400 mb-3">
+                These groups had a lesson today but no homework was assigned:
+              </p>
+              <div className="space-y-2">
+                {hwGaps.map((g) => (
+                  <div key={g.group_id} className="flex items-center justify-between bg-white/60 dark:bg-card/60 rounded-md px-3 py-2">
+                    <p className="text-sm font-medium text-rose-900 dark:text-rose-300 truncate">{g.group_name}</p>
+                    <Button
+                      onClick={() => navigate(`/homework/new/group/${g.group_id}`)}
+                      size="sm"
+                      variant="ghost"
+                      className="text-xs h-7 text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/20 flex-shrink-0"
+                    >
+                      Assign
+                    </Button>
                   </div>
                 ))}
               </div>

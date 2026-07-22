@@ -333,6 +333,23 @@ export async function getTeacherTodayHomework(): Promise<TeacherTodayHomework> {
   return response.data;
 }
 
+export interface HeadTeacherHwGaps {
+  date: string;
+  count: number;
+  groups: { group_id: number; group_name: string }[];
+}
+
+// Head-teacher oversight: subject groups that had a lesson today but no homework assigned.
+export async function getHeadTeacherHwGapsToday(): Promise<HeadTeacherHwGaps> {
+  try {
+    const response = await api.get('/assignments/head-teacher/hw-gaps-today');
+    return response.data;
+  } catch (error) {
+    console.warn('Failed to load homework gaps:', error);
+    return { date: '', count: 0, groups: [] };
+  }
+}
+
 export async function getTeacherStudentsProgress() {
   try {
     const response = await api.get('/dashboard/teacher/students-progress');
