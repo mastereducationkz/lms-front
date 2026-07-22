@@ -231,7 +231,7 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
                           {formatDeadline(item.due_date)}
                         </td>
                         <td className="py-2.5 pl-2 text-right">
-                          <StatusBadge status={item.status} score={item.score} maxScore={item.max_score} />
+                          <StatusBadge status={item.status} score={item.score} maxScore={item.max_score} late={item.late} />
                         </td>
                       </tr>
                     );

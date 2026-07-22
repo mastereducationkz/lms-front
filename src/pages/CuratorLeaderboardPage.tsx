@@ -50,6 +50,7 @@ interface StudentLessonStatus {
         feedback?: string | null;
         submitted_at?: string | null;
         graded_at?: string | null;
+        late?: boolean;
     } | null;
 }
 
@@ -1396,16 +1397,16 @@ export default function CuratorLeaderboardPage() {
                                                 title={hwStatus?.submitted ? 'Нажмите, чтобы увидеть фидбэк' : (lessonInfo.homework?.title || undefined)}
                                             >
                                                 {hwStatus?.submitted ? (
-                                                    hwStatus.score !== null ? (
-                                                        <span className="flex flex-col items-center leading-none">
-                                                            <span>{hwStatus.score}{hwMax ? `/${hwMax}` : ''}</span>
-                                                            {hwMax && hwMax > 0 ? (
-                                                                <span className="text-[10px] font-normal text-gray-400 mt-0.5">
-                                                                    {Math.round((hwStatus.score / hwMax) * 100)}%
-                                                                </span>
-                                                            ) : null}
-                                                        </span>
-                                                    ) : 'Сдано'
+                                                    <span className="flex flex-col items-center leading-none">
+                                                        <span>{hwStatus.score !== null ? `${hwStatus.score}${hwMax ? `/${hwMax}` : ''}` : 'Сдано'}</span>
+                                                        {hwStatus.late ? (
+                                                            <span className="text-[10px] font-semibold text-amber-500 dark:text-amber-400 mt-0.5">Поздно</span>
+                                                        ) : (hwStatus.score !== null && hwMax && hwMax > 0) ? (
+                                                            <span className="text-[10px] font-normal text-gray-400 mt-0.5">
+                                                                {Math.round((hwStatus.score / hwMax) * 100)}%
+                                                            </span>
+                                                        ) : null}
+                                                    </span>
                                                 ) : lessonInfo.homework ? (
                                                     <span className="text-rose-500 dark:text-rose-400 font-medium leading-tight">Не<br/>выполнено</span>
                                                 ) : (

@@ -66,6 +66,7 @@ export interface StudentHomeworkItem {
   assignment_type: string;
   content: any | null;
   status: 'not_submitted' | 'submitted' | 'graded' | 'overdue';
+  late?: boolean;
   submission_id: number | null;
   score: number | null;
   submitted_at: string | null;
