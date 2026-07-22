@@ -100,9 +100,10 @@ export default function HeadTeacherDashboardPage() {
   const [courses, setCourses] = useState<ManagedCourse[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [teachersData, setTeachersData] = useState<CourseTeachersData | null>(null);
-  const [hwGaps, setHwGaps] = useState<{ group_id: number; group_name: string }[]>([]);
   const [attendanceGaps, setAttendanceGaps] = useState<AttendanceGapTeacher[]>([]);
+  const [hwTeachers, setHwTeachers] = useState<AttendanceGapTeacher[]>([]);
   const [expandedTeacher, setExpandedTeacher] = useState<number | null>(null);
+  const [oversightTab, setOversightTab] = useState<'attendance' | 'homework'>('attendance');
 
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
@@ -153,7 +154,7 @@ export default function HeadTeacherDashboardPage() {
 
   useEffect(() => {
     loadCourses();
-    loadHwGaps();
+    loadHwTeachers();
     loadAttendanceGaps();
   }, []);
 
@@ -166,13 +167,18 @@ export default function HeadTeacherDashboardPage() {
     }
   };
 
-  const loadHwGaps = async () => {
+  const loadHwTeachers = async () => {
     try {
-      const res = await apiClient.getHeadTeacherHwGapsToday();
-      setHwGaps(res.groups || []);
+      const res = await apiClient.getHeadTeacherHwGapsByTeacher();
+      setHwTeachers(res.teachers || []);
     } catch (error) {
       console.error('Failed to load homework gaps:', error);
     }
+  };
+
+  const switchOversightTab = (tab: 'attendance' | 'homework') => {
+    setOversightTab(tab);
+    setExpandedTeacher(null);
   };
 
   useEffect(() => {
@@ -345,129 +351,133 @@ export default function HeadTeacherDashboardPage() {
         </div>
       </div>
 
-      {/* Attendance Oversight — by teacher */}
-      {attendanceGaps.length > 0 && (
-        <Card className="border shadow-sm">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-500" />
-                  Attendance Required
-                </CardTitle>
-                <CardDescription>
-                  {attendanceGaps.length} teacher{attendanceGaps.length === 1 ? '' : 's'} ·{' '}
-                  {attendanceGaps.reduce((s, t) => s + t.total_lessons, 0)} lessons unmarked · click a teacher to see groups
-                </CardDescription>
+      {/* Oversight — attendance / homework gaps, grouped by teacher (tabbed) */}
+      {(attendanceGaps.length > 0 || hwTeachers.length > 0) && (() => {
+        const isHw = oversightTab === 'homework';
+        const teachers = isHw ? hwTeachers : attendanceGaps;
+        const metricLabel = isHw ? 'Groups missing HW' : 'Lessons missing';
+        const totalMetric = teachers.reduce((s, t) => s + t.total_lessons, 0);
+        const summary = teachers.length === 0
+          ? (isHw ? 'All groups with a lesson today got homework 🎉' : 'No unmarked attendance 🎉')
+          : `${teachers.length} teacher${teachers.length === 1 ? '' : 's'} · ${totalMetric} ${isHw ? 'group' : 'lesson'}${totalMetric === 1 ? '' : 's'} ${isHw ? 'without homework today' : 'unmarked'} · click a teacher to see groups`;
+        const TabBtn = ({ id, label, count }: { id: 'attendance' | 'homework'; label: string; count: number }) => (
+          <button
+            onClick={() => switchOversightTab(id)}
+            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              oversightTab === id
+                ? 'bg-background shadow-sm text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {label}
+            <span className={`ml-1.5 inline-flex items-center justify-center min-w-[1.25rem] px-1.5 rounded-full text-xs font-semibold ${
+              oversightTab === id ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' : 'bg-muted text-muted-foreground'
+            }`}>{count}</span>
+          </button>
+        );
+        return (
+          <Card className="border shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    Teacher Oversight
+                  </CardTitle>
+                  <CardDescription>{summary}</CardDescription>
+                </div>
+                <div className="flex items-center gap-1 bg-muted/60 rounded-lg p-1 self-start">
+                  <TabBtn id="attendance" label="Attendance" count={attendanceGaps.length} />
+                  <TabBtn id="homework" label="Homework" count={hwTeachers.length} />
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50/80 dark:bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
-                  <tr>
-                    <th className="text-left font-medium px-4 py-2.5">Teacher</th>
-                    <th className="text-right font-medium px-4 py-2.5 w-24">Groups</th>
-                    <th className="text-right font-medium px-4 py-2.5 w-32">Lessons missing</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {attendanceGaps.map((t) => {
-                    const isOpen = expandedTeacher === t.teacher_id;
-                    return (
-                      <React.Fragment key={t.teacher_id}>
-                        <tr
-                          className="cursor-pointer hover:bg-muted/40 transition-colors"
-                          onClick={() => setExpandedTeacher(isOpen ? null : t.teacher_id)}
-                        >
-                          <td className="px-4 py-2.5">
-                            <div className="flex items-center gap-2 font-medium">
-                              {isOpen
-                                ? <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                                : <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
-                              <span className="truncate">{t.teacher_name}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-2.5 text-right text-muted-foreground">{t.groups_count}</td>
-                          <td className="px-4 py-2.5 text-right">
-                            <span className="inline-flex items-center justify-center min-w-[1.75rem] px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-                              {t.total_lessons}
-                            </span>
-                          </td>
-                        </tr>
-                        {isOpen && t.groups.map((g) => (
-                          <tr key={g.group_id} className="bg-muted/20">
-                            <td className="pl-10 pr-4 py-2">
-                              <div className="flex items-center justify-between gap-3">
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50/80 dark:bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                    <tr>
+                      <th className="text-left font-medium px-4 py-2.5">Teacher</th>
+                      <th className="text-right font-medium px-4 py-2.5 w-24">Groups</th>
+                      <th className="text-right font-medium px-4 py-2.5 w-40">{metricLabel}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {teachers.length === 0 && (
+                      <tr>
+                        <td colSpan={3} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                          {summary}
+                        </td>
+                      </tr>
+                    )}
+                    {teachers.map((t) => {
+                      const isOpen = expandedTeacher === t.teacher_id;
+                      return (
+                        <React.Fragment key={t.teacher_id}>
+                          <tr
+                            className="cursor-pointer hover:bg-muted/40 transition-colors"
+                            onClick={() => setExpandedTeacher(isOpen ? null : t.teacher_id)}
+                          >
+                            <td className="px-4 py-2.5">
+                              <div className="flex items-center gap-2 font-medium">
+                                {isOpen
+                                  ? <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                  : <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
+                                <span className="truncate">{t.teacher_name}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5 text-right text-muted-foreground">{t.groups_count}</td>
+                            <td className="px-4 py-2.5 text-right">
+                              <span className="inline-flex items-center justify-center min-w-[1.75rem] px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                                {t.total_lessons}
+                              </span>
+                            </td>
+                          </tr>
+                          {isOpen && t.groups.map((g) => (
+                            <tr key={g.group_id} className="bg-muted/20">
+                              <td className="pl-10 pr-4 py-2">
                                 <div className="min-w-0">
                                   <p className="truncate font-medium">{g.group_name}</p>
-                                  {g.oldest && (
+                                  {!isHw && g.oldest && (
                                     <p className="text-xs text-muted-foreground">
                                       oldest: {new Date(g.oldest).toLocaleDateString()}
                                     </p>
                                   )}
+                                  {isHw && (
+                                    <p className="text-xs text-muted-foreground">no homework today</p>
+                                  )}
                                 </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-2 text-right text-muted-foreground">
-                              {g.lessons_missing} lesson{g.lessons_missing === 1 ? '' : 's'}
-                            </td>
-                            <td className="px-4 py-2 text-right">
-                              <Button
-                                onClick={(e) => { e.stopPropagation(); navigate(`/attendance?group=${g.group_id}`); }}
-                                size="sm"
-                                variant="ghost"
-                                className="text-xs h-7"
-                              >
-                                Mark
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </React.Fragment>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Homework Not Assigned Today — subject groups that had a lesson today but no HW */}
-      {hwGaps.length > 0 && (
-        <div className="bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400 flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-4 mb-2">
-                <h3 className="text-sm font-semibold text-rose-900 dark:text-rose-300">
-                  Homework Not Assigned Today ({hwGaps.length})
-                </h3>
+                              </td>
+                              <td className="px-4 py-2 text-right text-muted-foreground">
+                                {isHw
+                                  ? '—'
+                                  : `${g.lessons_missing} lesson${g.lessons_missing === 1 ? '' : 's'}`}
+                              </td>
+                              <td className="px-4 py-2 text-right">
+                                <Button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(isHw ? `/homework/new/group/${g.group_id}` : `/attendance?group=${g.group_id}`);
+                                  }}
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-xs h-7"
+                                >
+                                  {isHw ? 'Assign' : 'Mark'}
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </React.Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-              <p className="text-xs text-rose-700 dark:text-rose-400 mb-3">
-                These groups had a lesson today but no homework was assigned:
-              </p>
-              <div className="space-y-2">
-                {hwGaps.map((g) => (
-                  <div key={g.group_id} className="flex items-center justify-between bg-white/60 dark:bg-card/60 rounded-md px-3 py-2">
-                    <p className="text-sm font-medium text-rose-900 dark:text-rose-300 truncate">{g.group_name}</p>
-                    <Button
-                      onClick={() => navigate(`/homework/new/group/${g.group_id}`)}
-                      size="sm"
-                      variant="ghost"
-                      className="text-xs h-7 text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/20 flex-shrink-0"
-                    >
-                      Assign
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

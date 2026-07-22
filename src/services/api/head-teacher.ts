@@ -169,3 +169,16 @@ export async function getHeadTeacherAttendanceGaps(): Promise<{ teachers: Attend
     return { teachers: [] };
   }
 }
+
+// Head-teacher homework oversight grouped by teacher -> group (groups that had a
+// class lesson today but no homework assigned today). Same shape as attendance gaps
+// so the dashboard renders both through one table.
+export async function getHeadTeacherHwGapsByTeacher(): Promise<{ date: string; teachers: AttendanceGapTeacher[] }> {
+  try {
+    const response = await api.get('/assignments/head-teacher/hw-gaps-by-teacher');
+    return response.data;
+  } catch (error) {
+    console.warn('Failed to load homework gaps by teacher:', error);
+    return { date: '', teachers: [] };
+  }
+}
