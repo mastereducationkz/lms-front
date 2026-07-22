@@ -144,3 +144,28 @@ export async function getHeadTeacherTeacherAssignments(
     throw error;
   }
 }
+
+export interface AttendanceGapGroup {
+  group_id: number;
+  group_name: string;
+  lessons_missing: number;
+  oldest: string;
+}
+export interface AttendanceGapTeacher {
+  teacher_id: number;
+  teacher_name: string;
+  total_lessons: number;
+  groups_count: number;
+  groups: AttendanceGapGroup[];
+}
+
+// Head-teacher attendance oversight grouped by teacher -> group (active groups only).
+export async function getHeadTeacherAttendanceGaps(): Promise<{ teachers: AttendanceGapTeacher[] }> {
+  try {
+    const response = await api.get('/dashboard/head-teacher/attendance-gaps');
+    return response.data;
+  } catch (error) {
+    console.warn('Failed to load attendance gaps:', error);
+    return { teachers: [] };
+  }
+}

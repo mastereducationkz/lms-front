@@ -62,7 +62,7 @@ import { getDetailedStudentAnalytics, getCourseAnalyticsOverview, getVideoEngage
 import { getCuratorPendingSubmissions, getCuratorRecentSubmissions, getCuratorStudentsProgress, getCuratorAssignmentsAnalytics, getCuratorHomeworkByGroup, getCuratorGroups, getGroupSchedule, getGroupLeaderboard, getWeeklyLessonsWithHwStatus, getGroupFullAttendanceMatrix, updateLeaderboardConfig, updateAttendanceBulk, setLessonTopic, updateLeaderboardEntry, updateAttendance, generateSchedule, getGroupSchedules, bulkScheduleUpload, getCuratorDetails, getCuratorTasks, getCuratorTaskGroups, getCuratorTasksSummary, updateCuratorTask, bulkUpdateCuratorTasks, getCuratorTaskTemplates, seedCuratorTaskTemplates, generateWeeklyTasks, getAllCuratorTasks, getAllCuratorTasksDaySummary, getCuratorsSummary, createCuratorTaskInstance, createCuratorTaskInstancesBulk } from './curator';
 import { addFavoriteFlashcard, getFavoriteFlashcards, removeFavoriteFlashcard, removeFavoriteByCardId, checkIsFavorite, lookupWord, quickCreateFlashcard, getVocabularyCards } from './flashcards';
 import { getGamificationStatus, getBonusAllowance, giveTeacherBonus, getGamificationLeaderboard, getPointHistory, getStudentLeaderboard } from './gamification';
-import { getHeadTeacherManagedCourses, getHeadTeacherCourseTeachers, getHeadTeacherTeacherDetails, getHeadTeacherTeacherFeedbacks, getHeadTeacherTeacherAssignments } from './head-teacher';
+import { getHeadTeacherManagedCourses, getHeadTeacherCourseTeachers, getHeadTeacherTeacherDetails, getHeadTeacherTeacherFeedbacks, getHeadTeacherTeacherAssignments, getHeadTeacherAttendanceGaps } from './head-teacher';
 import { getLessonRequests, getPendingLessonRequests, getMyLessonRequests, getIncomingRequests, createLessonRequest, approveLessonRequest, rejectLessonRequest, confirmLessonRequest, declineLessonRequest, getAvailableTeachers, updateSubstitutionPreference } from './lesson-requests';
 import { getDashboardStats, getRecentActivity, updateStudyTime, getTeacherSalaryBreakdown, getAdminDashboard, getAdminDashboardCharts, getAdminStats, completeStepsForUser, resetStepsForUser, getUserProgressSummary, reportQuestionError, getQuestionErrorReports, getQuestionErrorReportDetail, updateQuestionErrorReportStatus, updateQuestion, manualUnlockLesson, manualLockLesson, getManualUnlocks, getStudentsJournal, getStudentJournalGroups, getStudentProfile } from './admin';
 import { fetchModules, fetchLectures, createLecture, deleteLecture, updateLecture, fetchLecturesByModule } from './lectures';
@@ -159,7 +159,7 @@ const apiClient = {
   getGamificationStatus, getBonusAllowance, giveTeacherBonus,
   getGamificationLeaderboard, getPointHistory, getStudentLeaderboard,
   // Head Teacher
-  getHeadTeacherManagedCourses, getHeadTeacherCourseTeachers,
+  getHeadTeacherManagedCourses, getHeadTeacherCourseTeachers, getHeadTeacherAttendanceGaps,
   getHeadTeacherTeacherDetails, getHeadTeacherTeacherFeedbacks, getHeadTeacherTeacherAssignments,
   // Lesson Requests
   getLessonRequests, getPendingLessonRequests, getMyLessonRequests, getIncomingRequests, createLessonRequest,

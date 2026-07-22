@@ -23,7 +23,7 @@ import {
   TableRow,
 } from "../components/ui/table";
 import { Avatar, AvatarFallback } from '../components/ui/avatar';
-import { Calendar as CalendarIcon, ArrowRight, BarChart3, TrendingUp, Users, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle } from 'lucide-react';
+import { Calendar as CalendarIcon, ArrowRight, BarChart3, TrendingUp, Users, ArrowUpDown, ArrowUp, ArrowDown, AlertTriangle, ChevronDown, ChevronRight } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { cn } from '../lib/utils';
@@ -39,16 +39,6 @@ import {
   Bar
 } from 'recharts';
 import Skeleton from '../components/Skeleton';
-
-interface MissingAttendanceReminder {
-  event_id: number;
-  title: string;
-  group_name: string;
-  group_id?: number | null;
-  event_date: string;
-  expected_students: number;
-  recorded_students: number;
-}
 
 interface ManagedCourse {
   id: number;
@@ -82,6 +72,20 @@ interface ActivityHistoryItem {
   submissions_graded: number;
 }
 
+interface AttendanceGapGroup {
+  group_id: number;
+  group_name: string;
+  lessons_missing: number;
+  oldest: string;
+}
+interface AttendanceGapTeacher {
+  teacher_id: number;
+  teacher_name: string;
+  total_lessons: number;
+  groups_count: number;
+  groups: AttendanceGapGroup[];
+}
+
 interface CourseTeachersData {
   course_id: number;
   course_title: string;
@@ -96,9 +100,10 @@ export default function HeadTeacherDashboardPage() {
   const [courses, setCourses] = useState<ManagedCourse[]>([]);
   const [selectedCourseId, setSelectedCourseId] = useState<string>("");
   const [teachersData, setTeachersData] = useState<CourseTeachersData | null>(null);
-  const [missingAttendance, setMissingAttendance] = useState<MissingAttendanceReminder[]>([]);
   const [hwGaps, setHwGaps] = useState<{ group_id: number; group_name: string }[]>([]);
-  
+  const [attendanceGaps, setAttendanceGaps] = useState<AttendanceGapTeacher[]>([]);
+  const [expandedTeacher, setExpandedTeacher] = useState<number | null>(null);
+
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [loadingTeachers, setLoadingTeachers] = useState(false);
   
@@ -148,9 +153,18 @@ export default function HeadTeacherDashboardPage() {
 
   useEffect(() => {
     loadCourses();
-    loadMissingAttendance();
     loadHwGaps();
+    loadAttendanceGaps();
   }, []);
+
+  const loadAttendanceGaps = async () => {
+    try {
+      const res = await apiClient.getHeadTeacherAttendanceGaps();
+      setAttendanceGaps(res.teachers || []);
+    } catch (error) {
+      console.error('Failed to load attendance gaps:', error);
+    }
+  };
 
   const loadHwGaps = async () => {
     try {
@@ -170,17 +184,6 @@ export default function HeadTeacherDashboardPage() {
       );
     }
   }, [selectedCourseId, dateRange]);
-
-  const loadMissingAttendance = async () => {
-    try {
-      const res = await apiClient.getDashboardStats() as any;
-      if (res?.stats?.missing_attendance_reminders) {
-        setMissingAttendance(res.stats.missing_attendance_reminders);
-      }
-    } catch (error) {
-      console.error('Failed to load missing attendance:', error);
-    }
-  };
 
   const loadCourses = async () => {
     try {
@@ -342,62 +345,94 @@ export default function HeadTeacherDashboardPage() {
         </div>
       </div>
 
-      {/* Missing Attendance Alert */}
-      {missingAttendance.length > 0 && (
-        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-4 mb-2">
-                <h3 className="text-sm font-semibold text-amber-900 dark:text-amber-300">
-                  Attendance Not Recorded ({missingAttendance.length})
-                </h3>
-                <Button
-                  onClick={() => navigate('/attendance')}
-                  size="sm"
-                  variant="outline"
-                  className="text-xs h-7 border-amber-300 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/20"
-                >
-                  Go to Attendance
-                </Button>
-              </div>
-              <p className="text-xs text-amber-700 dark:text-amber-400 mb-3">
-                The following classes ended more than 2 hours ago without attendance records:
-              </p>
-              <div className="space-y-2">
-                {missingAttendance.slice(0, 5).map((reminder) => (
-                  <div key={reminder.event_id} className="flex items-center justify-between bg-white/60 dark:bg-card/60 rounded-md px-3 py-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-amber-900 dark:text-amber-300 truncate">{reminder.title}</p>
-                      <p className="text-xs text-amber-600 dark:text-amber-400">
-                        {reminder.group_name} • {new Date(reminder.event_date).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3 flex-shrink-0">
-                      <span className="text-xs text-amber-700 dark:text-amber-400">
-                        {reminder.recorded_students}/{reminder.expected_students} recorded
-                      </span>
-                      <Button
-                        onClick={() => {
-                          if (reminder.group_id) {
-                            navigate(`/attendance?group=${reminder.group_id}`);
-                          } else {
-                            navigate('/attendance');
-                          }
-                        }}
-                        size="sm"
-                        variant="ghost"
-                        className="text-xs h-7 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/20"
-                      >
-                        Mark
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+      {/* Attendance Oversight — by teacher */}
+      {attendanceGaps.length > 0 && (
+        <Card className="border shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-500" />
+                  Attendance Required
+                </CardTitle>
+                <CardDescription>
+                  {attendanceGaps.length} teacher{attendanceGaps.length === 1 ? '' : 's'} ·{' '}
+                  {attendanceGaps.reduce((s, t) => s + t.total_lessons, 0)} lessons unmarked · click a teacher to see groups
+                </CardDescription>
               </div>
             </div>
-          </div>
-        </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50/80 dark:bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
+                  <tr>
+                    <th className="text-left font-medium px-4 py-2.5">Teacher</th>
+                    <th className="text-right font-medium px-4 py-2.5 w-24">Groups</th>
+                    <th className="text-right font-medium px-4 py-2.5 w-32">Lessons missing</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {attendanceGaps.map((t) => {
+                    const isOpen = expandedTeacher === t.teacher_id;
+                    return (
+                      <React.Fragment key={t.teacher_id}>
+                        <tr
+                          className="cursor-pointer hover:bg-muted/40 transition-colors"
+                          onClick={() => setExpandedTeacher(isOpen ? null : t.teacher_id)}
+                        >
+                          <td className="px-4 py-2.5">
+                            <div className="flex items-center gap-2 font-medium">
+                              {isOpen
+                                ? <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                : <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
+                              <span className="truncate">{t.teacher_name}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-2.5 text-right text-muted-foreground">{t.groups_count}</td>
+                          <td className="px-4 py-2.5 text-right">
+                            <span className="inline-flex items-center justify-center min-w-[1.75rem] px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                              {t.total_lessons}
+                            </span>
+                          </td>
+                        </tr>
+                        {isOpen && t.groups.map((g) => (
+                          <tr key={g.group_id} className="bg-muted/20">
+                            <td className="pl-10 pr-4 py-2">
+                              <div className="flex items-center justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="truncate font-medium">{g.group_name}</p>
+                                  {g.oldest && (
+                                    <p className="text-xs text-muted-foreground">
+                                      oldest: {new Date(g.oldest).toLocaleDateString()}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-2 text-right text-muted-foreground">
+                              {g.lessons_missing} lesson{g.lessons_missing === 1 ? '' : 's'}
+                            </td>
+                            <td className="px-4 py-2 text-right">
+                              <Button
+                                onClick={(e) => { e.stopPropagation(); navigate(`/attendance?group=${g.group_id}`); }}
+                                size="sm"
+                                variant="ghost"
+                                className="text-xs h-7"
+                              >
+                                Mark
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </React.Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Homework Not Assigned Today — subject groups that had a lesson today but no HW */}
