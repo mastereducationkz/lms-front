@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Search, Users, AlertCircle, ArrowLeft, Calendar } from 'lucide-react';
+import { FileText, Search, Users, AlertCircle, ArrowLeft, Calendar, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from '../components/Toast';
 import api from '../services/api';
 import { Input } from '../components/ui/input';
@@ -59,6 +59,8 @@ const CuratorHomeworksPage: React.FC = () => {
   const [selectedTeacherId, setSelectedTeacherId] = useState<number | 'all'>('all');
   const [needsAttentionOnly, setNeedsAttentionOnly] = useState(false);
   const [showCompletedGroups, setShowCompletedGroups] = useState(false);
+  // Sort the assignments table by deadline; toggled via the "Срок" column header.
+  const [deadlineDir, setDeadlineDir] = useState<'asc' | 'desc'>('asc');
 
   useEffect(() => {
     fetchHomeworks();
@@ -174,9 +176,12 @@ const CuratorHomeworksPage: React.FC = () => {
   if (selected) {
     const pct = Math.round(selected.rate * 100);
     const sortedAssignments = [...selected.group.assignments].sort((a, b) => {
-      const aAtt = a.summary.overdue + a.summary.not_submitted;
-      const bAtt = b.summary.overdue + b.summary.not_submitted;
-      return bAtt - aAtt;
+      // Assignments with no deadline sink to the bottom regardless of direction.
+      const at = a.due_date ? new Date(a.due_date).getTime() : Infinity;
+      const bt = b.due_date ? new Date(b.due_date).getTime() : Infinity;
+      if (at !== bt) return deadlineDir === 'asc' ? at - bt : bt - at;
+      // Tie-break by attention so equal-deadline rows stay meaningfully ordered.
+      return (b.summary.overdue + b.summary.not_submitted) - (a.summary.overdue + a.summary.not_submitted);
     });
 
     return (
@@ -224,7 +229,17 @@ const CuratorHomeworksPage: React.FC = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="h-9 py-2 text-[10px] uppercase tracking-wider text-muted-foreground">Задание</TableHead>
-                    <TableHead className="h-9 py-2 text-[10px] uppercase tracking-wider text-muted-foreground">Срок</TableHead>
+                    <TableHead className="h-9 py-2 text-[10px] uppercase tracking-wider text-muted-foreground">
+                      <button
+                        type="button"
+                        onClick={() => setDeadlineDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
+                        className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-foreground transition-colors"
+                        title="Сортировать по сроку"
+                      >
+                        Срок
+                        {deadlineDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
+                      </button>
+                    </TableHead>
                     <TableHead className="h-9 py-2 text-[10px] uppercase tracking-wider text-muted-foreground w-[200px]">Сдано</TableHead>
                   </TableRow>
                 </TableHeader>
