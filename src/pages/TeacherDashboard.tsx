@@ -1122,7 +1122,7 @@ export default function TeacherDashboard() {
                 variant="outline"
                 className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
               >
-                {isAutoGrading ? 'Auto-grading...' : 'Auto-grade Unit HW'}
+                {isAutoGrading ? 'Auto-grading...' : 'Auto-grade HW'}
               </Button>
 
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
@@ -1936,15 +1936,15 @@ export default function TeacherDashboard() {
       >
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Auto-grade Unit Homework</DialogTitle>
+            <DialogTitle>Auto-grade Homework</DialogTitle>
             <DialogDescription>
-              This action automatically sets 100% for pending multi-task homework where all tasks are only unit completion tasks.
+              This action automatically sets 100% for pending completion homework — units, resource/link visits, and text tasks.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="rounded-md border border-emerald-200 dark:border-emerald-900/50 bg-emerald-50 dark:bg-emerald-900/10 p-3 text-sm text-emerald-900 dark:text-emerald-200">
-              Use this when homework only requires students to pass listed units and manual review is not needed.
+              Homework that needs manual review — <b>audio</b> and <b>file uploads</b> — is skipped and stays for you to grade.
             </div>
 
             {isAutoGradePreviewLoading ? (
