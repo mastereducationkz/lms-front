@@ -32,6 +32,7 @@ export default function SubstitutionRequestPage() {
   const [reason, setReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [autoApplied, setAutoApplied] = useState(false);
 
   useEffect(() => {
     if (requestType === 'substitution' && eventDatetime) {
@@ -65,7 +66,7 @@ export default function SubstitutionRequestPage() {
       const newDatetimeIso = requestType === 'reschedule' && newDatetime
         ? new Date(newDatetime).toISOString()
         : undefined;
-      await createLessonRequest({
+      const created = await createLessonRequest({
         request_type: requestType,
         event_id: eventId,
         group_id: groupId,
@@ -74,6 +75,8 @@ export default function SubstitutionRequestPage() {
         new_datetime: newDatetimeIso,
         reason: reason || undefined,
       });
+      // When the requester heads their own subject, the change is applied at once.
+      setAutoApplied((created as any)?.status === 'approved');
       setSubmitted(true);
     } catch (error: any) {
       console.error('Failed to submit request:', error);
@@ -118,9 +121,11 @@ export default function SubstitutionRequestPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
           <CardHeader className="text-center">
-            <CardTitle>Request Submitted</CardTitle>
+            <CardTitle>{autoApplied ? 'Change Applied' : 'Request Submitted'}</CardTitle>
             <CardDescription>
-              Your {requestType} request has been sent to the head teacher for approval.
+              {autoApplied
+                ? `Your ${requestType} was applied immediately and added to the Lesson Requests list.`
+                : `Your ${requestType} request has been sent to the head teacher for approval.`}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center gap-2">
