@@ -48,6 +48,7 @@ const ManualUnlocksPage = lazy(() => import('../pages/admin/ManualUnlocksPage.ts
 const TrialAccessPage = lazy(() => import('../pages/admin/TrialAccessPage.tsx'));
 const LessonRequestManagement = lazy(() => import('../pages/admin/LessonRequestManagement.tsx'));
 const LessonPage = lazy(() => import('../pages/LessonPage.tsx'));
+const PracticePrintPage = lazy(() => import('../pages/PracticePrintPage.tsx'));
 const CourseProgressPage = lazy(() => import('../pages/CourseProgressPage.tsx'));
 const EventManagement = lazy(() => import('../pages/EventManagement.tsx'));
 const CreateEvent = lazy(() => import('../pages/CreateEvent.tsx'));
@@ -354,6 +355,12 @@ export default function Router() {
           <Route path="/course/:courseId/lesson/:lessonId/edit" element={
             <ProtectedRoute allowedRoles={['admin', 'teacher', 'curator']}>
               <LessonEditPage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/course/:courseId/lesson/:lessonId/practice-print" element={
+            <ProtectedRoute>
+              <PracticePrintPage />
             </ProtectedRoute>
           } />
 

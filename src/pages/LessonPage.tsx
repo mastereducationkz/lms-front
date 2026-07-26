@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Skeleton } from '../components/ui/skeleton';
-import { ChevronLeft, ChevronRight, Play, FileText, HelpCircle, ChevronDown, ChevronUp, Lock, Trophy, PanelLeftOpen, PanelLeftClose, SkipForward, Languages, Layers, Check, Cloud, CloudOff, Loader2, Pencil } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, FileText, HelpCircle, ChevronDown, ChevronUp, Lock, Trophy, PanelLeftOpen, PanelLeftClose, SkipForward, Languages, Layers, Check, Cloud, CloudOff, Loader2, Pencil, Printer } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import apiClient from '../services/api';
 import type { Lesson, Step, Course, CourseModule, StepProgress, StepAttachment } from '../types';
@@ -1942,6 +1942,23 @@ export default function LessonPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            {currentStep?.content_type === 'quiz' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  window.open(
+                    `/course/${courseId}/lesson/${lessonId}/practice-print?step=${currentStep.id}`,
+                    '_blank'
+                  )
+                }
+                title="Download practice (PDF)"
+                aria-label="Download practice as PDF"
+              >
+                <Printer className="w-4 h-4 mr-1" />
+                <span className="hidden sm:inline">Practice PDF</span>
+              </Button>
+            )}
             {user?.role === 'admin' && (
               <Button
                 variant="outline"
