@@ -171,8 +171,13 @@ function WorksheetQuestion({ item }: { item: NumberedQuestion }) {
   const isLongOpen = !hasOptions && (type === 'long_text' || type === 'media_open_question');
   const isShortOpen = !hasOptions && (type === 'short_answer' || type === 'media_question');
 
+  // Most questions should never split across a page. But gap passages and
+  // long-answer lists can be taller than a page — forcing them to stay whole
+  // would leave a blank page — so those remain breakable.
+  const breakable = isGap || isLongOpen;
+
   return (
-    <div className="question">
+    <div className={`question${breakable ? ' question-breakable' : ''}`}>
       <div className="question-head">
         <span className="qnum">{n}.</span>
         <div className="qbody">
@@ -467,9 +472,11 @@ const PRINT_CSS = `
 .sheet-header h1 { font-size: 22px; margin: 0; }
 .sheet-sub { margin-top: 4px; font-size: 14px; color: #555; }
 
-/* No break-inside:avoid here — a gap passage can be taller than a page, and
-   avoiding breaks would push the whole question down and leave a blank page. */
-.question { margin: 0 0 24px; }
+/* Keep each question whole on one page (move it to the next page if it doesn't
+   fit). Tall questions opt out via .question-breakable so they don't strand a
+   blank page. */
+.question { margin: 0 0 24px; page-break-inside: avoid; break-inside: avoid; }
+.question-breakable { page-break-inside: auto; break-inside: auto; }
 .passage {
   border-left: 3px solid #cbd5e1; padding: 6px 12px; margin: 0 0 10px;
   background: #f8fafc; font-size: 14.5px;
@@ -486,7 +493,10 @@ const PRINT_CSS = `
 .gap-opt { display: inline-block; margin-right: 18px; }
 .gap-opt b { font-family: system-ui, sans-serif; }
 
-.qmedia { display: block; margin: 10px 0; border: 1px solid #e2e2e2; border-radius: 4px; }
+.qmedia {
+  display: block; margin: 10px 0; width: auto; max-width: 62%; max-height: 230px;
+  border: 1px solid #e2e2e2; border-radius: 4px;
+}
 
 .options { list-style: none; margin: 16px 0 0; padding: 0; }
 .option {
