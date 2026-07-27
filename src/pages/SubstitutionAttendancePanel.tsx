@@ -123,7 +123,7 @@ export default function SubstitutionAttendancePanel() {
         .map(s => ({
           student_id: s.student_id,
           status: s.attendance_status,
-          activity_score: s.activity_score,
+          activity_score: (s.attendance_status === 'attended' || s.attendance_status === 'late') ? s.activity_score : 0,
         }));
       await updateEventAttendance(openLesson.event_id, { attendance });
       toast.success('Attendance saved');
