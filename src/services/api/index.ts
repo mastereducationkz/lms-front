@@ -45,7 +45,7 @@ function _getCurrentUserFromStorage(): any {
     return userData ? JSON.parse(userData) : null;
   } catch { return null; }
 }
-import { getCourses, getCourse, createCourse, updateCourse, publishCourse, unpublishCourse, setCourseThumbnailUrl, uploadCourseThumbnail, deleteCourse, enrollInCourse, unenrollFromCourse, getMyCourses, autoEnrollStudents, grantGroupAccess, revokeGroupAccess, getCourseGroupAccessStatus, getCourseTeacherAccess, grantCourseTeacherAccess, revokeCourseTeacherAccess, getTeacherCourses, getCourseLessons, getCourseLessonsTyped, fixLessonOrder, addSummaryStepsToCourse, analyzeSatImage, fetchCourses, fetchCourseById } from './courses';
+import { getCourses, getCourse, createCourse, updateCourse, publishCourse, unpublishCourse, setCourseThumbnailUrl, uploadCourseThumbnail, deleteCourse, enrollInCourse, unenrollFromCourse, getMyCourses, autoEnrollStudents, grantGroupAccess, revokeGroupAccess, getCourseGroupAccessStatus, getCourseTeacherAccess, grantCourseTeacherAccess, revokeCourseTeacherAccess, getTeacherCourses, getCourseLessons, getCourseLessonsTyped, fixLessonOrder, addSummaryStepsToCourse, analyzeSatImage, analyzeNuetImage, fetchCourses, fetchCourseById } from './courses';
 import { getCourseModules, createModule, updateModule, deleteModule, fetchModulesByCourse, fetchModuleById, getModuleProgress } from './modules';
 import { getModuleLessons, getLesson, checkLessonAccess, getLessonTyped, createLesson, updateLesson, deleteLesson, splitLesson, getLessonSteps, createStep, getStep, updateStep, deleteStep, reorderSteps, uploadStepAttachment, deleteStepAttachment, fetchLesson, fetchLectureById } from './lessons';
 import { getAssignments, getAssignment, getAssignedLessonsForCourse, createAssignment, updateAssignment, submitAssignment, getMySubmissions, getPreviousHomework, getUnseenGradedCount, markSubmissionSeen, getAssignmentSubmissions, getSubmission, debugSubmissions, debugDeleteSubmission, gradeSubmission, toggleAssignmentVisibility, grantExtension, getAssignmentExtensions, revokeExtension, getMyExtension, getAssignmentStatusForStudent, getAssignmentStudentProgress, allowResubmission, getPendingSubmissions, getPendingSubmissionsMeta, getRecentSubmissions, getTeacherStudentsProgress, getTeacherTodayHomework, getHeadTeacherHwGapsToday, autoGradeUnitHomework, getAutoGradeUnitHomeworkPreview, uploadAssignmentAudio } from './assignments';
@@ -79,7 +79,7 @@ const apiClient = {
   getMyCourses, autoEnrollStudents, grantGroupAccess, revokeGroupAccess, getCourseGroupAccessStatus,
   getCourseTeacherAccess, grantCourseTeacherAccess, revokeCourseTeacherAccess,
   getTeacherCourses, getCourseLessons, getCourseLessonsTyped, fixLessonOrder,
-  addSummaryStepsToCourse, analyzeSatImage, fetchCourses, fetchCourseById,
+  addSummaryStepsToCourse, analyzeSatImage, analyzeNuetImage, fetchCourses, fetchCourseById,
   // Modules
   getCourseModules, createModule, updateModule, deleteModule, fetchModulesByCourse, fetchModuleById, getModuleProgress,
   // Lessons & Steps

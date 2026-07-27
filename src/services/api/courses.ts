@@ -241,6 +241,24 @@ export async function analyzeSatImage(imageFile: File, correctAnswers?: string):
   }
 }
 
+export async function analyzeNuetImage(imageFile: File, correctAnswers?: string): Promise<any> {
+  try {
+    const formData = new FormData();
+    formData.append('image', imageFile);
+    if (correctAnswers) {
+      formData.append('correct_answers', correctAnswers);
+    }
+    const response = await api.post('/courses/analyze-nuet-image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000,
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('analyzeNuetImage error:', error);
+    throw new Error(`Failed to analyze NUET image: ${error.message || error}`);
+  }
+}
+
 // Legacy compatibility aliases
 export const fetchCourses = () => getCourses();
 export const fetchCourseById = (courseId: string): Promise<Course> => getCourse(courseId);
