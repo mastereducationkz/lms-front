@@ -1211,16 +1211,31 @@ export interface EventStudent {
   student_id: number;
   name: string;
   attendance_status: string; // "attended", "missed", "late", "registered", "cancelled"
+  activity_score?: number;
   last_updated?: string;
 }
 
 export interface AttendanceRecord {
   student_id: number;
   status: string;
+  activity_score?: number;
 }
 
 export interface AttendanceBulkUpdate {
   attendance: AttendanceRecord[];
+}
+
+export interface SubstitutionLesson {
+  event_id: number;
+  title: string;
+  topic?: string | null;
+  start_datetime: string;
+  end_datetime: string;
+  group_id: number;
+  group_name: string;
+  is_online: boolean;
+  location?: string | null;
+  meeting_url?: string | null;
 }
 
 // =============================================================================

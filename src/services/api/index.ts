@@ -53,7 +53,7 @@ import { getAssignmentZeroStatus, getMyAssignmentZeroSubmission, saveAssignmentZ
 import { markLessonComplete, startLesson, getMyProgress, getCourseProgress, isLessonCompleted, markStepStarted, markStepVisited, getStepProgress, getLessonStepsProgress, getCourseStudentsStepsProgress, getStudentProgressOverview, getStudentProgressOverviewById, getDailyStreak, getStudentProgress, getProgressStudents, markLectureComplete, isLectureCompleted, getCourseProgressLegacy, getCourseStatus, getLessonProgressSummary, completeLessonsForTarget, resetLessonsForTarget } from './progress';
 import { getUnreadMessageCount, fetchThreads, fetchMessages, sendMessage, getAvailableContacts, markMessageAsRead, markAllMessagesAsRead } from './chat';
 import { fetchQuizzes, fetchQuizById, getQuizAttemptsLeft, submitQuiz, saveQuizAttempt, updateQuizAttempt, gradeQuizAttempt, deleteQuizAttempt, getUngradedQuizAttempts, getGradedQuizAttempts, getLessonQuizSummary, getStepQuizAttempts, getCourseQuizAttempts, getCourseQuizAnalytics, getStudentQuizAnalytics } from './quizzes';
-import { getAllEvents, createEvent, createCuratorEvent, updateEvent, deleteEvent, bulkDeleteEvents, createBulkEvents, getMyEvents, getCalendarEvents, getUpcomingEvents, getEventDetails, registerForEvent, unregisterFromEvent, getEventParticipants, updateEventAttendance } from './events';
+import { getAllEvents, createEvent, createCuratorEvent, updateEvent, deleteEvent, bulkDeleteEvents, createBulkEvents, getMyEvents, getCalendarEvents, getUpcomingEvents, getEventDetails, registerForEvent, unregisterFromEvent, getEventParticipants, updateEventAttendance, getMySubstitutions } from './events';
 import { uploadAssignmentFile, uploadTeacherFile, uploadSubmissionFile, uploadQuestionMedia, downloadFile, getFileUrl, uploadFile } from './uploads';
 import { getUsers, getStudentTeacherGroups, getStudentsForTeacherGroup, updateUser, deactivateUser, bulkSetUsersActive, assignUserToGroup, bulkAssignUsersToGroup, createUser, bulkCreateUsersFromText, resetUserPassword, getAllTeachers, getAllCurators, getParentChildren, linkParentChildren, unlinkParentChild } from './users';
 import { createTrial, getTrials, updateTrial, revokeTrial, resendTrialInvite, convertTrial } from './trials';
@@ -119,7 +119,7 @@ const apiClient = {
   getAllEvents, createEvent, createCuratorEvent, updateEvent, deleteEvent,
   bulkDeleteEvents, createBulkEvents, getMyEvents, getCalendarEvents, getUpcomingEvents,
   getEventDetails, registerForEvent, unregisterFromEvent,
-  getEventParticipants, updateEventAttendance,
+  getEventParticipants, updateEventAttendance, getMySubstitutions,
   // Uploads
   uploadAssignmentFile, uploadTeacherFile, uploadSubmissionFile, uploadQuestionMedia,
   downloadFile, getFileUrl, uploadFile,

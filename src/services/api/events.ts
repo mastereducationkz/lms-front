@@ -1,4 +1,4 @@
-import type { Event, CreateEventRequest, UpdateEventRequest, EventType, EventStudent, AttendanceBulkUpdate } from '../../types';
+import type { Event, CreateEventRequest, UpdateEventRequest, EventType, EventStudent, AttendanceBulkUpdate, SubstitutionLesson } from '../../types';
 import { api } from './client';
 
 export async function getAllEvents(params?: {
@@ -151,5 +151,14 @@ export async function updateEventAttendance(eventId: number, data: AttendanceBul
     await api.post(`/events/${eventId}/attendance`, data);
   } catch (error: any) {
     throw new Error(error.response?.data?.detail || 'Failed to update attendance');
+  }
+}
+
+export async function getMySubstitutions(): Promise<SubstitutionLesson[]> {
+  try {
+    const response = await api.get('/events/my-substitutions');
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Failed to load substitutions');
   }
 }
