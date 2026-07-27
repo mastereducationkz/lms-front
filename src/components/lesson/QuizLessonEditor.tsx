@@ -92,6 +92,7 @@ export default function QuizLessonEditor({
   const [draftQuestion, setDraftQuestion] = useState<Question | null>(null);
   const [editingQuestionIndex, setEditingQuestionIndex] = useState<number | null>(null);
   const [showSatImageModal, setShowSatImageModal] = useState(false);
+  const [analyzeMode, setAnalyzeMode] = useState<'sat' | 'nuet'>('sat');
   const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
   const [correctAnswersText, setCorrectAnswersText] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -655,11 +656,13 @@ export default function QuizLessonEditor({
     }
   }, [quizType, uploadQuizMedia]);
 
-  const analyzeImageFile = React.useCallback(async (file: File, correctAnswers?: string) => {
+  const analyzeImageFile = React.useCallback(async (file: File, correctAnswers?: string, mode: 'sat' | 'nuet' = 'sat') => {
     setIsAnalyzingImage(true);
     try {
-      const result = await apiClient.analyzeSatImage(file, correctAnswers);
-      console.log('SAT analysis result:', result);
+      const result = mode === 'nuet'
+        ? await apiClient.analyzeNuetImage(file, correctAnswers)
+        : await apiClient.analyzeSatImage(file, correctAnswers);
+      console.log('Analysis result:', result);
 
       if (!result || result.success === false) {
         const message = (result && (result.explanation || result.error)) || 'Analysis returned no data';
@@ -692,7 +695,7 @@ export default function QuizLessonEditor({
                 id: Date.now().toString() + '_' + index + '_opt_' + optIdx,
                 text: opt.text || opt || '',
                 is_correct: opt.is_correct || false,
-                letter: opt.letter || ['A', 'B', 'C', 'D'][optIdx] || ''
+                letter: opt.letter || ['A', 'B', 'C', 'D', 'E'][optIdx] || ''
               }))
             : [];
 
@@ -781,7 +784,7 @@ export default function QuizLessonEditor({
 
   const handleAnalyzeClick = async () => {
     if (!uploadedFile) return;
-    await analyzeImageFile(uploadedFile, correctAnswersText);
+    await analyzeImageFile(uploadedFile, correctAnswersText, analyzeMode);
   };
 
   // Global paste handler for the entire component
@@ -2572,7 +2575,24 @@ Italy = Rome`}</pre>
                   Upload a PDF document or Image of a test (e.g., SAT) to automatically extract questions, options, and correct answers using AI.
                 </p>
 
-                <div 
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAnalyzeMode('sat')}
+                    className={`flex-1 px-3 py-2 rounded-md text-sm font-semibold border ${analyzeMode === 'sat' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300'}`}
+                  >
+                    SAT (Gemini)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAnalyzeMode('nuet')}
+                    className={`flex-1 px-3 py-2 rounded-md text-sm font-semibold border ${analyzeMode === 'nuet' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300'}`}
+                  >
+                    NUET (ChatGPT)
+                  </button>
+                </div>
+
+                <div
                   className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
                   onDrop={(e) => {
                     e.preventDefault();
@@ -2672,7 +2692,7 @@ Italy = Rome`}</pre>
                 {isAnalyzingImage && (
                   <div className="text-center py-4">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="text-sm text-gray-600 mt-2">Analyzing file with Gemini AI... This may take a minute.</p>
+                    <p className="text-sm text-gray-600 mt-2">Analyzing file with {analyzeMode === 'nuet' ? 'ChatGPT' : 'Gemini'} AI... This may take a minute.</p>
                   </div>
                 )}
               </div>
