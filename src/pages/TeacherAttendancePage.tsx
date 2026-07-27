@@ -50,6 +50,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "../components/ui/dialog";
+import SubstitutionAttendancePanel from './SubstitutionAttendancePanel';
 
 interface LessonMeta {
     lesson_number: number;
@@ -78,6 +79,7 @@ interface AttendanceData {
 
 export default function TeacherAttendancePage() {
   const { user } = useAuth();
+  const [view, setView] = useState<'group' | 'substitutions'>('group');
   const [searchParams, setSearchParams] = useSearchParams();
   
   const [groups, setGroups] = useState<Group[]>([]);
@@ -429,6 +431,38 @@ export default function TeacherAttendancePage() {
 
   return (
     <div className="p-8 space-y-8 max-w-[1600px] mx-auto min-h-screen text-gray-900 dark:text-foreground font-sans">
+      {/* View toggle: group matrix vs. substitution lessons */}
+      <div className="inline-flex rounded-lg border border-gray-200 dark:border-border p-0.5 bg-gray-50 dark:bg-secondary">
+        <button
+          className={cn(
+            'px-4 py-1.5 text-sm font-semibold rounded-md transition-colors',
+            view === 'group'
+              ? 'bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm'
+              : 'text-gray-500 dark:text-gray-400'
+          )}
+          onClick={() => setView('group')}
+        >
+          Group Attendance
+        </button>
+        <button
+          className={cn(
+            'px-4 py-1.5 text-sm font-semibold rounded-md transition-colors',
+            view === 'substitutions'
+              ? 'bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm'
+              : 'text-gray-500 dark:text-gray-400'
+          )}
+          onClick={() => setView('substitutions')}
+        >
+          Substitutions
+        </button>
+      </div>
+
+      {view === 'substitutions' ? (
+        <div className="border border-gray-200 dark:border-border rounded-lg overflow-hidden bg-white dark:bg-card shadow-sm">
+          <SubstitutionAttendancePanel />
+        </div>
+      ) : (
+      <>
       {/* Header - Aligned with AnalyticsPage */}
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
         <div>
@@ -797,6 +831,8 @@ export default function TeacherAttendancePage() {
             )}
         </div>
       </div>
+      </>
+      )}
 
       {/* Activity Score Modal */}
       <Dialog open={activityModal.open} onOpenChange={(open) => !open && setActivityModal(prev => ({ ...prev, open: false }))}>
