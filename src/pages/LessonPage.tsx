@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Skeleton } from '../components/ui/skeleton';
-import { ChevronLeft, ChevronRight, Play, FileText, HelpCircle, ChevronDown, ChevronUp, Lock, Trophy, PanelLeftOpen, PanelLeftClose, SkipForward, Languages, Layers, Check, Cloud, CloudOff, Loader2, Pencil, Printer } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, FileText, HelpCircle, ChevronDown, ChevronUp, Lock, Trophy, PanelLeftOpen, PanelLeftClose, SkipForward, Languages, Star, Layers, Check, Cloud, CloudOff, Loader2, Pencil, Printer } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import apiClient from '../services/api';
 import type { Lesson, Step, Course, CourseModule, StepProgress, StepAttachment } from '../types';
@@ -355,6 +355,7 @@ export default function LessonPage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [modules, setModules] = useState<CourseModule[]>([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [isCurrentStepFavorite, setIsCurrentStepFavorite] = useState(false);
   const [isCourseLoading, setIsCourseLoading] = useState(true);
   const [isLessonLoading, setIsLessonLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -722,6 +723,35 @@ export default function LessonPage() {
   }, [stepsProgress, steps, courseId, lessonId]);
 
   const currentStep = orderedSteps[currentStepIndex];
+
+  // Reflect the current step's favorite state (student-only)
+  useEffect(() => {
+    let cancelled = false;
+    const stepId = currentStep?.id;
+    if (user?.role !== 'student' || !stepId) {
+      setIsCurrentStepFavorite(false);
+      return;
+    }
+    apiClient
+      .checkStepIsFavorite(stepId)
+      .then((res) => { if (!cancelled) setIsCurrentStepFavorite(!!res.is_favorite); })
+      .catch(() => { if (!cancelled) setIsCurrentStepFavorite(false); });
+    return () => { cancelled = true; };
+  }, [currentStep?.id, user?.role]);
+
+  const handleToggleFavoriteStep = useCallback(async () => {
+    const stepId = currentStep?.id;
+    if (!stepId) return;
+    const next = !isCurrentStepFavorite;
+    setIsCurrentStepFavorite(next); // optimistic
+    try {
+      if (next) await apiClient.addFavoriteStep(stepId);
+      else await apiClient.removeFavoriteStep(stepId);
+    } catch (e) {
+      setIsCurrentStepFavorite(!next); // revert on failure
+      toast('Failed to update favorite', 'error');
+    }
+  }, [currentStep?.id, isCurrentStepFavorite]);
 
   // Check if step is completed based on content type
   const isStepCompleted = useCallback((step: Step): boolean => {
@@ -1974,6 +2004,23 @@ export default function LessonPage() {
               >
                 <Pencil className="w-4 h-4 mr-1" />
                 Edit
+              </Button>
+            )}
+            {/* Favorite (bookmark) current step */}
+            {user?.role === 'student' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleToggleFavoriteStep}
+                className={`h-9 w-9 p-0 rounded-lg border transition-colors ${
+                  isCurrentStepFavorite
+                    ? 'text-yellow-500 bg-yellow-500/10 border-yellow-500/30 hover:bg-yellow-500/15'
+                    : 'bg-background text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground'
+                }`}
+                title={isCurrentStepFavorite ? 'Saved to favorites' : 'Save this page'}
+                aria-label={isCurrentStepFavorite ? 'Remove from favorites' : 'Save to favorites'}
+              >
+                <Star className={`w-5 h-5 ${isCurrentStepFavorite ? 'fill-current' : ''}`} />
               </Button>
             )}
             {/* Look Up Toggle */}
