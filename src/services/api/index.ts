@@ -17,6 +17,7 @@ export * from './groups';
 export * from './analytics';
 export * from './curator';
 export * from './flashcards';
+export * from './favoriteSteps';
 export * from './gamification';
 export * from './head-teacher';
 export * from './lesson-requests';
@@ -61,6 +62,7 @@ import { getAllGroups, getGroups, getMyGroups, getTeacherGroups, getCourseGroups
 import { getDetailedStudentAnalytics, getCourseAnalyticsOverview, getVideoEngagementAnalytics, getQuizPerformanceAnalytics, getQuizErrors, getAllStudentsAnalytics, getGroupsAnalytics, getCourseGroupsAnalytics, getCourseProgressHistory, getGroupStudentsAnalytics, getStudentProgressHistory, exportStudentReport, exportGroupReport, exportAllStudentsReport, exportAnalyticsExcel, getStudentDetailedProgress, getStudentSatScores, getStudentLearningPath } from './analytics';
 import { getCuratorPendingSubmissions, getCuratorRecentSubmissions, getCuratorStudentsProgress, getCuratorAssignmentsAnalytics, getCuratorHomeworkByGroup, getCuratorGroups, getGroupSchedule, getGroupLeaderboard, getWeeklyLessonsWithHwStatus, getGroupFullAttendanceMatrix, updateLeaderboardConfig, updateAttendanceBulk, setLessonTopic, updateLeaderboardEntry, updateAttendance, generateSchedule, getGroupSchedules, bulkScheduleUpload, getCuratorDetails, getCuratorTasks, getCuratorTaskGroups, getCuratorTasksSummary, updateCuratorTask, bulkUpdateCuratorTasks, getCuratorTaskTemplates, seedCuratorTaskTemplates, generateWeeklyTasks, getAllCuratorTasks, getAllCuratorTasksDaySummary, getCuratorsSummary, createCuratorTaskInstance, createCuratorTaskInstancesBulk } from './curator';
 import { addFavoriteFlashcard, getFavoriteFlashcards, removeFavoriteFlashcard, removeFavoriteByCardId, checkIsFavorite, lookupWord, quickCreateFlashcard, getVocabularyCards } from './flashcards';
+import { addFavoriteStep, removeFavoriteStep, getFavoriteSteps, checkStepIsFavorite } from './favoriteSteps';
 import { getGamificationStatus, getBonusAllowance, giveTeacherBonus, getGamificationLeaderboard, getPointHistory, getStudentLeaderboard } from './gamification';
 import { getHeadTeacherManagedCourses, getHeadTeacherCourseTeachers, getHeadTeacherTeacherDetails, getHeadTeacherTeacherFeedbacks, getHeadTeacherTeacherAssignments, getHeadTeacherAttendanceGaps, getHeadTeacherHwGapsByTeacher } from './head-teacher';
 import { getLessonRequests, getPendingLessonRequests, getMyLessonRequests, getIncomingRequests, createLessonRequest, approveLessonRequest, rejectLessonRequest, confirmLessonRequest, declineLessonRequest, getAvailableTeachers, updateSubstitutionPreference } from './lesson-requests';
@@ -155,6 +157,8 @@ const apiClient = {
   // Flashcards & Vocabulary
   addFavoriteFlashcard, getFavoriteFlashcards, removeFavoriteFlashcard,
   removeFavoriteByCardId, checkIsFavorite, lookupWord, quickCreateFlashcard, getVocabularyCards,
+  // Favorite Steps (page bookmarks)
+  addFavoriteStep, removeFavoriteStep, getFavoriteSteps, checkStepIsFavorite,
   // Gamification
   getGamificationStatus, getBonusAllowance, giveTeacherBonus,
   getGamificationLeaderboard, getPointHistory, getStudentLeaderboard,
