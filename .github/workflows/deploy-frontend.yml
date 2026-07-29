@@ -42,7 +42,7 @@ jobs:
             set -e
             echo "🏥 Health check (container serves index)..."
             for i in {1..20}; do
-              if docker exec lms-frontend wget -q -O /dev/null http://localhost/ 2>/dev/null; then
+              if docker exec lms-frontend wget -q -O /dev/null http://127.0.0.1/ 2>/dev/null; then
                 echo "✅ Health check passed"; exit 0
               fi
               echo "⏳ waiting ($i/20)"; sleep 3
