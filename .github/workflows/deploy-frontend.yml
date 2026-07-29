@@ -1,0 +1,50 @@
+name: Deploy Frontend to Server
+
+on:
+  workflow_run:
+    workflows: ["Frontend CI"]
+    types: [completed]
+
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'master' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            echo "🚀 Deploying frontend..."
+            cd ~/projects/lms-frontend
+            git config core.fileMode false
+            git fetch origin master
+            git checkout master
+            git pull --ff-only origin master
+            docker compose build
+            docker compose up -d lms-frontend
+            echo "✅ Frontend container rebuilt & restarted"
+
+      - name: Health check
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            echo "🏥 Health check (container serves index)..."
+            for i in {1..20}; do
+              if docker exec lms-frontend wget -q -O /dev/null http://localhost/ 2>/dev/null; then
+                echo "✅ Health check passed"; exit 0
+              fi
+              echo "⏳ waiting ($i/20)"; sleep 3
+            done
+            echo "❌ Health check failed"; docker logs --tail=100 lms-frontend || true; exit 1

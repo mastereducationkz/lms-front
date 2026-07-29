@@ -1,0 +1,56 @@
+name: Frontend CI
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "index.html"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.config.js"
+      - ".env.production"
+      - "Dockerfile"
+      - "nginx.conf"
+      - "docker-compose.yml"
+      - ".dockerignore"
+      - ".github/workflows/frontend-ci.yml"
+      - ".github/workflows/deploy-frontend.yml"
+  push:
+    branches: [master]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "index.html"
+      - "package.json"
+      - "package-lock.json"
+      - "vite.config.js"
+      - ".env.production"
+      - "Dockerfile"
+      - "nginx.conf"
+      - "docker-compose.yml"
+      - ".dockerignore"
+      - ".github/workflows/frontend-ci.yml"
+      - ".github/workflows/deploy-frontend.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (Vite, production)
+        run: npm run build
+
+      - name: Build Docker image (catch Dockerfile regressions)
+        run: docker build -t lms-frontend-ci .
