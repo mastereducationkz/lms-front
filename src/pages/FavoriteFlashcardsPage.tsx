@@ -8,6 +8,8 @@ import { Heart, Trash2, BookOpen, Eye, EyeOff, Play, XCircle, CheckCircle, Chevr
 import { toast } from '../components/Toast';
 import Loader from '../components/Loader';
 import type { FavoriteFlashcard, FlashcardItem } from '../types';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
+import FavoriteStepsList from '../components/favorites/FavoriteStepsList';
 
 export default function FavoriteFlashcardsPage() {
   const [favorites, setFavorites] = useState<FavoriteFlashcard[]>([]);
@@ -17,6 +19,7 @@ export default function FavoriteFlashcardsPage() {
   const [currentPracticeIndex, setCurrentPracticeIndex] = useState(0);
   const [practiceFlipped, setPracticeFlipped] = useState(false);
   const [practiceCompleted, setPracticeCompleted] = useState<Set<string>>(new Set());
+  const [activeTab, setActiveTab] = useState<'flashcards' | 'pages'>('flashcards');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -278,6 +281,13 @@ export default function FavoriteFlashcardsPage() {
   // Grid View (default)
   return (
     <div className="max-w-7xl mx-auto p-6">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'flashcards' | 'pages')}>
+        <TabsList className="mb-6">
+          <TabsTrigger value="flashcards">Flashcards</TabsTrigger>
+          <TabsTrigger value="pages">Pages</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="flashcards">
       <div className="mb-8">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
@@ -289,7 +299,7 @@ export default function FavoriteFlashcardsPage() {
             </div>
           </div>
           {favorites.length > 0 && (
-            <Button 
+            <Button
               onClick={handlePracticeAll}
               size="lg"
               className="flex items-center gap-2"
@@ -412,6 +422,12 @@ export default function FavoriteFlashcardsPage() {
           })}
         </div>
       )}
+        </TabsContent>
+
+        <TabsContent value="pages">
+          <FavoriteStepsList />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
