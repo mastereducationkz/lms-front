@@ -1932,7 +1932,7 @@ export default function LessonPage() {
         {/* <MaintenanceBanner /> */}
         {/* Header */}
         <div className="h-16 border-b border-border flex items-center justify-between px-4 md:px-6 bg-card flex-shrink-0">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMobileSidebarOpen(true)}>
               <ChevronRight className="w-5 h-5" />
             </Button>
@@ -1944,7 +1944,7 @@ export default function LessonPage() {
             <Button variant="ghost" size="icon" onClick={() => navigate(`/course/${courseId}`)} title="Back to Course">
               <ChevronLeft className="w-5 h-5" />
             </Button>
-            <h1 className="font-semibold text-base sm:text-lg leading-tight line-clamp-2 break-words max-w-[220px] sm:max-w-2xl">
+            <h1 className="font-semibold text-base sm:text-lg leading-tight line-clamp-2 break-words min-w-0 max-w-[220px] sm:max-w-2xl">
               {lesson.title}
             </h1>
             {(user?.role === 'teacher' || user?.role === 'admin') && (
@@ -1971,7 +1971,7 @@ export default function LessonPage() {
               </Button>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {currentStep?.content_type === 'quiz' && (
               <Button
                 variant="outline"
