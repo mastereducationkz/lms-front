@@ -121,9 +121,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <p className="mt-3 text-sm font-medium sm:text-[15px]">
                 Без ограничений по количеству. Чем больше друзей, тем больше бонус.
               </p>
-              <p className="mt-1 text-sm sm:text-[15px]">
-                Твой друг тоже получает скидку 15 000 ₸ на старт обучения.
-              </p>
             </div>
           </div>
         )}
