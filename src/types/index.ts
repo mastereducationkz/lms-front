@@ -905,6 +905,21 @@ export interface MessageThread {
     from_me: boolean;
   };
   unread_count: number;
+  is_muted?: boolean;
+}
+
+export interface MessageReaction {
+  user_id: number;
+  user_name?: string;
+  emoji: string;
+}
+
+export interface ReplyPreview {
+  id: number;
+  content: string;
+  file_url?: string;
+  from_user_id: number;
+  sender_name?: string;
 }
 
 export interface Message {
@@ -916,6 +931,11 @@ export interface Message {
   content: string;
   file_url?: string;
   is_read: boolean;
+  delivered_at?: string | null;
+  read_at?: string | null;
+  reply_to_message_id?: number | null;
+  reply_preview?: ReplyPreview | null;
+  reactions?: MessageReaction[];
   created_at: string;
 }
 

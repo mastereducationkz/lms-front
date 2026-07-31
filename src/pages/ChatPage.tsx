@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, FormEvent } from 'react';
 import { useLocation } from 'react-router-dom';
-import { isAuthenticated, fetchThreads, fetchMessages, getAvailableContacts, sendMessage, getCurrentUser, fetchGroupThreads, fetchGroupMessages, sendGroupMessage } from "../services/api";
+import { isAuthenticated, fetchThreads, fetchMessages, getAvailableContacts, sendMessage, getCurrentUser, fetchGroupThreads, fetchGroupMessages, sendGroupMessage, reactToMessage, getMutedConversations, muteConversation, unmuteConversation } from "../services/api";
 import type { MessageThread, Message, AvailableContact, User, GroupThread } from '../types';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -8,29 +8,12 @@ import { Badge } from '../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { Check } from 'lucide-react';
+import { BellOff, Info, Reply as ReplyIcon, X } from 'lucide-react';
 import { connectSocket } from '../services/socket';
 import { useVisiblePolling } from '../hooks/useVisiblePolling';
-
-const ATTACH_BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-
-function ChatAttachment({ fileUrl }: { fileUrl: string }) {
-  const url = fileUrl.startsWith('http') ? fileUrl : `${ATTACH_BACKEND_URL}${fileUrl}`;
-  const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(fileUrl);
-  if (isImage) {
-    return (
-      <a href={url} target="_blank" rel="noreferrer">
-        <img src={url} alt="attachment" className="max-w-[220px] max-h-[220px] rounded-lg mb-1 object-cover" />
-      </a>
-    );
-  }
-  const fileName = decodeURIComponent(fileUrl.split('/').pop() || 'file');
-  return (
-    <a href={url} target="_blank" rel="noreferrer" className="underline mb-1 break-all block">
-      📎 {fileName}
-    </a>
-  );
-}
+import { ChatAttachment } from '../components/chat/ChatAttachment';
+import { ChatMessageBubble } from '../components/chat/ChatMessageBubble';
+import { ChatInfoDialog } from '../components/chat/ChatInfoDialog';
 
 export default function ChatPage() {
   const location = useLocation();
@@ -45,8 +28,24 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showNewChatDialog, setShowNewChatDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [mutedIds, setMutedIds] = useState<Set<number>>(new Set());
+  const [showInfo, setShowInfo] = useState(false);
   const pollRef = useRef<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // DOM refs per message id so a reply preview can scroll to the original bubble.
+  const messageRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const registerMessageRef = (id: number, el: HTMLDivElement | null) => {
+    messageRefs.current[id] = el;
+  };
+  const jumpToMessage = (id: number) => {
+    const el = messageRefs.current[id];
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('ring-2', 'ring-blue-400', 'rounded-xl');
+      setTimeout(() => el.classList.remove('ring-2', 'ring-blue-400', 'rounded-xl'), 1200);
+    }
+  };
 
   // Загрузка пользователя и списка разговоров
   useEffect(() => {
@@ -54,6 +53,7 @@ export default function ChatPage() {
     loadThreads();
     void loadGroupThreads();
     loadAvailableContacts();
+    void getMutedConversations().then((ids) => setMutedIds(new Set(ids)));
   }, []);
 
   // Handle navigation state to open chat with specific user
@@ -88,18 +88,46 @@ export default function ChatPage() {
     const onMessageNew = (payload: any) => {
       const involvesActive = payload.from_user_id === activePartnerId || payload.to_user_id === activePartnerId;
       if (involvesActive) {
-        setMessages(prev => [...prev, payload]);
+        setMessages(prev => prev.some(m => m.id === payload.id) ? prev : [...prev, payload]);
+      }
+      // Acknowledge delivery of any incoming message so the sender gets the double tick.
+      const incoming = payload.to_user_id === currentUser?.id && payload.from_user_id !== currentUser?.id;
+      if (incoming) {
+        const s = connectSocket();
+        if (s && s.connected) s.emit('message:delivered', { partner_id: payload.from_user_id });
       }
     };
 
     const onMessageUpdated = (payload: any) => {
-      setMessages(prev => prev.map(m => m.id === payload.id ? { ...m, is_read: payload.is_read } : m));
+      // Full message payload: merge receipts + reactions in place.
+      setMessages(prev => prev.map(m => m.id === payload.id ? { ...m, ...payload } : m));
     };
 
+    // Legacy bulk read event (older backends) — mark listed ids read.
     const onMessageBulkUpdated = (payload: any) => {
-      const ids: number[] = payload?.ids || [];
-      const is_read = !!payload?.is_read;
-      if (ids.length) setMessages(prev => prev.map(m => ids.includes(m.id) ? { ...m, is_read } : m));
+      const ids: number[] = payload?.message_ids || payload?.ids || [];
+      if (ids.length) setMessages(prev => prev.map(m => ids.includes(m.id) ? { ...m, is_read: true } : m));
+    };
+
+    // Rich delivery/read receipts.
+    const onMessageReceipts = (payload: any) => {
+      const ids: number[] = payload?.message_ids || [];
+      const status: string = payload?.status;
+      if (!ids.length) return;
+      const now = new Date().toISOString();
+      setMessages(prev => prev.map(m => {
+        if (!ids.includes(m.id)) return m;
+        if (status === 'read') return { ...m, is_read: true, read_at: m.read_at || now, delivered_at: m.delivered_at || now };
+        if (status === 'delivered') return { ...m, delivered_at: m.delivered_at || now };
+        return m;
+      }));
+    };
+
+    // A message's reaction set changed.
+    const onMessageReaction = (payload: any) => {
+      const { message_id, reactions } = payload || {};
+      if (!message_id) return;
+      setMessages(prev => prev.map(m => m.id === message_id ? { ...m, reactions: reactions || [] } : m));
     };
 
     const onThreadsUpdate = async () => {
@@ -128,6 +156,8 @@ export default function ChatPage() {
     socket.on('message:new', onMessageNew);
     socket.on('message:updated', onMessageUpdated);
     socket.on('message:bulk-updated', onMessageBulkUpdated);
+    socket.on('message:receipts', onMessageReceipts);
+    socket.on('message:reaction', onMessageReaction);
     socket.on('threads:update', onThreadsUpdate);
     socket.on('unread:update', onUnreadUpdate);
     socket.on('group:message:new', onGroupMessageNew);
@@ -138,18 +168,21 @@ export default function ChatPage() {
       socket.off('message:new', onMessageNew);
       socket.off('message:updated', onMessageUpdated);
       socket.off('message:bulk-updated', onMessageBulkUpdated);
+      socket.off('message:receipts', onMessageReceipts);
+      socket.off('message:reaction', onMessageReaction);
       socket.off('threads:update', onThreadsUpdate);
       socket.off('unread:update', onUnreadUpdate);
       socket.off('group:message:new', onGroupMessageNew);
       socket.off('group:threads:update', onGroupThreadsUpdate);
       socket.off('group:unread:update', onGroupUnreadUpdate);
     };
-  }, [activePartnerId, activeGroupConvId]);
+  }, [activePartnerId, activeGroupConvId, currentUser?.id]);
 
   // Загрузка сообщений при смене активного партнера
   useEffect(() => {
     if (!activePartnerId) return;
-    
+    setReplyingTo(null);
+
     const loadMessages = async () => {
       const msgs: any[] = await fetchMessages(String(activePartnerId));
       setMessages(msgs.reverse());
@@ -224,7 +257,9 @@ export default function ChatPage() {
     setIsLoading(true);
     try {
       const optimistic = text.trim();
+      const replyToId = replyingTo?.id ?? null;
       setText('');
+      setReplyingTo(null);
       const socket = connectSocket();
 
       if (activeGroupConvId) {
@@ -236,9 +271,9 @@ export default function ChatPage() {
         void loadGroupThreads();
       } else if (activePartnerId) {
         if (socket && socket.connected) {
-          socket.emit('message:send', { to_user_id: activePartnerId, content: optimistic });
+          socket.emit('message:send', { to_user_id: activePartnerId, content: optimistic, reply_to_message_id: replyToId });
         } else {
-          await sendMessage(String(activePartnerId), optimistic);
+          await sendMessage(String(activePartnerId), optimistic, replyToId);
         }
         await loadThreads();
         updateUnreadCount();
@@ -247,6 +282,43 @@ export default function ChatPage() {
       console.error('Failed to send message:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Add/replace/toggle a reaction. Backend toggles same-emoji off, so a single
+  // "react with this emoji" call covers add, replace, and remove.
+  const applyReaction = async (messageId: number, emoji: string) => {
+    const socket = connectSocket();
+    if (socket && socket.connected) {
+      socket.emit('message:react', { message_id: messageId, emoji });
+      return;
+    }
+    try {
+      const res = await reactToMessage(messageId, emoji);
+      setMessages(prev => prev.map(m => m.id === messageId ? { ...m, reactions: res.reactions || [] } : m));
+    } catch (error) {
+      console.error('Failed to react:', error);
+    }
+  };
+
+  const toggleMute = async (partnerId: number) => {
+    const currentlyMuted = mutedIds.has(partnerId);
+    // Optimistic update, reverted on failure.
+    setMutedIds(prev => {
+      const next = new Set(prev);
+      if (currentlyMuted) next.delete(partnerId); else next.add(partnerId);
+      return next;
+    });
+    try {
+      if (currentlyMuted) await unmuteConversation(partnerId);
+      else await muteConversation(partnerId);
+    } catch (error) {
+      console.error('Failed to toggle mute:', error);
+      setMutedIds(prev => {
+        const next = new Set(prev);
+        if (currentlyMuted) next.add(partnerId); else next.delete(partnerId);
+        return next;
+      });
     }
   };
 
@@ -276,6 +348,7 @@ export default function ChatPage() {
     setActivePartnerId(null);
     setActiveGroupConvId(conv.id);
     setShowNewChatDialog(false);
+    setReplyingTo(null);
 
     const msgs: any[] = await fetchGroupMessages(conv.id);
     // Group endpoint already returns oldest→newest: do NOT reverse (unlike the DM endpoint).
@@ -654,7 +727,12 @@ export default function ChatPage() {
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium truncate">{thread.partner_name}</p>
+                      <p className="text-sm font-medium truncate flex items-center gap-1">
+                        {(thread.is_muted || mutedIds.has(thread.partner_id)) && (
+                          <BellOff className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                        )}
+                        <span className="truncate">{thread.partner_name}</span>
+                      </p>
                       {thread.last_message.created_at && (
                         <span className="text-xs text-gray-500 dark:text-gray-400">
                           {formatTime(thread.last_message.created_at)}
@@ -675,15 +753,34 @@ export default function ChatPage() {
       {/* Область сообщений */}
       <Card className="lg:col-span-8 flex flex-col min-h-0 order-last lg:order-none">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-semibold">
-            {activeGroupConvId
-              ? (groupThreads.find(t => t.id === activeGroupConvId)?.title || 'Group')
-              : getActivePartnerName()}
-          </CardTitle>
+          <div className="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              disabled={!activePartnerId}
+              onClick={() => { if (activePartnerId) setShowInfo(true); }}
+              className={`flex items-center gap-2 min-w-0 text-left ${activePartnerId ? 'cursor-pointer hover:opacity-80' : 'cursor-default'}`}
+              aria-label={activePartnerId ? 'Open chat info' : undefined}
+            >
+              <CardTitle className="text-lg font-semibold truncate">
+                {activeGroupConvId
+                  ? (groupThreads.find(t => t.id === activeGroupConvId)?.title || 'Group')
+                  : getActivePartnerName()}
+              </CardTitle>
+              {activePartnerId && mutedIds.has(activePartnerId) && (
+                <BellOff className="w-4 h-4 text-gray-400 shrink-0" />
+              )}
+            </button>
+            {activePartnerId && (
+              <Button variant="ghost" size="sm" onClick={() => setShowInfo(true)} aria-label="Chat info">
+                <Info className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
           {activePartnerId && (
             <div className="flex items-center space-x-2 mt-2">
               <span className="text-sm text-gray-500 dark:text-gray-400">
-                {availableContacts.find(c => c.user_id === activePartnerId)?.role || 'User'}
+                {availableContacts.find(c => c.user_id === activePartnerId)?.role
+                  || threads.find(t => t.partner_id === activePartnerId)?.partner_role || 'User'}
               </span>
             </div>
           )}
@@ -745,48 +842,46 @@ export default function ChatPage() {
                 }
 
                 return (
-                  <div
+                  <ChatMessageBubble
                     key={message.id}
-                    className={`flex ${message.from_user_id === activePartnerId ? 'justify-start' : 'justify-end'}`}
-                  >
-                    <div className={`max-w-[85%] sm:max-w-[70%]`}>
-                      <div
-                        className={`px-3 py-2 rounded-xl text-sm ${
-                          message.from_user_id === activePartnerId
-                            ? 'bg-white dark:bg-card border dark:border-gray-700 shadow-sm'
-                            : 'bg-blue-600 text-white'
-                        }`}
-                      >
-                        {message.file_url && <ChatAttachment fileUrl={message.file_url} />}
-                        <div className="flex items-start gap-2">
-                          <span className="flex-1">{message.content}</span>
-                          <span className={`text-[10px] whitespace-nowrap mt-auto flex items-center gap-0.5 ${
-                            message.from_user_id === activePartnerId ? 'text-gray-500 dark:text-gray-400' : 'text-blue-100'
-                          }`}>
-                            {formatTime(message.created_at)}
-                            {message.from_user_id !== activePartnerId && (
-                              <span className="relative inline-flex items-center text-white">
-                                {message.is_read ? (
-                                  <>
-                                    <Check className="w-3 h-3" strokeWidth={2.5} />
-                                    <Check className="w-3 h-3 -ml-1.5" strokeWidth={2.5} />
-                                  </>
-                                ) : (
-                                  <Check className="w-3 h-3" strokeWidth={2.5} />
-                                )}
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    message={message}
+                    isMine={message.from_user_id !== activePartnerId}
+                    currentUserId={currentUser ? Number(currentUser.id) : null}
+                    formatTime={formatTime}
+                    onReply={setReplyingTo}
+                    onReact={applyReaction}
+                    onJumpTo={jumpToMessage}
+                    registerRef={registerMessageRef}
+                  />
                 );
               })
             )}
             <div ref={messagesEndRef} />
           </div>
           
+          {/* Reply preview above the composer (DM only) */}
+          {replyingTo && activePartnerId && (
+            <div className="flex items-center gap-2 px-3 sm:px-4 pt-2 border-t dark:border-gray-700">
+              <ReplyIcon className="w-4 h-4 text-blue-500 shrink-0" />
+              <div className="flex-1 min-w-0 border-l-2 border-blue-500 pl-2">
+                <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 truncate">
+                  {replyingTo.from_user_id === Number(currentUser?.id) ? 'You' : (replyingTo.sender_name || 'Message')}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  {replyingTo.content || (replyingTo.file_url ? '📎 Attachment' : '')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReplyingTo(null)}
+                className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                aria-label="Cancel reply"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           {/* Форма отправки */}
           <form onSubmit={handleSendMessage} className="p-3 sm:p-4 border-t dark:border-gray-700">
             <div className="flex items-center gap-2">
@@ -813,6 +908,22 @@ export default function ChatPage() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Chat info dialog (participant details, shared media, mute) */}
+      {activePartnerId && (
+        <ChatInfoDialog
+          open={showInfo}
+          onOpenChange={setShowInfo}
+          partnerId={activePartnerId}
+          name={getActivePartnerName()}
+          role={availableContacts.find(c => c.user_id === activePartnerId)?.role
+            || threads.find(t => t.partner_id === activePartnerId)?.partner_role}
+          avatarUrl={availableContacts.find(c => c.user_id === activePartnerId)?.avatar_url
+            || threads.find(t => t.partner_id === activePartnerId)?.partner_avatar}
+          isMuted={mutedIds.has(activePartnerId)}
+          onToggleMute={() => toggleMute(activePartnerId)}
+        />
+      )}
     </div>
   );
 }
