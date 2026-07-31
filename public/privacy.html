@@ -10,11 +10,12 @@
     @media (prefers-color-scheme: dark) { body { color: #e5e7eb; background: #111827; } a { color: #93c5fd; } }
     h1 { font-size: 1.6rem; margin-bottom: 0.2rem; }
     h2 { font-size: 1.15rem; margin-top: 2rem; border-bottom: 1px solid #d1d5db55; padding-bottom: 4px; }
-    h3 { font-size: 1rem; }
     table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
     th, td { border: 1px solid #d1d5db88; padding: 6px 10px; text-align: left; vertical-align: top; }
+    ul { padding-left: 22px; }
     .muted { color: #6b7280; font-size: 0.9rem; }
     .lang-divider { margin: 48px 0 32px; border: none; border-top: 2px solid #d1d5db88; }
+    code { background: rgba(127,127,127,.15); padding: 1px 5px; border-radius: 3px; }
   </style>
 </head>
 <body>
@@ -24,44 +25,57 @@
   Effective date: 31 July 2026 · <a href="#ru">Русская версия ниже</a></p>
 
   <h2>1. Who we are</h2>
-  <p>Master LMS is the learning management platform operated by <strong>Master Education</strong> (Kazakhstan, <a href="https://mastereducation.kz">mastereducation.kz</a>) for its enrolled students, their parents/guardians, and its teaching staff. This policy covers the Master LMS mobile apps and the web platform at lms.mastereducation.kz.</p>
+  <p>Master LMS is the learning management platform operated by <strong>Master Education</strong> (Kazakhstan, <a href="https://mastereducation.kz">mastereducation.kz</a>). It lets students follow their courses, complete homework, and chat with their teachers and curators; parents follow their child's progress; staff manage teaching. This policy covers the Master LMS mobile apps (iOS &amp; Android) and the web platform at lms.mastereducation.kz.</p>
   <p>Contact: <a href="mailto:info@mastereducation.kz">info@mastereducation.kz</a></p>
 
   <h2>2. Accounts are created by the school</h2>
   <p>There is no public sign-up. Accounts are created by Master Education when a student enrols (or when a parent is linked to a student). Consent for processing a student's data — including a minor student's data — is obtained by Master Education from the parent or legal guardian as part of the enrolment agreement, before an account is created.</p>
 
   <h2>3. What data we collect</h2>
+  <p>We only collect data needed to operate the learning platform. Everything below is linked to your account and used for app functionality — never for advertising, never sold, and never shared with data brokers.</p>
   <table>
     <tr><th>Data</th><th>Purpose</th><th>Where it is stored</th></tr>
     <tr><td>Email address and password</td><td>Sign-in to your account</td><td>Our servers (passwords stored hashed; never in plain text)</td></tr>
-    <tr><td>Name and profile (role, group, study statistics)</td><td>Showing your profile, progress and leaderboards inside the platform</td><td>Our servers; a cached copy on your device</td></tr>
-    <tr><td>Authentication tokens</td><td>Keeping you signed in</td><td>Your device's secure storage (Keychain / Keystore)</td></tr>
+    <tr><td>Name and profile (role, group, study statistics)</td><td>Identifying you inside the platform — dashboards, chat, grading, leaderboards</td><td>Our servers; a cached copy on your device</td></tr>
+    <tr><td>Authentication tokens</td><td>Keeping you signed in</td><td>Your device's secure storage (iOS Keychain / Android Keystore)</td></tr>
     <tr><td>Messages</td><td>Built-in chat between students, parents, teachers and curators</td><td>Our servers</td></tr>
     <tr><td>Uploaded files</td><td>Homework submissions and chat attachments you choose to send</td><td>Our servers / our cloud file storage</td></tr>
-    <tr><td>Push notification token</td><td>Delivering notifications (homework, messages, schedule)</td><td>Our servers; removed on logout</td></tr>
+    <tr><td>Push notification token</td><td>Delivering notifications (homework, messages, schedule). You can disable notifications at any time in your device settings.</td><td>Our servers; removed on logout</td></tr>
     <tr><td>Learning activity</td><td>Quiz attempts, lesson progress, attendance, flashcards — shown to you, your teachers, and (for students) your parents</td><td>Our servers</td></tr>
   </table>
-  <p><strong>We do not collect:</strong> location, contacts, photos (beyond files you explicitly attach), health or financial data, or advertising identifiers. The app contains <strong>no advertising and no third-party analytics or tracking</strong>. We do not sell or share personal data for marketing.</p>
 
-  <h2>4. How data is used</h2>
-  <p>All data listed above is used solely to provide the educational service: authentication, lessons and homework, grading, schedules, attendance, progress analytics, messaging, and notifications. Data is linked to your account because the service is an individual learning platform. We do not use your data for advertising or profiling unrelated to education.</p>
+  <h2>4. Sign-in with Master Education (SSO)</h2>
+  <p>You may sign in with your Master Education account through our single sign-on service. Authentication is then handled by our own identity service (Zitadel, at <code>auth.mastereducation.kz</code>) using the industry-standard OAuth 2.0 / OpenID Connect protocol with PKCE. The app receives your verified email and basic profile to match you to your existing LMS account; it does not receive or store your Master Education password.</p>
 
-  <h2>5. Children's data</h2>
-  <p>Students may be under 18. Master Education acts on the basis of the enrolment agreement with the parent or legal guardian, who consents to the processing described in this policy. Parents have their own accounts and can see their child's learning data (progress, homework, attendance, schedule) in the app. A parent or guardian may at any time request access to, correction of, or deletion of their child's data by contacting <a href="mailto:info@mastereducation.kz">info@mastereducation.kz</a>.</p>
+  <h2>5. What we do NOT collect</h2>
+  <ul>
+    <li>No location data.</li>
+    <li>No contacts.</li>
+    <li>No advertising identifier (IDFA/GAID), no advertising, no cross-app tracking.</li>
+    <li>No third-party analytics, ad, or tracking SDKs.</li>
+    <li>No health or financial data.</li>
+    <li>The app does not request camera or photo-library permission; file uploads use the system document picker for files you explicitly choose.</li>
+  </ul>
 
-  <h2>6. Sharing</h2>
+  <h2>6. How data is used and who can see it</h2>
+  <p>All data listed above is used solely to provide the educational service: authentication, lessons and homework, grading, schedules, attendance, progress analytics, messaging, and notifications. Within the platform, your data is visible only to the people your role permits — for example, a parent sees only the progress of their own linked child, and a teacher sees only their own students' work. We do not use your data for advertising or profiling unrelated to education.</p>
+
+  <h2>7. Children's data</h2>
+  <p>The app is intended for students aged 13 and above, their parents/guardians, and school staff; it is not directed to children under 13, and we do not knowingly collect personal data from children under 13. For minor students, Master Education acts on the basis of the enrolment agreement with the parent or legal guardian, who consents to the processing described in this policy. Parents have their own accounts and see only the learning data of children linked to them by the school. A parent or guardian may at any time request access to, correction of, or deletion of their child's data at <a href="mailto:info@mastereducation.kz">info@mastereducation.kz</a>.</p>
+
+  <h2>8. Sharing</h2>
   <p>Personal data is not sold and not shared with third parties for their own purposes. We use infrastructure service providers strictly as processors: cloud hosting and file storage for the platform, and Expo/Apple/Google push-notification services for delivering notifications (they receive a device push token, not your profile). Data may be disclosed if required by law.</p>
 
-  <h2>7. Security and retention</h2>
-  <p>All traffic between the app and our servers is encrypted (HTTPS). Passwords are stored hashed; session tokens live in your device's secure storage. Data is retained while the account is active. When an account is deleted, personal data (profile, messages, submissions, progress) is permanently deleted from our systems.</p>
+  <h2>9. Security and retention</h2>
+  <p>All traffic between the app and our servers is encrypted in transit (HTTPS). Passwords are stored hashed; session tokens live in your device's secure storage. Access to data on our servers is restricted by role (student, parent, teacher, curator, administrator). Data is retained while the account is active; when an account is deleted, personal data (profile, messages, submissions, progress) is permanently deleted from our systems.</p>
 
-  <h2>8. Deleting your account</h2>
-  <p>Students and parents can permanently delete their account directly in the app: <em>Profile → Delete account</em> (password confirmation required). Deletion is immediate and irreversible. You can also request deletion by email at <a href="mailto:info@mastereducation.kz">info@mastereducation.kz</a>. Staff accounts are managed by the school administration.</p>
+  <h2>10. Deleting your account</h2>
+  <p>Students and parents can permanently delete their account and associated personal data directly in the app: <em>Profile → Delete account</em> (password confirmation required). Deletion is immediate and irreversible. You can also request deletion by email at <a href="mailto:info@mastereducation.kz">info@mastereducation.kz</a>. Staff accounts are managed by the school administration.</p>
 
-  <h2>9. Your rights</h2>
+  <h2>11. Your rights</h2>
   <p>You (or, for a minor student, your parent/guardian) may request access to, correction of, or deletion of personal data, and may withdraw consent by terminating the enrolment agreement. Requests are handled at <a href="mailto:info@mastereducation.kz">info@mastereducation.kz</a>.</p>
 
-  <h2>10. Changes</h2>
+  <h2>12. Changes</h2>
   <p>If this policy changes materially, we will update this page and note the new effective date above.</p>
 
   <hr class="lang-divider" id="ru">
@@ -71,44 +85,57 @@
   Дата вступления в силу: 31 июля 2026 г.</p>
 
   <h2>1. Кто мы</h2>
-  <p>Master LMS — образовательная платформа, которой управляет <strong>Master Education</strong> (Казахстан, <a href="https://mastereducation.kz">mastereducation.kz</a>) для своих учеников, их родителей/законных представителей и преподавателей. Политика распространяется на мобильные приложения Master LMS и веб-платформу lms.mastereducation.kz.</p>
+  <p>Master LMS — образовательная платформа, которой управляет <strong>Master Education</strong> (Казахстан, <a href="https://mastereducation.kz">mastereducation.kz</a>). Ученики проходят курсы, выполняют домашние задания и общаются с преподавателями и кураторами; родители следят за успеваемостью ребёнка; сотрудники ведут обучение. Политика распространяется на мобильные приложения Master LMS (iOS и Android) и веб-платформу lms.mastereducation.kz.</p>
   <p>Контакт: <a href="mailto:info@mastereducation.kz">info@mastereducation.kz</a></p>
 
   <h2>2. Аккаунты создаёт школа</h2>
   <p>Публичной регистрации нет. Аккаунты создаются Master Education при зачислении ученика (и при привязке родителя к ученику). Согласие на обработку данных ученика, в том числе несовершеннолетнего, Master Education получает от родителя или законного представителя в рамках договора об обучении — до создания аккаунта.</p>
 
   <h2>3. Какие данные мы собираем</h2>
+  <p>Мы собираем только данные, необходимые для работы платформы. Все перечисленные данные привязаны к вашей учётной записи и используются для работы приложения — не для рекламы; они не продаются и не передаются брокерам данных.</p>
   <table>
     <tr><th>Данные</th><th>Цель</th><th>Где хранятся</th></tr>
     <tr><td>Email и пароль</td><td>Вход в аккаунт</td><td>Наши серверы (пароли — только в хэшированном виде)</td></tr>
-    <tr><td>Имя и профиль (роль, группа, статистика занятий)</td><td>Профиль, прогресс и рейтинги внутри платформы</td><td>Наши серверы; кэш на устройстве</td></tr>
-    <tr><td>Токены авторизации</td><td>Поддержание входа</td><td>Защищённое хранилище устройства (Keychain / Keystore)</td></tr>
+    <tr><td>Имя и профиль (роль, группа, статистика занятий)</td><td>Идентификация внутри платформы — панель, чат, оценки, рейтинги</td><td>Наши серверы; кэш на устройстве</td></tr>
+    <tr><td>Токены авторизации</td><td>Поддержание входа</td><td>Защищённое хранилище устройства (iOS Keychain / Android Keystore)</td></tr>
     <tr><td>Сообщения</td><td>Встроенный чат учеников, родителей, преподавателей и кураторов</td><td>Наши серверы</td></tr>
     <tr><td>Загруженные файлы</td><td>Сдача домашних заданий и вложения в чате</td><td>Наши серверы / облачное файловое хранилище</td></tr>
-    <tr><td>Push-токен</td><td>Уведомления (домашние задания, сообщения, расписание)</td><td>Наши серверы; удаляется при выходе из аккаунта</td></tr>
+    <tr><td>Push-токен</td><td>Уведомления (домашние задания, сообщения, расписание). Уведомления можно отключить в настройках устройства.</td><td>Наши серверы; удаляется при выходе из аккаунта</td></tr>
     <tr><td>Учебная активность</td><td>Результаты тестов, прогресс, посещаемость, карточки — видны вам, вашим преподавателям и (для учеников) родителям</td><td>Наши серверы</td></tr>
   </table>
-  <p><strong>Мы не собираем:</strong> геолокацию, контакты, фотографии (кроме файлов, которые вы сами прикрепляете), медицинские и финансовые данные, рекламные идентификаторы. В приложении <strong>нет рекламы и сторонней аналитики/трекинга</strong>. Мы не продаём и не передаём персональные данные в маркетинговых целях.</p>
 
-  <h2>4. Как используются данные</h2>
-  <p>Все перечисленные данные используются исключительно для предоставления образовательного сервиса: вход в систему, уроки и домашние задания, оценивание, расписание, посещаемость, аналитика прогресса, чат и уведомления. Данные не используются для рекламы или профилирования, не связанного с обучением.</p>
+  <h2>4. Вход через Master Education (SSO)</h2>
+  <p>Вы можете войти через учётную запись Master Education. Аутентификация выполняется нашим собственным сервисом идентификации (Zitadel, <code>auth.mastereducation.kz</code>) по стандарту OAuth 2.0 / OpenID Connect с PKCE. Приложение получает ваш подтверждённый email и базовый профиль для сопоставления с существующей учётной записью LMS; ваш пароль Master Education приложение не получает и не хранит.</p>
 
-  <h2>5. Данные несовершеннолетних</h2>
-  <p>Ученики могут быть младше 18 лет. Master Education действует на основании договора об обучении с родителем или законным представителем, который даёт согласие на описанную здесь обработку. Родители имеют собственные аккаунты и видят учебные данные ребёнка (прогресс, домашние задания, посещаемость, расписание). Родитель может в любой момент запросить доступ, исправление или удаление данных ребёнка: <a href="mailto:info@mastereducation.kz">info@mastereducation.kz</a>.</p>
+  <h2>5. Что мы НЕ собираем</h2>
+  <ul>
+    <li>Данные о местоположении — нет.</li>
+    <li>Контакты — нет.</li>
+    <li>Рекламный идентификатор (IDFA/GAID), реклама и межприложенческое отслеживание — нет.</li>
+    <li>Сторонние SDK аналитики, рекламы или трекинга — нет.</li>
+    <li>Медицинские и финансовые данные — нет.</li>
+    <li>Приложение не запрашивает доступ к камере или фотогалерее; загрузка файлов выполняется через системный выбор документов — только файлы, которые вы выбрали сами.</li>
+  </ul>
 
-  <h2>6. Передача данных</h2>
+  <h2>6. Как используются данные и кто их видит</h2>
+  <p>Все перечисленные данные используются исключительно для предоставления образовательного сервиса: вход в систему, уроки и домашние задания, оценивание, расписание, посещаемость, аналитика прогресса, чат и уведомления. Внутри платформы данные видны только тем, кому это разрешает ваша роль: родитель видит прогресс только своего привязанного ребёнка, преподаватель — только работы своих учеников. Данные не используются для рекламы или профилирования, не связанного с обучением.</p>
+
+  <h2>7. Данные несовершеннолетних</h2>
+  <p>Приложение предназначено для учеников от 13 лет, их родителей/законных представителей и сотрудников школы; оно не адресовано детям младше 13 лет, и мы сознательно не собираем их персональные данные. В отношении несовершеннолетних учеников Master Education действует на основании договора об обучении с родителем или законным представителем, который даёт согласие на описанную здесь обработку. Родители имеют собственные аккаунты и видят учебные данные только привязанных к ним школой детей. Родитель может в любой момент запросить доступ, исправление или удаление данных ребёнка: <a href="mailto:info@mastereducation.kz">info@mastereducation.kz</a>.</p>
+
+  <h2>8. Передача данных</h2>
   <p>Персональные данные не продаются и не передаются третьим лицам для их собственных целей. Мы используем инфраструктурных провайдеров строго как обработчиков: облачный хостинг и файловое хранилище платформы, а также сервисы push-уведомлений Expo/Apple/Google (им передаётся только push-токен устройства). Данные могут быть раскрыты, если этого требует закон.</p>
 
-  <h2>7. Безопасность и сроки хранения</h2>
-  <p>Весь трафик между приложением и серверами шифруется (HTTPS). Пароли хранятся в хэшированном виде; токены сессии — в защищённом хранилище устройства. Данные хранятся, пока аккаунт активен. При удалении аккаунта персональные данные (профиль, сообщения, работы, прогресс) удаляются из наших систем безвозвратно.</p>
+  <h2>9. Безопасность и сроки хранения</h2>
+  <p>Весь трафик между приложением и серверами шифруется (HTTPS). Пароли хранятся в хэшированном виде; токены сессии — в защищённом хранилище устройства. Доступ к данным на серверах ограничен ролью (ученик, родитель, преподаватель, куратор, администратор). Данные хранятся, пока аккаунт активен; при удалении аккаунта персональные данные (профиль, сообщения, работы, прогресс) удаляются из наших систем безвозвратно.</p>
 
-  <h2>8. Удаление аккаунта</h2>
-  <p>Ученики и родители могут навсегда удалить аккаунт прямо в приложении: <em>Профиль → Удалить аккаунт</em> (с подтверждением пароля). Удаление немедленное и необратимое. Также можно направить запрос на <a href="mailto:info@mastereducation.kz">info@mastereducation.kz</a>. Аккаунты сотрудников управляются администрацией школы.</p>
+  <h2>10. Удаление аккаунта</h2>
+  <p>Ученики и родители могут навсегда удалить аккаунт и связанные персональные данные прямо в приложении: <em>Профиль → Удалить аккаунт</em> (с подтверждением пароля). Удаление немедленное и необратимое. Также можно направить запрос на <a href="mailto:info@mastereducation.kz">info@mastereducation.kz</a>. Аккаунты сотрудников управляются администрацией школы.</p>
 
-  <h2>9. Ваши права</h2>
+  <h2>11. Ваши права</h2>
   <p>Вы (а для несовершеннолетнего ученика — родитель/законный представитель) можете запросить доступ к данным, их исправление или удаление, а также отозвать согласие, расторгнув договор об обучении. Запросы: <a href="mailto:info@mastereducation.kz">info@mastereducation.kz</a>.</p>
 
-  <h2>10. Изменения</h2>
+  <h2>12. Изменения</h2>
   <p>При существенных изменениях политики мы обновим эту страницу и дату вступления в силу.</p>
 
 </body>
