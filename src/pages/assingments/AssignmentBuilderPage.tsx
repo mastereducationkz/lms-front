@@ -110,6 +110,22 @@ export default function AssignmentBuilderPage() {
     }
   }, [assignmentId, copyFromId]);
 
+  // A copy preselects its source group, which may be archived and therefore absent
+  // from the picker — the teacher can neither see nor deselect it, and class-link
+  // validation would demand a pick for an invisible group. Once the teacher's group
+  // list is loaded, drop selected groups that aren't in it (create/copy only; edits
+  // keep their group even if it has since been archived).
+  useEffect(() => {
+    if (isEditing || groupsLoading || groups.length === 0) return;
+    setFormData(prev => {
+      const visible = new Set(groups.map((g: any) => g.id));
+      const pruned = (prev.group_ids || []).filter(gid => visible.has(gid));
+      if (pruned.length === (prev.group_ids || []).length) return prev;
+      return { ...prev, group_ids: pruned, group_id: pruned[0] };
+    });
+    // formData.group_ids in deps: loadAssignment may set the source group AFTER groups load.
+  }, [groups, groupsLoading, isEditing, formData.group_ids]);
+
   const loadAssignment = async (id: string) => {
     try {
       setLoading(true);
