@@ -143,21 +143,21 @@ export default function AssignmentBuilderPage() {
         content: content || {},
         correct_answers: correct_answers || {},
         max_score: assignment.max_score,
-        due_date: assignment.due_date 
+        // A copy targets different lessons than its source, so drop the source's
+        // link data (it is keyed by the source group) and make the teacher pick anew.
+        due_date: !copyFromId && assignment.due_date
           ? parseAsUTC(assignment.due_date).toISOString()
           : '',
         allowed_file_types: assignment.allowed_file_types || ['pdf', 'docx', 'doc', 'jpg', 'png'],
         max_file_size_mb: assignment.max_file_size_mb || 10,
         group_id: assignment.group_id,
         group_ids: assignment.group_id ? [assignment.group_id] : [],
-        // Keep event_mapping for UI display
         event_mapping: {},
-        // Use lesson_number if available
-        lesson_number_mapping: assignment.lesson_number && assignment.group_id 
-          ? { [assignment.group_id]: assignment.lesson_number } 
+        lesson_number_mapping: !copyFromId && assignment.lesson_number && assignment.group_id
+          ? { [assignment.group_id]: assignment.lesson_number }
           : {},
-        due_date_mapping: assignment.due_date && assignment.group_id 
-          ? { [assignment.group_id]: parseAsUTC(assignment.due_date).toISOString() } 
+        due_date_mapping: !copyFromId && assignment.due_date && assignment.group_id
+          ? { [assignment.group_id]: parseAsUTC(assignment.due_date).toISOString() }
           : {},
         late_penalty_enabled: assignment.late_penalty_enabled || false,
         late_penalty_multiplier: assignment.late_penalty_multiplier || 0.6
@@ -323,6 +323,22 @@ export default function AssignmentBuilderPage() {
       return;
     }
 
+    // Linking homework to a class is mandatory: the link is what gives students a
+    // due date. On edit, an already-linked group (existing lesson/due date) is fine.
+    const groupsMissingLink = (formData.group_ids || []).filter(gid => {
+      if (formData.event_mapping?.[gid]) return false;
+      if (isEditing && (formData.lesson_number_mapping?.[gid] || formData.due_date_mapping?.[gid])) return false;
+      return true;
+    });
+    if (groupsMissingLink.length > 0) {
+      const names = groupsMissingLink
+        .map(gid => groups.find(g => g.id === gid)?.name || `group ${gid}`)
+        .join(', ');
+      setError(`Please pick a class to link this homework to for: ${names}`);
+      setLoading(false);
+      return;
+    }
+
     try {
       // Handle file uploads based on assignment type
       let finalContent = { ...formData.content };
@@ -451,6 +467,13 @@ export default function AssignmentBuilderPage() {
         max_file_size_mb: formData.max_file_size_mb || 10,
         group_id: formData.group_ids && formData.group_ids.length > 0 ? formData.group_ids[0] : undefined, // Legacy support
         group_ids: formData.group_ids,
+        // Persist the class link itself — the backend materializes virtual event ids
+        // and stores event_id, so the link survives beyond the derived due date.
+        event_mapping: Object.keys(formData.event_mapping || {}).reduce((acc, gid) => {
+            const eid = formData.event_mapping?.[parseInt(gid)];
+            if (eid) acc[parseInt(gid)] = eid;
+            return acc;
+        }, {} as Record<number, number>),
         lesson_number_mapping: lesson_number_mapping_final, // lesson_number for linking homework to lessons
         due_date_mapping: Object.keys(formData.due_date_mapping || {}).reduce((acc, gid) => {
             const date = formData.due_date_mapping?.[parseInt(gid)];
@@ -744,6 +767,8 @@ export default function AssignmentBuilderPage() {
                               const groupEvents = eventsByGroup[groupId] || [];
                               const selectedEventId = formData.event_mapping?.[groupId] || '';
                               const groupDueDate = formData.due_date_mapping?.[groupId];
+                              const existingLessonNumber = formData.lesson_number_mapping?.[groupId];
+                              const hasExistingLink = isEditing && !selectedEventId && (existingLessonNumber || groupDueDate);
 
                               return (
                                   <div key={groupId} className="p-3 border rounded-lg bg-white dark:bg-card dark:border-border space-y-4">
@@ -784,7 +809,15 @@ export default function AssignmentBuilderPage() {
                                                   ))}
                                               </SelectContent>
                                             </Select>
-                                            
+
+                                            {hasExistingLink && (
+                                              <p className="text-[11px] text-gray-500 dark:text-muted-foreground pl-0.5">
+                                                Currently linked{existingLessonNumber ? ` to Lesson ${existingLessonNumber}` : ''}
+                                                {groupDueDate ? ` · due ${formatInKZ(groupDueDate, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })} (KZ)` : ''}.
+                                                Pick a class above only if you want to change it.
+                                              </p>
+                                            )}
+
                                             {Number(selectedEventId) > 0 && (
                                               <div className="pl-2 pt-1.5 space-y-1.5 border-l-2 border-blue-500">
                                                 <Label className="text-[10px] text-blue-600 dark:text-blue-400 uppercase font-bold tracking-tight">Set Group Deadline (Optional)</Label>
