@@ -10,7 +10,7 @@ import {
 } from '../components/ui/select';
 import { Input } from '../components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
-import { ChevronLeft, ChevronRight, Loader2, Save, Eye, EyeOff, Check, ChevronsUpDown, ClipboardList } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Save, Eye, EyeOff, Check, ChevronsUpDown, ClipboardList, Sparkles, User } from 'lucide-react';
 import { StudentHomeworkDialog } from '../components/leaderboard/StudentHomeworkDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { getCuratorGroups, getWeeklyLessonsWithHwStatus, updateAttendance, updateLeaderboardEntry, updateLeaderboardConfig, setGroupWeekOffset } from '../services/api';
@@ -104,6 +104,13 @@ interface StudentRow {
     ielts_reading_test_name?: string | null;
     ielts_writing_test_name?: string | null;
     ielts_speaking_test_name?: string | null;
+    // Speaking-examiner discriminator (IELTS contract 2026-07-27). Branch every
+    // speaking display on ielts_speaking_source, NOT on the band — a row can carry
+    // a null band while a session is scheduled / was a no_show / was cancelled.
+    ielts_speaking_source?: 'ai' | 'instructor' | null;
+    ielts_speaking_examiner?: string | null;   // human examiner's name for "instructor"; null for "ai"
+    ielts_speaking_session_at?: string | null;  // ISO-8601, may carry a +05:00 (Asia/Almaty) offset
+    ielts_speaking_status?: 'completed' | 'scheduled' | 'no_show' | 'cancelled' | null;
     ielts_listening_feedback?: string | null;
     ielts_listening_feedback_ru?: string | null;
     ielts_reading_feedback?: string | null;
@@ -904,10 +911,38 @@ export default function CuratorLeaderboardPage() {
   // IELTS bands are conventionally rendered with one decimal: 7.0, 7.5
   const formatBand = (band?: number | null) => (band == null ? '—' : band.toFixed(1));
 
+  // A booked / missed / cancelled speaking session is real activity even with a
+  // null band — the leaderboard must not collapse it into "no result".
+  const hasSpeakingActivity = (s: StudentRow) =>
+    s.ielts_speaking_source != null || s.ielts_speaking_status != null;
+
   const hasIeltsData = (s: StudentRow) =>
     s.ielts_listening_band != null || s.ielts_reading_band != null ||
     s.ielts_writing_band != null || s.ielts_speaking_band != null ||
-    s.ielts_overall_band != null;
+    s.ielts_overall_band != null || hasSpeakingActivity(s);
+
+  // speakingSessionAt is timezone-aware ISO-8601 (may carry a +05:00 offset) — parse
+  // as an absolute instant and render in Almaty local time, matching the schedule grid.
+  const formatSpeakingSessionAt = (iso?: string | null): string | null => {
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    const date = d.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short', timeZone: 'Asia/Almaty' });
+    const time = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Almaty' });
+    return `${date}, ${time}`;
+  };
+
+  // Operational speaking-session states. Kept in Russian to match the leaderboard's
+  // "Не сдано" / "Отменён" vocabulary; `short` is used in the dense inline cell.
+  const SPEAKING_STATUS_META: Record<
+    NonNullable<StudentRow['ielts_speaking_status']>,
+    { label: string; short: string; className: string; dot: string }
+  > = {
+    completed: { label: 'Проведено', short: 'Сдано', className: 'text-emerald-700 bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-900/40', dot: 'bg-emerald-500' },
+    scheduled: { label: 'Запланировано', short: 'Запл.', className: 'text-amber-700 bg-amber-100 dark:text-amber-300 dark:bg-amber-900/40', dot: 'bg-amber-500' },
+    no_show: { label: 'Неявка', short: 'Неявка', className: 'text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900/40', dot: 'bg-red-500' },
+    cancelled: { label: 'Отменено', short: 'Отменено', className: 'text-gray-600 bg-gray-100 dark:text-gray-300 dark:bg-secondary', dot: 'bg-gray-400' },
+  };
 
   const hasIeltsEnFeedback = (s: StudentRow) =>
     Boolean(s.ielts_listening_feedback || s.ielts_reading_feedback ||
@@ -1524,6 +1559,20 @@ export default function CuratorLeaderboardPage() {
                                 >
                                     {student.ielts_overall_band != null ? (
                                         <span className="text-gray-900 dark:text-foreground">{formatBand(student.ielts_overall_band)}</span>
+                                    ) : (student.ielts_speaking_status && student.ielts_speaking_status !== 'completed') ? (
+                                        (() => {
+                                            const meta = SPEAKING_STATUS_META[student.ielts_speaking_status!];
+                                            const title = [meta.label, student.ielts_speaking_examiner, formatSpeakingSessionAt(student.ielts_speaking_session_at)]
+                                                .filter(Boolean).join(' · ');
+                                            return (
+                                                <span
+                                                    className={cn("inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold", meta.className)}
+                                                    title={title}
+                                                >
+                                                    {meta.short}
+                                                </span>
+                                            );
+                                        })()
                                     ) : hasIeltsData(student) ? (
                                         <span className="text-gray-500 dark:text-gray-400">—</span>
                                     ) : (
@@ -1800,6 +1849,76 @@ export default function CuratorLeaderboardPage() {
                   </span>
                 </div>
               </div>
+
+              {/* Speaking session — branch on speakingSource, not on the band.
+                  Surfaces AI-estimated bands, the human examiner + session time,
+                  and the booked / missed / cancelled states explicitly. */}
+              {s.ielts_speaking_source != null && (() => {
+                const status = s.ielts_speaking_status;
+                const meta = status ? SPEAKING_STATUS_META[status] : null;
+                const sessionAt = formatSpeakingSessionAt(s.ielts_speaking_session_at);
+                const isAi = s.ielts_speaking_source === 'ai';
+                return (
+                  <div className="px-5 py-3 border-b border-gray-100 dark:border-border shrink-0">
+                    <div className="flex items-start gap-2.5">
+                      <span className="mt-0.5 shrink-0">
+                        {isAi
+                          ? <Sparkles className="w-4 h-4 text-violet-500" />
+                          : <User className="w-4 h-4 text-sky-500" />}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                            Speaking
+                          </span>
+                          <span className={cn(
+                            "text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded",
+                            isAi
+                              ? "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
+                              : "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300"
+                          )}>
+                            {isAi ? 'AI' : 'Экзаменатор'}
+                          </span>
+                          {meta && (
+                            <span className={cn("text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded", meta.className)}>
+                              {meta.label}
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-1 text-sm text-gray-700 dark:text-gray-300">
+                          {isAi ? (
+                            <>
+                              {s.ielts_speaking_band != null ? (
+                                <>Оценка ИИ: <span className="font-semibold tabular-nums">{formatBand(s.ielts_speaking_band)}</span></>
+                              ) : (
+                                <span className="text-gray-500 dark:text-gray-400">Оценка ИИ ещё не готова</span>
+                              )}
+                              {s.ielts_speaking_test_name && (
+                                <span className="text-gray-400"> · {s.ielts_speaking_test_name}</span>
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              {s.ielts_speaking_examiner && <span className="font-medium">{s.ielts_speaking_examiner}</span>}
+                              {sessionAt && (
+                                <span className={s.ielts_speaking_examiner ? "text-gray-500 dark:text-gray-400" : ""}>
+                                  {s.ielts_speaking_examiner ? ' · ' : ''}{sessionAt}
+                                </span>
+                              )}
+                              {s.ielts_speaking_band != null && (
+                                <span> · <span className="font-semibold tabular-nums">{formatBand(s.ielts_speaking_band)}</span></span>
+                              )}
+                              {!s.ielts_speaking_examiner && !sessionAt && s.ielts_speaking_band == null && meta && (
+                                <span className="text-gray-500 dark:text-gray-400">{meta.label}</span>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Feedback body */}
               <div className="px-5 py-4 overflow-y-auto space-y-5">
