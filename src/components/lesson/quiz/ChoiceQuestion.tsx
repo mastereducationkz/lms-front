@@ -48,7 +48,8 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
         : [...cur, i].sort((a, b) => a - b)
       onChange(next)
     } else {
-      onChange(i)
+      // Clicking the selected option again deselects it (-1 = cleared)
+      onChange(isSelected(i) ? -1 : i)
     }
   }
 
