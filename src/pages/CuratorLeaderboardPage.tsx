@@ -1514,14 +1514,15 @@ export default function CuratorLeaderboardPage() {
                             const lessonStatus = student.lessons[lessonKey];
                             // Handle cases where lesson data might not be populated for student yet
                             const status = lessonStatus ? lessonStatus.attendance_status : 'absent';
-                            
+                            const cellIsFuture = parseAsUTC(lessonInfo.start_datetime).getTime() > Date.now();
+
                             return (
                                 <TableCell key={`cell-${lessonKey}`} className="p-0 border-r border-gray-300 dark:border-border">
                                     <div className="flex w-full h-12 items-stretch">
                                         <div
                                             className="w-1/2 border-r border-gray-300 dark:border-border relative group/att"
                                             onContextMenu={(e) => {
-                                                if (!canMarkAttendance || !lessonStatus) return;
+                                                if (!canMarkAttendance || !lessonStatus || cellIsFuture) return;
                                                 e.preventDefault();
                                                 setActivityModal({
                                                     open: true,
@@ -1536,14 +1537,14 @@ export default function CuratorLeaderboardPage() {
                                                 initialStatus={status}
                                                 onChange={(newStatus) => handleAttendanceChange(student.student_id, lessonKey, newStatus)}
                                                 disabled={user?.role === 'curator'}
-                                                isFuture={parseAsUTC(lessonInfo.start_datetime).getTime() > Date.now()}
+                                                isFuture={cellIsFuture}
                                             />
                                             {lessonStatus?.activity_score != null && (
                                                 <span className="absolute top-0 right-0 text-[9px] px-1 bg-yellow-400 text-gray-900 rounded-bl font-bold pointer-events-none" title={`Активность: ${lessonStatus.activity_score}/10`}>
                                                     {lessonStatus.activity_score}
                                                 </span>
                                             )}
-                                            {canMarkAttendance && lessonStatus && parseAsUTC(lessonInfo.start_datetime).getTime() <= Date.now() && (
+                                            {canMarkAttendance && lessonStatus && !cellIsFuture && (
                                                 <button
                                                     type="button"
                                                     className="absolute bottom-0 right-0 p-0.5 text-white/60 hover:text-white opacity-0 group-hover/att:opacity-100 transition-opacity"
