@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popove
 import { ChevronLeft, ChevronRight, Loader2, Save, Eye, EyeOff, Check, ChevronsUpDown, ClipboardList, Sparkles, User } from 'lucide-react';
 import { StudentHomeworkDialog } from '../components/leaderboard/StudentHomeworkDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import { getCuratorGroups, getWeeklyLessonsWithHwStatus, updateAttendance, updateLeaderboardEntry, updateLeaderboardConfig, setGroupWeekOffset } from '../services/api';
+import apiClient, { getCuratorGroups, getWeeklyLessonsWithHwStatus, updateAttendance, updateLeaderboardEntry, updateLeaderboardConfig, setGroupWeekOffset } from '../services/api';
 import { Group, CourseType } from '../types';
 import {
   PROGRAM_LABELS, PROGRAM_BADGE_STYLES, getGroupProgramType,
@@ -36,6 +36,7 @@ interface LessonMeta {
     lesson_number: number;
     event_id: number;
     title: string;
+    topic?: string | null;
     start_datetime: string;
     homework?: HomeworkMeta;        // legacy: first homework of the lesson
     homeworks?: HomeworkMeta[];     // all homeworks of the lesson
@@ -58,6 +59,7 @@ interface HomeworkStatus {
 interface StudentLessonStatus {
     event_id: number;
     attendance_status: string;
+    activity_score?: number | null;
     homework_status: HomeworkStatus | null;   // legacy single status
     homework_statuses?: HomeworkStatus[];     // one per lesson homework
 }
@@ -165,16 +167,18 @@ const MAX_SCORES = {
 
 const getOptions = (max: number) => Array.from({ length: max + 1 }, (_, i) => i);
 
-const ScoreSelect = ({ 
-    value, 
-    max, 
+const ScoreSelect = ({
+    value,
+    max,
     onChange,
-}: { 
-    value: number, 
-    max: number, 
+    disabled = false,
+}: {
+    value: number,
+    max: number,
     onChange: (val: string) => void,
+    disabled?: boolean,
 }) => (
-  <Select value={value.toString()} onValueChange={onChange}>
+  <Select value={value.toString()} onValueChange={onChange} disabled={disabled}>
       <SelectTrigger className={cn(
           "h-full w-full border-none focus:ring-0 px-1 text-center justify-center rounded-none",
           "hover:bg-black/5 dark:hover:bg-white/5" 
@@ -392,6 +396,9 @@ const MarkdownContent = ({ children }: { children: string }) => {
 
 export default function CuratorLeaderboardPage() {
   const { user } = useAuth();
+  const isTeacher = user?.role === 'teacher';
+  // Curators view attendance read-only; every other role on this page can mark it.
+  const canMarkAttendance = user?.role !== 'curator';
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentWeek, setCurrentWeek] = useState(1);
   const [weekOffset, setWeekOffset] = useState(0);
@@ -526,6 +533,7 @@ export default function CuratorLeaderboardPage() {
   })
 
   const toggleColumn = (field: keyof typeof enabledCols) => {
+      if (isTeacher) return;
       setEnabledCols(prev => ({ ...prev, [field]: !prev[field] }));
       setConfigChanged(true);
   };
@@ -535,8 +543,10 @@ export default function CuratorLeaderboardPage() {
   useEffect(() => {
     const loadGroups = async () => {
         try {
-            const myGroups = sortGroupsByCreatedAt(await getCuratorGroups());
-            setGroups(myGroups);
+            const fetched = user?.role === 'teacher'
+                ? await apiClient.getTeacherGroups(1000, false)
+                : await getCuratorGroups();
+            setGroups(sortGroupsByCreatedAt(fetched));
         } catch (e) {
             console.error("Failed to load groups", e);
         }
@@ -548,7 +558,7 @@ export default function CuratorLeaderboardPage() {
     if (groups.length === 0) return;
 
     const weekParam = searchParams.get('week');
-    const groupIdParam = searchParams.get('groupId');
+    const groupIdParam = searchParams.get('groupId') ?? searchParams.get('group');
 
     if (selectedGroupId && filteredGroups.some((group) => group.id === selectedGroupId)) {
       return;
@@ -716,8 +726,8 @@ export default function CuratorLeaderboardPage() {
   };
 
   const handleAttendanceChange = (studentId: number, lessonNumber: string, status: string) => {
-      // Security check — curators and head teachers view attendance here but don't edit it.
-      if (user?.role === 'curator' || user?.role === 'head_teacher') return;
+      // Security check — curators view attendance here but don't edit it.
+      if (!canMarkAttendance) return;
       
       // Status: "attended" or "absent" (from toggles)
       // Map to 10 or 0
@@ -754,72 +764,76 @@ export default function CuratorLeaderboardPage() {
     let successCount = 0;
 
     try {
-        // 1. Save Column Visibility Config
-        console.log('Saving leaderboard config:', {
-            group_id: selectedGroupId,
-            week_number: currentWeek,
-            curator_hour_enabled: enabledCols.curator_hour === true,
-            study_buddy_enabled: enabledCols.study_buddy === true,
-            self_reflection_journal_enabled: enabledCols.self_reflection_journal === true,
-            weekly_evaluation_enabled: enabledCols.weekly_evaluation === true,
-            extra_points_enabled: enabledCols.extra_points === true
-        });
-        
-        const savedConfig = await updateLeaderboardConfig({
-            group_id: selectedGroupId,
-            week_number: currentWeek,
-            curator_hour_enabled: enabledCols.curator_hour === true,
-            study_buddy_enabled: enabledCols.study_buddy === true,
-            self_reflection_journal_enabled: enabledCols.self_reflection_journal === true,
-            weekly_evaluation_enabled: enabledCols.weekly_evaluation === true,
-            extra_points_enabled: enabledCols.extra_points === true
-        });
-        
-        console.log('Config saved successfully:', savedConfig);
-        
+        // 1. Save Column Visibility Config — teachers can't touch manual columns, so skip entirely.
+        if (!isTeacher) {
+            console.log('Saving leaderboard config:', {
+                group_id: selectedGroupId,
+                week_number: currentWeek,
+                curator_hour_enabled: enabledCols.curator_hour === true,
+                study_buddy_enabled: enabledCols.study_buddy === true,
+                self_reflection_journal_enabled: enabledCols.self_reflection_journal === true,
+                weekly_evaluation_enabled: enabledCols.weekly_evaluation === true,
+                extra_points_enabled: enabledCols.extra_points === true
+            });
+
+            const savedConfig = await updateLeaderboardConfig({
+                group_id: selectedGroupId,
+                week_number: currentWeek,
+                curator_hour_enabled: enabledCols.curator_hour === true,
+                study_buddy_enabled: enabledCols.study_buddy === true,
+                self_reflection_journal_enabled: enabledCols.self_reflection_journal === true,
+                weekly_evaluation_enabled: enabledCols.weekly_evaluation === true,
+                extra_points_enabled: enabledCols.extra_points === true
+            });
+
+            console.log('Config saved successfully:', savedConfig);
+        }
+
         // 2. Save Student Scores
         const entriesToSave = data.students.filter(s => changedEntries.has(s.student_id));
         console.log('Entries to save:', entriesToSave.length, 'Changed entries:', Array.from(changedEntries));
         
         for (const student of entriesToSave) {
             try {
-                // Update Manual Fields (LeaderboardEntry)
-                // Only send fields that have actual values (not null/undefined)
-                const entryData: any = {
-                    user_id: student.student_id,
-                    group_id: selectedGroupId,
-                    week_number: currentWeek
-                };
-                
-                // Add optional fields only if they have values
-                if (student.curator_hour !== null && student.curator_hour !== undefined) {
-                    entryData.curator_hour = student.curator_hour;
+                // Update Manual Fields (LeaderboardEntry) — teachers save only attendance.
+                if (!isTeacher) {
+                    // Only send fields that have actual values (not null/undefined)
+                    const entryData: any = {
+                        user_id: student.student_id,
+                        group_id: selectedGroupId,
+                        week_number: currentWeek
+                    };
+
+                    // Add optional fields only if they have values
+                    if (student.curator_hour !== null && student.curator_hour !== undefined) {
+                        entryData.curator_hour = student.curator_hour;
+                    }
+                    if (student.mock_exam !== null && student.mock_exam !== undefined) {
+                        entryData.mock_exam = student.mock_exam;
+                    }
+                    if (student.study_buddy !== null && student.study_buddy !== undefined) {
+                        entryData.study_buddy = student.study_buddy;
+                    }
+                    if (student.self_reflection_journal !== null && student.self_reflection_journal !== undefined) {
+                        entryData.self_reflection_journal = student.self_reflection_journal;
+                    }
+                    if (student.weekly_evaluation !== null && student.weekly_evaluation !== undefined) {
+                        entryData.weekly_evaluation = student.weekly_evaluation;
+                    }
+                    if (student.extra_points !== null && student.extra_points !== undefined) {
+                        entryData.extra_points = student.extra_points;
+                    }
+
+                    console.log('Saving entry for student:', student.student_id, entryData);
+                    await updateLeaderboardEntry(entryData);
+                    console.log('Entry saved successfully for student:', student.student_id);
                 }
-                if (student.mock_exam !== null && student.mock_exam !== undefined) {
-                    entryData.mock_exam = student.mock_exam;
-                }
-                if (student.study_buddy !== null && student.study_buddy !== undefined) {
-                    entryData.study_buddy = student.study_buddy;
-                }
-                if (student.self_reflection_journal !== null && student.self_reflection_journal !== undefined) {
-                    entryData.self_reflection_journal = student.self_reflection_journal;
-                }
-                if (student.weekly_evaluation !== null && student.weekly_evaluation !== undefined) {
-                    entryData.weekly_evaluation = student.weekly_evaluation;
-                }
-                if (student.extra_points !== null && student.extra_points !== undefined) {
-                    entryData.extra_points = student.extra_points;
-                }
-                
-                console.log('Saving entry for student:', student.student_id, entryData);
-                await updateLeaderboardEntry(entryData);
-                console.log('Entry saved successfully for student:', student.student_id);
-                
+
                 // Update Attendance (Events) - wrapped in separate try/catch to not block entry save
                 for (const [lessonKey, lessonStatus] of Object.entries(student.lessons)) {
                     try {
                         const score = lessonStatus.attendance_status === 'attended' ? 10 : 0;
-                        
+
                         await updateAttendance({
                             group_id: selectedGroupId,
                             week_number: currentWeek,
@@ -827,7 +841,8 @@ export default function CuratorLeaderboardPage() {
                             student_id: student.student_id,
                             score: score,
                             status: lessonStatus.attendance_status,
-                            event_id: lessonStatus.event_id
+                            event_id: lessonStatus.event_id,
+                            activity_score: lessonStatus.activity_score ?? undefined
                         });
                     } catch (attendanceError) {
                         console.error(`Failed to update attendance for student ${student.student_id}, lesson ${lessonKey}:`, attendanceError);
@@ -1289,19 +1304,22 @@ export default function CuratorLeaderboardPage() {
                     >
                         <div className="flex flex-col items-center justify-center gap-1">
                             <span>Час<br/>куратора</span>
-                            <Input 
-                                type="date" 
+                            <Input
+                                type="date"
                                 className="h-6 w-24 text-[10px] p-1 mt-1 border-gray-300 dark:border-border"
                                 value={enabledCols.curator_hour_date || ''}
+                                disabled={isTeacher}
                                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                     const newDate = e.target.value;
                                     setEnabledCols(prev => ({ ...prev, curator_hour_date: newDate }));
-                                    updateLeaderboardConfig({
-                                        group_id: selectedGroupId!,
-                                        week_number: currentWeek,
-                                        curator_hour_date: newDate
-                                    });
+                                    if (!isTeacher) {
+                                        updateLeaderboardConfig({
+                                            group_id: selectedGroupId!,
+                                            week_number: currentWeek,
+                                            curator_hour_date: newDate
+                                        });
+                                    }
                                 }}
                             />
                             {enabledCols.curator_hour 
@@ -1503,7 +1521,7 @@ export default function CuratorLeaderboardPage() {
                         })}
 
                         <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border h-12", !enabledCols.curator_hour && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
-                            <ScoreSelect value={student.curator_hour} max={MAX_SCORES.curator_hour} onChange={(v) => handleManualScoreChange(student.student_id, 'curator_hour', v)} />
+                            <ScoreSelect value={student.curator_hour} max={MAX_SCORES.curator_hour} onChange={(v) => handleManualScoreChange(student.student_id, 'curator_hour', v)} disabled={isTeacher} />
                         </TableCell>
                         {showExamSections ? (
                             <>
@@ -1647,13 +1665,13 @@ export default function CuratorLeaderboardPage() {
                             </div>
                         </TableCell>
                         <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border", !enabledCols.self_reflection_journal && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
-                            <ScoreSelect value={student.self_reflection_journal} max={MAX_SCORES.self_reflection_journal} onChange={(v) => handleManualScoreChange(student.student_id, 'self_reflection_journal', v)} />
+                            <ScoreSelect value={student.self_reflection_journal} max={MAX_SCORES.self_reflection_journal} onChange={(v) => handleManualScoreChange(student.student_id, 'self_reflection_journal', v)} disabled={isTeacher} />
                         </TableCell>
                         <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border", !enabledCols.weekly_evaluation && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
-                            <ScoreSelect value={student.weekly_evaluation} max={MAX_SCORES.weekly_evaluation} onChange={(v) => handleManualScoreChange(student.student_id, 'weekly_evaluation', v)} />
+                            <ScoreSelect value={student.weekly_evaluation} max={MAX_SCORES.weekly_evaluation} onChange={(v) => handleManualScoreChange(student.student_id, 'weekly_evaluation', v)} disabled={isTeacher} />
                         </TableCell>
                         <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border", !enabledCols.extra_points && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
-                            <ScoreSelect value={student.extra_points} max={10} onChange={(v) => handleManualScoreChange(student.student_id, 'extra_points', v)} />
+                            <ScoreSelect value={student.extra_points} max={10} onChange={(v) => handleManualScoreChange(student.student_id, 'extra_points', v)} disabled={isTeacher} />
                         </TableCell>
 
                         <TableCell className="p-2 text-center font-semibold text-gray-900 dark:text-foreground border-r border-gray-300 dark:border-border bg-white dark:bg-card">

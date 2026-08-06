@@ -228,6 +228,7 @@ export async function updateAttendance(data: {
   score: number;
   status: string;
   event_id?: number;
+  activity_score?: number | null;
 }): Promise<any> {
   try {
     const response = await api.post('/leaderboard/curator/attendance', data);
