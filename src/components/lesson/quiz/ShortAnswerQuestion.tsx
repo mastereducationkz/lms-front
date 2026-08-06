@@ -6,6 +6,7 @@ interface ShortAnswerQuestionProps {
   onChange: (value: string) => void;
   disabled?: boolean;
   showResult?: boolean;
+  revealCorrect?: boolean;
 }
 
 export const ShortAnswerQuestion: React.FC<ShortAnswerQuestionProps> = ({
@@ -13,9 +14,11 @@ export const ShortAnswerQuestion: React.FC<ShortAnswerQuestionProps> = ({
   value,
   onChange,
   disabled,
-  showResult
+  showResult,
+  revealCorrect
 }) => {
-  const correctAnswers = (question.correct_answer || '').toString().split('|').map((a: string) => a.trim().toLowerCase()).filter((a: string) => a.length > 0);
+  const expectedAnswers = (question.correct_answer || '').toString().split('|').map((a: string) => a.trim()).filter((a: string) => a.length > 0);
+  const correctAnswers = expectedAnswers.map((a: string) => a.toLowerCase());
   const userVal = (value || '').toString().trim().toLowerCase();
   const isCorrect = correctAnswers.includes(userVal);
 
@@ -35,7 +38,12 @@ export const ShortAnswerQuestion: React.FC<ShortAnswerQuestionProps> = ({
         }`}
         disabled={disabled}
       />
-      {/* Result Indicator - Logic removed as requested to avoid confusion and redundancy */}
+      {revealCorrect && !isCorrect && expectedAnswers.length > 0 && (
+        <p className="text-sm">
+          <span className="font-medium text-foreground">Correct answer: </span>
+          <span className="text-green-700 dark:text-green-400">{expectedAnswers.join(' or ')}</span>
+        </p>
+      )}
     </div>
   );
 };

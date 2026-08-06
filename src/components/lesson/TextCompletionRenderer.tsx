@@ -11,6 +11,7 @@ interface TextCompletionRendererProps {
     onAnswerChange?: (gapIndex: number, value: string) => void;
     disabled?: boolean;
     showCorrectAnswers?: boolean;
+    revealCorrect?: boolean;
     correctAnswers?: string[];
     showNumbering?: boolean; // Show numbering like "1. [input] 2. [input]"
 }
@@ -28,6 +29,7 @@ export const TextCompletionRenderer: React.FC<TextCompletionRendererProps> = ({
     onAnswerChange,
     disabled = false,
     showCorrectAnswers = false,
+    revealCorrect = false,
     correctAnswers = [],
     showNumbering = false,
 }) => {
@@ -124,7 +126,7 @@ export const TextCompletionRenderer: React.FC<TextCompletionRendererProps> = ({
                                 maxWidth: '180px'
                             }}
                         />
-                        {isIncorrect && (
+                        {revealCorrect && isIncorrect && (
                             <span className="text-sm font-medium text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/20 px-2 py-0.5 rounded border border-green-200 dark:border-green-400">
                                 {correctAnswer}
                             </span>

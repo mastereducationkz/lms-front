@@ -9,6 +9,7 @@ interface FillInBlankQuestionProps {
   onAnswerChange: (index: number, value: string) => void;
   disabled?: boolean;
   showResult?: boolean;
+  revealCorrect?: boolean;
 }
 
 export const FillInBlankQuestion: React.FC<FillInBlankQuestionProps> = ({
@@ -18,7 +19,8 @@ export const FillInBlankQuestion: React.FC<FillInBlankQuestionProps> = ({
   answers,
   onAnswerChange,
   disabled,
-  showResult
+  showResult,
+  revealCorrect
 }) => {
   const correctAnswers: string[] = Array.isArray(question.correct_answer) ? question.correct_answer : (question.correct_answer ? [question.correct_answer] : []);
   
@@ -39,6 +41,7 @@ export const FillInBlankQuestion: React.FC<FillInBlankQuestionProps> = ({
         onAnswerChange={onAnswerChange}
         disabled={disabled}
         showCorrectAnswers={showResult}
+        revealCorrect={revealCorrect}
         correctAnswers={correctAnswers}
         shuffleOptions={true}
       />
