@@ -20,6 +20,12 @@ import { DateSeparator, UnreadDivider, isSameDay, formatDateSeparator, formatMes
 
 // Backstop only: how long to wait for the send ack before giving up on it ever arriving.
 // Success/failure is decided by the ack itself (see `deliver`), not by this clock.
+//
+// That decision depends on the server emitting the echo before its handler returns, over
+// the same connection the ack goes down -- true only while the Socket.IO server runs
+// without a client_manager. If one is ever added (see the note in the backend's
+// socket_messages.py), the echo moves to pub/sub, the ack can arrive first, and every send
+// will look failed. Read the ack's payload instead if that happens.
 const SEND_ACK_TIMEOUT_MS = 15000;
 
 let clientMsgCounter = 0;
@@ -343,6 +349,13 @@ export default function ChatPage() {
     // is what stops a slow-but-successful send from being marked failed and then retried into
     // a duplicate — the server has no content de-dup. The .timeout() is a backstop for the one
     // case that produces no ack at all: the handler raising before its own try block.
+    //
+    // INVARIANT: this relies on the backend's Socket.IO server using the default IN-PROCESS
+    // manager, so the room emit and the ack travel the same connection in order. Adding a
+    // client_manager (AsyncRedisManager etc. — which the 4-worker deployment otherwise wants)
+    // routes the echo through pub/sub while the ack stays direct, so the ack would beat the
+    // echo and EVERY send would look failed. If one is introduced, the backend must return a
+    // success payload from the handler and this must switch to reading it.
     const emitWithAck = (event: string, payload: Record<string, unknown>) => {
       socket.timeout(SEND_ACK_TIMEOUT_MS).emit(event, payload, failIfStillPending);
     };
