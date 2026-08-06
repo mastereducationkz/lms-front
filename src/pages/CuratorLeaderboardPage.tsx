@@ -1359,7 +1359,9 @@ export default function CuratorLeaderboardPage() {
                         );
                     })}
                     
-                    <TableHead 
+                    {/* Ручные кураторские колонки не показываем учителям — их зона это уроки и тесты */}
+                    {!isTeacher && (
+                    <TableHead
                         className={cn("text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-gray-200 dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.curator_hour && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-gray-400 dark:text-gray-500")}
                         onClick={() => toggleColumn('curator_hour')}
                         title={enabledCols.curator_hour ? "Нажмите, чтобы скрыть" : "Нажмите, чтобы показать"}
@@ -1390,6 +1392,7 @@ export default function CuratorLeaderboardPage() {
                             }
                         </div>
                     </TableHead>
+                    )}
                     {showExamSections ? (
                         <>
                             <TableHead className="text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight">
@@ -1404,7 +1407,8 @@ export default function CuratorLeaderboardPage() {
                     ) : (
                         <TableHead className="text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight">Пробный<br/>экзамен</TableHead>
                     )}
-                    <TableHead 
+                    {!isTeacher && (<>
+                    <TableHead
                         className={cn("text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-gray-200 dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.study_buddy && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-gray-400 dark:text-gray-500")}
                         onClick={() => toggleColumn('study_buddy')}
                         title={enabledCols.study_buddy ? "Нажмите, чтобы скрыть" : "Нажмите, чтобы показать"}
@@ -1456,7 +1460,8 @@ export default function CuratorLeaderboardPage() {
                             }
                         </div>
                     </TableHead>
-                    
+                    </>)}
+
                     <TableHead className="text-center font-bold p-2 w-16 text-gray-800 dark:text-foreground bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle">Итого</TableHead>
                     <TableHead className="text-center font-bold p-2 w-16 md:sticky md:right-0 z-40 bg-gray-100 dark:bg-secondary align-middle md:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">%</TableHead>
                 </TableRow>
@@ -1625,9 +1630,11 @@ export default function CuratorLeaderboardPage() {
                             );
                         })}
 
+                        {!isTeacher && (
                         <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border h-12", !enabledCols.curator_hour && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
                             <ScoreSelect value={student.curator_hour} max={MAX_SCORES.curator_hour} onChange={(v) => handleManualScoreChange(student.student_id, 'curator_hour', v)} disabled={isTeacher} />
                         </TableCell>
+                        )}
                         {showExamSections ? (
                             <>
                                 {(() => {
@@ -1741,6 +1748,7 @@ export default function CuratorLeaderboardPage() {
                                 </div>
                             </TableCell>
                         )}
+                        {!isTeacher && (<>
                         <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border", !enabledCols.study_buddy && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
                             <div className="h-12 w-full">
                                 <AttendanceToggle
@@ -1759,6 +1767,7 @@ export default function CuratorLeaderboardPage() {
                         <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border", !enabledCols.extra_points && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
                             <ScoreSelect value={student.extra_points} max={10} onChange={(v) => handleManualScoreChange(student.student_id, 'extra_points', v)} disabled={isTeacher} />
                         </TableCell>
+                        </>)}
 
                         <TableCell className="p-2 text-center font-semibold text-gray-900 dark:text-foreground border-r border-gray-300 dark:border-border bg-white dark:bg-card">
                             {calculateTotal(student)}
