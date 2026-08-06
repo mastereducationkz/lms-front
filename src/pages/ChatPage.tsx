@@ -349,13 +349,7 @@ export default function ChatPage() {
     // is what stops a slow-but-successful send from being marked failed and then retried into
     // a duplicate — the server has no content de-dup. The .timeout() is a backstop for the one
     // case that produces no ack at all: the handler raising before its own try block.
-    //
-    // INVARIANT: this relies on the backend's Socket.IO server using the default IN-PROCESS
-    // manager, so the room emit and the ack travel the same connection in order. Adding a
-    // client_manager (AsyncRedisManager etc. — which the 4-worker deployment otherwise wants)
-    // routes the echo through pub/sub while the ack stays direct, so the ack would beat the
-    // echo and EVERY send would look failed. If one is introduced, the backend must return a
-    // success payload from the handler and this must switch to reading it.
+    // This holds only while the backend runs without a client_manager — see SEND_ACK_TIMEOUT_MS.
     const emitWithAck = (event: string, payload: Record<string, unknown>) => {
       socket.timeout(SEND_ACK_TIMEOUT_MS).emit(event, payload, failIfStillPending);
     };
