@@ -1657,10 +1657,10 @@ export default function CuratorLeaderboardPage() {
                         )}
                         <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border", !enabledCols.study_buddy && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
                             <div className="h-12 w-full">
-                                <AttendanceToggle 
-                                    initialStatus={student.study_buddy === 15 ? 'attended' : 'absent'} 
-                                    onChange={(s) => handleManualScoreChange(student.student_id, 'study_buddy', s === 'attended' ? '15' : '0')} 
-                                    disabled={false}
+                                <AttendanceToggle
+                                    initialStatus={student.study_buddy === 15 ? 'attended' : 'absent'}
+                                    onChange={(s) => handleManualScoreChange(student.student_id, 'study_buddy', s === 'attended' ? '15' : '0')}
+                                    disabled={isTeacher}
                                 />
                             </div>
                         </TableCell>
