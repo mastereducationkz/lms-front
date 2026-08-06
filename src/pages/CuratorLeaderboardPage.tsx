@@ -1315,7 +1315,7 @@ export default function CuratorLeaderboardPage() {
                     {data.lessons.map(lesson => {
                         const lessonIsFuture = isAttendanceLockedLesson(lesson.start_datetime);
                         return (
-                        <TableHead key={`lesson-${lesson.lesson_number}`} className="p-0 text-center border-r border-gray-300 dark:border-border h-16 min-w-[160px] align-top bg-gray-100 dark:bg-secondary">
+                        <TableHead key={`lesson-${lesson.lesson_number}`} className="p-0 text-center border-r border-gray-300 dark:border-border min-h-16 min-w-[160px] align-top bg-gray-100 dark:bg-secondary">
                             <div className="flex flex-col h-full">
                                 <div
                                     className={cn(
@@ -1330,14 +1330,19 @@ export default function CuratorLeaderboardPage() {
                                     {lesson.topic && (
                                         <span className="text-[9px] font-normal text-blue-600 dark:text-blue-400 truncate max-w-[150px]" title={lesson.topic}>{lesson.topic}</span>
                                     )}
+                                    {canMarkAttendance && !lessonIsFuture && (
+                                        <span className="mt-0.5 text-[9px] font-bold uppercase tracking-tight text-blue-600 dark:text-blue-400">
+                                            Отметить всех
+                                        </span>
+                                    )}
                                     {canMarkAttendance && (
                                         <button
                                             type="button"
-                                            className="absolute top-1 right-1 p-0.5 text-gray-400 hover:text-blue-500 opacity-0 group-hover/lesson:opacity-100 transition-opacity"
+                                            className="absolute top-1 right-1 p-1 text-gray-400 hover:text-blue-500 opacity-100 md:opacity-0 md:group-hover/lesson:opacity-100 transition-opacity"
                                             title="Тема урока"
                                             onClick={(e) => { e.stopPropagation(); setTopicModal({ open: true, lesson, value: lesson.topic ?? '' }); }}
                                         >
-                                            <Pencil className="w-3 h-3" />
+                                            <Pencil className="w-3.5 h-3.5" />
                                         </button>
                                     )}
                                 </div>
@@ -1486,7 +1491,7 @@ export default function CuratorLeaderboardPage() {
 
                             return (
                                 <TableCell key={`cell-${lessonKey}`} className="p-0 border-r border-gray-300 dark:border-border">
-                                    <div className="flex w-full h-12 items-stretch">
+                                    <div className="flex w-full h-14 md:h-12 items-stretch">
                                         <div
                                             className="w-1/2 border-r border-gray-300 dark:border-border relative group/att"
                                             onContextMenu={(e) => {
@@ -1508,14 +1513,14 @@ export default function CuratorLeaderboardPage() {
                                                 isFuture={cellIsFuture}
                                             />
                                             {lessonStatus?.activity_score != null && (
-                                                <span className="absolute top-0 right-0 text-[9px] px-1 bg-yellow-400 text-gray-900 rounded-bl font-bold pointer-events-none" title={`Активность: ${lessonStatus.activity_score}/10`}>
+                                                <span className="absolute top-0 right-0 text-[10px] px-1.5 bg-yellow-400 text-gray-900 rounded-bl font-bold pointer-events-none" title={`Активность: ${lessonStatus.activity_score}/10`}>
                                                     {lessonStatus.activity_score}
                                                 </span>
                                             )}
                                             {canMarkAttendance && lessonStatus && !cellIsFuture && (
                                                 <button
                                                     type="button"
-                                                    className="absolute bottom-0 right-0 p-0.5 text-white/60 hover:text-white opacity-0 group-hover/att:opacity-100 transition-opacity"
+                                                    className="absolute bottom-0.5 right-0.5 p-1.5 rounded-full bg-black/20 text-white hover:bg-black/35 opacity-100 md:opacity-0 md:group-hover/att:opacity-100 transition-opacity"
                                                     title="Балл за активность"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
@@ -1528,7 +1533,7 @@ export default function CuratorLeaderboardPage() {
                                                         });
                                                     }}
                                                 >
-                                                    <Star className="w-2.5 h-2.5" />
+                                                    <Star className="w-3.5 h-3.5" />
                                                 </button>
                                             )}
                                         </div>
