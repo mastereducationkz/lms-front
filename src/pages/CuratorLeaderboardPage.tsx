@@ -10,10 +10,10 @@ import {
 } from '../components/ui/select';
 import { Input } from '../components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
-import { ChevronLeft, ChevronRight, Loader2, Save, Eye, EyeOff, Check, ChevronsUpDown, ClipboardList, Sparkles, User } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Save, Eye, EyeOff, Check, ChevronsUpDown, ClipboardList, Sparkles, User, Pencil, Star } from 'lucide-react';
 import { StudentHomeworkDialog } from '../components/leaderboard/StudentHomeworkDialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
-import apiClient, { getCuratorGroups, getWeeklyLessonsWithHwStatus, updateAttendance, updateLeaderboardEntry, updateLeaderboardConfig, setGroupWeekOffset } from '../services/api';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
+import apiClient, { getCuratorGroups, getWeeklyLessonsWithHwStatus, updateAttendance, updateLeaderboardEntry, updateLeaderboardConfig, setGroupWeekOffset, setLessonTopic } from '../services/api';
 import { Group, CourseType } from '../types';
 import {
   PROGRAM_LABELS, PROGRAM_BADGE_STYLES, getGroupProgramType,
@@ -531,6 +531,14 @@ export default function CuratorLeaderboardPage() {
   const [studentHwModal, setStudentHwModal] = useState<{ open: boolean; studentId: number | null; studentName: string }>({
     open: false, studentId: null, studentName: ''
   })
+  const [activityModal, setActivityModal] = useState<{
+    open: boolean; studentId: number | null; lessonKey: string | null;
+    studentName: string; currentScore: number;
+  }>({ open: false, studentId: null, lessonKey: null, studentName: '', currentScore: 0 });
+  const [topicModal, setTopicModal] = useState<{
+    open: boolean; lesson: LessonMeta | null; value: string;
+  }>({ open: false, lesson: null, value: '' });
+  const [savingTopic, setSavingTopic] = useState(false);
 
   const toggleColumn = (field: keyof typeof enabledCols) => {
       if (isTeacher) return;
@@ -757,6 +765,61 @@ export default function CuratorLeaderboardPage() {
       });
       setChangedEntries(prev => new Set(prev).add(studentId));
   };
+
+  const markAllPresentForLesson = (lesson: LessonMeta) => {
+    if (!canMarkAttendance || !data) return;
+    if (parseAsUTC(lesson.start_datetime).getTime() > Date.now()) return;
+    const lessonKey = lesson.lesson_number.toString();
+    data.students.forEach(s => handleAttendanceChange(s.student_id, lessonKey, 'attended'));
+  };
+
+  const updateActivityScore = (studentId: number, lessonKey: string, score: number) => {
+    setData(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        students: prev.students.map(s => {
+          if (s.student_id !== studentId) return s;
+          const lesson = s.lessons[lessonKey];
+          if (!lesson) return s;
+          return { ...s, lessons: { ...s.lessons, [lessonKey]: { ...lesson, activity_score: score } } };
+        })
+      };
+    });
+    setChangedEntries(prev => new Set(prev).add(studentId));
+  };
+
+  const saveTopic = async () => {
+    if (!topicModal.lesson || !selectedGroupId) return;
+    const lesson = topicModal.lesson;
+    const nextTopic = topicModal.value.trim();
+    setSavingTopic(true);
+    try {
+      const res = await setLessonTopic({
+        group_id: selectedGroupId,
+        event_id: lesson.event_id,
+        topic: nextTopic || null,
+      });
+      // The event may have been materialized server-side — adopt the returned id.
+      setData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          lessons: prev.lessons.map(l =>
+            l.event_id === lesson.event_id ? { ...l, topic: res.topic, event_id: res.event_id } : l
+          ),
+        };
+      });
+      toast(res.topic ? 'Тема сохранена' : 'Тема удалена', 'success');
+      setTopicModal({ open: false, lesson: null, value: '' });
+    } catch (err) {
+      console.error('Failed to save lesson topic:', err);
+      toast('Не удалось сохранить тему', 'error');
+    } finally {
+      setSavingTopic(false);
+    }
+  };
+
   const handleSaveChanges = async () => {
     if (!selectedGroupId || (!configChanged && changedEntries.size === 0) || !data) return;
     
@@ -1278,12 +1341,34 @@ export default function CuratorLeaderboardPage() {
                         Студент
                     </TableHead>
                     {/* Dynamic Lesson Columns */}
-                    {data.lessons.map(lesson => (
+                    {data.lessons.map(lesson => {
+                        const lessonIsFuture = parseAsUTC(lesson.start_datetime).getTime() > Date.now();
+                        return (
                         <TableHead key={`lesson-${lesson.lesson_number}`} className="p-0 text-center border-r border-gray-300 dark:border-border h-16 min-w-[160px] align-top bg-gray-100 dark:bg-secondary">
                             <div className="flex flex-col h-full">
-                                <div className="py-2 border-b border-gray-300 dark:border-border font-semibold text-gray-700 dark:text-gray-300 bg-gray-200/50 dark:bg-gray-700/50 text-xs flex flex-col items-center">
+                                <div
+                                    className={cn(
+                                        "py-2 border-b border-gray-300 dark:border-border font-semibold text-gray-700 dark:text-gray-300 bg-gray-200/50 dark:bg-gray-700/50 text-xs flex flex-col items-center relative group/lesson",
+                                        canMarkAttendance && !lessonIsFuture && "cursor-pointer hover:bg-gray-300/50 dark:hover:bg-gray-600/50"
+                                    )}
+                                    onClick={() => markAllPresentForLesson(lesson)}
+                                    title={canMarkAttendance && !lessonIsFuture ? 'Нажмите, чтобы отметить всех «Был»' : undefined}
+                                >
                                     <span className="text-sm">{formatDateParts(lesson.start_datetime).date}</span>
                                     <span className="text-[10px] font-normal text-gray-500 dark:text-gray-400 leading-tight uppercase">{formatDateParts(lesson.start_datetime).dayTime}</span>
+                                    {lesson.topic && (
+                                        <span className="text-[9px] font-normal text-blue-600 dark:text-blue-400 truncate max-w-[150px]" title={lesson.topic}>{lesson.topic}</span>
+                                    )}
+                                    {canMarkAttendance && (
+                                        <button
+                                            type="button"
+                                            className="absolute top-1 right-1 p-0.5 text-gray-400 hover:text-blue-500 opacity-0 group-hover/lesson:opacity-100 transition-opacity"
+                                            title="Тема урока"
+                                            onClick={(e) => { e.stopPropagation(); setTopicModal({ open: true, lesson, value: lesson.topic ?? '' }); }}
+                                        >
+                                            <Pencil className="w-3 h-3" />
+                                        </button>
+                                    )}
                                 </div>
                                 <div className="flex flex-1 items-stretch">
                                     <div className="w-1/2 py-2 text-[10px] font-bold text-gray-600 dark:text-gray-400 border-r border-gray-300 dark:border-border text-center uppercase tracking-tighter flex items-center justify-center">
@@ -1295,7 +1380,8 @@ export default function CuratorLeaderboardPage() {
                                 </div>
                             </div>
                         </TableHead>
-                    ))}
+                        );
+                    })}
                     
                     <TableHead 
                         className={cn("text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-gray-200 dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.curator_hour && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-gray-400 dark:text-gray-500")}
@@ -1432,13 +1518,50 @@ export default function CuratorLeaderboardPage() {
                             return (
                                 <TableCell key={`cell-${lessonKey}`} className="p-0 border-r border-gray-300 dark:border-border">
                                     <div className="flex w-full h-12 items-stretch">
-                                        <div className="w-1/2 border-r border-gray-300 dark:border-border">
+                                        <div
+                                            className="w-1/2 border-r border-gray-300 dark:border-border relative group/att"
+                                            onContextMenu={(e) => {
+                                                if (!canMarkAttendance || !lessonStatus) return;
+                                                e.preventDefault();
+                                                setActivityModal({
+                                                    open: true,
+                                                    studentId: student.student_id,
+                                                    lessonKey,
+                                                    studentName: student.student_name,
+                                                    currentScore: lessonStatus.activity_score ?? 0,
+                                                });
+                                            }}
+                                        >
                                             <AttendanceToggle
                                                 initialStatus={status}
                                                 onChange={(newStatus) => handleAttendanceChange(student.student_id, lessonKey, newStatus)}
                                                 disabled={user?.role === 'curator'}
                                                 isFuture={parseAsUTC(lessonInfo.start_datetime).getTime() > Date.now()}
                                             />
+                                            {lessonStatus?.activity_score != null && (
+                                                <span className="absolute top-0 right-0 text-[9px] px-1 bg-yellow-400 text-gray-900 rounded-bl font-bold pointer-events-none" title={`Активность: ${lessonStatus.activity_score}/10`}>
+                                                    {lessonStatus.activity_score}
+                                                </span>
+                                            )}
+                                            {canMarkAttendance && lessonStatus && parseAsUTC(lessonInfo.start_datetime).getTime() <= Date.now() && (
+                                                <button
+                                                    type="button"
+                                                    className="absolute bottom-0 right-0 p-0.5 text-white/60 hover:text-white opacity-0 group-hover/att:opacity-100 transition-opacity"
+                                                    title="Балл за активность"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setActivityModal({
+                                                            open: true,
+                                                            studentId: student.student_id,
+                                                            lessonKey,
+                                                            studentName: student.student_name,
+                                                            currentScore: lessonStatus.activity_score ?? 0,
+                                                        });
+                                                    }}
+                                                >
+                                                    <Star className="w-2.5 h-2.5" />
+                                                </button>
+                                            )}
                                         </div>
                                         <div className="w-1/2 bg-gray-50 dark:bg-secondary flex items-center justify-center p-0">
                                             {(() => {
@@ -2059,6 +2182,101 @@ export default function CuratorLeaderboardPage() {
       studentId={studentHwModal.studentId}
       studentName={studentHwModal.studentName}
     />
+
+    {/* Activity Score Modal */}
+    <Dialog open={activityModal.open} onOpenChange={(open) => !open && setActivityModal(prev => ({ ...prev, open: false }))}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Балл за активность</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Балл за активность для <strong>{activityModal.studentName}</strong>
+          </p>
+          <div className="flex flex-wrap gap-2 justify-center">
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(score => (
+              <Button
+                key={score}
+                variant={activityModal.currentScore === score ? "default" : "outline"}
+                size="sm"
+                className={cn(
+                  "w-10 h-10",
+                  activityModal.currentScore === score && "bg-yellow-500 hover:bg-yellow-600"
+                )}
+                onClick={() => setActivityModal(prev => ({ ...prev, currentScore: score }))}
+              >
+                {score}
+              </Button>
+            ))}
+          </div>
+          <div className="mt-3 rounded-lg bg-gray-50 dark:bg-secondary border border-gray-200 dark:border-border p-3 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+            <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">Шкала оценки:</p>
+            <div className="flex items-center gap-2"><span className="font-medium text-gray-600 dark:text-gray-400 w-10">0</span> Не участвовал(а) вообще</div>
+            <div className="flex items-center gap-2"><span className="font-medium text-gray-600 dark:text-gray-400 w-10">1-3</span> Минимальное участие, преимущественно пассивен(на)</div>
+            <div className="flex items-center gap-2"><span className="font-medium text-gray-600 dark:text-gray-400 w-10">4-5</span> Среднее участие, отвечал(а) при обращении</div>
+            <div className="flex items-center gap-2"><span className="font-medium text-gray-600 dark:text-gray-400 w-10">6-7</span> Активен(на), вызывался(лась) отвечать, вовлечён(а)</div>
+            <div className="flex items-center gap-2"><span className="font-medium text-gray-600 dark:text-gray-400 w-10">8-9</span> Очень активен(на), помогал(а) другим, задавал(а) вопросы</div>
+            <div className="flex items-center gap-2"><span className="font-medium text-gray-600 dark:text-gray-400 w-10">10</span> Выдающееся участие, вёл(а) обсуждение, исключительные усилия</div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setActivityModal({ open: false, studentId: null, lessonKey: null, studentName: '', currentScore: 0 })}
+          >
+            Отмена
+          </Button>
+          <Button
+            onClick={() => {
+              if (activityModal.studentId && activityModal.lessonKey) {
+                updateActivityScore(activityModal.studentId, activityModal.lessonKey, activityModal.currentScore);
+              }
+              setActivityModal({ open: false, studentId: null, lessonKey: null, studentName: '', currentScore: 0 });
+            }}
+            className="bg-yellow-500 hover:bg-yellow-600"
+          >
+            Сохранить
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Lesson topic edit modal */}
+    <Dialog open={topicModal.open} onOpenChange={(open) => !open && setTopicModal({ open: false, lesson: null, value: '' })}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Тема урока</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          {topicModal.lesson && (
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {topicModal.lesson.title}
+            </p>
+          )}
+          <Input
+            autoFocus
+            maxLength={200}
+            placeholder="Например: Present Perfect Tense"
+            value={topicModal.value}
+            onChange={(e) => setTopicModal(prev => ({ ...prev, value: e.target.value }))}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !savingTopic) saveTopic(); }}
+          />
+          <p className="text-xs text-gray-400">Оставьте поле пустым, чтобы удалить тему.</p>
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setTopicModal({ open: false, lesson: null, value: '' })}
+            disabled={savingTopic}
+          >
+            Отмена
+          </Button>
+          <Button onClick={saveTopic} disabled={savingTopic}>
+            {savingTopic ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Сохранить'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }
