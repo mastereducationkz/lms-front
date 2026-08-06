@@ -14,6 +14,7 @@ interface FillInBlankRendererProps {
   onAnswerChange?: (gapIndex: number, value: string) => void;
   disabled?: boolean;
   showCorrectAnswers?: boolean;
+  revealCorrect?: boolean;
   correctAnswers?: string[];
   shuffleOptions?: boolean;
 }
@@ -34,6 +35,7 @@ export const FillInBlankRenderer: React.FC<FillInBlankRendererProps> = ({
   onAnswerChange,
   disabled = false,
   showCorrectAnswers = false,
+  revealCorrect = false,
   correctAnswers = [],
   shuffleOptions = false,
 }) => {
@@ -103,16 +105,6 @@ export const FillInBlankRenderer: React.FC<FillInBlankRendererProps> = ({
         // Falls back to correctAnswers prop if needed (for backward compatibility)
         const correctAnswer = gap.correctOption || correctAnswers[gap.index];
 
-        // Temporary debug logging
-        if (showCorrectAnswers) {
-          console.log(`Gap #${gap.index + 1}:`, {
-            userAnswer: value,
-            correctAnswer: correctAnswer,
-            match: value.trim().toLowerCase() === correctAnswer.trim().toLowerCase(),
-            allOptions: gap.options
-          });
-        }
-
         const isCorrect = showCorrectAnswers && value && correctAnswer &&
           value.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
         const isIncorrect = showCorrectAnswers && value && correctAnswer &&
@@ -146,6 +138,11 @@ export const FillInBlankRenderer: React.FC<FillInBlankRendererProps> = ({
                 ))}
               </SelectContent>
             </Select>
+            {revealCorrect && isIncorrect && correctAnswer && (
+              <span className="text-sm font-medium text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/20 px-2 py-0.5 rounded border border-green-200 dark:border-green-400">
+                {correctAnswer}
+              </span>
+            )}
           </span>,
           gap.container
         );

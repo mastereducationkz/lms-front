@@ -1,4 +1,5 @@
 import React from 'react'
+import { CheckCircle2, XCircle } from 'lucide-react'
 import { renderTextWithLatex } from '../../../utils/latex'
 
 interface ChoiceQuestionProps {
@@ -7,6 +8,7 @@ interface ChoiceQuestionProps {
   onChange: (value: number | number[]) => void
   disabled?: boolean
   showResult?: boolean
+  revealCorrect?: boolean
   crossedOut?: Set<number>
   onCrossOut?: (optionIndex: number) => void
 }
@@ -19,6 +21,7 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
   onChange,
   disabled,
   showResult,
+  revealCorrect,
   crossedOut,
   onCrossOut,
 }) => {
@@ -85,7 +88,7 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
             ? correct
               ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
               : 'border-red-400 bg-red-50 dark:bg-red-900/20'
-            : correct && isMultiple
+            : correct && revealCorrect
               ? 'border-emerald-400 bg-emerald-50/80 dark:bg-emerald-900/15'
               : 'border-border bg-background'
         } else {
@@ -104,7 +107,7 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
             ? correct
               ? 'border-green-500 text-green-700 dark:text-green-400'
               : 'border-red-400 text-red-600 dark:text-red-400'
-            : correct && isMultiple
+            : correct && revealCorrect
               ? 'border-emerald-500 text-emerald-700 dark:text-emerald-400'
               : 'border-muted-foreground text-muted-foreground'
         } else {
@@ -137,7 +140,7 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
                               ? correct
                                 ? 'text-green-800 dark:text-green-300'
                                 : 'text-red-800 dark:text-red-300'
-                              : correct && isMultiple
+                              : correct && revealCorrect
                                 ? 'text-emerald-900 dark:text-emerald-200'
                                 : 'text-foreground/70'
                             : 'text-foreground'
@@ -155,6 +158,18 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
                   )}
                 </div>
               </div>
+              {revealCorrect && correct && (
+                <span className="mt-2 ml-10 inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                  <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                  Correct answer
+                </span>
+              )}
+              {showResult && selected && !correct && (
+                <span className="mt-2 ml-10 inline-flex items-center gap-1.5 text-xs font-medium text-red-600 dark:text-red-400">
+                  <XCircle className="w-3.5 h-3.5" aria-hidden="true" />
+                  Your answer
+                </span>
+              )}
             </button>
 
             {/* SAT-style elimination button — always visible on right */}

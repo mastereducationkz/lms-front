@@ -9,6 +9,7 @@ interface TextCompletionQuestionProps {
   onAnswerChange: (index: number, value: string) => void;
   disabled?: boolean;
   showResult?: boolean;
+  revealCorrect?: boolean;
 }
 
 export const TextCompletionQuestion: React.FC<TextCompletionQuestionProps> = ({
@@ -18,7 +19,8 @@ export const TextCompletionQuestion: React.FC<TextCompletionQuestionProps> = ({
   answers,
   onAnswerChange,
   disabled,
-  showResult
+  showResult,
+  revealCorrect
 }) => {
   const correctAnswers: string[] = Array.isArray(question.correct_answer) ? question.correct_answer : (question.correct_answer ? [question.correct_answer] : []);
 
@@ -41,6 +43,7 @@ export const TextCompletionQuestion: React.FC<TextCompletionQuestionProps> = ({
         onAnswerChange={onAnswerChange}
         disabled={disabled}
         showCorrectAnswers={showResult}
+        revealCorrect={revealCorrect}
         correctAnswers={correctAnswers}
         showNumbering={question.show_numbering || false}
       />

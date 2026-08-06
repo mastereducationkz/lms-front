@@ -144,6 +144,11 @@ const QuizRenderer = (props: QuizRendererProps) => {
     passingScorePercent = DEFAULT_QUIZ_PASSING_SCORE_REQUIRED,
   } = props;
 
+  // Reveal policy: correct answers are shown only once the student has passed.
+  // This is the single place the policy lives — change this expression to change it everywhere.
+  const canRevealCorrectAnswers = (hasPassed: boolean) =>
+    hasPassed || import.meta.env.DEV || Boolean(isTeacher);
+
   // Handle scrolling to highlighted question
   useEffect(() => {
     if (highlightedQuestionId && questions.length > 0 && (quizState === 'feed' || quizState === 'question')) {
@@ -582,6 +587,12 @@ const QuizRenderer = (props: QuizRendererProps) => {
     const isQuizIncomplete = unansweredQuestions.length > 0;
     const answeredCount = answerableQuestions.length - unansweredQuestions.length;
 
+    const feedStats = getGapStatistics();
+    const feedTotalItems = feedStats.totalGaps + feedStats.regularQuestions;
+    const feedCorrectItems = feedStats.correctGaps + feedStats.correctRegular;
+    const feedScorePercentage = feedTotalItems > 0 ? (feedCorrectItems / feedTotalItems) * 100 : 100;
+    const feedRevealCorrect = feedChecked && canRevealCorrectAnswers(feedScorePercentage >= passingScorePercent);
+
     const handleCheckAnswersClick = () => {
       if (isQuizIncomplete) {
         // Reveal the red highlights and jump to the first unanswered question
@@ -773,6 +784,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                       onChange={(val) => setQuizAnswers(prev => new Map(prev.set(q.id.toString(), val)))}
                       disabled={feedChecked}
                       showResult={feedChecked}
+                      revealCorrect={feedRevealCorrect}
                     />
                   ) : q.question_type === 'text_completion' ? (
                     <TextCompletionQuestion
@@ -788,6 +800,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                       }}
                       disabled={feedChecked}
                       showResult={feedChecked}
+                      revealCorrect={feedRevealCorrect}
                     />
                   ) : q.question_type === 'single_choice' || q.question_type === 'multiple_choice' || q.question_type === 'media_question' ? (
                     <ChoiceQuestion
@@ -796,6 +809,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                       onChange={(val) => setQuizAnswers(prev => new Map(prev.set(q.id.toString(), val)))}
                       disabled={feedChecked}
                       showResult={feedChecked}
+                      revealCorrect={feedRevealCorrect}
                       crossedOut={crossedOutByQuestion.get(q.id.toString())}
                       onCrossOut={(idx) => toggleCrossOut(q.id.toString(), idx)}
                     />
@@ -821,6 +835,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                       }}
                       disabled={feedChecked}
                       showResult={feedChecked}
+                      revealCorrect={feedRevealCorrect}
                     />
                   )}
 
@@ -1124,6 +1139,9 @@ const QuizRenderer = (props: QuizRendererProps) => {
                     </p>
                     <p className="text-red-800 dark:text-red-400 text-sm mt-2 text-center">
                       Please try again to improve your score
+                    </p>
+                    <p className="text-red-800 dark:text-red-400 text-sm mt-2 text-center">
+                      Correct answers unlock once you pass. Red marks your answer.
                     </p>
                   </div>
                 )}
@@ -1589,6 +1607,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 onChange={() => {}}
                 disabled={true}
                 showResult={true}
+                revealCorrect={canRevealCorrectAnswers(false)}
               />
             ) : question.question_type === 'matching' ? (
               <MatchingQuestion
@@ -1606,6 +1625,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 onChange={() => {}}
                 disabled={true}
                 showResult={true}
+                revealCorrect={canRevealCorrectAnswers(false)}
               />
             ) : (
               /* Fill-in-the-gaps Review */
@@ -1622,6 +1642,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                         onAnswerChange={() => { }}
                         disabled={true}
                         showResult={true}
+                        revealCorrect={canRevealCorrectAnswers(false)}
                       />
                     );
                   } else {
@@ -1852,6 +1873,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                         onChange={() => {}}
                         disabled={true}
                         showResult={true}
+                        revealCorrect={canRevealCorrectAnswers(isPassed)}
                       />
                     ) : q.question_type === 'text_completion' ? (
                       <TextCompletionQuestion
@@ -1860,6 +1882,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                         onAnswerChange={() => {}}
                         disabled={true}
                         showResult={true}
+                        revealCorrect={canRevealCorrectAnswers(isPassed)}
                       />
                     ) : q.question_type === 'single_choice' || q.question_type === 'multiple_choice' || q.question_type === 'media_question' ? (
                       <ChoiceQuestion
@@ -1868,6 +1891,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                         onChange={() => {}}
                         disabled={true}
                         showResult={true}
+                        revealCorrect={canRevealCorrectAnswers(isPassed)}
                       />
                     ) : q.question_type === 'matching' ? (
                       <MatchingQuestion
@@ -1884,10 +1908,18 @@ const QuizRenderer = (props: QuizRendererProps) => {
                         onAnswerChange={() => {}}
                         disabled={true}
                         showResult={true}
+                        revealCorrect={canRevealCorrectAnswers(isPassed)}
                       />
                     )}
 
-                    {/* Result Indicator - Logic removed as requested to avoid confusion and redundancy */}
+                    {q.explanation && (
+                      <div className="mt-4 space-y-3">
+                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                          <p className="text-sm font-medium text-blue-800 dark:text-blue-400 mb-1">Explanation:</p>
+                          <div className="text-blue-700 dark:text-blue-400 text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.explanation) }} />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -2072,7 +2104,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
             Review Answers
           </Button>
 
-          {(isPassed || import.meta.env.DEV || isTeacher) && (
+          {canRevealCorrectAnswers(isPassed) && (
             <Button
               onClick={() => setShowAllAnswers(true)}
               className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white min-h-[44px]"

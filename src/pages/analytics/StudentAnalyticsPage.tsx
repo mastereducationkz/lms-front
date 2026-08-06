@@ -660,7 +660,8 @@ export const StudentAnalyticsPage: React.FC = () => {
                               className="h-8 text-xs text-blue-600 dark:text-blue-400 hover:bg-white dark:hover:bg-secondary hover:text-blue-700 dark:hover:text-blue-300 border-transparent hover:border-slate-200 dark:hover:border-border shadow-none opacity-0 group-hover:opacity-100 transition-opacity"
                               onClick={() => navigate(`/homework/${hw.id}/progress`)}
                             >
-                              {(isTeacher() || isCurator() || isAdmin()) ? (needsGrading ? 'Grade' : 'Review') : 'View Details'}
+                              {/* Curators can no longer grade, so never offer them a "Grade" affordance. */}
+                              {(isTeacher() || isAdmin()) ? (needsGrading ? 'Grade' : 'Review') : 'View Details'}
                             </Button>
                           </div>
                         </div>

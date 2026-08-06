@@ -64,18 +64,6 @@ interface StudentLessonStatus {
     homework_statuses?: HomeworkStatus[];     // one per lesson homework
 }
 
-interface WeeklySet {
-    id?: number | null;
-    name?: string | null;
-    week_number?: number | null;
-    exam_type?: string | null;      // "SAT" | "NUET"
-    verbal_scaled?: number | null;  // SAT 200–800 / NUET 0–120; null if section not taken
-    math_scaled?: number | null;
-    total?: number | null;          // sum of taken sections; null if neither taken
-    completed?: boolean | null;
-    completed_at?: string | null;
-}
-
 interface IeltsSpeakingFeedback {
     fluencyCoherence?: string | null;
     lexicalResource?: string | null;
@@ -89,7 +77,6 @@ interface StudentRow {
     student_name: string;
     avatar_url: string | null;
     lessons: { [key: string]: StudentLessonStatus }; // key is lesson_number as string "1", "2"
-    weekly_set?: WeeklySet | null;  // scaled SAT/NUET weekly-set scores
     // Manual fields
     curator_hour: number;
     mock_exam: number;
@@ -129,7 +116,6 @@ interface StudentRow {
     ielts_writing_feedback_ru?: { task1?: string | null; task2?: string | null } | null;
     ielts_speaking_feedback?: IeltsSpeakingFeedback | null;
     ielts_speaking_feedback_ru?: IeltsSpeakingFeedback | null;
-    ielts_weekly_set_title?: string | null;
     study_buddy: number;
     self_reflection_journal: number;
     weekly_evaluation: number;
@@ -431,7 +417,7 @@ export default function CuratorLeaderboardPage() {
   const isSatGroup = selectedGroup ? getGroupProgramType(selectedGroup) === 'sat' : false;
   const isIeltsGroup = selectedGroup ? getGroupProgramType(selectedGroup) === 'ielts' : false;
   const isNuetGroup = selectedGroup ? getGroupProgramType(selectedGroup) === 'nuet' : false;
-  // SAT and NUET share the Math/Verbal section columns (with scaled weekly-set scores).
+  // SAT and NUET share the Math/Verbal section columns.
   const showExamSections = isSatGroup || isNuetGroup;
   const examLabel = isNuetGroup ? 'NUET' : 'SAT';
 
@@ -508,10 +494,6 @@ export default function CuratorLeaderboardPage() {
     correct: number | null;
     total: number | null;
     completedAt: string | null;
-    scaled?: number | null;         // scaled section score from the weekly set
-    weeklyTotal?: number | null;    // combined weekly-set total
-    examType?: string | null;       // "SAT" | "NUET"
-    weeklySetName?: string | null;
   }
 
   const [hwModal, setHwModal] = useState<HwFeedbackModal>({
@@ -977,31 +959,10 @@ export default function CuratorLeaderboardPage() {
     return `${correct}`;
   };
 
-  // A section cell: scaled weekly-set score (primary) with the raw correct/total
-  // fraction as subtext. Falls back to the fraction alone when no scaled score.
-  const renderExamSectionContent = (scaled?: number | null, correct?: number | null, total?: number | null) => {
-    if (scaled != null) {
-      return (
-        <span className="flex flex-col items-center leading-none">
-          <span className="text-gray-900 dark:text-foreground font-bold">{scaled}</span>
-          {correct != null && (
-            <span className="text-[10px] font-normal text-gray-400 mt-0.5">{renderSectionFraction(correct, total)}</span>
-          )}
-        </span>
-      );
-    }
-    return <span className="text-gray-900 dark:text-foreground">{renderSectionFraction(correct, total)}</span>;
-  };
-
-  // Hover summary of the weekly set: "Week 5 (13.06-14.06) · SAT total: 1420".
-  const weeklySetTooltip = (ws?: WeeklySet | null): string | undefined => {
-    if (!ws) return undefined;
-    const parts: string[] = [];
-    if (ws.name) parts.push(ws.name);
-    if (ws.total != null) parts.push(`${ws.exam_type ?? ''} total: ${ws.total}`.trim());
-    if (ws.completed === false) parts.push('(в процессе)');
-    return parts.join(' · ') || undefined;
-  };
+  // A section cell: the raw correct/total fraction.
+  const renderExamSectionContent = (correct?: number | null, total?: number | null) => (
+    <span className="text-gray-900 dark:text-foreground">{renderSectionFraction(correct, total)}</span>
+  );
 
   // IELTS bands are conventionally rendered with one decimal: 7.0, 7.5
   const formatBand = (band?: number | null) => (band == null ? '—' : band.toFixed(1));
@@ -1422,9 +1383,6 @@ export default function CuratorLeaderboardPage() {
                             <TableHead className="text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight">
                                 {examLabel} Verbal
                             </TableHead>
-                            <TableHead className="text-center font-semibold p-2 w-24 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight">
-                                {examLabel} Total
-                            </TableHead>
                         </>
                     ) : isIeltsGroup ? (
                         <TableHead className="text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight">IELTS</TableHead>
@@ -1650,10 +1608,8 @@ export default function CuratorLeaderboardPage() {
                         {showExamSections ? (
                             <>
                                 {(() => {
-                                    const ws = student.weekly_set;
-                                    const mathHasData = student.sat_math_correct_count != null || ws?.math_scaled != null;
-                                    const verbalHasData = student.sat_verbal_correct_count != null || ws?.verbal_scaled != null;
-                                    const wsTip = weeklySetTooltip(ws);
+                                    const mathHasData = student.sat_math_correct_count != null;
+                                    const verbalHasData = student.sat_verbal_correct_count != null;
                                     return (
                                         <>
                                             <TableCell className="p-0 border-r border-gray-300 dark:border-border h-12">
@@ -1674,16 +1630,12 @@ export default function CuratorLeaderboardPage() {
                                                             feedbackRu: student.sat_math_feedback_ru ?? null,
                                                             correct: student.sat_math_correct_count ?? null,
                                                             total: student.sat_math_total_count ?? null,
-                                                            completedAt: student.sat_math_completed_at ?? ws?.completed_at ?? null,
-                                                            scaled: ws?.math_scaled ?? null,
-                                                            weeklyTotal: ws?.total ?? null,
-                                                            examType: ws?.exam_type ?? null,
-                                                            weeklySetName: ws?.name ?? null,
+                                                            completedAt: student.sat_math_completed_at ?? null,
                                                         })
                                                     }}
-                                                    title={wsTip ?? (mathHasData ? 'Click to see Math feedback' : undefined)}
+                                                    title={mathHasData ? 'Click to see Math feedback' : undefined}
                                                 >
-                                                    {renderExamSectionContent(ws?.math_scaled, student.sat_math_correct_count, student.sat_math_total_count)}
+                                                    {renderExamSectionContent(student.sat_math_correct_count, student.sat_math_total_count)}
                                                 </div>
                                             </TableCell>
                                             <TableCell className="p-0 border-r border-gray-300 dark:border-border h-12">
@@ -1704,25 +1656,12 @@ export default function CuratorLeaderboardPage() {
                                                             feedbackRu: student.sat_verbal_feedback_ru ?? null,
                                                             correct: student.sat_verbal_correct_count ?? null,
                                                             total: student.sat_verbal_total_count ?? null,
-                                                            completedAt: student.sat_verbal_completed_at ?? ws?.completed_at ?? null,
-                                                            scaled: ws?.verbal_scaled ?? null,
-                                                            weeklyTotal: ws?.total ?? null,
-                                                            examType: ws?.exam_type ?? null,
-                                                            weeklySetName: ws?.name ?? null,
+                                                            completedAt: student.sat_verbal_completed_at ?? null,
                                                         })
                                                     }}
-                                                    title={wsTip ?? (verbalHasData ? 'Click to see Verbal feedback' : undefined)}
+                                                    title={verbalHasData ? 'Click to see Verbal feedback' : undefined}
                                                 >
-                                                    {renderExamSectionContent(ws?.verbal_scaled, student.sat_verbal_correct_count, student.sat_verbal_total_count)}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-12">
-                                                <div className="w-full h-full flex items-center justify-center" title={wsTip}>
-                                                    {ws?.total != null ? (
-                                                        <span className="text-sm font-bold text-gray-900 dark:text-foreground tabular-nums">{ws.total}</span>
-                                                    ) : (
-                                                        <span className="text-gray-300 dark:text-gray-600">—</span>
-                                                    )}
+                                                    {renderExamSectionContent(student.sat_verbal_correct_count, student.sat_verbal_total_count)}
                                                 </div>
                                             </TableCell>
                                         </>
@@ -1873,7 +1812,7 @@ export default function CuratorLeaderboardPage() {
                 ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400"
                 : "bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400"
             )}>
-              {satModal.examType ?? 'SAT'} {satModal.section === 'math' ? 'Math' : 'Verbal'}
+              {examLabel} {satModal.section === 'math' ? 'Math' : 'Verbal'}
             </span>
             {satModal.completedAt && (
               <span className="text-xs text-gray-400">
@@ -1907,25 +1846,6 @@ export default function CuratorLeaderboardPage() {
             </span>
           ) : null}
         </div>
-
-        {/* Weekly Set scaled scores */}
-        {(satModal.scaled != null || satModal.weeklyTotal != null) && (
-          <div className="flex items-center gap-3 px-5 py-2 shrink-0 border-t border-gray-100 dark:border-border text-sm">
-            {satModal.weeklySetName && (
-              <span className="text-xs text-gray-400 truncate max-w-[45%]">{satModal.weeklySetName}</span>
-            )}
-            {satModal.scaled != null && (
-              <span className="font-semibold text-gray-700 dark:text-gray-200">
-                {satModal.section === 'math' ? 'Math' : 'Verbal'}: {satModal.scaled}
-              </span>
-            )}
-            {satModal.weeklyTotal != null && (
-              <span className="ml-auto font-bold text-gray-900 dark:text-foreground">
-                Σ {satModal.weeklyTotal}
-              </span>
-            )}
-          </div>
-        )}
 
         {/* Feedback body */}
         <div className="px-5 py-4 overflow-y-auto">
@@ -2007,9 +1927,6 @@ export default function CuratorLeaderboardPage() {
                   <span className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400">
                     IELTS
                   </span>
-                  {s.ielts_weekly_set_title && (
-                    <span className="text-xs text-gray-400">{s.ielts_weekly_set_title}</span>
-                  )}
                 </div>
                 <h2 className="text-base font-semibold text-gray-900 dark:text-foreground">{s.student_name}</h2>
               </div>

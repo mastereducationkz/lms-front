@@ -63,6 +63,13 @@ export async function removeMessageReaction(messageId: number) {
   return response.data; // { message_id, reactions: [...] }
 }
 
+// --- Reporting ---------------------------------------------------------------
+
+export async function reportMessage(messageId: number, reason?: string | null) {
+  const response = await api.post(`/messages/${messageId}/report`, { reason: reason ?? null });
+  return response.data; // { status, report_id }
+}
+
 // --- Mute --------------------------------------------------------------------
 
 export async function getMutedConversations(): Promise<number[]> {

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Trash2, GripVertical, BookOpen, FileText, MessageSquare, Link as LinkIcon, FileSearch, Star } from 'lucide-react';
+import { Trash2, GripVertical, BookOpen, FileText, MessageSquare, Link as LinkIcon, FileSearch, Mic, Star } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader } from '../ui/card';
 import { Label } from '../ui/label';
@@ -15,7 +15,7 @@ import PdfTextTaskEditor from './PdfTextTaskEditor';
 
 interface Task {
   id: string;
-  task_type: 'course_unit' | 'file_task' | 'text_task' | 'link_task' | 'pdf_text_task';
+  task_type: 'course_unit' | 'file_task' | 'text_task' | 'link_task' | 'pdf_text_task' | 'audio_task';
   title: string;
   description?: string;
   order_index: number;
@@ -34,7 +34,8 @@ const TASK_TYPES = [
   { value: 'file_task', label: 'File Upload', icon: FileText, description: 'Upload a file (PDF, image, etc.)' },
   { value: 'text_task', label: 'Text Response', icon: MessageSquare, description: 'Written answer' },
   { value: 'link_task', label: 'External Link', icon: LinkIcon, description: 'Visit external resource' },
-  { value: 'pdf_text_task', label: 'File + Text', icon: FileSearch, description: 'Upload file, student writes response' }
+  { value: 'pdf_text_task', label: 'File + Text', icon: FileSearch, description: 'Upload file, student writes response' },
+  { value: 'audio_task', label: 'Audio Answer', icon: Mic, description: 'Student records an audio answer' }
 ];
 
 export default function MultiTaskEditor({ content, onContentChange }: MultiTaskEditorProps) {
@@ -170,6 +171,24 @@ export default function MultiTaskEditor({ content, onContentChange }: MultiTaskE
             content={task.content}
             onContentChange={(content) => updateTask(index, { content })}
           />
+        );
+      case 'audio_task':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor={`audio-question-${task.id}`}>Question/Prompt *</Label>
+              <Textarea
+                id={`audio-question-${task.id}`}
+                value={task.content.question || ''}
+                onChange={(e) => updateTask(index, { content: { ...task.content, question: e.target.value } })}
+                placeholder="Enter the prompt the student should answer by recording their voice..."
+                rows={4}
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                The student records an audio answer in the browser. This task is graded manually.
+              </p>
+            </div>
+          </div>
         );
       default:
         return <div>Unknown task type</div>;

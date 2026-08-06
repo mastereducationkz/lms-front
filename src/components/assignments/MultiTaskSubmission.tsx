@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import React from 'react'
-import { BookOpen, FileText, MessageSquare, Link as LinkIcon, CheckCircle, ExternalLink, Upload, X, FileSearch, Star } from 'lucide-react';
+import { BookOpen, FileText, MessageSquare, Link as LinkIcon, CheckCircle, ExternalLink, Upload, X, FileSearch, Mic, Square, RotateCcw, AlertCircle, Star } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader } from '../ui/card';
 import { Label } from '../ui/label';
@@ -11,10 +11,11 @@ import apiClient from '../../services/api';
 import { toast } from '../Toast';
 import { compressImage } from '../../utils/imageCompression';
 import { cn } from '../../lib/utils';
+import { AudioPlayer } from '../AudioPlayer';
 
 interface Task {
   id: string;
-  task_type: 'course_unit' | 'file_task' | 'text_task' | 'link_task' | 'pdf_text_task';
+  task_type: 'course_unit' | 'file_task' | 'text_task' | 'link_task' | 'pdf_text_task' | 'audio_task';
   title: string;
   description?: string;
   order_index: number;
@@ -236,6 +237,341 @@ function CourseUnitTaskDisplay({ task, isCompleted, onCompletion, readOnly, stud
           </p>
         )}
       </div>
+    </div>
+  );
+}
+
+const AUDIO_MIME_TYPE_CANDIDATES = [
+  'audio/webm;codecs=opus',
+  'audio/webm',
+  'audio/mp4',
+  'audio/ogg;codecs=opus',
+  'audio/ogg',
+];
+
+function pickSupportedAudioMimeType(): string {
+  if (typeof MediaRecorder === 'undefined' || typeof MediaRecorder.isTypeSupported !== 'function') {
+    return '';
+  }
+  for (const candidate of AUDIO_MIME_TYPE_CANDIDATES) {
+    if (MediaRecorder.isTypeSupported(candidate)) {
+      return candidate;
+    }
+  }
+  return '';
+}
+
+function formatElapsed(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function resolveMediaUrl(url: string): string {
+  if (!url) return url;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + url;
+}
+
+type AudioRecorderState = 'idle' | 'requesting' | 'recording' | 'stopped';
+
+interface AudioTaskSubmissionProps {
+  task: Task;
+  audioUrl?: string | null;
+  readOnly: boolean;
+  onRecorded: (data: { audio_url: string; audio_name: string; duration_seconds: number }) => void;
+}
+
+function AudioTaskSubmission({ task, audioUrl, readOnly, onRecorded }: AudioTaskSubmissionProps) {
+  const [isSupported, setIsSupported] = useState(true);
+  const [recorderState, setRecorderState] = useState<AudioRecorderState>('idle');
+  const [permissionError, setPermissionError] = useState('');
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
+  const [recordedUrl, setRecordedUrl] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const mimeTypeRef = useRef('');
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const recordedUrlRef = useRef('');
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    const supported = typeof navigator !== 'undefined'
+      && !!navigator.mediaDevices
+      && typeof navigator.mediaDevices.getUserMedia === 'function'
+      && typeof window !== 'undefined'
+      && typeof window.MediaRecorder !== 'undefined';
+    setIsSupported(supported);
+  }, []);
+
+  const stopTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const stopStream = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+  };
+
+  // Clean up on unmount: stop any active stream/timer and revoke the object URL.
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        try {
+          mediaRecorderRef.current.stop();
+        } catch {
+          // Ignore errors while tearing down on unmount.
+        }
+      }
+      if (recordedUrlRef.current) {
+        URL.revokeObjectURL(recordedUrlRef.current);
+        recordedUrlRef.current = '';
+      }
+    };
+  }, []);
+
+  const startRecording = async () => {
+    setPermissionError('');
+    setUploadError('');
+    setRecorderState('requesting');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      const mimeType = pickSupportedAudioMimeType();
+      mimeTypeRef.current = mimeType;
+
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      chunksRef.current = [];
+
+      recorder.ondataavailable = (event: BlobEvent) => {
+        if (event.data && event.data.size > 0) {
+          chunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        const finalMimeType = mimeTypeRef.current || recorder.mimeType || 'audio/webm';
+        const blob = new Blob(chunksRef.current, { type: finalMimeType });
+        const url = URL.createObjectURL(blob);
+
+        if (!isMountedRef.current) {
+          URL.revokeObjectURL(url);
+          return;
+        }
+
+        if (recordedUrlRef.current) {
+          URL.revokeObjectURL(recordedUrlRef.current);
+        }
+        recordedUrlRef.current = url;
+        setRecordedBlob(blob);
+        setRecordedUrl(url);
+        setRecorderState('stopped');
+        stopTimer();
+        stopStream();
+      };
+
+      recorder.start();
+      setRecorderState('recording');
+      setElapsedSeconds(0);
+      timerRef.current = setInterval(() => {
+        setElapsedSeconds((prev) => prev + 1);
+      }, 1000);
+    } catch (err: any) {
+      console.error('Failed to start recording:', err);
+      stopStream();
+      setRecorderState('idle');
+      if (err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError') {
+        setPermissionError('Microphone access was denied. Please allow microphone access in your browser settings and try again.');
+      } else if (err?.name === 'NotFoundError') {
+        setPermissionError('No microphone was found on this device. Please connect a microphone and try again.');
+      } else {
+        setPermissionError('Could not access the microphone. Please check your device settings and try again.');
+      }
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
+  };
+
+  const discardRecording = () => {
+    if (recordedUrlRef.current) {
+      URL.revokeObjectURL(recordedUrlRef.current);
+      recordedUrlRef.current = '';
+    }
+    chunksRef.current = [];
+    setRecordedBlob(null);
+    setRecordedUrl('');
+    setElapsedSeconds(0);
+    setUploadError('');
+    setRecorderState('idle');
+  };
+
+  const uploadRecording = async (blob: Blob) => {
+    setIsUploading(true);
+    setUploadError('');
+    try {
+      const result = await apiClient.uploadAssignmentAudio(blob);
+      onRecorded({ audio_url: result.url, audio_name: result.filename, duration_seconds: elapsedSeconds });
+      discardRecording();
+      toast('Recording saved', 'success');
+    } catch (error) {
+      console.error('Audio upload failed:', error);
+      setUploadError('Failed to save your recording. Please try again.');
+    } finally {
+      if (isMountedRef.current) {
+        setIsUploading(false);
+      }
+    }
+  };
+
+  const showSavedRecording = !!audioUrl && recorderState === 'idle' && !recordedUrl;
+
+  return (
+    <div className="space-y-3">
+      <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{task.content.question}</div>
+
+      {showSavedRecording && (
+        <div className="space-y-2">
+          {readOnly && (
+            <div className="text-xs font-medium text-gray-500 dark:text-gray-400">Student's Recording:</div>
+          )}
+          <AudioPlayer src={resolveMediaUrl(audioUrl!)} />
+          {!readOnly && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={startRecording}
+              disabled={!isSupported || isUploading}
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Record again
+            </Button>
+          )}
+        </div>
+      )}
+
+      {readOnly && !audioUrl && (
+        <div className="text-sm italic text-muted-foreground">No recording submitted.</div>
+      )}
+
+      {!readOnly && !isSupported && (
+        <div className="flex items-start rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+          <AlertCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+          <span>Audio recording is not supported in this browser. Please try a recent version of Chrome, Safari, or Firefox.</span>
+        </div>
+      )}
+
+      {!readOnly && isSupported && permissionError && (
+        <div className="flex items-start rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+          <AlertCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+          <div className="flex-1">
+            <p>{permissionError}</p>
+            <Button type="button" variant="outline" size="sm" className="mt-2" onClick={startRecording}>
+              Try Again
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {!readOnly && isSupported && !permissionError && !showSavedRecording && (
+        <div className="space-y-3">
+          {recorderState === 'recording' && (
+            <div className="flex items-center gap-2 text-sm font-mono font-semibold text-foreground">
+              <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+              {formatElapsed(elapsedSeconds)}
+            </div>
+          )}
+
+          {recorderState === 'idle' && (
+            <Button type="button" onClick={startRecording}>
+              <Mic className="w-4 h-4 mr-2" />
+              Record
+            </Button>
+          )}
+
+          {recorderState === 'requesting' && (
+            <Button type="button" disabled>
+              Requesting microphone access...
+            </Button>
+          )}
+
+          {recorderState === 'recording' && (
+            <Button type="button" variant="destructive" onClick={stopRecording}>
+              <Square className="w-4 h-4 mr-2" />
+              Stop
+            </Button>
+          )}
+
+          {recorderState === 'stopped' && recordedUrl && (
+            <div className="space-y-3">
+              <AudioPlayer src={recordedUrl} />
+              {uploadError && (
+                <div className="flex items-start rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
+                  <AlertCircle className="w-4 h-4 mr-2 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p>{uploadError}</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={() => recordedBlob && uploadRecording(recordedBlob)}
+                      disabled={isUploading}
+                    >
+                      Retry
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={discardRecording}
+                  disabled={isUploading}
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Re-record
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => recordedBlob && uploadRecording(recordedBlob)}
+                  disabled={!recordedBlob || isUploading}
+                >
+                  {isUploading ? 'Saving...' : 'Save recording'}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -886,6 +1222,16 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
           </div>
         );
 
+      case 'audio_task':
+        return (
+          <AudioTaskSubmission
+            task={task}
+            audioUrl={taskAnswer.audio_url}
+            readOnly={readOnly}
+            onRecorded={(data) => handleTaskCompletion(task.id, data)}
+          />
+        );
+
       default:
         return <div>Unknown task type</div>;
     }
@@ -919,7 +1265,11 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
       case 'course_unit':
         // Must be marked as completed
         return !!taskAnswer.completed;
-        
+
+      case 'audio_task':
+        // Must have an uploaded recording
+        return !!taskAnswer.audio_url;
+
       default:
         // Fallback to generic completed flag
         return !!taskAnswer.completed;
@@ -933,6 +1283,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
       case 'text_task': return MessageSquare;
       case 'link_task': return LinkIcon;
       case 'pdf_text_task': return FileSearch;
+      case 'audio_task': return Mic;
       default: return FileText;
     }
   };

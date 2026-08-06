@@ -1,19 +1,62 @@
-import { useEffect, useRef, useState, FormEvent } from 'react';
+import { useEffect, useRef, useState, FormEvent, Fragment } from 'react';
 import { useLocation } from 'react-router-dom';
-import { isAuthenticated, fetchThreads, fetchMessages, getAvailableContacts, sendMessage, getCurrentUser, fetchGroupThreads, fetchGroupMessages, sendGroupMessage, reactToMessage, getMutedConversations, muteConversation, unmuteConversation } from "../services/api";
-import type { MessageThread, Message, AvailableContact, User, GroupThread } from '../types';
+import { toast } from 'sonner';
+import { isAuthenticated, fetchThreads, fetchMessages, getAvailableContacts, sendMessage, getCurrentUser, fetchGroupThreads, fetchGroupMessages, sendGroupMessage, reactToMessage, reportMessage, getMutedConversations, muteConversation, unmuteConversation } from "../services/api";
+import type { MessageThread, AvailableContact, User, GroupThread } from '../types';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { BellOff, Info, Reply as ReplyIcon, X } from 'lucide-react';
 import { connectSocket } from '../services/socket';
 import { useVisiblePolling } from '../hooks/useVisiblePolling';
 import { ChatAttachment } from '../components/chat/ChatAttachment';
-import { ChatMessageBubble } from '../components/chat/ChatMessageBubble';
+import { ChatMessageBubble, type ChatMessage } from '../components/chat/ChatMessageBubble';
 import { ChatInfoDialog } from '../components/chat/ChatInfoDialog';
+import { DateSeparator, UnreadDivider, isSameDay, formatDateSeparator, formatMessageTime } from '../components/chat/ChatSeparators';
+
+// Backstop only: how long to wait for the send ack before giving up on it ever arriving.
+// Success/failure is decided by the ack itself (see `deliver`), not by this clock.
+//
+// That decision depends on the server emitting the echo before its handler returns, over
+// the same connection the ack goes down -- true only while the Socket.IO server runs
+// without a client_manager. If one is ever added (see the note in the backend's
+// socket_messages.py), the echo moves to pub/sub, the ack can arrive first, and every send
+// will look failed. Read the ack's payload instead if that happens.
+const SEND_ACK_TIMEOUT_MS = 15000;
+
+let clientMsgCounter = 0;
+function nextClientId(): string {
+  clientMsgCounter += 1;
+  return `tmp-${Date.now()}-${clientMsgCounter}`;
+}
+
+// Merge a server echo into the list: dedup by id, and when the echo is one of our own
+// sends, replace the matching optimistic bubble in place so it flips pending → sent
+// instead of appearing twice.
+function reconcileEcho(list: ChatMessage[], echo: ChatMessage, meId: number | null): ChatMessage[] {
+  if (list.some(m => m.id === echo.id)) return list;
+  if (meId !== null && echo.from_user_id === meId) {
+    const idx = list.findIndex(m =>
+      m._status === 'pending' && m.content === echo.content && (m.file_url ?? '') === (echo.file_url ?? ''));
+    if (idx !== -1) {
+      const next = [...list];
+      next[idx] = { ...echo, _clientId: list[idx]._clientId };
+      return next;
+    }
+  }
+  return [...list, echo];
+}
+
+// Swap an optimistic bubble for the message the REST fallback persisted.
+function replacePending(list: ChatMessage[], clientId: string, saved: ChatMessage): ChatMessage[] {
+  return list.some(m => m.id === saved.id)
+    ? list.filter(m => m._clientId !== clientId)
+    : list.map(m => (m._clientId === clientId ? { ...saved, _clientId: clientId } : m));
+}
 
 export default function ChatPage() {
   const location = useLocation();
@@ -21,16 +64,19 @@ export default function ChatPage() {
   const [activePartnerId, setActivePartnerId] = useState<number | null>(null);
   const [groupThreads, setGroupThreads] = useState<GroupThread[]>([]);
   const [activeGroupConvId, setActiveGroupConvId] = useState<number | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [text, setText] = useState<string>('');
   const [availableContacts, setAvailableContacts] = useState<AvailableContact[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [showNewChatDialog, setShowNewChatDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [mutedIds, setMutedIds] = useState<Set<number>>(new Set());
   const [showInfo, setShowInfo] = useState(false);
+  // First message the partner sent that we had not read when the thread opened — the
+  // "unread messages" divider sits above it until the thread is reopened.
+  const [firstUnreadId, setFirstUnreadId] = useState<number | null>(null);
+  const [reportTargetId, setReportTargetId] = useState<number | null>(null);
   const pollRef = useRef<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   // DOM refs per message id so a reply preview can scroll to the original bubble.
@@ -88,7 +134,7 @@ export default function ChatPage() {
     const onMessageNew = (payload: any) => {
       const involvesActive = payload.from_user_id === activePartnerId || payload.to_user_id === activePartnerId;
       if (involvesActive) {
-        setMessages(prev => prev.some(m => m.id === payload.id) ? prev : [...prev, payload]);
+        setMessages(prev => reconcileEcho(prev, payload, currentUser ? Number(currentUser.id) : null));
       }
       // Acknowledge delivery of any incoming message so the sender gets the double tick.
       const incoming = payload.to_user_id === currentUser?.id && payload.from_user_id !== currentUser?.id;
@@ -140,7 +186,7 @@ export default function ChatPage() {
 
     const onGroupMessageNew = (payload: any) => {
       if (payload.conversation_id === activeGroupConvId) {
-        setMessages(prev => prev.some(m => m.id === payload.id) ? prev : [...prev, payload]);
+        setMessages(prev => reconcileEcho(prev, payload, currentUser ? Number(currentUser.id) : null));
       }
       void loadGroupThreads();
     };
@@ -184,8 +230,13 @@ export default function ChatPage() {
     setReplyingTo(null);
 
     const loadMessages = async () => {
-      const msgs: any[] = await fetchMessages(String(activePartnerId));
-      setMessages(msgs.reverse());
+      const msgs: ChatMessage[] = await fetchMessages(String(activePartnerId));
+      const ordered = msgs.reverse();
+      // Capture the divider position BEFORE marking the thread read, otherwise the
+      // read receipt lands first and there is nothing left to divide.
+      const firstUnread = ordered.find(m => !m.is_read && m.from_user_id === activePartnerId);
+      setFirstUnreadId(firstUnread ? firstUnread.id : null);
+      setMessages(ordered);
       const socket = connectSocket();
       if (socket && socket.connected) {
         socket.emit('message:read-all', { partner_id: activePartnerId });
@@ -250,38 +301,121 @@ export default function ChatPage() {
      }
    };
 
-  const handleSendMessage = async (e: FormEvent) => {
+  const markSendFailed = (clientId: string) => {
+    setMessages(prev => prev.map(m => (m._clientId === clientId ? { ...m, _status: 'failed' } : m)));
+  };
+
+  // Enqueue an optimistic bubble, then send it. Over the socket the send is
+  // fire-and-forget, so the bubble stays "pending" until the server echoes it back
+  // (see reconcileEcho) and flips to "failed" if no echo lands inside the window.
+  const deliver = async (content: string, replyToId: number | null) => {
+    const clientId = nextClientId();
+    const meId = currentUser ? Number(currentUser.id) : 0;
+    const replySource = replyToId ? messages.find(m => m.id === replyToId) : undefined;
+    const optimistic: ChatMessage = {
+      id: -Date.now() - clientMsgCounter, // temporary, never collides with a server id
+      from_user_id: meId,
+      to_user_id: activePartnerId ?? 0,
+      sender_name: currentUser?.name || currentUser?.full_name,
+      content,
+      is_read: false,
+      reply_to_message_id: replyToId,
+      reply_preview: replySource
+        ? {
+            id: replySource.id,
+            content: replySource.content,
+            file_url: replySource.file_url,
+            from_user_id: replySource.from_user_id,
+            sender_name: replySource.sender_name,
+          }
+        : null,
+      created_at: new Date().toISOString(),
+      _status: 'pending',
+      _clientId: clientId,
+    };
+    setMessages(prev => [...prev, optimistic]);
+
+    const failIfStillPending = () => {
+      setMessages(prev => prev.map(m =>
+        (m._clientId === clientId && m._status === 'pending' ? { ...m, _status: 'failed' } : m)));
+    };
+
+    const socket = connectSocket();
+    // Decide failure from the server's ack, never from a wall clock. The handler broadcasts
+    // message:new to our OWN room before it returns, and socket.io preserves packet order on
+    // a connection, so a send that worked has already reconciled this bubble by the time the
+    // ack lands. Still pending when the ack fires therefore means the server rejected it (it
+    // answers those with a message:error carrying no id we could correlate). That distinction
+    // is what stops a slow-but-successful send from being marked failed and then retried into
+    // a duplicate — the server has no content de-dup. The .timeout() is a backstop for the one
+    // case that produces no ack at all: the handler raising before its own try block.
+    // This holds only while the backend runs without a client_manager — see SEND_ACK_TIMEOUT_MS.
+    const emitWithAck = (event: string, payload: Record<string, unknown>) => {
+      socket.timeout(SEND_ACK_TIMEOUT_MS).emit(event, payload, failIfStillPending);
+    };
+
+    if (activeGroupConvId) {
+      if (socket && socket.connected) {
+        emitWithAck('group:message:send', { conversation_id: activeGroupConvId, content });
+      } else {
+        try {
+          const saved = await sendGroupMessage(activeGroupConvId, content);
+          setMessages(prev => replacePending(prev, clientId, saved));
+        } catch (error) {
+          console.error('Failed to send message:', error);
+          markSendFailed(clientId);
+          return;
+        }
+      }
+      void loadGroupThreads();
+      return;
+    }
+
+    if (!activePartnerId) return;
+    if (socket && socket.connected) {
+      emitWithAck('message:send', { to_user_id: activePartnerId, content, reply_to_message_id: replyToId });
+    } else {
+      try {
+        const saved = await sendMessage(String(activePartnerId), content, replyToId);
+        setMessages(prev => replacePending(prev, clientId, saved));
+      } catch (error) {
+        console.error('Failed to send message:', error);
+        markSendFailed(clientId);
+        return;
+      }
+    }
+    await loadThreads();
+    updateUnreadCount();
+  };
+
+  const handleSendMessage = (e: FormEvent) => {
     e.preventDefault();
     if (!text.trim() || (!activePartnerId && !activeGroupConvId)) return;
+    // The optimistic bubble is enqueued synchronously, so clearing the input here is
+    // safe — a failed send leaves a retry bubble behind, not a void.
+    const content = text.trim();
+    const replyToId = replyingTo?.id ?? null;
+    setText('');
+    setReplyingTo(null);
+    void deliver(content, replyToId);
+  };
 
-    setIsLoading(true);
+  // Drop the failed bubble and send it again, which enqueues a fresh optimistic one.
+  const retrySend = (message: ChatMessage) => {
+    setMessages(prev => prev.filter(m => (message._clientId ? m._clientId !== message._clientId : m.id !== message.id)));
+    void deliver(message.content, message.reply_to_message_id ?? null);
+  };
+
+  const confirmReport = async () => {
+    if (reportTargetId === null) return;
+    const messageId = reportTargetId;
+    setReportTargetId(null);
     try {
-      const optimistic = text.trim();
-      const replyToId = replyingTo?.id ?? null;
-      setText('');
-      setReplyingTo(null);
-      const socket = connectSocket();
-
-      if (activeGroupConvId) {
-        if (socket && socket.connected) {
-          socket.emit('group:message:send', { conversation_id: activeGroupConvId, content: optimistic });
-        } else {
-          await sendGroupMessage(activeGroupConvId, optimistic);
-        }
-        void loadGroupThreads();
-      } else if (activePartnerId) {
-        if (socket && socket.connected) {
-          socket.emit('message:send', { to_user_id: activePartnerId, content: optimistic, reply_to_message_id: replyToId });
-        } else {
-          await sendMessage(String(activePartnerId), optimistic, replyToId);
-        }
-        await loadThreads();
-        updateUnreadCount();
-      }
+      await reportMessage(messageId);
+      toast.success('Reported', { description: 'The school administration will review this message.' });
     } catch (error) {
-      console.error('Failed to send message:', error);
-    } finally {
-      setIsLoading(false);
+      console.error('Failed to report message:', error);
+      toast.error('Could not submit the report', { description: 'Please try again.' });
     }
   };
 
@@ -328,9 +462,12 @@ export default function ChatPage() {
     setShowNewChatDialog(false);
     
     // Загружаем сообщения с этим контактом
-    const msgs: any[] = await fetchMessages(String(contact.user_id));
-    setMessages(msgs.reverse());
-    
+    const msgs: ChatMessage[] = await fetchMessages(String(contact.user_id));
+    const ordered = msgs.reverse();
+    const firstUnread = ordered.find(m => !m.is_read && m.from_user_id === contact.user_id);
+    setFirstUnreadId(firstUnread ? firstUnread.id : null);
+    setMessages(ordered);
+
     // Отмечаем все сообщения от этого партнера как прочитанные
     const socket = connectSocket();
     if (socket && socket.connected) {
@@ -349,8 +486,10 @@ export default function ChatPage() {
     setActiveGroupConvId(conv.id);
     setShowNewChatDialog(false);
     setReplyingTo(null);
+    // Group threads carry no per-message read flag, so there is no divider to place.
+    setFirstUnreadId(null);
 
-    const msgs: any[] = await fetchGroupMessages(conv.id);
+    const msgs: ChatMessage[] = await fetchGroupMessages(conv.id);
     // Group endpoint already returns oldest→newest: do NOT reverse (unlike the DM endpoint).
     setMessages(msgs);
 
@@ -802,17 +941,18 @@ export default function ChatPage() {
                 )}
               </div>
             ) : (
-              messages.map(message => {
+              messages.map((message, index) => {
+                const previous = messages[index - 1];
+                const showDate = index === 0 || !isSameDay(previous.created_at, message.created_at);
                 // Групповые сообщения: своё определяем по currentUser (from_user_id — number, User.id — string),
                 // без чекмарок прочтения (у GroupMessage нет is_read) и с именем отправителя над чужими бабблами.
-                if (activeGroupConvId) {
+                const body = activeGroupConvId ? (() => {
                   const gMsg = message as any;
                   const isMine = gMsg.from_user_id === Number(currentUser?.id);
+                  const isPending = message._status === 'pending';
+                  const isFailed = message._status === 'failed';
                   return (
-                    <div
-                      key={gMsg.id}
-                      className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
-                    >
+                    <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
                       <div className="max-w-[85%] sm:max-w-[70%]">
                         {!isMine && (
                           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5 px-1">
@@ -824,35 +964,52 @@ export default function ChatPage() {
                             isMine
                               ? 'bg-blue-600 text-white'
                               : 'bg-white dark:bg-card border dark:border-gray-700 shadow-sm'
-                          }`}
+                          } ${isPending ? 'opacity-70' : ''} ${isFailed ? 'ring-1 ring-red-500' : ''}`}
                         >
                           {gMsg.file_url && <ChatAttachment fileUrl={gMsg.file_url} />}
                           <div className="flex items-start gap-2">
                             <span className="flex-1">{gMsg.content}</span>
-                            <span className={`text-[10px] whitespace-nowrap mt-auto ${
+                            <span className={`text-[10px] whitespace-nowrap mt-auto flex items-center gap-0.5 ${
                               isMine ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
                             }`}>
-                              {formatTime(gMsg.created_at)}
+                              {formatMessageTime(gMsg.created_at)}
+                              {isPending && <span>· sending…</span>}
+                              {isFailed && (
+                                <button
+                                  type="button"
+                                  onClick={() => retrySend(message)}
+                                  className="font-semibold text-red-200 underline hover:text-white"
+                                >
+                                  · failed · retry
+                                </button>
+                              )}
                             </span>
                           </div>
                         </div>
                       </div>
                     </div>
                   );
-                }
-
-                return (
+                })() : (
                   <ChatMessageBubble
-                    key={message.id}
                     message={message}
                     isMine={message.from_user_id !== activePartnerId}
                     currentUserId={currentUser ? Number(currentUser.id) : null}
-                    formatTime={formatTime}
+                    formatTime={formatMessageTime}
                     onReply={setReplyingTo}
                     onReact={applyReaction}
                     onJumpTo={jumpToMessage}
+                    onRetry={retrySend}
+                    onReport={setReportTargetId}
                     registerRef={registerMessageRef}
                   />
+                );
+
+                return (
+                  <Fragment key={message._clientId ?? message.id}>
+                    {showDate && <DateSeparator label={formatDateSeparator(message.created_at)} />}
+                    {message.id === firstUnreadId && <UnreadDivider />}
+                    {body}
+                  </Fragment>
                 );
               })
             )}
@@ -889,7 +1046,7 @@ export default function ChatPage() {
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Type a message..."
-                disabled={(!activePartnerId && !activeGroupConvId) || isLoading}
+                disabled={!activePartnerId && !activeGroupConvId}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
@@ -899,10 +1056,10 @@ export default function ChatPage() {
               />
               <Button
                 type="submit"
-                disabled={!text.trim() || (!activePartnerId && !activeGroupConvId) || isLoading}
+                disabled={!text.trim() || (!activePartnerId && !activeGroupConvId)}
                 size="sm"
               >
-                {isLoading ? 'Sending...' : 'Send'}
+                Send
               </Button>
             </div>
           </form>
@@ -924,6 +1081,24 @@ export default function ChatPage() {
           onToggleMute={() => toggleMute(activePartnerId)}
         />
       )}
+
+      {/* Report confirmation (message context menu → Report) */}
+      <AlertDialog open={reportTargetId !== null} onOpenChange={(open) => { if (!open) setReportTargetId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Report message</AlertDialogTitle>
+            <AlertDialogDescription>
+              Report this message to the school administration for review?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmReport} className="bg-red-600 hover:bg-red-700">
+              Report
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
