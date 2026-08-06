@@ -1349,11 +1349,10 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 >
                                     <span className="text-sm">{formatDateParts(lesson.start_datetime).date}</span>
                                     <span className="text-[10px] font-normal text-gray-500 dark:text-gray-400 leading-tight uppercase">{formatDateParts(lesson.start_datetime).dayTime}</span>
-                                    {lesson.topic && (
-                                        <span className="text-[9px] font-normal text-blue-600 dark:text-blue-400 truncate max-w-[150px]" title={lesson.topic}>{lesson.topic}</span>
-                                    )}
-                                    {canMarkAttendance && !lessonIsFuture && (
-                                        <span className="mt-0.5 text-[9px] font-bold uppercase tracking-tight text-blue-600 dark:text-blue-400">
+                                    {/* Слоты рендерятся всегда (invisible, когда пусто), чтобы шапки всех уроков были одной высоты */}
+                                    <span className={cn("text-[9px] font-normal text-blue-600 dark:text-blue-400 truncate max-w-[150px] leading-tight", !lesson.topic && "invisible")} title={lesson.topic ?? undefined}>{lesson.topic || '·'}</span>
+                                    {canMarkAttendance && (
+                                        <span className={cn("mt-0.5 text-[9px] font-bold uppercase tracking-tight text-blue-600 dark:text-blue-400 leading-tight", lessonIsFuture && "invisible")}>
                                             {t('Отметить всех', 'Mark all')}
                                         </span>
                                     )}
@@ -1372,9 +1371,20 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     <div className="w-1/2 py-2 text-[10px] font-bold text-gray-600 dark:text-gray-400 border-r border-gray-300 dark:border-border text-center uppercase tracking-tighter flex items-center justify-center">
                                         {t('Урок', 'Lesson')}
                                     </div>
+                                    {lessonHomeworks(lesson).length === 0 && canAssignHw && selectedGroupId ? (
+                                        <button
+                                            type="button"
+                                            className="w-1/2 py-2 text-[10px] font-bold bg-gray-50 dark:bg-secondary text-center uppercase tracking-tighter flex items-center justify-center gap-0.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                                            title={t('Задать ДЗ к этому уроку', 'Assign homework for this lesson')}
+                                            onClick={() => navigate(`/homework/new/group/${selectedGroupId}?lesson_number=${lesson.lesson_number}`)}
+                                        >
+                                            <Plus className="w-3 h-3" />{t('Задать', 'Assign')}
+                                        </button>
+                                    ) : (
                                     <div className="w-1/2 py-2 text-[10px] font-bold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-secondary text-center uppercase tracking-tighter flex items-center justify-center" title={lessonHomeworks(lesson).map(h => h.title).join(', ') || t("Без ДЗ", "No homework")}>
                                         {lessonHomeworks(lesson).length > 1 ? t(`ДЗ (${lessonHomeworks(lesson).length})`, `HW (${lessonHomeworks(lesson).length})`) : t('ДЗ', 'HW')}
                                     </div>
+                                    )}
                                 </div>
                             </div>
                         </TableHead>
@@ -1569,22 +1579,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                             {(() => {
                                                 const hws = lessonHomeworks(lessonInfo);
                                                 if (hws.length === 0) {
-                                                    // Для учителя «Не задано» — сигнал (ДЗ не создано) и кнопка: сразу в конструктор ДЗ
-                                                    if (canAssignHw && selectedGroupId) {
-                                                        return (
-                                                            <button
-                                                                type="button"
-                                                                className="w-full h-full flex flex-col items-center justify-center gap-0.5 text-[11px] leading-tight hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                                                                title={t('Задать ДЗ к этому уроку', 'Assign homework for this lesson')}
-                                                                onClick={() => navigate(`/homework/new/group/${selectedGroupId}?lesson_number=${lessonInfo.lesson_number}`)}
-                                                            >
-                                                                <span className="italic font-medium text-rose-500 dark:text-rose-400">{t('Не задано', 'Not assigned')}</span>
-                                                                <span className="flex items-center gap-0.5 font-semibold text-blue-600 dark:text-blue-400">
-                                                                    <Plus className="w-3 h-3" />{t('Задать', 'Assign')}
-                                                                </span>
-                                                            </button>
-                                                        );
-                                                    }
+                                                    // Для учителя «Не задано» — сигнал (ДЗ не создано); кнопка Assign живёт в шапке колонки
                                                     return <span className={cn(
                                                         "w-full text-center text-[11px] italic leading-tight",
                                                         isTeacher ? "text-rose-500 dark:text-rose-400 font-medium" : "text-gray-300 dark:text-gray-600"
