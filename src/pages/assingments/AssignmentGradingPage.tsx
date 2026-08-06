@@ -29,6 +29,22 @@ function isAudioSubmission(assignment: Assignment | null, submission: Submission
   return AUDIO_FILE_EXTENSIONS.includes(ext);
 }
 
+// Recordings inside multi-task answers that MultiTaskSubmission itself won't play back —
+// the sub-task was removed from (or changed type in) the assignment after the student
+// submitted, so without this the grader has no way to hear them.
+function unplayedTaskRecordings(assignment: Assignment | null, submission: Submission | null | undefined): string[] {
+  const taskAnswers = submission?.answers?.tasks || {};
+  if (typeof taskAnswers !== 'object') return [];
+  const audioTaskIds = new Set(
+    (assignment?.content?.tasks || [])
+      .filter((task: any) => task?.task_type === 'audio_task')
+      .map((task: any) => task.id)
+  );
+  return Object.entries(taskAnswers)
+    .filter(([taskId, answer]: [string, any]) => answer?.audio_url && !audioTaskIds.has(taskId))
+    .map(([, answer]: [string, any]) => answer.audio_url as string);
+}
+
 export default function AssignmentGradingPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -257,13 +273,23 @@ export default function AssignmentGradingPage() {
               </h3>
               
               {assignment?.assignment_type === 'multi_task' && selectedSubmission ? (
-                <MultiTaskSubmission
-                  assignment={assignment}
-                  initialAnswers={selectedSubmission.answers}
-                  readOnly={true}
-                  onSubmit={() => {}}
-                  studentId={String(selectedSubmission.user_id)}
-                />
+                <div className="space-y-4">
+                  <MultiTaskSubmission
+                    assignment={assignment}
+                    initialAnswers={selectedSubmission.answers}
+                    readOnly={true}
+                    onSubmit={() => {}}
+                    studentId={String(selectedSubmission.user_id)}
+                  />
+                  {unplayedTaskRecordings(assignment, selectedSubmission).map((url, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                        Recording from a removed task:
+                      </div>
+                      <AudioPlayer src={resolveFileUrl(url)} />
+                    </div>
+                  ))}
+                </div>
               ) : isAudioSubmission(assignment, selectedSubmission) && selectedSubmission?.file_url ? (
                 <div className="space-y-4">
                   <AudioPlayer src={resolveFileUrl(selectedSubmission.file_url)} />
