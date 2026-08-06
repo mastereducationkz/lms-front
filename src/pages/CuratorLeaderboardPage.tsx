@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { 
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
@@ -10,7 +10,7 @@ import {
 } from '../components/ui/select';
 import { Input } from '../components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
-import { ChevronLeft, ChevronRight, Loader2, Save, Eye, EyeOff, Check, ChevronsUpDown, ClipboardList, Sparkles, User, Pencil, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Save, Eye, EyeOff, Check, ChevronsUpDown, ClipboardList, Sparkles, User, Pencil, Star, Plus } from 'lucide-react';
 import { StudentHomeworkDialog } from '../components/leaderboard/StudentHomeworkDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { getCuratorGroups, getWeeklyLessonsWithHwStatus, updateAttendance, updateLeaderboardEntry, updateLeaderboardConfig, setGroupWeekOffset, setLessonTopic } from '../services/api';
@@ -392,6 +392,9 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   const t = (ru: string, en: string) => (isTeacher ? en : ru);
   // Curators view attendance read-only; every other role on this page can mark it.
   const canMarkAttendance = user?.role !== 'curator';
+  // The assignment builder route is teacher/admin-only — gate the Assign shortcut the same way.
+  const canAssignHw = isTeacher || user?.role === 'admin';
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentWeek, setCurrentWeek] = useState(1);
   const [weekOffset, setWeekOffset] = useState(0);
@@ -1566,7 +1569,22 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                             {(() => {
                                                 const hws = lessonHomeworks(lessonInfo);
                                                 if (hws.length === 0) {
-                                                    // Для учителя «Не задано» — сигнал (ДЗ не создано), для остальных — нейтральный факт
+                                                    // Для учителя «Не задано» — сигнал (ДЗ не создано) и кнопка: сразу в конструктор ДЗ
+                                                    if (canAssignHw && selectedGroupId) {
+                                                        return (
+                                                            <button
+                                                                type="button"
+                                                                className="w-full h-full flex flex-col items-center justify-center gap-0.5 text-[11px] leading-tight hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                                                                title={t('Задать ДЗ к этому уроку', 'Assign homework for this lesson')}
+                                                                onClick={() => navigate(`/homework/new/group/${selectedGroupId}?lesson_number=${lessonInfo.lesson_number}`)}
+                                                            >
+                                                                <span className="italic font-medium text-rose-500 dark:text-rose-400">{t('Не задано', 'Not assigned')}</span>
+                                                                <span className="flex items-center gap-0.5 font-semibold text-blue-600 dark:text-blue-400">
+                                                                    <Plus className="w-3 h-3" />{t('Задать', 'Assign')}
+                                                                </span>
+                                                            </button>
+                                                        );
+                                                    }
                                                     return <span className={cn(
                                                         "w-full text-center text-[11px] italic leading-tight",
                                                         isTeacher ? "text-rose-500 dark:text-rose-400 font-medium" : "text-gray-300 dark:text-gray-600"

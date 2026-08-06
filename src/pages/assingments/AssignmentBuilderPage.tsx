@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../services/api';
@@ -300,6 +300,23 @@ export default function AssignmentBuilderPage() {
           return { ...prev, ...updates };
       });
   };
+
+  // Deep link from the attendance leaderboard: /homework/new/group/:groupId?lesson_number=N
+  // pre-selects the matching class once that group's events load, which also fills
+  // lesson_number_mapping and the due date. Runs once; no match → teacher picks manually.
+  const lessonNumberParam = searchParams.get('lesson_number');
+  const lessonPrefillDone = useRef(false);
+  useEffect(() => {
+      if (lessonPrefillDone.current || !groupId || !lessonNumberParam) return;
+      const gid = parseInt(groupId);
+      const events = eventsByGroup[gid];
+      if (!events || events.length === 0) return;
+      lessonPrefillDone.current = true;
+      const target = events.find((e: any) => e.lesson_number === parseInt(lessonNumberParam));
+      if (target) {
+          handleEventMappingChange(gid, target.id);
+      }
+  }, [eventsByGroup, groupId, lessonNumberParam]);
 
   const handleTypeChange = (newType: string) => {
     setFormData(prev => ({
