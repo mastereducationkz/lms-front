@@ -52,9 +52,11 @@ export function connectSocket(): Socket {
     autoConnect: isAuthenticated(),
     // Optimized reconnection settings for better stability
     reconnection: true,
-    // Never stop retrying (matches the mobile client). Capping this at 5 left long-lived
-    // tabs permanently offline after a short backend blip — chat then silently fell back
-    // to REST-only with no live messages until a manual reload.
+    // Never stop retrying (matches the mobile client). Capping this at 5 left long-lived tabs
+    // permanently offline once the attempts were spent — chat then silently fell back to
+    // REST-only with no live messages until a manual reload. The underlying cause of the
+    // repeated drops has not been established (the multi-worker backend is one candidate), so
+    // this is a defence against exhausting retries, not a fix for whatever triggers them.
     reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,  // Start with 1s delay
     reconnectionDelayMax: 10000,  // Max 10s delay
