@@ -52,7 +52,10 @@ export function connectSocket(): Socket {
     autoConnect: isAuthenticated(),
     // Optimized reconnection settings for better stability
     reconnection: true,
-    reconnectionAttempts: 5,  // Limited attempts instead of Infinity
+    // Never stop retrying (matches the mobile client). Capping this at 5 left long-lived
+    // tabs permanently offline after a short backend blip — chat then silently fell back
+    // to REST-only with no live messages until a manual reload.
+    reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,  // Start with 1s delay
     reconnectionDelayMax: 10000,  // Max 10s delay
     timeout: 20000,  // 20s connection timeout
