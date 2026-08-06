@@ -145,7 +145,7 @@ export default function SubstitutionAttendancePanel() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-3">
+      <div className="space-y-3">
         <Skeleton className="h-16 w-full" />
         <Skeleton className="h-16 w-full" />
         <Skeleton className="h-16 w-full" />
@@ -164,7 +164,7 @@ export default function SubstitutionAttendancePanel() {
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-3">
+    <div className="space-y-3">
       {sortedLessons.map(lesson => {
         const locked = isAttendanceLockedLesson(lesson.start_datetime);
         return (
