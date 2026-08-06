@@ -101,6 +101,7 @@ interface QuizRendererProps {
   finishQuiz: () => void;
   reviewQuiz: () => void;
   autoFillCorrectAnswers: () => void;
+  clearAllAnswers?: () => void;
   quizAttempt?: any;
   highlightedQuestionId?: string;
   isTeacher?: boolean;
@@ -135,6 +136,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
     finishQuiz,
     reviewQuiz,
     autoFillCorrectAnswers,
+    clearAllAnswers,
     quizAttempt,
     highlightedQuestionId,
     isTeacher,
@@ -610,15 +612,28 @@ const QuizRenderer = (props: QuizRendererProps) => {
           <h2 className="text-2xl font-bold text-foreground">Quick Practice</h2>
           <p className="text-muted-foreground">Answer all questions below to continue</p>
 
-          {/* Development / Teacher Helper Button */}
+          {/* Development / Teacher Helper Buttons */}
           {(import.meta.env.DEV || isTeacher) && (
-            <Button
-              onClick={autoFillCorrectAnswers}
-              className="mt-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-2 mx-auto"
-              title={isTeacher ? "Show Correct Answers" : "Development only: Auto-fill correct answers"}
-            >
-              {isTeacher ? "Show Correct Answers" : "Dev: Fill Answers"}
-            </Button>
+            <div className="mt-2 flex items-center justify-center gap-2">
+              <Button
+                onClick={autoFillCorrectAnswers}
+                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+                title={isTeacher ? "Show Correct Answers" : "Development only: Auto-fill correct answers"}
+              >
+                {isTeacher ? "Show Correct Answers" : "Dev: Fill Answers"}
+              </Button>
+              {clearAllAnswers && (
+                <Button
+                  onClick={() => { setShowValidationErrors(false); clearAllAnswers(); }}
+                  variant="outline"
+                  className="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+                  disabled={quizAnswers.size === 0 && gapAnswers.size === 0}
+                  title="Clear all answers in this quiz"
+                >
+                  Clear All
+                </Button>
+              )}
+            </div>
           )}
         </div>
 
@@ -1280,16 +1295,29 @@ const QuizRenderer = (props: QuizRendererProps) => {
             Question{questionGaps > 1 ? 's' : ''} {displayNumber}{questionGaps > 1 ? `-${displayNumber + questionGaps - 1}` : ''} of {totalQuestionCount}
           </p>
           {(import.meta.env.DEV || isTeacher) && (
-            <Button
-              onClick={autoFillCorrectAnswers}
-              variant="outline"
-              size="sm"
-              className="mt-2 text-primary border-primary/30 hover:bg-primary/10 flex items-center gap-2 mx-auto"
-              title={isTeacher ? "Show Correct Answers" : "Development only: Auto-fill correct answers"}
-            >
-              {isTeacher ? <HelpCircle className="w-3 h-3" aria-hidden="true" /> : <span aria-hidden="true">🔧</span>} 
-              {isTeacher ? "Show Correct Answers" : "Dev: Fill Answers"}
-            </Button>
+            <div className="mt-2 flex items-center justify-center gap-2">
+              <Button
+                onClick={autoFillCorrectAnswers}
+                variant="outline"
+                size="sm"
+                className="text-primary border-primary/30 hover:bg-primary/10 flex items-center gap-2"
+                title={isTeacher ? "Show Correct Answers" : "Development only: Auto-fill correct answers"}
+              >
+                {isTeacher ? <HelpCircle className="w-3 h-3" aria-hidden="true" /> : <span aria-hidden="true">🔧</span>}
+                {isTeacher ? "Show Correct Answers" : "Dev: Fill Answers"}
+              </Button>
+              {clearAllAnswers && (
+                <Button
+                  onClick={() => { setShowValidationErrors(false); clearAllAnswers(); }}
+                  variant="outline"
+                  size="sm"
+                  disabled={quizAnswers.size === 0 && gapAnswers.size === 0}
+                  title="Clear all answers in this quiz"
+                >
+                  Clear All
+                </Button>
+              )}
+            </div>
           )}
         </div>
 

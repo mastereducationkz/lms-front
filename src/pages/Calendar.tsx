@@ -244,31 +244,6 @@ export default function Calendar() {
     return Math.abs(hash);
   };
 
-  const checkMonthlyLimit = (event: Event): boolean => {
-      if (!event.group_ids || event.group_ids.length === 0) return false;
-      
-      const eventDate = new Date(event.start_datetime);
-      const eMonth = eventDate.getMonth();
-      const eYear = eventDate.getFullYear();
-      
-      let count = 0;
-      // Count requests for this group in this month
-      // Iterate all myRequests
-      for (const req of myRequests.values()) {
-          // Check if request is for one of the event's groups
-          const reqGroupId = req.group_id; // number
-          if (!event.group_ids.includes(reqGroupId)) continue;
-          
-          if (req.status === 'rejected') continue;
-          
-          const reqDate = new Date(req.original_datetime);
-          if (reqDate.getMonth() === eMonth && reqDate.getFullYear() === eYear) {
-              count++;
-          }
-      }
-      return count >= 2;
-  };
-
   // Get color based on event type and content
   // Prioritize using group_ids to determine color, so all lessons for the same group(s) have the same color.
   // This avoids unique colors for each "Lesson N" title.
@@ -694,10 +669,6 @@ export default function Calendar() {
                                 {myRequests.has(event.id) ? (
                                     <div className="text-xs font-semibold px-2 py-1 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400 rounded">
                                         Request {myRequests.get(event.id)?.status.replace('_', ' ')}
-                                    </div>
-                                ) : checkMonthlyLimit(event) ? (
-                                    <div className="text-xs font-semibold px-2 py-1 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 rounded border border-red-200 dark:border-red-800">
-                                        Monthly request limit reached (2/2)
                                     </div>
                                 ) : (
                                     <>

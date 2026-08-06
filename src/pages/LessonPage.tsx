@@ -1304,8 +1304,50 @@ export default function LessonPage() {
 
 
   const handleQuizAnswer = useCallback((questionId: string, answer: any) => {
-    setQuizAnswers(prev => new Map(prev.set(String(questionId), answer)));
+    // A cleared answer (deselected option) removes the entry entirely so the
+    // question counts as unanswered again. -1 is the ChoiceQuestion sentinel
+    // for a deselected single-choice answer.
+    const isCleared = answer === undefined || answer === null || answer === -1 ||
+      (Array.isArray(answer) && answer.length === 0);
+    setQuizAnswers(prev => {
+      const next = new Map(prev);
+      if (isCleared) {
+        next.delete(String(questionId));
+      } else {
+        next.set(String(questionId), answer);
+      }
+      return next;
+    });
   }, []);
+
+  // Teacher "Clear All": wipe every answer of the current quiz. The persisted
+  // copies (localStorage + server draft) are wiped by the effect below.
+  const clearAllQuizAnswers = useCallback(() => {
+    setQuizAnswers(new Map());
+    setGapAnswers(new Map());
+    setFeedChecked(false);
+  }, []);
+
+  // When the answers of a quiz step become empty AFTER having had answers
+  // (deselected one by one or via Clear All), wipe the persisted copies too —
+  // the regular persistence effects skip empty maps so they can't do it.
+  const hadAnswersForStepRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (currentStep?.content_type !== 'quiz') return;
+    const stepId = currentStep.id.toString();
+    if (quizAnswers.size > 0 || gapAnswers.size > 0) {
+      hadAnswersForStepRef.current = stepId;
+      return;
+    }
+    if (hadAnswersForStepRef.current !== stepId) return;
+    hadAnswersForStepRef.current = null;
+    localStorage.removeItem(`quiz_answers_${stepId}`);
+    localStorage.removeItem(`gap_answers_${stepId}`);
+    if (quizAttempt?.id && quizAttempt.is_draft) {
+      apiClient.updateQuizAttempt(quizAttempt.id, { answers: JSON.stringify({}) })
+        .catch(err => console.error('Failed to clear quiz draft on server:', err));
+    }
+  }, [quizAnswers, gapAnswers, currentStep, quizAttempt]);
 
   const checkAnswer = () => {
     // For long_text questions, skip result screen and go directly to next question
@@ -1809,6 +1851,7 @@ export default function LessonPage() {
               finishQuiz={finishQuiz}
               reviewQuiz={reviewQuiz}
               autoFillCorrectAnswers={autoFillCorrectAnswers}
+              clearAllAnswers={clearAllQuizAnswers}
               quizAttempt={quizAttempt}
               highlightedQuestionId={searchParams.get('questionId') || undefined}
               isTeacher={user?.role === 'teacher' || user?.role === 'admin' || user?.role === 'curator'}

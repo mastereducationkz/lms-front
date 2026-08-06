@@ -26,32 +26,40 @@ import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import { toast } from '../components/Toast';
 
+interface HomeworkMeta {
+    id: number;
+    title: string;
+    max_score?: number | null;
+}
+
 interface LessonMeta {
     lesson_number: number;
     event_id: number;
     title: string;
     start_datetime: string;
-    homework?: {
-        id: number;
-        title: string;
-        max_score?: number | null;
-    };
+    homework?: HomeworkMeta;        // legacy: first homework of the lesson
+    homeworks?: HomeworkMeta[];     // all homeworks of the lesson
+}
+
+interface HomeworkStatus {
+    assignment_id?: number;
+    title?: string;
+    submitted: boolean;
+    score: number | null;
+    max_score?: number;
+    is_graded?: boolean;
+    submission_id?: number;
+    feedback?: string | null;
+    submitted_at?: string | null;
+    graded_at?: string | null;
+    late?: boolean;
 }
 
 interface StudentLessonStatus {
     event_id: number;
     attendance_status: string;
-    homework_status: {
-        submitted: boolean;
-        score: number | null;
-        max_score?: number;
-        is_graded?: boolean;
-        submission_id?: number;
-        feedback?: string | null;
-        submitted_at?: string | null;
-        graded_at?: string | null;
-        late?: boolean;
-    } | null;
+    homework_status: HomeworkStatus | null;   // legacy single status
+    homework_statuses?: HomeworkStatus[];     // one per lesson homework
 }
 
 interface IeltsSpeakingFeedback {
@@ -588,12 +596,21 @@ export default function CuratorLeaderboardPage() {
     }
   };
 
+  // All homeworks of a lesson; falls back to the legacy single-homework field.
+  const lessonHomeworks = (meta?: LessonMeta): HomeworkMeta[] =>
+    meta?.homeworks ?? (meta?.homework ? [meta.homework] : []);
+
+  // Per-homework statuses of a student's lesson; falls back to the legacy field.
+  const lessonHwStatuses = (ls?: StudentLessonStatus | null): HomeworkStatus[] =>
+    ls?.homework_statuses ?? (ls?.homework_status ? [ls.homework_status] : []);
+
   // Normalized HW contribution: score/max × 10 so a 30-point HW weighs the
   // same as a 10-point one. Max comes from the submission, falling back to
   // the assignment meta; a missing/zero max contributes nothing.
-  const hwContribution = (lessonKey: string, hw: StudentLessonStatus['homework_status']) => {
+  const hwContribution = (lessonKey: string, hw: HomeworkStatus) => {
     if (!hw || hw.score === null || hw.score === undefined) return 0;
-    const metaMax = data?.lessons.find(l => l.lesson_number.toString() === lessonKey)?.homework?.max_score;
+    const metaHws = lessonHomeworks(data?.lessons.find(l => l.lesson_number.toString() === lessonKey));
+    const metaMax = metaHws.find(m => m.id === hw.assignment_id)?.max_score ?? metaHws[0]?.max_score;
     const max = hw.max_score ?? metaMax ?? 0;
     if (!max || max <= 0) return 0;
     return (hw.score / max) * MAX_SCORES.homework;
@@ -609,8 +626,10 @@ export default function CuratorLeaderboardPage() {
         if (lesson.attendance_status === 'attended') {
             lessonsTotal += MAX_SCORES.attendance;
         }
-        // Homework — normalized to MAX_SCORES.homework
-        lessonsTotal += hwContribution(lessonKey, lesson.homework_status);
+        // Homework — each homework of the lesson is normalized to MAX_SCORES.homework
+        lessonHwStatuses(lesson).forEach(hw => {
+            lessonsTotal += hwContribution(lessonKey, hw);
+        });
     });
 
     // Manual Columns
@@ -634,9 +653,7 @@ export default function CuratorLeaderboardPage() {
       let maxLessons = 0;
       data.lessons.forEach(meta => {
           maxLessons += MAX_SCORES.attendance; // 10
-          if (meta.homework) {
-              maxLessons += MAX_SCORES.homework; // 10, normalized
-          }
+          maxLessons += lessonHomeworks(meta).length * MAX_SCORES.homework; // 10 each, normalized
       });
       
       let maxForWeek = maxLessons + MAX_SCORES.mock_exam;
@@ -1218,8 +1235,8 @@ export default function CuratorLeaderboardPage() {
                                     <div className="w-1/2 py-2 text-[10px] font-bold text-gray-600 dark:text-gray-400 border-r border-gray-300 dark:border-border text-center uppercase tracking-tighter flex items-center justify-center">
                                         Урок
                                     </div>
-                                    <div className="w-1/2 py-2 text-[10px] font-bold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-secondary text-center uppercase tracking-tighter flex items-center justify-center" title={lesson.homework?.title || "Без ДЗ"}>
-                                        ДЗ
+                                    <div className="w-1/2 py-2 text-[10px] font-bold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-secondary text-center uppercase tracking-tighter flex items-center justify-center" title={lessonHomeworks(lesson).map(h => h.title).join(', ') || "Без ДЗ"}>
+                                        {lessonHomeworks(lesson).length > 1 ? `ДЗ (${lessonHomeworks(lesson).length})` : 'ДЗ'}
                                     </div>
                                 </div>
                             </div>
@@ -1351,7 +1368,6 @@ export default function CuratorLeaderboardPage() {
                             const lessonStatus = student.lessons[lessonKey];
                             // Handle cases where lesson data might not be populated for student yet
                             const status = lessonStatus ? lessonStatus.attendance_status : 'absent';
-                            const hwStatus = lessonStatus ? lessonStatus.homework_status : null;
                             
                             return (
                                 <TableCell key={`cell-${lessonKey}`} className="p-0 border-r border-gray-300 dark:border-border">
@@ -1366,46 +1382,76 @@ export default function CuratorLeaderboardPage() {
                                         </div>
                                         <div className="w-1/2 bg-gray-50 dark:bg-secondary flex items-center justify-center p-0">
                                             {(() => {
-                                                const hwMax = hwStatus?.max_score ?? lessonInfo.homework?.max_score ?? null;
+                                                const hws = lessonHomeworks(lessonInfo);
+                                                if (hws.length === 0) {
+                                                    return <span className="w-full text-center text-[11px] text-gray-300 dark:text-gray-600 italic leading-tight">Не<br/>задано</span>;
+                                                }
+                                                const statuses = lessonHwStatuses(lessonStatus);
+                                                const rows = hws.map((hw, i) => ({
+                                                    hw,
+                                                    st: statuses.find(s => s.assignment_id === hw.id)
+                                                        ?? (statuses.length === hws.length ? statuses[i] : null),
+                                                }));
+                                                const single = rows.length === 1;
+                                                const openFeedback = (hw: HomeworkMeta, st: HomeworkStatus) => setHwModal({
+                                                    open: true,
+                                                    studentName: student.student_name,
+                                                    lessonTitle: single
+                                                        ? (lessonInfo.title || `Lesson ${lessonInfo.lesson_number}`)
+                                                        : `${lessonInfo.title || `Lesson ${lessonInfo.lesson_number}`} — ${hw.title}`,
+                                                    score: st.score,
+                                                    maxScore: st.max_score ?? hw.max_score ?? undefined,
+                                                    feedback: st.feedback ?? null,
+                                                    submittedAt: st.submitted_at ?? null,
+                                                    gradedAt: st.graded_at ?? null,
+                                                });
                                                 return (
-                                            <div
-                                                className={cn(
-                                                    "w-full text-center text-[11px] h-full flex items-center justify-center",
-                                                    hwStatus?.submitted ? "text-green-700 dark:text-green-400 font-bold" : "text-gray-400",
-                                                    hwStatus?.submitted && "cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
-                                                )}
-                                                onClick={() => {
-                                                    if (!hwStatus?.submitted) return
-                                                    setHwModal({
-                                                        open: true,
-                                                        studentName: student.student_name,
-                                                        lessonTitle: lessonInfo.title || `Lesson ${lessonInfo.lesson_number}`,
-                                                        score: hwStatus.score,
-                                                        maxScore: hwStatus.max_score ?? lessonInfo.homework?.max_score ?? undefined,
-                                                        feedback: hwStatus.feedback ?? null,
-                                                        submittedAt: hwStatus.submitted_at ?? null,
-                                                        gradedAt: hwStatus.graded_at ?? null,
-                                                    })
-                                                }}
-                                                title={hwStatus?.submitted ? 'Нажмите, чтобы увидеть фидбэк' : (lessonInfo.homework?.title || undefined)}
-                                            >
-                                                {hwStatus?.submitted ? (
-                                                    <span className="flex flex-col items-center leading-none">
-                                                        <span>{hwStatus.score !== null ? `${hwStatus.score}${hwMax ? `/${hwMax}` : ''}` : 'Сдано'}</span>
-                                                        {hwStatus.late ? (
-                                                            <span className="text-[10px] font-semibold text-amber-500 dark:text-amber-400 mt-0.5">Поздно</span>
-                                                        ) : (hwStatus.score !== null && hwMax && hwMax > 0) ? (
-                                                            <span className="text-[10px] font-normal text-gray-400 mt-0.5">
-                                                                {Math.round((hwStatus.score / hwMax) * 100)}%
-                                                            </span>
-                                                        ) : null}
-                                                    </span>
-                                                ) : lessonInfo.homework ? (
-                                                    <span className="text-rose-500 dark:text-rose-400 font-medium leading-tight">Не<br/>выполнено</span>
-                                                ) : (
-                                                    <span className="text-gray-300 dark:text-gray-600 italic leading-tight">Не<br/>задано</span>
-                                                )}
-                                            </div>
+                                                    <div className="w-full h-full flex flex-col items-stretch justify-center overflow-hidden">
+                                                        {rows.map(({ hw, st }, i) => {
+                                                            const hwMax = st?.max_score ?? hw.max_score ?? null;
+                                                            const submitted = !!st?.submitted;
+                                                            return (
+                                                                <div
+                                                                    key={hw.id ?? i}
+                                                                    className={cn(
+                                                                        "flex-1 min-h-0 w-full text-center flex items-center justify-center",
+                                                                        single ? "text-[11px]" : rows.length > 2 ? "text-[9px]" : "text-[10px]",
+                                                                        !single && i > 0 && "border-t border-gray-200 dark:border-border/60",
+                                                                        submitted ? "text-green-700 dark:text-green-400 font-bold" : "text-gray-400",
+                                                                        submitted && "cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+                                                                    )}
+                                                                    onClick={() => { if (submitted && st) openFeedback(hw, st); }}
+                                                                    title={submitted
+                                                                        ? `${hw.title}: нажмите, чтобы увидеть фидбэк`
+                                                                        : `${hw.title}: не сдано`}
+                                                                >
+                                                                    {submitted && st ? (
+                                                                        single ? (
+                                                                            <span className="flex flex-col items-center leading-none">
+                                                                                <span>{st.score !== null ? `${st.score}${hwMax ? `/${hwMax}` : ''}` : 'Сдано'}</span>
+                                                                                {st.late ? (
+                                                                                    <span className="text-[10px] font-semibold text-amber-500 dark:text-amber-400 mt-0.5">Поздно</span>
+                                                                                ) : (st.score !== null && hwMax && hwMax > 0) ? (
+                                                                                    <span className="text-[10px] font-normal text-gray-400 mt-0.5">
+                                                                                        {Math.round((st.score / hwMax) * 100)}%
+                                                                                    </span>
+                                                                                ) : null}
+                                                                            </span>
+                                                                        ) : (
+                                                                            <span className="leading-none">
+                                                                                {st.score !== null ? `${st.score}${hwMax ? `/${hwMax}` : ''}` : 'Сдано'}
+                                                                                {st.late && <span className="ml-0.5 font-semibold text-amber-500 dark:text-amber-400">·П</span>}
+                                                                            </span>
+                                                                        )
+                                                                    ) : (
+                                                                        <span className={cn("text-rose-500 dark:text-rose-400 font-medium leading-tight")}>
+                                                                            {single ? <>Не<br/>выполнено</> : rows.length > 2 ? '—' : 'Не сдано'}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
                                                 );
                                             })()}
                                         </div>
