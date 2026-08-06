@@ -37,7 +37,7 @@ const CourseBuilderPage = lazy(() => import('../pages/CourseBuilderPage.tsx'));
 const CreateCourseWizard = lazy(() => import('../pages/CreateCourseWizard.tsx'));
 const LessonEditPage = lazy(() => import('../pages/LessonEditPage.tsx'));
 const TeacherClassPage = lazy(() => import('../pages/TeacherClassPage.tsx'));
-const TeacherAttendancePage = lazy(() => import('../pages/TeacherAttendancePage.tsx'));
+const AttendancePage = lazy(() => import('../pages/AttendancePage.tsx'));
 const AdminDashboard = lazy(() => import('../pages/admin/AdminDashboard.tsx'));
 const AssignmentZeroSubmissions = lazy(() => import('../pages/admin/AssignmentZeroSubmissions.tsx'));
 const ExamResultsTrackingPage = lazy(() => import('../pages/admin/ExamResultsTrackingPage.tsx'));
@@ -381,7 +381,7 @@ export default function Router() {
           <Route path="/attendance" element={
             <ProtectedRoute allowedRoles={['teacher', 'admin', 'head_teacher', 'head_curator']}>
               <AppLayout>
-                <TeacherAttendancePage />
+                <AttendancePage />
               </AppLayout>
             </ProtectedRoute>
           } />
