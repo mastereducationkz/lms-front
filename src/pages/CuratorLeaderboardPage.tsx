@@ -1308,14 +1308,14 @@ export default function CuratorLeaderboardPage() {
             <Table className="border-collapse w-full text-xs">
               <TableHeader className="bg-gray-100 dark:bg-secondary sticky top-0 z-30">
                 <TableRow className="h-auto border-b border-gray-300 dark:border-border hover:bg-gray-100 dark:hover:bg-secondary">
-                    <TableHead className="w-48 sticky left-0 z-40 bg-gray-100 dark:bg-secondary font-semibold text-gray-700 dark:text-gray-300 p-2 border-r border-gray-300 dark:border-border text-left align-middle text-center">
+                    <TableHead className="w-28 md:w-48 sticky left-0 z-40 bg-gray-100 dark:bg-secondary font-semibold text-gray-700 dark:text-gray-300 p-2 border-r border-gray-300 dark:border-border text-left align-middle text-center">
                         Студент
                     </TableHead>
                     {/* Dynamic Lesson Columns */}
                     {data.lessons.map(lesson => {
                         const lessonIsFuture = isAttendanceLockedLesson(lesson.start_datetime);
                         return (
-                        <TableHead key={`lesson-${lesson.lesson_number}`} className="p-0 text-center border-r border-gray-300 dark:border-border h-auto min-w-[160px] align-top bg-gray-100 dark:bg-secondary">
+                        <TableHead key={`lesson-${lesson.lesson_number}`} className="p-0 text-center border-r border-gray-300 dark:border-border h-auto min-w-[140px] md:min-w-[160px] align-top bg-gray-100 dark:bg-secondary">
                             <div className="flex flex-col h-full">
                                 <div
                                     className={cn(
@@ -1458,7 +1458,7 @@ export default function CuratorLeaderboardPage() {
                     </TableHead>
                     
                     <TableHead className="text-center font-bold p-2 w-16 text-gray-800 dark:text-foreground bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle">Итого</TableHead>
-                    <TableHead className="text-center font-bold p-2 w-16 sticky right-0 z-40 bg-gray-100 dark:bg-secondary align-middle shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">%</TableHead>
+                    <TableHead className="text-center font-bold p-2 w-16 md:sticky md:right-0 z-40 bg-gray-100 dark:bg-secondary align-middle md:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">%</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1473,7 +1473,7 @@ export default function CuratorLeaderboardPage() {
                                     type="button"
                                     onClick={() => setStudentHwModal({ open: true, studentId: student.student_id, studentName: student.student_name })}
                                     title={`${student.student_name} — все домашние задания`}
-                                    className="group flex items-center gap-1 truncate max-w-[150px] font-medium text-gray-900 dark:text-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors"
+                                    className="group flex items-center gap-1 truncate max-w-[84px] md:max-w-[150px] font-medium text-gray-900 dark:text-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors"
                                 >
                                     <span className="truncate">{student.student_name}</span>
                                     <ClipboardList className="w-3 h-3 shrink-0 text-gray-300 group-hover:text-blue-500 dark:text-gray-600 dark:group-hover:text-blue-400" />
@@ -1764,7 +1764,7 @@ export default function CuratorLeaderboardPage() {
                             {calculateTotal(student)}
                         </TableCell>
                          <TableCell className={cn(
-                             "p-2 text-center font-bold sticky right-0 z-30 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]",
+                             "p-2 text-center font-bold md:sticky md:right-0 z-30 md:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]",
                              getPercentColor(percent)
                          )}>
                             {percent}%
