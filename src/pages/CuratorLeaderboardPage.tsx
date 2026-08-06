@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popove
 import { ChevronLeft, ChevronRight, Loader2, Save, Eye, EyeOff, Check, ChevronsUpDown, ClipboardList, Sparkles, User, Pencil, Star } from 'lucide-react';
 import { StudentHomeworkDialog } from '../components/leaderboard/StudentHomeworkDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
-import apiClient, { getCuratorGroups, getWeeklyLessonsWithHwStatus, updateAttendance, updateLeaderboardEntry, updateLeaderboardConfig, setGroupWeekOffset, setLessonTopic } from '../services/api';
+import { getCuratorGroups, getWeeklyLessonsWithHwStatus, updateAttendance, updateLeaderboardEntry, updateLeaderboardConfig, setGroupWeekOffset, setLessonTopic } from '../services/api';
 import { Group, CourseType } from '../types';
 import {
   PROGRAM_LABELS, PROGRAM_BADGE_STYLES, getGroupProgramType,
@@ -534,10 +534,9 @@ export default function CuratorLeaderboardPage() {
   useEffect(() => {
     const loadGroups = async () => {
         try {
-            const fetched = user?.role === 'teacher'
-                ? await apiClient.getTeacherGroups(1000, false)
-                : await getCuratorGroups();
-            setGroups(sortGroupsByCreatedAt(fetched));
+            // /leaderboard/curator/groups serves every role here (incl. teacher)
+            // and carries current_week/max_week/week1_start for the week switcher.
+            setGroups(sortGroupsByCreatedAt(await getCuratorGroups()));
         } catch (e) {
             console.error("Failed to load groups", e);
         }
