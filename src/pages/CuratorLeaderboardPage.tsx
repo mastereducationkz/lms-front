@@ -22,6 +22,7 @@ import {
 import { Checkbox } from '../components/ui/checkbox';
 import { Label } from '../components/ui/label';
 import { parseAsUTC } from '../lib/datetime';
+import { isAttendanceLockedLesson } from '../lib/attendance';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import { toast } from '../components/Toast';
@@ -750,7 +751,7 @@ export default function CuratorLeaderboardPage() {
 
   const markAllPresentForLesson = (lesson: LessonMeta) => {
     if (!canMarkAttendance || !data) return;
-    if (parseAsUTC(lesson.start_datetime).getTime() > Date.now()) return;
+    if (isAttendanceLockedLesson(lesson.start_datetime)) return;
     const lessonKey = lesson.lesson_number.toString();
     data.students.forEach(s => handleAttendanceChange(s.student_id, lessonKey, 'attended'));
   };
@@ -807,6 +808,7 @@ export default function CuratorLeaderboardPage() {
     
     setIsSaving(true);
     let successCount = 0;
+    let attendanceFailures = 0;
 
     try {
         // 1. Save Column Visibility Config — teachers can't touch manual columns, so skip entirely.
@@ -837,7 +839,12 @@ export default function CuratorLeaderboardPage() {
         // 2. Save Student Scores
         const entriesToSave = data.students.filter(s => changedEntries.has(s.student_id));
         console.log('Entries to save:', entriesToSave.length, 'Changed entries:', Array.from(changedEntries));
-        
+
+        const lockedLessonKeys = new Set(
+            (data.lessons ?? []).filter(l => isAttendanceLockedLesson(l.start_datetime))
+                .map(l => l.lesson_number.toString())
+        );
+
         for (const student of entriesToSave) {
             try {
                 // Update Manual Fields (LeaderboardEntry) — teachers save only attendance.
@@ -876,6 +883,7 @@ export default function CuratorLeaderboardPage() {
 
                 // Update Attendance (Events) - wrapped in separate try/catch to not block entry save
                 for (const [lessonKey, lessonStatus] of Object.entries(student.lessons)) {
+                    if (lockedLessonKeys.has(lessonKey)) continue;
                     try {
                         const score = lessonStatus.attendance_status === 'attended' ? 10 : 0;
 
@@ -890,6 +898,7 @@ export default function CuratorLeaderboardPage() {
                             activity_score: lessonStatus.activity_score ?? undefined
                         });
                     } catch (attendanceError) {
+                        attendanceFailures++;
                         console.error(`Failed to update attendance for student ${student.student_id}, lesson ${lessonKey}:`, attendanceError);
                     }
                 }
@@ -900,7 +909,7 @@ export default function CuratorLeaderboardPage() {
             }
         }
         
-        if (successCount === entriesToSave.length) {
+        if (successCount === entriesToSave.length && attendanceFailures === 0) {
             toast("Все изменения сохранены", "success");
             setChangedEntries(new Set());
             setConfigChanged(false);
@@ -922,6 +931,8 @@ export default function CuratorLeaderboardPage() {
             } catch (reloadErr) {
                 console.error('Failed to reload config:', reloadErr);
             }
+        } else if (attendanceFailures > 0) {
+            toast(`Сохранено с ошибками (не сохранилось ${attendanceFailures} отметок). Попробуйте ещё раз.`, "error");
         } else {
             toast(`Сохранено ${successCount}/${entriesToSave.length} записей. Попробуйте ещё раз.`, "error");
         }
@@ -1303,7 +1314,7 @@ export default function CuratorLeaderboardPage() {
                     </TableHead>
                     {/* Dynamic Lesson Columns */}
                     {data.lessons.map(lesson => {
-                        const lessonIsFuture = parseAsUTC(lesson.start_datetime).getTime() > Date.now();
+                        const lessonIsFuture = isAttendanceLockedLesson(lesson.start_datetime);
                         return (
                         <TableHead key={`lesson-${lesson.lesson_number}`} className="p-0 text-center border-r border-gray-300 dark:border-border h-16 min-w-[160px] align-top bg-gray-100 dark:bg-secondary">
                             <div className="flex flex-col h-full">
@@ -1472,7 +1483,7 @@ export default function CuratorLeaderboardPage() {
                             const lessonStatus = student.lessons[lessonKey];
                             // Handle cases where lesson data might not be populated for student yet
                             const status = lessonStatus ? lessonStatus.attendance_status : 'absent';
-                            const cellIsFuture = parseAsUTC(lessonInfo.start_datetime).getTime() > Date.now();
+                            const cellIsFuture = isAttendanceLockedLesson(lessonInfo.start_datetime);
 
                             return (
                                 <TableCell key={`cell-${lessonKey}`} className="p-0 border-r border-gray-300 dark:border-border">

@@ -29,13 +29,14 @@ export default function AttendancePage() {
           ))}
         </div>
       </div>
-      {view === 'substitutions' ? (
+      <div className={view === 'substitutions' ? '' : 'hidden'}>
         <div className="m-8 border border-gray-200 dark:border-border rounded-lg overflow-hidden bg-white dark:bg-card shadow-sm">
           <SubstitutionAttendancePanel />
         </div>
-      ) : (
+      </div>
+      <div className={view === 'leaderboard' ? '' : 'hidden'}>
         <CuratorLeaderboardPage />
-      )}
+      </div>
     </div>
   );
 }
