@@ -1315,7 +1315,7 @@ export default function CuratorLeaderboardPage() {
                     {data.lessons.map(lesson => {
                         const lessonIsFuture = isAttendanceLockedLesson(lesson.start_datetime);
                         return (
-                        <TableHead key={`lesson-${lesson.lesson_number}`} className="p-0 text-center border-r border-gray-300 dark:border-border min-h-16 min-w-[160px] align-top bg-gray-100 dark:bg-secondary">
+                        <TableHead key={`lesson-${lesson.lesson_number}`} className="p-0 text-center border-r border-gray-300 dark:border-border h-auto min-w-[160px] align-top bg-gray-100 dark:bg-secondary">
                             <div className="flex flex-col h-full">
                                 <div
                                     className={cn(
@@ -1541,7 +1541,11 @@ export default function CuratorLeaderboardPage() {
                                             {(() => {
                                                 const hws = lessonHomeworks(lessonInfo);
                                                 if (hws.length === 0) {
-                                                    return <span className="w-full text-center text-[11px] text-gray-300 dark:text-gray-600 italic leading-tight">Не<br/>задано</span>;
+                                                    // Для учителя «Не задано» — сигнал (ДЗ не создано), для остальных — нейтральный факт
+                                                    return <span className={cn(
+                                                        "w-full text-center text-[11px] italic leading-tight",
+                                                        isTeacher ? "text-rose-500 dark:text-rose-400 font-medium" : "text-gray-300 dark:text-gray-600"
+                                                    )}>Не<br/>задано</span>;
                                                 }
                                                 const statuses = lessonHwStatuses(lessonStatus);
                                                 const rows = hws.map((hw, i) => ({
@@ -1601,7 +1605,11 @@ export default function CuratorLeaderboardPage() {
                                                                             </span>
                                                                         )
                                                                     ) : (
-                                                                        <span className={cn("text-rose-500 dark:text-rose-400 font-medium leading-tight")}>
+                                                                        // Для учителя несданное ДЗ — зона куратора, приглушаем
+                                                                        <span className={cn(
+                                                                            "font-medium leading-tight",
+                                                                            isTeacher ? "text-gray-400 dark:text-gray-500" : "text-rose-500 dark:text-rose-400"
+                                                                        )}>
                                                                             {single ? <>Не<br/>выполнено</> : rows.length > 2 ? '—' : 'Не сдано'}
                                                                         </span>
                                                                     )}
