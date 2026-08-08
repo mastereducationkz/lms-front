@@ -3,10 +3,13 @@ import { ArrowDown, ArrowRight, ArrowUp, Download } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import apiClient from '../services/api';
-import { exportBluebookGrid, getBluebookGrid, type BluebookGrid } from '../services/api/exams';
-import { formatGroupLabel, getGroupProgramType } from '../lib/groupPicker';
-import type { Group } from '../types';
+import {
+  exportBluebookGrid,
+  getBluebookGrid,
+  getBluebookGroups,
+  type BluebookGrid,
+  type BluebookGroupOption,
+} from '../services/api/exams';
 
 /**
  * Staff view: students as rows, chronological Bluebook results as columns, each column
@@ -53,7 +56,7 @@ const formatDayMonth = (iso: string | null) => {
 };
 
 export default function BluebookGroupGridPage() {
-  const [groups, setGroups] = useState<Group[]>([]);
+  const [groups, setGroups] = useState<BluebookGroupOption[]>([]);
   const [groupId, setGroupId] = useState<number | null>(null);
   const [grid, setGrid] = useState<BluebookGrid | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,12 +67,9 @@ export default function BluebookGroupGridPage() {
     let cancelled = false;
     (async () => {
       try {
-        const all = await apiClient.getMyGroups();
-        // Bluebook is a SAT-family artefact; NUET shares the Math/Verbal structure.
-        const relevant = all.filter((g: Group) => {
-          const p = getGroupProgramType(g);
-          return p === 'sat' || p === 'nuet';
-        });
+        // Scope-aware and SAT-only, resolved server-side. Do not swap this for
+        // getMyGroups(): that endpoint returns [] for admin/head_teacher/head_curator.
+        const relevant = await getBluebookGroups();
         if (cancelled) return;
         setGroups(relevant);
         if (relevant.length > 0) setGroupId(relevant[0].id);
@@ -144,7 +144,7 @@ export default function BluebookGroupGridPage() {
             onChange={(e) => setGroupId(e.target.value ? Number(e.target.value) : null)}
           >
             {groups.map((g) => (
-              <option key={g.id} value={g.id}>{formatGroupLabel(g)}</option>
+              <option key={g.id} value={g.id}>{g.teacher_name ? `${g.name} — ${g.teacher_name}` : g.name}</option>
             ))}
           </select>
           <Button
@@ -169,7 +169,7 @@ export default function BluebookGroupGridPage() {
 
       {!loading && !error && groups.length === 0 && (
         <Card><CardContent className="p-8 text-center text-muted-foreground">
-          You have no SAT or NUET groups.
+          You have no SAT groups.
         </CardContent></Card>
       )}
 

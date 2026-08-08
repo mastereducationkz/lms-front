@@ -163,6 +163,27 @@ export interface BluebookGrid {
   }>;
 }
 
+export interface BluebookGroupOption {
+  id: number;
+  name: string;
+  program_type: string;
+  teacher_id: number | null;
+  teacher_name: string | null;
+}
+
+/**
+ * SAT groups the current staff user may open a Bluebook grid for.
+ *
+ * Must NOT be replaced with getMyGroups(): `/users/groups/me` implements only the
+ * student, teacher and curator branches and returns [] for admin, head_teacher and
+ * head_curator, which made this page look empty for exactly those roles. This endpoint
+ * derives scope from the shared row-scope service instead.
+ */
+export async function getBluebookGroups(): Promise<BluebookGroupOption[]> {
+  const response = await api.get('/exams/bluebook/groups');
+  return response.data;
+}
+
 export async function getBluebookGrid(groupId: number, cohortDate?: string): Promise<BluebookGrid> {
   const response = await api.get(`/exams/bluebook/groups/${groupId}/grid`, {
     params: cohortDate ? { cohort_date: cohortDate } : {},
