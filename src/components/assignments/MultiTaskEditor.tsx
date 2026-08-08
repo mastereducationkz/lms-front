@@ -36,7 +36,7 @@ const TASK_TYPES = [
   { value: 'link_task', label: 'External Link', icon: LinkIcon, description: 'Visit external resource' },
   { value: 'pdf_text_task', label: 'File + Text', icon: FileSearch, description: 'Upload file, student writes response' },
   { value: 'audio_task', label: 'Audio Answer', icon: Mic, description: 'Student records an audio answer' },
-  { value: 'bluebook_task', label: 'Bluebook Test', icon: ClipboardList, description: 'Student reports Bluebook practice scores + screenshot' }
+  { value: 'bluebook_task', label: 'Bluebook Test', icon: ClipboardList, description: 'Student uploads the official College Board PDF; scores are read from it' }
 ];
 
 // College Board publishes practice tests 4-11 in Bluebook. Enforced again server-side:
@@ -220,8 +220,10 @@ export default function MultiTaskEditor({ content, onContentChange }: MultiTaskE
                 ))}
               </select>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                The student enters their Reading &amp; Writing and Math section scores and
-                attaches a screenshot. The total is calculated automatically. Graded manually.
+                The student uploads the official College Board score report (PDF) for this
+                test. Reading &amp; Writing, Math and the total are read from the report
+                automatically — the student cannot type or edit them, and screenshots are
+                rejected. You can open the report and correct a score while grading.
               </p>
             </div>
           </div>

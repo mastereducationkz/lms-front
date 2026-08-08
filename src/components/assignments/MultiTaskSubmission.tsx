@@ -13,6 +13,7 @@ import { compressImage } from '../../utils/imageCompression';
 import { cn } from '../../lib/utils';
 import { AudioPlayer } from '../AudioPlayer';
 import { parseBluebookReport } from '../../services/api/exams';
+import { BluebookGraderPanel } from './BluebookGraderPanel';
 
 interface Task {
   id: string;
@@ -752,7 +753,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
               Bluebook Test #{expected ?? '—'}
             </div>
 
-            <div className="rounded-md border border-dashed p-4">
+            <div className={`rounded-md border border-dashed p-4 ${readOnly ? 'hidden' : ''}`}>
               <label htmlFor={`bb-pdf-${task.id}`} className="text-sm font-medium">
                 Official score report (PDF) *
               </label>
@@ -779,7 +780,15 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
               )}
             </div>
 
-            {parsed && (
+            {readOnly && (
+              <BluebookGraderPanel
+                assignmentId={Number(assignment?.id)}
+                studentId={Number(studentId)}
+                fallback={parsed}
+              />
+            )}
+
+            {!readOnly && parsed && (
               <div className="rounded-md border bg-muted/40 p-3">
                 <div className="text-xs font-medium mb-2">
                   Read from your report — SAT Practice {parsed.test_number}

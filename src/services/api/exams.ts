@@ -445,3 +445,45 @@ export async function revokeTestimonial(id: number, reason?: string): Promise<Te
 export function openTestimonialPhoto(id: number): Promise<void> {
   return openAuthenticatedFile(`/exams/testimonials/${id}/photo`);
 }
+
+
+export interface BluebookResultDetail {
+  id: number;
+  test_number: number;
+  verbal_score: number;
+  math_score: number;
+  total_score: number;
+  report_date: string | null;
+  report_student_name: string | null;
+  report_name_matches: boolean | null;
+  has_report: boolean;
+  overridden_at: string | null;
+  override_reason: string | null;
+}
+
+/** The parsed Bluebook result behind one submission, for the grading view. */
+export async function getBluebookResult(
+  assignmentId: number,
+  studentId: number,
+): Promise<BluebookResultDetail> {
+  const response = await api.get('/exams/bluebook/result', {
+    params: { assignment_id: assignmentId, student_id: studentId },
+  });
+  return response.data;
+}
+
+/** Open the student's official College Board PDF. Streamed through the API. */
+export function openBluebookReport(assignmentId: number, studentId: number): Promise<void> {
+  return openAuthenticatedFile(
+    `/exams/bluebook/report?assignment_id=${assignmentId}&student_id=${studentId}`,
+  );
+}
+
+/** Correct a parsed score. Records who changed it and why. */
+export async function overrideBluebookResult(
+  resultId: number,
+  payload: { verbal_score: number; math_score: number; reason: string },
+): Promise<BluebookResultDetail> {
+  const response = await api.patch(`/exams/bluebook/results/${resultId}`, payload);
+  return response.data;
+}
