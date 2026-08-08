@@ -197,22 +197,47 @@ export default function ExamCountdown({ tileColor }: { tileColor?: string }) {
     }
   };
 
+  // The nearest upcoming exam gets the full flip clock; the other tracks sit under it
+  // as compact lines. Two full clocks side by side swamped the hero - they squeezed the
+  // greeting to one word per line and gave equal weight to a deadline months away.
+  const withDays = (kind: ExamKind) => {
+    const target = data.exams[kind]?.target_date;
+    if (!target) return Number.POSITIVE_INFINITY;
+    return new Date(`${target.slice(0, 10)}T00:00:00`).getTime() - now;
+  };
+  const ordered = [...data.available_exams].sort((a, b) => {
+    const da = withDays(a);
+    const db = withDays(b);
+    // Exams already past sort after upcoming ones, undated last of all.
+    const rank = (v: number) => (v === Number.POSITIVE_INFINITY ? 2 : v < 0 ? 1 : 0);
+    return rank(da) - rank(db) || da - db;
+  });
+  const [primary, ...secondary] = ordered;
+
   return (
     <>
-      {/* One panel per track. Stacks on phones, sits side by side from sm up, with a
-          divider between them so two countdowns do not read as one. */}
-      <div className="flex w-full flex-col items-center gap-4 sm:w-auto sm:flex-row sm:items-start sm:gap-6 sm:divide-x sm:divide-white/15">
-        {data.available_exams.map((kind, i) => (
-          <ExamPanel
-            key={kind}
-            kind={kind}
-            info={data.exams[kind]}
-            now={now}
-            tileColor={tileColor}
-            onEdit={() => openModal(kind)}
-            className={i > 0 ? "sm:pl-6" : undefined}
-          />
-        ))}
+      <div className="flex w-full flex-col items-center gap-2 sm:w-auto">
+        <ExamPanel
+          kind={primary}
+          info={data.exams[primary]}
+          now={now}
+          tileColor={tileColor}
+          onEdit={() => openModal(primary)}
+        />
+
+        {secondary.length > 0 && (
+          <div className="mt-1 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-white/15 pt-2 text-[11px]">
+            {secondary.map((kind) => (
+              <SecondaryExam
+                key={kind}
+                kind={kind}
+                info={data.exams[kind]}
+                now={now}
+                onEdit={() => openModal(kind)}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -391,5 +416,64 @@ function ExamPanel({
         </>
       )}
     </div>
+  );
+}
+
+
+/**
+ * A non-primary track, rendered as one compact line: "IELTS · 30 days · Sep 9, 2026".
+ *
+ * A student on two tracks needs to see both deadlines, but they are not equally urgent.
+ * Giving the further-off exam its own flip clock doubled the width of the hero and left
+ * the greeting wrapping one word per line, so the secondary track states the same facts
+ * in a single row.
+ */
+function SecondaryExam({
+  kind,
+  info,
+  now,
+  onEdit,
+}: {
+  kind: ExamKind;
+  info?: { target_date: string | null };
+  now: number;
+  onEdit: () => void;
+}) {
+  const label = EXAM_LABEL[kind];
+  const target = info?.target_date
+    ? new Date(`${info.target_date.slice(0, 10)}T00:00:00`).getTime()
+    : null;
+  const days = target != null ? Math.floor((target - now) / 86_400_000) : null;
+
+  return (
+    <span className="inline-flex items-center gap-1.5 text-white/70">
+      <span className="font-semibold uppercase tracking-[0.12em] text-white/80">{label}</span>
+      {days != null && days > 0 ? (
+        <>
+          <span aria-hidden="true">·</span>
+          <span className="font-semibold text-white">{days}</span>
+          <span>{days === 1 ? "day" : "days"}</span>
+          <span aria-hidden="true">·</span>
+          <span>{formatDate(info!.target_date!)}</span>
+        </>
+      ) : days != null && days <= 0 ? (
+        <>
+          <span aria-hidden="true">·</span>
+          <span className="font-semibold text-white">Exam day 🎓</span>
+        </>
+      ) : (
+        <>
+          <span aria-hidden="true">·</span>
+          <span>no date set</span>
+        </>
+      )}
+      <button
+        type="button"
+        onClick={onEdit}
+        className="ml-0.5 text-sky-300 underline-offset-2 hover:text-sky-200 hover:underline"
+      >
+        {days != null ? "Change" : "Set date"}
+      </button>
+    </span>
   );
 }

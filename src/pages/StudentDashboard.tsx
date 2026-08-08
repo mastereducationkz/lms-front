@@ -723,7 +723,9 @@ export default function StudentDashboard({
       <Card className="relative border-0 text-white overflow-hidden" style={{ background: heroThemeCss }} data-tour="dashboard-overview">
         <div className="absolute right-4 top-4 z-10">{bannerColorPicker}</div>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0 flex-1">
+        {/* basis + min-width keep the greeting readable: with flex-1 alone a wide
+            countdown starved this column and wrapped the heading one word per line. */}
+        <div className="min-w-0 flex-1 lg:basis-[22rem] lg:min-w-[18rem]">
         <CardHeader className="p-5 sm:p-6">
           <CardTitle className="text-2xl sm:text-3xl">Welcome back, {firstName}!</CardTitle>
           <CardDescription className="text-white/80 text-sm sm:text-base">
