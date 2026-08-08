@@ -7,6 +7,8 @@ import { isOidcConfigured, startOidcLogin, getLastAccount } from '../services/oi
 
 // --- TYPE DEFINITIONS ---
 
+import { PlatformSwitcher } from './PlatformSwitcher';
+
 export interface Testimonial {
   avatarSrc: string;
   name: string;
@@ -205,6 +207,10 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                 </form>
               </div>
             )}
+
+            {/* Sibling platforms. Placed after the sign-in actions so it never competes
+                with the primary path, but stays visible without scrolling. */}
+            <PlatformSwitcher className="animate-element animate-delay-950 mt-6 pt-5 border-t border-border" />
 
             {onBackToHome && (
               <div className="animate-element animate-delay-950 mt-4 text-center">

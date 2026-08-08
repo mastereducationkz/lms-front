@@ -949,8 +949,14 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     console.log('Entry saved successfully for student:', student.student_id);
                 }
 
-                // Update Attendance (Events) - wrapped in separate try/catch to not block entry save
-                for (const [lessonKey, lessonStatus] of Object.entries(student.lessons)) {
+                // Update Attendance (Events) - wrapped in separate try/catch to not block entry save.
+                //
+                // Curators are read-only on attendance. The cell inputs are already gated by
+                // canMarkAttendance, but this save loop ran for EVERY lesson of every changed
+                // row, so a curator editing an unrelated field (extra points, reflection
+                // journal) still pushed an attendance write for the whole row. The backend
+                // now rejects it outright; skipping here avoids a burst of pointless 403s.
+                for (const [lessonKey, lessonStatus] of Object.entries(canMarkAttendance ? student.lessons : {})) {
                     if (lockedLessonKeys.has(lessonKey)) continue;
                     try {
                         const score = lessonStatus.attendance_status === 'attended' ? 10 : 0;

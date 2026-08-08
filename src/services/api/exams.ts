@@ -189,6 +189,28 @@ export interface BluebookGrid {
   };
 }
 
+export interface ExamGroupOption {
+  id: number;
+  name: string;
+  program_type: string;
+  teacher_id: number | null;
+  teacher_name: string | null;
+}
+
+/** Groups the caller may filter exam results by, across all programs. Scope-aware. */
+export async function getExamGroups(params?: {
+  program?: 'sat' | 'ielts' | 'nuet';
+  search?: string;
+}): Promise<ExamGroupOption[]> {
+  const response = await api.get('/exams/groups', {
+    params: {
+      ...(params?.program ? { program: params.program } : {}),
+      ...(params?.search ? { search: params.search } : {}),
+    },
+  });
+  return response.data;
+}
+
 export interface BluebookGroupOption {
   id: number;
   name: string;
