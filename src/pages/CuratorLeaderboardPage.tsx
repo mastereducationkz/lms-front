@@ -63,6 +63,10 @@ interface StudentLessonStatus {
     activity_score?: number | null;
     homework_status: HomeworkStatus | null;   // legacy single status
     homework_statuses?: HomeworkStatus[];     // one per lesson homework
+    // False = this lesson ended before the student's effective join date (CRM
+    // "joined_from"). It isn't theirs, so it renders blank and is dropped from
+    // the % denominator. Undefined on older payloads → treat as enrolled.
+    enrolled?: boolean;
 }
 
 interface IeltsSpeakingFeedback {
@@ -265,6 +269,24 @@ const calculateCurrentWeekNumber = (createdAtStr: string) => {
     return diffWeeks + 1;
 };
 
+// Week number that a calendar date falls into, using the same Monday-aligned
+// anchor as calculateCurrentWeekNumber. Lets "Mark" jump straight to the week of
+// the oldest missing lesson instead of landing on the current week. Returns >= 1.
+const weekNumberForDate = (anchorStr: string, target: Date) => {
+    const week1Start = new Date(anchorStr);
+    const day = week1Start.getDay();
+    const diffToMonday = day === 0 ? 6 : day - 1;
+    week1Start.setDate(week1Start.getDate() - diffToMonday);
+    week1Start.setHours(0, 0, 0, 0);
+
+    const targetAtStart = new Date(target);
+    targetAtStart.setHours(0, 0, 0, 0);
+
+    const diffTime = targetAtStart.getTime() - week1Start.getTime();
+    if (diffTime < 0) return 1;
+    return Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7)) + 1;
+};
+
 // Monday of a given week number for a group, derived from its created_at.
 const getWeekMonday = (createdAtStr: string, week: number) => {
     const week1 = new Date(createdAtStr);
@@ -300,8 +322,18 @@ const groupWeekAnchor = (group: Group) =>
 // getGroupDateText, PROGRAM_BADGE_STYLES, pluralizeGroups, sortGroupsByCreatedAt)
 // are shared with the Attendance page — see ../lib/groupPicker.
 
-const applyGroupWeek = (group: Group, weekParam: string | null) => {
+const applyGroupWeek = (group: Group, weekParam: string | null, dateParam?: string | null) => {
     if (weekParam) return parseInt(weekParam, 10);
+    // ?date=YYYY-MM-DD (e.g. the oldest missing lesson from the dashboard's
+    // "Mark" link) → open the week containing that date, clamped to the group's
+    // range, instead of defaulting to the current week.
+    if (dateParam) {
+        const d = new Date(`${dateParam.slice(0, 10)}T00:00:00`);
+        if (!isNaN(d.getTime())) {
+            const maxWeek = group.max_week || 52;
+            return Math.min(maxWeek, Math.max(1, weekNumberForDate(groupWeekAnchor(group), d)));
+        }
+    }
     if (group.current_week) return group.current_week;
     return calculateCurrentWeekNumber(groupWeekAnchor(group));
 };
@@ -557,6 +589,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
     if (groups.length === 0) return;
 
     const weekParam = searchParams.get('week');
+    const dateParam = searchParams.get('date');
     const groupIdParam = searchParams.get('groupId') ?? searchParams.get('group');
 
     if (selectedGroupId && filteredGroups.some((group) => group.id === selectedGroupId)) {
@@ -567,7 +600,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       const fromUrl = filteredGroups.find((group) => group.id === parseInt(groupIdParam, 10));
       if (fromUrl) {
         setSelectedGroupId(fromUrl.id);
-        setCurrentWeek(applyGroupWeek(fromUrl, weekParam));
+        setCurrentWeek(applyGroupWeek(fromUrl, weekParam, dateParam));
         return;
       }
     }
@@ -575,7 +608,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
     if (filteredGroups.length > 0) {
       const nextGroup = filteredGroups[0];
       setSelectedGroupId(nextGroup.id);
-      setCurrentWeek(applyGroupWeek(nextGroup, weekParam));
+      setCurrentWeek(applyGroupWeek(nextGroup, weekParam, dateParam));
       return;
     }
 
@@ -588,6 +621,9 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         setSearchParams(params => {
             params.set('groupId', selectedGroupId.toString());
             params.set('week', currentWeek.toString());
+            // `date` was a one-shot hint (jump to the oldest-missing week); the
+            // resolved week now lives in the URL, so drop it to avoid re-applying.
+            params.delete('date');
             return params;
         }, { replace: true });
         
@@ -697,7 +733,18 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       ).length;
       maxForWeek -= cancelledLessons * MAX_SCORES.attendance;
 
-      if (maxForWeek === 0) return 0;
+      // Lessons that predate the student's join date (enrolled === false) aren't
+      // theirs — drop both their attendance and their homework from the
+      // denominator so early lessons never tank a late-added student's %.
+      Object.entries(student.lessons).forEach(([lessonKey, l]) => {
+          if (l.enrolled === false) {
+              maxForWeek -= MAX_SCORES.attendance;
+              const meta = data.lessons.find(m => m.lesson_number.toString() === lessonKey);
+              maxForWeek -= lessonHomeworks(meta).length * MAX_SCORES.homework;
+          }
+      });
+
+      if (maxForWeek <= 0) return 0;
       return Math.round((total / maxForWeek) * 100); 
   };
 
@@ -1525,10 +1572,19 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                             // Handle cases where lesson data might not be populated for student yet
                             const status = lessonStatus ? lessonStatus.attendance_status : 'absent';
                             const cellIsFuture = isAttendanceLockedLesson(lessonInfo.start_datetime);
+                            // Lesson predates the student's join date: not theirs, so
+                            // show a neutral blank cell (both halves) and skip editing.
+                            const preEnroll = lessonStatus?.enrolled === false;
 
                             return (
                                 <TableCell key={`cell-${lessonKey}`} className="p-0 border-r border-gray-300 dark:border-border">
                                     <div className="flex w-full h-14 md:h-12 items-stretch">
+                                        {preEnroll ? (
+                                        <div
+                                            className="w-1/2 border-r border-gray-300 dark:border-border flex items-center justify-center text-[11px] text-gray-300 dark:text-gray-600 select-none"
+                                            title={t('Ученик ещё не был в группе на этом уроке', 'Student had not joined the group for this lesson')}
+                                        >—</div>
+                                        ) : (
                                         <div
                                             className="w-1/2 border-r border-gray-300 dark:border-border relative group/att"
                                             onContextMenu={(e) => {
@@ -1575,8 +1631,12 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                 </button>
                                             )}
                                         </div>
+                                        )}
                                         <div className="w-1/2 bg-gray-50 dark:bg-secondary flex items-center justify-center p-0">
                                             {(() => {
+                                                if (preEnroll) {
+                                                    return <span className="w-full text-center text-[11px] text-gray-300 dark:text-gray-600 select-none">—</span>;
+                                                }
                                                 const hws = lessonHomeworks(lessonInfo);
                                                 if (hws.length === 0) {
                                                     // Для учителя «Не задано» — сигнал (ДЗ не создано); кнопка Assign живёт в шапке колонки

@@ -466,7 +466,9 @@ export default function HeadTeacherDashboardPage() {
                                 <Button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    navigate(isHw ? `/homework/new/group/${g.group_id}` : `/attendance?group=${g.group_id}`);
+                                    navigate(isHw
+                                      ? `/homework/new/group/${g.group_id}`
+                                      : `/attendance?group=${g.group_id}${g.oldest ? `&date=${g.oldest.slice(0, 10)}` : ''}`);
                                   }}
                                   size="sm"
                                   variant="ghost"

@@ -1088,7 +1088,7 @@ export default function TeacherDashboard() {
                   {attendanceGroups.map((g) => (
                     <tr
                       key={g.group_id}
-                      onClick={() => navigate(g.group_id > 0 ? `/attendance?group=${g.group_id}` : '/attendance')}
+                      onClick={() => navigate(g.group_id > 0 ? `/attendance?group=${g.group_id}${g.oldest ? `&date=${g.oldest.slice(0, 10)}` : ''}` : '/attendance')}
                       className="border-b border-gray-100 dark:border-border last:border-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-secondary/40 transition-colors"
                     >
                       <td className="px-6 py-3 font-medium text-gray-900 dark:text-foreground">{g.group_name}</td>
