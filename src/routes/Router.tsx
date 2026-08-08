@@ -40,7 +40,6 @@ const TeacherClassPage = lazy(() => import('../pages/TeacherClassPage.tsx'));
 const AttendancePage = lazy(() => import('../pages/AttendancePage.tsx'));
 const AdminDashboard = lazy(() => import('../pages/admin/AdminDashboard.tsx'));
 const AssignmentZeroSubmissions = lazy(() => import('../pages/admin/AssignmentZeroSubmissions.tsx'));
-const ExamResultsTrackingPage = lazy(() => import('../pages/admin/ExamResultsTrackingPage.tsx'));
 const BluebookGroupGridPage = lazy(() => import('../pages/BluebookGroupGridPage.tsx'));
 const ExamResultsWorkbenchPage = lazy(() => import('../pages/ExamResultsWorkbenchPage.tsx'));
 const QuestionReportsPage = lazy(() => import('../pages/admin/QuestionReportsPage.tsx'));
@@ -75,7 +74,6 @@ const StudentAnalyticsPage = lazy(() =>
 const HeadTeacherTeacherDetailsPage = lazy(() => import('../pages/HeadTeacherTeacherDetailsPage.tsx'));
 const HeadCuratorCuratorPage = lazy(() => import('../pages/HeadCuratorCuratorPage.tsx'));
 const CuratorTasksPage = lazy(() => import('../pages/CuratorTasksPage.tsx'));
-const CuratorExamResultsPage = lazy(() => import('../pages/CuratorExamResultsPage.tsx'));
 const StudentsJournalPage = lazy(() => import('../pages/StudentsJournalPage.tsx'));
 const StudentProfilePage = lazy(() => import('../pages/StudentProfilePage.tsx'));
 
@@ -437,25 +435,20 @@ export default function Router() {
             </ProtectedRoute>
           } />
 
+          {/* The one exam-results screen. Row scope is enforced server-side, so these
+              roles are the outer gate only: a teacher sees their groups, an admin sees
+              everything, from the same component. */}
           <Route path="/exam-results" element={
-            <ProtectedRoute allowedRoles={['admin', 'head_curator', 'head_teacher']}>
-              <AppLayout>
-                <ExamResultsTrackingPage />
-              </AppLayout>
-            </ProtectedRoute>
-          } />
-
-          <Route path="/exam-results-tracking" element={<Navigate to="/exam-results" replace />} />
-
-          {/* Row scope is enforced server-side; these roles are the outer gate only, so
-              a teacher and an admin can share the page and see different rows. */}
-          <Route path="/exam-results-workbench" element={
             <ProtectedRoute allowedRoles={['teacher', 'curator', 'head_curator', 'head_teacher', 'admin']}>
               <AppLayout>
                 <ExamResultsWorkbenchPage />
               </AppLayout>
             </ProtectedRoute>
           } />
+
+          <Route path="/exam-results-tracking" element={<Navigate to="/exam-results" replace />} />
+
+          <Route path="/exam-results-workbench" element={<Navigate to="/exam-results" replace />} />
 
           <Route path="/bluebook-results" element={
             <ProtectedRoute allowedRoles={['teacher', 'curator', 'head_curator', 'head_teacher', 'admin']}>
@@ -608,14 +601,9 @@ export default function Router() {
               </AppLayout>
             </ProtectedRoute>
           } />
-
-          <Route path="/curator/exam-results" element={
-            <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator']}>
-              <AppLayout>
-                <CuratorExamResultsPage />
-              </AppLayout>
-            </ProtectedRoute>
-          } />
+          {/* Consolidated into /exam-results, which now carries the triage list, the
+              record/reschedule actions and the filters+export the old pages lacked. */}
+          <Route path="/curator/exam-results" element={<Navigate to="/exam-results" replace />} />
 
           <Route path="/curator/students" element={
             <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator']}>

@@ -44,6 +44,23 @@ export async function getSatOfficialDates(params?: {
   return response.data;
 }
 
+export interface ExamResultDetail {
+  id: number;
+  exam_type: string;
+  test_date: string;
+  total_score: string;
+  verbal_score: number | null;
+  math_score: number | null;
+  listening_band: string | null;
+  reading_band: string | null;
+  writing_band: string | null;
+  speaking_band: string | null;
+  status: 'reported' | 'verified' | 'rejected';
+  source: string;
+  has_proof: boolean;
+  notes: string | null;
+}
+
 export interface ExamResultRow {
   student: {
     student_id: number;
@@ -56,6 +73,9 @@ export interface ExamResultRow {
   group_id: number | null;
   group_name: string | null;
   planned_test_date: string | null;
+  ask_result_on: string | null;
+  triage_status: 'pending' | 'due' | 'overdue' | 'completed' | 'unscheduled' | null;
+  attempts: ExamResultDetail[];
   result: {
     id: number;
     exam_type: string;
@@ -247,4 +267,64 @@ export async function exportBluebookGrid(groupId: number, cohortDate?: string): 
     responseType: 'blob',
   });
   return response.data;
+}
+
+
+export interface RecordResultPayload {
+  student_id: number;
+  exam_type: 'sat' | 'ielts' | 'nuet';
+  test_date: string;
+  /** SAT only - the total is derived server-side from these. */
+  verbal_score?: number;
+  math_score?: number;
+  /** IELTS overall, and NUET total. */
+  total_score?: number;
+  listening_band?: number;
+  reading_band?: number;
+  writing_band?: number;
+  speaking_band?: number;
+  notes?: string;
+}
+
+/** Record a new attempt. Retakes accumulate; nothing is overwritten. */
+export async function createExamResult(payload: RecordResultPayload): Promise<ExamResultDetail> {
+  const response = await api.post('/exams/results', payload);
+  return response.data;
+}
+
+export async function updateExamResult(
+  resultId: number,
+  payload: { status?: 'reported' | 'verified' | 'rejected'; notes?: string; is_superseded?: boolean },
+): Promise<ExamResultDetail> {
+  const response = await api.patch(`/exams/results/${resultId}`, payload);
+  return response.data;
+}
+
+/** Reschedule the expected exam date. Never clears an existing result. */
+export async function updatePlannedDate(payload: {
+  student_id: number;
+  exam_type: 'sat' | 'ielts' | 'nuet';
+  planned_test_date: string;
+}): Promise<ExamResultRow> {
+  const response = await api.patch('/exams/planned-date', payload);
+  return response.data;
+}
+
+export async function uploadResultProof(resultId: number, file: File): Promise<ExamResultDetail> {
+  const form = new FormData();
+  form.append('file', file);
+  const response = await api.post(`/exams/results/${resultId}/proof`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+}
+
+/**
+ * URL for the proof. The endpoint re-checks row scope and then redirects to a
+ * short-lived link, so this is safe to use as an href - the storage key is never
+ * exposed in list payloads.
+ */
+export function resultProofUrl(resultId: number): string {
+  const base = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:8000';
+  return `${base}/exams/results/${resultId}/proof`;
 }
