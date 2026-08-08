@@ -12,6 +12,7 @@ import { toast } from '../Toast';
 import { compressImage } from '../../utils/imageCompression';
 import { cn } from '../../lib/utils';
 import { AudioPlayer } from '../AudioPlayer';
+import { parseBluebookReport } from '../../services/api/exams';
 
 interface Task {
   id: string;
@@ -583,6 +584,8 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
     initialAnswers?.tasks || initialAnswers || {}
   );
   const [uploading, setUploading] = useState<Record<string, boolean>>({})
+  // Per-task parse errors for the Bluebook PDF, shown inline next to the file input.
+  const [bluebookError, setBluebookError] = useState<Record<string, string>>({})
   const [dragOver, setDragOver] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
@@ -712,118 +715,105 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
 
     switch (task.task_type) {
       case 'bluebook_task': {
-        const verbal = taskAnswer.verbal_score ?? '';
-        const math = taskAnswer.math_score ?? '';
-        const asNumber = (v: any) => (v === '' || v === null || v === undefined ? null : Number(v));
-        const verbalNum = asNumber(verbal);
-        const mathNum = asNumber(math);
-        // Score = Verbal + Math, always derived - never entered, and recomputed
-        // server-side on submit so a crafted payload cannot disagree with its sections.
-        const total =
-          verbalNum !== null && mathNum !== null && !Number.isNaN(verbalNum) && !Number.isNaN(mathNum)
-            ? verbalNum + mathNum
-            : null;
+        // Scores are parsed from the official College Board PDF and are NOT editable.
+        // The submission carries only the returned report_key; the server re-parses
+        // that stored file, so nothing typed here could change a recorded score.
+        const parsed = taskAnswer.parsed_report;
+        const expected = task.content?.test_number;
 
-        const invalid = (v: number | null) =>
-          v !== null && (Number.isNaN(v) || v < 200 || v > 800 || v % 10 !== 0);
-
-        const bbFiles = hasFiles ? taskAnswer.files : (hasLegacyFile ? [{
-          file_url: taskAnswer.file_url,
-          file_name: taskAnswer.file_name,
-          file_size: taskAnswer.file_size,
-        }] : []);
-
-        const setScore = (field: 'verbal_score' | 'math_score', raw: string) => {
-          handleTaskCompletion(task.id, { ...taskAnswer, [field]: raw });
+        const onPickReport = async (file: File | null) => {
+          if (!file || readOnly) return;
+          setUploading((prev) => ({ ...prev, [task.id]: true }));
+          setBluebookError((prev) => ({ ...prev, [task.id]: '' }));
+          try {
+            const report = await parseBluebookReport(file, expected);
+            handleTaskCompletion(task.id, {
+              ...taskAnswer,
+              completed: true,
+              report_key: report.report_key,
+              parsed_report: report,
+            });
+          } catch (err: any) {
+            const detail = err?.response?.data?.detail;
+            setBluebookError((prev) => ({
+              ...prev,
+              [task.id]: typeof detail === 'string'
+                ? detail
+                : 'Could not read this file. Upload the official PDF score report from Bluebook.',
+            }));
+          } finally {
+            setUploading((prev) => ({ ...prev, [task.id]: false }));
+          }
         };
 
         return (
           <div className="space-y-4">
             <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
-              Bluebook Test #{task.content?.test_number ?? '—'}
+              Bluebook Test #{expected ?? '—'}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label htmlFor={`bb-verbal-${task.id}`} className="text-xs font-medium">
-                  Reading &amp; Writing *
-                </label>
-                <input
-                  id={`bb-verbal-${task.id}`}
-                  type="number" min={200} max={800} step={10} inputMode="numeric"
-                  disabled={readOnly}
-                  value={verbal}
-                  onChange={(e) => setScore('verbal_score', e.target.value)}
-                  aria-invalid={invalid(verbalNum)}
-                  aria-describedby={`bb-verbal-help-${task.id}`}
-                  className={`mt-1 block w-full rounded-md border bg-background px-3 py-2 text-sm ${
-                    invalid(verbalNum) ? 'border-red-500' : 'border-input'
-                  }`}
-                />
-                <p id={`bb-verbal-help-${task.id}`} className="text-xs text-muted-foreground mt-1">
-                  200–800, in steps of 10
-                </p>
-              </div>
-
-              <div>
-                <label htmlFor={`bb-math-${task.id}`} className="text-xs font-medium">Math *</label>
-                <input
-                  id={`bb-math-${task.id}`}
-                  type="number" min={200} max={800} step={10} inputMode="numeric"
-                  disabled={readOnly}
-                  value={math}
-                  onChange={(e) => setScore('math_score', e.target.value)}
-                  aria-invalid={invalid(mathNum)}
-                  aria-describedby={`bb-math-help-${task.id}`}
-                  className={`mt-1 block w-full rounded-md border bg-background px-3 py-2 text-sm ${
-                    invalid(mathNum) ? 'border-red-500' : 'border-input'
-                  }`}
-                />
-                <p id={`bb-math-help-${task.id}`} className="text-xs text-muted-foreground mt-1">
-                  200–800, in steps of 10
-                </p>
-              </div>
-
-              <div>
-                <span className="text-xs font-medium">Total score</span>
-                <output
-                  aria-live="polite"
-                  className="mt-1 block w-full rounded-md border border-input bg-muted px-3 py-2 text-sm font-semibold"
-                >
-                  {total ?? '—'}
-                </output>
-                <p className="text-xs text-muted-foreground mt-1">Calculated automatically</p>
-              </div>
-            </div>
-
-            <div>
-              <span className="text-xs font-medium">Screenshot of your Bluebook result *</span>
+            <div className="rounded-md border border-dashed p-4">
+              <label htmlFor={`bb-pdf-${task.id}`} className="text-sm font-medium">
+                Official score report (PDF) *
+              </label>
+              <p className="text-xs text-muted-foreground mt-1 mb-2">
+                In Bluebook, open <strong>My Practice</strong>, choose this practice test and
+                download the score report as PDF, then upload that file here. Your scores are
+                read from the report automatically — screenshots and photos are not accepted.
+              </p>
               <input
+                id={`bb-pdf-${task.id}`}
                 type="file"
-                accept="image/*"
+                accept="application/pdf,.pdf"
                 disabled={readOnly || uploading[task.id]}
-                onChange={(e) => e.target.files && handleFilesUpload(task.id, e.target.files)}
-                className="mt-1 block w-full text-sm"
-                aria-label="Upload a screenshot of your Bluebook result"
+                onChange={(e) => onPickReport(e.target.files?.[0] ?? null)}
+                className="block w-full text-sm"
               />
               {uploading[task.id] && (
-                <p className="text-xs text-muted-foreground mt-1">Uploading…</p>
+                <p className="text-xs text-muted-foreground mt-2">Reading your report…</p>
               )}
-              {bbFiles.length > 0 && (
-                <ul className="mt-2 space-y-1">
-                  {bbFiles.map((f: any, i: number) => (
-                    <li key={i} className="text-xs text-muted-foreground truncate">
-                      {f.file_name}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {bbFiles.length === 0 && !readOnly && (
-                <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
-                  A screenshot is required before you can submit.
+              {bluebookError[task.id] && (
+                <p className="text-xs text-red-600 dark:text-red-400 mt-2" role="alert">
+                  {bluebookError[task.id]}
                 </p>
               )}
             </div>
+
+            {parsed && (
+              <div className="rounded-md border bg-muted/40 p-3">
+                <div className="text-xs font-medium mb-2">
+                  Read from your report — SAT Practice {parsed.test_number}
+                  {parsed.report_date ? ` · ${parsed.report_date}` : ''}
+                </div>
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div>
+                    <div className="text-[11px] text-muted-foreground">Reading &amp; Writing</div>
+                    <div className="text-lg font-semibold">{parsed.verbal_score}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-muted-foreground">Math</div>
+                    <div className="text-lg font-semibold">{parsed.math_score}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-muted-foreground">Total</div>
+                    <div className="text-lg font-bold">{parsed.total_score}</div>
+                  </div>
+                </div>
+                {parsed.student_name && (
+                  <div className="mt-2 text-[11px] text-muted-foreground">
+                    Report name: {parsed.student_name}
+                    {parsed.name_matches === false && (
+                      <span className="ml-1 text-amber-600 dark:text-amber-500">
+                        — this does not match your account name; your teacher will check it.
+                      </span>
+                    )}
+                  </div>
+                )}
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  These values come from the official report and cannot be edited.
+                </p>
+              </div>
+            )}
           </div>
         );
       }

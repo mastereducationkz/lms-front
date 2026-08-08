@@ -109,17 +109,23 @@ function UnitSeparator() {
 }
 
 /**
- * Countdown to a student's exam date (SAT/IELTS) for the dashboard hero.
- * When the student is in both SAT and IELTS groups, a toggle switches between them.
- * "Set/Change date" opens a popup with exam-specific info and saves the planned
- * test date via PATCH /assignment-zero/planned-date — the same field curators
- * read in /assignment-zero/curator/upcoming to follow up on results on time.
+ * Countdown to a student's exam date(s) for the dashboard hero.
+ *
+ * A student on both tracks sees BOTH countdowns side by side. This used to be a toggle
+ * showing one at a time, which meant a SAT+IELTS student could only ever see one of
+ * their two deadlines and had to know to click for the other - the one they were not
+ * looking at is exactly the one they were liable to forget.
+ *
+ * "Set/Change date" saves the planned test date via PATCH /assignment-zero/planned-date,
+ * the same field curators read to follow up on results on time.
  */
 export default function ExamCountdown({ tileColor }: { tileColor?: string }) {
   const navigate = useNavigate();
   const [data, setData] = useState<ExamCountdownData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<ExamKind | null>(null);
+  // Which exam's date dialog is open, if any. Replaces the old single "active" exam:
+  // every available exam is rendered, so editing has to name its target.
+  const [editing, setEditing] = useState<ExamKind | null>(null);
   const [open, setOpen] = useState(false);
   const [dateValue, setDateValue] = useState("");
   const [saving, setSaving] = useState(false);
@@ -150,29 +156,18 @@ export default function ExamCountdown({ tileColor }: { tileColor?: string }) {
 
   if (loading || !data || !data.applicable || data.available_exams.length === 0) return null;
 
-  const active: ExamKind =
-    selected && data.available_exams.includes(selected)
-      ? selected
-      : data.default_exam ?? data.available_exams[0];
-  const info = data.exams[active];
-  const examLabel = EXAM_LABEL[active];
   const officialDates = data.sat_official_dates ?? [];
+  // The exam the dialog is editing. Falls back to the first available one so the
+  // dialog always has a subject even if state is momentarily out of step.
+  const active: ExamKind = editing ?? data.default_exam ?? data.available_exams[0];
+  const examLabel = EXAM_LABEL[active];
 
-  // Live countdown to local midnight of the exam date, ticking every second.
-  const targetMs = info?.target_date
-    ? new Date(`${info.target_date.slice(0, 10)}T00:00:00`).getTime()
-    : null;
-  const diff = targetMs != null ? targetMs - now : null;
-  const hasCountdown = diff != null && diff > 0;
-  const dd = hasCountdown ? Math.floor(diff! / 86_400_000) : 0;
-  const hh = hasCountdown ? Math.floor((diff! / 3_600_000) % 24) : 0;
-  const mm = hasCountdown ? Math.floor((diff! / 60_000) % 60) : 0;
-  const ss = hasCountdown ? Math.floor((diff! / 1_000) % 60) : 0;
-
-  const openModal = () => {
+  const openModal = (kind: ExamKind) => {
+    setEditing(kind);
     setError("");
     setNeedsAssignmentZero(false);
-    setDateValue(info?.target_date ? info.target_date.slice(0, 10) : "");
+    const target = data.exams[kind]?.target_date;
+    setDateValue(target ? target.slice(0, 10) : "");
     setOpen(true);
   };
 
@@ -204,76 +199,20 @@ export default function ExamCountdown({ tileColor }: { tileColor?: string }) {
 
   return (
     <>
-      <div className="w-full sm:w-auto text-center" style={tileColor ? ({ "--fc-tile": tileColor } as CSSProperties) : undefined}>
-        {data.available_exams.length > 1 && (
-          <div className="mx-auto mb-3 inline-flex rounded-lg bg-black/20 p-0.5 text-[11px] font-semibold">
-            {data.available_exams.map((k) => (
-              <button
-                key={k}
-                type="button"
-                onClick={() => setSelected(k)}
-                className={`rounded-md px-4 py-1 transition-colors ${
-                  active === k ? "bg-sky-500 text-white shadow-sm" : "text-white/55 hover:text-white"
-                }`}
-              >
-                {EXAM_LABEL[k]}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {hasCountdown ? (
-          <>
-            <div className="flex items-start justify-center gap-1.5 sm:gap-2">
-              <TimeGroup value={dd} label="days" />
-              <UnitSeparator />
-              <TimeGroup value={hh} label="hrs" />
-              {/* minutes & seconds only from sm up; phones show days : hrs */}
-              <div className="hidden items-start gap-1.5 sm:flex sm:gap-2">
-                <UnitSeparator />
-                <TimeGroup value={mm} label="min" />
-                <UnitSeparator />
-                <TimeGroup value={ss} label="sec" />
-              </div>
-            </div>
-            <div className="mt-2 text-[11px] font-semibold uppercase tracking-[0.13em] text-white/55">
-              until {examLabel} · {formatDate(info!.target_date!)}
-            </div>
-            <button
-              type="button"
-              onClick={openModal}
-              className="mt-1 inline-flex items-center gap-1 text-[11px] text-sky-300 underline-offset-2 hover:text-sky-200 hover:underline"
-            >
-              Change date
-            </button>
-          </>
-        ) : targetMs != null ? (
-          <>
-            <div className="text-2xl font-extrabold text-white">Exam day! 🎓</div>
-            <div className="mt-1 text-xs text-white/70">{examLabel} · {formatDate(info!.target_date!)}</div>
-            <button
-              type="button"
-              onClick={openModal}
-              className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-sky-300 underline-offset-2 hover:text-sky-200 hover:underline"
-            >
-              Change date
-            </button>
-          </>
-        ) : (
-          <>
-            <div className="text-sm font-medium leading-snug text-white">
-              Set your {examLabel} exam date
-            </div>
-            <div className="mt-0.5 text-[11px] text-white/60">Add it to see your countdown</div>
-            <Button
-              size="sm"
-              className="mt-2 h-7 bg-sky-500 px-3 text-xs text-white hover:bg-sky-400"
-              onClick={openModal}
-            >
-              Set date
-            </Button>
-          </>
-        )}
+      {/* One panel per track. Stacks on phones, sits side by side from sm up, with a
+          divider between them so two countdowns do not read as one. */}
+      <div className="flex w-full flex-col items-center gap-4 sm:w-auto sm:flex-row sm:items-start sm:gap-6 sm:divide-x sm:divide-white/15">
+        {data.available_exams.map((kind, i) => (
+          <ExamPanel
+            key={kind}
+            kind={kind}
+            info={data.exams[kind]}
+            now={now}
+            tileColor={tileColor}
+            onEdit={() => openModal(kind)}
+            className={i > 0 ? "sm:pl-6" : undefined}
+          />
+        ))}
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -356,5 +295,101 @@ export default function ExamCountdown({ tileColor }: { tileColor?: string }) {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+
+/**
+ * One track's countdown. Extracted so several can render at once - a student on both
+ * SAT and IELTS needs to see both deadlines, not one behind a toggle.
+ */
+function ExamPanel({
+  kind,
+  info,
+  now,
+  tileColor,
+  onEdit,
+  className,
+}: {
+  kind: ExamKind;
+  info?: { target_date: string | null; days_left: number | null; source: string | null; can_edit: boolean };
+  now: number;
+  tileColor?: string;
+  onEdit: () => void;
+  className?: string;
+}) {
+  const examLabel = EXAM_LABEL[kind];
+  const targetMs = info?.target_date
+    ? new Date(`${info.target_date.slice(0, 10)}T00:00:00`).getTime()
+    : null;
+  const diff = targetMs != null ? targetMs - now : null;
+  const hasCountdown = diff != null && diff > 0;
+  const dd = hasCountdown ? Math.floor(diff! / 86_400_000) : 0;
+  const hh = hasCountdown ? Math.floor((diff! / 3_600_000) % 24) : 0;
+  const mm = hasCountdown ? Math.floor((diff! / 60_000) % 60) : 0;
+  const ss = hasCountdown ? Math.floor((diff! / 1_000) % 60) : 0;
+
+  return (
+    <div
+      className={`w-full text-center sm:w-auto ${className ?? ""}`}
+      style={tileColor ? ({ "--fc-tile": tileColor } as CSSProperties) : undefined}
+    >
+      <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white/70">
+        {examLabel}
+      </div>
+
+      {hasCountdown ? (
+        <>
+          <div className="flex items-start justify-center gap-1.5 sm:gap-2">
+            <TimeGroup value={dd} label="days" />
+            <UnitSeparator />
+            <TimeGroup value={hh} label="hrs" />
+            {/* minutes & seconds only from sm up; phones show days : hrs */}
+            <div className="hidden items-start gap-1.5 sm:flex sm:gap-2">
+              <UnitSeparator />
+              <TimeGroup value={mm} label="min" />
+              <UnitSeparator />
+              <TimeGroup value={ss} label="sec" />
+            </div>
+          </div>
+          <div className="mt-2 text-[11px] font-semibold uppercase tracking-[0.13em] text-white/55">
+            {formatDate(info!.target_date!)}
+          </div>
+          <button
+            type="button"
+            onClick={onEdit}
+            className="mt-1 inline-flex items-center gap-1 text-[11px] text-sky-300 underline-offset-2 hover:text-sky-200 hover:underline"
+          >
+            Change date
+          </button>
+        </>
+      ) : targetMs != null ? (
+        <>
+          <div className="text-2xl font-extrabold text-white">Exam day! 🎓</div>
+          <div className="mt-1 text-xs text-white/70">{formatDate(info!.target_date!)}</div>
+          <button
+            type="button"
+            onClick={onEdit}
+            className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-sky-300 underline-offset-2 hover:text-sky-200 hover:underline"
+          >
+            Change date
+          </button>
+        </>
+      ) : (
+        <>
+          <div className="text-sm font-medium leading-snug text-white">
+            Set your {examLabel} exam date
+          </div>
+          <div className="mt-0.5 text-[11px] text-white/60">Add it to see your countdown</div>
+          <Button
+            size="sm"
+            className="mt-2 h-7 bg-sky-500 px-3 text-xs text-white hover:bg-sky-400"
+            onClick={onEdit}
+          >
+            Set date
+          </Button>
+        </>
+      )}
+    </div>
   );
 }

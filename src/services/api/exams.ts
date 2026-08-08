@@ -328,3 +328,103 @@ export function resultProofUrl(resultId: number): string {
   const base = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:8000';
   return `${base}/exams/results/${resultId}/proof`;
 }
+
+
+export interface ParsedBluebookReport {
+  report_key: string;
+  test_number: number;
+  verbal_score: number;
+  math_score: number;
+  total_score: number;
+  report_date: string | null;
+  student_name: string | null;
+  /** False when the name on the report does not resemble the account name. Advisory. */
+  name_matches: boolean;
+}
+
+/**
+ * Validate a College Board Bluebook practice PDF and read its scores.
+ *
+ * Scores are parsed server-side and are NOT editable: the submission carries only the
+ * returned report_key, and the server re-parses that stored file on submit, so a
+ * tampered payload cannot change a recorded score.
+ */
+export async function parseBluebookReport(
+  file: File,
+  expectedTestNumber?: number,
+): Promise<ParsedBluebookReport> {
+  const form = new FormData();
+  form.append('file', file);
+  const response = await api.post('/exams/bluebook/parse-report', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    params: expectedTestNumber != null ? { expected_test_number: expectedTestNumber } : {},
+  });
+  return response.data;
+}
+
+export interface Testimonial {
+  id: number;
+  student_id: number;
+  student_name: string | null;
+  quote: string | null;
+  has_photo: boolean;
+  status: 'draft' | 'pending' | 'approved' | 'rejected' | 'revoked';
+  consent_given: boolean;
+  consent_channels: string[] | null;
+  guardian_consent: boolean;
+  consent_note: string | null;
+  consent_recorded_at: string | null;
+  approved_at: string | null;
+  revoked_at: string | null;
+  rejected_reason: string | null;
+  is_marketing_ready: boolean;
+}
+
+export async function listTestimonials(params?: {
+  marketingReady?: boolean;
+  status?: string;
+}): Promise<Testimonial[]> {
+  const response = await api.get('/exams/testimonials', {
+    params: {
+      ...(params?.marketingReady ? { marketing_ready: true } : {}),
+      ...(params?.status ? { status: params.status } : {}),
+    },
+  });
+  return response.data;
+}
+
+export async function upsertTestimonial(payload: {
+  student_id: number;
+  quote?: string | null;
+  exam_result_id?: number | null;
+  consent_given: boolean;
+  consent_channels: string[];
+  guardian_consent: boolean;
+  consent_note?: string | null;
+}): Promise<Testimonial> {
+  const response = await api.put('/exams/testimonials', payload);
+  return response.data;
+}
+
+export async function uploadTestimonialPhoto(id: number, file: File): Promise<Testimonial> {
+  const form = new FormData();
+  form.append('file', file);
+  const response = await api.post(`/exams/testimonials/${id}/photo`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+}
+
+export async function approveTestimonial(id: number): Promise<Testimonial> {
+  return (await api.post(`/exams/testimonials/${id}/approve`)).data;
+}
+
+export async function revokeTestimonial(id: number, reason?: string): Promise<Testimonial> {
+  return (await api.post(`/exams/testimonials/${id}/revoke`, { reason })).data;
+}
+
+/** Photo URL. The endpoint re-checks scope, then redirects to a short-lived link. */
+export function testimonialPhotoUrl(id: number): string {
+  const base = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:8000';
+  return `${base}/exams/testimonials/${id}/photo`;
+}

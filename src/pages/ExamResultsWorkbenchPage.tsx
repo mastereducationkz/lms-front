@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
-import { CalendarClock, ChevronDown, ChevronRight, Download, FileText, Plus, Search } from 'lucide-react';
+import { CalendarClock, ChevronDown, ChevronRight, Download, FileText, MessageSquareQuote, Plus, Search } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -7,8 +7,10 @@ import { Badge } from '../components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { useAuth } from '../contexts/AuthContext';
 import { RecordResultDialog } from '../components/exams/RecordResultDialog';
+import { TestimonialDialog } from '../components/exams/TestimonialDialog';
 import {
   exportExamResults,
+  listTestimonials,
   getExamGroups,
   getExamResults,
   getSatOfficialDates,
@@ -18,6 +20,7 @@ import {
   type ExamResultFilters,
   type ExamResultRow,
   type SatOfficialDate,
+  type Testimonial,
 } from '../services/api/exams';
 
 /**
@@ -42,6 +45,9 @@ const EXAM_TYPES: { value: ExamType; label: string }[] = [
 ];
 
 const WRITE_ROLES = new Set(['curator', 'head_curator', 'admin']);
+// Approving releases material to the sales team, so it is deliberately narrower than
+// collecting it: the person who gathered the photo is not the only check on it.
+const APPROVE_ROLES = new Set(['head_curator', 'admin']);
 
 const dash = (v: string | null | undefined) => (v && v.trim() ? v : '—');
 
@@ -58,6 +64,7 @@ export default function ExamResultsWorkbenchPage() {
   const isRu = ['curator', 'head_curator'].includes(user?.role || '');
   const t = (ru: string, en: string) => (isRu ? ru : en);
   const canWrite = WRITE_ROLES.has(user?.role || '');
+  const canApprove = APPROVE_ROLES.has(user?.role || '');
 
   const [examType, setExamType] = useState<ExamType>('sat');
   const [dateField, setDateField] = useState<DateField>('planned');
@@ -77,6 +84,9 @@ export default function ExamResultsWorkbenchPage() {
   const [exporting, setExporting] = useState(false);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [recording, setRecording] = useState<ExamResultRow | null>(null);
+  const [testimonialFor, setTestimonialFor] = useState<ExamResultRow | null>(null);
+  const [testimonials, setTestimonials] = useState<Record<number, Testimonial>>({});
+  const [marketingOnly, setMarketingOnly] = useState(false);
   const [rescheduling, setRescheduling] = useState<number | null>(null);
 
   useEffect(() => {
@@ -133,14 +143,27 @@ export default function ExamResultsWorkbenchPage() {
     return () => clearTimeout(handle);
   }, [filters, load]);
 
+  const loadTestimonials = useCallback(async () => {
+    if (!canWrite) return;   // readers do not see marketing material
+    try {
+      const list = await listTestimonials();
+      setTestimonials(Object.fromEntries(list.map((x) => [x.student_id, x])));
+    } catch { /* the column simply shows nothing */ }
+  }, [canWrite]);
+
+  useEffect(() => { loadTestimonials(); }, [loadTestimonials]);
+
   // Triage presets filter client-side: the status is derived per row, and re-querying
   // for a view of data already on screen would just add latency.
   const visible = useMemo(() => rows.filter((r) => {
+    // "Marketing-ready" is what the sales team may actually use: approved, consented
+    // and not withdrawn. Everything else is invisible to them by construction.
+    if (marketingOnly && !testimonials[r.student.student_id]?.is_marketing_ready) return false;
     if (preset === 'all') return true;
     if (preset === 'done') return r.triage_status === 'completed';
     if (preset === 'overdue') return r.triage_status === 'overdue';
     return r.triage_status === 'overdue' || r.triage_status === 'due';
-  }), [rows, preset]);
+  }), [rows, preset, marketingOnly, testimonials]);
 
   const counts = useMemo(() => ({
     all: rows.length,
@@ -244,6 +267,13 @@ export default function ExamResultsWorkbenchPage() {
                 </Button>
               ))}
             </div>
+            {canWrite && (
+              <label className="ml-2 inline-flex items-center gap-1.5 text-xs">
+                <input type="checkbox" checked={marketingOnly}
+                       onChange={(e) => setMarketingOnly(e.target.checked)} />
+                {t('Готово для маркетинга', 'Marketing-ready only')}
+              </label>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -361,6 +391,7 @@ export default function ExamResultsWorkbenchPage() {
                     <TableHead className="text-center">{isIelts ? 'Overall' : t('Итог', 'Total')}</TableHead>
                     <TableHead>{t('Статус', 'Status')}</TableHead>
                     <TableHead className="text-center">{t('Подтв.', 'Proof')}</TableHead>
+                    {canWrite && <TableHead className="text-center">{t('Отзыв', 'Testimonial')}</TableHead>}
                     {canWrite && <TableHead className="text-right">{t('Действия', 'Actions')}</TableHead>}
                   </TableRow>
                 </TableHeader>
@@ -422,6 +453,29 @@ export default function ExamResultsWorkbenchPage() {
                             ) : '—'}
                           </TableCell>
                           {canWrite && (
+                            <TableCell className="text-center whitespace-nowrap">
+                              {(() => {
+                                const tst = testimonials[id];
+                                return (
+                                  <button
+                                    onClick={() => setTestimonialFor(row)}
+                                    className="inline-flex items-center gap-1 hover:underline"
+                                    aria-label={t('Отзыв и фото', 'Testimonial and photo')}
+                                  >
+                                    <MessageSquareQuote className="h-3.5 w-3.5" aria-hidden="true" />
+                                    {tst?.is_marketing_ready
+                                      ? <span className="text-green-700 dark:text-green-400">
+                                          {t('готов', 'ready')}
+                                        </span>
+                                      : tst
+                                        ? <span className="text-muted-foreground">{tst.status}</span>
+                                        : <span className="text-muted-foreground">{t('добавить', 'add')}</span>}
+                                  </button>
+                                );
+                              })()}
+                            </TableCell>
+                          )}
+                          {canWrite && (
                             <TableCell className="text-right whitespace-nowrap">
                               <div className="inline-flex items-center gap-1">
                                 <label className="sr-only" htmlFor={`resch-${id}`}>
@@ -465,6 +519,7 @@ export default function ExamResultsWorkbenchPage() {
                               ) : '—'}
                             </TableCell>
                             {canWrite && <TableCell />}
+                            {canWrite && <TableCell />}
                           </TableRow>
                         ))}
                       </Fragment>
@@ -475,6 +530,17 @@ export default function ExamResultsWorkbenchPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {testimonialFor && (
+        <TestimonialDialog
+          studentId={testimonialFor.student.student_id}
+          studentName={testimonialFor.student.full_name}
+          examResultId={testimonialFor.result?.id ?? null}
+          canApprove={canApprove}
+          onClose={() => setTestimonialFor(null)}
+          onSaved={loadTestimonials}
+        />
       )}
 
       {recording && (
