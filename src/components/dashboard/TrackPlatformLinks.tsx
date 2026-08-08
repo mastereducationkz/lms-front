@@ -2,20 +2,17 @@ import { useEffect, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
-import apiClient from '../../services/api';
-import { getGroupProgramType, PROGRAM_BADGE_STYLES } from '../../lib/groupPicker';
+import { PROGRAM_BADGE_STYLES } from '../../lib/groupPicker';
 import { platformLinksForTracks, type PlatformLink } from '../../lib/platformLinks';
-import type { Group } from '../../types';
+import { getMyTracks } from '../../services/api/exams';
 
 /**
  * Track-aware links to the dedicated SAT / NUET / IELTS platforms.
  *
- * Entitlement comes from the student's live group memberships. `GET /users/groups/me`
- * already filters to `is_active AND NOT is_over`, so an archived or finished group
- * never grants a tile. Track resolution reuses `getGroupProgramType`, which prefers the
- * stored `program_type` and falls back to a word-boundary name match - necessary
- * because the backfill migration never set `nuet`, so legacy NUET groups are still
- * stored as `general_english`.
+ * Entitlement comes from GET /exams/my-tracks, the same resolver the dashboard
+ * countdown uses. It was previously derived here in the browser from getMyGroups(),
+ * with different filters from the countdown's - so a student on both SAT and IELTS saw
+ * two countdowns but only one platform tile, contradicting itself on one screen.
  *
  * Renders nothing at all (no heading, no empty state) when the student has no
  * applicable track, so General-English-only and trial students see an unchanged
@@ -29,11 +26,8 @@ export function TrackPlatformLinks() {
 
     (async () => {
       try {
-        const groups: Group[] = await apiClient.getMyGroups();
-        // Special-group-only students are internal cohorts, not track students.
-        const eligible = groups.filter((g) => !g.is_special);
-        const resolved = platformLinksForTracks(eligible.map(getGroupProgramType));
-        if (!cancelled) setLinks(resolved);
+        const tracks = await getMyTracks();
+        if (!cancelled) setLinks(platformLinksForTracks(tracks));
       } catch {
         // A failed lookup must not render links the student may not be entitled to.
         // Fail closed and stay silent rather than guessing.

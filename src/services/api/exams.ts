@@ -487,3 +487,16 @@ export async function overrideBluebookResult(
   const response = await api.patch(`/exams/bluebook/results/${resultId}`, payload);
   return response.data;
 }
+
+
+/**
+ * The signed-in student's exam tracks, resolved server-side.
+ *
+ * Shared with the dashboard countdown. Do NOT re-derive tracks in the browser from
+ * getMyGroups(): that is exactly what made the tiles disagree with the countdown for a
+ * student on two tracks, because the two used different group filters.
+ */
+export async function getMyTracks(): Promise<Array<'sat' | 'nuet' | 'ielts'>> {
+  const response = await api.get('/exams/my-tracks');
+  return response.data?.tracks ?? [];
+}
