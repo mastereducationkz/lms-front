@@ -67,6 +67,10 @@ interface StudentLessonStatus {
     // "joined_from"). It isn't theirs, so it renders blank and is dropped from
     // the % denominator. Undefined on older payloads → treat as enrolled.
     enrolled?: boolean;
+    // False = no attendance record yet (unmarked). A past unmarked lesson renders
+    // as "Не отмечено" (distinct from a real ABSENT) and drops out of the %
+    // denominator. Undefined on older payloads → treat as marked (legacy).
+    marked?: boolean;
 }
 
 interface IeltsSpeakingFeedback {
@@ -736,11 +740,16 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       // Lessons that predate the student's join date (enrolled === false) aren't
       // theirs — drop both their attendance and their homework from the
       // denominator so early lessons never tank a late-added student's %.
+      // Past unmarked lessons (marked === false) are "no data", not an absence —
+      // drop only their attendance from the denominator until someone marks them
+      // (homework submission is independent of attendance, so it stays).
       Object.entries(student.lessons).forEach(([lessonKey, l]) => {
+          const meta = data.lessons.find(m => m.lesson_number.toString() === lessonKey);
           if (l.enrolled === false) {
               maxForWeek -= MAX_SCORES.attendance;
-              const meta = data.lessons.find(m => m.lesson_number.toString() === lessonKey);
               maxForWeek -= lessonHomeworks(meta).length * MAX_SCORES.homework;
+          } else if (l.marked === false && meta && !isAttendanceLockedLesson(meta.start_datetime)) {
+              maxForWeek -= MAX_SCORES.attendance;
           }
       });
 
@@ -794,7 +803,11 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                           ...s.lessons,
                           [lessonNumber]: {
                               ...lesson,
-                              attendance_status: status
+                              attendance_status: status,
+                              // Editing an unmarked lesson makes it marked, so the
+                              // "Не отмечено" state clears immediately and it re-enters
+                              // the % denominator.
+                              marked: true
                           }
                       }
                   };
@@ -1575,6 +1588,10 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                             // Lesson predates the student's join date: not theirs, so
                             // show a neutral blank cell (both halves) and skip editing.
                             const preEnroll = lessonStatus?.enrolled === false;
+                            // Past lesson with no attendance record yet: show a distinct
+                            // "Не отмечено" cell instead of a red ABSENT default. Future
+                            // lessons are handled by the toggle's isFuture branch.
+                            const unmarked = !preEnroll && !cellIsFuture && lessonStatus?.marked === false;
 
                             return (
                                 <TableCell key={`cell-${lessonKey}`} className="p-0 border-r border-gray-300 dark:border-border">
@@ -1584,6 +1601,21 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                             className="w-1/2 border-r border-gray-300 dark:border-border flex items-center justify-center text-[11px] text-gray-300 dark:text-gray-600 select-none"
                                             title={t('Ученик ещё не был в группе на этом уроке', 'Student had not joined the group for this lesson')}
                                         >—</div>
+                                        ) : unmarked ? (
+                                        <div
+                                            className={cn(
+                                                "w-1/2 border-r border-gray-300 dark:border-border flex items-center justify-center p-1",
+                                                canMarkAttendance ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-secondary/40 transition-colors" : "cursor-default"
+                                            )}
+                                            onClick={() => { if (canMarkAttendance) handleAttendanceChange(student.student_id, lessonKey, 'attended'); }}
+                                            title={canMarkAttendance
+                                                ? t('Не отмечено — нажмите, чтобы отметить (Был)', 'Not marked — click to mark (Present)')
+                                                : t('Посещаемость ещё не отмечена', 'Attendance not recorded yet')}
+                                        >
+                                            <span className="w-full text-center text-[9px] md:text-[10px] leading-tight font-semibold uppercase text-gray-400 dark:text-gray-500 border border-dashed border-gray-300 dark:border-border rounded px-1 py-1">
+                                                {isTeacher ? <>Not<br/>marked</> : <>Не<br/>отмечено</>}
+                                            </span>
+                                        </div>
                                         ) : (
                                         <div
                                             className="w-1/2 border-r border-gray-300 dark:border-border relative group/att"
