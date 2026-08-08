@@ -1256,6 +1256,10 @@ export interface SubstitutionLesson {
   is_online: boolean;
   location?: string | null;
   meeting_url?: string | null;
+  // The group's regular teacher — who the current user is covering for.
+  original_teacher_name?: string | null;
+  // Whether attendance is already recorded for this lesson.
+  marked?: boolean;
 }
 
 // =============================================================================

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Loader2, Star, Video, MapPin, Lock, CalendarClock } from 'lucide-react';
+import { Loader2, Star, Video, MapPin, Lock, CalendarClock, Repeat, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../components/ui/button';
 import { Skeleton } from '../components/ui/skeleton';
@@ -136,12 +136,95 @@ export default function SubstitutionAttendancePanel() {
     }
   };
 
-  const sortedLessons = useMemo(
-    () => [...lessons].sort((a, b) =>
-      parseAsUTC(b.start_datetime).getTime() - parseAsUTC(a.start_datetime).getTime()
-    ),
-    [lessons]
-  );
+  // Group by actionability: past-unmarked lessons need attention, upcoming ones
+  // are locked, already-marked ones are done. This is the point of the tab.
+  const sections = useMemo(() => {
+    const desc = (a: SubstitutionLesson, b: SubstitutionLesson) =>
+      parseAsUTC(b.start_datetime).getTime() - parseAsUTC(a.start_datetime).getTime();
+    const asc = (a: SubstitutionLesson, b: SubstitutionLesson) =>
+      parseAsUTC(a.start_datetime).getTime() - parseAsUTC(b.start_datetime).getTime();
+    const needsMarking: SubstitutionLesson[] = [];
+    const upcoming: SubstitutionLesson[] = [];
+    const marked: SubstitutionLesson[] = [];
+    for (const l of lessons) {
+      if (isAttendanceLockedLesson(l.start_datetime)) upcoming.push(l);
+      else if (l.marked) marked.push(l);
+      else needsMarking.push(l);
+    }
+    needsMarking.sort(desc);
+    upcoming.sort(asc); // soonest upcoming first
+    marked.sort(desc);
+    return { needsMarking, upcoming, marked };
+  }, [lessons]);
+
+  const renderCard = (lesson: SubstitutionLesson) => {
+    const locked = isAttendanceLockedLesson(lesson.start_datetime);
+    // The auto-title carries "... : Lesson N" — surface just the lesson label and
+    // lead with the real group name so it's clear whose class this is.
+    const lessonSuffix = lesson.title.includes(':') ? lesson.title.split(':').pop()!.trim() : '';
+    const primary = lessonSuffix ? `${lesson.group_name} · ${lessonSuffix}` : lesson.group_name;
+    return (
+      <div
+        key={lesson.event_id}
+        className={cn(
+          'flex items-center justify-between gap-4 rounded-lg border p-4 transition-colors',
+          'border-gray-200 dark:border-border bg-white dark:bg-card',
+          !locked && 'hover:bg-gray-50 dark:hover:bg-secondary cursor-pointer',
+          lesson.marked && 'opacity-70'
+        )}
+        onClick={() => !locked && openRoster(lesson)}
+      >
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-gray-900 dark:text-foreground truncate">
+              {primary}
+            </span>
+            <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
+              <Repeat className="w-3 h-3" /> Substitution
+            </span>
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            <span className="font-medium text-gray-600 dark:text-gray-300">
+              Covering for {lesson.original_teacher_name || '—'}
+            </span>
+            <span>{formatDateTime(lesson.start_datetime)}</span>
+            <span className="flex items-center gap-1">
+              {lesson.is_online
+                ? <Video className="w-3.5 h-3.5" />
+                : <MapPin className="w-3.5 h-3.5" />}
+              {lesson.is_online ? 'Online' : (lesson.location || 'In person')}
+            </span>
+          </div>
+        </div>
+        {locked ? (
+          <span className="flex items-center gap-1 text-xs font-medium text-gray-400 shrink-0">
+            <Lock className="w-3.5 h-3.5" /> Upcoming
+          </span>
+        ) : lesson.marked ? (
+          <span className="flex items-center gap-1 text-xs font-semibold text-green-600 dark:text-green-400 shrink-0">
+            <Check className="w-3.5 h-3.5" /> Marked
+          </span>
+        ) : (
+          <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 shrink-0">
+            Mark attendance
+          </span>
+        )}
+      </div>
+    );
+  };
+
+  const renderSection = (label: string, items: SubstitutionLesson[]) => {
+    if (items.length === 0) return null;
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 px-1">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</h3>
+          <span className="text-xs text-gray-400">{items.length}</span>
+        </div>
+        <div className="space-y-2">{items.map(renderCard)}</div>
+      </div>
+    );
+  };
 
   if (loading) {
     return (
@@ -153,7 +236,7 @@ export default function SubstitutionAttendancePanel() {
     );
   }
 
-  if (sortedLessons.length === 0) {
+  if (lessons.length === 0) {
     return (
       <div className="py-24 text-center text-gray-500 dark:text-gray-400">
         <CalendarClock className="w-10 h-10 mx-auto mb-3 opacity-40" />
@@ -164,51 +247,10 @@ export default function SubstitutionAttendancePanel() {
   }
 
   return (
-    <div className="space-y-3">
-      {sortedLessons.map(lesson => {
-        const locked = isAttendanceLockedLesson(lesson.start_datetime);
-        return (
-          <div
-            key={lesson.event_id}
-            className={cn(
-              'flex items-center justify-between gap-4 rounded-lg border p-4 transition-colors',
-              'border-gray-200 dark:border-border bg-white dark:bg-card',
-              !locked && 'hover:bg-gray-50 dark:hover:bg-secondary cursor-pointer'
-            )}
-            onClick={() => !locked && openRoster(lesson)}
-          >
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-gray-900 dark:text-foreground truncate">
-                  {lesson.title}
-                </span>
-                {lesson.topic && (
-                  <span className="text-xs text-muted-foreground truncate">· {lesson.topic}</span>
-                )}
-              </div>
-              <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
-                <span>{lesson.group_name}</span>
-                <span>{formatDateTime(lesson.start_datetime)}</span>
-                <span className="flex items-center gap-1">
-                  {lesson.is_online
-                    ? <Video className="w-3.5 h-3.5" />
-                    : <MapPin className="w-3.5 h-3.5" />}
-                  {lesson.is_online ? 'Online' : (lesson.location || 'In person')}
-                </span>
-              </div>
-            </div>
-            {locked ? (
-              <span className="flex items-center gap-1 text-xs font-medium text-gray-400 shrink-0">
-                <Lock className="w-3.5 h-3.5" /> Future
-              </span>
-            ) : (
-              <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 shrink-0">
-                Mark attendance
-              </span>
-            )}
-          </div>
-        );
-      })}
+    <div className="space-y-6">
+      {renderSection('Needs marking', sections.needsMarking)}
+      {renderSection('Upcoming', sections.upcoming)}
+      {renderSection('Marked', sections.marked)}
 
       {/* Roster dialog */}
       <Dialog open={!!openLesson} onOpenChange={(o) => !o && closeRoster()}>
