@@ -14,7 +14,7 @@ import {
   getExamGroups,
   getExamResults,
   getSatOfficialDates,
-  resultProofUrl,
+  openResultProof,
   updatePlannedDate,
   type ExamGroupOption,
   type ExamResultFilters,
@@ -444,12 +444,14 @@ export default function ExamResultsWorkbenchPage() {
                           </TableCell>
                           <TableCell className="text-center">
                             {r?.has_proof ? (
-                              <a href={resultProofUrl(r.id)} target="_blank" rel="noopener noreferrer"
-                                 className="inline-flex items-center gap-1 text-primary hover:underline"
-                                 aria-label={t('Открыть подтверждение', 'Open proof')}>
+                              <button type="button"
+                                      onClick={() => openResultProof(r.id).catch(
+                                        () => setError(t('Не удалось открыть файл.', 'Could not open the file.')))}
+                                      className="inline-flex items-center gap-1 text-primary hover:underline"
+                                      aria-label={t('Открыть подтверждение', 'Open proof')}>
                                 <FileText className="h-3.5 w-3.5" aria-hidden="true" />
                                 {t('Открыть', 'View')}
-                              </a>
+                              </button>
                             ) : '—'}
                           </TableCell>
                           {canWrite && (
@@ -514,8 +516,10 @@ export default function ExamResultsWorkbenchPage() {
                             <TableCell><span className="text-muted-foreground">{a.status}</span></TableCell>
                             <TableCell className="text-center">
                               {a.has_proof ? (
-                                <a href={resultProofUrl(a.id)} target="_blank" rel="noopener noreferrer"
-                                   className="text-primary hover:underline">{t('Открыть', 'View')}</a>
+                                <button type="button"
+                                        onClick={() => openResultProof(a.id).catch(
+                                          () => setError(t('Не удалось открыть файл.', 'Could not open the file.')))}
+                                        className="text-primary hover:underline">{t('Открыть', 'View')}</button>
                               ) : '—'}
                             </TableCell>
                             {canWrite && <TableCell />}

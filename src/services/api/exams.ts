@@ -320,13 +320,31 @@ export async function uploadResultProof(resultId: number, file: File): Promise<E
 }
 
 /**
- * URL for the proof. The endpoint re-checks row scope and then redirects to a
- * short-lived link, so this is safe to use as an href - the storage key is never
- * exposed in list payloads.
+ * Open a private file that sits behind an authenticated endpoint.
+ *
+ * These endpoints authenticate with an `Authorization: Bearer` header attached by the
+ * axios interceptor. A plain <a href> is a browser navigation, which carries no such
+ * header, so linking straight to the URL returns 401 even for a signed-in head curator.
+ * Fetch it through the client instead and hand the browser a blob it can display.
  */
-export function resultProofUrl(resultId: number): string {
-  const base = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:8000';
-  return `${base}/exams/results/${resultId}/proof`;
+async function openAuthenticatedFile(path: string): Promise<void> {
+  const response = await api.get(path, { responseType: 'blob' });
+  const url = URL.createObjectURL(response.data as Blob);
+  const win = window.open(url, '_blank', 'noopener,noreferrer');
+  if (!win) {
+    // Popup blocked: fall back to a download so the file is still reachable.
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = path.split('/').filter(Boolean).slice(-2).join('-');
+    a.click();
+  }
+  // Give the new tab time to load before releasing the object URL.
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
+/** Open a result's proof (score report). Re-authorized server-side per request. */
+export function openResultProof(resultId: number): Promise<void> {
+  return openAuthenticatedFile(`/exams/results/${resultId}/proof`);
 }
 
 
@@ -423,8 +441,7 @@ export async function revokeTestimonial(id: number, reason?: string): Promise<Te
   return (await api.post(`/exams/testimonials/${id}/revoke`, { reason })).data;
 }
 
-/** Photo URL. The endpoint re-checks scope, then redirects to a short-lived link. */
-export function testimonialPhotoUrl(id: number): string {
-  const base = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:8000';
-  return `${base}/exams/testimonials/${id}/photo`;
+/** Open a testimonial photo. Re-authorized server-side per request. */
+export function openTestimonialPhoto(id: number): Promise<void> {
+  return openAuthenticatedFile(`/exams/testimonials/${id}/photo`);
 }

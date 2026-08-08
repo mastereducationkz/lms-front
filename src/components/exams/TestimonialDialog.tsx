@@ -5,7 +5,7 @@ import {
   approveTestimonial,
   listTestimonials,
   revokeTestimonial,
-  testimonialPhotoUrl,
+  openTestimonialPhoto,
   upsertTestimonial,
   uploadTestimonialPhoto,
   type Testimonial,
@@ -51,6 +51,7 @@ export function TestimonialDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [savedNotice, setSavedNotice] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,11 +77,20 @@ export function TestimonialDialog({
   const toggleChannel = (value: string) =>
     setChannels((prev) => prev.includes(value) ? prev.filter((c) => c !== value) : [...prev, value]);
 
-  const save = async () => {
+  /**
+   * Save, and optionally approve in the same click.
+   *
+   * The dialog used to close on save, which meant the Approve button - only rendered
+   * once a testimonial exists - was never reachable on the first pass. An approver
+   * filled the form, saw "pending", and had no obvious way forward. Now the dialog
+   * stays open with the saved record loaded, and approvers get a single
+   * "Save & approve" action.
+   */
+  const save = async (thenApprove = false) => {
     setBusy(true);
     setError(null);
     try {
-      const saved = await upsertTestimonial({
+      let saved = await upsertTestimonial({
         student_id: studentId,
         quote: quote.trim() || null,
         exam_result_id: examResultId ?? null,
@@ -89,21 +99,46 @@ export function TestimonialDialog({
         guardian_consent: guardian,
         consent_note: note.trim() || null,
       });
+
       if (photo) {
         try {
-          await uploadTestimonialPhoto(saved.id, photo);
+          saved = await uploadTestimonialPhoto(saved.id, photo);
+          setPhoto(null);
         } catch {
-          setError('Saved, but the photo upload failed. Try attaching it again.');
           setExisting(saved);
+          setError('Saved, but the photo upload failed. Try attaching it again.');
+          onSaved?.();
           setBusy(false);
           return;
         }
       }
+
+      if (thenApprove) {
+        try {
+          saved = await approveTestimonial(saved.id);
+        } catch (e: any) {
+          const detail = e?.response?.data?.detail;
+          setExisting(saved);
+          setError(typeof detail === 'string' ? detail : 'Saved, but approval failed.');
+          onSaved?.();
+          setBusy(false);
+          return;
+        }
+      }
+
+      setExisting(saved);
+      setSavedNotice(
+        saved.is_marketing_ready
+          ? 'Saved and approved — the sales team can use this now.'
+          : canApprove
+            ? 'Saved. Choose "Approve for sales" to release it.'
+            : 'Saved. A head curator or admin needs to approve it before sales can use it.',
+      );
       onSaved?.();
-      onClose();
     } catch (e: any) {
       const detail = e?.response?.data?.detail;
       setError(typeof detail === 'string' ? detail : 'Could not save.');
+    } finally {
       setBusy(false);
     }
   };
@@ -112,7 +147,9 @@ export function TestimonialDialog({
     if (!existing) return;
     setBusy(true); setError(null);
     try {
-      setExisting(await approveTestimonial(existing.id));
+      const out = await approveTestimonial(existing.id);
+      setExisting(out);
+      setSavedNotice('Approved — the sales team can use this now.');
       onSaved?.();
     } catch (e: any) {
       const detail = e?.response?.data?.detail;
@@ -155,8 +192,10 @@ export function TestimonialDialog({
                   </span>
                 )}
                 {existing.has_photo && (
-                  <a href={testimonialPhotoUrl(existing.id)} target="_blank" rel="noopener noreferrer"
-                     className="text-primary hover:underline">view photo</a>
+                  <button type="button"
+                          onClick={() => openTestimonialPhoto(existing.id).catch(
+                            () => setError('Could not open the photo.'))}
+                          className="text-primary hover:underline">view photo</button>
                 )}
               </div>
             )}
@@ -250,6 +289,19 @@ export function TestimonialDialog({
               </fieldset>
             </div>
 
+            {savedNotice && (
+              <p className="mt-3 rounded-md bg-green-50 dark:bg-green-900/30 px-3 py-2 text-xs text-green-800 dark:text-green-300"
+                 role="status">{savedNotice}</p>
+            )}
+            {existing && existing.status === 'pending' && !existing.revoked_at && (
+              <p className="mt-3 rounded-md bg-muted px-3 py-2 text-[11px] text-muted-foreground">
+                <strong>Why "pending"?</strong> Collecting the material and releasing it are
+                separate steps, so the person who gathered it is not the only check on it.
+                {canApprove
+                  ? ' You can approve it yourself with the button below.'
+                  : ' A head curator or admin approves it.'}
+              </p>
+            )}
             {error && <p className="mt-3 text-xs text-red-600 dark:text-red-400" role="alert">{error}</p>}
 
             <div className="mt-5 flex flex-wrap justify-end gap-2">
@@ -267,8 +319,16 @@ export function TestimonialDialog({
               )}
               <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Close</Button>
               {!existing?.revoked_at && (
-                <Button size="sm" onClick={save} disabled={busy || consentIncomplete}>
+                <Button variant="secondary" size="sm" onClick={() => save(false)}
+                        disabled={busy || consentIncomplete}>
                   {busy ? 'Saving…' : 'Save'}
+                </Button>
+              )}
+              {canApprove && !existing?.revoked_at && (
+                <Button size="sm" onClick={() => save(true)}
+                        disabled={busy || consentIncomplete || !consent}
+                        title={!consent ? 'Record consent before approving' : undefined}>
+                  {busy ? 'Saving…' : 'Save & approve'}
                 </Button>
               )}
             </div>
