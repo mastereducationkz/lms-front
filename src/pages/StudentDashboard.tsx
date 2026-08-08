@@ -9,6 +9,7 @@ import { Input } from "../components/ui/input";
 import type { DashboardStats, StudentProgressOverview, Assignment, Event, AssignmentSubmission } from "../types";
 import { Clock, BookOpen, LineChart, CheckCircle, Target, Calendar, FileText, AlertCircle, Video, GraduationCap, MessageCircle } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
+import { TrackPlatformLinks } from "../components/dashboard/TrackPlatformLinks";
 
 // Dashboard hero background presets (all dark so white text + the flip board stay legible).
 // `tile` is an opaque, banner-tinted color for the flip-clock digits (must be
@@ -745,6 +746,10 @@ export default function StudentDashboard({
         </div>
         </div>
       </Card>
+
+      {/* Links to the dedicated SAT / NUET / IELTS platforms, driven by the student's
+          live group memberships. Renders nothing when no track applies. */}
+      <TrackPlatformLinks />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-2" data-tour="dashboard-stats">
         <Card className="h-fit">

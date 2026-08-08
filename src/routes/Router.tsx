@@ -41,6 +41,7 @@ const AttendancePage = lazy(() => import('../pages/AttendancePage.tsx'));
 const AdminDashboard = lazy(() => import('../pages/admin/AdminDashboard.tsx'));
 const AssignmentZeroSubmissions = lazy(() => import('../pages/admin/AssignmentZeroSubmissions.tsx'));
 const ExamResultsTrackingPage = lazy(() => import('../pages/admin/ExamResultsTrackingPage.tsx'));
+const BluebookGroupGridPage = lazy(() => import('../pages/BluebookGroupGridPage.tsx'));
 const QuestionReportsPage = lazy(() => import('../pages/admin/QuestionReportsPage.tsx'));
 const WeeklyTopStudentsPage = lazy(() => import('../pages/admin/WeeklyTopStudentsPage.tsx'));
 const UserManagement = lazy(() => import('../pages/UserManagement.tsx'));
@@ -444,6 +445,15 @@ export default function Router() {
           } />
 
           <Route path="/exam-results-tracking" element={<Navigate to="/exam-results" replace />} />
+
+          {/* Row scope is enforced server-side; these roles are the outer gate only. */}
+          <Route path="/bluebook-results" element={
+            <ProtectedRoute allowedRoles={['teacher', 'curator', 'head_curator', 'head_teacher', 'admin']}>
+              <AppLayout>
+                <BluebookGroupGridPage />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
 
           <Route path="/admin/question-reports" element={
             <ProtectedRoute allowedRoles={['admin', 'teacher']}>

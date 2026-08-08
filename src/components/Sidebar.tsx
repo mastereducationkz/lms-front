@@ -92,6 +92,7 @@ function getNavigationItems(
     ['/admin/weekly-top-students', 'Weekly Top Students', Trophy, 0, ['admin'], 'weekly-top-students-nav', 'admin'],
     ['/admin/events', 'Manage Events', Calendar, 0, ['admin'], 'events-management', 'admin'],
     ['/exam-results', 'Exam Results', ClipboardCheck, 0, ['admin', 'head_curator', 'head_teacher'], 'exam-results-tracking-nav', 'admin'],
+    ['/bluebook-results', 'Bluebook Results', ClipboardCheck, 0, ['teacher', 'curator', 'head_curator', 'head_teacher', 'admin'], 'bluebook-results-nav', 'primary'],
     ['/admin/question-reports', 'Question Reports', AlertTriangle, 0, ['admin'], 'question-reports-nav', 'admin'],
     ['/curator/homeworks', 'Homework', FileText, 0, ['head_teacher'], 'head-homework-nav', 'primary'],
     ['/curator/leaderboard', 'Leaderboard', Trophy, 0, ['head_teacher'], 'head-leaderboard-nav', 'primary'],

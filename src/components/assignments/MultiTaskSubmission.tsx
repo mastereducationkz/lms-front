@@ -15,7 +15,7 @@ import { AudioPlayer } from '../AudioPlayer';
 
 interface Task {
   id: string;
-  task_type: 'course_unit' | 'file_task' | 'text_task' | 'link_task' | 'pdf_text_task' | 'audio_task';
+  task_type: 'course_unit' | 'file_task' | 'text_task' | 'link_task' | 'pdf_text_task' | 'audio_task' | 'bluebook_task';
   title: string;
   description?: string;
   order_index: number;
@@ -711,9 +711,126 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
     const isCompleted = taskAnswer.completed || hasFiles || hasLegacyFile || !!taskAnswer.text_response;
 
     switch (task.task_type) {
+      case 'bluebook_task': {
+        const verbal = taskAnswer.verbal_score ?? '';
+        const math = taskAnswer.math_score ?? '';
+        const asNumber = (v: any) => (v === '' || v === null || v === undefined ? null : Number(v));
+        const verbalNum = asNumber(verbal);
+        const mathNum = asNumber(math);
+        // Score = Verbal + Math, always derived - never entered, and recomputed
+        // server-side on submit so a crafted payload cannot disagree with its sections.
+        const total =
+          verbalNum !== null && mathNum !== null && !Number.isNaN(verbalNum) && !Number.isNaN(mathNum)
+            ? verbalNum + mathNum
+            : null;
+
+        const invalid = (v: number | null) =>
+          v !== null && (Number.isNaN(v) || v < 200 || v > 800 || v % 10 !== 0);
+
+        const bbFiles = hasFiles ? taskAnswer.files : (hasLegacyFile ? [{
+          file_url: taskAnswer.file_url,
+          file_name: taskAnswer.file_name,
+          file_size: taskAnswer.file_size,
+        }] : []);
+
+        const setScore = (field: 'verbal_score' | 'math_score', raw: string) => {
+          handleTaskCompletion(task.id, { ...taskAnswer, [field]: raw });
+        };
+
+        return (
+          <div className="space-y-4">
+            <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
+              Bluebook Test #{task.content?.test_number ?? '—'}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label htmlFor={`bb-verbal-${task.id}`} className="text-xs font-medium">
+                  Reading &amp; Writing *
+                </label>
+                <input
+                  id={`bb-verbal-${task.id}`}
+                  type="number" min={200} max={800} step={10} inputMode="numeric"
+                  disabled={readOnly}
+                  value={verbal}
+                  onChange={(e) => setScore('verbal_score', e.target.value)}
+                  aria-invalid={invalid(verbalNum)}
+                  aria-describedby={`bb-verbal-help-${task.id}`}
+                  className={`mt-1 block w-full rounded-md border bg-background px-3 py-2 text-sm ${
+                    invalid(verbalNum) ? 'border-red-500' : 'border-input'
+                  }`}
+                />
+                <p id={`bb-verbal-help-${task.id}`} className="text-xs text-muted-foreground mt-1">
+                  200–800, in steps of 10
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor={`bb-math-${task.id}`} className="text-xs font-medium">Math *</label>
+                <input
+                  id={`bb-math-${task.id}`}
+                  type="number" min={200} max={800} step={10} inputMode="numeric"
+                  disabled={readOnly}
+                  value={math}
+                  onChange={(e) => setScore('math_score', e.target.value)}
+                  aria-invalid={invalid(mathNum)}
+                  aria-describedby={`bb-math-help-${task.id}`}
+                  className={`mt-1 block w-full rounded-md border bg-background px-3 py-2 text-sm ${
+                    invalid(mathNum) ? 'border-red-500' : 'border-input'
+                  }`}
+                />
+                <p id={`bb-math-help-${task.id}`} className="text-xs text-muted-foreground mt-1">
+                  200–800, in steps of 10
+                </p>
+              </div>
+
+              <div>
+                <span className="text-xs font-medium">Total score</span>
+                <output
+                  aria-live="polite"
+                  className="mt-1 block w-full rounded-md border border-input bg-muted px-3 py-2 text-sm font-semibold"
+                >
+                  {total ?? '—'}
+                </output>
+                <p className="text-xs text-muted-foreground mt-1">Calculated automatically</p>
+              </div>
+            </div>
+
+            <div>
+              <span className="text-xs font-medium">Screenshot of your Bluebook result *</span>
+              <input
+                type="file"
+                accept="image/*"
+                disabled={readOnly || uploading[task.id]}
+                onChange={(e) => e.target.files && handleFilesUpload(task.id, e.target.files)}
+                className="mt-1 block w-full text-sm"
+                aria-label="Upload a screenshot of your Bluebook result"
+              />
+              {uploading[task.id] && (
+                <p className="text-xs text-muted-foreground mt-1">Uploading…</p>
+              )}
+              {bbFiles.length > 0 && (
+                <ul className="mt-2 space-y-1">
+                  {bbFiles.map((f: any, i: number) => (
+                    <li key={i} className="text-xs text-muted-foreground truncate">
+                      {f.file_name}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {bbFiles.length === 0 && !readOnly && (
+                <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
+                  A screenshot is required before you can submit.
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      }
+
       case 'course_unit':
         return (
-          <CourseUnitTaskDisplay 
+          <CourseUnitTaskDisplay
             task={task} 
             isCompleted={!!answers[task.id]} 
             onCompletion={(completed) => handleTaskCompletion(task.id, { completed })}

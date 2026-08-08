@@ -6,6 +6,7 @@ import { Badge } from '../../components/ui/badge'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table'
 import { Search, ChevronLeft, ChevronRight } from 'lucide-react'
 import apiClient from '../../services/api'
+import { getSatOfficialDates } from '../../services/api/exams'
 
 type ExamType = 'sat' | 'ielts'
 type TrackingStatus = 'pending' | 'overdue' | 'completed'
@@ -37,16 +38,10 @@ interface TrackingRow {
   status: TrackingStatus
 }
 
-const SAT_MONTH_TEMPLATE_DAY: Record<number, number> = {
-  8: 23,
-  9: 13,
-  10: 4,
-  11: 8,
-  12: 6,
-  3: 14,
-  5: 2,
-  6: 6,
-}
+// The hard-coded {month -> day} table that used to live here held the 2025-26 days and
+// was projected onto the current year, so this page resolved legacy month cohorts to
+// dates 1-8 days off the real ones - and therefore disagreed with the backend's curator
+// table for the same student. Official dates now come from GET /exams/sat-dates.
 
 const MONTH_NAME_TO_INDEX: Record<string, number> = {
   january: 1,
@@ -77,29 +72,52 @@ const parseDateOnly = (value?: string | null): Date | null => {
   return parsed
 }
 
-const resolveLegacySatMonthDate = (target?: string | null): Date | null => {
+/**
+ * Resolve a stored SAT target to a real date.
+ *
+ * Exact dates (ISO, or the "Aug 22, 2026" label the backend writes back) win. A legacy
+ * bare-month cohort string is matched against the OFFICIAL date list rather than a
+ * guessed day-of-month: the nearest future administration in that month, falling back
+ * to the latest one in the current year when the month has already passed. This mirrors
+ * the backend's resolve_legacy_sat_month exactly, so the two views agree.
+ */
+const resolveLegacySatMonthDate = (
+  target: string | null | undefined,
+  officialDates: Date[],
+): Date | null => {
   if (!target) return null
   const parsedExact = parseDateOnly(target)
   if (parsedExact) return parsedExact
 
+  const parsedLabel = new Date(target)
+  if (!Number.isNaN(parsedLabel.getTime())) return parsedLabel
+
   const monthIndex = MONTH_NAME_TO_INDEX[target.trim().toLowerCase()]
   if (!monthIndex) return null
-  const day = SAT_MONTH_TEMPLATE_DAY[monthIndex]
-  if (!day) return null
 
   const now = new Date()
-  const currentYear = now.getFullYear()
-  const candidateCurrentYear = new Date(currentYear, monthIndex - 1, day)
-  if (candidateCurrentYear >= now) return candidateCurrentYear
-  return new Date(currentYear + 1, monthIndex - 1, day)
+  const inMonth = officialDates.filter((d) => d.getMonth() + 1 === monthIndex)
+  if (inMonth.length === 0) return null
+
+  const future = inMonth.filter((d) => d >= now).sort((a, b) => a.getTime() - b.getTime())
+  if (future.length > 0) return future[0]
+
+  const sameYear = inMonth
+    .filter((d) => d.getFullYear() === now.getFullYear())
+    .sort((a, b) => b.getTime() - a.getTime())
+  return sameYear[0] ?? null
 }
 
-const buildTrackingRows = (submissions: AssignmentZeroSubmission[]): TrackingRow[] => {
+const buildTrackingRows = (
+  submissions: AssignmentZeroSubmission[],
+  officialDates: Date[],
+): TrackingRow[] => {
   const now = new Date()
   const rows: TrackingRow[] = []
 
   submissions.forEach((submission) => {
-    const satPlanned = parseDateOnly(submission.sat_planned_test_date) || resolveLegacySatMonthDate(submission.sat_target_date)
+    const satPlanned = parseDateOnly(submission.sat_planned_test_date)
+      || resolveLegacySatMonthDate(submission.sat_target_date, officialDates)
     if (satPlanned) {
       const satAskDate = new Date(satPlanned)
       satAskDate.setDate(satAskDate.getDate() + 13)
@@ -154,7 +172,29 @@ const ExamResultsTrackingPage = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | TrackingStatus>('all')
   const [trackFilter, setTrackFilter] = useState<'all' | ExamType>('all')
   const [currentPage, setCurrentPage] = useState(1)
+  // Official SAT dates from the backend registry, used to resolve legacy bare-month
+  // cohort strings to real administrations. Past dates are included because historical
+  // cohorts still need resolving.
+  const [officialDates, setOfficialDates] = useState<Date[]>([])
   const pageSize = 15
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const { dates } = await getSatOfficialDates({ includeAnticipated: false, includePast: true })
+        if (cancelled) return
+        setOfficialDates(
+          dates
+            .map((d) => parseDateOnly(d.test_date))
+            .filter((d): d is Date => d !== null),
+        )
+      } catch (error) {
+        console.error('Failed to load official SAT dates:', error)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
 
   useEffect(() => {
     const fetchData = async () => {
@@ -183,7 +223,10 @@ const ExamResultsTrackingPage = () => {
     fetchData()
   }, [])
 
-  const rows = useMemo(() => buildTrackingRows(submissions), [submissions])
+  const rows = useMemo(
+    () => buildTrackingRows(submissions, officialDates),
+    [submissions, officialDates],
+  )
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {

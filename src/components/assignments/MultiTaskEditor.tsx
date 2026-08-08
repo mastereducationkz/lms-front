@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Trash2, GripVertical, BookOpen, FileText, MessageSquare, Link as LinkIcon, FileSearch, Mic, Star } from 'lucide-react';
+import { Trash2, GripVertical, BookOpen, FileText, MessageSquare, Link as LinkIcon, FileSearch, Mic, Star, ClipboardList } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader } from '../ui/card';
 import { Label } from '../ui/label';
@@ -15,7 +15,7 @@ import PdfTextTaskEditor from './PdfTextTaskEditor';
 
 interface Task {
   id: string;
-  task_type: 'course_unit' | 'file_task' | 'text_task' | 'link_task' | 'pdf_text_task' | 'audio_task';
+  task_type: 'course_unit' | 'file_task' | 'text_task' | 'link_task' | 'pdf_text_task' | 'audio_task' | 'bluebook_task';
   title: string;
   description?: string;
   order_index: number;
@@ -35,8 +35,13 @@ const TASK_TYPES = [
   { value: 'text_task', label: 'Text Response', icon: MessageSquare, description: 'Written answer' },
   { value: 'link_task', label: 'External Link', icon: LinkIcon, description: 'Visit external resource' },
   { value: 'pdf_text_task', label: 'File + Text', icon: FileSearch, description: 'Upload file, student writes response' },
-  { value: 'audio_task', label: 'Audio Answer', icon: Mic, description: 'Student records an audio answer' }
+  { value: 'audio_task', label: 'Audio Answer', icon: Mic, description: 'Student records an audio answer' },
+  { value: 'bluebook_task', label: 'Bluebook Test', icon: ClipboardList, description: 'Student reports Bluebook practice scores + screenshot' }
 ];
+
+// College Board publishes practice tests 4-11 in Bluebook. Enforced again server-side:
+// the selector is a convenience, not a security boundary.
+const BLUEBOOK_TEST_NUMBERS = [4, 5, 6, 7, 8, 9, 10, 11];
 
 export default function MultiTaskEditor({ content, onContentChange }: MultiTaskEditorProps) {
   const [tasks, setTasks] = useState<Task[]>(content.tasks || []);
@@ -186,6 +191,37 @@ export default function MultiTaskEditor({ content, onContentChange }: MultiTaskE
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 The student records an audio answer in the browser. This task is graded manually.
+              </p>
+            </div>
+          </div>
+        );
+      case 'bluebook_task':
+        return (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor={`bluebook-test-${task.id}`}>Bluebook test *</Label>
+              <select
+                id={`bluebook-test-${task.id}`}
+                className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={task.content.test_number ?? ''}
+                onChange={(e) =>
+                  updateTask(index, {
+                    content: {
+                      ...task.content,
+                      // Stored as a number: the backend rejects a string test_number.
+                      test_number: e.target.value === '' ? undefined : Number(e.target.value),
+                    },
+                  })
+                }
+              >
+                <option value="">Select a test…</option>
+                {BLUEBOOK_TEST_NUMBERS.map((n) => (
+                  <option key={n} value={n}>{`Bluebook Test #${n}`}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                The student enters their Reading &amp; Writing and Math section scores and
+                attaches a screenshot. The total is calculated automatically. Graded manually.
               </p>
             </div>
           </div>

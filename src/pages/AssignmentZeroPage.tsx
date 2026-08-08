@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import apiClient from '../services/api';
+import { getSatOfficialDates } from '../services/api/exams';
 import { toast } from '../components/Toast.tsx';
 import {
   Upload,
@@ -131,37 +132,12 @@ const SCHOOL_TYPES = [
   { value: 'Public', label: 'Public school (общеобразовательная)' },
 ];
 
-const SAT_DATE_TEMPLATES = [
-  { month: 8, day: 23 },
-  { month: 9, day: 13 },
-  { month: 10, day: 4 },
-  { month: 11, day: 8 },
-  { month: 12, day: 6 },
-  { month: 3, day: 14 },
-  { month: 5, day: 2 },
-  { month: 6, day: 6 },
-];
-
-const SAT_TARGET_DATES = (() => {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const years = [today.getFullYear(), today.getFullYear() + 1];
-
-  const candidates = years
-    .flatMap((year) => SAT_DATE_TEMPLATES.map(({ month, day }) => new Date(year, month - 1, day)))
-    .filter((date) => date >= today)
-    .sort((a, b) => a.getTime() - b.getTime())
-    .slice(0, SAT_DATE_TEMPLATES.length);
-
-  return candidates.map((date) => {
-    const label = date.toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    });
-    return { value: label, label };
-  });
-})();
+// SAT official dates are fetched from GET /exams/sat-dates (see satTargetDates below).
+//
+// They used to be generated here from a hard-coded {month, day} table projected onto
+// the current year. That table held the 2025-26 days, so every 2026-27 option was
+// wrong by 1-8 days (Aug 23 instead of Aug 22, March 14 instead of March 6, ...) while
+// the backend had the correct list all along. Do not reintroduce a local date table.
 
 const SAT_MONTHS = [
   { value: 'January', label: 'January' },
@@ -599,6 +575,29 @@ export default function AssignmentZeroPage() {
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+
+  // Official SAT dates, from the backend registry - never a local table.
+  // Only upcoming CONFIRMED administrations are offered as a target; College Board's
+  // provisional "Anticipated" 2027-28 dates are excluded so a student is never asked
+  // to plan around a date that may still move.
+  const [satTargetDates, setSatTargetDates] = useState<{ value: string; label: string }[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { dates } = await getSatOfficialDates({ includeAnticipated: false, includePast: false });
+        if (cancelled) return;
+        // `value` stays the human label because that is what `sat_target_date` has
+        // always stored, and the backend parses it back to a real date. Changing the
+        // stored form would break existing rows.
+        setSatTargetDates(dates.map((d) => ({ value: d.label, label: d.label })));
+      } catch {
+        if (!cancelled) setSatTargetDates([]);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (totalSteps < 1) return;
@@ -1490,7 +1489,7 @@ export default function AssignmentZeroPage() {
                           <SelectValue placeholder="Select target date" />
                         </SelectTrigger>
                         <SelectContent>
-                          {SAT_TARGET_DATES.map((date) => (
+                          {satTargetDates.map((date) => (
                             <SelectItem key={date.value} value={date.value}>
                               {date.label}
                             </SelectItem>
