@@ -129,26 +129,35 @@ export interface BluebookGrid {
     key: string;
     label: string;
     test_number: number | null;
+    assignment_id: number | null;
     due_date: string | null;
     week_number: number | null;
     is_baseline: boolean;
+    /** False when no Bluebook homework exists for this test in this group. */
+    is_assigned: boolean;
   }>;
   rows: Array<{
     student_id: number;
     full_name: string;
     display_id: string | null;
+    email: string | null;
     cells: Record<string, {
-      verbal_score: number;
-      math_score: number;
-      total_score: number;
+      state: 'submitted' | 'not_submitted' | 'not_assigned';
+      verbal_score: number | null;
+      math_score: number | null;
+      total_score: number | null;
       taken_at: string | null;
       screenshot_url: string | null;
-      source: string;
+      source: string | null;
       delta: number | null;
       trend: 'up' | 'down' | 'same' | null;
     }>;
+    submitted_count: number;
+    assigned_count: number;
     best_total: number | null;
     latest_total: number | null;
+    average_total: number | null;
+    baseline_total: number | null;
     improvement_from_baseline: number | null;
     official_result: { total_score: string; test_date: string; source: string } | null;
   }>;
@@ -161,6 +170,23 @@ export interface BluebookGrid {
     mean_verbal: number | null;
     mean_math: number | null;
   }>;
+  group_stats: {
+    student_count: number;
+    tests_assigned: number;
+    tests_available: number;
+    submitted_count: number;
+    expected_count: number;
+    completion_rate: number;
+    average_latest_total: number | null;
+    median_latest_total: number | null;
+    average_best_total: number | null;
+    highest_total: number | null;
+    lowest_latest_total: number | null;
+    average_improvement: number | null;
+    improved_count: number;
+    declined_count: number;
+    students_with_no_results: number;
+  };
 }
 
 export interface BluebookGroupOption {
@@ -179,8 +205,10 @@ export interface BluebookGroupOption {
  * head_curator, which made this page look empty for exactly those roles. This endpoint
  * derives scope from the shared row-scope service instead.
  */
-export async function getBluebookGroups(): Promise<BluebookGroupOption[]> {
-  const response = await api.get('/exams/bluebook/groups');
+export async function getBluebookGroups(search?: string): Promise<BluebookGroupOption[]> {
+  const response = await api.get('/exams/bluebook/groups', {
+    params: search ? { search } : {},
+  });
   return response.data;
 }
 
