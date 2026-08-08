@@ -137,6 +137,9 @@ export default function StudentDashboard({
   const [isSavingIeltsPrompt, setIsSavingIeltsPrompt] = useState(false);
   const [ieltsPromptDate, setIeltsPromptDate] = useState('');
   const [ieltsCurrentExactDate, setIeltsCurrentExactDate] = useState<string | null>(null);
+  // True when the stored date is in the past - the student has either sat the exam or
+  // rebooked, so the check-in asks a different question.
+  const [ieltsDateHasPassed, setIeltsDateHasPassed] = useState(false);
   const [ieltsPromptMessage, setIeltsPromptMessage] = useState('');
   
   // Daily questions state
@@ -193,21 +196,19 @@ export default function StudentDashboard({
       const status = await apiClient.getIeltsDatePromptStatus()
       const shouldPrompt = Boolean(status.is_ielts_student && status.should_prompt)
       setShowIeltsPrompt(shouldPrompt)
+      setIeltsDateHasPassed(Boolean((status as any).date_has_passed))
 
       if (shouldPrompt) {
-        try {
-          const submission = await apiClient.getMyAssignmentZeroSubmission()
-          const plannedDate = submission?.ielts_planned_test_date || null
-          if (plannedDate) {
-            const normalized = `${plannedDate}`.slice(0, 10)
-            setIeltsCurrentExactDate(normalized)
-            setIeltsPromptDate(normalized)
-          } else {
-            setIeltsCurrentExactDate(null)
-            setIeltsPromptDate('')
-          }
-        } catch (submissionError) {
-          console.error('Failed to load IELTS planned date from submission:', submissionError)
+        // The date now comes from the prompt endpoint itself. It used to be fetched with
+        // a second call to the Assignment Zero submission, which 404s for a student with
+        // no submission row - and a failed fetch made the banner claim "we do not have
+        // your exact IELTS date" while the countdown below displayed that very date.
+        const plannedDate = (status as any).planned_test_date || null
+        if (plannedDate) {
+          const normalized = `${plannedDate}`.slice(0, 10)
+          setIeltsCurrentExactDate(normalized)
+          setIeltsPromptDate(normalized)
+        } else {
           setIeltsCurrentExactDate(null)
           setIeltsPromptDate('')
         }
@@ -679,8 +680,15 @@ export default function StudentDashboard({
           <CardContent className="space-y-3">
             {ieltsCurrentExactDate ? (
               <div className="rounded-md border border-amber-200 bg-white/70 dark:bg-card/60 px-3 py-2 text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Current exact date:</span>{' '}
+                <span className="text-gray-600 dark:text-gray-400">
+                  {ieltsDateHasPassed ? 'That date has passed:' : 'Current exact date:'}
+                </span>{' '}
                 <span className="font-semibold">{ieltsCurrentExactDate}</span>
+                {ieltsDateHasPassed && (
+                  <p className="mt-1 text-gray-600 dark:text-gray-400">
+                    If you have rebooked, set the new date below.
+                  </p>
+                )}
               </div>
             ) : (
               <p className="text-sm text-gray-700 dark:text-gray-300">
