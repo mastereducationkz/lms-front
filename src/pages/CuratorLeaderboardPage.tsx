@@ -71,6 +71,11 @@ interface StudentLessonStatus {
     // as "Не отмечено" (distinct from a real ABSENT) and drops out of the %
     // denominator. Undefined on older payloads → treat as marked (legacy).
     marked?: boolean;
+    // True = the lesson falls inside a CRM freeze period. The student was not expected, so
+    // the cell renders «Заморозка», is not editable, and leaves both the attendance and the
+    // homework denominators — exactly as a pre-join lesson does. Weeks before the freeze are
+    // untouched. Undefined on older payloads → treat as not frozen.
+    frozen?: boolean;
 }
 
 interface IeltsSpeakingFeedback {
@@ -85,6 +90,14 @@ interface StudentRow {
     student_id: number;
     student_name: string;
     avatar_url: string | null;
+    /** Present while the CRM has an active freeze for this student. Staff-facing detail. */
+    freeze?: {
+        is_frozen: boolean;
+        planned_resume_date: string | null;
+        label: string;
+        freeze_start?: string | null;
+        is_overdue?: boolean;
+    } | null;
     lessons: { [key: string]: StudentLessonStatus }; // key is lesson_number as string "1", "2"
     // Manual fields
     curator_hour: number;
@@ -745,7 +758,10 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       // (homework submission is independent of attendance, so it stays).
       Object.entries(student.lessons).forEach(([lessonKey, l]) => {
           const meta = data.lessons.find(m => m.lesson_number.toString() === lessonKey);
-          if (l.enrolled === false) {
+          if (l.enrolled === false || l.frozen) {
+              // A frozen lesson is not theirs either: counting it would make a freeze look
+              // like a collapse in attendance, and the weeks they actually studied would be
+              // dragged down by the weeks they were away.
               maxForWeek -= MAX_SCORES.attendance;
               maxForWeek -= lessonHomeworks(meta).length * MAX_SCORES.homework;
           } else if (l.marked === false && meta && !isAttendanceLockedLesson(meta.start_datetime)) {
@@ -783,6 +799,9 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   const handleAttendanceChange = (studentId: number, lessonNumber: string, status: string) => {
       // Security check — curators view attendance here but don't edit it.
       if (!canMarkAttendance) return;
+      // A frozen lesson is not editable: the student was not expected, so marking them
+      // present or absent would be recording something that did not happen.
+      if (data?.students.find(s => s.student_id === studentId)?.lessons[lessonNumber]?.frozen) return;
       
       // Status: "attended" or "absent" (from toggles)
       // Map to 10 or 0
@@ -1579,6 +1598,17 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     className="group flex items-center gap-1 truncate max-w-[84px] md:max-w-[150px] font-medium text-gray-900 dark:text-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors"
                                 >
                                     <span className="truncate">{student.student_name}</span>
+                                    {student.freeze?.is_frozen && (
+                                        <span
+                                            className="ml-1 shrink-0 rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-950/40 dark:text-sky-300"
+                                            title={student.freeze.planned_resume_date
+                                                ? t(`Плановое возобновление ${student.freeze.planned_resume_date}`,
+                                                    `Planned return ${student.freeze.planned_resume_date}`)
+                                                : undefined}
+                                        >
+                                            {student.freeze.label}
+                                        </span>
+                                    )}
                                     <ClipboardList className="w-3 h-3 shrink-0 text-gray-300 group-hover:text-blue-500 dark:text-gray-600 dark:group-hover:text-blue-400" />
                                 </button>
                             </div>
@@ -1594,10 +1624,12 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                             // Lesson predates the student's join date: not theirs, so
                             // show a neutral blank cell (both halves) and skip editing.
                             const preEnroll = lessonStatus?.enrolled === false;
+                            const frozenLesson = Boolean(lessonStatus?.frozen);
                             // Past lesson with no attendance record yet: show a distinct
                             // "Не отмечено" cell instead of a red ABSENT default. Future
                             // lessons are handled by the toggle's isFuture branch.
-                            const unmarked = !preEnroll && !cellIsFuture && lessonStatus?.marked === false;
+                            const unmarked =
+                                !preEnroll && !frozenLesson && !cellIsFuture && lessonStatus?.marked === false;
 
                             return (
                                 <TableCell key={`cell-${lessonKey}`} className="p-0 border-r border-gray-300 dark:border-border">
@@ -1607,6 +1639,11 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                             className="w-1/2 border-r border-gray-300 dark:border-border flex items-center justify-center text-[11px] text-gray-300 dark:text-gray-600 select-none"
                                             title={t('Ученик ещё не был в группе на этом уроке', 'Student had not joined the group for this lesson')}
                                         >—</div>
+                                        ) : frozenLesson ? (
+                                        <div
+                                            className="w-1/2 border-r border-gray-300 dark:border-border flex items-center justify-center bg-sky-50 dark:bg-sky-950/30 text-[10px] text-sky-700 dark:text-sky-300 select-none"
+                                            title={t('Ученик был на заморозке — урок не учитывается', 'Student was frozen — the lesson does not count')}
+                                        >{t('Заморозка', 'Frozen')}</div>
                                         ) : unmarked ? (
                                         <div
                                             className={cn(
