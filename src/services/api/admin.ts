@@ -42,6 +42,11 @@ export async function getTeacherSalaryBreakdown(params: {
   period_start: string
   period_end: string
   lesson_rate: number
+  individual_rate?: number
+  /** crm = the teacher's real rate, override = manually typed, default = neither. */
+  rate_source?: 'crm' | 'override' | 'default'
+  level?: string | null
+  group_band?: string | null
   total_lessons: number
   total_amount_tenge: number
   groups: Array<{
@@ -61,7 +66,9 @@ export async function getTeacherSalaryBreakdown(params: {
       params: {
         period_start: params.period_start,
         period_end: params.period_end,
-        lesson_rate: params.lesson_rate ?? 4000,
+        // Omitted on purpose when the teacher has not overridden it: the server then
+        // uses the rate the CRM computed for them (level × lesson kind × group count).
+        ...(params.lesson_rate != null ? { lesson_rate: params.lesson_rate } : {}),
       },
       timeout: 60000,
     })
