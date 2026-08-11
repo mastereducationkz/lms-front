@@ -113,7 +113,10 @@ export async function assignTeacherToGroup(groupId: number, teacherId: number): 
 export async function getGroupStudents(groupId: number): Promise<User[]> {
   try {
     const response = await api.get(`/admin/groups/${groupId}/students`);
-    return response.data || [];
+    // Backend returns GroupStudentsResponse: { group_id, group_name, students: [...], total_students }.
+    // Callers expect a bare User[] and .map() over it — unwrap here. Tolerate a raw array too.
+    const data = response.data;
+    return Array.isArray(data) ? data : (data?.students ?? []);
   } catch (error) {
     console.error(`Failed to fetch group students for group ${groupId}:`, error);
     return [];
