@@ -11,7 +11,7 @@ const COLUMNS: { key: OnboardingStatus; title: string }[] = [
   { key: 'done', title: 'Завершено' },
 ];
 
-function Card({ card }: { card: OnboardingCard }) {
+function Card({ card, isHead }: { card: OnboardingCard; isHead: boolean }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: card.id });
   const style = transform
     ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
@@ -26,7 +26,7 @@ function Card({ card }: { card: OnboardingCard }) {
     >
       <div className="font-medium text-gray-900 dark:text-gray-100">{card.student_name}</div>
       <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">{card.group_name || '—'}
-        {card.curator_name ? ` · ${card.curator_name}` : ''}</div>
+        {isHead && card.curator_name ? ` · ${card.curator_name}` : ''}</div>
       {card.telegram_link ? (
         <a href={card.telegram_link} target="_blank" rel="noreferrer"
            onPointerDown={(e) => e.stopPropagation()}
@@ -46,7 +46,7 @@ function Card({ card }: { card: OnboardingCard }) {
   );
 }
 
-function Column({ col, cards }: { col: { key: OnboardingStatus; title: string }; cards: OnboardingCard[] }) {
+function Column({ col, cards, isHead }: { col: { key: OnboardingStatus; title: string }; cards: OnboardingCard[]; isHead: boolean }) {
   const { setNodeRef, isOver } = useDroppable({ id: col.key });
   return (
     <div ref={setNodeRef}
@@ -55,7 +55,7 @@ function Column({ col, cards }: { col: { key: OnboardingStatus; title: string };
         <h3 className="font-semibold text-gray-800 dark:text-gray-200">{col.title}</h3>
         <span className="text-xs text-gray-500 bg-gray-200 dark:bg-gray-700 rounded-full px-2 py-0.5">{cards.length}</span>
       </div>
-      {cards.map((c) => <Card key={c.id} card={c} />)}
+      {cards.map((c) => <Card key={c.id} card={c} isHead={isHead} />)}
     </div>
   );
 }
@@ -67,7 +67,7 @@ export default function CuratorOnboardingPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getOnboarding().then(setCards).finally(() => setLoading(false));
+    getOnboarding().then(setCards).catch((e) => console.error('Failed to load onboarding', e)).finally(() => setLoading(false));
   }, []);
 
   const byStatus = useMemo(() => {
@@ -102,7 +102,7 @@ export default function CuratorOnboardingPage() {
       ) : (
         <DndContext onDragEnd={onDragEnd}>
           <div className="flex gap-3 overflow-x-auto">
-            {COLUMNS.map((col) => <Column key={col.key} col={col} cards={byStatus[col.key] || []} />)}
+            {COLUMNS.map((col) => <Column key={col.key} col={col} cards={byStatus[col.key] || []} isHead={isHead} />)}
           </div>
         </DndContext>
       )}
