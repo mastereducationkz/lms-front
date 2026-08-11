@@ -422,8 +422,9 @@ export default function HeadCuratorDashboard() {
         </Card>
       </div>
 
-      {/* Задачи кураторов — только для head_curator */}
-      {user?.role === 'head_curator' && (
+      {/* Задачи кураторов — feature hidden (paused). Reversal: change `false` back to
+          `user?.role === 'head_curator'`. Replaced in the sidebar by "Онбординг". */}
+      {false && user?.role === 'head_curator' && (
         <Card className="shadow-sm border-0 overflow-hidden">
           <CardHeader className="bg-white dark:bg-card flex flex-row items-center justify-between gap-4">
             <div>
