@@ -127,6 +127,10 @@ interface SalaryBreakdownResult {
   period_start: string
   period_end: string
   lesson_rate: number
+  individual_rate?: number
+  rate_source?: 'crm' | 'override' | 'default'
+  level?: string | null
+  group_band?: string | null
   total_lessons: number
   total_amount_tenge: number
   groups: SalaryBreakdownGroup[]
@@ -185,7 +189,9 @@ export default function TeacherDashboard() {
   const [salaryInterval, setSalaryInterval] = useState<'first_half' | 'second_half' | 'custom'>('second_half');
   const [salaryPeriodStart, setSalaryPeriodStart] = useState<string>('');
   const [salaryPeriodEnd, setSalaryPeriodEnd] = useState<string>('');
-  const [salaryRate, setSalaryRate] = useState<number>(4000);
+  // Empty means "use my rate from the CRM". Typing a number overrides it, which is what
+  // recalculating an old period at the rate that applied back then needs.
+  const [salaryRate, setSalaryRate] = useState<number | ''>('');
   const [salaryResult, setSalaryResult] = useState<SalaryBreakdownResult | null>(null);
   const [isSalaryLoading, setIsSalaryLoading] = useState(false);
 
@@ -417,7 +423,7 @@ export default function TeacherDashboard() {
       const res = await apiClient.getTeacherSalaryBreakdown({
         period_start: salaryPeriodStart,
         period_end: salaryPeriodEnd,
-        lesson_rate: salaryRate,
+        lesson_rate: salaryRate === '' ? undefined : salaryRate,
       });
       setSalaryResult(res);
     } catch (error) {
@@ -1886,9 +1892,28 @@ export default function TeacherDashboard() {
                 id="salary-rate"
                 type="number"
                 min={0}
+                placeholder="Моя ставка (из CRM)"
                 value={salaryRate}
-                onChange={(e) => setSalaryRate(Number(e.target.value) || 0)}
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  setSalaryRate(raw === '' ? '' : Number(raw) || 0);
+                }}
               />
+              <p className="text-xs text-muted-foreground">
+                {salaryResult?.rate_source === 'crm' ? (
+                  <>
+                    Ставка по уровню{salaryResult.level ? ` (${salaryResult.level}` : ''}
+                    {salaryResult.level && salaryResult.group_band ? `, ${salaryResult.group_band}` : ''}
+                    {salaryResult.level ? ')' : ''}: группа {salaryResult.lesson_rate} тг
+                    {salaryResult.individual_rate ? `, индивидуально ${salaryResult.individual_rate} тг` : ''}.
+                    Оставьте поле пустым, чтобы использовать её.
+                  </>
+                ) : salaryResult?.rate_source === 'override' ? (
+                  <>Указана вручную. Очистите поле, чтобы вернуться к ставке из CRM.</>
+                ) : (
+                  <>Оставьте пустым — подставится ваша ставка из CRM.</>
+                )}
+              </p>
             </div>
           </div>
 
