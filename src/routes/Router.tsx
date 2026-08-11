@@ -74,6 +74,7 @@ const StudentAnalyticsPage = lazy(() =>
 const HeadTeacherTeacherDetailsPage = lazy(() => import('../pages/HeadTeacherTeacherDetailsPage.tsx'));
 const HeadCuratorCuratorPage = lazy(() => import('../pages/HeadCuratorCuratorPage.tsx'));
 const CuratorTasksPage = lazy(() => import('../pages/CuratorTasksPage.tsx'));
+const CuratorOnboardingPage = lazy(() => import('../pages/CuratorOnboardingPage.tsx'));
 const StudentsJournalPage = lazy(() => import('../pages/StudentsJournalPage.tsx'));
 const StudentProfilePage = lazy(() => import('../pages/StudentProfilePage.tsx'));
 
@@ -598,6 +599,14 @@ export default function Router() {
             <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator']}>
               <AppLayout>
                 <CuratorTasksPage />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/curator/onboarding" element={
+            <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator']}>
+              <AppLayout>
+                <CuratorOnboardingPage />
               </AppLayout>
             </ProtectedRoute>
           } />

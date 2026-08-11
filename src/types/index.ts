@@ -1351,3 +1351,21 @@ export interface AvailableTeacher {
   name: string;
   email: string;
 }
+
+export type OnboardingStatus = 'new' | 'in_progress' | 'done';
+
+export interface OnboardingCard {
+  id: number;
+  student_id: number;
+  student_name: string;
+  group_id: number | null;
+  group_name: string | null;
+  curator_id: number;
+  curator_name: string | null;
+  telegram_id: string | null;
+  telegram_link: string | null;
+  phone_number: string | null;
+  parent_phone_number: string | null;
+  status: OnboardingStatus | 'cancelled';
+  created_at: string | null;
+}
