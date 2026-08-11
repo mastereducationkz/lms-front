@@ -1,5 +1,6 @@
-import { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { lazy, Suspense, useEffect, useRef } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { applyPendingPwaUpdate } from '../services/pwa';
 import { NextStepProvider } from 'nextstepjs';
 import { AuthProvider } from '../contexts/AuthContext.tsx';
 import { SettingsProvider } from '../contexts/SettingsContext';
@@ -85,10 +86,27 @@ const RouteFallback = () => (
   </div>
 );
 
+// Applies a waiting PWA update on route change — a safe moment to swap the
+// bundle since the current page is unmounting anyway. No-op unless an update is
+// pending. Must live inside <BrowserRouter> to use useLocation().
+function PwaUpdateOnNavigate() {
+  const location = useLocation();
+  const isFirst = useRef(true);
+  useEffect(() => {
+    if (isFirst.current) {
+      isFirst.current = false;
+      return;
+    }
+    applyPendingPwaUpdate();
+  }, [location.pathname]);
+  return null;
+}
+
 export default function Router() {
-  
+
   return (
     <BrowserRouter>
+      <PwaUpdateOnNavigate />
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
         <Toaster />
         <AuthProvider>
