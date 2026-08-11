@@ -75,7 +75,10 @@ const StudentAnalyticsPage = lazy(() =>
 const HeadTeacherTeacherDetailsPage = lazy(() => import('../pages/HeadTeacherTeacherDetailsPage.tsx'));
 const HeadCuratorCuratorPage = lazy(() => import('../pages/HeadCuratorCuratorPage.tsx'));
 const CuratorTasksPage = lazy(() => import('../pages/CuratorTasksPage.tsx'));
-const CuratorOnboardingPage = lazy(() => import('../pages/CuratorOnboardingPage.tsx'));
+// Onboarding is now edited in the CRM; this path only redirects. The old page component is
+// deliberately left in the tree, unrouted, so the migration can be reverted by pointing the
+// route back at it if the CRM board has to be switched off.
+const CuratorOnboardingRedirect = lazy(() => import('../pages/CuratorOnboardingRedirect.tsx'));
 const StudentsJournalPage = lazy(() => import('../pages/StudentsJournalPage.tsx'));
 const StudentProfilePage = lazy(() => import('../pages/StudentProfilePage.tsx'));
 
@@ -624,7 +627,7 @@ export default function Router() {
           <Route path="/curator/onboarding" element={
             <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator']}>
               <AppLayout>
-                <CuratorOnboardingPage />
+                <CuratorOnboardingRedirect />
               </AppLayout>
             </ProtectedRoute>
           } />

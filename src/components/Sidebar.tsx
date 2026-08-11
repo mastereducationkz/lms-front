@@ -5,7 +5,9 @@ import { connectSocket } from '../services/socket';
 import { useVisiblePolling } from '../hooks/useVisiblePolling';
 import apiClient from '../services/api';
 import logoIco from '../assets/masteredlogo-ico.ico';
+import { CRM_ONBOARDING_URL, CRM_WORKSPACE_URL } from '../lib/crmLinks';
 import { 
+  ExternalLink,
   Home, 
   BookOpen, 
   ClipboardList,
@@ -84,7 +86,11 @@ function getNavigationItems(
     ['/analytics', ['head_curator', 'curator'].includes(_userRole || '') ? 'Аналитика' : 'Analytics', BarChart3, 0, ['teacher', 'curator', 'admin', 'head_curator', 'head_teacher'], 'analytics-nav', 'primary'],
     ['/curator/homeworks', ['head_curator', 'curator'].includes(_userRole || '') ? 'Домашние задания' : 'Homework', FileText, 0, ['curator', 'head_curator'], 'homework-analytics-nav', 'curator'],
     ['/curator/leaderboard', ['head_curator', 'curator'].includes(_userRole || '') ? 'Лидерборд' : 'Leaderboard', Trophy, 0, ['curator', 'head_curator'], 'leaderboard-nav', 'curator'],
-    ['/curator/onboarding', ['head_curator', 'curator'].includes(_userRole || '') ? 'Онбординг' : 'Onboarding', UserPlus, 0, ['curator', 'head_curator'], 'curator-onboarding-nav', 'curator'],
+    // Onboarding moved to the CRM. Linked directly rather than through the in-app redirect
+    // so curators land on the board in one hop; /curator/onboarding still redirects, which
+    // is what catches existing bookmarks.
+    [CRM_ONBOARDING_URL, ['head_curator', 'curator'].includes(_userRole || '') ? 'Онбординг (CRM)' : 'Onboarding (CRM)', UserPlus, 0, ['curator', 'head_curator'], 'curator-onboarding-nav', 'curator'],
+    [CRM_WORKSPACE_URL, ['head_curator', 'curator'].includes(_userRole || '') ? 'Вернуться в CRM' : 'Back to CRM', ExternalLink, 0, ['curator', 'head_curator'], 'crm-workspace-nav', 'curator'],
     ['/curator/students', ['head_curator', 'curator'].includes(_userRole || '') ? 'Журнал' : 'Students', Users, 0, ['curator', 'head_curator'], 'students-journal-nav', 'curator'],
     ['/curator/groups', ['head_curator', 'curator'].includes(_userRole || '') ? 'Мои группы' : 'My groups', UsersRound, 0, ['curator', 'head_curator'], 'curator-groups-nav', 'curator'],
     ['/admin/courses', 'Manage Courses', BookMarked, 0, ['admin'], 'courses-management', 'admin'],
