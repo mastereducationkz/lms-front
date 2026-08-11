@@ -663,8 +663,7 @@ export default function Calendar() {
                              event.event_type === 'class' && 
                              !isSubstituted &&
                              !event.is_substitution &&
-                             event.group_ids?.length > 0 &&
-                             new Date(event.start_datetime) > new Date() && (
+                             event.group_ids?.length > 0 && (
                               <div className="flex gap-2 mt-3 pt-3 border-t dark:border-border border-current/10 flex-wrap">
                                 {myRequests.has(event.id) ? (
                                     <div className="text-xs font-semibold px-2 py-1 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400 rounded">
