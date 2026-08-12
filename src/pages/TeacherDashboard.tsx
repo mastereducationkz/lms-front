@@ -1366,7 +1366,7 @@ export default function TeacherDashboard() {
                       <td className="px-6 py-4">
                         {student.group_name ? (
                           <Badge variant="outline" className="bg-gray-50 dark:bg-secondary inline-flex items-center whitespace-nowrap">
-                            {student.group_name.split("-")[1]}
+                            {student.group_name.split("-")[0]}
                           </Badge>
                         ) : (
                           <span className="text-gray-400 dark:text-gray-500 text-xs">-</span>

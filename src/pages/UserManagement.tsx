@@ -2221,7 +2221,7 @@ function GroupForm({
   const generateGroupName = (teacherName: string, description?: string) => {
     const firstName = teacherName.split(" ")[0]; // Берем только первое имя
     const suffix = description?.trim() || 'Group';
-    return `${firstName} - ${suffix}`;
+    return `${suffix} - ${firstName}`;
   };
 
   // Auto-generate group name from teacher (default) or curator (special groups)

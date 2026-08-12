@@ -30,22 +30,23 @@ export const getGroupProgramType = (group: Group): CourseType => {
   return stored || 'general_english';
 };
 
-// Label: strip the leading "Xxx - " prefix from the group name, then append the
-// teacher's full name. e.g. "Kamila - IELTS June 10" + "Kamila B" -> "IELTS June 10 - Kamila B"
+// Label: strip the trailing " - Xxx" teacher-first-name suffix from the group
+// name, then append the teacher's full name. e.g. "IELTS June 10 - Kamila" +
+// "Kamila B" -> "IELTS June 10 - Kamila B"
 export const formatGroupLabel = (group: Group): string => {
   const rawName = group.name || '';
-  const sepIndex = rawName.indexOf(' - ');
-  const base = sepIndex !== -1 ? rawName.slice(sepIndex + 3).trim() : rawName.trim();
+  const sepIndex = rawName.lastIndexOf(' - ');
+  const base = sepIndex !== -1 ? rawName.slice(0, sepIndex).trim() : rawName.trim();
   const teacher = (group.teacher_name || '').trim();
   return teacher ? `${base} - ${teacher}` : base;
 };
 
-// Subject/date portion (label minus leading prefix and minus the program keyword,
-// which is shown as a badge instead). e.g. "June 38 SAT" -> "June 38"
+// Subject/date portion (label minus trailing teacher suffix and minus the
+// program keyword, which is shown as a badge instead). e.g. "June 38 SAT" -> "June 38"
 export const getGroupDateText = (group: Group): string => {
   const rawName = group.name || '';
-  const sepIndex = rawName.indexOf(' - ');
-  let base = sepIndex !== -1 ? rawName.slice(sepIndex + 3).trim() : rawName.trim();
+  const sepIndex = rawName.lastIndexOf(' - ');
+  let base = sepIndex !== -1 ? rawName.slice(0, sepIndex).trim() : rawName.trim();
   const program = getGroupProgramType(group);
   if (program !== 'general_english') {
     base = base
