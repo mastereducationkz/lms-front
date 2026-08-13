@@ -1332,6 +1332,31 @@ export interface LessonRequest {
   created_at: string;
   resolved_at?: string;
   resolved_by?: number;
+  /** Who decided, in words. `resolved_by` alone is an id nobody can hold accountable. */
+  resolver_name?: string | null;
+  resolver_role?: string | null;
+
+  // ── the live lesson, not just what was asked for ───────────────────────────────────
+  //
+  // A request records a decision; the Event records what actually happens. They can
+  // disagree — schedule regeneration used to revert approved substitutions — and a page
+  // showing only the request cannot reveal it.
+  lesson_title?: string | null;
+  /** The teacher the lesson is assigned to right now. */
+  current_event_teacher_id?: number | null;
+  current_event_teacher_name?: string | null;
+  /** The group's regular teacher — the owner, unchanged by a substitution. */
+  group_teacher_id?: number | null;
+  group_teacher_name?: string | null;
+  /** Who owes the register: the actual lesson teacher. */
+  attendance_owner_id?: number | null;
+  attendance_owner_name?: string | null;
+  attendance_marked?: boolean | null;
+  /** False = an approval and the schedule disagree. Null for pending/rejected. */
+  is_applied?: boolean | null;
+  /** Plain-Russian explanation of a false `is_applied`, for non-staff readers. */
+  consistency_note?: string | null;
+  lesson_is_active?: boolean | null;
 }
 
 export interface CreateLessonRequest {
