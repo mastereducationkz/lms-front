@@ -462,13 +462,20 @@ export default function AssignmentPage() {
     // Handle Multi-Task Assignments
     if (assignment.assignment_type === 'multi_task') {
       return (
-        <MultiTaskSubmission
-          assignment={assignment}
-          onSubmit={handleMultiTaskSubmit}
-          initialAnswers={submission?.answers}
-          readOnly={isReadOnlyPrevious}
-          isSubmitting={submitting}
-        />
+        <>
+          {!submission && (status as any)?.draft?.answers && (
+            <div className="mb-3 rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
+              Восстановлен черновик. Работа ещё <b>не отправлена</b>.
+            </div>
+          )}
+          <MultiTaskSubmission
+            assignment={assignment}
+            onSubmit={handleMultiTaskSubmit}
+            initialAnswers={submission?.answers ?? ((status as any)?.draft?.answers ? { tasks: (status as any).draft.answers } : undefined)}
+            readOnly={isReadOnlyPrevious}
+            isSubmitting={submitting}
+          />
+        </>
       );
     }
 
