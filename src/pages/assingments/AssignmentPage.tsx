@@ -304,12 +304,12 @@ export default function AssignmentPage() {
                     </>
                   ) : (
                     <>
-                      <span className="text-foreground">Submitted - Awaiting Grade</span>
+                      <span className="text-foreground">Сдано</span>
                     </>
                   )}
                 </CardTitle>
                 <CardDescription>
-                  Submitted on {new Date(submission.submitted_at).toLocaleString()}
+                  Отправлено: {new Date(submission.submitted_at).toLocaleString()}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -754,10 +754,10 @@ export default function AssignmentPage() {
                 )
                
               )}
-              {status?.late && (
-                <Badge variant="destructive" className="text-sm">
-                  Late Submission
-                </Badge>
+              {!submission && isOverdue && !extension && (
+                <span className="text-sm text-amber-700 dark:text-amber-300">
+                  Дедлайн прошёл — работа ещё не отправлена
+                </span>
               )}
             </div>
           </div>
