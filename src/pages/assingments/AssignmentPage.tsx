@@ -474,6 +474,7 @@ export default function AssignmentPage() {
             initialAnswers={submission?.answers ?? ((status as any)?.draft?.answers ? { tasks: (status as any).draft.answers } : undefined)}
             readOnly={isReadOnlyPrevious}
             isSubmitting={submitting}
+            onAutosave={async (answers) => { await apiClient.saveDraft(assignment.id.toString(), { answers }); }}
           />
         </>
       );
