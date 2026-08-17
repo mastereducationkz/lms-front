@@ -399,10 +399,16 @@ export default function LessonPage() {
   const pendingDraftCreateRef = useRef<boolean>(false);
   const cachedHashRef = useRef<{ stepId: number; hash: string } | null>(null);
   const videoMarkedRef = useRef<Set<number>>(new Set());
-  const prevCompletedRef = useRef<boolean>(false);
+  // Dedup set: ensures the "ready to submit" popup / markLessonComplete POST fires at most
+  // once per lesson id per session, even though this component instance persists across
+  // in-app lesson navigation (loadLessonData overwrites `lesson` in place, so is_completed
+  // can flip true -> false -> true as the student browses away and back).
+  const checkedLessonsRef = useRef<Set<string>>(new Set());
   const isSpecialGroupStudent = user?.role === 'student' && user?.special_group_only_student === true;
 
-  const handleCompleteResponse = useCallback((res: any) => {
+  const maybeShowReadyPopup = useCallback((lessonId: string, res: any) => {
+    if (checkedLessonsRef.current.has(lessonId)) return;
+    checkedLessonsRef.current.add(lessonId);
     const list = res?.newly_ready_assignments;
     if (Array.isArray(list) && list.length > 0) setReadyPopup(list[0]);
   }, []);
@@ -429,13 +435,12 @@ export default function LessonPage() {
   // which does not go through the markLessonComplete calls in this file) and fetch
   // newly_ready_assignments once, idempotently, so the "ready to submit" popup can appear.
   useEffect(() => {
-    const nowCompleted = Boolean(lesson?.is_completed);
-    if (nowCompleted && !prevCompletedRef.current) {
-      prevCompletedRef.current = true;
-      apiClient.markLessonComplete(String(lesson!.id), 0).then(handleCompleteResponse).catch(() => {});
+    if (!lesson) return;
+    const nowCompleted = Boolean(lesson.is_completed);
+    if (nowCompleted && !checkedLessonsRef.current.has(lesson.id)) {
+      apiClient.markLessonComplete(String(lesson.id), 0).then(res => maybeShowReadyPopup(lesson.id, res)).catch(() => {});
     }
-    if (!nowCompleted) prevCompletedRef.current = false;
-  }, [lesson?.is_completed, handleCompleteResponse]);
+  }, [lesson?.id, lesson?.is_completed, maybeShowReadyPopup]);
 
   // Track the furthest step the student has reached
   useEffect(() => {
@@ -1242,7 +1247,7 @@ export default function LessonPage() {
 
     try {
       const _res = await apiClient.markLessonComplete(lesson.id.toString(), 0);
-      handleCompleteResponse(_res);
+      maybeShowReadyPopup(lesson.id, _res);
       loadLessonData();
       loadCourseData(false);
       toast('Lesson skipped', 'success');
@@ -1271,7 +1276,7 @@ export default function LessonPage() {
       }
 
       const _res = await apiClient.markLessonComplete(lesson.id.toString(), 0);
-      handleCompleteResponse(_res);
+      maybeShowReadyPopup(lesson.id, _res);
       await loadLessonData();
       await loadCourseData(false);
 
