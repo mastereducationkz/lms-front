@@ -388,3 +388,23 @@ export async function getAutoGradeUnitHomeworkPreview(): Promise<{
     throw new Error('Failed to load auto-grade preview');
   }
 }
+
+export async function saveDraft(
+  assignmentId: string,
+  payload: { answers?: any; file_url?: string | null; submitted_file_name?: string | null }
+): Promise<any> {
+  const response = await api.put(`/assignments/${assignmentId}/draft`, payload);
+  return response.data;
+}
+
+export async function getDraft(assignmentId: string): Promise<any | null> {
+  const response = await api.get(`/assignments/${assignmentId}/draft`);
+  return response.data ?? null;
+}
+
+export async function getReadyToSubmit(): Promise<
+  Array<{ id: number; title: string; group_id: number | null; due_date: string | null }>
+> {
+  const response = await api.get('/assignments/ready-to-submit');
+  return response.data ?? [];
+}
