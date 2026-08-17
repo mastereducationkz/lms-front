@@ -34,6 +34,7 @@ interface MultiTaskSubmissionProps {
   isSubmitting?: boolean;
   studentId?: string;
   onAutosave?: (answers: Record<string, any>) => Promise<any>;
+  unitGate?: { ready: boolean; missing: Array<{ lesson_id: number; title: string }> };
 }
 
 // Course Unit Task Display Component
@@ -579,7 +580,7 @@ function AudioTaskSubmission({ task, audioUrl, readOnly, onRecorded }: AudioTask
   );
 }
 
-export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswers, readOnly = false, isSubmitting = false, studentId, onAutosave }: MultiTaskSubmissionProps) {
+export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswers, readOnly = false, isSubmitting = false, studentId, onAutosave, unitGate }: MultiTaskSubmissionProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   // Handle both formats: { tasks: {...} } or direct object {...}
   const [answers, setAnswers] = useState<Record<string, any>>(
@@ -1509,8 +1510,9 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
         
         const allRequiredCompleted = requiredTasks.length === 0 || completedRequiredCount === requiredTasks.length;
         const hasOnlyOptionalTasks = requiredTasks.length === 0 && optionalTasks.length > 0;
-        const canSubmit = allRequiredCompleted;
-        
+        const unitsBlocked = unitGate ? unitGate.ready === false : false;
+        const canSubmit = allRequiredCompleted && !unitsBlocked;
+
         return (
           <div className="flex flex-col items-end gap-2 pt-4">
             {!canSubmit && requiredTasks.length > 0 && (
@@ -1518,6 +1520,18 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                 Complete all required tasks to submit ({completedRequiredCount}/{requiredTasks.length} done)
                 {optionalTasks.length > 0 && ` • ${completedOptionalCount}/${optionalTasks.length} bonus tasks`}
               </p>
+            )}
+            {!canSubmit && (
+              <div className="text-sm text-muted-foreground space-y-1">
+                {requiredTasks.filter(t => !checkTaskCompletion(t)).length > 0 && (
+                  <div>
+                    Осталось заполнить: {requiredTasks.filter(t => !checkTaskCompletion(t)).map(t => t.title || `Задача ${t.id}`).join(', ')}
+                  </div>
+                )}
+                {unitsBlocked && (
+                  <div>Осталось пройти: {unitGate!.missing.map(m => m.title).join(', ')}</div>
+                )}
+              </div>
             )}
             {hasOnlyOptionalTasks && (
               <p className="text-sm text-gray-500 dark:text-gray-400">

@@ -475,6 +475,7 @@ export default function AssignmentPage() {
             readOnly={isReadOnlyPrevious}
             isSubmitting={submitting}
             onAutosave={async (answers) => { await apiClient.saveDraft(assignment.id.toString(), { answers }); }}
+            unitGate={(status as any)?.unit_gate}
           />
         </>
       );
