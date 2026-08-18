@@ -585,7 +585,9 @@ export default function StudentDashboard({
 
   return (
     <div className="space-y-8">
-      {readyToSubmit.length > 0 && (
+      {/* Temporarily hidden per product request (2026-08-18) — keep the data loading
+          and widget code intact, just don't render it, so this is a one-line revert. */}
+      {false && readyToSubmit.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
