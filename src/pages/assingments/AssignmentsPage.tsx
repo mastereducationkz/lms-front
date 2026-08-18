@@ -536,13 +536,13 @@ export default function AssignmentsPage() {
       case 'graded':
         return (
           <span className={`${baseClasses} bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800`}>
-            Проверено
+            Graded
           </span>
         );
       case 'submitted':
         return (
           <span className={`${baseClasses} bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800`}>
-            Сдано
+            Submitted
           </span>
         );
       case 'overdue':

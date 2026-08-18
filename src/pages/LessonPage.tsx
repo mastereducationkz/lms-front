@@ -2318,13 +2318,13 @@ export default function LessonPage() {
       <Dialog open={!!readyPopup} onOpenChange={(o) => !o && setReadyPopup(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Можно сдать ДЗ</DialogTitle>
+            <DialogTitle>Ready to submit</DialogTitle>
           </DialogHeader>
-          <div className="text-sm mb-4">«{readyPopup?.title}» готово к сдаче — вы прошли нужные юниты.</div>
+          <div className="text-sm mb-4">"{readyPopup?.title}" is ready to submit — you've completed the required units.</div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setReadyPopup(null)}>Позже</Button>
+            <Button variant="ghost" onClick={() => setReadyPopup(null)}>Later</Button>
             <Button onClick={() => { const id = readyPopup?.id; setReadyPopup(null); if (id) navigate(`/homework/${id}`); }}>
-              Перейти к ДЗ
+              Go to assignment
             </Button>
           </DialogFooter>
         </DialogContent>

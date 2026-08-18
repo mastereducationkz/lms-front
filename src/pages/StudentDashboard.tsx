@@ -572,7 +572,7 @@ export default function StudentDashboard({
         <Card className="border-green-300 bg-green-50 dark:bg-green-950/20">
           <CardContent className="p-4">
             <div className="font-medium text-green-800 dark:text-green-200 mb-2">
-              {readyToSubmit.length} ДЗ готовы к сдаче
+              {readyToSubmit.length} assignments ready to submit
             </div>
             <ul className="text-sm space-y-1">
               {readyToSubmit.map(a => (

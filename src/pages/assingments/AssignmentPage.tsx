@@ -177,7 +177,7 @@ export default function AssignmentPage() {
       await loadSubmission(id);
     } catch (err: any) {
       if (err?.response?.status === 409) {
-        toast(err.response.data?.detail || 'Сначала пройдите связанные юниты', 'error');
+        toast(err.response.data?.detail || 'Complete the linked units first', 'error');
       } else {
         console.error('Assignment submission error:', err);
         toast('Failed to submit assignment', 'error');
@@ -235,13 +235,13 @@ export default function AssignmentPage() {
         submitted_file_name: null
       });
       
-      toast('✅ Assignment submitted successfully!', 'success');
+      toast('Assignment submitted successfully!', 'success');
       
       // Reload submission to show updated status
       await loadSubmission(assignment.id.toString());
     } catch (err: any) {
       if (err?.response?.status === 409) {
-        toast(err.response.data?.detail || 'Сначала пройдите связанные юниты', 'error');
+        toast(err.response.data?.detail || 'Complete the linked units first', 'error');
       } else {
         console.error('Failed to submit assignment:', err);
         toast('Failed to submit assignment', 'error');
@@ -304,12 +304,12 @@ export default function AssignmentPage() {
                     </>
                   ) : (
                     <>
-                      <span className="text-foreground">Сдано</span>
+                      <span className="text-foreground">Submitted</span>
                     </>
                   )}
                 </CardTitle>
                 <CardDescription>
-                  Отправлено: {new Date(submission.submitted_at).toLocaleString()}
+                  Submitted: {new Date(submission.submitted_at).toLocaleString()}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -470,11 +470,11 @@ export default function AssignmentPage() {
     const readinessBanner = !submission && (status as any)?.unit_gate && (status as any).unit_gate.total > 0 && (
       (status as any).unit_gate.ready ? (
         <div className="mb-3 rounded-md border border-green-300 bg-green-50 dark:bg-green-950/30 px-3 py-2 text-sm text-green-800 dark:text-green-200">
-          Все юниты пройдены — можно сдавать ✅
+          All units completed — ready to submit
         </div>
       ) : (
         <div className="mb-3 rounded-md border border-slate-300 bg-slate-50 dark:bg-secondary px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
-          Чтобы сдать, пройдите юниты: {(status as any).unit_gate.missing.map((m: any) => m.title).join(', ')}
+          To submit, complete these units: {(status as any).unit_gate.missing.map((m: any) => m.title).join(', ')}
         </div>
       )
     );
@@ -485,7 +485,7 @@ export default function AssignmentPage() {
           {readinessBanner}
           {!submission && (status as any)?.draft?.answers && (
             <div className="mb-3 rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
-              Восстановлен черновик. Работа ещё <b>не отправлена</b>.
+              Draft restored. Work is <b>not submitted</b> yet.
             </div>
           )}
           <MultiTaskSubmission
@@ -756,7 +756,7 @@ export default function AssignmentPage() {
               )}
               {!submission && isOverdue && !extension && (
                 <span className="text-sm text-amber-700 dark:text-amber-300">
-                  Дедлайн прошёл — работа ещё не отправлена
+                  Deadline passed — not submitted yet
                 </span>
               )}
             </div>

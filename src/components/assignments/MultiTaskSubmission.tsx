@@ -145,6 +145,15 @@ function CourseUnitTaskDisplay({ task, isCompleted, onCompletion, readOnly, stud
   const totalCount = task.content.lesson_ids?.length || 0;
   const allLessonsCompleted = totalCount > 0 && completedCount === totalCount;
 
+  // Lesson completion is verified server-side (see unit_gate on the assignment
+  // status endpoint), so once every lesson is done this task marks itself
+  // complete automatically instead of asking the student to also self-attest.
+  useEffect(() => {
+    if (!readOnly && allLessonsCompleted && !isCompleted) {
+      onCompletion(true);
+    }
+  }, [readOnly, allLessonsCompleted, isCompleted, onCompletion]);
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -220,24 +229,16 @@ function CourseUnitTaskDisplay({ task, isCompleted, onCompletion, readOnly, stud
           </div>
         )}
         {!readOnly && allLessonsCompleted && (
-          <div className="mt-3 flex items-start gap-2 rounded-md border border-gray-200 dark:border-border bg-white dark:bg-card p-3">
-            <Checkbox
-              id={`course-unit-confirm-${task.id}`}
-              checked={isCompleted}
-              onCheckedChange={(checked) => onCompletion(checked === true)}
-              aria-label="Confirm unit homework completion"
-            />
-            <Label
-              htmlFor={`course-unit-confirm-${task.id}`}
-              className="text-sm leading-snug text-foreground cursor-pointer"
-            >
-              I confirm I completed these lessons for this homework assignment
-            </Label>
+          <div className="mt-3 flex items-center gap-2 rounded-md border border-gray-200 dark:border-border bg-white dark:bg-card p-3">
+            <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+            <span className="text-sm leading-snug text-foreground">
+              All lessons for this task are complete.
+            </span>
           </div>
         )}
         {!readOnly && !allLessonsCompleted && totalCount > 0 && (
           <p className="mt-2 text-xs text-muted-foreground">
-            Complete all lessons above, then confirm to mark this task done.
+            Complete all lessons above to mark this task done.
           </p>
         )}
       </div>
@@ -1525,11 +1526,11 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
               <div className="text-sm text-muted-foreground space-y-1">
                 {requiredTasks.filter(t => !checkTaskCompletion(t)).length > 0 && (
                   <div>
-                    Осталось заполнить: {requiredTasks.filter(t => !checkTaskCompletion(t)).map(t => t.title || `Задача ${t.id}`).join(', ')}
+                    Still needed: {requiredTasks.filter(t => !checkTaskCompletion(t)).map(t => t.title || `Task ${t.id}`).join(', ')}
                   </div>
                 )}
                 {unitsBlocked && (
-                  <div>Осталось пройти: {unitGate!.missing.map(m => m.title).join(', ')}</div>
+                  <div>Complete these units first: {unitGate!.missing.map(m => m.title).join(', ')}</div>
                 )}
               </div>
             )}
@@ -1546,7 +1547,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
             )}
             {onAutosave && !readOnly && (
               <div className="text-xs text-muted-foreground mb-1" aria-live="polite">
-                {autosaveState === 'saving' ? 'Сохраняем…' : savedAt ? `Черновик сохранён · ${savedAt}` : ''}
+                {autosaveState === 'saving' ? 'Saving…' : savedAt ? `Draft saved · ${savedAt}` : ''}
               </div>
             )}
             <Button
