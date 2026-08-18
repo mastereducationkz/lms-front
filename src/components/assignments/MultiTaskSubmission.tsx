@@ -33,6 +33,8 @@ interface MultiTaskSubmissionProps {
   readOnly?: boolean;
   isSubmitting?: boolean;
   studentId?: string;
+  onAutosave?: (answers: Record<string, any>) => Promise<any>;
+  unitGate?: { ready: boolean; missing: Array<{ lesson_id: number; title: string }> };
 }
 
 // Course Unit Task Display Component
@@ -578,7 +580,7 @@ function AudioTaskSubmission({ task, audioUrl, readOnly, onRecorded }: AudioTask
   );
 }
 
-export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswers, readOnly = false, isSubmitting = false, studentId }: MultiTaskSubmissionProps) {
+export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswers, readOnly = false, isSubmitting = false, studentId, onAutosave, unitGate }: MultiTaskSubmissionProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   // Handle both formats: { tasks: {...} } or direct object {...}
   const [answers, setAnswers] = useState<Record<string, any>>(
@@ -588,6 +590,27 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
   // Per-task parse errors for the Bluebook PDF, shown inline next to the file input.
   const [bluebookError, setBluebookError] = useState<Record<string, string>>({})
   const [dragOver, setDragOver] = useState<Record<string, boolean>>({})
+  const [autosaveState, setAutosaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [savedAt, setSavedAt] = useState<string>('');
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const didMountRef = useRef(false);
+
+  useEffect(() => {
+    if (readOnly || !onAutosave) return;
+    if (!didMountRef.current) { didMountRef.current = true; return; } // skip initial hydrate
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    autosaveTimer.current = setTimeout(async () => {
+      try {
+        setAutosaveState('saving');
+        await onAutosave(answers);
+        setAutosaveState('saved');
+        setSavedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      } catch {
+        setAutosaveState('idle'); // silent; will retry on next change
+      }
+    }, 1500);
+    return () => { if (autosaveTimer.current) clearTimeout(autosaveTimer.current); };
+  }, [answers, onAutosave, readOnly]);
 
   useEffect(() => {
     if (assignment.content && assignment.content.tasks) {
@@ -1487,8 +1510,9 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
         
         const allRequiredCompleted = requiredTasks.length === 0 || completedRequiredCount === requiredTasks.length;
         const hasOnlyOptionalTasks = requiredTasks.length === 0 && optionalTasks.length > 0;
-        const canSubmit = allRequiredCompleted;
-        
+        const unitsBlocked = unitGate ? unitGate.ready === false : false;
+        const canSubmit = allRequiredCompleted && !unitsBlocked;
+
         return (
           <div className="flex flex-col items-end gap-2 pt-4">
             {!canSubmit && requiredTasks.length > 0 && (
@@ -1496,6 +1520,18 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                 Complete all required tasks to submit ({completedRequiredCount}/{requiredTasks.length} done)
                 {optionalTasks.length > 0 && ` • ${completedOptionalCount}/${optionalTasks.length} bonus tasks`}
               </p>
+            )}
+            {!canSubmit && (
+              <div className="text-sm text-muted-foreground space-y-1">
+                {requiredTasks.filter(t => !checkTaskCompletion(t)).length > 0 && (
+                  <div>
+                    Осталось заполнить: {requiredTasks.filter(t => !checkTaskCompletion(t)).map(t => t.title || `Задача ${t.id}`).join(', ')}
+                  </div>
+                )}
+                {unitsBlocked && (
+                  <div>Осталось пройти: {unitGate!.missing.map(m => m.title).join(', ')}</div>
+                )}
+              </div>
             )}
             {hasOnlyOptionalTasks && (
               <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -1508,10 +1544,15 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                 {completedOptionalCount}/{optionalTasks.length} bonus tasks completed (optional)
               </p>
             )}
-            <Button 
-              onClick={handleSubmit} 
-              size="lg" 
-              className="w-full md:w-auto" 
+            {onAutosave && !readOnly && (
+              <div className="text-xs text-muted-foreground mb-1" aria-live="polite">
+                {autosaveState === 'saving' ? 'Сохраняем…' : savedAt ? `Черновик сохранён · ${savedAt}` : ''}
+              </div>
+            )}
+            <Button
+              onClick={handleSubmit}
+              size="lg"
+              className="w-full md:w-auto"
               disabled={isSubmitting || !canSubmit}
             >
               {isSubmitting ? 'Submitting...' : 'Submit Assignment'}

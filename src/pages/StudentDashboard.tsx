@@ -128,6 +128,7 @@ export default function StudentDashboard({
     }
   };
   const [submissions, setSubmissions] = useState<AssignmentSubmission[]>([]);
+  const [readyToSubmit, setReadyToSubmit] = useState<Array<{ id: number; title: string }>>([]);
   const [isLoadingTodo, setIsLoadingTodo] = useState(true);
   const [showCompleted, setShowCompleted] = useState(false);
   /** Result of GET /users/groups/me; null until first fetch completes */
@@ -357,6 +358,8 @@ export default function StudentDashboard({
       setEvents(eventsData || []);
       setWebinars(webinarsData || []);
       setSubmissions(submissionsData || []);
+
+      apiClient.getReadyToSubmit().then(setReadyToSubmit).catch(() => setReadyToSubmit([]));
     } catch (error) {
       console.error('Failed to load todo data:', error);
     } finally {
@@ -565,6 +568,28 @@ export default function StudentDashboard({
 
   return (
     <div className="space-y-8">
+      {readyToSubmit.length > 0 && (
+        <Card className="border-green-300 bg-green-50 dark:bg-green-950/20">
+          <CardContent className="p-4">
+            <div className="font-medium text-green-800 dark:text-green-200 mb-2">
+              {readyToSubmit.length} ДЗ готовы к сдаче
+            </div>
+            <ul className="text-sm space-y-1">
+              {readyToSubmit.map(a => (
+                <li key={a.id}>
+                  <button
+                    type="button"
+                    className="text-green-700 dark:text-green-300 underline"
+                    onClick={() => navigate(`/homework/${a.id}`)}
+                  >
+                    {a.title}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
       {!webinarAnnouncementDismissed && uniqueWebinars.length > 0 && (
         <Card className="border-primary/30 bg-primary/5">
           <CardHeader className="pb-3">

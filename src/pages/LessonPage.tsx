@@ -3,6 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { Skeleton } from '../components/ui/skeleton';
 import { ChevronLeft, ChevronRight, Play, FileText, HelpCircle, ChevronDown, ChevronUp, Lock, Trophy, PanelLeftOpen, PanelLeftClose, SkipForward, Languages, Star, Layers, Check, Cloud, CloudOff, Loader2, Pencil, Printer } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
@@ -14,7 +15,6 @@ import FlashcardViewer from '../components/lesson/FlashcardViewer';
 import QuizRenderer from '../components/lesson/QuizRenderer';
 import SummaryStepRenderer from '../components/lesson/SummaryStepRenderer';
 import TextLookupPopover from '../components/lesson/TextLookupPopover';
-import MaintenanceBanner from '../components/MaintenanceBanner';
 import { toast } from '../components/Toast';
 import { gradeQuestion, getAnswerKey } from '../components/lesson/quiz/scoring';
 import { isQuizScorePassing, resolveQuizPassingScorePercent } from '../utils/quizPassingScore';
@@ -389,6 +389,9 @@ export default function LessonPage() {
     return saved ? JSON.parse(saved) : false;
   });
 
+  // "Can submit HW" popup shown when completing the lesson unlocks a ready-to-submit assignment
+  const [readyPopup, setReadyPopup] = useState<{ id: number; title: string } | null>(null);
+
   // Refs for race-safe operations
   const textContentRef = useRef<HTMLDivElement>(null);
   const activeStepIdRef = useRef<number | null>(null);
@@ -396,7 +399,19 @@ export default function LessonPage() {
   const pendingDraftCreateRef = useRef<boolean>(false);
   const cachedHashRef = useRef<{ stepId: number; hash: string } | null>(null);
   const videoMarkedRef = useRef<Set<number>>(new Set());
+  // Dedup set: ensures the "ready to submit" popup / markLessonComplete POST fires at most
+  // once per lesson id per session, even though this component instance persists across
+  // in-app lesson navigation (loadLessonData overwrites `lesson` in place, so is_completed
+  // can flip true -> false -> true as the student browses away and back).
+  const checkedLessonsRef = useRef<Set<string>>(new Set());
   const isSpecialGroupStudent = user?.role === 'student' && user?.special_group_only_student === true;
+
+  const maybeShowReadyPopup = useCallback((lessonId: string, res: any) => {
+    if (checkedLessonsRef.current.has(lessonId)) return;
+    checkedLessonsRef.current.add(lessonId);
+    const list = res?.newly_ready_assignments;
+    if (Array.isArray(list) && list.length > 0) setReadyPopup(list[0]);
+  }, []);
 
   const devLog = useCallback((...args: unknown[]) => {
     if (import.meta.env.DEV) console.log(...args);
@@ -415,6 +430,17 @@ export default function LessonPage() {
   useEffect(() => {
     localStorage.setItem('lessonSidebarCollapsed', JSON.stringify(isSidebarCollapsed));
   }, [isSidebarCollapsed]);
+
+  // Detect the lesson flipping to completed (e.g. via step-driven completion on the backend,
+  // which does not go through the markLessonComplete calls in this file) and fetch
+  // newly_ready_assignments once, idempotently, so the "ready to submit" popup can appear.
+  useEffect(() => {
+    if (!lesson) return;
+    const nowCompleted = Boolean(lesson.is_completed);
+    if (nowCompleted && !checkedLessonsRef.current.has(lesson.id)) {
+      apiClient.markLessonComplete(String(lesson.id), 0).then(res => maybeShowReadyPopup(lesson.id, res)).catch(() => {});
+    }
+  }, [lesson?.id, lesson?.is_completed, maybeShowReadyPopup]);
 
   // Track the furthest step the student has reached
   useEffect(() => {
@@ -1220,7 +1246,8 @@ export default function LessonPage() {
     if (!confirm('Are you sure you want to skip this lesson? It will be marked as completed.')) return;
 
     try {
-      await apiClient.markLessonComplete(lesson.id.toString(), 0);
+      const _res = await apiClient.markLessonComplete(lesson.id.toString(), 0);
+      maybeShowReadyPopup(lesson.id, _res);
       loadLessonData();
       loadCourseData(false);
       toast('Lesson skipped', 'success');
@@ -1248,7 +1275,8 @@ export default function LessonPage() {
         }
       }
 
-      await apiClient.markLessonComplete(lesson.id.toString(), 0);
+      const _res = await apiClient.markLessonComplete(lesson.id.toString(), 0);
+      maybeShowReadyPopup(lesson.id, _res);
       await loadLessonData();
       await loadCourseData(false);
 
@@ -2286,6 +2314,21 @@ export default function LessonPage() {
           </div>
         </div>
       )}
+
+      <Dialog open={!!readyPopup} onOpenChange={(o) => !o && setReadyPopup(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Можно сдать ДЗ</DialogTitle>
+          </DialogHeader>
+          <div className="text-sm mb-4">«{readyPopup?.title}» готово к сдаче — вы прошли нужные юниты.</div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setReadyPopup(null)}>Позже</Button>
+            <Button onClick={() => { const id = readyPopup?.id; setReadyPopup(null); if (id) navigate(`/homework/${id}`); }}>
+              Перейти к ДЗ
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

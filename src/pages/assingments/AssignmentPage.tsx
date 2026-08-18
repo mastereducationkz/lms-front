@@ -175,9 +175,13 @@ export default function AssignmentPage() {
       
       // Reload submission to show updated status
       await loadSubmission(id);
-    } catch (err) {
-      console.error('Assignment submission error:', err);
-      toast('Failed to submit assignment', 'error');
+    } catch (err: any) {
+      if (err?.response?.status === 409) {
+        toast(err.response.data?.detail || 'Сначала пройдите связанные юниты', 'error');
+      } else {
+        console.error('Assignment submission error:', err);
+        toast('Failed to submit assignment', 'error');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -235,10 +239,14 @@ export default function AssignmentPage() {
       
       // Reload submission to show updated status
       await loadSubmission(assignment.id.toString());
-    } catch (err) {
-      console.error('Failed to submit assignment:', err);
-      toast('Failed to submit assignment', 'error');
-      setError('Failed to submit assignment. Please try again.');
+    } catch (err: any) {
+      if (err?.response?.status === 409) {
+        toast(err.response.data?.detail || 'Сначала пройдите связанные юниты', 'error');
+      } else {
+        console.error('Failed to submit assignment:', err);
+        toast('Failed to submit assignment', 'error');
+        setError('Failed to submit assignment. Please try again.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -296,12 +304,12 @@ export default function AssignmentPage() {
                     </>
                   ) : (
                     <>
-                      <span className="text-foreground">Submitted - Awaiting Grade</span>
+                      <span className="text-foreground">Сдано</span>
                     </>
                   )}
                 </CardTitle>
                 <CardDescription>
-                  Submitted on {new Date(submission.submitted_at).toLocaleString()}
+                  Отправлено: {new Date(submission.submitted_at).toLocaleString()}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -459,23 +467,46 @@ export default function AssignmentPage() {
     }
 
     // Not submitted yet - show submission form
+    const readinessBanner = !submission && (status as any)?.unit_gate && (status as any).unit_gate.total > 0 && (
+      (status as any).unit_gate.ready ? (
+        <div className="mb-3 rounded-md border border-green-300 bg-green-50 dark:bg-green-950/30 px-3 py-2 text-sm text-green-800 dark:text-green-200">
+          Все юниты пройдены — можно сдавать ✅
+        </div>
+      ) : (
+        <div className="mb-3 rounded-md border border-slate-300 bg-slate-50 dark:bg-secondary px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+          Чтобы сдать, пройдите юниты: {(status as any).unit_gate.missing.map((m: any) => m.title).join(', ')}
+        </div>
+      )
+    );
     // Handle Multi-Task Assignments
     if (assignment.assignment_type === 'multi_task') {
       return (
-        <MultiTaskSubmission
-          assignment={assignment}
-          onSubmit={handleMultiTaskSubmit}
-          initialAnswers={submission?.answers}
-          readOnly={isReadOnlyPrevious}
-          isSubmitting={submitting}
-        />
+        <>
+          {readinessBanner}
+          {!submission && (status as any)?.draft?.answers && (
+            <div className="mb-3 rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
+              Восстановлен черновик. Работа ещё <b>не отправлена</b>.
+            </div>
+          )}
+          <MultiTaskSubmission
+            assignment={assignment}
+            onSubmit={handleMultiTaskSubmit}
+            initialAnswers={submission?.answers ?? ((status as any)?.draft?.answers ? { tasks: (status as any).draft.answers } : undefined)}
+            readOnly={isReadOnlyPrevious}
+            isSubmitting={submitting}
+            onAutosave={async (answers) => { await apiClient.saveDraft(assignment.id.toString(), { answers }); }}
+            unitGate={(status as any)?.unit_gate}
+          />
+        </>
       );
     }
 
     // Handle Audio Recording Assignments
     if (assignment.assignment_type === 'audio') {
       return (
-        <Card>
+        <>
+          {readinessBanner}
+          <Card>
           <CardHeader>
             <CardTitle>Instructions</CardTitle>
             <CardDescription>
@@ -492,7 +523,8 @@ export default function AssignmentPage() {
               Record Audio
             </Button>
           </CardContent>
-        </Card>
+          </Card>
+        </>
       );
     }
 
@@ -500,6 +532,7 @@ export default function AssignmentPage() {
     if (assignment.assignment_type === 'file_upload') {
       return (
         <div className="space-y-6">
+          {readinessBanner}
           <div className="prose dark:prose-invert max-w-none">
             <h3 className="text-lg font-medium mb-2">Instructions</h3>
             <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
@@ -631,7 +664,9 @@ export default function AssignmentPage() {
 
     // Default for free_text, essay, etc.
     return (
-      <Card>
+      <>
+        {readinessBanner}
+        <Card>
         <CardHeader>
           <CardTitle>Submit Your Work</CardTitle>
           <CardDescription>
@@ -655,7 +690,8 @@ export default function AssignmentPage() {
             </Button>
           </div>
         </CardContent>
-      </Card>
+        </Card>
+      </>
     );
   };
 
@@ -718,10 +754,10 @@ export default function AssignmentPage() {
                 )
                
               )}
-              {status?.late && (
-                <Badge variant="destructive" className="text-sm">
-                  Late Submission
-                </Badge>
+              {!submission && isOverdue && !extension && (
+                <span className="text-sm text-amber-700 dark:text-amber-300">
+                  Дедлайн прошёл — работа ещё не отправлена
+                </span>
               )}
             </div>
           </div>
