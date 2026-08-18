@@ -131,6 +131,11 @@ interface SalaryBreakdownResult {
   rate_source?: 'crm' | 'override' | 'default'
   level?: string | null
   group_band?: string | null
+  reference_rates?: {
+    webinar_hourly: number
+    office_hours_hourly: number
+    trial_hourly: number
+  }
   total_lessons: number
   total_amount_tenge: number
   groups: SalaryBreakdownGroup[]
@@ -1932,6 +1937,28 @@ export default function TeacherDashboard() {
               <div className="text-sm text-gray-600 dark:text-gray-300">
                 Уроков: <span className="font-semibold">{salaryResult.total_lessons}</span> · Итого:{' '}
                 <span className="font-semibold">{salaryResult.total_amount_tenge.toLocaleString()} тг</span>
+              </div>
+              <div className="rounded-md border border-gray-200 dark:border-border bg-muted/40 p-3 text-sm space-y-1">
+                <div>
+                  Индивидуальный урок — {salaryResult.individual_rate} ₸/час
+                  {salaryResult.group_band ? ` (${salaryResult.group_band})` : ''}
+                </div>
+                <div>
+                  Групповой урок — {salaryResult.lesson_rate} ₸/час
+                  {salaryResult.group_band ? ` (${salaryResult.group_band})` : ''}
+                </div>
+                {salaryResult.reference_rates && (
+                  <>
+                    <div>
+                      Вебинар — {salaryResult.reference_rates.webinar_hourly} ₸/час · Office Hours —{' '}
+                      {salaryResult.reference_rates.office_hours_hourly} ₸/час · Пробный урок —{' '}
+                      {salaryResult.reference_rates.trial_hourly} ₸/час
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Вебинары, Office Hours и пробные уроки добавляются менеджером вручную.
+                    </p>
+                  </>
+                )}
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" onClick={handleOpenTelegramWithText}>
