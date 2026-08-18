@@ -128,7 +128,7 @@ export default function StudentDashboard({
     }
   };
   const [submissions, setSubmissions] = useState<AssignmentSubmission[]>([]);
-  const [readyToSubmit, setReadyToSubmit] = useState<Array<{ id: number; title: string }>>([]);
+  const [readyToSubmit, setReadyToSubmit] = useState<Array<{ id: number; title: string; due_date: string | null }>>([]);
   const [isLoadingTodo, setIsLoadingTodo] = useState(true);
   const [showCompleted, setShowCompleted] = useState(false);
   /** Result of GET /users/groups/me; null until first fetch completes */
@@ -433,10 +433,27 @@ export default function StudentDashboard({
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
       day: 'numeric'
     });
+  };
+
+  // Deadline urgency for an assignment that's ready to submit (never overdue-graded —
+  // these are always unsubmitted by definition), mirrors getAssignmentStatus's colors.
+  const getDueUrgency = (dueDate: string | null) => {
+    if (!dueDate) {
+      return { icon: FileText, label: 'No due date', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' };
+    }
+    const now = new Date();
+    const due = new Date(dueDate);
+    if (due < now) {
+      return { icon: AlertCircle, label: `Overdue since ${formatDate(dueDate)}`, color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' };
+    }
+    if (due.getTime() - now.getTime() < 24 * 60 * 60 * 1000) {
+      return { icon: Clock, label: `Due ${formatDateTime(dueDate)}`, color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' };
+    }
+    return { icon: Calendar, label: `Due ${formatDate(dueDate)}`, color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' };
   };
 
   // Get current and relevant assignments (due soon, overdue, or recent)
@@ -569,24 +586,36 @@ export default function StudentDashboard({
   return (
     <div className="space-y-8">
       {readyToSubmit.length > 0 && (
-        <Card className="border-green-300 bg-green-50 dark:bg-green-950/20">
-          <CardContent className="p-4">
-            <div className="font-medium text-green-800 dark:text-green-200 mb-2">
-              {readyToSubmit.length} assignments ready to submit
-            </div>
-            <ul className="text-sm space-y-1">
-              {readyToSubmit.map(a => (
-                <li key={a.id}>
-                  <button
-                    type="button"
-                    className="text-green-700 dark:text-green-300 underline"
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+              Ready to Submit
+              <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                {readyToSubmit.length}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {readyToSubmit.map(a => {
+                const due = getDueUrgency(a.due_date);
+                return (
+                  <div
+                    key={a.id}
+                    className="flex items-center gap-3 p-2 border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-secondary cursor-pointer transition-colors"
                     onClick={() => navigate(`/homework/${a.id}`)}
                   >
-                    {a.title}
-                  </button>
-                </li>
-              ))}
-            </ul>
+                    <due.icon className="h-4 w-4 text-gray-500" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm truncate">{a.title}</div>
+                      <div className="text-xs text-gray-500">{due.label}</div>
+                    </div>
+                    <Badge className={`text-xs ${due.color}`}>Ready</Badge>
+                  </div>
+                );
+              })}
+            </div>
           </CardContent>
         </Card>
       )}
