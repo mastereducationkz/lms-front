@@ -132,14 +132,12 @@ function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId }: Cour
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task.content.course_id, JSON.stringify(task.content.lesson_ids)]);
 
-  if (loading) {
-    return (
-      <div className="space-y-3">
-        <div className="text-sm text-gray-600 dark:text-gray-400">Loading course information...</div>
-      </div>
-    );
-  }
-
+  // These (and the effect below) MUST run before the `if (loading) return` below —
+  // React requires the same hooks to run on every render, and an early return before
+  // a hook call makes that hook run on some renders but not others, which crashes with
+  // "Rendered more/fewer hooks than during the previous render" the moment `loading`
+  // flips. While loading, `lessonProgress` is still `{}`, so `allLessonsCompleted`
+  // correctly evaluates to false — no risk of firing onCompletion prematurely.
   const completedCount = Object.values(lessonProgress).filter(c => c).length;
   const totalCount = task.content.lesson_ids?.length || 0;
   const allLessonsCompleted = totalCount > 0 && completedCount === totalCount;
@@ -154,11 +152,19 @@ function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId }: Cour
   // see completion flip back to false and call onCompletion again indefinitely.
   const autoCompletedRef = useRef(false);
   useEffect(() => {
-    if (!readOnly && allLessonsCompleted && !autoCompletedRef.current) {
+    if (!readOnly && !loading && allLessonsCompleted && !autoCompletedRef.current) {
       autoCompletedRef.current = true;
       onCompletion(true);
     }
-  }, [readOnly, allLessonsCompleted, onCompletion]);
+  }, [readOnly, loading, allLessonsCompleted, onCompletion]);
+
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        <div className="text-sm text-gray-600 dark:text-gray-400">Loading course information...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3">
