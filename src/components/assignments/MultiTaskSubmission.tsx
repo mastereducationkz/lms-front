@@ -40,13 +40,12 @@ interface MultiTaskSubmissionProps {
 // Course Unit Task Display Component
 interface CourseUnitTaskDisplayProps {
   task: Task;
-  isCompleted: boolean;
   onCompletion: (completed: boolean) => void;
   readOnly: boolean;
   studentId?: string;
 }
 
-function CourseUnitTaskDisplay({ task, isCompleted, onCompletion, readOnly, studentId }: CourseUnitTaskDisplayProps) {
+function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId }: CourseUnitTaskDisplayProps) {
   const [courseData, setCourseData] = useState<any>(null);
   const [lessonsData, setLessonsData] = useState<any[]>([]);
   const [lessonProgress, setLessonProgress] = useState<Record<number, boolean>>({});
@@ -148,11 +147,18 @@ function CourseUnitTaskDisplay({ task, isCompleted, onCompletion, readOnly, stud
   // Lesson completion is verified server-side (see unit_gate on the assignment
   // status endpoint), so once every lesson is done this task marks itself
   // complete automatically instead of asking the student to also self-attest.
+  // Guarded with a ref (fires at most once per mount) rather than `!isCompleted`
+  // in the dependency array: `onCompletion` is a fresh closure every parent
+  // render, and if anything upstream ever resets `answers` (e.g. a prop-identity
+  // change re-syncing from initialAnswers), a `!isCompleted`-only guard would
+  // see completion flip back to false and call onCompletion again indefinitely.
+  const autoCompletedRef = useRef(false);
   useEffect(() => {
-    if (!readOnly && allLessonsCompleted && !isCompleted) {
+    if (!readOnly && allLessonsCompleted && !autoCompletedRef.current) {
+      autoCompletedRef.current = true;
       onCompletion(true);
     }
-  }, [readOnly, allLessonsCompleted, isCompleted, onCompletion]);
+  }, [readOnly, allLessonsCompleted, onCompletion]);
 
   return (
     <div className="space-y-3">
@@ -854,8 +860,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
       case 'course_unit':
         return (
           <CourseUnitTaskDisplay
-            task={task} 
-            isCompleted={!!answers[task.id]} 
+            task={task}
             onCompletion={(completed) => handleTaskCompletion(task.id, { completed })}
             readOnly={readOnly}
             studentId={studentId}

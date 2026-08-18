@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.tsx';
 import apiClient from '../../services/api';
@@ -50,6 +50,16 @@ export default function AssignmentPage() {
   const [error, setError] = useState<string>('');
   const [isCompressing, setIsCompressing] = useState<boolean>(false);
   const [fieldAnswers, setFieldAnswers] = useState<Record<string, string>>({});
+
+  // Stable reference: MultiTaskSubmission resets its local answers state whenever this
+  // object's IDENTITY changes, so a fresh `{ tasks: ... }` literal on every render here
+  // would wipe in-progress edits (and any auto-completing task) on every unrelated
+  // re-render of this page. Only produce a new object when the underlying data changes.
+  const draftAnswers = (status as any)?.draft?.answers;
+  const multiTaskInitialAnswers = useMemo(
+    () => (submission?.answers ?? (draftAnswers ? { tasks: draftAnswers } : undefined)),
+    [submission?.answers, draftAnswers]
+  );
 
 
   const loadAssignment = async (assignmentId: string) => {
@@ -491,7 +501,7 @@ export default function AssignmentPage() {
           <MultiTaskSubmission
             assignment={assignment}
             onSubmit={handleMultiTaskSubmit}
-            initialAnswers={submission?.answers ?? ((status as any)?.draft?.answers ? { tasks: (status as any).draft.answers } : undefined)}
+            initialAnswers={multiTaskInitialAnswers}
             readOnly={isReadOnlyPrevious}
             isSubmitting={submitting}
             onAutosave={async (answers) => { await apiClient.saveDraft(assignment.id.toString(), { answers }); }}
