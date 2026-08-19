@@ -5,6 +5,9 @@ import 'katex/dist/katex.min.css';
 import Router from "./routes/Router";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { registerPwa } from "./services/pwa";
+import { installDomErrorGuard } from "./utils/domErrorGuard";
+
+installDomErrorGuard();
 
 // Suppress NextStep.js navigation warning for React SPA
 // This runs before React mounts to catch the warning early
