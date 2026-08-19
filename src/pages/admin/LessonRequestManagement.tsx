@@ -15,6 +15,7 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
+import TeacherRescheduleStatsPanel from './TeacherRescheduleStatsPanel';
 
 type Props = {
   variant?: 'admin' | 'head_teacher';
@@ -252,8 +253,39 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
 
   const inconsistentCount = visible.filter(inconsistent).length;
 
+  const activeTab = searchParams.get('tab') === 'stats' ? 'stats' : 'requests';
+
   return (
     <div className="space-y-6">
+      <div className="flex rounded-md shadow-sm w-fit">
+        {([
+          ['requests', 'Запросы'],
+          ['stats', 'Статистика по учителям'],
+        ] as [string, string][]).map(([value, label], idx, arr) => {
+          const isActive = activeTab === value;
+          return (
+            <button
+              key={value}
+              onClick={() => setParam('tab', value)}
+              className={`px-4 py-2 text-sm font-medium border transition-colors
+                ${idx === 0 ? 'rounded-l-md' : ''}
+                ${idx === arr.length - 1 ? 'rounded-r-md' : ''}
+                ${idx !== 0 ? '-ml-px' : ''}
+                ${isActive
+                  ? 'bg-primary text-primary-foreground border-primary z-10'
+                  : 'bg-background text-foreground border-input hover:bg-accent hover:text-accent-foreground'
+                }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      {activeTab === 'stats' ? (
+        <TeacherRescheduleStatsPanel />
+      ) : (
+      <>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Заявки по урокам</h1>
@@ -571,6 +603,8 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
           </Table>
         </CardContent>
       </Card>
+      </>
+      )}
     </div>
   );
 }
