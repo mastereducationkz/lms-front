@@ -102,7 +102,7 @@ function getNavigationItems(
     ['/admin/question-reports', 'Question Reports', AlertTriangle, 0, ['admin'], 'question-reports-nav', 'admin'],
     ['/curator/homeworks', 'Homework', FileText, 0, ['head_teacher'], 'head-homework-nav', 'primary'],
     ['/curator/leaderboard', 'Leaderboard', Trophy, 0, ['head_teacher'], 'head-leaderboard-nav', 'primary'],
-    ['/head-teacher/lesson-requests', 'Lesson Requests', ArrowLeftRight, lessonRequestCount, ['head_teacher'], 'head-lesson-requests-nav', 'primary'],
+    ['/head-teacher/lesson-requests', ['head_curator', 'curator'].includes(_userRole || '') ? 'Заявки по урокам' : 'Lesson Requests', ArrowLeftRight, lessonRequestCount, ['head_teacher', 'head_curator'], 'head-lesson-requests-nav', 'primary'],
     ['/admin/lesson-requests', 'Lesson Requests', ArrowLeftRight, lessonRequestCount, ['admin'], 'lesson-requests-nav', 'admin'],
     ['/my-requests', 'My Requests', ArrowLeftRight, lessonRequestCount, ['teacher'], 'my-requests-nav', 'primary'],
     ['/manual-unlocks', 'Manual Unlocks', Unlock, 0, ['teacher', 'head_teacher'], 'manual-unlocks-nav', 'primary'],
