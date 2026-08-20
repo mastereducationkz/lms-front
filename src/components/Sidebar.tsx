@@ -193,7 +193,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
         .catch((error) => console.warn('Failed to load lesson request count:', error));
     },
     60000,
-    !!user && ['teacher', 'head_teacher', 'admin'].includes(user.role),
+    !!user && ['teacher', 'head_teacher', 'head_curator', 'admin'].includes(user.role),
   );
 
   useEffect(() => {
