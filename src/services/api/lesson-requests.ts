@@ -120,3 +120,26 @@ export async function updateSubstitutionPreference(enabled: boolean): Promise<{ 
     throw error;
   }
 }
+
+export type TeacherRequestStats = {
+  teacher_id: number;
+  teacher_name: string;
+  total: number;
+  by_type: { substitution: number; reschedule: number; cancel: number };
+};
+
+export async function getTeacherRequestStats(
+  year: number,
+  month: number,
+  minCount: number = 2,
+): Promise<TeacherRequestStats[]> {
+  try {
+    const response = await api.get('/lesson-requests/teacher-stats', {
+      params: { year, month, min_count: minCount },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Failed to get teacher request stats:', error);
+    throw error;
+  }
+}

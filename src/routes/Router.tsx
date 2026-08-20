@@ -600,7 +600,7 @@ export default function Router() {
           } />
 
           <Route path="/head-teacher/lesson-requests" element={
-            <ProtectedRoute allowedRoles={['head_teacher']}>
+            <ProtectedRoute allowedRoles={['head_teacher', 'head_curator']}>
               <AppLayout>
                 <HeadTeacherLessonRequestsPage />
               </AppLayout>
