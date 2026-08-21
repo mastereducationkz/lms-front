@@ -1129,8 +1129,8 @@ export interface Event {
   lesson_id?: number;
   teacher_id?: number;
   teacher_name?: string;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Alias for backward compatibility or convenience

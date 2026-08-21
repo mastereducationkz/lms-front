@@ -70,8 +70,10 @@ export function findLatexFormulas(text: string): LatexMatch[] {
       continue;
     }
     
-    // Skip if content starts with a number followed by space (currency like "$24 coming to me")
-    if (/^\d+\s/.test(content)) {
+    // Skip if content starts with a number followed by space (currency like "$24 coming to me"),
+    // but NOT when it contains actual math — e.g. "12 + 11\sqrt{2}" or "2 + 19" are real formulas,
+    // not currency. Only bail out when there's no LaTeX command, operator or math syntax.
+    if (/^\d+\s/.test(content) && !/[\\+\-=^_{}<>]|\b(sqrt|frac|times|cdot|div|sum|int|pi)\b/.test(content)) {
       continue;
     }
     

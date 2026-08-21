@@ -290,15 +290,21 @@ export function eventStyle(e: Event): TypeStyle {
 
 /**
  * Display label for a class: just the group, without the noise. Group names /
- * titles here follow "Teacher - Group[: Lesson N]" (e.g. "Шадеева - IELTS June 8
- * 2026: Lesson 34"), so we drop the short teacher prefix and the lesson suffix,
- * leaving "IELTS June 8 2026". Non-class events keep their own title.
+ * titles here follow "Group - Teacher[: Lesson N]" (e.g. "IELTS June 8 2026 -
+ * Шадеева: Lesson 34"), so we drop the short trailing teacher name and the lesson
+ * suffix, leaving "IELTS June 8 2026". Non-class events keep their own title.
  */
 export function eventTitle(e: Event): string {
   if (e.event_type !== 'class') return e.title;
-  let name = e.groups && e.groups.length ? e.groups.join(', ') : e.title;
-  const dash = name.indexOf(' - ');
-  if (dash !== -1 && dash <= 24) name = name.slice(dash + 3); // strip "Teacher - "
-  name = name.replace(/:\s*Lesson\s+\d+.*$/i, '').trim();     // strip ": Lesson N"
-  return name || e.title;
+  const segments = e.groups && e.groups.length ? e.groups : [e.title];
+  const cleaned = segments
+    .map((seg) => {
+      let name = seg.replace(/:\s*Lesson\s+\d+.*$/i, '').trim(); // strip ": Lesson N"
+      const dash = name.lastIndexOf(' - ');
+      // Teacher names are short; strip a trailing " - Teacher" suffix only.
+      if (dash !== -1 && name.length - dash - 3 <= 24) name = name.slice(0, dash).trim();
+      return name;
+    })
+    .filter(Boolean);
+  return cleaned.join(', ') || e.title;
 }

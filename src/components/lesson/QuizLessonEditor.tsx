@@ -1355,7 +1355,7 @@ export default function QuizLessonEditor({
                               <span className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">
                                 {String.fromCharCode(65 + optIdx)}
                               </span>
-                              <span className="flex-1">{opt.text || <span className="text-gray-400 italic">Empty option</span>}</span>
+                              <span className="flex-1">{opt.text ? <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex(opt.text) }} /> : <span className="text-gray-400 italic">Empty option</span>}</span>
                               {q.correct_answer === optIdx && (
                                 <CheckCircle className="w-4 h-4 text-green-600" />
                               )}
@@ -1389,7 +1389,7 @@ export default function QuizLessonEditor({
                                 <span className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">
                                   {String.fromCharCode(65 + optIdx)}
                                 </span>
-                                <span className="flex-1">{opt.text || <span className="text-gray-400 italic">Empty option</span>}</span>
+                                <span className="flex-1">{opt.text ? <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex(opt.text) }} /> : <span className="text-gray-400 italic">Empty option</span>}</span>
                                 {isCorrect && (
                                   <CheckCircle className="w-4 h-4 text-green-600" />
                                 )}

@@ -1391,6 +1391,21 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
   // Helper to check if a specific task is truly completed based on its requirements
   const checkTaskCompletion = (task: Task) => {
     const taskAnswer = answers[task.id];
+
+    // course_unit is server-authoritative: it's complete when none of its linked
+    // lessons are missing per the unit gate. Do NOT rely solely on the client-only
+    // `completed` flag — that flag is set by a one-shot auto-complete effect and can
+    // be wiped by an `initialAnswers` re-sync (which races the lesson fetch), leaving
+    // submit permanently blocked even though every lesson is objectively done.
+    if (task.task_type === 'course_unit') {
+      const lessonIds: number[] = task.content?.lesson_ids || [];
+      if (lessonIds.length > 0 && unitGate && Array.isArray(unitGate.missing)) {
+        const missingIds = new Set(unitGate.missing.map((m) => m.lesson_id));
+        if (lessonIds.every((lid) => !missingIds.has(lid))) return true;
+      }
+      return !!taskAnswer?.completed;
+    }
+
     if (!taskAnswer) return false;
 
     switch (task.task_type) {
@@ -1412,10 +1427,8 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
       case 'link_task':
         // Must be marked as completed
         return !!taskAnswer.completed;
-        
-      case 'course_unit':
-        // Must be marked as completed
-        return !!taskAnswer.completed;
+
+      // course_unit is handled above (server-authoritative unit gate).
 
       case 'audio_task':
         // Must have an uploaded recording
