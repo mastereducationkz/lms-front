@@ -39,6 +39,8 @@ interface LessonMeta {
     title: string;
     topic?: string | null;
     start_datetime: string;
+    is_substitution?: boolean;               // lesson was covered by a substitute teacher
+    substitute_teacher_name?: string | null; // that substitute's name (null when regular teacher)
     homework?: HomeworkMeta;        // legacy: first homework of the lesson
     homeworks?: HomeworkMeta[];     // all homeworks of the lesson
 }
@@ -1436,6 +1438,13 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     <span className="text-[10px] font-normal text-gray-500 dark:text-gray-400 leading-tight uppercase">{formatDateParts(lesson.start_datetime).dayTime}</span>
                                     {/* Слоты рендерятся всегда (invisible, когда пусто), чтобы шапки всех уроков были одной высоты */}
                                     <span className={cn("text-[9px] font-normal text-blue-600 dark:text-blue-400 truncate max-w-[150px] leading-tight", !lesson.topic && "invisible")} title={lesson.topic ?? undefined}>{lesson.topic || '·'}</span>
+                                    {/* Замена: показываем имя подменяющего учителя под датой (тот же приём с invisible-слотом) */}
+                                    <span
+                                        className={cn("text-[9px] font-medium text-amber-600 dark:text-amber-400 truncate max-w-[150px] leading-tight", !lesson.substitute_teacher_name && "invisible")}
+                                        title={lesson.substitute_teacher_name ? `${t('Замена', 'Substitute')}: ${lesson.substitute_teacher_name}` : undefined}
+                                    >
+                                        {lesson.substitute_teacher_name ? `${t('Замена', 'Substitute')}: ${lesson.substitute_teacher_name}` : '·'}
+                                    </span>
                                     {canMarkAttendance && (
                                         <span className={cn("mt-0.5 text-[9px] font-bold uppercase tracking-tight text-blue-600 dark:text-blue-400 leading-tight", lessonIsFuture && "invisible")}>
                                             {t('Отметить всех', 'Mark all')}
