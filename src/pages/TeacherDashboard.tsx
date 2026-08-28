@@ -163,6 +163,7 @@ export default function TeacherDashboard() {
   const [error, setError] = useState<string>('');
   const [activeTab, setActiveTab] = useState('pending');
   const [activeGroup, setActiveGroup] = useState('all');
+  const [studentSearch, setStudentSearch] = useState('');
   
   // Quiz grading modal state
   const [selectedQuizAttempt, setSelectedQuizAttempt] = useState<any>(null);
@@ -804,14 +805,23 @@ export default function TeacherDashboard() {
   }, [studentsProgress]);
 
   const filteredStudents = useMemo(() => {
-    if (activeGroup === 'all') return studentsProgress;
-    return studentsProgress.filter(s => s.group_name === activeGroup);
-  }, [studentsProgress, activeGroup]);
+    let list = activeGroup === 'all'
+      ? studentsProgress
+      : studentsProgress.filter(s => s.group_name === activeGroup);
+    const needle = studentSearch.trim().toLowerCase();
+    if (needle) {
+      list = list.filter(s =>
+        (s.student_name || '').toLowerCase().includes(needle)
+        || (s.student_email || '').toLowerCase().includes(needle)
+      );
+    }
+    return list;
+  }, [studentsProgress, activeGroup, studentSearch]);
 
   // Reset to page 1 when filter changes
   useEffect(() => {
     setStudentPage(1);
-  }, [activeGroup]);
+  }, [activeGroup, studentSearch]);
 
   // Calculate paginated students
   const totalStudentPages = Math.ceil(filteredStudents.length / studentsPerPage);
@@ -1308,6 +1318,14 @@ export default function TeacherDashboard() {
               <p className="text-sm text-gray-500 dark:text-gray-400">Overview of all students across your courses</p>
             </div>
             
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <input
+                type="text"
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+                placeholder="Search student…"
+                className="w-full sm:w-56 px-3 py-2 text-sm bg-white dark:bg-card border border-gray-200 dark:border-border rounded-lg outline-none focus:border-blue-400"
+              />
             {uniqueGroups.length > 0 && (
               <div className="flex items-center space-x-2">
                 <Filter className="w-4 h-4 text-gray-500 dark:text-gray-400" />
@@ -1324,6 +1342,7 @@ export default function TeacherDashboard() {
                 </Select>
               </div>
             )}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">

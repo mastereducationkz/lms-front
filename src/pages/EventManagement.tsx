@@ -128,9 +128,12 @@ export default function EventManagement() {
   };
 
   const filteredEvents = events.filter(event => {
-    // Search filter
-    if (searchTerm && !event.title.toLowerCase().includes(searchTerm.toLowerCase())) {
-      return false;
+    // Search filter: title or any linked group name
+    if (searchTerm) {
+      const needle = searchTerm.toLowerCase();
+      const titleHit = event.title.toLowerCase().includes(needle);
+      const groupHit = (event.groups || []).some(g => String(g).toLowerCase().includes(needle));
+      if (!titleHit && !groupHit) return false;
     }
 
     // Event type filter

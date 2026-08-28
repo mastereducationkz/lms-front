@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/api';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import {
@@ -83,6 +84,8 @@ export default function StudentsJournalPage() {
   const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState('');
+  // Debounced: without it every keystroke fired a /student-journal/list request.
+  const debouncedSearch = useDebouncedValue(search, 350);
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [showArchived, setShowArchived] = useState(false);
   const [page, setPage] = useState(0);
@@ -92,7 +95,7 @@ export default function StudentsJournalPage() {
     setLoading(true);
     try {
       const params: any = { limit: pageSize, offset: page * pageSize };
-      if (search.trim()) params.search = search.trim();
+      if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
       if (selectedGroup !== 'all') params.group_id = Number(selectedGroup);
       if (showArchived) params.include_archived = true;
       const data = await apiClient.getStudentsJournal(params);
@@ -103,7 +106,7 @@ export default function StudentsJournalPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, selectedGroup, page, showArchived]);
+  }, [debouncedSearch, selectedGroup, page, showArchived]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -112,7 +115,7 @@ export default function StudentsJournalPage() {
   }, [showArchived]);
 
   // Reset page on filter change
-  useEffect(() => { setPage(0); }, [search, selectedGroup, showArchived]);
+  useEffect(() => { setPage(0); }, [debouncedSearch, selectedGroup, showArchived]);
 
   const totalPages = Math.ceil(total / pageSize);
 

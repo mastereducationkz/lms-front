@@ -15,6 +15,7 @@ export async function getCourseAnalyticsOverview(
   courseId: string,
   params?: {
     group_id?: string
+    search?: string
     page?: number
     page_size?: number
     sort?: 'name' | 'progress' | 'activity'

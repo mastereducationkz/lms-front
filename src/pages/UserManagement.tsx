@@ -143,6 +143,7 @@ export default function UserManagement() {
   const [trialFilter, setTrialFilter] = useState(searchParams.get('is_trial') || 'all');
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [groupStatusFilter, setGroupStatusFilter] = useState<'all' | 'true' | 'false'>('true'); // Default to active groups
+  const [groupSearch, setGroupSearch] = useState('');
   const [groupProgramFilter, setGroupProgramFilter] = useState<'all' | CourseType>('all')
 
   // Debounced search (network fires on this; URL/input update immediately)
@@ -1438,6 +1439,16 @@ export default function UserManagement() {
               {/* Group Status + program filters */}
               <div className="mt-4 flex flex-wrap items-end gap-6">
                 <div>
+                  <Label htmlFor="group-search" className="text-sm font-medium">Search</Label>
+                  <Input
+                    id="group-search"
+                    value={groupSearch}
+                    onChange={(e) => setGroupSearch(e.target.value)}
+                    placeholder="Group name…"
+                    className="w-52"
+                  />
+                </div>
+                <div>
                   <Label htmlFor="group-status" className="text-sm font-medium">Group Status</Label>
                   <Select
                     value={groupStatusFilter}
@@ -1505,7 +1516,7 @@ export default function UserManagement() {
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-card divide-y divide-gray-200 dark:divide-border">
-                  {groups?.map((group) => (
+                  {groups?.filter(g => !groupSearch.trim() || (g.name || '').toLowerCase().includes(groupSearch.trim().toLowerCase())).map((group) => (
                     <tr key={group.id} className="hover:bg-gray-50 dark:hover:bg-secondary">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>

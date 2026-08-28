@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import apiClient from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
+import { Input } from '../../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
@@ -64,6 +66,7 @@ interface GroupAnalytics {
     average_assignment_score_percentage: number;
     average_study_time_minutes: number;
     description?: string;
+    is_archived?: boolean;
 }
 
 interface QuizError {
@@ -133,6 +136,8 @@ export default function AnalyticsPage() {
   const [loadingOverview, setLoadingOverview] = useState(false);
   const [loadingGroups, setLoadingGroups] = useState(false);
   const [showArchivedGroups, setShowArchivedGroups] = useState(false);
+  const [studentSearch, setStudentSearch] = useState('');
+  const debouncedStudentSearch = useDebouncedValue(studentSearch, 350);
   const [loadingCharts, setLoadingCharts] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -171,7 +176,7 @@ export default function AnalyticsPage() {
     }
 
     fetchOverview(selectedCourseId);
-  }, [selectedCourseId, selectedGroupId, studentSort, studentSortDir, studentPage, studentPageSize]);
+  }, [selectedCourseId, selectedGroupId, studentSort, studentSortDir, studentPage, studentPageSize, debouncedStudentSearch]);
 
   // Load chart data only when visible tabs need it
   useEffect(() => {
@@ -284,6 +289,7 @@ export default function AnalyticsPage() {
     try {
         const data = await apiClient.getCourseAnalyticsOverview(courseId, {
           group_id: selectedGroupId !== 'all' ? selectedGroupId : undefined,
+          search: debouncedStudentSearch.trim() || undefined,
           page: studentPage,
           page_size: studentPageSize,
           sort: studentSort,
@@ -699,11 +705,22 @@ export default function AnalyticsPage() {
 
         <TabsContent value="students" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>Student Progress Directory</CardTitle>
-              <CardDescription>
-                Detailed progress tracking for {studentsPagination?.total_items ?? students.length} students
-              </CardDescription>
+            <CardHeader className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 space-y-0">
+              <div>
+                <CardTitle>Student Progress Directory</CardTitle>
+                <CardDescription>
+                  Detailed progress tracking for {studentsPagination?.total_items ?? students.length} students
+                </CardDescription>
+              </div>
+              <div className="relative w-full sm:w-72">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                <Input
+                  value={studentSearch}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStudentSearch(e.target.value)}
+                  placeholder={user?.role === 'head_curator' || user?.role === 'curator' ? 'Поиск: имя или email…' : 'Search name or email…'}
+                  className="pl-9"
+                />
+              </div>
             </CardHeader>
             <CardContent>
               {loadingGroups ? ( // Use loadingGroups as a proxy for raw data processing buffer or implement specific loading state

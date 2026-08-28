@@ -119,6 +119,7 @@ export default function HeadTeacherDashboardPage() {
   type SortField = 'teacher_name' | 'groups_count' | 'students_count' | 'checked_homeworks_count' | 'feedbacks_given_count' | 'missed_attendance_count';
   type SortDirection = 'asc' | 'desc' | null;
   const [sortField, setSortField] = useState<SortField>('checked_homeworks_count');
+  const [teacherSearch, setTeacherSearch] = useState('');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
   const getTeacherDetailPath = (courseId: string, teacherId: number) =>
@@ -249,11 +250,19 @@ export default function HeadTeacherDashboardPage() {
     return <ArrowUpDown className="h-4 w-4 text-slate-400" />;
   };
 
-  // Sort teachers
+  // Filter by name, then sort
+  const visibleTeachers = React.useMemo(() => {
+    const needle = teacherSearch.trim().toLowerCase();
+    if (!needle) return teachersData?.teachers || [];
+    return (teachersData?.teachers || []).filter(
+      (t) => (t.teacher_name || '').toLowerCase().includes(needle)
+    );
+  }, [teachersData?.teachers, teacherSearch]);
+
   const sortedTeachers = React.useMemo(() => {
-    if (!teachersData?.teachers || !sortDirection) return teachersData?.teachers || [];
-    
-    const sorted = [...teachersData.teachers].sort((a, b) => {
+    if (!visibleTeachers.length || !sortDirection) return visibleTeachers;
+
+    const sorted = [...visibleTeachers].sort((a, b) => {
       let aVal: string | number | undefined = a[sortField];
       let bVal: string | number | undefined = b[sortField];
       
@@ -270,7 +279,7 @@ export default function HeadTeacherDashboardPage() {
     });
     
     return sorted;
-  }, [teachersData?.teachers, sortField, sortDirection]);
+  }, [visibleTeachers, sortField, sortDirection]);
 
   const totalTeachers = teachersData?.teachers.length || 0;
   const totalStudents = teachersData?.teachers.reduce((sum, t) => sum + t.students_count, 0) || 0;
@@ -308,6 +317,13 @@ export default function HeadTeacherDashboardPage() {
         </div>
         
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center bg-white dark:bg-card dark:border-border p-2 rounded-xl border shadow-sm">
+          <input
+            type="text"
+            value={teacherSearch}
+            onChange={(e) => setTeacherSearch(e.target.value)}
+            placeholder="Search teacher…"
+            className="w-full sm:w-52 px-3 py-2 text-sm bg-transparent border border-slate-200 dark:border-border rounded-lg outline-none focus:border-blue-400"
+          />
           <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
             <SelectTrigger className="w-[240px] border-0 bg-transparent font-medium focus:ring-0">
               <SelectValue placeholder="Select a course" />
