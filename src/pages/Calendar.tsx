@@ -91,13 +91,18 @@ export default function Calendar() {
         })
         .filter((m) => m.year >= 2020 && m.year <= 2030);
 
+      // allSettled, not all: a single month failing (e.g. a 500) must not blank
+      // the whole calendar — keep the months that loaded.
       const [monthResults, requests] = await Promise.all([
-        Promise.all(months.map((m) => getCalendarEvents(m.year, m.month))),
+        Promise.allSettled(months.map((m) => getCalendarEvents(m.year, m.month))),
         user?.role === 'teacher' ? getMyLessonRequests() : Promise.resolve([]),
       ]);
 
       const byId = new Map<number, Event>();
-      monthResults.flat().forEach((e) => byId.set(e.id, e));
+      monthResults.forEach((r) => {
+        if (r.status === 'fulfilled') r.value.forEach((e) => byId.set(e.id, e));
+        else console.error('Failed to load a calendar month:', r.reason);
+      });
       setEvents([...byId.values()]);
 
       const reqMap = new Map<number, LessonRequest>();
