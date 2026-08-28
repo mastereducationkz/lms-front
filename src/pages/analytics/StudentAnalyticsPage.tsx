@@ -114,7 +114,7 @@ export const StudentAnalyticsPage: React.FC = () => {
   const { studentId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { isTeacher, isCurator, isAdmin } = useAuth();
+  const { isTeacher, isCurator, isAdmin, hasAnyRole } = useAuth();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === 'dark';
   const courseId = searchParams.get('course_id');
@@ -255,6 +255,11 @@ export const StudentAnalyticsPage: React.FC = () => {
             <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-foreground">{data.student_info?.name || (isCurator() ? 'Детали студента' : 'Student Details')}</h1>
             <p className="text-slate-500 dark:text-gray-400">{data.student_info?.email}</p>
           </div>
+          {hasAnyRole(['curator', 'admin', 'head_curator', 'head_teacher']) && (
+            <Button onClick={() => navigate(`/curator/students/${studentId}/report`)}>
+              <FileText className="mr-2 h-4 w-4" /> Отчёт об успеваемости
+            </Button>
+          )}
         </div>
       </div>
 

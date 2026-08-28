@@ -198,6 +198,9 @@ export default function StudentProfilePage() {
           </div>
         </div>
         <div className="flex flex-col items-end gap-1 text-right text-xs text-gray-400">
+          <Button size="sm" className="mb-1" onClick={() => navigate(`/curator/students/${student.id}/report`)}>
+            Отчёт об успеваемости
+          </Button>
           <span>Стрик: <span className="font-medium text-gray-700">{student.daily_streak} дн.</span></span>
           <span>Последняя активность: <span className="font-medium text-gray-700">{formatDate(student.last_activity_date)}</span></span>
           <span>Зарегистрирован: <span className="font-medium text-gray-700">{formatDate(student.created_at)}</span></span>

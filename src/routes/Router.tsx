@@ -81,6 +81,7 @@ const CuratorTasksPage = lazy(() => import('../pages/CuratorTasksPage.tsx'));
 const CuratorOnboardingRedirect = lazy(() => import('../pages/CuratorOnboardingRedirect.tsx'));
 const StudentsJournalPage = lazy(() => import('../pages/StudentsJournalPage.tsx'));
 const StudentProfilePage = lazy(() => import('../pages/StudentProfilePage.tsx'));
+const StudentReportPage = lazy(() => import('../pages/StudentReportPage.tsx'));
 
 // Fallback shown while a route chunk is fetched.
 const RouteFallback = () => (
@@ -647,6 +648,14 @@ export default function Router() {
             <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator']}>
               <AppLayout>
                 <StudentProfilePage />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/curator/students/:studentId/report" element={
+            <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator', 'head_teacher']}>
+              <AppLayout>
+                <StudentReportPage />
               </AppLayout>
             </ProtectedRoute>
           } />
