@@ -18,6 +18,7 @@ import type { AdminDashboard as AdminDashboardType, AdminDashboardCharts } from 
 import Loader from '../../components/Loader'
 import { Button } from '../../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
+import StudentSearchBox from '../../components/StudentSearchBox'
 
 const chartMargin = { top: 8, right: 8, left: -8, bottom: 0 }
 
@@ -179,6 +180,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="max-w-6xl mx-auto px-6 sm:px-8 py-8 space-y-6">
+      <StudentSearchBox className="max-w-md" />
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {platformKpis.map((k) => (
           <Card key={k.label} className={statCardClass}>

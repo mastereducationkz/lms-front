@@ -93,9 +93,11 @@ export async function getAllStudentsAnalytics(courseId?: string): Promise<any> {
   }
 }
 
-export async function getGroupsAnalytics(): Promise<any> {
+export async function getGroupsAnalytics(includeArchived = false): Promise<any> {
   try {
-    const response = await api.get('/analytics/groups');
+    const response = await api.get('/analytics/groups', {
+      params: includeArchived ? { include_archived: true } : undefined,
+    });
     return response.data;
   } catch (error) {
     console.error('Failed to fetch groups analytics:', error);
@@ -103,10 +105,11 @@ export async function getGroupsAnalytics(): Promise<any> {
   }
 }
 
-export async function getCourseGroupsAnalytics(courseId: string): Promise<any> {
+export async function getCourseGroupsAnalytics(courseId: string, includeArchived = false): Promise<any> {
   try {
     const response = await api.get(`/analytics/course/${courseId}/groups`, {
-      timeout: 60000
+      timeout: 60000,
+      params: includeArchived ? { include_archived: true } : undefined,
     });
     return response.data;
   } catch (error) {

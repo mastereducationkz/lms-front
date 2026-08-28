@@ -36,6 +36,7 @@ import {
 import { format, subDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { cn } from '../lib/utils';
+import StudentSearchBox from '../components/StudentSearchBox';
 
 export default function HeadCuratorDashboard() {
   const { user } = useAuth();
@@ -125,6 +126,7 @@ export default function HeadCuratorDashboard() {
 
   return (
     <div className="space-y-6">
+      <StudentSearchBox className="max-w-md" />
       {/* Заголовок */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>

@@ -91,7 +91,7 @@ function getNavigationItems(
     // is what catches existing bookmarks.
     [CRM_ONBOARDING_URL, ['head_curator', 'curator'].includes(_userRole || '') ? 'Онбординг (CRM)' : 'Onboarding (CRM)', UserPlus, 0, ['curator', 'head_curator'], 'curator-onboarding-nav', 'curator'],
     [CRM_WORKSPACE_URL, ['head_curator', 'curator'].includes(_userRole || '') ? 'Вернуться в CRM' : 'Back to CRM', ExternalLink, 0, ['curator', 'head_curator'], 'crm-workspace-nav', 'curator'],
-    ['/curator/students', ['head_curator', 'curator'].includes(_userRole || '') ? 'Журнал' : 'Students', Users, 0, ['curator', 'head_curator', 'admin'], 'students-journal-nav', 'curator'],
+    ['/curator/students', ['head_curator', 'curator'].includes(_userRole || '') ? 'Журнал' : 'Students', Users, 0, ['curator', 'head_curator', 'admin', 'head_teacher'], 'students-journal-nav', 'curator'],
     ['/curator/groups', ['head_curator', 'curator'].includes(_userRole || '') ? 'Мои группы' : 'My groups', UsersRound, 0, ['curator', 'head_curator'], 'curator-groups-nav', 'curator'],
     ['/admin/courses', 'Manage Courses', BookMarked, 0, ['admin'], 'courses-management', 'admin'],
     ['/admin/users', 'Manage Users', Users, 0, ['admin', 'head_curator'], 'users-management', 'admin'],

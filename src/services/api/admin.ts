@@ -289,6 +289,7 @@ export async function getStudentsJournal(params?: {
   search?: string;
   limit?: number;
   offset?: number;
+  include_archived?: boolean;
 }): Promise<{
   total: number;
   students: Array<{
@@ -317,9 +318,11 @@ export async function getStudentsJournal(params?: {
   }
 }
 
-export async function getStudentJournalGroups(): Promise<Array<{ id: number; name: string }>> {
+export async function getStudentJournalGroups(includeArchived = false): Promise<Array<{ id: number; name: string; is_archived?: boolean }>> {
   try {
-    const response = await api.get('/student-journal/groups');
+    const response = await api.get('/student-journal/groups', {
+      params: includeArchived ? { include_archived: true } : undefined,
+    });
     return response.data;
   } catch (error) {
     console.error('Failed to get journal groups:', error);

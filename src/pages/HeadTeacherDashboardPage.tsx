@@ -27,6 +27,7 @@ import { Calendar as CalendarIcon, ArrowRight, BarChart3, TrendingUp, Users, Arr
 import { format, subDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { cn } from '../lib/utils';
+import StudentSearchBox from '../components/StudentSearchBox';
 import {
   AreaChart,
   Area,
@@ -298,6 +299,7 @@ export default function HeadTeacherDashboardPage() {
 
   return (
     <div className="p-4 md:p-8 space-y-8 max-w-[1600px] mx-auto">
+      <StudentSearchBox className="max-w-md" />
       {/* Header & Controls */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
         <div>

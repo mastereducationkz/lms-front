@@ -84,6 +84,7 @@ export default function StudentsJournalPage() {
 
   const [search, setSearch] = useState('');
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
+  const [showArchived, setShowArchived] = useState(false);
   const [page, setPage] = useState(0);
   const pageSize = 50;
 
@@ -93,6 +94,7 @@ export default function StudentsJournalPage() {
       const params: any = { limit: pageSize, offset: page * pageSize };
       if (search.trim()) params.search = search.trim();
       if (selectedGroup !== 'all') params.group_id = Number(selectedGroup);
+      if (showArchived) params.include_archived = true;
       const data = await apiClient.getStudentsJournal(params);
       setStudents(data.students);
       setTotal(data.total);
@@ -101,16 +103,16 @@ export default function StudentsJournalPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, selectedGroup, page]);
+  }, [search, selectedGroup, page, showArchived]);
 
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
-    apiClient.getStudentJournalGroups().then(setGroups).catch(console.error);
-  }, []);
+    apiClient.getStudentJournalGroups(showArchived).then(setGroups).catch(console.error);
+  }, [showArchived]);
 
   // Reset page on filter change
-  useEffect(() => { setPage(0); }, [search, selectedGroup]);
+  useEffect(() => { setPage(0); }, [search, selectedGroup, showArchived]);
 
   const totalPages = Math.ceil(total / pageSize);
 
@@ -124,7 +126,7 @@ export default function StudentsJournalPage() {
         </div>
         <div className="flex items-center gap-2">
           <Input
-            placeholder="Поиск по имени..."
+            placeholder="Поиск по имени или email..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-52 h-8 text-sm"
@@ -134,10 +136,21 @@ export default function StudentsJournalPage() {
             <SelectContent>
               <SelectItem value="all">Все группы</SelectItem>
               {groups.map(g => (
-                <SelectItem key={g.id} value={String(g.id)}>{g.name}</SelectItem>
+                <SelectItem key={g.id} value={String(g.id)}>
+                  {g.name}{(g as { is_archived?: boolean }).is_archived ? ' (архив)' : ''}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
+          <label className="flex items-center gap-1.5 text-xs text-gray-500 whitespace-nowrap cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={showArchived}
+              onChange={e => setShowArchived(e.target.checked)}
+              className="rounded border-gray-300"
+            />
+            Архивные группы
+          </label>
         </div>
       </div>
 

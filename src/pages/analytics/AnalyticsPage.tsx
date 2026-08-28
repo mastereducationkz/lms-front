@@ -132,6 +132,7 @@ export default function AnalyticsPage() {
   // Granular Loading States
   const [loadingOverview, setLoadingOverview] = useState(false);
   const [loadingGroups, setLoadingGroups] = useState(false);
+  const [showArchivedGroups, setShowArchivedGroups] = useState(false);
   const [loadingCharts, setLoadingCharts] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -142,6 +143,12 @@ export default function AnalyticsPage() {
 
   const needsChartData = activeTab === 'overview' || activeTab === 'engagement';
   const needsQuizData = activeTab === 'quizzes' || activeTab === 'topics' || activeTab === 'overview';
+
+  // Effect: refetch the group list when the archived toggle flips
+  useEffect(() => {
+    if (selectedCourseId) fetchCourseGroups(selectedCourseId, showArchivedGroups);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showArchivedGroups]);
 
   // Effect: Fetch Course Data when Course ID changes
   useEffect(() => {
@@ -249,10 +256,10 @@ export default function AnalyticsPage() {
     }
   };
 
-  const fetchCourseGroups = async (courseId: string) => {
+  const fetchCourseGroups = async (courseId: string, includeArchived = showArchivedGroups) => {
       setLoadingGroups(true);
       try {
-          const groupsData = await apiClient.getCourseGroupsAnalytics(String(courseId));
+          const groupsData = await apiClient.getCourseGroupsAnalytics(String(courseId), includeArchived);
           const mappedGroups = (groupsData.groups || []).map((g: any) => ({
             id: g.group_id,
             name: g.group_name,
@@ -885,9 +892,20 @@ export default function AnalyticsPage() {
         <TabsContent value="groups" className="space-y-4">
            {loadingGroups ? <Skeleton className="h-[200px] w-full" /> : (
             <Card>
-              <CardHeader>
-                <CardTitle>Course Groups</CardTitle>
-                <CardDescription>Overview of performance by group</CardDescription>
+              <CardHeader className="flex flex-row items-start justify-between space-y-0">
+                <div>
+                  <CardTitle>Course Groups</CardTitle>
+                  <CardDescription>Overview of performance by group</CardDescription>
+                </div>
+                <label className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-gray-400 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={showArchivedGroups}
+                    onChange={e => setShowArchivedGroups(e.target.checked)}
+                    className="rounded border-gray-300"
+                  />
+                  {user?.role === 'head_curator' || user?.role === 'curator' ? 'Архивные группы' : 'Show archived'}
+                </label>
               </CardHeader>
               <CardContent>
                <Table>
@@ -905,6 +923,9 @@ export default function AnalyticsPage() {
                     <TableRow key={group.group_id}>
                       <TableCell className="font-medium">
                         {group.description || group.group_name}
+                        {group.is_archived && (
+                          <Badge variant="outline" className="ml-2 text-xs text-gray-500 border-gray-300">архив</Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">

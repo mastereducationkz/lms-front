@@ -637,7 +637,7 @@ export default function Router() {
           <Route path="/curator/exam-results" element={<Navigate to="/exam-results" replace />} />
 
           <Route path="/curator/students" element={
-            <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator']}>
+            <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator', 'head_teacher']}>
               <AppLayout>
                 <StudentsJournalPage />
               </AppLayout>
@@ -645,7 +645,7 @@ export default function Router() {
           } />
 
           <Route path="/curator/students/:studentId" element={
-            <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator']}>
+            <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator', 'head_teacher']}>
               <AppLayout>
                 <StudentProfilePage />
               </AppLayout>
