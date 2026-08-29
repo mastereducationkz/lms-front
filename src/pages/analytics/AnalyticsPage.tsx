@@ -27,6 +27,7 @@ interface Group {
 }
 
 interface StudentAnalytics {
+    is_inactive?: boolean;
   student_id: number;
   student_name: string;
   email: string;
@@ -67,6 +68,8 @@ interface GroupAnalytics {
     average_study_time_minutes: number;
     description?: string;
     is_archived?: boolean;
+    teacher_name?: string | null;
+    curator_name?: string | null;
 }
 
 interface QuizError {
@@ -138,6 +141,8 @@ export default function AnalyticsPage() {
   const [showArchivedGroups, setShowArchivedGroups] = useState(false);
   const [studentSearch, setStudentSearch] = useState('');
   const debouncedStudentSearch = useDebouncedValue(studentSearch, 350);
+  const [groupSearch, setGroupSearch] = useState('');
+  const [showInactiveStudents, setShowInactiveStudents] = useState(false);
   const [loadingCharts, setLoadingCharts] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -176,7 +181,7 @@ export default function AnalyticsPage() {
     }
 
     fetchOverview(selectedCourseId);
-  }, [selectedCourseId, selectedGroupId, studentSort, studentSortDir, studentPage, studentPageSize, debouncedStudentSearch]);
+  }, [selectedCourseId, selectedGroupId, studentSort, studentSortDir, studentPage, studentPageSize, debouncedStudentSearch, showInactiveStudents]);
 
   // Load chart data only when visible tabs need it
   useEffect(() => {
@@ -212,6 +217,14 @@ export default function AnalyticsPage() {
 
   const handleGroupChange = (groupId: string) => {
       const newParams = new URLSearchParams(searchParams);
+      newParams.set('group_id', groupId);
+      newParams.set('page', '1');
+      setSearchParams(newParams);
+  };
+
+  const openGroupStudents = (groupId: string) => {
+      const newParams = new URLSearchParams(searchParams);
+      newParams.set('tab', 'students');
       newParams.set('group_id', groupId);
       newParams.set('page', '1');
       setSearchParams(newParams);
@@ -290,6 +303,7 @@ export default function AnalyticsPage() {
         const data = await apiClient.getCourseAnalyticsOverview(courseId, {
           group_id: selectedGroupId !== 'all' ? selectedGroupId : undefined,
           search: debouncedStudentSearch.trim() || undefined,
+          include_inactive: showInactiveStudents || undefined,
           page: studentPage,
           page_size: studentPageSize,
           sort: studentSort,
@@ -712,14 +726,25 @@ export default function AnalyticsPage() {
                   Detailed progress tracking for {studentsPagination?.total_items ?? students.length} students
                 </CardDescription>
               </div>
-              <div className="relative w-full sm:w-72">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                <Input
-                  value={studentSearch}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStudentSearch(e.target.value)}
-                  placeholder={user?.role === 'head_curator' || user?.role === 'curator' ? 'Поиск: имя или email…' : 'Search name or email…'}
-                  className="pl-9"
-                />
+              <div className="flex flex-col items-stretch gap-2 w-full sm:w-72">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                  <Input
+                    value={studentSearch}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStudentSearch(e.target.value)}
+                    placeholder={user?.role === 'head_curator' || user?.role === 'curator' ? 'Поиск: имя или email…' : 'Search name or email…'}
+                    className="pl-9"
+                  />
+                </div>
+                <label className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-gray-400 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={showInactiveStudents}
+                    onChange={e => setShowInactiveStudents(e.target.checked)}
+                    className="rounded border-gray-300"
+                  />
+                  {user?.role === 'head_curator' || user?.role === 'curator' ? 'Деактивированные студенты' : 'Include deactivated'}
+                </label>
               </div>
             </CardHeader>
             <CardContent>
@@ -765,7 +790,12 @@ export default function AnalyticsPage() {
                     >
                       <TableCell className="text-sm">
                         <div>
-                          <p className="font-medium text-gray-900 dark:text-foreground">{student.student_name}</p>
+                          <p className="font-medium text-gray-900 dark:text-foreground">
+                            {student.student_name}
+                            {student.is_inactive && (
+                              <span className="ml-1.5 text-[10px] font-normal text-red-500 bg-red-50 border border-red-200 rounded px-1 py-px align-middle">деактивирован</span>
+                            )}
+                          </p>
                           <p className="text-gray-500 dark:text-gray-400">{student.email}</p>
                         </div>
                       </TableCell>
@@ -914,15 +944,26 @@ export default function AnalyticsPage() {
                   <CardTitle>Course Groups</CardTitle>
                   <CardDescription>Overview of performance by group</CardDescription>
                 </div>
-                <label className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-gray-400 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={showArchivedGroups}
-                    onChange={e => setShowArchivedGroups(e.target.checked)}
-                    className="rounded border-gray-300"
-                  />
-                  {user?.role === 'head_curator' || user?.role === 'curator' ? 'Архивные группы' : 'Show archived'}
-                </label>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                    <Input
+                      value={groupSearch}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGroupSearch(e.target.value)}
+                      placeholder={user?.role === 'head_curator' || user?.role === 'curator' ? 'Поиск группы…' : 'Search group…'}
+                      className="pl-9"
+                    />
+                  </div>
+                  <label className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-gray-400 cursor-pointer select-none whitespace-nowrap">
+                    <input
+                      type="checkbox"
+                      checked={showArchivedGroups}
+                      onChange={e => setShowArchivedGroups(e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    {user?.role === 'head_curator' || user?.role === 'curator' ? 'Архивные группы' : 'Show archived'}
+                  </label>
+                </div>
               </CardHeader>
               <CardContent>
                <Table>
@@ -936,7 +977,14 @@ export default function AnalyticsPage() {
                    </TableRow>
                  </TableHeader>
                  <TableBody>
-                  {groupsAnalytics.map(group => (
+                  {groupsAnalytics.filter(g => {
+                    const needle = groupSearch.trim().toLowerCase();
+                    if (!needle) return true;
+                    return (g.group_name || '').toLowerCase().includes(needle)
+                      || (g.description || '').toLowerCase().includes(needle)
+                      || (g.teacher_name || '').toLowerCase().includes(needle)
+                      || (g.curator_name || '').toLowerCase().includes(needle);
+                  }).map(group => (
                     <TableRow key={group.group_id}>
                       <TableCell className="font-medium">
                         {group.description || group.group_name}
@@ -964,10 +1012,7 @@ export default function AnalyticsPage() {
                             variant="ghost" 
                             size="sm" 
                             className="text-blue-600 hover:text-blue-800"
-                            onClick={() => {
-                                handleTabChange('students');
-                                handleGroupChange(String(group.group_id));
-                            }}
+                            onClick={() => openGroupStudents(String(group.group_id))}
                          >
                             View Students &rarr;
                          </Button>

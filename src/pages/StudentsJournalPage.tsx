@@ -19,6 +19,7 @@ interface StudentRow {
   id: number;
   name: string;
   email: string;
+  is_inactive?: boolean;
   avatar_url: string | null;
   group_id: number;
   group_name: string;
@@ -88,6 +89,7 @@ export default function StudentsJournalPage() {
   const debouncedSearch = useDebouncedValue(search, 350);
   const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [showArchived, setShowArchived] = useState(false);
+  const [showInactive, setShowInactive] = useState(false);
   const [page, setPage] = useState(0);
   const pageSize = 50;
 
@@ -98,6 +100,7 @@ export default function StudentsJournalPage() {
       if (debouncedSearch.trim()) params.search = debouncedSearch.trim();
       if (selectedGroup !== 'all') params.group_id = Number(selectedGroup);
       if (showArchived) params.include_archived = true;
+      if (showInactive) params.include_inactive = true;
       const data = await apiClient.getStudentsJournal(params);
       setStudents(data.students);
       setTotal(data.total);
@@ -106,7 +109,7 @@ export default function StudentsJournalPage() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, selectedGroup, page, showArchived]);
+  }, [debouncedSearch, selectedGroup, page, showArchived, showInactive]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -115,7 +118,7 @@ export default function StudentsJournalPage() {
   }, [showArchived]);
 
   // Reset page on filter change
-  useEffect(() => { setPage(0); }, [debouncedSearch, selectedGroup, showArchived]);
+  useEffect(() => { setPage(0); }, [debouncedSearch, selectedGroup, showArchived, showInactive]);
 
   const totalPages = Math.ceil(total / pageSize);
 
@@ -153,6 +156,15 @@ export default function StudentsJournalPage() {
               className="rounded border-gray-300"
             />
             Архивные группы
+          </label>
+          <label className="flex items-center gap-1.5 text-xs text-gray-500 whitespace-nowrap cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={showInactive}
+              onChange={e => setShowInactive(e.target.checked)}
+              className="rounded border-gray-300"
+            />
+            Деактивированные
           </label>
         </div>
       </div>
@@ -205,7 +217,12 @@ export default function StudentsJournalPage() {
                         </div>
                       )}
                       <div>
-                        <p className="font-medium text-gray-900 text-sm leading-tight">{s.name}</p>
+                        <p className="font-medium text-gray-900 text-sm leading-tight">
+                          {s.name}
+                          {s.is_inactive && (
+                            <span className="ml-1.5 text-[10px] font-normal text-red-500 bg-red-50 border border-red-200 rounded px-1 py-px align-middle">деактивирован</span>
+                          )}
+                        </p>
                         <p className="text-xs text-gray-400">{s.email}</p>
                       </div>
                     </div>

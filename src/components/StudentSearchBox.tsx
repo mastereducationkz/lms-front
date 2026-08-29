@@ -15,6 +15,7 @@ interface JournalStudent {
   name: string;
   email: string;
   group_name: string | null;
+  is_inactive?: boolean;
 }
 
 export default function StudentSearchBox({ className = '' }: { className?: string }) {
@@ -114,7 +115,10 @@ export default function StudentSearchBox({ className = '' }: { className?: strin
                 }`}
               >
                 <span className="min-w-0">
-                  <span className="block text-sm text-gray-900 truncate">{s.name}</span>
+                  <span className="block text-sm text-gray-900 truncate">
+                    {s.name}
+                    {s.is_inactive && <span className="ml-1.5 text-[10px] text-red-500">деактивирован</span>}
+                  </span>
                   <span className="block text-xs text-gray-400 truncate">{s.email}</span>
                 </span>
                 {s.group_name && (

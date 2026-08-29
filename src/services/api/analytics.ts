@@ -16,6 +16,7 @@ export async function getCourseAnalyticsOverview(
   params?: {
     group_id?: string
     search?: string
+    include_inactive?: boolean
     page?: number
     page_size?: number
     sort?: 'name' | 'progress' | 'activity'

@@ -290,6 +290,7 @@ export async function getStudentsJournal(params?: {
   limit?: number;
   offset?: number;
   include_archived?: boolean;
+  include_inactive?: boolean;
 }): Promise<{
   total: number;
   students: Array<{
