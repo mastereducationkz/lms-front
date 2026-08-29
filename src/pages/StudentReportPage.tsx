@@ -5,9 +5,11 @@ import { Button } from '../components/ui/button';
 import {
   getStudentReport,
   downloadStudentReportPdf,
+  getSubmissionDetail,
   API_BASE_URL,
   type StudentReport,
   type ReportHomeworkItem,
+  type SubmissionDetail,
   type WeeklySatTest,
   type WeeklyIeltsTest,
 } from '../services/api';
@@ -78,6 +80,7 @@ export default function StudentReportPage() {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [openHw, setOpenHw] = useState<number | null>(null);
+  const [viewer, setViewer] = useState<{ loading: boolean; data: SubmissionDetail | null } | null>(null);
   const [openWeek, setOpenWeek] = useState<string | null>(null);
   const [openQuiz, setOpenQuiz] = useState<string | null>(null);
 
@@ -104,6 +107,16 @@ export default function StudentReportPage() {
       setError('Не удалось скачать PDF');
     } finally {
       setDownloading(false);
+    }
+  };
+
+  const openSubmission = async (submissionId: number) => {
+    setViewer({ loading: true, data: null });
+    try {
+      const data = await getSubmissionDetail(Number(studentId), submissionId);
+      setViewer({ loading: false, data });
+    } catch {
+      setViewer(null);
     }
   };
 
@@ -309,6 +322,13 @@ export default function StudentReportPage() {
                                 📎 {item.submission.file_name || 'Файл сабмишена'}
                               </a>
                             )}
+                            <button
+                              type="button"
+                              className="block text-blue-600 hover:underline"
+                              onClick={e => { e.stopPropagation(); openSubmission(item.submission!.id); }}
+                            >
+                              Открыть содержимое сабмишена →
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -550,6 +570,161 @@ export default function StudentReportPage() {
       </Section>
 
       <p className="text-xs text-gray-300 text-center pb-4">Отчёт сформирован {fmtDate(report.generated_at)}</p>
+
+      {viewer && (
+        <SubmissionViewer viewer={viewer} onClose={() => setViewer(null)} />
+      )}
+    </div>
+  );
+}
+
+// ─── Submission viewer ────────────────────────────────────────────────────────
+
+function AnswerValue({ value }: { value: unknown }) {
+  if (value === null || value === undefined || value === '') return null;
+  if (typeof value === 'boolean') {
+    return <p className="text-sm text-gray-700">{value ? '✓ Выполнено' : '— Не выполнено'}</p>;
+  }
+  if (typeof value === 'string') {
+    if (/^(https?:\/\/|\/)/.test(value) && /\.(png|jpe?g|gif|webp|pdf|mp3|m4a|ogg|wav|webm|docx?|xlsx?)([?#]|$)/i.test(value)) {
+      return (
+        <a href={fileHref(value)} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">
+          📎 {value.split('/').pop()}
+        </a>
+      );
+    }
+    return <p className="text-sm text-gray-800 whitespace-pre-wrap break-words">{value}</p>;
+  }
+  if (typeof value === 'number') return <p className="text-sm text-gray-800">{String(value)}</p>;
+  return (
+    <pre className="text-xs text-gray-600 bg-gray-50 border border-gray-100 rounded p-2 overflow-x-auto">
+      {JSON.stringify(value, null, 2)}
+    </pre>
+  );
+}
+
+const ANSWER_FIELD_LABELS: Record<string, string> = {
+  text_response: 'Ответ',
+  text: 'Ответ',
+  file_url: 'Файл',
+  screenshot_url: 'Скриншот',
+  url: 'Ссылка',
+  completed: 'Статус',
+  verbal_score: 'Verbal',
+  math_score: 'Math',
+};
+
+function TaskAnswer({ answer }: { answer: unknown }) {
+  if (answer === null || answer === undefined) {
+    return <p className="text-sm text-gray-400">Ответа нет</p>;
+  }
+  if (typeof answer !== 'object' || Array.isArray(answer)) {
+    return <AnswerValue value={answer} />;
+  }
+  const entries = Object.entries(answer as Record<string, unknown>)
+    .filter(([, v]) => v !== null && v !== undefined && v !== '');
+  if (entries.length === 0) return <p className="text-sm text-gray-400">Ответа нет</p>;
+  return (
+    <div className="space-y-1.5">
+      {entries.map(([key, value]) => (
+        <div key={key}>
+          <p className="text-[11px] uppercase tracking-wide text-gray-400">{ANSWER_FIELD_LABELS[key] ?? key}</p>
+          <AnswerValue value={value} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SubmissionViewer({ viewer, onClose }: {
+  viewer: { loading: boolean; data: SubmissionDetail | null };
+  onClose: () => void;
+}) {
+  const data = viewer.data;
+  const answers = (data?.submission.answers ?? {}) as Record<string, unknown>;
+  const tasks = data?.assignment.tasks ?? [];
+  const matchedIds = new Set(tasks.map(t => t.id).filter(Boolean) as string[]);
+  const unmatched = Object.entries(answers).filter(([key]) => !matchedIds.has(key));
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={onClose}>
+      <div
+        className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-5 space-y-4"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-base font-semibold text-gray-900">
+              {data?.assignment.title ?? 'Сабмишен'}
+            </h3>
+            {data && (
+              <p className="text-xs text-gray-400 mt-0.5">
+                Сдано {fmtDate(data.submission.submitted_at)}
+                {data.submission.is_graded && <> · Оценка: {data.submission.score ?? '—'} из {data.submission.max_score ?? '—'}</>}
+                {data.submission.is_late && <span className="text-orange-500"> · позже срока</span>}
+              </p>
+            )}
+          </div>
+          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-700 text-lg leading-none">✕</button>
+        </div>
+
+        {viewer.loading && <p className="text-sm text-gray-400">Загружаем…</p>}
+
+        {data && (
+          <>
+            {data.submission.file_url && (
+              <a
+                href={fileHref(data.submission.file_url)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block text-sm text-blue-600 hover:underline"
+              >
+                📎 {data.submission.file_name || 'Файл сабмишена'}
+              </a>
+            )}
+
+            {tasks.length > 0 ? (
+              <div className="space-y-3">
+                {tasks.map((task, i) => (
+                  <div key={task.id ?? i} className="border border-gray-100 rounded-lg p-3 space-y-2">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {i + 1}. {task.title || task.task_type || 'Задание'}
+                        {task.points != null && <span className="ml-1.5 text-xs text-gray-400 font-normal">({task.points} б.)</span>}
+                      </p>
+                      {task.question && (
+                        <p className="text-xs text-gray-500 whitespace-pre-wrap mt-0.5 line-clamp-4">{task.question}</p>
+                      )}
+                    </div>
+                    <TaskAnswer answer={task.id != null ? answers[task.id] : undefined} />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <TaskAnswer answer={data.submission.answers} />
+            )}
+
+            {unmatched.length > 0 && tasks.length > 0 && (
+              <div className="border border-gray-100 rounded-lg p-3 space-y-2">
+                <p className="text-xs text-gray-400">Прочие данные сабмишена</p>
+                {unmatched.map(([key, value]) => (
+                  <div key={key}>
+                    <p className="text-[11px] uppercase tracking-wide text-gray-400">{key}</p>
+                    <AnswerValue value={value} />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {data.submission.feedback && (
+              <div className="bg-gray-50 border border-gray-100 rounded-lg p-3">
+                <p className="text-xs font-medium text-gray-700 mb-1">Фидбэк</p>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap">{data.submission.feedback}</p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

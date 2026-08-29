@@ -18,14 +18,15 @@ const FOCUS_CHECK_THROTTLE_MS = 5 * 60 * 1000 // 5 min
 // The "Обновить" toast still lets an active user apply it immediately. In every
 // case the reload goes through beforeunload, so useUnsavedChangesWarning still
 // guards any in-progress homework.
-let updateSW: ((reloadPage?: boolean) => Promise<void>) | null = null
 let updatePending = false
 let applying = false
 
 function applyUpdate(): void {
-  if (!updatePending || applying || !updateSW) return
+  if (!updatePending || applying) return
   applying = true
-  void updateSW(true)
+  // The worker already took over (skipWaiting+claim in sw.js); a plain reload
+  // is what swaps the running bundle.
+  window.location.reload()
 }
 
 /**
@@ -45,7 +46,26 @@ export function applyPendingPwaUpdate(): void {
 export function registerPwa(): void {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return
 
-  updateSW = registerSW({
+  // A deploy removes the previous build's hashed chunks, so a tab that was open
+  // across a deploy can fail a lazy import. Reload once to land on the fresh
+  // bundle instead of showing a broken page; the guard prevents a reload loop.
+  window.addEventListener('vite:preloadError', (event) => {
+    event.preventDefault()
+    const key = 'pwa-chunk-reload'
+    if (sessionStorage.getItem(key)) return
+    sessionStorage.setItem(key, '1')
+    window.setTimeout(() => sessionStorage.removeItem(key), 30_000)
+    window.location.reload()
+  })
+
+  // New worker took control (skipWaiting+claim): the fresh bundle is one reload
+  // away. Reuse the safe-moment machinery (tab hidden / route change / toast).
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!navigator.serviceWorker.controller) return
+    updatePending = true
+  })
+
+  registerSW({
     immediate: true,
     onNeedRefresh() {
       updatePending = true

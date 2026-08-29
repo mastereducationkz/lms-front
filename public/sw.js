@@ -1,17 +1,25 @@
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching'
+import { clientsClaim } from 'workbox-core'
 
-// Explicit update flow (registerType: 'prompt'). A freshly deployed service worker installs
-// and then WAITS in the standard lifecycle instead of calling skipWaiting()/clientsClaim() to
-// seize already-open tabs. The app posts SKIP_WAITING (via updateSW(true)) only after the user
-// accepts the "new version available" prompt, so no one is reloaded or has their precache
-// wiped mid-session — the pattern that kicked everyone out right after a deploy.
+// Take over immediately. The previous prompt-based flow left a deployed fix
+// installed-but-WAITING until the user closed every tab of the origin — a plain
+// reload never activates a waiting worker, so long-lived tabs (teachers keep the
+// calendar open for weeks) ran stale bundles indefinitely and "fixed" bugs kept
+// reappearing. Old bundles predate any in-page update code, so the ONLY lever
+// that reaches them is the service worker script itself: activate on install,
+// claim the clients, and let the page-side vite:preloadError handler reload the
+// one tab that might lose a lazy chunk mid-session (see src/services/pwa.ts).
+self.addEventListener('install', () => {
+  self.skipWaiting()
+})
+clientsClaim()
+
+// Kept for the in-page "Обновить" button; harmless now that install skips waiting.
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting()
   }
 })
 
-// Runs on activation of the NEW worker (i.e. only after the user opts in), so it never deletes
-// the running tab's precache out from under it.
 cleanupOutdatedCaches()
 precacheAndRoute(self.__WB_MANIFEST)

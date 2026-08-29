@@ -157,6 +157,43 @@ export interface StudentReport {
   generated_at: string;
 }
 
+export interface SubmissionTask {
+  id: string | null;
+  title: string | null;
+  task_type: string | null;
+  question: string | null;
+  points: number | null;
+}
+
+export interface SubmissionDetail {
+  assignment: {
+    id: number;
+    title: string | null;
+    assignment_type: string | null;
+    max_score: number | null;
+    tasks: SubmissionTask[];
+  };
+  submission: {
+    id: number;
+    score: number | null;
+    max_score: number | null;
+    is_graded: boolean;
+    is_late: boolean;
+    feedback: string | null;
+    file_url: string | null;
+    file_name: string | null;
+    submitted_at: string | null;
+    graded_at: string | null;
+    answers: Record<string, unknown> | null;
+  };
+}
+
+/** The content of one homework submission (staff report drill-down). */
+export async function getSubmissionDetail(studentId: number, submissionId: number): Promise<SubmissionDetail> {
+  const response = await api.get(`/reports/students/${studentId}/submissions/${submissionId}`);
+  return response.data;
+}
+
 export async function getStudentReport(studentId: number): Promise<StudentReport> {
   // The external-platform fetches make this slower than a normal read; never cache
   // so a curator always sees fresh weekly results.

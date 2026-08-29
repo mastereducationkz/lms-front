@@ -93,9 +93,16 @@ export default function Calendar() {
 
       // allSettled, not all: a single month failing (e.g. a 500) must not blank
       // the whole calendar — keep the months that loaded.
+      // The requests fetch failing must not blank the calendar — it only powers
+      // the substitution badges, so degrade to an empty list.
       const [monthResults, requests] = await Promise.all([
         Promise.allSettled(months.map((m) => getCalendarEvents(m.year, m.month))),
-        user?.role === 'teacher' ? getMyLessonRequests() : Promise.resolve([]),
+        user?.role === 'teacher'
+          ? getMyLessonRequests().catch((e) => {
+              console.error('Failed to load lesson requests for calendar:', e);
+              return [] as LessonRequest[];
+            })
+          : Promise.resolve([]),
       ]);
 
       const byId = new Map<number, Event>();
