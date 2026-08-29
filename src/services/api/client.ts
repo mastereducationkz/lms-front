@@ -83,8 +83,12 @@ class TokenManager {
   }
 
   getRefreshToken(): string | null {
-    if (!this.refreshToken) {
-      this.refreshToken = CookieUtils.getCookie('refresh_token');
+    // Always read the cookie: cookies are shared across tabs, so after another
+    // tab rotates the refresh token, the in-memory copy here is a dead token —
+    // using it got the whole device logged out (rotation is single-use).
+    const fromCookie = CookieUtils.getCookie('refresh_token');
+    if (fromCookie) {
+      this.refreshToken = fromCookie;
     }
     return this.refreshToken;
   }
