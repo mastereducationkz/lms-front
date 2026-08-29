@@ -38,6 +38,17 @@ const fmtBand = (v: number | null | undefined): string =>
 const fileHref = (fileUrl: string): string =>
   fileUrl.startsWith('http') ? fileUrl : `${API_BASE_URL}${fileUrl}`;
 
+const PDF_SECTIONS: { key: string; label: string }[] = [
+  { key: 'homework', label: 'Домашние задания' },
+  { key: 'weekly', label: 'Еженедельные SAT/NUET тесты' },
+  { key: 'ielts', label: 'Еженедельные IELTS тесты' },
+  { key: 'bluebook', label: 'Bluebook и официальные экзамены' },
+  { key: 'quizzes', label: 'Квизы по курсам' },
+  { key: 'courses', label: 'Прогресс в курсах' },
+  { key: 'attendance', label: 'Посещаемость' },
+  { key: 'activity', label: 'Дополнительная активность' },
+];
+
 const HW_STATUS: Record<ReportHomeworkItem['status'], { label: string; cls: string }> = {
   graded: { label: 'Проверено', cls: 'bg-green-50 text-green-700 border-green-200' },
   submitted: { label: 'На проверке', cls: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
@@ -79,6 +90,11 @@ export default function StudentReportPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportSections, setExportSections] = useState<Record<string, boolean>>(
+    () => Object.fromEntries(PDF_SECTIONS.map(s => [s.key, true])),
+  );
+  const [exportFeedback, setExportFeedback] = useState(true);
   const [openHw, setOpenHw] = useState<number | null>(null);
   const [viewer, setViewer] = useState<{ loading: boolean; data: SubmissionDetail | null } | null>(null);
   const [openWeek, setOpenWeek] = useState<string | null>(null);
@@ -100,9 +116,15 @@ export default function StudentReportPage() {
 
   const handleDownloadPdf = async () => {
     if (!report) return;
+    const chosen = PDF_SECTIONS.filter(s => exportSections[s.key]).map(s => s.key);
+    if (chosen.length === 0) return;
     setDownloading(true);
     try {
-      await downloadStudentReportPdf(report.student.id, report.student.name);
+      await downloadStudentReportPdf(report.student.id, report.student.name, {
+        sections: chosen.length === PDF_SECTIONS.length ? undefined : chosen,
+        includeFeedback: exportFeedback,
+      });
+      setExportOpen(false);
     } catch {
       setError('Не удалось скачать PDF');
     } finally {
@@ -233,9 +255,7 @@ export default function StudentReportPage() {
             ))}
           </div>
         </div>
-        <Button onClick={handleDownloadPdf} disabled={downloading}>
-          {downloading ? 'Формируем…' : 'Скачать PDF'}
-        </Button>
+        <Button onClick={() => setExportOpen(true)}>Скачать PDF</Button>
       </div>
 
       {weekly_tests.errors.length > 0 && (
@@ -570,6 +590,54 @@ export default function StudentReportPage() {
       </Section>
 
       <p className="text-xs text-gray-300 text-center pb-4">Отчёт сформирован {fmtDate(report.generated_at)}</p>
+
+      {exportOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => !downloading && setExportOpen(false)}>
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-5 space-y-4" onClick={e => e.stopPropagation()}>
+            <div>
+              <h3 className="text-base font-semibold text-gray-900">Экспорт отчёта в PDF</h3>
+              <p className="text-xs text-gray-400 mt-0.5">Выберите разделы, которые войдут в документ.</p>
+            </div>
+            <div className="space-y-2">
+              {PDF_SECTIONS.map(section => (
+                <label key={section.key} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={exportSections[section.key]}
+                    onChange={e => setExportSections(prev => ({ ...prev, [section.key]: e.target.checked }))}
+                    className="rounded border-gray-300"
+                  />
+                  {section.label}
+                </label>
+              ))}
+            </div>
+            <div className="border-t border-gray-100 pt-3">
+              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={exportFeedback}
+                  onChange={e => setExportFeedback(e.target.checked)}
+                  className="rounded border-gray-300"
+                />
+                Включить обратную связь по еженедельным тестам
+              </label>
+              <p className="text-[11px] text-gray-400 mt-1 ml-6">Подробные разборы заметно увеличивают объём документа.</p>
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <Button variant="outline" size="sm" disabled={downloading} onClick={() => setExportOpen(false)}>
+                Отмена
+              </Button>
+              <Button
+                size="sm"
+                disabled={downloading || PDF_SECTIONS.every(s => !exportSections[s.key])}
+                onClick={handleDownloadPdf}
+              >
+                {downloading ? 'Формируем…' : 'Скачать PDF'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {viewer && (
         <SubmissionViewer viewer={viewer} onClose={() => setViewer(null)} />

@@ -1,3 +1,5 @@
+import type { AxiosRequestConfig } from 'axios';
+
 import { api } from './client';
 
 /**
@@ -197,14 +199,28 @@ export async function getSubmissionDetail(studentId: number, submissionId: numbe
 export async function getStudentReport(studentId: number): Promise<StudentReport> {
   // The external-platform fetches make this slower than a normal read; never cache
   // so a curator always sees fresh weekly results.
-  const response = await api.get(`/reports/students/${studentId}`, { cache: false } as { cache: boolean });
+  const response = await api.get(`/reports/students/${studentId}`, { cache: false } as AxiosRequestConfig & { cache?: boolean });
   return response.data;
 }
 
+export interface PdfExportOptions {
+  /** Section keys understood by the backend; omit for the full report. */
+  sections?: string[];
+  includeFeedback?: boolean;
+}
+
 /** Download the PDF version of the report and hand it to the browser. */
-export async function downloadStudentReportPdf(studentId: number, studentName?: string): Promise<void> {
+export async function downloadStudentReportPdf(
+  studentId: number,
+  studentName?: string,
+  options?: PdfExportOptions,
+): Promise<void> {
+  const params: Record<string, string | boolean> = {};
+  if (options?.sections && options.sections.length > 0) params.sections = options.sections.join(',');
+  if (options?.includeFeedback === false) params.include_feedback = false;
   const response = await api.get(`/reports/students/${studentId}/pdf`, {
     responseType: 'blob',
+    params,
   });
   const url = URL.createObjectURL(response.data as Blob);
   const a = document.createElement('a');
