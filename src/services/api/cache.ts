@@ -8,8 +8,17 @@
  * - Safe by default: only successful (status 2xx) GET responses are cached;
  *   auth, refresh, file-streaming and per-request opt-outs are bypassed.
  *
- * The cache is intentionally NOT persisted to storage; it lives only for the
- * lifetime of the page so we never serve stale data across full reloads.
+ * Persistence: valid entries are mirrored to sessionStorage so a full reload
+ * (or the PWA being resumed) reuses them instead of re-fetching everything.
+ * Persistence NEVER extends staleness — entries still expire at their original
+ * `expiresAt`, so the worst-case age across a reload is the same TTL that
+ * applies within a session. The blob is per-tab (sessionStorage), versioned,
+ * and wiped by clearCache() on logout so it never crosses users.
+ *
+ * Revalidate-on-focus: when the tab becomes visible again after being away,
+ * entries older than FOCUS_STALE_MS are expired so the next request (navigation
+ * or a visibility-gated poll) refetches fresh data — mirroring React Query's
+ * refetchOnWindowFocus without a second caching layer.
  */
 
 import type { AxiosRequestConfig } from 'axios'
@@ -19,12 +28,28 @@ const MAX_ENTRIES = 250
 type CacheEntry = {
   data: unknown
   expiresAt: number
+  cachedAt: number
 }
 
 const store = new Map<string, CacheEntry>()
 const inflight = new Map<string, Promise<unknown>>()
 
 const DEFAULT_TTL_MS = 60 * 1000
+
+// --- Persistence + focus-revalidation config ---
+const PERSIST_KEY = 'lms:api-cache:v1'
+// Bump when the entry shape or a deploy should invalidate any persisted blob.
+const PERSIST_VERSION = 1
+// On regaining focus, treat anything older than this as stale so it refetches.
+const FOCUS_STALE_MS = 10 * 1000
+const hasWindow = typeof window !== 'undefined'
+const sessionStore: Storage | null = (() => {
+  try {
+    return hasWindow ? window.sessionStorage : null
+  } catch {
+    return null // Storage can throw in private-mode / sandboxed iframes.
+  }
+})()
 
 /**
  * Per-endpoint TTL rules. The first matching pattern wins.
@@ -158,8 +183,10 @@ export const getCached = <T = unknown,>(key: string): T | undefined => {
 
 export const setCached = (key: string, data: unknown, ttlMs: number): void => {
   if (!ttlMs || ttlMs <= 0) return
-  store.set(key, { data, expiresAt: Date.now() + ttlMs })
+  const now = Date.now()
+  store.set(key, { data, expiresAt: now + ttlMs, cachedAt: now })
   enforceLimit()
+  schedulePersist()
 }
 
 export const getInflight = <T = unknown,>(key: string): Promise<T> | undefined => {
@@ -202,6 +229,107 @@ export const invalidateForMutation = (url: string): void => {
 export const clearCache = (): void => {
   store.clear()
   inflight.clear()
+  if (persistTimer !== null) {
+    clearTimeout(persistTimer)
+    persistTimer = null
+  }
+  try {
+    sessionStore?.removeItem(PERSIST_KEY)
+  } catch {
+    /* ignore */
+  }
+}
+
+// --- sessionStorage persistence (debounced) ---
+let persistTimer: ReturnType<typeof setTimeout> | null = null
+
+const persistNow = (): void => {
+  persistTimer = null
+  if (!sessionStore) return
+  const now = Date.now()
+  const entries: Array<[string, CacheEntry]> = []
+  for (const [key, entry] of store) {
+    if (entry.expiresAt > now) entries.push([key, entry])
+  }
+  try {
+    if (entries.length === 0) {
+      sessionStore.removeItem(PERSIST_KEY)
+    } else {
+      sessionStore.setItem(PERSIST_KEY, JSON.stringify({ v: PERSIST_VERSION, entries }))
+    }
+  } catch {
+    // Quota exceeded or serialization failure: drop the persisted copy rather
+    // than throw. In-memory cache keeps working.
+    try {
+      sessionStore.removeItem(PERSIST_KEY)
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+const schedulePersist = (): void => {
+  if (!sessionStore || persistTimer !== null) return
+  persistTimer = setTimeout(persistNow, 500)
+}
+
+const hydrate = (): void => {
+  if (!sessionStore) return
+  let raw: string | null = null
+  try {
+    raw = sessionStore.getItem(PERSIST_KEY)
+  } catch {
+    return
+  }
+  if (!raw) return
+  try {
+    const parsed = JSON.parse(raw) as { v?: number; entries?: Array<[string, CacheEntry]> }
+    if (parsed.v !== PERSIST_VERSION || !Array.isArray(parsed.entries)) {
+      sessionStore.removeItem(PERSIST_KEY)
+      return
+    }
+    const now = Date.now()
+    for (const [key, entry] of parsed.entries) {
+      // Honor the original expiry — persistence never extends staleness.
+      if (entry && typeof entry.expiresAt === 'number' && entry.expiresAt > now) {
+        store.set(key, {
+          data: entry.data,
+          expiresAt: entry.expiresAt,
+          cachedAt: typeof entry.cachedAt === 'number' ? entry.cachedAt : now,
+        })
+      }
+    }
+    enforceLimit()
+  } catch {
+    try {
+      sessionStore.removeItem(PERSIST_KEY)
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+// --- Revalidate on focus ---
+// When the tab regains visibility, expire anything older than FOCUS_STALE_MS so
+// the next request refetches. Cheap (a Map sweep) and only runs on focus.
+const expireStaleOnFocus = (): void => {
+  const now = Date.now()
+  let changed = false
+  for (const [key, entry] of Array.from(store)) {
+    if (now - entry.cachedAt > FOCUS_STALE_MS) {
+      store.delete(key)
+      changed = true
+    }
+  }
+  if (changed) schedulePersist()
+}
+
+if (hasWindow) {
+  hydrate()
+  window.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') expireStaleOnFocus()
+  })
+  window.addEventListener('focus', expireStaleOnFocus)
 }
 
 export const isCacheableGet = (

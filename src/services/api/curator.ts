@@ -177,6 +177,7 @@ export async function updateAttendanceBulk(data: {
     score: number;
     status: string;
     event_id: number | null;
+    activity_score?: number | null;
   }>;
 }): Promise<any> {
   try {
@@ -184,6 +185,23 @@ export async function updateAttendanceBulk(data: {
     return response.data;
   } catch (error) {
     console.error('Failed to update bulk attendance:', error);
+    throw error;
+  }
+}
+
+export async function updateLeaderboardEntriesBulk(data: {
+  entries: Array<{
+    user_id: number;
+    group_id: number;
+    week_number: number;
+    [key: string]: number;
+  }>;
+}): Promise<{ status: string; updated_count: number }> {
+  try {
+    const response = await api.post('/leaderboard/curator/leaderboard/bulk', data);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to update bulk leaderboard entries:', error);
     throw error;
   }
 }

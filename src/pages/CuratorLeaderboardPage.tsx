@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popove
 import { ChevronLeft, ChevronRight, Loader2, Save, Eye, EyeOff, Check, ChevronsUpDown, ClipboardList, Sparkles, User, Pencil, Star, Plus } from 'lucide-react';
 import { StudentHomeworkDialog } from '../components/leaderboard/StudentHomeworkDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
-import { getCuratorGroups, getWeeklyLessonsWithHwStatus, updateAttendance, updateLeaderboardEntry, updateLeaderboardConfig, setGroupWeekOffset, setLessonTopic } from '../services/api';
+import { getCuratorGroups, getWeeklyLessonsWithHwStatus, updateAttendanceBulk, updateLeaderboardEntriesBulk, updateLeaderboardConfig, setGroupWeekOffset, setLessonTopic } from '../services/api';
 import { Group, CourseType } from '../types';
 import {
   PROGRAM_LABELS, PROGRAM_BADGE_STYLES, getGroupProgramType,
@@ -925,85 +925,75 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
             console.log('Config saved successfully:', savedConfig);
         }
 
-        // 2. Save Student Scores
+        // 2. Save Student Scores — batched into (at most) two bulk requests instead of
+        // the previous per-row round-trips (1 entry + up to 5 attendance writes per
+        // changed student ⇒ dozens of serial requests for a single class × week save).
         const entriesToSave = data.students.filter(s => changedEntries.has(s.student_id));
-        console.log('Entries to save:', entriesToSave.length, 'Changed entries:', Array.from(changedEntries));
 
         const lockedLessonKeys = new Set(
             (data.lessons ?? []).filter(l => isAttendanceLockedLesson(l.start_datetime))
                 .map(l => l.lesson_number.toString())
         );
 
-        for (const student of entriesToSave) {
-            try {
-                // Update Manual Fields (LeaderboardEntry) — teachers save only attendance.
-                if (!isTeacher) {
-                    // Only send fields that have actual values (not null/undefined)
-                    const entryData: any = {
-                        user_id: student.student_id,
-                        group_id: selectedGroupId,
-                        week_number: currentWeek
-                    };
-
-                    // Add optional fields only if they have values
-                    if (student.curator_hour !== null && student.curator_hour !== undefined) {
-                        entryData.curator_hour = student.curator_hour;
-                    }
-                    if (student.mock_exam !== null && student.mock_exam !== undefined) {
-                        entryData.mock_exam = student.mock_exam;
-                    }
-                    if (student.study_buddy !== null && student.study_buddy !== undefined) {
-                        entryData.study_buddy = student.study_buddy;
-                    }
-                    if (student.self_reflection_journal !== null && student.self_reflection_journal !== undefined) {
-                        entryData.self_reflection_journal = student.self_reflection_journal;
-                    }
-                    if (student.weekly_evaluation !== null && student.weekly_evaluation !== undefined) {
-                        entryData.weekly_evaluation = student.weekly_evaluation;
-                    }
-                    if (student.extra_points !== null && student.extra_points !== undefined) {
-                        entryData.extra_points = student.extra_points;
-                    }
-
-                    console.log('Saving entry for student:', student.student_id, entryData);
-                    await updateLeaderboardEntry(entryData);
-                    console.log('Entry saved successfully for student:', student.student_id);
-                }
-
-                // Update Attendance (Events) - wrapped in separate try/catch to not block entry save.
-                //
-                // Curators are read-only on attendance. The cell inputs are already gated by
-                // canMarkAttendance, but this save loop ran for EVERY lesson of every changed
-                // row, so a curator editing an unrelated field (extra points, reflection
-                // journal) still pushed an attendance write for the whole row. The backend
-                // now rejects it outright; skipping here avoids a burst of pointless 403s.
-                for (const [lessonKey, lessonStatus] of Object.entries(canMarkAttendance ? student.lessons : {})) {
-                    if (lockedLessonKeys.has(lessonKey)) continue;
-                    try {
-                        const score = lessonStatus.attendance_status === 'attended' ? 10 : 0;
-
-                        await updateAttendance({
-                            group_id: selectedGroupId,
-                            week_number: currentWeek,
-                            lesson_index: parseInt(lessonKey),
-                            student_id: student.student_id,
-                            score: score,
-                            status: lessonStatus.attendance_status,
-                            event_id: lessonStatus.event_id,
-                            activity_score: lessonStatus.activity_score ?? undefined
-                        });
-                    } catch (attendanceError) {
-                        attendanceFailures++;
-                        console.error(`Failed to update attendance for student ${student.student_id}, lesson ${lessonKey}:`, attendanceError);
-                    }
-                }
-
-                successCount++;
-            } catch (e) {
-                console.error(`Failed to save for student ${student.student_id}`, e);
+        // Build manual leaderboard-entry payloads (curators/admins only; teachers skip).
+        const entryUpdates: any[] = [];
+        if (!isTeacher) {
+            for (const student of entriesToSave) {
+                const entryData: any = {
+                    user_id: student.student_id,
+                    group_id: selectedGroupId,
+                    week_number: currentWeek,
+                };
+                // Only send fields that have actual values (not null/undefined).
+                if (student.curator_hour !== null && student.curator_hour !== undefined) entryData.curator_hour = student.curator_hour;
+                if (student.mock_exam !== null && student.mock_exam !== undefined) entryData.mock_exam = student.mock_exam;
+                if (student.study_buddy !== null && student.study_buddy !== undefined) entryData.study_buddy = student.study_buddy;
+                if (student.self_reflection_journal !== null && student.self_reflection_journal !== undefined) entryData.self_reflection_journal = student.self_reflection_journal;
+                if (student.weekly_evaluation !== null && student.weekly_evaluation !== undefined) entryData.weekly_evaluation = student.weekly_evaluation;
+                if (student.extra_points !== null && student.extra_points !== undefined) entryData.extra_points = student.extra_points;
+                entryUpdates.push(entryData);
             }
         }
-        
+
+        // Build attendance payloads only when this role may mark attendance.
+        // Curators are read-only on attendance (the backend rejects it), so skipping
+        // here avoids a burst of pointless 403s when they edit unrelated fields.
+        const attendanceUpdates: any[] = [];
+        if (canMarkAttendance) {
+            for (const student of entriesToSave) {
+                for (const [lessonKey, lessonStatus] of Object.entries(student.lessons)) {
+                    if (lockedLessonKeys.has(lessonKey)) continue;
+                    attendanceUpdates.push({
+                        group_id: selectedGroupId,
+                        week_number: currentWeek,
+                        lesson_index: parseInt(lessonKey),
+                        student_id: student.student_id,
+                        score: lessonStatus.attendance_status === 'attended' ? 10 : 0,
+                        status: lessonStatus.attendance_status,
+                        event_id: lessonStatus.event_id ?? null,
+                        activity_score: lessonStatus.activity_score ?? undefined,
+                    });
+                }
+            }
+        }
+
+        // Entries and attendance are independent — fire both bulk writes together.
+        const [entryResult, attendanceResult] = await Promise.allSettled([
+            entryUpdates.length ? updateLeaderboardEntriesBulk({ entries: entryUpdates }) : Promise.resolve(null),
+            attendanceUpdates.length ? updateAttendanceBulk({ updates: attendanceUpdates }) : Promise.resolve(null),
+        ]);
+
+        if (entryResult.status === 'rejected') {
+            console.error('Failed to save leaderboard entries', entryResult.reason);
+        }
+        if (attendanceResult.status === 'rejected') {
+            attendanceFailures = attendanceUpdates.length;
+            console.error('Failed to save attendance', attendanceResult.reason);
+        }
+
+        // Entry save is all-or-nothing per request: success ⇒ every changed row saved.
+        successCount = entryResult.status === 'fulfilled' ? entriesToSave.length : 0;
+
         if (successCount === entriesToSave.length && attendanceFailures === 0) {
             toast(t("Все изменения сохранены", "All changes saved"), "success");
             setChangedEntries(new Set());

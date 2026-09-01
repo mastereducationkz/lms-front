@@ -169,13 +169,23 @@ export default function StudentDashboard({
     loadProgressData();
     loadTodoData();
     loadDailyQuestionsStatus();
-    loadSpecialGroupsState();
-    loadIeltsPromptStatus();
+    // Both the special-groups flag and the IELTS-prompt gate need the group list;
+    // fetch it once and share instead of two separate getMyGroups round-trips.
+    (async () => {
+      let myGroups: any[] = [];
+      try {
+        myGroups = await apiClient.getMyGroups();
+      } catch (error) {
+        console.error('Failed to load groups:', error);
+      }
+      loadSpecialGroupsState(myGroups);
+      loadIeltsPromptStatus(myGroups);
+    })();
   }, []);
 
-  const loadSpecialGroupsState = async () => {
+  const loadSpecialGroupsState = async (preloadedGroups?: any[]) => {
     try {
-      const myGroups = await apiClient.getMyGroups()
+      const myGroups = preloadedGroups ?? await apiClient.getMyGroups()
       const hasOnlySpecialGroups = myGroups.length > 0 && myGroups.every(group => group.is_special)
       setGroupsSpecialChecked(hasOnlySpecialGroups)
     } catch (error) {
@@ -184,10 +194,10 @@ export default function StudentDashboard({
     }
   }
 
-  const loadIeltsPromptStatus = async () => {
+  const loadIeltsPromptStatus = async (preloadedGroups?: any[]) => {
     try {
       setIsLoadingIeltsPrompt(true)
-      const myGroups = await apiClient.getMyGroups()
+      const myGroups = preloadedGroups ?? await apiClient.getMyGroups()
       if (myGroups.length > 0 && myGroups.every((g) => g.is_special)) {
         setShowIeltsPrompt(false)
         setIeltsCurrentExactDate(null)
