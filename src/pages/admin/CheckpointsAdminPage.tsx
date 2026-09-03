@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '../../components/ui/button';
@@ -39,11 +39,15 @@ export default function CheckpointsAdminPage() {
     listCheckpointDefinitions().then(setDefinitions).catch(() => toast.error('Failed to load definitions'));
   }, []);
 
+  const reloadGen = useRef(0);
+
   const reload = useCallback(async () => {
     if (!groupId) return;
+    const gen = ++reloadGen.current;
     setLoading(true);
     try {
-      setMatrix(await getCheckpointMatrix(groupId));
+      const result = await getCheckpointMatrix(groupId);
+      if (reloadGen.current === gen) setMatrix(result);
     } catch {
       toast.error('Failed to load matrix');
     } finally {
@@ -51,7 +55,7 @@ export default function CheckpointsAdminPage() {
     }
   }, [groupId]);
 
-  useEffect(() => { setSelected(null); void reload(); }, [reload]);
+  useEffect(() => { setSelected(null); setMatrix(null); void reload(); }, [reload]);
 
   useEffect(() => {
     setSelected((prev) => {
