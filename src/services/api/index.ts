@@ -9,6 +9,7 @@ export * from './progress';
 export * from './chat';
 export * from './parents';
 export * from './platformTests';
+export * from './targets';
 export * from './quizzes';
 export * from './events';
 export * from './uploads';
