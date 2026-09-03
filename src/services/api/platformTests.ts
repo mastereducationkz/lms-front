@@ -28,9 +28,10 @@ export interface PlatformTestProgress {
   group_id: number | null;
   title: string;
   platform: string;
+  track?: string;
   weekly_set_id: number;
   set_title: string | null;
-  set_path: string;
+  set_path: string | null;
   date_from: string | null;
   date_to: string | null;
   due_date: string | null;

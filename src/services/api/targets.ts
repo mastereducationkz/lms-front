@@ -52,20 +52,30 @@ export interface IeltsProgress {
   reached: boolean;
 }
 
+/** SAT scaled values are ESTIMATES predicted from correct counts — always shown with `note`. */
 export interface SatCurrent {
   total: number | null;
   math: number | null;
   verbal: number | null;
-  week: number | null;
-  set_name: string | null;
-  completed_at: string | null;
-  source: string;
+  math_correct?: number | null;
+  math_total?: number | null;
+  verbal_correct?: number | null;
+  verbal_total?: number | null;
+  previous_total?: number | null;
+  trend?: number | null;
+  week?: number | null;
+  set_name?: string | null;
+  completed_at?: string | null;
+  source: 'events' | 'weekly_set' | string;
+  estimate?: boolean;
 }
 
 export interface SatProgress {
   current: SatCurrent | null;
   gaps: Record<string, number | null>;
   reached: boolean;
+  /** The estimate disclaimer to show next to any scaled value. */
+  note?: string;
 }
 
 export interface TargetsPayload {
