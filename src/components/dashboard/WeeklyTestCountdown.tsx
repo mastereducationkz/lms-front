@@ -12,8 +12,9 @@ import { formatAlmaty, getWeeklyTestsMe, type PlatformTestProgress } from '../..
  * any error, so the dashboard never shows an empty box.
  */
 
-const SHORT: Record<string, string> = { listening: 'L', reading: 'R', writing: 'W', speaking: 'S' };
-const LABEL: Record<string, string> = { listening: 'Listening', reading: 'Reading', writing: 'Writing', speaking: 'Speaking' };
+const SHORT: Record<string, string> = { listening: 'L', reading: 'R', writing: 'W', speaking: 'S', math: 'M', verbal: 'V', nuet: 'NUET' };
+const LABEL: Record<string, string> = { listening: 'Listening', reading: 'Reading', writing: 'Writing', speaking: 'Speaking', math: 'Math', verbal: 'Verbal', nuet: 'NUET' };
+const platformLabel = (item: PlatformTestProgress): string => ((item as { track?: string }).track ?? item.platform ?? '').toUpperCase() || 'Platform';
 
 function headlineFor(item: PlatformTestProgress): string {
   const days = item.days_left;
@@ -60,7 +61,7 @@ export function WeeklyTestCountdown() {
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">IELTS weekly test</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{platformLabel(item)} weekly test</p>
               <p className="font-medium truncate">{item.set_title ?? item.title}</p>
               <p className="mt-1 text-lg font-semibold text-primary">{headlineFor(item)}</p>
               {item.date_to && (

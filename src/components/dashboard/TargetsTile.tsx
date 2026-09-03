@@ -217,10 +217,19 @@ function ScoreBlock({ track, data, onSaved }: { track: 'sat' | 'nuet'; data: Tar
             )}
           </p>
           {track === 'sat' && current && (
-            <p className="text-xs text-muted-foreground">
-              Math {score(current.math)}{targets.math != null ? ` → ${targets.math}` : ''} · Verbal {score(current.verbal)}{targets.verbal != null ? ` → ${targets.verbal}` : ''}
-              {current.set_name ? ` · ${current.set_name}` : ''}
-            </p>
+            <>
+              <p className="text-xs text-muted-foreground">
+                Math {score(current.math)}{targets.math != null ? ` → ${targets.math}` : ''}
+                {current.math_correct != null && current.math_total != null ? ` (${current.math_correct}/${current.math_total} correct)` : ''}
+                {' · '}Verbal {score(current.verbal)}{targets.verbal != null ? ` → ${targets.verbal}` : ''}
+                {current.verbal_correct != null && current.verbal_total != null ? ` (${current.verbal_correct}/${current.verbal_total} correct)` : ''}
+                {current.set_name ? ` · ${current.set_name}` : ''}
+                {current.trend != null && current.trend !== 0 ? ` · ${current.trend > 0 ? '↑' : '↓'} ${Math.abs(current.trend)} vs previous set` : ''}
+              </p>
+              <p className="text-[11px] text-muted-foreground italic">
+                {data.progress.sat?.note ?? 'Scaled scores are estimates predicted from the number of correct answers. They are not official scores.'}
+              </p>
+            </>
           )}
           {track === 'sat' && !current && <p className="text-xs text-muted-foreground">No completed weekly set yet</p>}
           {record && sourceLabel(record.source) && <p className="text-[11px] text-muted-foreground">{sourceLabel(record.source)}</p>}

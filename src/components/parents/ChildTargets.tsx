@@ -36,7 +36,11 @@ export function ChildTargets({ studentId }: { studentId: number }) {
   }
   if (data.tracks.includes('sat')) {
     const target = data.targets.sat?.targets.total;
-    lines.push(`SAT: цель ${score(target)} · сейчас ${score(sat?.current?.total)}`);
+    const cur = sat?.current;
+    const detail = cur
+      ? ` (Math ${score(cur.math)}${cur.math_correct != null && cur.math_total != null ? ` — ${cur.math_correct}/${cur.math_total}` : ''}, Verbal ${score(cur.verbal)}${cur.verbal_correct != null && cur.verbal_total != null ? ` — ${cur.verbal_correct}/${cur.verbal_total}` : ''})`
+      : '';
+    lines.push(`SAT: цель ${score(target)} · сейчас ${score(cur?.total)}${detail}`);
   }
   if (data.tracks.includes('nuet')) {
     lines.push(`NUET: цель ${score(data.targets.nuet?.targets.total)}`);
@@ -49,6 +53,11 @@ export function ChildTargets({ studentId }: { studentId: number }) {
       {lines.map((line) => (
         <p key={line} className="text-gray-800 dark:text-foreground">{line}</p>
       ))}
+      {data.tracks.includes('sat') && sat?.current && (
+        <p className="mt-1 text-[11px] italic text-gray-500 dark:text-gray-400">
+          Баллы SAT — оценка по числу правильных ответов, не официальный результат.
+        </p>
+      )}
     </div>
   );
 }
