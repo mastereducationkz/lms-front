@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { GraduationCap, MessageCircle, Users } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { getMyChildren, type ParentChild } from '../services/api';
+import { ChildTargets } from '../components/parents/ChildTargets';
 import Skeleton from '../components/Skeleton.tsx';
 
 export default function ParentDashboard() {
@@ -65,6 +66,7 @@ export default function ParentDashboard() {
                     </p>
                   </div>
                 </div>
+                <ChildTargets studentId={child.id} />
               </div>
             ))}
           </div>

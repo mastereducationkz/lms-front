@@ -11,6 +11,7 @@ import { Clock, BookOpen, LineChart, CheckCircle, Target, Calendar, FileText, Al
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
 import { TrackPlatformLinks } from "../components/dashboard/TrackPlatformLinks";
 import { WeeklyTestCountdown } from "../components/dashboard/WeeklyTestCountdown";
+import { TargetsTile } from "../components/dashboard/TargetsTile";
 
 // Dashboard hero background presets (all dark so white text + the flip board stay legible).
 // `tile` is an opaque, banner-tinted color for the flip-clock digits (must be
@@ -828,6 +829,9 @@ export default function StudentDashboard({
           live group memberships. Renders nothing when no track applies. */}
       {/* Current IELTS weekly test: countdown + one checkmark per part (hides itself when off). */}
       <WeeklyTestCountdown />
+
+      {/* Exam targets vs current level per track (hides itself when off). */}
+      <TargetsTile />
 
       <TrackPlatformLinks />
 
