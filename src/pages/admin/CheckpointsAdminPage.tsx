@@ -53,6 +53,18 @@ export default function CheckpointsAdminPage() {
 
   useEffect(() => { setSelected(null); void reload(); }, [reload]);
 
+  useEffect(() => {
+    setSelected((prev) => {
+      if (!prev || !matrix) return prev;
+      const freshCell = matrix.students
+        .find((s) => s.student_id === prev.studentId)
+        ?.cells.find((c) => c.checkpoint_id === prev.cell.checkpoint_id);
+      if (!freshCell) return null;
+      if (freshCell === prev.cell) return prev;
+      return { studentId: prev.studentId, cell: freshCell };
+    });
+  }, [matrix]);
+
   const group = useMemo(() => groups.find((g) => g.id === groupId) ?? null, [groups, groupId]);
 
   const run = async (label: string, fn: () => Promise<unknown>) => {
@@ -99,7 +111,7 @@ export default function CheckpointsAdminPage() {
             </label>
             <div>
               <label className="text-xs text-muted-foreground">Auto-open from checkpoint #</label>
-              <Input type="number" min={1} className="w-24" defaultValue={group.checkpoints_start_number} disabled={!isAdmin || busy}
+              <Input key={group.id} type="number" min={1} className="w-24" defaultValue={group.checkpoints_start_number} disabled={!isAdmin || busy}
                      onBlur={(e) => {
                        const n = Number(e.target.value);
                        if (n >= 1 && n !== group.checkpoints_start_number) {
