@@ -1582,7 +1582,13 @@ export default function LessonPage() {
       localStorage.removeItem(`gap_answers_${currentStep.id}`);
     } catch (error) {
       console.error('Failed to save quiz attempt:', error);
-      toast('Failed to save quiz attempt. Please try again.', 'error');
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      const detail = (error as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
+      if ((status === 403 || status === 409) && typeof detail === 'string') {
+        toast(detail, 'error');
+      } else {
+        toast('Failed to save quiz attempt. Please try again.', 'error');
+      }
     }
   };
 
