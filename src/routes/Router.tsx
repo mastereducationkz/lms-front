@@ -16,6 +16,7 @@ import Loader from '../components/Loader';
 // 3.4 MB bundle that every user downloaded on first load regardless of route. Structural pieces
 // above (providers, AppLayout shell, ProtectedRoute) stay eager since they load on every route.
 const LoginPage = lazy(() => import('../pages/LoginPage.tsx'));
+const CheckpointsPage = lazy(() => import('../pages/CheckpointsPage.tsx'));
 const DashboardPage = lazy(() => import('../pages/DashboardPage.tsx'));
 const CoursesPage = lazy(() => import('../pages/CoursesPage.tsx'));
 const CourseOverviewPage = lazy(() => import('../pages/CourseOverviewPage.tsx'));
@@ -209,6 +210,14 @@ export default function Router() {
             <ProtectedRoute>
               <AppLayout>
                 <AssignmentsPage />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/checkpoints" element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <AppLayout>
+                <CheckpointsPage />
               </AppLayout>
             </ProtectedRoute>
           } />

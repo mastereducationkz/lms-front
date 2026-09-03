@@ -161,7 +161,10 @@ export function coversLabel(units: CheckpointUnit[]): string {
   const short = (t: string) => t.replace(/^Unit\s+(\d+(?:\.\d+)?)[:.].*$/i, 'Unit $1');
   const verbal = units.filter((u) => u.kind === 'verbal').map((u) => short(u.title));
   const math = units.filter((u) => u.kind === 'math').map((u) => short(u.title));
-  return `Verbal ${verbal.join(', ')} + Math ${math.join(', ')}`;
+  const parts: string[] = [];
+  if (verbal.length) parts.push(`Verbal ${verbal.join(', ')}`);
+  if (math.length) parts.push(`Math ${math.join(', ')}`);
+  return parts.join(' + ');
 }
 
 export const formatDeadline = (iso: string | null | undefined): string => formatAlmaty(iso ?? null, true);
