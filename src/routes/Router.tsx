@@ -445,7 +445,7 @@ export default function Router() {
           } />
 
           <Route path="/admin/checkpoints" element={
-            <ProtectedRoute allowedRoles={['admin', 'head_curator', 'head_teacher', 'teacher', 'curator']}>
+            <ProtectedRoute allowedRoles={['admin', 'head_curator', 'head_teacher', 'teacher']}>
               <AppLayout>
                 <CheckpointsAdminPage />
               </AppLayout>
