@@ -37,35 +37,50 @@ export function CheckpointsCard() {
           </button>
         </div>
         <ul className="mt-2 space-y-2">
-          {items.map((item) => (
-            <li key={`${item.group_id}-${item.checkpoint_id}`}>
-              <button
-                type="button"
-                className="w-full text-left rounded-lg border px-3 py-2 hover:bg-muted/50"
-                onClick={() => item.quiz && navigate(`/course/${item.quiz.course_id}/lesson/${item.quiz.lesson_id}`)}
-                aria-label={`Open ${item.title}`}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-medium flex items-center gap-2">
-                      <ClipboardCheck className="h-4 w-4" aria-hidden="true" />
-                      {item.title}
-                      <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_CLASS[item.status]}`}>
-                        {STATUS_LABEL[item.status]}
-                      </span>
+          {items.map((item) => {
+            const clickable = Boolean(item.quiz) && item.status !== 'overdue';
+            const content = (
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="font-medium flex items-center gap-2">
+                    <ClipboardCheck className="h-4 w-4" aria-hidden="true" />
+                    {item.title}
+                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_CLASS[item.status]}`}>
+                      {STATUS_LABEL[item.status]}
+                    </span>
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">Covers: {coversLabel(item.covers)} · {item.total_questions} questions</p>
+                  {item.deadline && (
+                    <p className={`text-xs ${item.status === 'overdue' ? 'text-red-600' : 'text-muted-foreground'}`}>
+                      Deadline: {formatDeadline(item.deadline)} (Almaty)
                     </p>
-                    <p className="text-xs text-muted-foreground truncate">Covers: {coversLabel(item.covers)} · {item.total_questions} questions</p>
-                    {item.deadline && (
-                      <p className={`text-xs ${item.status === 'overdue' ? 'text-red-600' : 'text-muted-foreground'}`}>
-                        Deadline: {formatDeadline(item.deadline)} (Almaty)
-                      </p>
-                    )}
-                  </div>
-                  <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  )}
+                  {item.status === 'overdue' && (
+                    <p className="text-xs text-red-600">Deadline passed — ask your curator to reopen it.</p>
+                  )}
                 </div>
-              </button>
-            </li>
-          ))}
+                {clickable && <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />}
+              </div>
+            );
+            return (
+              <li key={`${item.group_id}-${item.checkpoint_id}`}>
+                {clickable ? (
+                  <button
+                    type="button"
+                    className="w-full text-left rounded-lg border px-3 py-2 hover:bg-muted/50"
+                    onClick={() => navigate(`/course/${item.quiz!.course_id}/lesson/${item.quiz!.lesson_id}`)}
+                    aria-label={`Open ${item.title}`}
+                  >
+                    {content}
+                  </button>
+                ) : (
+                  <div className="w-full rounded-lg border px-3 py-2">
+                    {content}
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </CardContent>
     </Card>

@@ -46,6 +46,7 @@ const BluebookGroupGridPage = lazy(() => import('../pages/BluebookGroupGridPage.
 const ExamResultsWorkbenchPage = lazy(() => import('../pages/ExamResultsWorkbenchPage.tsx'));
 const QuestionReportsPage = lazy(() => import('../pages/admin/QuestionReportsPage.tsx'));
 const WeeklyTopStudentsPage = lazy(() => import('../pages/admin/WeeklyTopStudentsPage.tsx'));
+const CheckpointsAdminPage = lazy(() => import('../pages/admin/CheckpointsAdminPage.tsx'));
 const UserManagement = lazy(() => import('../pages/UserManagement.tsx'));
 const ManualUnlocksPage = lazy(() => import('../pages/admin/ManualUnlocksPage.tsx'));
 const TrialAccessPage = lazy(() => import('../pages/admin/TrialAccessPage.tsx'));
@@ -439,6 +440,14 @@ export default function Router() {
             <ProtectedRoute allowedRoles={['admin']}>
               <AppLayout>
                 <WeeklyTopStudentsPage />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/admin/checkpoints" element={
+            <ProtectedRoute allowedRoles={['admin', 'head_curator', 'head_teacher', 'teacher', 'curator']}>
+              <AppLayout>
+                <CheckpointsAdminPage />
               </AppLayout>
             </ProtectedRoute>
           } />
