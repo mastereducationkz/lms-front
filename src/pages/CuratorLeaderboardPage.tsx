@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popove
 import { ChevronLeft, ChevronRight, Loader2, Save, Eye, EyeOff, Check, ChevronsUpDown, ClipboardList, Sparkles, User, Pencil, Star, Plus } from 'lucide-react';
 import { StudentHomeworkDialog } from '../components/leaderboard/StudentHomeworkDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
-import { getCuratorGroups, getWeeklyLessonsWithHwStatus, updateAttendanceBulk, updateLeaderboardEntriesBulk, updateLeaderboardConfig, setGroupWeekOffset, setLessonTopic } from '../services/api';
+import { getCuratorGroups, getWeeklyLessonsWithHwStatus, updateAttendanceBulk, updateLeaderboardEntriesBulk, updateLeaderboardConfig, setGroupWeekOffset, setLessonTopic, setGroupPlatformTestsOptOut } from '../services/api';
 import { Group, CourseType } from '../types';
 import {
   PROGRAM_LABELS, PROGRAM_BADGE_STYLES, getGroupProgramType,
@@ -449,6 +449,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentWeek, setCurrentWeek] = useState(1);
   const [weekOffset, setWeekOffset] = useState(0);
+  const [platformTestsOn, setPlatformTestsOn] = useState(true);
+  const [savingPlatformTests, setSavingPlatformTests] = useState(false);
   const [savingOffset, setSavingOffset] = useState(false);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [groupPickerOpen, setGroupPickerOpen] = useState(false);
@@ -486,6 +488,27 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   useEffect(() => {
     setWeekOffset(selectedGroup?.weekly_set_week_offset ?? 0);
   }, [selectedGroup?.id, selectedGroup?.weekly_set_week_offset]);
+
+  useEffect(() => {
+    setPlatformTestsOn(!(selectedGroup?.platform_tests_opt_out ?? false));
+  }, [selectedGroup?.id, selectedGroup?.platform_tests_opt_out]);
+
+  // Per-group opt-out of the auto-created IELTS weekly-test assignments (Platform Integration Pack).
+  const savePlatformTests = async (on: boolean) => {
+    if (!selectedGroup) return;
+    setSavingPlatformTests(true);
+    setPlatformTestsOn(on);
+    try {
+      const res = await setGroupPlatformTestsOptOut(selectedGroup.id, !on);
+      setPlatformTestsOn(!res.opt_out);
+      selectedGroup.platform_tests_opt_out = res.opt_out;
+    } catch (e) {
+      console.error('Failed to update platform tests setting:', e);
+      setPlatformTestsOn(!(selectedGroup.platform_tests_opt_out ?? false));
+    } finally {
+      setSavingPlatformTests(false);
+    }
+  };
 
   // Persist the per-group NUET week offset, then refetch so the corrected weeks show.
   const saveWeekOffset = async (next: number) => {
@@ -1342,6 +1365,25 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                         </Button>
                     )}
 
+                    {isIeltsGroup && (
+                        <label
+                            className="flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-card px-2 h-8 cursor-pointer select-none"
+                            title={t(
+                                'Автоматические задания «недельный тест IELTS» для этой группы (создаются при публикации набора на платформе).',
+                                'Auto-created "IELTS weekly test" assignments for this group (created when a set is published on the platform).',
+                            )}
+                        >
+                            <input
+                                type="checkbox"
+                                checked={platformTestsOn}
+                                disabled={savingPlatformTests}
+                                onChange={(e) => savePlatformTests(e.target.checked)}
+                                className="h-3.5 w-3.5"
+                            />
+                            <span className="text-[10px] text-gray-500 dark:text-gray-400 whitespace-nowrap">{t('Авто-тесты', 'Auto tests')}</span>
+                            {savingPlatformTests && <Loader2 className="w-3 h-3 animate-spin text-gray-400" />}
+                        </label>
+                    )}
                     {isNuetGroup && (
                         <div
                             className="flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-card px-2 h-8"
