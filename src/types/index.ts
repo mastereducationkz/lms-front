@@ -512,6 +512,8 @@ export interface Question {
   needs_image?: boolean; // Flag to indicate if the question requires an image (from Gemini parser)
   // Matching question fields
   matching_pairs?: { left: string; right: string }[]; // Pairs for matching questions
+  /** SAT Checkpoints: 5 easy / 5 medium / 5 hard per unit. Optional for ordinary quizzes. */
+  difficulty?: 'easy' | 'medium' | 'hard';
 }
 
 export interface QuizData {
