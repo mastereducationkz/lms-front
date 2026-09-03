@@ -22,6 +22,7 @@ import { Badge } from '../../components/ui/badge.tsx';
 import { Textarea } from '../../components/ui/textarea.tsx';
 import { Label } from '../../components/ui/label.tsx';
 import MultiTaskSubmission from '../../components/assignments/MultiTaskSubmission.tsx';
+import PlatformTestPanel from '../../components/assignments/PlatformTestPanel.tsx';
 import { compressImage } from '../../utils/imageCompression';
 import { AudioPlayer } from '../../components/AudioPlayer';
 
@@ -713,6 +714,15 @@ export default function AssignmentPage() {
       <div className="text-gray-500 dark:text-gray-400 text-lg">Loading assignment...</div>
     </div>
   );
+
+  // The weekly test lives on the exam platform: one checkmark per part, no submit form.
+  if (assignment.assignment_type === 'platform_test') {
+    return (
+      <div className="max-w-4xl mx-auto space-y-6 p-6">
+        <PlatformTestPanel assignment={assignment} />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 p-6">

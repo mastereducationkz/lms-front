@@ -247,6 +247,8 @@ export interface Group {
   program_type?: CourseType;
   /** Shifts leaderboard week → NUET content week (content_week = week − offset) for mid-week starts */
   weekly_set_week_offset?: number;
+  /** Platform Integration Pack: when true the group gets no auto-created platform-test assignments. */
+  platform_tests_opt_out?: boolean;
   schedule_config?: any;
   current_week?: number;
   max_week?: number;
@@ -675,7 +677,8 @@ export type AssignmentType =
   | 'coding'
   | 'multi_task'
   | 'audio'
-  | 'mixed';
+  | 'mixed'
+  | 'platform_test';
 
 export type QuestionType =
   | 'single_choice'
