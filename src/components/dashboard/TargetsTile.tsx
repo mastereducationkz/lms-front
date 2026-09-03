@@ -96,6 +96,9 @@ function IeltsBlock({ data, onSaved }: { data: TargetsPayload; onSaved: (next: T
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">IELTS</p>
           <p className="text-lg font-semibold">
+            {progress?.start?.overall != null && (
+              <span className="text-muted-foreground font-normal" title="Diagnostic entry band">start {band(progress.start.overall)} → </span>
+            )}
             Target {band(targets.overall)} <span className="text-muted-foreground font-normal">·</span> now{' '}
             <span className={progress?.reached ? 'text-emerald-600 dark:text-emerald-400' : ''}>{band(progress?.overall_now)}</span>
             {progress?.overall_best != null && <span className="ml-2 text-xs font-normal text-muted-foreground">best {band(progress.overall_best)}</span>}
@@ -125,6 +128,11 @@ function IeltsBlock({ data, onSaved }: { data: TargetsPayload; onSaved: (next: T
                   )}
                 </p>
                 <p className="text-[11px] text-muted-foreground">best {band(mod.best)}</p>
+                {m !== 'speaking' && progress.start?.[m] && (
+                  <p className="text-[11px] text-muted-foreground" title="Diagnostic entry band">
+                    start {progress.start[m]?.band != null ? band(progress.start[m]?.band) : 'taken'}
+                  </p>
+                )}
               </li>
             );
           })}

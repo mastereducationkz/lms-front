@@ -25,8 +25,25 @@ export interface IeltsModuleProgress {
   best: number | null;
 }
 
+export interface DiagnosticModule {
+  band: number | null;          // null = taken, not scored yet
+  completed_at: string | null;
+  result_url: string | null;
+}
+
+/** Diagnostic entry bands (no Speaking); stored nightly by the LMS. */
+export interface DiagnosticStart {
+  listening: DiagnosticModule | null;
+  reading: DiagnosticModule | null;
+  writing: DiagnosticModule | null;
+  completed_count: number | null;
+  overall: number | null;
+  fetched_at: string | null;
+}
+
 export interface IeltsProgress {
   modules: Record<IeltsModule, IeltsModuleProgress>;
+  start?: DiagnosticStart | null;
   overall_now: number | null;
   overall_best: number | null;
   overall_missing: IeltsModule[];
