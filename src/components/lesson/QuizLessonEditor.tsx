@@ -1534,6 +1534,20 @@ export default function QuizLessonEditor({
                 </div>
               </div>
 
+              <div className="flex items-center gap-2 mb-2">
+                <label className="text-xs text-gray-600 dark:text-gray-300">Difficulty (SAT checkpoints)</label>
+                <select
+                  className="h-8 rounded border bg-transparent px-2 text-xs"
+                  value={draftQuestion.difficulty || ''}
+                  onChange={(e) => applyDraftUpdate({ difficulty: (e.target.value || undefined) as any })}
+                >
+                  <option value="">— not set —</option>
+                  <option value="easy">Easy</option>
+                  <option value="medium">Medium</option>
+                  <option value="hard">Hard</option>
+                </select>
+              </div>
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left side - Passage and Explanation */}
                 {draftQuestion.is_sat_question && (
@@ -1573,19 +1587,6 @@ export default function QuizLessonEditor({
                             </Button>
                           </div>
                         )}
-                      </div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <label className="text-xs text-gray-600 dark:text-gray-300">Difficulty (SAT checkpoints)</label>
-                        <select
-                          className="h-8 rounded border bg-transparent px-2 text-xs"
-                          value={draftQuestion.difficulty || ''}
-                          onChange={(e) => applyDraftUpdate({ difficulty: (e.target.value || undefined) as any })}
-                        >
-                          <option value="">— not set —</option>
-                          <option value="easy">Easy</option>
-                          <option value="medium">Medium</option>
-                          <option value="hard">Hard</option>
-                        </select>
                       </div>
                       <Tabs defaultValue="passage" className="w-full">
                         <TabsList className="grid w-full grid-cols-2">
