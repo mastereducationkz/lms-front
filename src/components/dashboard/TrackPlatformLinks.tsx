@@ -3,7 +3,7 @@ import { ExternalLink } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { PROGRAM_BADGE_STYLES } from '../../lib/groupPicker';
-import { platformLinksForTracks, type PlatformLink } from '../../lib/platformLinks';
+import { openPlatformPage, platformLinksForTracks, type PlatformLink } from '../../lib/platformLinks';
 import { getMyTracks } from '../../services/api/exams';
 
 /**
@@ -72,6 +72,13 @@ export function TrackPlatformLinks() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={`Open the ${link.label} platform in a new tab`}
+                  onClick={(event) => {
+                    // Plain click: open via the signed handoff (falls back to href's host).
+                    // Modified clicks keep the browser's own new-tab/window behaviour.
+                    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+                    event.preventDefault();
+                    void openPlatformPage(link.track, '/');
+                  }}
                 >
                   Open
                   <ExternalLink className="ml-1.5 h-4 w-4" aria-hidden="true" />
