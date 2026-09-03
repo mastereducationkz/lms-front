@@ -83,12 +83,6 @@ export interface CheckpointMatrix {
   students: { student_id: number; name: string; email: string; cells: CheckpointCell[] }[];
 }
 
-export interface CheckpointResultRow extends CheckpointRow {
-  student_id: number;
-  name: string;
-  email: string;
-}
-
 export async function getMyCheckpoints(): Promise<{ enabled: boolean; items: StudentCheckpointItem[] }> {
   const response = await api.get('/checkpoints/me');
   return response.data;
@@ -148,11 +142,6 @@ export async function reopenCheckpoint(
 
 export async function updateCheckpointDeadline(rowId: number, deadline: string): Promise<CheckpointRow> {
   const response = await api.patch(`/checkpoints/admin/student-checkpoints/${rowId}`, { deadline });
-  return response.data;
-}
-
-export async function getCheckpointResults(groupId: number, checkpointId: number): Promise<CheckpointResultRow[]> {
-  const response = await api.get(`/checkpoints/admin/groups/${groupId}/checkpoints/${checkpointId}/results`, { cache: false } as any);
   return response.data;
 }
 

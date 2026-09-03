@@ -16,6 +16,15 @@ import {
 /** Local-datetime input value → ISO string the backend stores as naive UTC. */
 const toIso = (local: string) => (local ? new Date(local).toISOString() : undefined);
 
+/** ISO string → `datetime-local` input value in the browser's local timezone. */
+const toLocalInputValue = (iso: string | null) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+
 function StatusChip({ status }: { status: CheckpointCell['status'] }) {
   return <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_CLASS[status]}`}>{STATUS_LABEL[status]}</span>;
 }
@@ -71,19 +80,28 @@ export default function CheckpointsAdminPage() {
 
   const group = useMemo(() => groups.find((g) => g.id === groupId) ?? null, [groups, groupId]);
 
-  const run = async (label: string, fn: () => Promise<unknown>) => {
+  const run = async (label: string, fn: () => Promise<unknown>): Promise<boolean> => {
     setBusy(true);
     try {
       await fn();
-      toast.success(label);
-      await reload();
-      setGroups(await listCheckpointGroups('sat'));
-      setDefinitions(await listCheckpointDefinitions());
     } catch (e: any) {
       toast.error(e?.response?.data?.detail ?? `${label} failed`);
+      setBusy(false);
+      return false;
+    }
+    toast.success(label);
+    try {
+      const [, groupsResult, definitionsResult] = await Promise.all([
+        reload(), listCheckpointGroups('sat'), listCheckpointDefinitions(),
+      ]);
+      setGroups(groupsResult);
+      setDefinitions(definitionsResult);
+    } catch (e) {
+      console.warn(`Failed to refresh checkpoints admin data after ${label}`, e);
     } finally {
       setBusy(false);
     }
+    return true;
   };
 
   return (
@@ -123,7 +141,7 @@ export default function CheckpointsAdminPage() {
                        }
                      }} />
             </div>
-            <Button variant="outline" size="sm" onClick={() => reload()} disabled={loading}>
+            <Button variant="outline" size="sm" onClick={() => reload()} disabled={loading} aria-label="Reload matrix">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             </Button>
           </>
@@ -162,7 +180,12 @@ export default function CheckpointsAdminPage() {
                   </td>
                   {s.cells.map((cell) => (
                     <td key={cell.checkpoint_id} className="px-3 py-2 align-top">
-                      <button type="button" className="text-left" onClick={() => { setSelected({ studentId: s.student_id, cell }); setDeadlineInput(''); }}>
+                      <button
+                        type="button"
+                        className="text-left"
+                        onClick={() => { setSelected({ studentId: s.student_id, cell }); setDeadlineInput(toLocalInputValue(cell.deadline)); }}
+                        aria-label={`${s.name} — Checkpoint ${cell.number}, ${STATUS_LABEL[cell.status]}`}
+                      >
                         <StatusChip status={cell.status} />
                         <div className="mt-1 text-[11px] text-muted-foreground">
                           {cell.units.map((u) => (u.completed ? '✓' : '·')).join(' ')}
@@ -218,11 +241,14 @@ export default function CheckpointsAdminPage() {
               {selected.cell.id != null && (
                 <>
                   <div>
-                    <label className="text-xs text-muted-foreground">New deadline</label>
+                    <label className="text-xs text-muted-foreground">New deadline (your local time)</label>
                     <Input type="datetime-local" value={deadlineInput} onChange={(e) => setDeadlineInput(e.target.value)} />
                   </div>
-                  <Button size="sm" variant="outline" disabled={busy || !deadlineInput} onClick={() => run('Deadline updated',
-                    () => updateCheckpointDeadline(selected.cell.id!, toIso(deadlineInput)!))}>
+                  <Button size="sm" variant="outline" disabled={busy || !deadlineInput} onClick={async () => {
+                    const ok = await run('Deadline updated',
+                      () => updateCheckpointDeadline(selected.cell.id!, toIso(deadlineInput)!));
+                    if (ok) setDeadlineInput('');
+                  }}>
                     Set deadline
                   </Button>
                 </>
@@ -255,6 +281,7 @@ export default function CheckpointsAdminPage() {
                     <td className="px-3 py-2 whitespace-nowrap">{d.title}</td>
                     <td className="px-3 py-2">
                       <input type="checkbox" checked={d.is_active} disabled={!isAdmin || busy}
+                             aria-label={`${d.title} active`}
                              onChange={(e) => run(`${d.title} ${e.target.checked ? 'activated' : 'deactivated'}`,
                                () => updateCheckpointDefinition(d.id, { is_active: e.target.checked }))} />
                     </td>
@@ -265,7 +292,8 @@ export default function CheckpointsAdminPage() {
                       {isAdmin && (
                         <div className="mt-1 flex gap-2">
                           <Input className="w-48" placeholder={current} value={unitEdits[d.id] ?? ''}
-                                 onChange={(e) => setUnitEdits({ ...unitEdits, [d.id]: e.target.value })} />
+                                 aria-label={`${d.title} required unit ids`}
+                                 onChange={(e) => setUnitEdits((prev) => ({ ...prev, [d.id]: e.target.value }))} />
                           <Button size="sm" variant="outline" disabled={busy || !(unitEdits[d.id] ?? '').trim()} onClick={() => {
                             const ids = (unitEdits[d.id] ?? '').split(',').map((x) => Number(x.trim())).filter((x) => x > 0);
                             if (ids.length !== 3) { toast.error('Enter exactly 3 lesson ids: verbal, verbal, math'); return; }
@@ -281,7 +309,7 @@ export default function CheckpointsAdminPage() {
                     <td className="px-3 py-2 whitespace-nowrap">
                       {d.question_count}/{d.total_questions}
                       <Button size="sm" variant="ghost" className="ml-1" onClick={async () => {
-                        try { setChecks({ ...checks, [d.id]: await checkCheckpointQuiz(d.id) }); } catch { toast.error('Check failed'); }
+                        try { const res = await checkCheckpointQuiz(d.id); setChecks((prev) => ({ ...prev, [d.id]: res })); } catch { toast.error('Check failed'); }
                       }}>Check</Button>
                       {check && (
                         <div className="text-[11px] text-muted-foreground">
