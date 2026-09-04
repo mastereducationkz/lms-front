@@ -238,9 +238,9 @@ export default function CourseOverviewPage() {
                               : 'border-gray-200 dark:border-border hover:border-gray-300 dark:hover:border-border hover:bg-gray-100 dark:hover:bg-secondary'
                         }`}
                       >
-                        {isAccessible && (
+                        {isAccessible && progress.showFill && (
                           <span
-                            className="absolute inset-y-0 left-0 bg-primary/10 transition-[width] duration-300 motion-reduce:transition-none"
+                            className="absolute inset-y-0 left-0 bg-foreground/[0.06] transition-[width] duration-300 motion-reduce:transition-none"
                             style={{ width: `${progress.ratio * 100}%` }}
                             aria-hidden="true"
                           />

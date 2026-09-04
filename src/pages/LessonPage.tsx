@@ -339,9 +339,9 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                                       : 'opacity-50 cursor-not-allowed'
                                   }`}
                               >
-                                {isAccessible && (
+                                {isAccessible && progress.showFill && (
                                   <span
-                                    className="absolute inset-y-0 left-0 bg-primary/10 transition-[width] duration-300 motion-reduce:transition-none"
+                                    className="absolute inset-y-0 left-0 bg-foreground/[0.06] transition-[width] duration-300 motion-reduce:transition-none"
                                     style={{ width: `${progress.ratio * 100}%` }}
                                     aria-hidden="true"
                                   />
