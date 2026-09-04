@@ -5,10 +5,12 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { Skeleton } from '../components/ui/skeleton';
-import { ChevronLeft, ChevronRight, Play, FileText, HelpCircle, ChevronDown, ChevronUp, Lock, Trophy, PanelLeftOpen, PanelLeftClose, SkipForward, Languages, Star, Layers, Check, Cloud, CloudOff, Loader2, Pencil, Printer } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, FileText, HelpCircle, ChevronDown, ChevronUp, Lock, Trophy, PanelLeftOpen, PanelLeftClose, SkipForward, Languages, Star, Layers, Check, Cloud, CloudOff, Loader2, Pencil, Printer, ClipboardCheck } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import apiClient from '../services/api';
 import type { Lesson, Step, Course, CourseModule, StepProgress, StepAttachment } from '../types';
+import { getMyCheckpoints, coversLabel, formatDeadline, type StudentCheckpointItem } from '../services/api/checkpoints';
+import { buildCheckpointHints, isOpen as isCheckpointOpen, type CheckpointHints } from '../lib/checkpointHints';
 import YouTubeVideoPlayer from '../components/YouTubeVideoPlayer';
 import { renderTextWithLatex } from '../utils/latex';
 import FlashcardViewer from '../components/lesson/FlashcardViewer';
@@ -166,6 +168,19 @@ const stripVideoLanguageMeta = (content?: string) => {
   return (content || '').replace(videoLanguageMetaPattern, '').trim()
 }
 
+// Short chip labels/colors for a checkpoint quiz row in the sidebar/overview (distinct
+// from the fuller STATUS_LABEL/STATUS_CLASS used on the checkpoint screens themselves).
+const CHECKPOINT_CHIP_LABEL: Record<StudentCheckpointItem['status'], string> = {
+  locked: 'Locked', available: 'Open', completed: 'Done', overdue: 'Overdue', reopened: 'Open',
+};
+const CHECKPOINT_CHIP_CLASS: Record<StudentCheckpointItem['status'], string> = {
+  locked: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
+  available: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+  completed: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+  overdue: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+  reopened: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+};
+
 interface LessonSidebarProps {
   course: Course | null;
   modules: CourseModule[];
@@ -173,9 +188,10 @@ interface LessonSidebarProps {
   onLessonSelect: (lessonId: string) => void;
   isCollapsed?: boolean;
   onToggle?: () => void;
+  checkpointHints?: CheckpointHints;
 }
 
-const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCollapsed = false, onToggle }: LessonSidebarProps) => {
+const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCollapsed = false, onToggle, checkpointHints }: LessonSidebarProps) => {
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
 
   // Update expanded modules when modules are loaded
@@ -298,8 +314,12 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                           .map((lecture, _lectureIndex) => {
                             const isSelected = selectedLessonId === lecture.id.toString();
                             const isAccessible = (lecture as any).is_accessible !== false; // Default to accessible if not specified
-                            
+                            const isCheckpointLesson = (lecture as any).kind === 'checkpoint';
+                            const checkpointItem = checkpointHints?.byQuizLesson.get(Number(lecture.id));
+                            const requiredByCheckpoint = checkpointHints?.unitToCheckpoint.get(Number(lecture.id));
+
                             const getLessonIcon = () => {
+                              if (isCheckpointLesson) return <ClipboardCheck className="w-4 h-4" />;
                               return <Play className="w-4 h-4" />;
                             };
 
@@ -311,10 +331,10 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                                 disabled={!isAccessible}
                                 title={!isAccessible ? "Complete previous lessons to unlock" : ""}
                                 className={`w-full justify-start pl-12 pr-4 py-3 h-auto rounded-none border-b border-border/30 flex items-center gap-3 text-left text-sm ${
-                                  isSelected 
-                                    ? 'bg-primary/15 border-l-4 border-l-primary' 
-                                    : isAccessible 
-                                      ? 'hover:bg-muted/35' 
+                                  isSelected
+                                    ? 'bg-primary/15 border-l-4 border-l-primary'
+                                    : isAccessible
+                                      ? 'hover:bg-muted/35'
                                       : 'opacity-50 cursor-not-allowed'
                                   }`}
                               >
@@ -323,9 +343,24 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                                 </div>
                                 <div className="flex items-center justify-between w-full min-w-0">
                                   <span className="truncate text-foreground">{lecture.title}</span>
-                                  {lecture.is_completed ? (
-                                    <span className="ml-2 h-5 px-2 inline-flex items-center rounded bg-accent text-primary border border-primary/20 text-[10px]">✓</span>
-                                  ) : null}
+                                  <span className="flex items-center gap-1 ml-2 shrink-0">
+                                    {isCheckpointLesson && checkpointItem ? (
+                                      <span className={`h-5 px-2 inline-flex items-center rounded text-[10px] font-medium ${CHECKPOINT_CHIP_CLASS[checkpointItem.status]}`}>
+                                        {CHECKPOINT_CHIP_LABEL[checkpointItem.status]}
+                                      </span>
+                                    ) : requiredByCheckpoint ? (
+                                      <span
+                                        className="h-5 px-1.5 inline-flex items-center gap-0.5 rounded bg-muted text-muted-foreground border border-border text-[10px] font-medium"
+                                        title={`Required for Checkpoint ${requiredByCheckpoint.number}`}
+                                      >
+                                        <ClipboardCheck className="w-3 h-3" aria-hidden="true" />
+                                        {requiredByCheckpoint.number}
+                                      </span>
+                                    ) : null}
+                                    {lecture.is_completed ? (
+                                      <span className="h-5 px-2 inline-flex items-center rounded bg-accent text-primary border border-primary/20 text-[10px]">✓</span>
+                                    ) : null}
+                                  </span>
                                 </div>
                               </button>
                             );
@@ -392,6 +427,16 @@ export default function LessonPage() {
   // "Can submit HW" popup shown when completing the lesson unlocks a ready-to-submit assignment
   const [readyPopup, setReadyPopup] = useState<{ id: number; title: string } | null>(null);
 
+  // SAT Checkpoints: the student's checkpoint rows for this course (empty if the
+  // student's group doesn't have checkpoints enabled — see getMyCheckpoints).
+  const [checkpointItems, setCheckpointItems] = useState<StudentCheckpointItem[]>([]);
+  // "Checkpoint N unlocked" dialog. `onContinue` is set only when this dialog is
+  // intercepting the "Next Lesson" action (see goToNextStep) — its presence switches the
+  // footer from [Later/Take checkpoint] to [Continue to next unit/Take checkpoint].
+  const [checkpointDialog, setCheckpointDialog] = useState<{ item: StudentCheckpointItem; onContinue: (() => void) | null } | null>(null);
+  // Checkpoint ids whose "open" banner the student dismissed this page load.
+  const [dismissedCheckpointIds, setDismissedCheckpointIds] = useState<Set<number>>(new Set());
+
   // Refs for race-safe operations
   const textContentRef = useRef<HTMLDivElement>(null);
   const activeStepIdRef = useRef<number | null>(null);
@@ -411,6 +456,76 @@ export default function LessonPage() {
     checkedLessonsRef.current.add(lessonId);
     const list = res?.newly_ready_assignments;
     if (Array.isArray(list) && list.length > 0) setReadyPopup(list[0]);
+  }, []);
+
+  // Mirrors `checkpointItems` so goToNextStep/effects can read the latest value without
+  // pulling it into their dependency arrays.
+  const checkpointItemsRef = useRef<StudentCheckpointItem[]>([]);
+  useEffect(() => { checkpointItemsRef.current = checkpointItems; }, [checkpointItems]);
+
+  // Last-known status per checkpoint_id, used to detect a locked -> open transition.
+  const checkpointStatusRef = useRef<Map<number, StudentCheckpointItem['status']>>(new Map());
+  // Dedup: the "Checkpoint N unlocked" dialog fires at most once per (lesson, checkpoint)
+  // pair per session, whichever path (goToNextStep intercept or the completion effect)
+  // notices it first.
+  const checkpointDialogDedupRef = useRef<Set<string>>(new Set());
+
+  const checkpointHints = useMemo(() => buildCheckpointHints(checkpointItems), [checkpointItems]);
+
+  // The (at most one) open checkpoint to nudge the student about right now, while they're
+  // not already on that checkpoint's own quiz lesson and haven't dismissed it this load.
+  const openCheckpointBanner = useMemo(() => {
+    return checkpointItems.find((item) => {
+      if (!isCheckpointOpen(item)) return false;
+      if (dismissedCheckpointIds.has(item.checkpoint_id)) return false;
+      if (lesson && item.quiz && String(item.quiz.lesson_id) === String(lesson.id)) return false;
+      return true;
+    }) || null;
+  }, [checkpointItems, dismissedCheckpointIds, lesson]);
+
+  const fetchCheckpoints = useCallback(async (): Promise<StudentCheckpointItem[]> => {
+    try {
+      const res = await getMyCheckpoints();
+      const items = res?.items || [];
+      setCheckpointItems(items);
+      return items;
+    } catch {
+      // Student may be in a non-checkpoints-enabled group, or the request failed —
+      // fail silently and keep whatever we last knew.
+      return checkpointItemsRef.current;
+    }
+  }, []);
+
+  // Compares freshly-fetched checkpoint items against the last known snapshot; if a
+  // checkpoint covering `completedLessonId` just moved from locked to open, opens the
+  // "unlocked" dialog (unless something already opened it for this pair). Always updates
+  // the snapshot so later comparisons are against the latest known state.
+  const noteCheckpointTransition = useCallback((items: StudentCheckpointItem[], completedLessonId?: string | null) => {
+    const prevSnapshot = checkpointStatusRef.current;
+    let unlocked: StudentCheckpointItem | null = null;
+
+    if (completedLessonId) {
+      for (const item of items) {
+        const prevStatus = prevSnapshot.get(item.checkpoint_id);
+        const justOpened = prevStatus === 'locked' && isCheckpointOpen(item);
+        const coversThisLesson = item.covers.some((c) => String(c.lesson_id) === completedLessonId);
+        if (justOpened && coversThisLesson) {
+          const key = `${completedLessonId}:${item.checkpoint_id}`;
+          if (!checkpointDialogDedupRef.current.has(key)) {
+            checkpointDialogDedupRef.current.add(key);
+            unlocked = item;
+          }
+          break;
+        }
+      }
+    }
+
+    checkpointStatusRef.current = new Map(items.map((item) => [item.checkpoint_id, item.status]));
+
+    if (unlocked) {
+      const found = unlocked;
+      setCheckpointDialog((prev) => prev ?? { item: found, onContinue: null });
+    }
   }, []);
 
   const devLog = useCallback((...args: unknown[]) => {
@@ -441,6 +556,29 @@ export default function LessonPage() {
       apiClient.markLessonComplete(String(lesson.id), 0).then(res => maybeShowReadyPopup(lesson.id, res)).catch(() => {});
     }
   }, [lesson?.id, lesson?.is_completed, maybeShowReadyPopup]);
+
+  // Load this student's checkpoint rows for the course, and re-seed the status snapshot
+  // (no dialog on initial load — only genuine locked -> open transitions trigger it).
+  useEffect(() => {
+    if (!courseId) return;
+    let cancelled = false;
+    fetchCheckpoints().then((items) => {
+      if (cancelled) return;
+      checkpointStatusRef.current = new Map(items.map((item) => [item.checkpoint_id, item.status]));
+    });
+    return () => { cancelled = true; };
+  }, [courseId, fetchCheckpoints]);
+
+  // Mirrors the "ready to submit" effect above, but for checkpoints: when the current
+  // lesson flips to completed, refetch checkpoints and see whether one covering this
+  // lesson just opened as a result (see the module-level gotcha note on step-driven
+  // completion already having opened it server-side by this point).
+  useEffect(() => {
+    if (!lesson) return;
+    if (!Boolean(lesson.is_completed)) return;
+    const lessonId = String(lesson.id);
+    fetchCheckpoints().then((items) => noteCheckpointTransition(items, lessonId));
+  }, [lesson?.id, lesson?.is_completed, fetchCheckpoints, noteCheckpointTransition]);
 
   // Track the furthest step the student has reached
   useEffect(() => {
@@ -1230,10 +1368,34 @@ export default function LessonPage() {
       if (currentStep && !currentStep.is_optional && !isStepCompleted(currentStep)) {
         await markStepAsVisited(currentStep.id.toString(), 2);
       }
-      setCurrentStepIndex(0);
-      navigate(`/course/${courseId}/lesson/${nextLessonId}`);
+
+      const proceed = () => {
+        setCurrentStepIndex(0);
+        navigate(`/course/${courseId}/lesson/${nextLessonId}`);
+      };
+
+      // The step-visit call above may have just opened a checkpoint that requires the
+      // unit we're leaving — nudge the student to take it before moving on. This is a
+      // NUDGE, never a hard block: "Continue to next unit" always performs the exact
+      // navigation `proceed` does above.
+      const currentLessonId = lesson ? String(lesson.id) : null;
+      if (currentLessonId) {
+        const items = await fetchCheckpoints();
+        const pendingItem = items.find(
+          (item) => isCheckpointOpen(item) && item.covers.some((c) => String(c.lesson_id) === currentLessonId)
+        );
+        if (pendingItem) {
+          checkpointDialogDedupRef.current.add(`${currentLessonId}:${pendingItem.checkpoint_id}`);
+          checkpointStatusRef.current = new Map(items.map((item) => [item.checkpoint_id, item.status]));
+          setCheckpointDialog({ item: pendingItem, onContinue: proceed });
+          return;
+        }
+        checkpointStatusRef.current = new Map(items.map((item) => [item.checkpoint_id, item.status]));
+      }
+
+      proceed();
     }
-  }, [currentStep, canProceedToNext, getProceedBlockReason, currentStepIndex, orderedSteps.length, nextLessonId, goToStep, isStepCompleted, markStepAsVisited, navigate, courseId]);
+  }, [currentStep, canProceedToNext, getProceedBlockReason, currentStepIndex, orderedSteps.length, nextLessonId, goToStep, isStepCompleted, markStepAsVisited, navigate, courseId, lesson, fetchCheckpoints]);
 
   const goToPreviousStep = useCallback(() => {
     if (currentStepIndex > 0) {
@@ -2001,6 +2163,7 @@ export default function LessonPage() {
           onLessonSelect={handleLessonSelect}
           isCollapsed={isSidebarCollapsed}
           onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          checkpointHints={checkpointHints}
         />
       </div>
 
@@ -2024,6 +2187,25 @@ export default function LessonPage() {
             <h1 className="font-semibold text-base sm:text-lg leading-tight line-clamp-2 break-words min-w-0 max-w-[220px] sm:max-w-2xl">
               {lesson.title}
             </h1>
+            {(() => {
+              const requiredByCheckpoint = checkpointHints.unitToCheckpoint.get(Number(lesson.id));
+              const asCheckpointQuiz = checkpointHints.byQuizLesson.get(Number(lesson.id));
+              if (requiredByCheckpoint) {
+                return (
+                  <span className="h-5 px-2 inline-flex items-center rounded bg-muted text-muted-foreground border border-border text-[10px] font-medium shrink-0">
+                    Counts toward Checkpoint {requiredByCheckpoint.number}
+                  </span>
+                );
+              }
+              if (asCheckpointQuiz) {
+                return (
+                  <span className={`h-5 px-2 inline-flex items-center rounded text-[10px] font-medium shrink-0 ${CHECKPOINT_CHIP_CLASS[asCheckpointQuiz.status]}`}>
+                    {asCheckpointQuiz.deadline ? `Due ${formatDeadline(asCheckpointQuiz.deadline)}` : CHECKPOINT_CHIP_LABEL[asCheckpointQuiz.status]}
+                  </span>
+                );
+              }
+              return null;
+            })()}
             {(user?.role === 'teacher' || user?.role === 'admin') && (
               <Button 
                 variant="ghost" 
@@ -2049,7 +2231,7 @@ export default function LessonPage() {
             )}
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {currentStep?.content_type === 'quiz' && (
+            {currentStep?.content_type === 'quiz' && lesson.kind !== 'checkpoint' && (
               <Button
                 variant="outline"
                 size="sm"
@@ -2136,7 +2318,37 @@ export default function LessonPage() {
               </div>
             ) : (
               <>
-                {/* Steps Navigation */}
+                {openCheckpointBanner && (
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+                    <span className="flex items-center gap-2">
+                      <ClipboardCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
+                      Checkpoint {openCheckpointBanner.number} is open — {coversLabel(openCheckpointBanner.covers)} · {openCheckpointBanner.total_questions} questions · due {formatDeadline(openCheckpointBanner.deadline)}
+                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          const quiz = openCheckpointBanner.quiz;
+                          if (quiz) navigate(`/course/${quiz.course_id}/lesson/${quiz.lesson_id}`);
+                        }}
+                      >
+                        Take it now
+                      </Button>
+                      <button
+                        type="button"
+                        onClick={() => setDismissedCheckpointIds((prev) => new Set(prev).add(openCheckpointBanner.checkpoint_id))}
+                        className="px-1 text-amber-700 hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-100"
+                        aria-label="Dismiss checkpoint reminder"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {/* Steps Navigation — a checkpoint lesson is just its one quiz step, which
+                    already shows its own "Question X of Y" progress, so this tile strip
+                    (and the matching bottom step bar below) would be redundant chrome. */}
+                {lesson.kind !== 'checkpoint' && (
                 <div className="mb-6">
                   <div
                     role="tablist"
@@ -2239,6 +2451,7 @@ export default function LessonPage() {
                     })}
                   </div>
                 </div>
+                )}
 
                 {/* Step Content */}
                 <Card className="border-none shadow-none bg-transparent">
@@ -2255,7 +2468,17 @@ export default function LessonPage() {
                   </CardContent>
                 </Card>
 
-                {/* Bottom step navigation */}
+                {/* Bottom step navigation — the quiz component owns the whole screen for a
+                    checkpoint lesson (it has its own "Question X of Y" progress), so this
+                    is replaced with a single modest way back to the course instead. */}
+                {lesson.kind === 'checkpoint' ? (
+                  <div className="mt-6 flex justify-center">
+                    <Button variant="outline" onClick={() => navigate(`/course/${courseId}`)} className="min-h-[44px]">
+                      <ChevronLeft className="w-4 h-4 mr-2" aria-hidden="true" />
+                      Back to course
+                    </Button>
+                  </div>
+                ) : (
                 <div className="mt-6 flex flex-col sm:flex-row gap-2 sm:justify-between items-center">
                   <Button
                     variant="outline"
@@ -2300,6 +2523,7 @@ export default function LessonPage() {
                     <ChevronRight className="w-4 h-4 ml-2" aria-hidden="true" />
                   </Button>
                 </div>
+                )}
               </>
             )}
           </div>
@@ -2316,12 +2540,16 @@ export default function LessonPage() {
               modules={modules}
               selectedLessonId={lessonId!}
               onLessonSelect={(id) => { handleLessonSelect(id); setIsMobileSidebarOpen(false); }}
+              checkpointHints={checkpointHints}
             />
           </div>
         </div>
       )}
 
-      <Dialog open={!!readyPopup} onOpenChange={(o) => !o && setReadyPopup(null)}>
+      {/* Only one popup dialog is ever shown at a time — the checkpoint dialog (unlock
+          notice or the "take it before moving on" nudge) takes priority over the HW
+          ready-to-submit one if both would otherwise fire. */}
+      <Dialog open={!!readyPopup && !checkpointDialog} onOpenChange={(o) => !o && setReadyPopup(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Ready to submit</DialogTitle>
@@ -2331,6 +2559,47 @@ export default function LessonPage() {
             <Button variant="ghost" onClick={() => setReadyPopup(null)}>Later</Button>
             <Button onClick={() => { const id = readyPopup?.id; setReadyPopup(null); if (id) navigate(`/homework/${id}`); }}>
               Go to assignment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!checkpointDialog} onOpenChange={(o) => !o && setCheckpointDialog(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Checkpoint {checkpointDialog?.item.number} unlocked</DialogTitle>
+          </DialogHeader>
+          {checkpointDialog && (
+            <div className="text-sm mb-4 space-y-1">
+              <p>Covers {coversLabel(checkpointDialog.item.covers)}.</p>
+              <p>
+                {checkpointDialog.item.total_questions} questions · due {formatDeadline(checkpointDialog.item.deadline)}
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            {checkpointDialog?.onContinue ? (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  const cont = checkpointDialog?.onContinue;
+                  setCheckpointDialog(null);
+                  cont?.();
+                }}
+              >
+                Continue to next unit
+              </Button>
+            ) : (
+              <Button variant="ghost" onClick={() => setCheckpointDialog(null)}>Later</Button>
+            )}
+            <Button
+              onClick={() => {
+                const quiz = checkpointDialog?.item.quiz;
+                setCheckpointDialog(null);
+                if (quiz) navigate(`/course/${quiz.course_id}/lesson/${quiz.lesson_id}`);
+              }}
+            >
+              Take checkpoint
             </Button>
           </DialogFooter>
         </DialogContent>
