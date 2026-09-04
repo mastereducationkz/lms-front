@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '../ui/button';
 import {
   AlertDialog,
@@ -97,6 +97,9 @@ interface QuizRendererProps {
   goToStep: (index: number) => void;
   currentStepIndex: number;
   nextLessonId: string | null;
+  /** Optional call to action on the pass screen, e.g. a checkpoint sending the student back
+   *  to the course now that the units it was holding back are open again. */
+  continueAction?: { note: string; label: string; onClick: () => void };
   courseId: string | undefined;
   finishQuiz: () => void;
   reviewQuiz: () => void;
@@ -127,6 +130,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
     getCurrentQuestion,
     getCurrentUserAnswer,
     goToNextStep,
+    continueAction,
     setQuizCompleted,
     markStepAsVisited,
     currentStep,
@@ -1280,6 +1284,37 @@ const QuizRenderer = (props: QuizRendererProps) => {
     );
   };
 
+  const QuizConfetti = () => {
+    const pieces = useMemo(
+      () =>
+        Array.from({ length: 40 }, (_, i) => ({
+          left: Math.random() * 100,
+          delay: Math.random() * 0.5,
+          duration: 2.4 + Math.random() * 1.6,
+          tilt: Math.random() * 360,
+          color: ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#a855f7'][i % 5],
+        })),
+      []
+    );
+    return (
+      <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden" aria-hidden="true">
+        {pieces.map((piece, i) => (
+          <span
+            key={i}
+            className="quiz-confetti-piece"
+            style={{
+              left: `${piece.left}%`,
+              backgroundColor: piece.color,
+              animationDelay: `${piece.delay}s`,
+              animationDuration: `${piece.duration}s`,
+              transform: `rotate(${piece.tilt}deg)`,
+            }}
+          />
+        ))}
+      </div>
+    );
+  };
+
   const renderQuizQuestion = () => {
     if (!questions || questions.length === 0) return null;
     const q = questions[currentQuestionIndex];
@@ -1980,6 +2015,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
     return (
       <div className="w-full max-w-3xl mx-auto text-center space-y-4 py-6 md:py-10">
+        {isPassed && <QuizConfetti />}
         <h2 className="text-3xl font-bold text-foreground">
           {isPassed ? 'Nice work!' : 'Keep going!'}
         </h2>
@@ -2128,6 +2164,15 @@ const QuizRenderer = (props: QuizRendererProps) => {
             <div className="text-sm text-muted-foreground prose dark:prose-invert max-w-none">
               <p>{quizAttempt.feedback}</p>
             </div>
+          </div>
+        )}
+
+        {isPassed && continueAction && (
+          <div className="space-y-3 pt-2">
+            <p className="text-base text-foreground">{continueAction.note}</p>
+            <Button onClick={continueAction.onClick} className="min-h-[44px]">
+              {continueAction.label}
+            </Button>
           </div>
         )}
 

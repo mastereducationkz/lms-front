@@ -731,3 +731,24 @@
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
 }
+/* Celebration confetti shown once when a quiz is passed. Purely decorative, and
+   removed entirely for anyone who asked for reduced motion. */
+@keyframes quiz-confetti-fall {
+  0%   { transform: translate3d(0, -12vh, 0) rotate(0deg); opacity: 1; }
+  100% { transform: translate3d(0, 110vh, 0) rotate(720deg); opacity: 0; }
+}
+
+.quiz-confetti-piece {
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  animation-name: quiz-confetti-fall;
+  animation-timing-function: ease-in;
+  animation-fill-mode: forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quiz-confetti-piece { display: none; }
+}

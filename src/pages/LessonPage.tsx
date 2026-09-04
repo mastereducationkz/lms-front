@@ -2026,6 +2026,15 @@ export default function LessonPage() {
             <div ref={textContentRef} className="relative">
               <TextLookupPopover containerRef={textContentRef} />
               <QuizRenderer
+                continueAction={
+                  lesson?.kind === 'checkpoint'
+                    ? {
+                        note: 'The units this checkpoint was holding back are open again.',
+                        label: 'Continue the course',
+                        onClick: () => navigate(`/course/${courseId}`),
+                      }
+                    : undefined
+                }
                 quizState={quizState}
   
               quizData={quizData}
