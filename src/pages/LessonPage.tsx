@@ -326,6 +326,8 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                               return <Play className="w-4 h-4" />;
                             };
 
+                            const isCompletedUnit = !isCheckpointLesson && Boolean(lecture.is_completed);
+
                             return (
                               <button
                                 key={lecture.id}
@@ -336,9 +338,11 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                                 className={`relative w-full justify-start pl-12 pr-4 py-3 h-auto rounded-none border-b border-border/30 flex items-center gap-3 text-left text-sm ${
                                   isSelected
                                     ? 'bg-primary/15 border-l-4 border-l-primary'
-                                    : isAccessible
-                                      ? 'hover:bg-muted/35'
-                                      : 'opacity-50 cursor-not-allowed'
+                                    : isCompletedUnit
+                                      ? `bg-green-500/10 ${isAccessible ? 'hover:bg-green-500/15' : 'opacity-50 cursor-not-allowed'}`
+                                      : isAccessible
+                                        ? 'hover:bg-muted/35'
+                                        : 'opacity-50 cursor-not-allowed'
                                   }`}
                               >
                                 {isAccessible && progress.showFill && (
@@ -348,17 +352,11 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                                     aria-hidden="true"
                                   />
                                 )}
-                                <div className={`relative flex items-center justify-center w-6 h-6 rounded-full bg-muted/50 flex-shrink-0 ${
-                                  isAccessible && !isCheckpointLesson && lecture.is_completed ? 'text-green-600 dark:text-green-400' : ''
-                                }`}>
+                                <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-muted/50 flex-shrink-0">
                                   {!isAccessible ? <Lock className="w-4 h-4 text-muted-foreground" /> : getLessonIcon()}
                                 </div>
                                 <div className="relative flex items-center justify-between w-full min-w-0">
-                                  <span className={`truncate ${
-                                    isAccessible && !isCheckpointLesson && lecture.is_completed
-                                      ? 'text-green-700 dark:text-green-400'
-                                      : 'text-foreground'
-                                  }`}>{lecture.title}</span>
+                                  <span className="truncate text-foreground">{lecture.title}</span>
                                   <span className="flex items-center gap-1 ml-2 shrink-0">
                                     {isCheckpointLesson && checkpointItem ? (
                                       <span className={`h-5 px-2 inline-flex items-center rounded text-[10px] font-medium ${CHECKPOINT_CHIP_CLASS[checkpointItem.status]}`}>
