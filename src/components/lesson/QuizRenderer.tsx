@@ -1286,16 +1286,29 @@ const QuizRenderer = (props: QuizRendererProps) => {
     return (
       <div
         key={`q-${q.id}`}
-        className="w-full md:max-w-3xl md:mx-auto space-y-4 md:space-y-6 md:p-4 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-200"
+        className="w-full md:max-w-4xl md:mx-auto space-y-4 md:space-y-8 md:p-6 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-200"
       >
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold text-foreground">Quiz Question</h2>
-          <p className="text-muted-foreground">
-            Question{questionGaps > 1 ? 's' : ''} {displayNumber}{questionGaps > 1 ? `-${displayNumber + questionGaps - 1}` : ''} of {totalQuestionCount}
-          </p>
+        {/* Progress header — identical to the one the result view renders, so answering a
+            question changes only the answer area, never the surrounding chrome. */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-semibold text-foreground">
+              Question{questionGaps > 1 ? 's' : ''} {displayNumber}{questionGaps > 1 ? `-${displayNumber + questionGaps - 1}` : ''} of {totalQuestionCount}
+            </span>
+            <span className="text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">
+              {Math.round(((displayNumber + questionGaps - 1) / totalQuestionCount) * 100)}% Complete
+            </span>
+          </div>
+
+          <div className="w-full bg-muted rounded-full h-3 shadow-inner">
+            <div
+              className="bg-primary h-3 rounded-full transition-all duration-500 ease-out shadow-sm"
+              style={{ width: `${((displayNumber + questionGaps - 1) / totalQuestionCount) * 100}%` }}
+            ></div>
+          </div>
+
           {(import.meta.env.DEV || isTeacher) && (
-            <div className="mt-2 flex items-center justify-center gap-2">
+            <div className="flex items-center gap-2">
               <Button
                 onClick={autoFillCorrectAnswers}
                 variant="outline"
@@ -1480,7 +1493,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
           <Button
             onClick={checkAnswer}
             disabled={!isAnswerComplete(q, quizAnswers.get(getAnswerKey(q)), gapAnswers.get(getAnswerKey(q)))}
-            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+            className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
           >
             {q.question_type === 'short_answer' || q.question_type === 'media_open_question' || q.question_type === 'long_text'
               ? 'Submit to Teacher'
