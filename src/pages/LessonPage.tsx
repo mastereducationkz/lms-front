@@ -356,7 +356,7 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                                 <div className="relative flex items-center justify-between w-full min-w-0">
                                   <span className={`truncate ${
                                     isAccessible && !isCheckpointLesson && lecture.is_completed
-                                      ? 'text-green-900 dark:text-green-100'
+                                      ? 'text-green-700 dark:text-green-400'
                                       : 'text-foreground'
                                   }`}>{lecture.title}</span>
                                   <span className="flex items-center gap-1 ml-2 shrink-0">
