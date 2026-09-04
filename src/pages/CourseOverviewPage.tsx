@@ -85,7 +85,7 @@ export default function CourseOverviewPage() {
       setIsLoading(false);
     }
 
-    // SAT Checkpoints: which units feed which checkpoint, for the "CP N" chips below.
+    // SAT Checkpoints: which units feed which checkpoint, for the checkpoint chips below.
     // Returns { enabled: false, items: [] } for students outside a checkpoints-enabled
     // group, so this fails silently and simply renders no chips.
     try {
