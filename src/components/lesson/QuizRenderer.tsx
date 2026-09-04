@@ -1239,6 +1239,51 @@ const QuizRenderer = (props: QuizRendererProps) => {
     );
   };
 
+  // Overview of the whole quiz: one square per question, coloured once that question
+  // has been answered and checked. Only questions before the current one carry a
+  // verdict — the one on screen may have a selection that has not been checked yet.
+  const renderQuestionMap = () => {
+    if (!questions || questions.length <= 1) return null;
+    return (
+      <div className="pt-8 flex flex-wrap justify-center gap-1.5" aria-label="Question overview">
+        {questions.map((mapQuestion: any, i: number) => {
+          const key = getAnswerKey(mapQuestion);
+          const isCurrent = i === currentQuestionIndex;
+          let tone = 'bg-muted text-muted-foreground';
+          let label = 'not answered yet';
+          if (i < currentQuestionIndex) {
+            const status = getQuestionStatus(
+              mapQuestion,
+              quizAnswers.get(key),
+              gapAnswers.get(key),
+              { isSpecialGroupStudent }
+            );
+            if (status.key === 'correct') {
+              tone = 'bg-green-600 text-white'; label = 'correct';
+            } else if (status.key === 'incorrect') {
+              tone = 'bg-red-500 text-white'; label = 'incorrect';
+            } else if (status.key === 'partial') {
+              tone = 'bg-amber-500 text-white'; label = 'partly correct';
+            } else {
+              tone = 'bg-muted-foreground/40 text-white'; label = 'needs review';
+            }
+          }
+          return (
+            <span
+              key={mapQuestion.id ?? i}
+              title={`Question ${i + 1} — ${isCurrent ? 'current' : label}`}
+              className={`h-6 w-6 rounded text-[10px] font-medium flex items-center justify-center ${tone} ${
+                isCurrent ? 'ring-2 ring-primary ring-offset-1 ring-offset-background' : ''
+              }`}
+            >
+              {i + 1}
+            </span>
+          );
+        })}
+      </div>
+    );
+  };
+
   const renderQuizQuestion = () => {
     if (!questions || questions.length === 0) return null;
     const q = questions[currentQuestionIndex];
@@ -1490,6 +1535,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
               : 'Check Answer'}
           </Button>
         </div>
+
+        {renderQuestionMap()}
       </div>
     );
   };
@@ -1689,6 +1736,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
             </span>
           </Button>
         </div>
+
+        {renderQuestionMap()}
       </div>
     );
   };
