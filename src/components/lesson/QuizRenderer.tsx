@@ -1288,23 +1288,11 @@ const QuizRenderer = (props: QuizRendererProps) => {
         key={`q-${q.id}`}
         className="w-full md:max-w-4xl md:mx-auto space-y-4 md:space-y-8 md:p-6 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-200"
       >
-        {/* Progress header — identical to the one the result view renders, so answering a
-            question changes only the answer area, never the surrounding chrome. */}
+        {/* Counter only — a quiet line above the question, the same one the result view
+            renders, so answering changes the answer area and nothing else. */}
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-semibold text-foreground">
-              Question{questionGaps > 1 ? 's' : ''} {displayNumber}{questionGaps > 1 ? `-${displayNumber + questionGaps - 1}` : ''} of {totalQuestionCount}
-            </span>
-            <span className="text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">
-              {Math.round(((displayNumber + questionGaps - 1) / totalQuestionCount) * 100)}% Complete
-            </span>
-          </div>
-
-          <div className="w-full bg-muted rounded-full h-3 shadow-inner">
-            <div
-              className="bg-primary h-3 rounded-full transition-all duration-500 ease-out shadow-sm"
-              style={{ width: `${((displayNumber + questionGaps - 1) / totalQuestionCount) * 100}%` }}
-            ></div>
+          <div className="text-sm text-muted-foreground">
+            Question{questionGaps > 1 ? 's' : ''} {displayNumber}{questionGaps > 1 ? `-${displayNumber + questionGaps - 1}` : ''} of {totalQuestionCount}
           </div>
 
           {(import.meta.env.DEV || isTeacher) && (
@@ -1516,27 +1504,12 @@ const QuizRenderer = (props: QuizRendererProps) => {
       ? (question.content_text || question.question_text || '').match(/\[\[(.*?)\]\]/g)?.length || 1
       : 1;
     const currentEndNumber = displayNumber + questionGaps - 1;
-    const progress = (currentEndNumber / totalQuestionCount) * 100;
 
     return (
       <div className="w-full md:max-w-4xl md:mx-auto space-y-4 md:space-y-8 md:p-6">
-        {/* Progress Header */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-semibold text-foreground">
-              Question{questionGaps > 1 ? 's' : ''} {displayNumber}{questionGaps > 1 ? `-${currentEndNumber}` : ''} of {totalQuestionCount}
-            </span>
-            <span className="text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">
-              {Math.round(progress)}% Complete
-            </span>
-          </div>
-
-          <div className="w-full bg-muted rounded-full h-3 shadow-inner">
-            <div
-              className="bg-primary h-3 rounded-full transition-all duration-500 ease-out shadow-sm"
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
+        {/* Counter only — no progress bar, matching the question view. */}
+        <div className="text-sm text-muted-foreground">
+          Question{questionGaps > 1 ? 's' : ''} {displayNumber}{questionGaps > 1 ? `-${currentEndNumber}` : ''} of {totalQuestionCount}
         </div>
 
         {/* Exam mode badge - shown outside audio player */}
