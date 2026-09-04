@@ -2319,13 +2319,10 @@ export default function LessonPage() {
             ) : (
               <>
                 {openCheckpointBanner && (
-                  <div className="mb-4 flex items-center justify-between gap-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
-                    <span className="flex items-center gap-2 min-w-0 truncate">
-                      <ClipboardCheck className="w-4 h-4 shrink-0 text-primary" aria-hidden="true" />
-                      <span className="truncate">
-                        <span className="font-medium text-foreground">Checkpoint {openCheckpointBanner.number} is open</span>
-                        <span className="text-muted-foreground"> · due {formatDeadline(openCheckpointBanner.deadline)}</span>
-                      </span>
+                  <div className="mb-4 flex items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-2 text-sm">
+                    <span className="min-w-0 truncate">
+                      <span className="font-medium text-foreground">Checkpoint {openCheckpointBanner.number} is open</span>
+                      <span className="text-muted-foreground"> · due {formatDeadline(openCheckpointBanner.deadline)}</span>
                     </span>
                     <div className="flex items-center gap-1 shrink-0">
                       <Button
