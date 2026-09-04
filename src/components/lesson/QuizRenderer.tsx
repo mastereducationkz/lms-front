@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '../ui/dialog';
-import { ChevronRight, ChevronDown, ChevronUp, AlertTriangle, HelpCircle, Lock as LockIcon, Lightbulb, AlertCircle } from 'lucide-react';
+import { ChevronRight, ChevronDown, ChevronUp, AlertTriangle, HelpCircle, Lock as LockIcon, AlertCircle } from 'lucide-react';
 import { renderTextWithLatex } from '../../utils/latex';
 import { applyHighlightsToHtml as applyHighlightsToHtmlShared } from '../../utils/highlightUtils';
 import type { Step } from '../../types';
@@ -1666,13 +1666,12 @@ const QuizRenderer = (props: QuizRendererProps) => {
               </div>
             )}
 
-            {/* Explanation */}
+            {/* Explanation — neutral surface, no icon, eased in so it reads as a reveal
+                rather than a jump. Respects prefers-reduced-motion via motion-safe. */}
             {question.explanation && (
-              <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-700/40">
-                <h5 className="text-lg font-bold text-blue-900 dark:text-blue-400 mb-3 flex items-center gap-2">
-                  <Lightbulb className="w-5 h-5" aria-hidden="true" /> Explanation
-                </h5>
-                <div className="text-blue-800 dark:text-blue-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(question.explanation) }} />
+              <div className="mt-8 p-6 bg-muted/40 rounded-xl border border-border motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
+                <h5 className="text-sm font-semibold text-foreground mb-2">Explanation</h5>
+                <div className="text-foreground/80 leading-relaxed" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(question.explanation) }} />
               </div>
             )}
           </div>
