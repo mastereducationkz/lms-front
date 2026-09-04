@@ -32,7 +32,7 @@ export default function CheckpointsPage() {
     <div className="p-4 md:p-6 space-y-4 max-w-3xl">
       <h1 className="text-2xl font-semibold">SAT Checkpoints</h1>
       <p className="text-sm text-muted-foreground">
-        A checkpoint opens as soon as you finish its 2 Verbal units and 1 Math unit, and stays open for 24 hours.
+        A checkpoint opens as soon as you finish its 2 Verbal units and 1 Math unit, and stays open for 3 days.
       </p>
       {items.map((item) => {
         const open = item.status === 'available' || item.status === 'reopened';

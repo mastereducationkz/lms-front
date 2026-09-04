@@ -317,6 +317,8 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                             const isAccessible = (lecture as any).is_accessible !== false; // Default to accessible if not specified
                             const isCheckpointLesson = (lecture as any).kind === 'checkpoint';
                             const checkpointItem = checkpointHints?.byQuizLesson.get(Number(lecture.id));
+                            const blockingCheckpoint = checkpointHints?.unitToCheckpoint.get(Number(lecture.id));
+                            const lockedByCheckpoint = !!blockingCheckpoint && isCheckpointOpen(blockingCheckpoint);
                             const progress = unitStepProgress(lecture);
 
                             const getLessonIcon = () => {
@@ -330,7 +332,7 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                                 id={`lesson-sidebar-${lecture.id}`}
                                 onClick={() => isAccessible && onLessonSelect(lecture.id.toString())}
                                 disabled={!isAccessible}
-                                title={!isAccessible ? "Complete previous lessons to unlock" : progress.title}
+                                title={!isAccessible ? (lockedByCheckpoint ? `Finish Checkpoint ${blockingCheckpoint!.number} before starting this unit` : "Complete previous lessons to unlock") : progress.title}
                                 className={`relative w-full justify-start pl-12 pr-4 py-3 h-auto rounded-none border-b border-border/30 flex items-center gap-3 text-left text-sm ${
                                   isSelected
                                     ? 'bg-primary/15 border-l-4 border-l-primary'
@@ -431,8 +433,10 @@ export default function LessonPage() {
   // student's group doesn't have checkpoints enabled — see getMyCheckpoints).
   const [checkpointItems, setCheckpointItems] = useState<StudentCheckpointItem[]>([]);
   // "Checkpoint N unlocked" dialog. `onContinue` is set only when this dialog is
-  // intercepting the "Next Lesson" action (see goToNextStep) — its presence switches the
-  // footer from [Later/Take checkpoint] to [Continue to next unit/Take checkpoint].
+  // intercepting the "Next Lesson" action (see goToNextStep) AND the next lesson is
+  // still reachable — its presence switches the footer from [Later/Take checkpoint] to
+  // [Continue to next unit/Take checkpoint]. If the next lesson is itself blocked by an
+  // open checkpoint, goToNextStep passes null so the dialog only offers [Later].
   const [checkpointDialog, setCheckpointDialog] = useState<{ item: StudentCheckpointItem; onContinue: (() => void) | null } | null>(null);
   // Checkpoint ids whose "open" banner the student dismissed this page load.
   const [dismissedCheckpointIds, setDismissedCheckpointIds] = useState<Set<number>>(new Set());
@@ -1375,9 +1379,11 @@ export default function LessonPage() {
       };
 
       // The step-visit call above may have just opened a checkpoint that requires the
-      // unit we're leaving — nudge the student to take it before moving on. This is a
-      // NUDGE, never a hard block: "Continue to next unit" always performs the exact
-      // navigation `proceed` does above.
+      // unit we're leaving — tell the student before moving on. Whether the dialog's
+      // "Continue to next unit" button appears depends on whether the server will
+      // actually let them in: if the next lesson itself belongs to this (or another)
+      // open checkpoint block, the server refuses it, so we offer only "Later" +
+      // "Take checkpoint" instead of an escape route that would just 403.
       const currentLessonId = lesson ? String(lesson.id) : null;
       if (currentLessonId) {
         const items = await fetchCheckpoints();
@@ -1387,7 +1393,10 @@ export default function LessonPage() {
         if (pendingItem) {
           checkpointDialogDedupRef.current.add(`${currentLessonId}:${pendingItem.checkpoint_id}`);
           checkpointStatusRef.current = new Map(items.map((item) => [item.checkpoint_id, item.status]));
-          setCheckpointDialog({ item: pendingItem, onContinue: proceed });
+          const nextLessonBlocked = modules.some((m) =>
+            (m.lessons || []).some((l: any) => String(l.id) === String(nextLessonId) && l.is_accessible === false)
+          );
+          setCheckpointDialog({ item: pendingItem, onContinue: nextLessonBlocked ? null : proceed });
           return;
         }
         checkpointStatusRef.current = new Map(items.map((item) => [item.checkpoint_id, item.status]));
@@ -1395,7 +1404,7 @@ export default function LessonPage() {
 
       proceed();
     }
-  }, [currentStep, canProceedToNext, getProceedBlockReason, currentStepIndex, orderedSteps.length, nextLessonId, goToStep, isStepCompleted, markStepAsVisited, navigate, courseId, lesson, fetchCheckpoints]);
+  }, [currentStep, canProceedToNext, getProceedBlockReason, currentStepIndex, orderedSteps.length, nextLessonId, goToStep, isStepCompleted, markStepAsVisited, navigate, courseId, lesson, fetchCheckpoints, modules]);
 
   const goToPreviousStep = useCallback(() => {
     if (currentStepIndex > 0) {

@@ -163,7 +163,7 @@ export default function CheckpointsAdminPage() {
                         <Button size="sm" variant="outline" disabled={busy}
                                 onClick={() => run(`${d.title} opened for group`, () => openCheckpoint(matrix.group.id, d.id, {}))}>Open all</Button>
                         <Button size="sm" variant="outline" disabled={busy}
-                                onClick={() => window.confirm(`Reopen ${d.title} for the whole group (new 24h deadline)?`)
+                                onClick={() => window.confirm(`Reopen ${d.title} for the whole group (new 3-day deadline)?`)
                                   && run(`${d.title} reopened for group`, () => reopenCheckpoint(matrix.group.id, d.id, {}))}>Reopen all</Button>
                       </div>
                     )}
@@ -235,7 +235,7 @@ export default function CheckpointsAdminPage() {
               {selected.cell.status !== 'locked' && (
                 <Button size="sm" variant="outline" disabled={busy} onClick={() => run('Checkpoint reopened',
                   () => reopenCheckpoint(matrix.group.id, selected.cell.checkpoint_id, { student_ids: [selected.studentId] }))}>
-                  Reopen (new 24h)
+                  Reopen (new 3 days)
                 </Button>
               )}
               {selected.cell.id != null && (
