@@ -607,14 +607,10 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
     return (
       <div className="w-full md:max-w-3xl md:mx-auto space-y-4 md:space-y-6 md:p-4 pb-24">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold text-foreground">Quick Practice</h2>
-          <p className="text-muted-foreground">Answer all questions below to continue</p>
-
-          {/* Development / Teacher Helper Buttons */}
+        {/* Header — the questions speak for themselves; only the dev/teacher helpers remain. */}
+        <div className="space-y-2">
           {(import.meta.env.DEV || isTeacher) && (
-            <div className="mt-2 flex items-center justify-center gap-2">
+            <div className="flex items-center gap-2">
               <Button
                 onClick={autoFillCorrectAnswers}
                 className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
