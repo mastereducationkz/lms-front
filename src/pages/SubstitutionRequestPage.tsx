@@ -45,7 +45,7 @@ export default function SubstitutionRequestPage() {
       setLoadingTeachers(true);
       setAvailableTeachers([]);
       setSelectedTeacherIds([]);
-      const data = await getAvailableTeachers(eventDatetime, groupId || 0);
+      const data = await getAvailableTeachers(eventDatetime, groupId || 0, eventId);
       setAvailableTeachers(data.available_teachers || []);
     } catch (error) {
       console.error('Failed to load available teachers:', error);
