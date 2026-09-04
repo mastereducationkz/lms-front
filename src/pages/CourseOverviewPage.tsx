@@ -7,6 +7,7 @@ import apiClient from '../services/api';
 import type { Course, Lesson } from '../types';
 import { getMyCheckpoints, type StudentCheckpointItem } from '../services/api/checkpoints';
 import { buildCheckpointHints, type CheckpointHints } from '../lib/checkpointHints';
+import { unitStepProgress } from '../lib/unitProgress';
 
 import { Progress } from '../components/ui/progress';
 
@@ -221,15 +222,15 @@ export default function CourseOverviewPage() {
                       const isAccessible = (lesson as any).is_accessible !== false;
                       const isCheckpointLesson = lesson.kind === 'checkpoint';
                       const checkpointItem = checkpointHints.byQuizLesson.get(Number(lesson.id));
-                      const requiredByCheckpoint = checkpointHints.unitToCheckpoint.get(Number(lesson.id));
+                      const progress = unitStepProgress(lesson);
 
                       return (
                       <button
                         key={lesson.id}
                         onClick={() => handleLessonClick(lesson)}
                         disabled={!isAccessible}
-                        title={!isAccessible ? "Complete previous lessons to unlock" : ""}
-                        className={`w-full flex items-center justify-between p-4 rounded-lg border transition-colors text-left ${
+                        title={!isAccessible ? "Complete previous lessons to unlock" : progress.title}
+                        className={`relative overflow-hidden w-full flex items-center justify-between p-4 rounded-lg border transition-colors text-left ${
                           !isAccessible
                             ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-secondary border-gray-200 dark:border-border'
                             : lesson.is_completed
@@ -237,7 +238,14 @@ export default function CourseOverviewPage() {
                               : 'border-gray-200 dark:border-border hover:border-gray-300 dark:hover:border-border hover:bg-gray-100 dark:hover:bg-secondary'
                         }`}
                       >
-                        <div className="flex items-center space-x-3">
+                        {isAccessible && (
+                          <span
+                            className="absolute inset-y-0 left-0 bg-primary/10 transition-[width] duration-300 motion-reduce:transition-none"
+                            style={{ width: `${progress.ratio * 100}%` }}
+                            aria-hidden="true"
+                          />
+                        )}
+                        <div className="relative flex items-center space-x-3">
                           <div className={`flex-shrink-0 ${
                             !isAccessible 
                               ? 'text-gray-400 dark:text-gray-500' 
@@ -262,14 +270,6 @@ export default function CourseOverviewPage() {
                                 <span className={`h-5 px-2 inline-flex items-center rounded text-[10px] font-medium shrink-0 ${CHECKPOINT_CHIP_CLASS[checkpointItem.status]}`}>
                                   {CHECKPOINT_CHIP_LABEL[checkpointItem.status]}
                                 </span>
-                              ) : requiredByCheckpoint ? (
-                                <span
-                                  className="h-5 px-1.5 inline-flex items-center gap-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-border text-[10px] font-medium shrink-0"
-                                  title={`Required for Checkpoint ${requiredByCheckpoint.number}`}
-                                >
-                                  <ClipboardCheck className="w-3 h-3" aria-hidden="true" />
-                                  {requiredByCheckpoint.number}
-                                </span>
                               ) : null}
                             </div>
                             {lesson.description && (
@@ -284,7 +284,7 @@ export default function CourseOverviewPage() {
                             )}
                           </div>
                         </div>
-                        <ChevronRight className={`w-4 h-4 ${lesson.is_completed ? 'text-green-400' : 'text-gray-400'}`} />
+                        <ChevronRight className={`relative w-4 h-4 ${lesson.is_completed ? 'text-green-400' : 'text-gray-400'}`} />
                       </button>
                     )})}
                   </div>

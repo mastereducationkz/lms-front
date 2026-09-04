@@ -11,6 +11,7 @@ import apiClient from '../services/api';
 import type { Lesson, Step, Course, CourseModule, StepProgress, StepAttachment } from '../types';
 import { getMyCheckpoints, coversLabel, formatDeadline, type StudentCheckpointItem } from '../services/api/checkpoints';
 import { buildCheckpointHints, isOpen as isCheckpointOpen, type CheckpointHints } from '../lib/checkpointHints';
+import { unitStepProgress } from '../lib/unitProgress';
 import YouTubeVideoPlayer from '../components/YouTubeVideoPlayer';
 import { renderTextWithLatex } from '../utils/latex';
 import FlashcardViewer from '../components/lesson/FlashcardViewer';
@@ -316,7 +317,7 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                             const isAccessible = (lecture as any).is_accessible !== false; // Default to accessible if not specified
                             const isCheckpointLesson = (lecture as any).kind === 'checkpoint';
                             const checkpointItem = checkpointHints?.byQuizLesson.get(Number(lecture.id));
-                            const requiredByCheckpoint = checkpointHints?.unitToCheckpoint.get(Number(lecture.id));
+                            const progress = unitStepProgress(lecture);
 
                             const getLessonIcon = () => {
                               if (isCheckpointLesson) return <ClipboardCheck className="w-4 h-4" />;
@@ -329,8 +330,8 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                                 id={`lesson-sidebar-${lecture.id}`}
                                 onClick={() => isAccessible && onLessonSelect(lecture.id.toString())}
                                 disabled={!isAccessible}
-                                title={!isAccessible ? "Complete previous lessons to unlock" : ""}
-                                className={`w-full justify-start pl-12 pr-4 py-3 h-auto rounded-none border-b border-border/30 flex items-center gap-3 text-left text-sm ${
+                                title={!isAccessible ? "Complete previous lessons to unlock" : progress.title}
+                                className={`relative w-full justify-start pl-12 pr-4 py-3 h-auto rounded-none border-b border-border/30 flex items-center gap-3 text-left text-sm ${
                                   isSelected
                                     ? 'bg-primary/15 border-l-4 border-l-primary'
                                     : isAccessible
@@ -338,23 +339,22 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                                       : 'opacity-50 cursor-not-allowed'
                                   }`}
                               >
-                                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-muted/50">
+                                {isAccessible && (
+                                  <span
+                                    className="absolute inset-y-0 left-0 bg-primary/10 transition-[width] duration-300 motion-reduce:transition-none"
+                                    style={{ width: `${progress.ratio * 100}%` }}
+                                    aria-hidden="true"
+                                  />
+                                )}
+                                <div className="relative flex items-center justify-center w-6 h-6 rounded-full bg-muted/50 flex-shrink-0">
                                   {!isAccessible ? <Lock className="w-4 h-4 text-muted-foreground" /> : getLessonIcon()}
                                 </div>
-                                <div className="flex items-center justify-between w-full min-w-0">
+                                <div className="relative flex items-center justify-between w-full min-w-0">
                                   <span className="truncate text-foreground">{lecture.title}</span>
                                   <span className="flex items-center gap-1 ml-2 shrink-0">
                                     {isCheckpointLesson && checkpointItem ? (
                                       <span className={`h-5 px-2 inline-flex items-center rounded text-[10px] font-medium ${CHECKPOINT_CHIP_CLASS[checkpointItem.status]}`}>
                                         {CHECKPOINT_CHIP_LABEL[checkpointItem.status]}
-                                      </span>
-                                    ) : requiredByCheckpoint ? (
-                                      <span
-                                        className="h-5 px-1.5 inline-flex items-center gap-0.5 rounded bg-muted text-muted-foreground border border-border text-[10px] font-medium"
-                                        title={`Required for Checkpoint ${requiredByCheckpoint.number}`}
-                                      >
-                                        <ClipboardCheck className="w-3 h-3" aria-hidden="true" />
-                                        {requiredByCheckpoint.number}
                                       </span>
                                     ) : null}
                                     {lecture.is_completed ? (
@@ -2319,12 +2319,15 @@ export default function LessonPage() {
             ) : (
               <>
                 {openCheckpointBanner && (
-                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-                    <span className="flex items-center gap-2">
-                      <ClipboardCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
-                      Checkpoint {openCheckpointBanner.number} is open — {coversLabel(openCheckpointBanner.covers)} · {openCheckpointBanner.total_questions} questions · due {formatDeadline(openCheckpointBanner.deadline)}
+                  <div className="mb-4 flex items-center justify-between gap-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm">
+                    <span className="flex items-center gap-2 min-w-0 truncate">
+                      <ClipboardCheck className="w-4 h-4 shrink-0 text-primary" aria-hidden="true" />
+                      <span className="truncate">
+                        <span className="font-medium text-foreground">Checkpoint {openCheckpointBanner.number} is open</span>
+                        <span className="text-muted-foreground"> · due {formatDeadline(openCheckpointBanner.deadline)}</span>
+                      </span>
                     </span>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1 shrink-0">
                       <Button
                         size="sm"
                         onClick={() => {
@@ -2332,16 +2335,17 @@ export default function LessonPage() {
                           if (quiz) navigate(`/course/${quiz.course_id}/lesson/${quiz.lesson_id}`);
                         }}
                       >
-                        Take it now
+                        Start
                       </Button>
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-foreground"
                         onClick={() => setDismissedCheckpointIds((prev) => new Set(prev).add(openCheckpointBanner.checkpoint_id))}
-                        className="px-1 text-amber-700 hover:text-amber-900 dark:text-amber-300 dark:hover:text-amber-100"
                         aria-label="Dismiss checkpoint reminder"
                       >
                         ×
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}

@@ -1,5 +1,4 @@
 import { api } from './client';
-import { formatAlmaty } from './platformTests';
 
 // SAT Checkpoints (docs/superpowers/plans/2026-09-03-sat-checkpoints.md).
 // Backend: /checkpoints/me (student) and /checkpoints/admin/* (staff).
@@ -156,7 +155,21 @@ export function coversLabel(units: CheckpointUnit[]): string {
   return parts.join(' + ');
 }
 
-export const formatDeadline = (iso: string | null | undefined): string => formatAlmaty(iso ?? null, true);
+/**
+ * Checkpoint deadlines specifically render in English (e.g. "5 Sep, 17:48"), still in the
+ * Asia/Almaty timezone — formatAlmaty's ru-RU locale (used elsewhere) reads oddly here in an
+ * otherwise-English UI, so this doesn't delegate to it.
+ */
+export const formatDeadline = (iso: string | null | undefined): string => {
+  if (!iso) return '';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Almaty', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false,
+  }).formatToParts(date);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+  return `${get('day')} ${get('month')}, ${get('hour')}:${get('minute')}`;
+};
 
 export const STATUS_LABEL: Record<CheckpointStatus, string> = {
   locked: 'Locked', available: 'Available', completed: 'Completed', overdue: 'Overdue', reopened: 'Reopened',
