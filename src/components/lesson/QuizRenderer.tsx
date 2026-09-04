@@ -1448,6 +1448,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 onChange={(val) => handleQuizAnswer(q.id.toString(), val)}
                 disabled={false}
                 showResult={false}
+                crossedOut={crossedOutByQuestion.get(q.id.toString())}
+                onCrossOut={(idx) => toggleCrossOut(q.id.toString(), idx)}
               />
             ) : q.question_type === 'matching' ? (
               <MatchingQuestion
