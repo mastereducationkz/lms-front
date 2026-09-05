@@ -26,17 +26,22 @@ const MODULE_LABEL: Record<string, string> = {
   reading: 'Reading',
   writing: 'Writing',
   speaking: 'Speaking',
+  math: 'Math',
+  verbal: 'Verbal',
+  nuet: 'NUET',
 };
 
 const moduleLabel = (module: string) => MODULE_LABEL[module] ?? module;
-const trackOf = (platform: string): PlatformTrack => (platform === 'ielts' ? 'ielts' : 'sat');
+// The LMS program decides the bare host (NUET lives on the SAT platform under its own host).
+const trackOf = (platform: string, track?: string | null): PlatformTrack =>
+  track === 'nuet' ? 'nuet' : track === 'sat' || platform === 'sat' ? 'sat' : 'ielts';
 
 function StateBadge({ state, band }: { state: PlatformModuleProgress['state']; band: number | null }) {
   if (state === 'done') {
     return (
       <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 gap-1">
         <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-        Done{band != null ? ` · Band ${band}` : ''}
+        Done{band != null ? (band > 9 ? ` · est. ${band}` : ` · Band ${band}`) : ''}
       </Badge>
     );
   }
@@ -107,7 +112,7 @@ function ModuleRow({ module, track, canOpen }: { module: PlatformModuleProgress;
 }
 
 function StudentView({ progress }: { progress: PlatformTestProgress }) {
-  const track = trackOf(progress.platform);
+  const track = trackOf(progress.platform, (progress as { track?: string }).track);
   return (
     <Card>
       <CardHeader>
@@ -128,13 +133,16 @@ function StudentView({ progress }: { progress: PlatformTestProgress }) {
           ))}
         </ul>
         <p className="text-xs text-muted-foreground">
-          Checkmarks update automatically from the platform. Listening, Reading and Writing stay open after the
-          deadline while the weekly set is active; Speaking is only available inside its window.
+          {progress.modules.some((m) => m.module === 'speaking')
+            ? 'Checkmarks update automatically from the platform. Listening, Reading and Writing stay open after the deadline while the weekly set is active; Speaking is only available inside its window.'
+            : 'Checkmarks update automatically from the platform. Scores shown for SAT sections are estimates predicted from correct answers, not official scores.'}
         </p>
-        <Button variant="link" className="px-0" onClick={() => void openPlatformPage(track, progress.set_path)}>
+        {progress.set_path && (
+        <Button variant="link" className="px-0" onClick={() => void openPlatformPage(track, progress.set_path ?? '/')}>
           Open the weekly set on the platform
           <ExternalLink className="ml-1.5 h-3.5 w-3.5" aria-hidden="true" />
         </Button>
+        )}
       </CardContent>
     </Card>
   );
@@ -217,8 +225,8 @@ export default function PlatformTestPanel({ assignment }: { assignment: Assignme
     };
   }, [assignment.id, user?.id]);
 
-  const content = (assignment.content ?? {}) as { platform?: string; set_path?: string };
-  const track = trackOf(content.platform ?? 'ielts');
+  const content = (assignment.content ?? {}) as { platform?: string; track?: string; set_path?: string };
+  const track = trackOf(content.platform ?? 'ielts', content.track);
 
   if (state === 'loading') {
     return (

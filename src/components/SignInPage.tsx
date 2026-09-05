@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { Input } from './ui/input';
-import { isOidcConfigured, startOidcLogin, getLastAccount } from '../services/oidc';
+import { isOidcConfigured, startOidcLogin, getLastAccount, oidcStorageAvailable, OidcCallbackError } from '../services/oidc';
 
 
 // --- TYPE DEFINITIONS ---
@@ -74,6 +74,28 @@ export const SignInPage: React.FC<SignInPageProps> = ({
   // "Continue as X": if the user signed in via Master Education before (on any of our platforms),
   // personalize the primary button and pre-select that account via login_hint.
   const lastAccount = oidcEnabled ? getLastAccount() : null;
+  // Starting the redirect used to be fire-and-forget, so every failure was swallowed and a
+  // browser that blocks site storage (or an unreachable IdP) just made the primary button
+  // look dead. Check storage up front — without it the flow could only dead-end later at
+  // /auth/callback — and surface anything else the redirect throws.
+  const [ssoError, setSsoError] = useState('');
+  const beginSso = (opts?: { selectAccount?: boolean; loginHint?: string }) => {
+    setSsoError('');
+    if (!oidcStorageAvailable()) {
+      setSsoError(
+        'Браузер не разрешает сайту сохранять данные, поэтому вход через Master Education невозможен. Откройте LMS в обычном окне браузера и разрешите файлы cookie, либо войдите по паролю.',
+      );
+      return;
+    }
+    startOidcLogin(opts).catch((err: unknown) => {
+      console.error('[sso] could not start login:', err);
+      setSsoError(
+        err instanceof OidcCallbackError && err.reason === 'not_configured'
+          ? 'Вход через Master Education сейчас недоступен. Войдите по паролю или сообщите администратору.'
+          : 'Не удалось открыть вход через Master Education. Проверьте интернет и попробуйте ещё раз.',
+      );
+    });
+  };
 
   return (
     <div className="h-[100dvh] flex flex-col md:flex-row font-geist w-[100dvw]">
@@ -84,9 +106,9 @@ export const SignInPage: React.FC<SignInPageProps> = ({
             <h1 className="animate-element animate-delay-100 text-4xl md:text-5xl font-semibold leading-tight">{title}</h1>
             <p className="animate-element animate-delay-200 text-muted-foreground">{description}</p>
 
-            {error && (
+            {(error || ssoError) && (
               <div className="animate-element animate-delay-250 -mb-2 p-3 text-sm text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded">
-                {error}
+                {error || ssoError}
               </div>
             )}
 
@@ -96,7 +118,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    void startOidcLogin(lastAccount?.email ? { loginHint: lastAccount.email } : undefined);
+                    beginSso(lastAccount?.email ? { loginHint: lastAccount.email } : undefined);
                   }}
                   disabled={loading}
                   title={lastAccount ? (lastAccount.email || lastAccount.name) : undefined}
@@ -112,7 +134,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                   <button
                     type="button"
                     onClick={() => {
-                      void startOidcLogin({ selectAccount: true });
+                      beginSso({ selectAccount: true });
                     }}
                     disabled={loading}
                     className="text-muted-foreground underline transition-colors hover:text-foreground"

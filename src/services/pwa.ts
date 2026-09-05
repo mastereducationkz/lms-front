@@ -21,8 +21,20 @@ const FOCUS_CHECK_THROTTLE_MS = 5 * 60 * 1000 // 5 min
 let updatePending = false
 let applying = false
 
+/**
+ * The one route a reload must never touch. /auth/callback carries a single-use
+ * authorization code + PKCE state: reloading it replays a URL whose credentials are
+ * already spent, and the login dies with "no matching state". A student switching apps
+ * mid-login (they arrive from Telegram) is enough to trigger it. The update just waits
+ * for the next safe moment — landing on the dashboard is one.
+ */
+function onOidcCallback(): boolean {
+  return window.location.pathname === '/auth/callback'
+}
+
 function applyUpdate(): void {
   if (!updatePending || applying) return
+  if (onOidcCallback()) return
   applying = true
   // The worker already took over (skipWaiting+claim in sw.js); a plain reload
   // is what swaps the running bundle.
@@ -51,6 +63,8 @@ export function registerPwa(): void {
   // bundle instead of showing a broken page; the guard prevents a reload loop.
   window.addEventListener('vite:preloadError', (event) => {
     event.preventDefault()
+    // Same single-use-credential hazard as applyUpdate(): never reload the SSO callback.
+    if (onOidcCallback()) return
     const key = 'pwa-chunk-reload'
     if (sessionStorage.getItem(key)) return
     sessionStorage.setItem(key, '1')

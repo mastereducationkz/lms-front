@@ -97,10 +97,11 @@ export async function declineLessonRequest(requestId: number): Promise<LessonReq
   }
 }
 
-export async function getAvailableTeachers(datetime: string, groupId?: number): Promise<{ available_teachers: AvailableTeacher[] }> {
+export async function getAvailableTeachers(datetime: string, groupId?: number, eventId?: number): Promise<{ available_teachers: AvailableTeacher[] }> {
   try {
     const params: any = { datetime_str: datetime };
     if (groupId) params.group_id = groupId;
+    if (eventId) params.event_id = eventId;
     const response = await api.get('/lesson-requests/teachers/available', { params });
     return response.data;
   } catch (error) {
