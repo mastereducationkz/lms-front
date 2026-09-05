@@ -386,7 +386,7 @@ export default function Router() {
           } />
 
           <Route path="/course/:courseId/lesson/:lessonId/edit" element={
-            <ProtectedRoute allowedRoles={['admin', 'teacher', 'curator']}>
+            <ProtectedRoute allowedRoles={['admin', 'head_teacher', 'head_curator', 'teacher', 'curator']}>
               <LessonEditPage />
             </ProtectedRoute>
           } />
@@ -445,7 +445,7 @@ export default function Router() {
           } />
 
           <Route path="/admin/checkpoints" element={
-            <ProtectedRoute allowedRoles={['admin', 'head_curator', 'head_teacher', 'teacher']}>
+            <ProtectedRoute allowedRoles={['admin', 'head_curator', 'head_teacher', 'teacher', 'curator']}>
               <AppLayout>
                 <CheckpointsAdminPage />
               </AppLayout>

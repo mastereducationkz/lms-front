@@ -31,7 +31,11 @@ function StatusChip({ status, skipped }: { status: CheckpointCell['status']; ski
 
 export default function CheckpointsAdminPage() {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  const role = user?.role ?? '';
+  // Mirrors the backend: every staff role manages the groups it can see (the server scopes
+  // teachers and curators to their own groups); definitions belong to admins and head roles.
+  const canManage = ['admin', 'head_curator', 'head_teacher', 'teacher', 'curator'].includes(role);
+  const canEditDefinitions = ['admin', 'head_curator', 'head_teacher'].includes(role);
   const [groups, setGroups] = useState<CheckpointGroup[]>([]);
   const [groupId, setGroupId] = useState<number | null>(null);
   const [matrix, setMatrix] = useState<CheckpointMatrix | null>(null);
@@ -41,7 +45,7 @@ export default function CheckpointsAdminPage() {
   const [busy, setBusy] = useState(false);
   const [selected, setSelected] = useState<{ studentId: number; cell: CheckpointCell } | null>(null);
   const [deadlineInput, setDeadlineInput] = useState('');
-  const [unitEdits, setUnitEdits] = useState<Record<number, string>>({});
+  const [unitEdits, setUnitEdits] = useState<Record<number, { verbal: string; math: string }>>({});
 
   useEffect(() => {
     listCheckpointGroups('sat').then(setGroups).catch(() => toast.error('Failed to load groups'));
@@ -126,14 +130,14 @@ export default function CheckpointsAdminPage() {
         {group && (
           <>
             <label className="flex items-center gap-2 rounded-lg border px-3 h-10 select-none">
-              <input type="checkbox" checked={group.checkpoints_enabled} disabled={!isAdmin || busy}
+              <input type="checkbox" checked={group.checkpoints_enabled} disabled={!canManage || busy}
                      onChange={(e) => run(e.target.checked ? 'Checkpoints enabled' : 'Checkpoints disabled',
                        () => updateCheckpointGroupSettings(group.id, { enabled: e.target.checked }))} />
               <span className="text-sm">Checkpoints enabled</span>
             </label>
             <div>
               <label className="text-xs text-muted-foreground">Auto-open from checkpoint #</label>
-              <Input key={group.id} type="number" min={1} className="w-24" defaultValue={group.checkpoints_start_number} disabled={!isAdmin || busy}
+              <Input key={group.id} type="number" min={1} className="w-24" defaultValue={group.checkpoints_start_number} disabled={!canManage || busy}
                      onBlur={(e) => {
                        const n = Number(e.target.value);
                        if (n >= 1 && n !== group.checkpoints_start_number) {
@@ -161,7 +165,7 @@ export default function CheckpointsAdminPage() {
                 {matrix.definitions.map((d) => (
                   <th key={d.id} className="px-3 py-2 text-left whitespace-nowrap">
                     <div>{d.title}{!d.is_active && <span className="ml-1 text-[10px] text-muted-foreground">(inactive)</span>}</div>
-                    {isAdmin && (
+                    {canManage && (
                       <div className="mt-1 flex gap-1">
                         <Button size="sm" variant="outline" disabled={busy}
                                 onClick={() => run(`${d.title} opened for group`, () => openCheckpoint(matrix.group.id, d.id, {}))}>Open all</Button>
@@ -227,7 +231,7 @@ export default function CheckpointsAdminPage() {
             <dt>Result</dt><dd>{selected.cell.percentage != null ? `${selected.cell.correct_answers}/${selected.cell.total_questions} (${selected.cell.percentage}%)` : '—'}</dd>
             <dt>Reopened</dt><dd>{selected.cell.reopen_count}×</dd>
           </dl>
-          {isAdmin && (
+          {canManage && (
             <div className="flex flex-wrap items-end gap-2">
               {selected.cell.status === 'locked' && (
                 <Button size="sm" disabled={busy} onClick={() => run('Checkpoint opened',
@@ -270,20 +274,22 @@ export default function CheckpointsAdminPage() {
               <tr>
                 <th className="px-3 py-2 text-left">#</th>
                 <th className="px-3 py-2 text-left">Active</th>
-                <th className="px-3 py-2 text-left">Required units (lesson ids: verbal, verbal, math)</th>
+                <th className="px-3 py-2 text-left">Required units (2 verbal lessons + 1 math lesson; a lesson may be 2 units)</th>
                 <th className="px-3 py-2 text-left">Questions</th>
                 <th className="px-3 py-2 text-left">Quiz</th>
               </tr>
             </thead>
             <tbody>
               {definitions.map((d) => {
-                const current = d.required_units.map((u) => u.lesson_id).join(', ');
+                const currentVerbal = d.required_units.filter((u) => u.kind === 'verbal').map((u) => u.lesson_id).join(', ');
+                const currentMath = d.required_units.filter((u) => u.kind === 'math').map((u) => u.lesson_id).join(', ');
+                const edit = unitEdits[d.id] ?? { verbal: '', math: '' };
                 const check = checks[d.id];
                 return (
                   <tr key={d.id} className="border-t align-top">
                     <td className="px-3 py-2 whitespace-nowrap">{d.title}</td>
                     <td className="px-3 py-2">
-                      <input type="checkbox" checked={d.is_active} disabled={!isAdmin || busy}
+                      <input type="checkbox" checked={d.is_active} disabled={!canEditDefinitions || busy}
                              aria-label={`${d.title} active`}
                              onChange={(e) => run(`${d.title} ${e.target.checked ? 'activated' : 'deactivated'}`,
                                () => updateCheckpointDefinition(d.id, { is_active: e.target.checked }))} />
@@ -292,17 +298,26 @@ export default function CheckpointsAdminPage() {
                       <div className="text-xs text-muted-foreground">
                         {d.required_units.map((u) => `${u.kind === 'verbal' ? 'V' : 'M'}:${u.title}`).join(' · ')}
                       </div>
-                      {isAdmin && (
-                        <div className="mt-1 flex gap-2">
-                          <Input className="w-48" placeholder={current} value={unitEdits[d.id] ?? ''}
-                                 aria-label={`${d.title} required unit ids`}
-                                 onChange={(e) => setUnitEdits((prev) => ({ ...prev, [d.id]: e.target.value }))} />
-                          <Button size="sm" variant="outline" disabled={busy || !(unitEdits[d.id] ?? '').trim()} onClick={() => {
-                            const ids = (unitEdits[d.id] ?? '').split(',').map((x) => Number(x.trim())).filter((x) => x > 0);
-                            if (ids.length !== 3) { toast.error('Enter exactly 3 lesson ids: verbal, verbal, math'); return; }
+                      {canEditDefinitions && (
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <Input className="w-36" placeholder={`Verbal: ${currentVerbal}`} value={edit.verbal}
+                                 aria-label={`${d.title} verbal unit ids`}
+                                 onChange={(e) => setUnitEdits((prev) => ({ ...prev, [d.id]: { ...edit, verbal: e.target.value } }))} />
+                          <Input className="w-28" placeholder={`Math: ${currentMath}`} value={edit.math}
+                                 aria-label={`${d.title} math unit ids`}
+                                 onChange={(e) => setUnitEdits((prev) => ({ ...prev, [d.id]: { ...edit, math: e.target.value } }))} />
+                          <Button size="sm" variant="outline" disabled={busy || !(edit.verbal.trim() && edit.math.trim())} onClick={() => {
+                            const parse = (s: string) => s.split(',').map((x) => Number(x.trim())).filter((x) => x > 0);
+                            const verbal = parse(edit.verbal);
+                            const math = parse(edit.math);
+                            if (verbal.length < 2 || math.length < 1 || verbal.length + math.length > 4) {
+                              toast.error('Enter 2 or 3 verbal lesson ids and 1 or 2 math lesson ids (4 at most)');
+                              return;
+                            }
                             void run(`${d.title} units saved`, () => updateCheckpointDefinition(d.id, {
                               required_units: [
-                                { lesson_id: ids[0], kind: 'verbal' }, { lesson_id: ids[1], kind: 'verbal' }, { lesson_id: ids[2], kind: 'math' },
+                                ...verbal.map((lesson_id) => ({ lesson_id, kind: 'verbal' as const })),
+                                ...math.map((lesson_id) => ({ lesson_id, kind: 'math' as const })),
                               ],
                             }));
                           }}>Save</Button>
