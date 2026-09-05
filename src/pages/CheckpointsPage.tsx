@@ -45,7 +45,7 @@ export default function CheckpointsPage() {
                     {item.status === 'locked' ? <Lock className="h-4 w-4" aria-hidden="true" /> : null}
                     {item.title}
                     <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_CLASS[item.status]}`}>
-                      {STATUS_LABEL[item.status]}
+                      {item.skipped ? 'Skipped' : STATUS_LABEL[item.status]}
                     </span>
                   </p>
                   <p className="text-xs text-muted-foreground">Covers: {coversLabel(item.covers)} · {item.total_questions} questions</p>

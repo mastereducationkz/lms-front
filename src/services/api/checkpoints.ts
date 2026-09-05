@@ -36,6 +36,8 @@ export interface StudentCheckpointItem extends CheckpointRow {
   covers: CheckpointUnit[];
   total_questions: number;
   locked_reason: string | null;
+  /** Below the group's start number and never opened: not required, never gates later blocks. */
+  skipped: boolean;
   quiz: { course_id: number; lesson_id: number } | null;
 }
 
@@ -74,6 +76,7 @@ export interface CheckpointCell extends CheckpointRow {
   number: number;
   units: CheckpointUnit[];
   locked_reason: string | null;
+  skipped: boolean;
 }
 
 export interface CheckpointMatrix {

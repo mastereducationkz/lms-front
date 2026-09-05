@@ -25,8 +25,8 @@ const toLocalInputValue = (iso: string | null) => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 
-function StatusChip({ status }: { status: CheckpointCell['status'] }) {
-  return <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_CLASS[status]}`}>{STATUS_LABEL[status]}</span>;
+function StatusChip({ status, skipped }: { status: CheckpointCell['status']; skipped?: boolean }) {
+  return <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_CLASS[status]}`}>{skipped ? 'Skipped' : STATUS_LABEL[status]}</span>;
 }
 
 export default function CheckpointsAdminPage() {
@@ -140,6 +140,9 @@ export default function CheckpointsAdminPage() {
                          void run('Start number saved', () => updateCheckpointGroupSettings(group.id, { start_number: n }));
                        }
                      }} />
+              <p className="mt-1 max-w-xs text-[11px] leading-snug text-muted-foreground">
+                Set this before enabling. Checkpoints below it never auto-open and never hold later units back (a mid-course group).
+              </p>
             </div>
             <Button variant="outline" size="sm" onClick={() => reload()} disabled={loading} aria-label="Reload matrix">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
@@ -186,7 +189,7 @@ export default function CheckpointsAdminPage() {
                         onClick={() => { setSelected({ studentId: s.student_id, cell }); setDeadlineInput(toLocalInputValue(cell.deadline)); }}
                         aria-label={`${s.name} — Checkpoint ${cell.number}, ${STATUS_LABEL[cell.status]}`}
                       >
-                        <StatusChip status={cell.status} />
+                        <StatusChip status={cell.status} skipped={cell.skipped} />
                         <div className="mt-1 text-[11px] text-muted-foreground">
                           {cell.units.map((u) => (u.completed ? '✓' : '·')).join(' ')}
                           {cell.deadline && cell.status !== 'completed' && <> · due {formatDeadline(cell.deadline)}</>}
@@ -209,7 +212,7 @@ export default function CheckpointsAdminPage() {
             <h2 className="font-medium">
               {matrix.students.find((s) => s.student_id === selected.studentId)?.name} · Checkpoint {selected.cell.number}
             </h2>
-            <StatusChip status={selected.cell.status} />
+            <StatusChip status={selected.cell.status} skipped={selected.cell.skipped} />
           </div>
           <ul className="text-sm space-y-1">
             {selected.cell.units.map((u) => (

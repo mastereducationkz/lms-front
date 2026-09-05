@@ -29,7 +29,7 @@ export function CheckpointsCard() {
   if (!data || !data.enabled || data.items.length === 0) return null;
 
   const openItems = data.items.filter((i) => OPEN_STATUSES.has(i.status));
-  const nextLocked = openItems.length === 0 ? data.items.find((i) => i.status === 'locked') : undefined;
+  const nextLocked = openItems.length === 0 ? data.items.find((i) => i.status === 'locked' && !i.skipped) : undefined;
 
   return (
     <Card className="mt-2">
