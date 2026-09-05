@@ -24,7 +24,7 @@ export interface PlatformModuleProgress {
 }
 
 export interface PlatformTestProgress {
-  assignment_id: number;
+  assignment_id: number | null; // null since 2026-09-05: weekly tests are calendar events, not homework
   group_id: number | null;
   title: string;
   platform: string;

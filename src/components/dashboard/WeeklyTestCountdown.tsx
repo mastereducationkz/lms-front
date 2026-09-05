@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, ChevronRight, Circle, Clock } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { formatAlmaty, getWeeklyTestsMe, type PlatformTestProgress } from '../../services/api/platformTests';
+import { openPlatformPage, type PlatformTrack } from '../../lib/platformLinks';
 
 /**
  * Student dashboard: the current weekly platform test with its countdown and one checkmark per
@@ -14,6 +15,11 @@ import { formatAlmaty, getWeeklyTestsMe, type PlatformTestProgress } from '../..
 
 const SHORT: Record<string, string> = { listening: 'L', reading: 'R', writing: 'W', speaking: 'S', math: 'M', verbal: 'V', nuet: 'NUET' };
 const LABEL: Record<string, string> = { listening: 'Listening', reading: 'Reading', writing: 'Writing', speaking: 'Speaking', math: 'Math', verbal: 'Verbal', nuet: 'NUET' };
+// No homework row any more (weekly tests are calendar events): open the set page on the platform,
+// signed in via handoff. Old items that still carry an assignment keep the homework page.
+const trackOf = (item: PlatformTestProgress): PlatformTrack =>
+  (((item as { track?: string }).track ?? item.platform ?? 'ielts') as PlatformTrack);
+
 const platformLabel = (item: PlatformTestProgress): string => ((item as { track?: string }).track ?? item.platform ?? '').toUpperCase() || 'Platform';
 
 function headlineFor(item: PlatformTestProgress): string {
@@ -31,6 +37,10 @@ function headlineFor(item: PlatformTestProgress): string {
 
 export function WeeklyTestCountdown() {
   const navigate = useNavigate();
+  const openItem = (item: PlatformTestProgress) => {
+    if (item.assignment_id) navigate(`/homework/${item.assignment_id}`);
+    else void openPlatformPage(trackOf(item), item.set_path ?? '/');
+  };
   const [item, setItem] = useState<PlatformTestProgress | null>(null);
 
   useEffect(() => {
@@ -56,7 +66,7 @@ export function WeeklyTestCountdown() {
         <button
           type="button"
           className="w-full text-left"
-          onClick={() => navigate(`/homework/${item.assignment_id}`)}
+          onClick={() => openItem(item)}
           aria-label={`Open ${item.title}`}
         >
           <div className="flex items-start justify-between gap-3">
