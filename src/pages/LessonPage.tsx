@@ -10,7 +10,7 @@ import { useSettings } from '../contexts/SettingsContext';
 import apiClient from '../services/api';
 import type { Lesson, Step, Course, CourseModule, StepProgress, StepAttachment } from '../types';
 import { getMyCheckpoints, coversLabel, formatDeadline, type StudentCheckpointItem } from '../services/api/checkpoints';
-import { buildCheckpointHints, isOpen as isCheckpointOpen, type CheckpointHints } from '../lib/checkpointHints';
+import { buildCheckpointHints, blockingCheckpointForUnit, isOpen as isCheckpointOpen, type CheckpointHints } from '../lib/checkpointHints';
 import { unitStepProgress } from '../lib/unitProgress';
 import YouTubeVideoPlayer from '../components/YouTubeVideoPlayer';
 import { renderTextWithLatex } from '../utils/latex';
@@ -317,8 +317,8 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                             const isAccessible = (lecture as any).is_accessible !== false; // Default to accessible if not specified
                             const isCheckpointLesson = (lecture as any).kind === 'checkpoint';
                             const checkpointItem = checkpointHints?.byQuizLesson.get(Number(lecture.id));
-                            const blockingCheckpoint = checkpointHints?.unitToCheckpoint.get(Number(lecture.id));
-                            const lockedByCheckpoint = !!blockingCheckpoint && isCheckpointOpen(blockingCheckpoint);
+                            const blockingCheckpoint = checkpointHints ? blockingCheckpointForUnit(checkpointHints, Number(lecture.id)) : null;
+                            const lockedByCheckpoint = !!blockingCheckpoint;
                             const progress = unitStepProgress(lecture);
 
                             const getLessonIcon = () => {
@@ -334,7 +334,13 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                                 id={`lesson-sidebar-${lecture.id}`}
                                 onClick={() => isAccessible && onLessonSelect(lecture.id.toString())}
                                 disabled={!isAccessible}
-                                title={!isAccessible ? (lockedByCheckpoint ? `Finish Checkpoint ${blockingCheckpoint!.number} before starting this unit` : "Complete previous lessons to unlock") : progress.title}
+                                title={!isAccessible
+                                  ? (isCheckpointLesson && checkpointItem
+                                      ? (checkpointItem.locked_reason || 'This checkpoint is not open yet')
+                                      : lockedByCheckpoint
+                                        ? `Finish Checkpoint ${blockingCheckpoint!.number} before starting this unit`
+                                        : "Complete previous lessons to unlock")
+                                  : progress.title}
                                 className={`relative w-full justify-start pl-12 pr-4 py-3 h-auto rounded-none border-b border-border/30 border-l-4 flex items-center gap-3 text-left text-sm ${
                                   isSelected
                                     ? 'bg-primary/15 border-l-primary'

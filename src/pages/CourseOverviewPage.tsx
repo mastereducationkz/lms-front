@@ -6,7 +6,7 @@ import { ChevronRight, Play, FileText, HelpCircle, Clock, Users, CheckCircle, Lo
 import apiClient from '../services/api';
 import type { Course, Lesson } from '../types';
 import { getMyCheckpoints, type StudentCheckpointItem } from '../services/api/checkpoints';
-import { buildCheckpointHints, isOpen as isCheckpointOpen, type CheckpointHints } from '../lib/checkpointHints';
+import { buildCheckpointHints, blockingCheckpointForUnit, type CheckpointHints } from '../lib/checkpointHints';
 import { unitStepProgress } from '../lib/unitProgress';
 
 import { Progress } from '../components/ui/progress';
@@ -222,8 +222,8 @@ export default function CourseOverviewPage() {
                       const isAccessible = (lesson as any).is_accessible !== false;
                       const isCheckpointLesson = lesson.kind === 'checkpoint';
                       const checkpointItem = checkpointHints.byQuizLesson.get(Number(lesson.id));
-                      const blockingCheckpoint = checkpointHints.unitToCheckpoint.get(Number(lesson.id));
-                      const lockedByCheckpoint = !!blockingCheckpoint && isCheckpointOpen(blockingCheckpoint);
+                      const blockingCheckpoint = blockingCheckpointForUnit(checkpointHints, Number(lesson.id));
+                      const lockedByCheckpoint = !!blockingCheckpoint;
                       const progress = unitStepProgress(lesson);
 
                       return (
@@ -231,7 +231,13 @@ export default function CourseOverviewPage() {
                         key={lesson.id}
                         onClick={() => handleLessonClick(lesson)}
                         disabled={!isAccessible}
-                        title={!isAccessible ? (lockedByCheckpoint ? `Finish Checkpoint ${blockingCheckpoint!.number} before starting this unit` : "Complete previous lessons to unlock") : progress.title}
+                        title={!isAccessible
+                          ? (isCheckpointLesson && checkpointItem
+                              ? (checkpointItem.locked_reason || 'This checkpoint is not open yet')
+                              : lockedByCheckpoint
+                                ? `Finish Checkpoint ${blockingCheckpoint!.number} before starting this unit`
+                                : "Complete previous lessons to unlock")
+                          : progress.title}
                         className={`relative overflow-hidden w-full flex items-center justify-between p-4 rounded-lg border transition-colors text-left ${
                           !isAccessible
                             ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-secondary border-gray-200 dark:border-border'
