@@ -805,7 +805,11 @@ export default function LessonPage() {
 
     } catch (error) {
       console.error('Failed to load lesson data:', error);
-      setError('Failed to load lesson data');
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      const detail = (error as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
+      // A refusal that carries a reason (a checkpoint holding this unit back, a checkpoint that is
+      // not open for this student) is shown as that reason, not as a generic failure.
+      setError(status === 403 && typeof detail === 'string' ? detail : 'Failed to load lesson data');
     } finally {
       setIsLessonLoading(false);
     }
@@ -2172,14 +2176,26 @@ export default function LessonPage() {
   }
 
   if (error) {
+    // A checkpoint is holding this unit back (or this checkpoint is not open): say so and lead
+    // the student to the checkpoint instead of offering a pointless Retry.
+    const lockedByCheckpoint = /checkpoint/i.test(error);
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">Error</h2>
+        <div className="text-center max-w-md px-6">
+          <h2 className={`text-2xl font-bold mb-2 ${lockedByCheckpoint ? 'text-foreground' : 'text-red-600 dark:text-red-400'}`}>
+            {lockedByCheckpoint ? 'This unit is locked' : 'Error'}
+          </h2>
           <p className="text-muted-foreground">{error}</p>
-          <Button onClick={() => window.location.reload()} className="mt-4">
-            Retry
-          </Button>
+          {lockedByCheckpoint ? (
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              <Button onClick={() => navigate('/checkpoints')}>Go to my checkpoints</Button>
+              <Button variant="outline" onClick={() => navigate(`/course/${courseId}`)}>Back to course</Button>
+            </div>
+          ) : (
+            <Button onClick={() => window.location.reload()} className="mt-4">
+              Retry
+            </Button>
+          )}
         </div>
       </div>
     );
@@ -2363,17 +2379,21 @@ export default function LessonPage() {
             ) : (
               <>
                 {openCheckpointBanner && (
-                  <div className="mb-4 flex items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-2 text-sm">
-                    <span className="min-w-0 truncate">
+                  <div className={`mb-4 flex items-center justify-between gap-3 rounded-md border px-3 py-2 text-sm ${
+                    openCheckpointBanner.status === 'overdue'
+                      ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/40'
+                      : 'border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/40'
+                  }`}>
+                    <span className="min-w-0">
                       {openCheckpointBanner.status === 'overdue' ? (
                         <>
-                          <span className="font-medium text-red-600">Checkpoint {openCheckpointBanner.number} is overdue</span>
-                          <span className="text-muted-foreground"> · {deadlineCountdown(openCheckpointBanner.deadline)} · submit now, it will be marked late</span>
+                          <span className="font-semibold text-red-700 dark:text-red-300">Course paused: Checkpoint {openCheckpointBanner.number} is overdue.</span>
+                          <span className="text-foreground/80"> The next units stay locked until you submit it · {deadlineCountdown(openCheckpointBanner.deadline)} · a submission now is marked late.</span>
                         </>
                       ) : (
                         <>
-                          <span className="font-medium text-foreground">Checkpoint {openCheckpointBanner.number} is open</span>
-                          <span className="text-muted-foreground"> · due {formatDeadline(openCheckpointBanner.deadline)} · {deadlineCountdown(openCheckpointBanner.deadline)}</span>
+                          <span className="font-semibold text-amber-900 dark:text-amber-200">Course paused: submit Checkpoint {openCheckpointBanner.number} to unlock the next units.</span>
+                          <span className="text-foreground/80"> Due {formatDeadline(openCheckpointBanner.deadline)} · {deadlineCountdown(openCheckpointBanner.deadline)}.</span>
                         </>
                       )}
                     </span>
@@ -2621,13 +2641,16 @@ export default function LessonPage() {
       <Dialog open={!!checkpointDialog} onOpenChange={(o) => !o && setCheckpointDialog(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Checkpoint {checkpointDialog?.item.number} unlocked</DialogTitle>
+            <DialogTitle>Checkpoint {checkpointDialog?.item.number} is open — the course is paused</DialogTitle>
           </DialogHeader>
           {checkpointDialog && (
-            <div className="text-sm mb-4 space-y-1">
-              <p>Covers {coversLabel(checkpointDialog.item.covers)}.</p>
+            <div className="text-sm mb-4 space-y-2">
+              <p className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 font-medium text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
+                You have finished every unit of this block. The next units stay locked until you submit Checkpoint {checkpointDialog.item.number}.
+              </p>
+              <p>Covers {coversLabel(checkpointDialog.item.covers)} · {checkpointDialog.item.total_questions} questions.</p>
               <p>
-                {checkpointDialog.item.total_questions} questions · due {formatDeadline(checkpointDialog.item.deadline)}
+                Due {formatDeadline(checkpointDialog.item.deadline)} ({deadlineCountdown(checkpointDialog.item.deadline)}). After the deadline you can still submit, but it is marked late.
               </p>
             </div>
           )}
@@ -2644,7 +2667,7 @@ export default function LessonPage() {
                 Continue to next unit
               </Button>
             ) : (
-              <Button variant="ghost" onClick={() => setCheckpointDialog(null)}>Later</Button>
+              <Button variant="ghost" onClick={() => setCheckpointDialog(null)}>Not now</Button>
             )}
             <Button
               onClick={() => {
@@ -2653,7 +2676,7 @@ export default function LessonPage() {
                 if (quiz) navigate(`/course/${quiz.course_id}/lesson/${quiz.lesson_id}`);
               }}
             >
-              Take checkpoint
+              Take Checkpoint {checkpointDialog?.item.number} now
             </Button>
           </DialogFooter>
         </DialogContent>
