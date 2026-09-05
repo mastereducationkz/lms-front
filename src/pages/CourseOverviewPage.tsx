@@ -1,12 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { ChevronRight, Play, FileText, HelpCircle, Clock, Users, CheckCircle, Lock } from 'lucide-react';
+import { ChevronRight, Play, FileText, HelpCircle, Clock, Users, CheckCircle, Lock, ClipboardCheck } from 'lucide-react';
 import apiClient from '../services/api';
 import type { Course, Lesson } from '../types';
+import { getMyCheckpoints, type StudentCheckpointItem } from '../services/api/checkpoints';
+import { buildCheckpointHints, blockingCheckpointForUnit, type CheckpointHints } from '../lib/checkpointHints';
+import { unitStepProgress } from '../lib/unitProgress';
 
 import { Progress } from '../components/ui/progress';
+
+// Short chip labels/colors for a checkpoint quiz row — mirrors LessonPage's sidebar chips.
+const CHECKPOINT_CHIP_LABEL: Record<StudentCheckpointItem['status'], string> = {
+  locked: 'Locked', available: 'Open', completed: 'Done', overdue: 'Overdue', reopened: 'Open',
+};
+const CHECKPOINT_CHIP_CLASS: Record<StudentCheckpointItem['status'], string> = {
+  locked: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
+  available: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+  completed: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+  overdue: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+  reopened: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+};
 
 export default function CourseOverviewPage() {
   const { courseId } = useParams<{ courseId: string }>();
@@ -16,6 +31,8 @@ export default function CourseOverviewPage() {
   const [modules, setModules] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [checkpointItems, setCheckpointItems] = useState<StudentCheckpointItem[]>([]);
+  const checkpointHints: CheckpointHints = useMemo(() => buildCheckpointHints(checkpointItems), [checkpointItems]);
 
   const formatDuration = (minutes: number): string => {
     if (minutes < 60) {
@@ -68,9 +85,22 @@ export default function CourseOverviewPage() {
     } finally {
       setIsLoading(false);
     }
+
+    // SAT Checkpoints: which units feed which checkpoint, for the checkpoint chips below.
+    // Returns { enabled: false, items: [] } for students outside a checkpoints-enabled
+    // group, so this fails silently and simply renders no chips.
+    try {
+      const res = await getMyCheckpoints();
+      setCheckpointItems(res?.items || []);
+    } catch {
+      setCheckpointItems([]);
+    }
   };
 
   const getLessonIcon = (lesson: Lesson) => {
+    if (lesson.kind === 'checkpoint') {
+      return <ClipboardCheck className="w-4 h-4" />;
+    }
     // Check if lesson has steps and get the first step's content type
     if (lesson.steps && lesson.steps.length > 0) {
       const firstStep = lesson.steps[0];
@@ -190,14 +220,25 @@ export default function CourseOverviewPage() {
                   <div className="space-y-3">
                     {module.lessons.map((lesson: any) => {
                       const isAccessible = (lesson as any).is_accessible !== false;
-                      
+                      const isCheckpointLesson = lesson.kind === 'checkpoint';
+                      const checkpointItem = checkpointHints.byQuizLesson.get(Number(lesson.id));
+                      const blockingCheckpoint = blockingCheckpointForUnit(checkpointHints, Number(lesson.id));
+                      const lockedByCheckpoint = !!blockingCheckpoint;
+                      const progress = unitStepProgress(lesson);
+
                       return (
                       <button
                         key={lesson.id}
                         onClick={() => handleLessonClick(lesson)}
                         disabled={!isAccessible}
-                        title={!isAccessible ? "Complete previous lessons to unlock" : ""}
-                        className={`w-full flex items-center justify-between p-4 rounded-lg border transition-colors text-left ${
+                        title={!isAccessible
+                          ? (isCheckpointLesson && checkpointItem
+                              ? (checkpointItem.locked_reason || 'This checkpoint is not open yet')
+                              : lockedByCheckpoint
+                                ? `Finish Checkpoint ${blockingCheckpoint!.number} before starting this unit`
+                                : "Complete previous lessons to unlock")
+                          : progress.title}
+                        className={`relative overflow-hidden w-full flex items-center justify-between p-4 rounded-lg border transition-colors text-left ${
                           !isAccessible
                             ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-secondary border-gray-200 dark:border-border'
                             : lesson.is_completed
@@ -205,7 +246,14 @@ export default function CourseOverviewPage() {
                               : 'border-gray-200 dark:border-border hover:border-gray-300 dark:hover:border-border hover:bg-gray-100 dark:hover:bg-secondary'
                         }`}
                       >
-                        <div className="flex items-center space-x-3">
+                        {isAccessible && progress.showFill && (
+                          <span
+                            className="absolute inset-y-0 left-0 bg-foreground/[0.06] transition-[width] duration-300 motion-reduce:transition-none"
+                            style={{ width: `${progress.ratio * 100}%` }}
+                            aria-hidden="true"
+                          />
+                        )}
+                        <div className="relative flex items-center space-x-3">
                           <div className={`flex-shrink-0 ${
                             !isAccessible 
                               ? 'text-gray-400 dark:text-gray-500' 
@@ -222,9 +270,16 @@ export default function CourseOverviewPage() {
                             )}
                           </div>
                           <div>
-                            <h3 className={`font-medium ${lesson.is_completed ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-white'}`}>
-                              {lesson.title}
-                            </h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className={`font-medium ${lesson.is_completed ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-white'}`}>
+                                {lesson.title}
+                              </h3>
+                              {isCheckpointLesson && checkpointItem ? (
+                                <span className={`h-5 px-2 inline-flex items-center rounded text-[10px] font-medium shrink-0 ${CHECKPOINT_CHIP_CLASS[checkpointItem.status]}`}>
+                                  {CHECKPOINT_CHIP_LABEL[checkpointItem.status]}
+                                </span>
+                              ) : null}
+                            </div>
                             {lesson.description && (
                               <p className={`text-sm mt-1 ${lesson.is_completed ? 'text-green-700 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
                                 {lesson.description}
@@ -237,7 +292,7 @@ export default function CourseOverviewPage() {
                             )}
                           </div>
                         </div>
-                        <ChevronRight className={`w-4 h-4 ${lesson.is_completed ? 'text-green-400' : 'text-gray-400'}`} />
+                        <ChevronRight className={`relative w-4 h-4 ${lesson.is_completed ? 'text-green-400' : 'text-gray-400'}`} />
                       </button>
                     )})}
                   </div>

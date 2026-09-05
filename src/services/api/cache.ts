@@ -57,6 +57,8 @@ const sessionStore: Storage | null = (() => {
  * A TTL of 0 disables caching for the endpoint.
  */
 const TTL_RULES: Array<{ test: RegExp; ttlMs: number }> = [
+  { test: /^\/checkpoints(\/|$)/, ttlMs: 15 * 1000 },
+
   // Never cache
   { test: /^\/auth\//, ttlMs: 0 },
   { test: /^\/messages\//, ttlMs: 0 },
@@ -111,6 +113,8 @@ const INVALIDATION_RULES: Array<{ mutation: RegExp; invalidatePrefixes: string[]
   { mutation: /^\/flashcards(\/|$)/, invalidatePrefixes: ['/flashcards'] },
   { mutation: /^\/lesson-requests(\/|$)/, invalidatePrefixes: ['/lesson-requests', '/events'] },
   { mutation: /^\/media(\/|$)/, invalidatePrefixes: ['/courses'] },
+  { mutation: /^\/checkpoints(\/|$)/, invalidatePrefixes: ['/checkpoints'] },
+  { mutation: /^\/progress\/(quiz-attempt|lesson\/\d+\/complete|step\/\d+\/visit)/, invalidatePrefixes: ['/checkpoints'] },
 ]
 
 const extractPath = (url: string): string => {

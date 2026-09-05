@@ -1,5 +1,5 @@
 import React from 'react'
-import { CheckCircle2, XCircle } from 'lucide-react'
+import { Check, X } from 'lucide-react'
 import { renderTextWithLatex } from '../../../utils/latex'
 
 interface ChoiceQuestionProps {
@@ -103,12 +103,12 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
         if (crossed) {
           badgeClass += 'border-muted-foreground/40 text-muted-foreground/40'
         } else if (showResult) {
-          badgeClass += selected
-            ? correct
-              ? 'border-green-500 text-green-700 dark:text-green-400'
-              : 'border-red-400 text-red-600 dark:text-red-400'
-            : correct && revealCorrect
-              ? 'border-emerald-500 text-emerald-700 dark:text-emerald-400'
+          // Once the answer is shown the badge stops being a letter and becomes the verdict:
+          // a filled green tick for the right option, a filled red cross for a wrong pick.
+          badgeClass += correct && revealCorrect
+            ? 'border-green-600 bg-green-600 text-white'
+            : selected && !correct
+              ? 'border-red-500 bg-red-500 text-white'
               : 'border-muted-foreground text-muted-foreground'
         } else {
           badgeClass += selected
@@ -126,8 +126,16 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
               className={`flex-1 text-left px-4 py-3 rounded-xl transition-all duration-150 ${borderClass}`}
             >
               <div className="flex items-center gap-3">
-                {/* Letter badge */}
-                <span className={badgeClass}>{letter}</span>
+                {/* Letter badge — the verdict marker once the answer is revealed */}
+                <span className={badgeClass}>
+                  {showResult && correct && revealCorrect ? (
+                    <Check className="w-4 h-4" aria-hidden="true" />
+                  ) : showResult && selected && !correct ? (
+                    <X className="w-4 h-4" aria-hidden="true" />
+                  ) : (
+                    letter
+                  )}
+                </span>
 
                 <div className="flex-1">
                   {option.text && (
@@ -158,18 +166,7 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
                   )}
                 </div>
               </div>
-              {revealCorrect && correct && (
-                <span className="mt-2 ml-10 inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
-                  <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
-                  Correct answer
-                </span>
-              )}
-              {showResult && selected && !correct && (
-                <span className="mt-2 ml-10 inline-flex items-center gap-1.5 text-xs font-medium text-red-600 dark:text-red-400">
-                  <XCircle className="w-3.5 h-3.5" aria-hidden="true" />
-                  Your answer
-                </span>
-              )}
+
             </button>
 
             {/* SAT-style elimination button — always visible on right */}

@@ -452,6 +452,8 @@ export interface Lesson {
   updated_at: string;
   is_completed?: boolean; // For student view
   is_initially_unlocked?: boolean; // Admin can mark lessons as initially unlocked
+  is_accessible?: boolean; // For student view — sequential lesson gating
+  kind?: 'unit' | 'checkpoint';
   steps?: Step[];
   total_steps?: number;
   next_lesson_id?: number | null;
@@ -512,6 +514,8 @@ export interface Question {
   needs_image?: boolean; // Flag to indicate if the question requires an image (from Gemini parser)
   // Matching question fields
   matching_pairs?: { left: string; right: string }[]; // Pairs for matching questions
+  /** SAT Checkpoints: 5 easy / 5 medium / 5 hard per unit. Optional for ordinary quizzes. */
+  difficulty?: 'easy' | 'medium' | 'hard';
 }
 
 export interface QuizData {

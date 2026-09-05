@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '../ui/button';
 import {
   AlertDialog,
@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '../ui/dialog';
-import { ChevronRight, ChevronDown, ChevronUp, AlertTriangle, HelpCircle, Lock as LockIcon, Lightbulb, AlertCircle } from 'lucide-react';
+import { ChevronRight, ChevronDown, ChevronUp, AlertTriangle, HelpCircle, Lock as LockIcon, AlertCircle } from 'lucide-react';
 import { renderTextWithLatex } from '../../utils/latex';
 import { applyHighlightsToHtml as applyHighlightsToHtmlShared } from '../../utils/highlightUtils';
 import type { Step } from '../../types';
@@ -97,6 +97,12 @@ interface QuizRendererProps {
   goToStep: (index: number) => void;
   currentStepIndex: number;
   nextLessonId: string | null;
+  /** Optional call to action on the pass screen, e.g. a checkpoint sending the student back
+   *  to the course now that the units it was holding back are open again. */
+  continueAction?: { note: string; label: string; onClick: () => void };
+  /** A one-shot assessment that is no longer open (a completed or lapsed checkpoint): the
+   *  server would refuse another attempt with 409, so the player offers no retake. */
+  singleAttempt?: boolean;
   courseId: string | undefined;
   finishQuiz: () => void;
   reviewQuiz: () => void;
@@ -127,6 +133,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
     getCurrentQuestion,
     getCurrentUserAnswer,
     goToNextStep,
+    continueAction,
+    singleAttempt,
     setQuizCompleted,
     markStepAsVisited,
     currentStep,
@@ -607,14 +615,10 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
     return (
       <div className="w-full md:max-w-3xl md:mx-auto space-y-4 md:space-y-6 md:p-4 pb-24">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold text-foreground">Quick Practice</h2>
-          <p className="text-muted-foreground">Answer all questions below to continue</p>
-
-          {/* Development / Teacher Helper Buttons */}
+        {/* Header — the questions speak for themselves; only the dev/teacher helpers remain. */}
+        <div className="space-y-2">
           {(import.meta.env.DEV || isTeacher) && (
-            <div className="mt-2 flex items-center justify-center gap-2">
+            <div className="flex items-center gap-2">
               <Button
                 onClick={autoFillCorrectAnswers}
                 className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
@@ -1239,6 +1243,82 @@ const QuizRenderer = (props: QuizRendererProps) => {
     );
   };
 
+  // Overview of the whole quiz: one square per question, coloured once that question
+  // has been answered and checked. Only questions before the current one carry a
+  // verdict — the one on screen may have a selection that has not been checked yet.
+  const renderQuestionMap = () => {
+    if (!questions || questions.length <= 1) return null;
+    return (
+      <div className="pt-8 flex flex-wrap justify-center gap-1.5" aria-label="Question overview">
+        {questions.map((mapQuestion: any, i: number) => {
+          const key = getAnswerKey(mapQuestion);
+          const isCurrent = i === currentQuestionIndex;
+          let tone = 'bg-muted text-muted-foreground';
+          let label = 'not answered yet';
+          if (i < currentQuestionIndex) {
+            const status = getQuestionStatus(
+              mapQuestion,
+              quizAnswers.get(key),
+              gapAnswers.get(key),
+              { isSpecialGroupStudent }
+            );
+            if (status.key === 'correct') {
+              tone = 'bg-green-600 text-white'; label = 'correct';
+            } else if (status.key === 'incorrect') {
+              tone = 'bg-red-500 text-white'; label = 'incorrect';
+            } else if (status.key === 'partial') {
+              tone = 'bg-amber-500 text-white'; label = 'partly correct';
+            } else {
+              tone = 'bg-muted-foreground/40 text-white'; label = 'needs review';
+            }
+          }
+          return (
+            <span
+              key={mapQuestion.id ?? i}
+              title={`Question ${i + 1} — ${isCurrent ? 'current' : label}`}
+              className={`h-6 w-6 rounded text-[10px] font-medium flex items-center justify-center ${tone} ${
+                isCurrent ? 'ring-2 ring-primary ring-offset-1 ring-offset-background' : ''
+              }`}
+            >
+              {i + 1}
+            </span>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const QuizConfetti = () => {
+    const pieces = useMemo(
+      () =>
+        Array.from({ length: 40 }, (_, i) => ({
+          left: Math.random() * 100,
+          delay: Math.random() * 0.5,
+          duration: 2.4 + Math.random() * 1.6,
+          tilt: Math.random() * 360,
+          color: ['#22c55e', '#3b82f6', '#f59e0b', '#ef4444', '#a855f7'][i % 5],
+        })),
+      []
+    );
+    return (
+      <div className="pointer-events-none fixed inset-0 z-50 overflow-hidden" aria-hidden="true">
+        {pieces.map((piece, i) => (
+          <span
+            key={i}
+            className="quiz-confetti-piece"
+            style={{
+              left: `${piece.left}%`,
+              backgroundColor: piece.color,
+              animationDelay: `${piece.delay}s`,
+              animationDuration: `${piece.duration}s`,
+              transform: `rotate(${piece.tilt}deg)`,
+            }}
+          />
+        ))}
+      </div>
+    );
+  };
+
   const renderQuizQuestion = () => {
     if (!questions || questions.length === 0) return null;
     const q = questions[currentQuestionIndex];
@@ -1286,16 +1366,17 @@ const QuizRenderer = (props: QuizRendererProps) => {
     return (
       <div
         key={`q-${q.id}`}
-        className="w-full md:max-w-3xl md:mx-auto space-y-4 md:space-y-6 md:p-4 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-200"
+        className="w-full md:max-w-4xl md:mx-auto space-y-4 md:space-y-8 md:p-6 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-200"
       >
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold text-foreground">Quiz Question</h2>
-          <p className="text-muted-foreground">
+        {/* Counter only — a quiet line above the question, the same one the result view
+            renders, so answering changes the answer area and nothing else. */}
+        <div className="space-y-4">
+          <div className="text-sm text-muted-foreground">
             Question{questionGaps > 1 ? 's' : ''} {displayNumber}{questionGaps > 1 ? `-${displayNumber + questionGaps - 1}` : ''} of {totalQuestionCount}
-          </p>
+          </div>
+
           {(import.meta.env.DEV || isTeacher) && (
-            <div className="mt-2 flex items-center justify-center gap-2">
+            <div className="flex items-center gap-2">
               <Button
                 onClick={autoFillCorrectAnswers}
                 variant="outline"
@@ -1447,6 +1528,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 onChange={(val) => handleQuizAnswer(q.id.toString(), val)}
                 disabled={false}
                 showResult={false}
+                crossedOut={crossedOutByQuestion.get(q.id.toString())}
+                onCrossOut={(idx) => toggleCrossOut(q.id.toString(), idx)}
               />
             ) : q.question_type === 'matching' ? (
               <MatchingQuestion
@@ -1480,13 +1563,15 @@ const QuizRenderer = (props: QuizRendererProps) => {
           <Button
             onClick={checkAnswer}
             disabled={!isAnswerComplete(q, quizAnswers.get(getAnswerKey(q)), gapAnswers.get(getAnswerKey(q)))}
-            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg text-lg font-semibold shadow-md hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+            className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
           >
             {q.question_type === 'short_answer' || q.question_type === 'media_open_question' || q.question_type === 'long_text'
               ? 'Submit to Teacher'
               : 'Check Answer'}
           </Button>
         </div>
+
+        {renderQuestionMap()}
       </div>
     );
   };
@@ -1503,27 +1588,12 @@ const QuizRenderer = (props: QuizRendererProps) => {
       ? (question.content_text || question.question_text || '').match(/\[\[(.*?)\]\]/g)?.length || 1
       : 1;
     const currentEndNumber = displayNumber + questionGaps - 1;
-    const progress = (currentEndNumber / totalQuestionCount) * 100;
 
     return (
       <div className="w-full md:max-w-4xl md:mx-auto space-y-4 md:space-y-8 md:p-6">
-        {/* Progress Header */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-semibold text-foreground">
-              Question{questionGaps > 1 ? 's' : ''} {displayNumber}{questionGaps > 1 ? `-${currentEndNumber}` : ''} of {totalQuestionCount}
-            </span>
-            <span className="text-sm font-medium text-muted-foreground bg-muted px-3 py-1 rounded-full">
-              {Math.round(progress)}% Complete
-            </span>
-          </div>
-
-          <div className="w-full bg-muted rounded-full h-3 shadow-inner">
-            <div
-              className="bg-primary h-3 rounded-full transition-all duration-500 ease-out shadow-sm"
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
+        {/* Counter only — no progress bar, matching the question view. */}
+        <div className="text-sm text-muted-foreground">
+          Question{questionGaps > 1 ? 's' : ''} {displayNumber}{questionGaps > 1 ? `-${currentEndNumber}` : ''} of {totalQuestionCount}
         </div>
 
         {/* Exam mode badge - shown outside audio player */}
@@ -1678,13 +1748,12 @@ const QuizRenderer = (props: QuizRendererProps) => {
               </div>
             )}
 
-            {/* Explanation */}
+            {/* Explanation — neutral surface, no icon, eased in so it reads as a reveal
+                rather than a jump. Respects prefers-reduced-motion via motion-safe. */}
             {question.explanation && (
-              <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-700/40">
-                <h5 className="text-lg font-bold text-blue-900 dark:text-blue-400 mb-3 flex items-center gap-2">
-                  <Lightbulb className="w-5 h-5" aria-hidden="true" /> Explanation
-                </h5>
-                <div className="text-blue-800 dark:text-blue-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(question.explanation) }} />
+              <div className="mt-8 p-6 bg-muted/40 rounded-xl border border-border motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
+                <h5 className="text-sm font-semibold text-foreground mb-2">Explanation</h5>
+                <div className="text-foreground/80 leading-relaxed" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(question.explanation) }} />
               </div>
             )}
           </div>
@@ -1702,6 +1771,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
             </span>
           </Button>
         </div>
+
+        {renderQuestionMap()}
       </div>
     );
   };
@@ -1793,7 +1864,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
               >
                 Back to Results
               </Button>
-              {!hasLongText && (
+              {!hasLongText && !singleAttempt && (
                 <Button
                   onClick={resetQuiz}
                   className="px-4 py-2 text-sm"
@@ -1948,6 +2019,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
     return (
       <div className="w-full max-w-3xl mx-auto text-center space-y-4 py-6 md:py-10">
+        {isPassed && <QuizConfetti />}
         <h2 className="text-3xl font-bold text-foreground">
           {isPassed ? 'Nice work!' : 'Keep going!'}
         </h2>
@@ -2099,6 +2171,15 @@ const QuizRenderer = (props: QuizRendererProps) => {
           </div>
         )}
 
+        {isPassed && continueAction && (
+          <div className="space-y-3 pt-2">
+            <p className="text-base text-foreground">{continueAction.note}</p>
+            <Button onClick={continueAction.onClick} className="min-h-[44px]">
+              {continueAction.label}
+            </Button>
+          </div>
+        )}
+
         <div className="flex flex-col sm:flex-row justify-center gap-3 flex-wrap pt-2">
           <Button onClick={reviewQuiz} variant="outline" className="min-h-[44px]">
             Review Answers
@@ -2113,7 +2194,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
             </Button>
           )}
 
-          {!hasLongText && (
+          {!hasLongText && !singleAttempt && (
             <Button onClick={resetQuiz} variant="outline">
               Retake Quiz
             </Button>

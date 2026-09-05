@@ -1282,6 +1282,7 @@ export default function QuizLessonEditor({
                                           q.question_type === 'matching' ? 'Matching' :
                                           q.question_type}
                       </span>
+                      {q.difficulty && <span className="ml-2 text-[10px] uppercase text-gray-500">{q.difficulty}</span>}
                       {!validation.isValid && (
                         <span className="text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded">
                           {validation.errors[0]}
@@ -1531,6 +1532,20 @@ export default function QuizLessonEditor({
                     <div className="text-xs text-gray-500 mt-1">⌘+H</div>
                   </div>
                 </div>
+              </div>
+
+              <div className="flex items-center gap-2 mb-2">
+                <label className="text-xs text-gray-600 dark:text-gray-300">Difficulty (SAT checkpoints)</label>
+                <select
+                  className="h-8 rounded border bg-transparent px-2 text-xs"
+                  value={draftQuestion.difficulty || ''}
+                  onChange={(e) => applyDraftUpdate({ difficulty: (e.target.value || undefined) as any })}
+                >
+                  <option value="">— not set —</option>
+                  <option value="easy">Easy</option>
+                  <option value="medium">Medium</option>
+                  <option value="hard">Hard</option>
+                </select>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
