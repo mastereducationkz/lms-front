@@ -25,6 +25,9 @@ export interface CheckpointRow {
   opened_by: 'auto' | 'admin' | null;
   reopen_count: number;
   quiz_attempt_id: number | null;
+  /** Submitted after the deadline (the deadline is soft: late work is accepted and flagged). */
+  late: boolean;
+  late_minutes: number | null;
 }
 
 export interface StudentCheckpointItem extends CheckpointRow {
@@ -173,6 +176,30 @@ export const formatDeadline = (iso: string | null | undefined): string => {
   const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
   return `${get('day')} ${get('month')}, ${get('hour')}:${get('minute')}`;
 };
+
+/** "5h 12m" / "3d 2h" style duration for countdowns and lateness. */
+export const formatDuration = (minutes: number): string => {
+  const m = Math.max(0, Math.round(minutes));
+  const d = Math.floor(m / 1440);
+  const h = Math.floor((m % 1440) / 60);
+  const min = m % 60;
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${min}m`;
+  return `${min}m`;
+};
+
+/** "due in 5h 12m" while the deadline is ahead, "overdue by 3h 05m" once it has passed. */
+export const deadlineCountdown = (iso: string | null | undefined, now: Date = new Date()): string => {
+  if (!iso) return '';
+  const deadline = new Date(iso);
+  if (Number.isNaN(deadline.getTime())) return '';
+  const minutes = (deadline.getTime() - now.getTime()) / 60000;
+  return minutes >= 0 ? `due in ${formatDuration(minutes)}` : `overdue by ${formatDuration(-minutes)}`;
+};
+
+/** "late by 3h 12m" for a row submitted after its deadline, '' otherwise. */
+export const lateLabel = (row: Pick<CheckpointRow, 'late' | 'late_minutes'>): string =>
+  row.late && row.late_minutes != null ? `late by ${formatDuration(row.late_minutes)}` : '';
 
 export const STATUS_LABEL: Record<CheckpointStatus, string> = {
   locked: 'Locked', available: 'Available', completed: 'Completed', overdue: 'Overdue', reopened: 'Reopened',
