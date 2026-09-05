@@ -107,3 +107,18 @@ export async function openPlatformPage(track: PlatformTrack, path = '/'): Promis
   }
   window.open(url, '_blank', 'noopener,noreferrer');
 }
+
+/**
+ * Recognise a platform page URL (the link of an auto-managed weekly-test calendar event) as
+ * `track` + relative path, so the click can go through the signed handoff instead of a bare tab.
+ */
+export function parsePlatformUrl(url: string | null | undefined): { track: PlatformTrack; path: string } | null {
+  const match = /^https?:\/\/([^/?#]+)([^#]*)/i.exec((url || '').trim());
+  if (!match) return null;
+  const host = match[1].toLowerCase();
+  for (const track of Object.keys(PLATFORM_URLS) as PlatformTrack[]) {
+    const base = /^https?:\/\/([^/?#]+)/i.exec(PLATFORM_URLS[track]);
+    if (base && base[1].toLowerCase() === host) return { track, path: match[2] || '/' };
+  }
+  return null;
+}

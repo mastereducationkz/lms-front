@@ -1,4 +1,5 @@
-import { Clock, MapPin, Video, Users } from 'lucide-react';
+import { Clock, ExternalLink, MapPin, Video, Users } from 'lucide-react';
+import { openPlatformPage, parsePlatformUrl } from '../../lib/platformLinks';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import type { Event, LessonRequest } from '../../types';
 import { cx, formatTime, eventStyle, typeLabel, isSubstitutedForTeacher } from './calendarUtils';
@@ -16,6 +17,8 @@ interface Props {
 
 export default function EventDetailDialog({ event, open, onOpenChange, user, myRequests, onRequest }: Props) {
   if (!event) return null;
+  // Auto-managed weekly-test events link to the set page on the platform: open it signed in.
+  const platformLink = event.event_type === 'weekly_test' ? parsePlatformUrl(event.meeting_url) : null;
   const s = eventStyle(event);
   const sub = isSubstitutedForTeacher(event, user);
   const dateLabel = new Date(event.start_datetime).toLocaleDateString('en-US', {
@@ -78,7 +81,20 @@ export default function EventDetailDialog({ event, open, onOpenChange, user, myR
               </div>
             )}
 
-            {event.meeting_url && (
+            {event.meeting_url && platformLink && (
+              <div className="flex items-center gap-2.5">
+                <ExternalLink className="h-4 w-4 flex-none text-muted-foreground/70" />
+                <button
+                  type="button"
+                  onClick={() => void openPlatformPage(platformLink.track, platformLink.path)}
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                >
+                  Open on {platformLink.track.toUpperCase()} / Открыть на {platformLink.track.toUpperCase()}
+                </button>
+              </div>
+            )}
+
+            {event.meeting_url && !platformLink && (
               <div className="flex items-center gap-2.5">
                 <Video className="h-4 w-4 flex-none text-muted-foreground/70" />
                 <a
