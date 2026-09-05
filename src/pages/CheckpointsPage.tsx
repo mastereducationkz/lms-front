@@ -5,7 +5,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import Loader from '../components/Loader';
 import {
-  coversLabel, formatDeadline, getMyCheckpoints, STATUS_CLASS, STATUS_LABEL, type StudentCheckpointItem,
+  coversLabel, deadlineCountdown, formatDeadline, getMyCheckpoints, lateLabel, STATUS_CLASS, STATUS_LABEL, type StudentCheckpointItem,
 } from '../services/api/checkpoints';
 
 export default function CheckpointsPage() {
@@ -32,10 +32,10 @@ export default function CheckpointsPage() {
     <div className="p-4 md:p-6 space-y-4 max-w-3xl">
       <h1 className="text-2xl font-semibold">SAT Checkpoints</h1>
       <p className="text-sm text-muted-foreground">
-        A checkpoint opens as soon as you finish its 2 Verbal units and 1 Math unit, and stays open for 3 days.
+        A checkpoint opens the moment you finish its Verbal and Math units, and you have 24 hours from then. After the deadline you can still submit, but the result is marked late.
       </p>
       {items.map((item) => {
-        const open = item.status === 'available' || item.status === 'reopened';
+        const open = item.status === 'available' || item.status === 'reopened' || item.status === 'overdue';
         return (
           <Card key={`${item.group_id}-${item.checkpoint_id}`}>
             <CardContent className="p-5">
@@ -51,12 +51,13 @@ export default function CheckpointsPage() {
                   <p className="text-xs text-muted-foreground">Covers: {coversLabel(item.covers)} · {item.total_questions} questions</p>
                   {item.deadline && item.status !== 'completed' && (
                     <p className={`text-xs ${item.status === 'overdue' ? 'text-red-600' : 'text-muted-foreground'}`}>
-                      Deadline: {formatDeadline(item.deadline)} (Almaty)
+                      Deadline: {formatDeadline(item.deadline)} (Almaty) · {deadlineCountdown(item.deadline)}
                     </p>
                   )}
                   {item.status === 'completed' && (
                     <p className="text-xs text-muted-foreground">
                       Result: {item.correct_answers}/{item.total_questions} ({item.percentage}%) · submitted {formatDeadline(item.submitted_at)}
+                      {item.late && <span className="text-red-600"> · {lateLabel(item)}</span>}
                     </p>
                   )}
                   <ul className="mt-2 flex flex-wrap gap-2" aria-label="Required units">
@@ -71,12 +72,15 @@ export default function CheckpointsPage() {
                   {item.locked_reason && <p className="mt-2 text-xs text-muted-foreground">{item.locked_reason}</p>}
                 </div>
                 {open && item.quiz && (
-                  <Button onClick={() => navigate(`/course/${item.quiz!.course_id}/lesson/${item.quiz!.lesson_id}`)}>
-                    Start
-                  </Button>
-                )}
-                {item.status === 'overdue' && (
-                  <p className="text-xs text-red-600 max-w-[10rem]">Deadline passed. Ask your curator to reopen it.</p>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <Button variant={item.status === 'overdue' ? 'destructive' : 'default'}
+                            onClick={() => navigate(`/course/${item.quiz!.course_id}/lesson/${item.quiz!.lesson_id}`)}>
+                      {item.status === 'overdue' ? 'Submit late' : 'Start'}
+                    </Button>
+                    {item.status === 'overdue' && (
+                      <p className="text-xs text-red-600 max-w-[12rem] text-right">The deadline has passed; a submission now is marked late.</p>
+                    )}
+                  </div>
                 )}
               </div>
             </CardContent>

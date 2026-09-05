@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronRight, ClipboardCheck } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import {
-  coversLabel, formatDeadline, getMyCheckpoints, STATUS_CLASS, STATUS_LABEL, type StudentCheckpointItem,
+  coversLabel, deadlineCountdown, formatDeadline, getMyCheckpoints, STATUS_CLASS, STATUS_LABEL, type StudentCheckpointItem,
 } from '../../services/api/checkpoints';
 
 const OPEN_STATUSES = new Set(['available', 'reopened', 'overdue']);
@@ -43,7 +43,7 @@ export function CheckpointsCard() {
         {openItems.length > 0 ? (
           <ul className="mt-2 space-y-2">
             {openItems.map((item) => {
-              const clickable = Boolean(item.quiz) && item.status !== 'overdue';
+              const clickable = Boolean(item.quiz);
               const content = (
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -57,11 +57,11 @@ export function CheckpointsCard() {
                     <p className="text-xs text-muted-foreground truncate">Covers: {coversLabel(item.covers)} · {item.total_questions} questions</p>
                     {item.deadline && (
                       <p className={`text-xs ${item.status === 'overdue' ? 'text-red-600' : 'text-muted-foreground'}`}>
-                        Deadline: {formatDeadline(item.deadline)} (Almaty)
+                        Deadline: {formatDeadline(item.deadline)} (Almaty) · {deadlineCountdown(item.deadline)}
                       </p>
                     )}
                     {item.status === 'overdue' && (
-                      <p className="text-xs text-red-600">Deadline passed — ask your curator to reopen it.</p>
+                      <p className="text-xs text-red-600">The deadline has passed. You can still submit, and it will be marked late.</p>
                     )}
                   </div>
                   {clickable && <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />}

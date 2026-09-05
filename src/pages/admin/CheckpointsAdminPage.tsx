@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import {
-  checkCheckpointQuiz, formatDeadline, getCheckpointMatrix, listCheckpointDefinitions, listCheckpointGroups,
+  checkCheckpointQuiz, deadlineCountdown, formatDeadline, getCheckpointMatrix, lateLabel, listCheckpointDefinitions, listCheckpointGroups,
   openCheckpoint, reopenCheckpoint, STATUS_CLASS, STATUS_LABEL, updateCheckpointDeadline,
   updateCheckpointDefinition, updateCheckpointGroupSettings,
   type CheckpointCell, type CheckpointDefinition, type CheckpointGroup, type CheckpointMatrix, type CheckpointQuizCheck,
@@ -170,7 +170,7 @@ export default function CheckpointsAdminPage() {
                         <Button size="sm" variant="outline" disabled={busy}
                                 onClick={() => run(`${d.title} opened for group`, () => openCheckpoint(matrix.group.id, d.id, {}))}>Open all</Button>
                         <Button size="sm" variant="outline" disabled={busy}
-                                onClick={() => window.confirm(`Reopen ${d.title} for the whole group (new 3-day deadline)?`)
+                                onClick={() => window.confirm(`Reopen ${d.title} for the whole group (new 24-hour deadline)?`)
                                   && run(`${d.title} reopened for group`, () => reopenCheckpoint(matrix.group.id, d.id, {}))}>Reopen all</Button>
                       </div>
                     )}
@@ -196,8 +196,9 @@ export default function CheckpointsAdminPage() {
                         <StatusChip status={cell.status} skipped={cell.skipped} />
                         <div className="mt-1 text-[11px] text-muted-foreground">
                           {cell.units.map((u) => (u.completed ? '✓' : '·')).join(' ')}
-                          {cell.deadline && cell.status !== 'completed' && <> · due {formatDeadline(cell.deadline)}</>}
+                          {cell.deadline && cell.status !== 'completed' && <> · due {formatDeadline(cell.deadline)} ({deadlineCountdown(cell.deadline)})</>}
                           {cell.status === 'completed' && <> · {cell.correct_answers}/{cell.total_questions} ({cell.percentage}%)</>}
+                          {cell.late && <span className="text-red-600"> · {lateLabel(cell)}</span>}
                         </div>
                       </button>
                     </td>
@@ -206,6 +207,9 @@ export default function CheckpointsAdminPage() {
               ))}
             </tbody>
           </table>
+          <p className="px-3 py-2 text-[11px] text-muted-foreground border-t">
+            Under each chip, one mark per required unit in order: ✓ completed, · not yet. A checkpoint opens for a student when every mark is ✓ (definition active, group enabled, number not below the group's start). Deadline is 24 hours from opening; a later submission is accepted and shown as late.
+          </p>
         </div>
       )}
 
@@ -227,7 +231,7 @@ export default function CheckpointsAdminPage() {
           <dl className="grid grid-cols-2 gap-x-4 text-xs text-muted-foreground">
             <dt>Opened</dt><dd>{formatDeadline(selected.cell.opened_at) || '—'} {selected.cell.opened_by ? `(${selected.cell.opened_by})` : ''}</dd>
             <dt>Deadline</dt><dd>{formatDeadline(selected.cell.deadline) || '—'}</dd>
-            <dt>Submitted</dt><dd>{formatDeadline(selected.cell.submitted_at) || '—'}</dd>
+            <dt>Submitted</dt><dd>{formatDeadline(selected.cell.submitted_at) || '—'}{selected.cell.submitted_at && (selected.cell.late ? <span className="text-red-600"> · {lateLabel(selected.cell)}</span> : ' · on time')}</dd>
             <dt>Result</dt><dd>{selected.cell.percentage != null ? `${selected.cell.correct_answers}/${selected.cell.total_questions} (${selected.cell.percentage}%)` : '—'}</dd>
             <dt>Reopened</dt><dd>{selected.cell.reopen_count}×</dd>
           </dl>
@@ -242,7 +246,7 @@ export default function CheckpointsAdminPage() {
               {selected.cell.status !== 'locked' && (
                 <Button size="sm" variant="outline" disabled={busy} onClick={() => run('Checkpoint reopened',
                   () => reopenCheckpoint(matrix.group.id, selected.cell.checkpoint_id, { student_ids: [selected.studentId] }))}>
-                  Reopen (new 3 days)
+                  Reopen (new 24 hours)
                 </Button>
               )}
               {selected.cell.id != null && (
@@ -283,7 +287,9 @@ export default function CheckpointsAdminPage() {
               {definitions.map((d) => {
                 const currentVerbal = d.required_units.filter((u) => u.kind === 'verbal').map((u) => u.lesson_id).join(', ');
                 const currentMath = d.required_units.filter((u) => u.kind === 'math').map((u) => u.lesson_id).join(', ');
-                const edit = unitEdits[d.id] ?? { verbal: '', math: '' };
+                // Boxes start with the live binding, so the mapping is readable and editable in place.
+                const edit = unitEdits[d.id] ?? { verbal: currentVerbal, math: currentMath };
+                const unitsChanged = edit.verbal.trim() !== currentVerbal || edit.math.trim() !== currentMath;
                 const check = checks[d.id];
                 return (
                   <tr key={d.id} className="border-t align-top">
@@ -300,13 +306,15 @@ export default function CheckpointsAdminPage() {
                       </div>
                       {canEditDefinitions && (
                         <div className="mt-1 flex flex-wrap items-center gap-2">
-                          <Input className="w-36" placeholder={`Verbal: ${currentVerbal}`} value={edit.verbal}
+                          <span className="text-[11px] text-muted-foreground">Verbal</span>
+                          <Input className="w-32" placeholder={currentVerbal} value={edit.verbal}
                                  aria-label={`${d.title} verbal unit ids`}
                                  onChange={(e) => setUnitEdits((prev) => ({ ...prev, [d.id]: { ...edit, verbal: e.target.value } }))} />
-                          <Input className="w-28" placeholder={`Math: ${currentMath}`} value={edit.math}
+                          <span className="text-[11px] text-muted-foreground">Math</span>
+                          <Input className="w-24" placeholder={currentMath} value={edit.math}
                                  aria-label={`${d.title} math unit ids`}
                                  onChange={(e) => setUnitEdits((prev) => ({ ...prev, [d.id]: { ...edit, math: e.target.value } }))} />
-                          <Button size="sm" variant="outline" disabled={busy || !(edit.verbal.trim() && edit.math.trim())} onClick={() => {
+                          <Button size="sm" variant="outline" disabled={busy || !unitsChanged || !(edit.verbal.trim() && edit.math.trim())} onClick={() => {
                             const parse = (s: string) => s.split(',').map((x) => Number(x.trim())).filter((x) => x > 0);
                             const verbal = parse(edit.verbal);
                             const math = parse(edit.math);

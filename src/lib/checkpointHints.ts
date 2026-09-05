@@ -29,19 +29,20 @@ export function buildCheckpointHints(items: StudentCheckpointItem[] | undefined 
   return { unitToCheckpoint, byQuizLesson, items: sorted };
 }
 
-/** A checkpoint the student can act on right now. */
+/** A checkpoint the student can act on right now. The deadline is soft, so an overdue
+ *  checkpoint is still answerable (the submission is marked late). */
 export function isOpen(item: Pick<StudentCheckpointItem, 'status'>): boolean {
-  return item.status === 'available' || item.status === 'reopened';
+  return item.status === 'available' || item.status === 'reopened' || item.status === 'overdue';
 }
 
 /**
  * Mirrors the backend's ordinal gate (blocked_unit_lesson_ids_for_student): a checkpoint
- * counts as cleared once it is completed or has lapsed to overdue, or when the group
- * skipped it via its start number. Everything else — never opened, open, reopened —
- * still holds every later block back.
+ * counts as cleared once it is completed (on time or late), or when the group skipped it via
+ * its start number. Everything else — never opened, open, reopened, overdue — still holds every
+ * later block back; an overdue checkpoint is cleared by submitting it late.
  */
 export function isCleared(item: Pick<StudentCheckpointItem, 'status' | 'skipped'>): boolean {
-  return item.status === 'completed' || item.status === 'overdue' || Boolean(item.skipped);
+  return item.status === 'completed' || Boolean(item.skipped);
 }
 
 /**

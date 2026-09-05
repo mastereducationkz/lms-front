@@ -9,7 +9,7 @@ import { ChevronLeft, ChevronRight, Play, FileText, HelpCircle, ChevronDown, Che
 import { useSettings } from '../contexts/SettingsContext';
 import apiClient from '../services/api';
 import type { Lesson, Step, Course, CourseModule, StepProgress, StepAttachment } from '../types';
-import { getMyCheckpoints, coversLabel, formatDeadline, type StudentCheckpointItem } from '../services/api/checkpoints';
+import { getMyCheckpoints, coversLabel, deadlineCountdown, formatDeadline, type StudentCheckpointItem } from '../services/api/checkpoints';
 import { buildCheckpointHints, blockingCheckpointForUnit, isOpen as isCheckpointOpen, type CheckpointHints } from '../lib/checkpointHints';
 import { unitStepProgress } from '../lib/unitProgress';
 import YouTubeVideoPlayer from '../components/YouTubeVideoPlayer';
@@ -497,8 +497,9 @@ export default function LessonPage() {
   }, [checkpointItems, dismissedCheckpointIds, lesson]);
 
   // When this lesson IS a checkpoint quiz: its item from the latest fetch. A checkpoint can be
-  // answered only while open (available / reopened); once completed or lapsed the player must
-  // not offer a retake — the server refuses it with 409 anyway. Reopening makes it open again.
+  // answered while open (available / reopened) and, late, while overdue; once completed the
+  // player must not offer a retake — the server refuses it with 409 anyway. Reopening makes it
+  // open again.
   const thisCheckpoint = lesson ? checkpointHints.byQuizLesson.get(Number(lesson.id)) : undefined;
   const checkpointRetakeBlocked = lesson?.kind === 'checkpoint' && !!thisCheckpoint && !isCheckpointOpen(thisCheckpoint);
 
@@ -2239,7 +2240,11 @@ export default function LessonPage() {
               if (asCheckpointQuiz) {
                 return (
                   <span className={`h-5 px-2 inline-flex items-center rounded text-[10px] font-medium shrink-0 ${CHECKPOINT_CHIP_CLASS[asCheckpointQuiz.status]}`}>
-                    {asCheckpointQuiz.deadline ? `Due ${formatDeadline(asCheckpointQuiz.deadline)}` : CHECKPOINT_CHIP_LABEL[asCheckpointQuiz.status]}
+                    {asCheckpointQuiz.status === 'overdue'
+                      ? `Overdue · ${deadlineCountdown(asCheckpointQuiz.deadline)} · a submission now is marked late`
+                      : asCheckpointQuiz.deadline && asCheckpointQuiz.status !== 'completed'
+                        ? `Due ${formatDeadline(asCheckpointQuiz.deadline)} · ${deadlineCountdown(asCheckpointQuiz.deadline)}`
+                        : CHECKPOINT_CHIP_LABEL[asCheckpointQuiz.status]}
                   </span>
                 );
               }
@@ -2360,8 +2365,17 @@ export default function LessonPage() {
                 {openCheckpointBanner && (
                   <div className="mb-4 flex items-center justify-between gap-3 rounded-md border border-border bg-background px-3 py-2 text-sm">
                     <span className="min-w-0 truncate">
-                      <span className="font-medium text-foreground">Checkpoint {openCheckpointBanner.number} is open</span>
-                      <span className="text-muted-foreground"> · due {formatDeadline(openCheckpointBanner.deadline)}</span>
+                      {openCheckpointBanner.status === 'overdue' ? (
+                        <>
+                          <span className="font-medium text-red-600">Checkpoint {openCheckpointBanner.number} is overdue</span>
+                          <span className="text-muted-foreground"> · {deadlineCountdown(openCheckpointBanner.deadline)} · submit now, it will be marked late</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="font-medium text-foreground">Checkpoint {openCheckpointBanner.number} is open</span>
+                          <span className="text-muted-foreground"> · due {formatDeadline(openCheckpointBanner.deadline)} · {deadlineCountdown(openCheckpointBanner.deadline)}</span>
+                        </>
+                      )}
                     </span>
                     <div className="flex items-center gap-1 shrink-0">
                       <Button
@@ -2371,7 +2385,7 @@ export default function LessonPage() {
                           if (quiz) navigate(`/course/${quiz.course_id}/lesson/${quiz.lesson_id}`);
                         }}
                       >
-                        Start
+                        {openCheckpointBanner.status === 'overdue' ? 'Submit late' : 'Start'}
                       </Button>
                       <Button
                         variant="ghost"
