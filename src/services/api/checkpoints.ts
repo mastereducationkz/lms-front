@@ -57,6 +57,13 @@ export interface CheckpointDefinition {
   question_count: number;
 }
 
+export interface UnitOption {
+  lesson_id: number;
+  title: string;
+  module: string;
+  kind: UnitKind;
+}
+
 export interface CheckpointQuizCheck {
   question_count: number;
   expected: number;
@@ -105,6 +112,11 @@ export async function updateCheckpointDefinition(
   },
 ): Promise<CheckpointDefinition> {
   const response = await api.put(`/checkpoints/admin/definitions/${id}`, body);
+  return response.data;
+}
+
+export async function listUnitOptions(definitionId: number): Promise<UnitOption[]> {
+  const response = await api.get(`/checkpoints/admin/definitions/${definitionId}/unit-options`);
   return response.data;
 }
 

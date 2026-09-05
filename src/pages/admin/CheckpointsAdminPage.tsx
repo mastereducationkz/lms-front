@@ -3,14 +3,15 @@ import { Link } from 'react-router-dom';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { SearchableSelect } from '../../components/ui/searchable-select';
+import { UnitPicker, type PickedUnit } from '../../components/checkpoints/UnitPicker';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   checkCheckpointQuiz, deadlineCountdown, formatDeadline, getCheckpointMatrix, lateLabel, listCheckpointDefinitions, listCheckpointGroups,
-  openCheckpoint, reopenCheckpoint, STATUS_CLASS, STATUS_LABEL, updateCheckpointDeadline,
+  listUnitOptions, openCheckpoint, reopenCheckpoint, STATUS_CLASS, STATUS_LABEL, updateCheckpointDeadline,
   updateCheckpointDefinition, updateCheckpointGroupSettings,
-  type CheckpointCell, type CheckpointDefinition, type CheckpointGroup, type CheckpointMatrix, type CheckpointQuizCheck,
+  type CheckpointCell, type CheckpointDefinition, type CheckpointGroup, type CheckpointMatrix, type CheckpointQuizCheck, type UnitOption,
 } from '../../services/api/checkpoints';
 
 /** Local-datetime input value → ISO string the backend stores as naive UTC. */
@@ -45,12 +46,29 @@ export default function CheckpointsAdminPage() {
   const [busy, setBusy] = useState(false);
   const [selected, setSelected] = useState<{ studentId: number; cell: CheckpointCell } | null>(null);
   const [deadlineInput, setDeadlineInput] = useState('');
-  const [unitEdits, setUnitEdits] = useState<Record<number, { verbal: string; math: string }>>({});
+  // Pending unit choices per definition (absent = showing the live binding), and the course's
+  // units for the picker, fetched once per course.
+  const [unitEdits, setUnitEdits] = useState<Record<number, PickedUnit[]>>({});
+  const [unitOptions, setUnitOptions] = useState<Record<number, UnitOption[]>>({});
 
   useEffect(() => {
     listCheckpointGroups('sat').then(setGroups).catch(() => toast.error('Failed to load groups'));
     listCheckpointDefinitions().then(setDefinitions).catch(() => toast.error('Failed to load definitions'));
   }, []);
+
+  useEffect(() => {
+    const wanted = new Map<number, number>();               // course_id -> a definition of that course
+    definitions.forEach((d) => { if (!wanted.has(d.course_id)) wanted.set(d.course_id, d.id); });
+    wanted.forEach((definitionId, courseId) => {
+      setUnitOptions((prev) => {
+        if (prev[courseId]) return prev;
+        listUnitOptions(definitionId)
+          .then((opts) => setUnitOptions((p) => ({ ...p, [courseId]: opts })))
+          .catch(() => toast.error('Failed to load the course units'));
+        return prev;
+      });
+    });
+  }, [definitions]);
 
   const reloadGen = useRef(0);
 
@@ -84,6 +102,23 @@ export default function CheckpointsAdminPage() {
 
   const group = useMemo(() => groups.find((g) => g.id === groupId) ?? null, [groups, groupId]);
 
+  // The block most of the group is working on: median of each student's highest fully completed
+  // block, plus one — the same rule as scripts/checkpoint_pilot.py. A group enabled at this
+  // number gets at most the checkpoint it just finished, not every block it did weeks ago.
+  const suggestedStart = useMemo(() => {
+    if (!matrix || matrix.students.length === 0) return null;
+    const highs = matrix.students.map((s) => {
+      const done = new Set(s.cells.filter((c) => c.units.length > 0 && c.units.every((u) => u.completed)).map((c) => c.number));
+      let h = 0;
+      while (done.has(h + 1)) h += 1;
+      return h;
+    }).sort((a, b) => a - b);
+    const n = highs.length;
+    const median = n % 2 ? highs[(n - 1) / 2] : Math.floor((highs[n / 2 - 1] + highs[n / 2]) / 2);
+    const max = Math.max(1, ...matrix.definitions.map((d) => d.number));
+    return Math.min(max, median + 1);
+  }, [matrix]);
+
   const run = async (label: string, fn: () => Promise<unknown>): Promise<boolean> => {
     setBusy(true);
     try {
@@ -114,18 +149,20 @@ export default function CheckpointsAdminPage() {
 
       {/* ---- group picker + settings ---- */}
       <div className="flex flex-wrap items-end gap-3">
-        <div className="w-72">
+        <div className="w-96">
           <label className="text-xs text-muted-foreground">Group</label>
-          <Select value={groupId ? String(groupId) : ''} onValueChange={(v) => setGroupId(Number(v))}>
-            <SelectTrigger><SelectValue placeholder="Choose a SAT group" /></SelectTrigger>
-            <SelectContent>
-              {groups.map((g) => (
-                <SelectItem key={g.id} value={String(g.id)}>
-                  {g.name} {g.checkpoints_enabled ? '· ON' : ''} ({g.student_count})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SearchableSelect
+            className="w-full"
+            value={groupId ? String(groupId) : null}
+            onChange={(v) => setGroupId(Number(v))}
+            placeholder="Choose a SAT group"
+            searchPlaceholder="Search by group or teacher…"
+            options={groups.map((g) => ({
+              value: String(g.id),
+              label: `${g.name}${g.checkpoints_enabled ? ' · ON' : ''}`,
+              hint: `${g.teacher_name ? `${g.teacher_name} · ` : ''}${g.student_count}`,
+            }))}
+          />
         </div>
         {group && (
           <>
@@ -146,6 +183,9 @@ export default function CheckpointsAdminPage() {
                      }} />
               <p className="mt-1 max-w-xs text-[11px] leading-snug text-muted-foreground">
                 Set this before enabling. Checkpoints below it never auto-open and never hold later units back (a mid-course group).
+                {suggestedStart != null && (
+                  <> Suggested: <strong className="text-foreground">{suggestedStart}</strong>{suggestedStart > 1 ? ` — half the group has finished block ${suggestedStart - 1}.` : ' — nobody has finished block 1 yet.'}</>
+                )}
               </p>
             </div>
             <Button variant="outline" size="sm" onClick={() => reload()} disabled={loading} aria-label="Reload matrix">
@@ -278,18 +318,18 @@ export default function CheckpointsAdminPage() {
               <tr>
                 <th className="px-3 py-2 text-left">#</th>
                 <th className="px-3 py-2 text-left">Active</th>
-                <th className="px-3 py-2 text-left">Required units (2 verbal lessons + 1 math lesson; a lesson may be 2 units)</th>
+                <th className="px-3 py-2 text-left">Required units (2 Verbal lessons + 1 Math lesson; a lesson may be 2 units)</th>
                 <th className="px-3 py-2 text-left">Questions</th>
                 <th className="px-3 py-2 text-left">Quiz</th>
               </tr>
             </thead>
             <tbody>
               {definitions.map((d) => {
-                const currentVerbal = d.required_units.filter((u) => u.kind === 'verbal').map((u) => u.lesson_id).join(', ');
-                const currentMath = d.required_units.filter((u) => u.kind === 'math').map((u) => u.lesson_id).join(', ');
-                // Boxes start with the live binding, so the mapping is readable and editable in place.
-                const edit = unitEdits[d.id] ?? { verbal: currentVerbal, math: currentMath };
-                const unitsChanged = edit.verbal.trim() !== currentVerbal || edit.math.trim() !== currentMath;
+                const current: PickedUnit[] = d.required_units.map((u) => ({ lesson_id: u.lesson_id, kind: u.kind, title: u.title }));
+                const edit = unitEdits[d.id] ?? current;
+                const unitsChanged = edit.map((u) => u.lesson_id).join(',') !== current.map((u) => u.lesson_id).join(',');
+                const unitsValid = edit.filter((u) => u.kind === 'verbal').length >= 2 && edit.some((u) => u.kind === 'math') && edit.length <= 4;
+                const discardUnits = () => setUnitEdits((prev) => { const next = { ...prev }; delete next[d.id]; return next; });
                 const check = checks[d.id];
                 return (
                   <tr key={d.id} className="border-t align-top">
@@ -300,35 +340,31 @@ export default function CheckpointsAdminPage() {
                              onChange={(e) => run(`${d.title} ${e.target.checked ? 'activated' : 'deactivated'}`,
                                () => updateCheckpointDefinition(d.id, { is_active: e.target.checked }))} />
                     </td>
-                    <td className="px-3 py-2">
-                      <div className="text-xs text-muted-foreground">
-                        {d.required_units.map((u) => `${u.kind === 'verbal' ? 'V' : 'M'}:${u.title}`).join(' · ')}
-                      </div>
-                      {canEditDefinitions && (
-                        <div className="mt-1 flex flex-wrap items-center gap-2">
-                          <span className="text-[11px] text-muted-foreground">Verbal</span>
-                          <Input className="w-32" placeholder={currentVerbal} value={edit.verbal}
-                                 aria-label={`${d.title} verbal unit ids`}
-                                 onChange={(e) => setUnitEdits((prev) => ({ ...prev, [d.id]: { ...edit, verbal: e.target.value } }))} />
-                          <span className="text-[11px] text-muted-foreground">Math</span>
-                          <Input className="w-24" placeholder={currentMath} value={edit.math}
-                                 aria-label={`${d.title} math unit ids`}
-                                 onChange={(e) => setUnitEdits((prev) => ({ ...prev, [d.id]: { ...edit, math: e.target.value } }))} />
-                          <Button size="sm" variant="outline" disabled={busy || !unitsChanged || !(edit.verbal.trim() && edit.math.trim())} onClick={() => {
-                            const parse = (s: string) => s.split(',').map((x) => Number(x.trim())).filter((x) => x > 0);
-                            const verbal = parse(edit.verbal);
-                            const math = parse(edit.math);
-                            if (verbal.length < 2 || math.length < 1 || verbal.length + math.length > 4) {
-                              toast.error('Enter 2 or 3 verbal lesson ids and 1 or 2 math lesson ids (4 at most)');
-                              return;
-                            }
-                            void run(`${d.title} units saved`, () => updateCheckpointDefinition(d.id, {
-                              required_units: [
-                                ...verbal.map((lesson_id) => ({ lesson_id, kind: 'verbal' as const })),
-                                ...math.map((lesson_id) => ({ lesson_id, kind: 'math' as const })),
-                              ],
-                            }));
-                          }}>Save</Button>
+                    <td className="min-w-[24rem] px-3 py-2">
+                      {canEditDefinitions ? (
+                        <div className="space-y-1.5">
+                          <UnitPicker
+                            options={unitOptions[d.course_id] ?? []}
+                            loading={!unitOptions[d.course_id]}
+                            selected={edit}
+                            disabled={busy}
+                            onChange={(next) => setUnitEdits((prev) => ({ ...prev, [d.id]: next }))}
+                          />
+                          {unitsChanged && (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Button size="sm" variant="outline" disabled={busy || !unitsValid} onClick={() => {
+                                void run(`${d.title} units saved`, () => updateCheckpointDefinition(d.id, {
+                                  required_units: edit.map((u) => ({ lesson_id: u.lesson_id, kind: u.kind })),
+                                })).then((ok) => { if (ok) discardUnits(); });
+                              }}>Save</Button>
+                              <Button size="sm" variant="ghost" disabled={busy} onClick={discardUnits}>Cancel</Button>
+                              {!unitsValid && <span className="text-[11px] text-red-600">Pick 2–3 Verbal and 1–2 Math units (4 at most)</span>}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-xs text-muted-foreground">
+                          {d.required_units.map((u) => `${u.kind === 'verbal' ? 'V' : 'M'}:${u.title}`).join(' · ')}
                         </div>
                       )}
                     </td>

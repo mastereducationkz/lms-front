@@ -95,3 +95,7 @@ jspm_packages/
 tmp/
 temp/
 .superpowers/
+
+# Claude Code worktrees and macOS metadata
+.claude/worktrees/
+.DS_Store
