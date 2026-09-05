@@ -496,6 +496,12 @@ export default function LessonPage() {
     }) || null;
   }, [checkpointItems, dismissedCheckpointIds, lesson]);
 
+  // When this lesson IS a checkpoint quiz: its item from the latest fetch. A checkpoint can be
+  // answered only while open (available / reopened); once completed or lapsed the player must
+  // not offer a retake — the server refuses it with 409 anyway. Reopening makes it open again.
+  const thisCheckpoint = lesson ? checkpointHints.byQuizLesson.get(Number(lesson.id)) : undefined;
+  const checkpointRetakeBlocked = lesson?.kind === 'checkpoint' && !!thisCheckpoint && !isCheckpointOpen(thisCheckpoint);
+
   const fetchCheckpoints = useCallback(async (): Promise<StudentCheckpointItem[]> => {
     try {
       const res = await getMyCheckpoints();
@@ -1760,6 +1766,11 @@ export default function LessonPage() {
 
       localStorage.removeItem(`quiz_answers_${currentStep.id}`);
       localStorage.removeItem(`gap_answers_${currentStep.id}`);
+      if (lesson?.kind === 'checkpoint') {
+        // The submission just changed this checkpoint's state (and what the sidebar chip, the
+        // banner and the retake rule show) — refresh it now rather than on the next navigation.
+        void fetchCheckpoints();
+      }
     } catch (error) {
       console.error('Failed to save quiz attempt:', error);
       const status = (error as { response?: { status?: number } })?.response?.status;
@@ -2032,6 +2043,7 @@ export default function LessonPage() {
             <div ref={textContentRef} className="relative">
               <TextLookupPopover containerRef={textContentRef} />
               <QuizRenderer
+                singleAttempt={checkpointRetakeBlocked}
                 continueAction={
                   lesson?.kind === 'checkpoint'
                     ? {

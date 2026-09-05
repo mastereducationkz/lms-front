@@ -100,6 +100,9 @@ interface QuizRendererProps {
   /** Optional call to action on the pass screen, e.g. a checkpoint sending the student back
    *  to the course now that the units it was holding back are open again. */
   continueAction?: { note: string; label: string; onClick: () => void };
+  /** A one-shot assessment that is no longer open (a completed or lapsed checkpoint): the
+   *  server would refuse another attempt with 409, so the player offers no retake. */
+  singleAttempt?: boolean;
   courseId: string | undefined;
   finishQuiz: () => void;
   reviewQuiz: () => void;
@@ -131,6 +134,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
     getCurrentUserAnswer,
     goToNextStep,
     continueAction,
+    singleAttempt,
     setQuizCompleted,
     markStepAsVisited,
     currentStep,
@@ -1860,7 +1864,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
               >
                 Back to Results
               </Button>
-              {!hasLongText && (
+              {!hasLongText && !singleAttempt && (
                 <Button
                   onClick={resetQuiz}
                   className="px-4 py-2 text-sm"
@@ -2190,7 +2194,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
             </Button>
           )}
 
-          {!hasLongText && (
+          {!hasLongText && !singleAttempt && (
             <Button onClick={resetQuiz} variant="outline">
               Retake Quiz
             </Button>
