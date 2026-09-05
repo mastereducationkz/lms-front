@@ -5,8 +5,8 @@ import { Button } from '../components/ui/button';
 import { ChevronRight, Play, FileText, HelpCircle, Clock, Users, CheckCircle, Lock, ClipboardCheck } from 'lucide-react';
 import apiClient from '../services/api';
 import type { Course, Lesson } from '../types';
-import { getMyCheckpoints, type StudentCheckpointItem } from '../services/api/checkpoints';
-import { buildCheckpointHints, blockingCheckpointForUnit, type CheckpointHints } from '../lib/checkpointHints';
+import { deadlineCountdown, formatDeadline, getMyCheckpoints, type StudentCheckpointItem } from '../services/api/checkpoints';
+import { buildCheckpointHints, blockingCheckpointForUnit, isPending as isCheckpointPending, type CheckpointHints } from '../lib/checkpointHints';
 import { unitStepProgress } from '../lib/unitProgress';
 
 import { Progress } from '../components/ui/progress';
@@ -33,6 +33,11 @@ export default function CourseOverviewPage() {
   const [error, setError] = useState<string | null>(null);
   const [checkpointItems, setCheckpointItems] = useState<StudentCheckpointItem[]>([]);
   const checkpointHints: CheckpointHints = useMemo(() => buildCheckpointHints(checkpointItems), [checkpointItems]);
+  // The checkpoint that is pausing the course right now, if any (lowest number first).
+  const pausingCheckpoint = useMemo(
+    () => [...checkpointItems].filter(isCheckpointPending).sort((a, b) => a.number - b.number)[0] ?? null,
+    [checkpointItems],
+  );
 
   const formatDuration = (minutes: number): string => {
     if (minutes < 60) {
@@ -192,6 +197,30 @@ export default function CourseOverviewPage() {
       {/* Course Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
+          {pausingCheckpoint && (
+            <div className={`rounded-lg border px-4 py-3 ${
+              pausingCheckpoint.status === 'overdue'
+                ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/40'
+                : 'border-amber-300 bg-amber-50 dark:border-amber-700 dark:bg-amber-950/40'
+            }`} role="status">
+              <p className="font-semibold text-foreground">
+                Course paused: submit Checkpoint {pausingCheckpoint.number} to unlock the next units
+              </p>
+              <p className="mt-0.5 text-sm text-foreground/80">
+                {pausingCheckpoint.total_questions} questions · due {formatDeadline(pausingCheckpoint.deadline)} · {deadlineCountdown(pausingCheckpoint.deadline)}
+                {pausingCheckpoint.status === 'overdue' ? ' · a submission now is marked late' : ''}
+              </p>
+              {pausingCheckpoint.quiz && (
+                <Button
+                  className="mt-2"
+                  variant={pausingCheckpoint.status === 'overdue' ? 'destructive' : 'default'}
+                  onClick={() => navigate(`/course/${pausingCheckpoint.quiz!.course_id}/lesson/${pausingCheckpoint.quiz!.lesson_id}`)}
+                >
+                  {pausingCheckpoint.status === 'overdue' ? 'Submit late' : `Take Checkpoint ${pausingCheckpoint.number} now`}
+                </Button>
+              )}
+            </div>
+          )}
           {modules.map((module) => (
             <Card key={module.id} className={module.is_completed ? "border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-900/20" : ""}>
               <CardHeader>

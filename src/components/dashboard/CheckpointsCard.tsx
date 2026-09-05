@@ -54,6 +54,7 @@ export function CheckpointsCard() {
                         {STATUS_LABEL[item.status]}
                       </span>
                     </p>
+                    <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">Course paused: the next units unlock when you submit this checkpoint.</p>
                     <p className="text-xs text-muted-foreground truncate">Covers: {coversLabel(item.covers)} · {item.total_questions} questions</p>
                     {item.deadline && (
                       <p className={`text-xs ${item.status === 'overdue' ? 'text-red-600' : 'text-muted-foreground'}`}>

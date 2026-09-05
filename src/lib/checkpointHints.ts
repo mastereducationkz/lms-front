@@ -36,22 +36,22 @@ export function isOpen(item: Pick<StudentCheckpointItem, 'status'>): boolean {
 }
 
 /**
- * Mirrors the backend's ordinal gate (blocked_unit_lesson_ids_for_student): a checkpoint
- * counts as cleared once it is completed (on time or late), or when the group skipped it via
- * its start number. Everything else — never opened, open, reopened, overdue — still holds every
- * later block back; an overdue checkpoint is cleared by submitting it late.
+ * Mirrors the backend gate (blocked_unit_lesson_ids_for_student): only a checkpoint that has
+ * opened and is not yet submitted — available, reopened or overdue — pauses the course; the
+ * units of every later block wait for it. Completed, skipped and never-opened checkpoints hold
+ * nothing back.
  */
-export function isCleared(item: Pick<StudentCheckpointItem, 'status' | 'skipped'>): boolean {
-  return item.status === 'completed' || Boolean(item.skipped);
+export function isPending(item: Pick<StudentCheckpointItem, 'status'>): boolean {
+  return isOpen(item);
 }
 
 /**
- * The earlier checkpoint (same group) that still holds this unit back, or null when the
- * unit is not bound to a checkpoint or every earlier checkpoint is cleared. Used only to
- * explain a lock the server already imposed — the server stays the authority.
+ * The earlier checkpoint (same group) that holds this unit back, or null when the unit is not
+ * bound to a checkpoint or no earlier checkpoint is pending. Used only to explain a lock the
+ * server already imposed — the server stays the authority.
  */
 export function blockingCheckpointForUnit(hints: CheckpointHints, unitLessonId: number): StudentCheckpointItem | null {
   const own = hints.unitToCheckpoint.get(unitLessonId);
   if (!own) return null;
-  return hints.items.find((i) => i.group_id === own.group_id && i.number < own.number && !isCleared(i)) || null;
+  return hints.items.find((i) => i.group_id === own.group_id && i.number < own.number && isPending(i)) || null;
 }

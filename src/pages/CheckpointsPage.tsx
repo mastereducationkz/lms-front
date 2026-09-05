@@ -48,6 +48,9 @@ export default function CheckpointsPage() {
                       {item.skipped ? 'Skipped' : STATUS_LABEL[item.status]}
                     </span>
                   </p>
+                  {open && (
+                    <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">Course paused: the next units unlock when you submit this checkpoint.</p>
+                  )}
                   <p className="text-xs text-muted-foreground">Covers: {coversLabel(item.covers)} · {item.total_questions} questions</p>
                   {item.deadline && item.status !== 'completed' && (
                     <p className={`text-xs ${item.status === 'overdue' ? 'text-red-600' : 'text-muted-foreground'}`}>
