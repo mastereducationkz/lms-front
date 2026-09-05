@@ -103,16 +103,15 @@ export default function CheckpointsAdminPage() {
   const group = useMemo(() => groups.find((g) => g.id === groupId) ?? null, [groups, groupId]);
 
   // The block most of the group is working on: median of each student's highest fully completed
-  // block, plus one — the same rule as scripts/checkpoint_pilot.py. A group enabled at this
-  // number gets at most the checkpoint it just finished, not every block it did weeks ago.
+  // block, plus one — the same rule as scripts/checkpoint_pilot.py. The highest block, not the
+  // longest contiguous run: one unit of an early block never marked complete must not drag the
+  // suggestion back to the start. A group enabled at this number gets at most the checkpoint it
+  // just finished, not every block it did weeks ago.
   const suggestedStart = useMemo(() => {
     if (!matrix || matrix.students.length === 0) return null;
-    const highs = matrix.students.map((s) => {
-      const done = new Set(s.cells.filter((c) => c.units.length > 0 && c.units.every((u) => u.completed)).map((c) => c.number));
-      let h = 0;
-      while (done.has(h + 1)) h += 1;
-      return h;
-    }).sort((a, b) => a - b);
+    const highs = matrix.students.map((s) => Math.max(0, ...s.cells
+      .filter((c) => c.units.length > 0 && c.units.every((u) => u.completed))
+      .map((c) => c.number))).sort((a, b) => a - b);
     const n = highs.length;
     const median = n % 2 ? highs[(n - 1) / 2] : Math.floor((highs[n / 2 - 1] + highs[n / 2]) / 2);
     const max = Math.max(1, ...matrix.definitions.map((d) => d.number));
