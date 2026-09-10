@@ -29,7 +29,7 @@ function hasFinished(event: Event): boolean {
  */
 export default function MeetAttendanceSection({ event, role }: Props) {
   const wanted = RECORD_ROLES.has(role ?? '') && isMeetLesson(event) && hasFinished(event);
-  const { record, loading, busyId, confirm, reload } = useMeetRecord(event.id, wanted);
+  const { record, loading, busyId, confirm, confirmMany, reload } = useMeetRecord(event.id, wanted);
   const [expanded, setExpanded] = useState(false);
 
   if (!wanted) return null;
@@ -61,7 +61,9 @@ export default function MeetAttendanceSection({ event, role }: Props) {
         )}
       </div>
       {stateText && <p className="text-sm text-muted-foreground">{stateText}</p>}
-      {record.state === 'ready' && <MeetRecordView record={record} busyId={busyId} onConfirm={confirm} compact />}
+      {record.state === 'ready' && (
+        <MeetRecordView record={record} busyId={busyId} onConfirm={confirm} onConfirmMany={confirmMany} compact />
+      )}
       <MeetAttendanceDialog
         eventId={event.id}
         open={expanded}

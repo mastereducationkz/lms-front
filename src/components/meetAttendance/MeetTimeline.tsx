@@ -3,7 +3,7 @@ import { cn } from '../../lib/utils';
 import { barFor, clock, flagText, flagTone, position, MARK_LABEL, type Axis } from '../../lib/meetAttendance';
 import type { MeetAccount, MeetFlag, MeetMark, MeetPresence } from '../../services/api/meetAttendance';
 
-export type RowKind = 'teacher' | 'student' | 'other' | 'not_tracked';
+export type RowKind = 'teacher' | 'student' | 'unknown' | 'other' | 'not_tracked';
 
 export interface TimelineRow {
   key: string;
@@ -21,6 +21,7 @@ export interface TimelineRow {
 const BAR: Record<RowKind, string> = {
   teacher: 'bg-violet-500 dark:bg-violet-400',
   student: 'bg-emerald-500 dark:bg-emerald-400',
+  unknown: 'bg-amber-400 dark:bg-amber-500',
   other: 'bg-sky-500 dark:bg-sky-400',
   not_tracked: 'bg-slate-300 dark:bg-slate-600',
 };
@@ -66,7 +67,7 @@ export function FlagChip({ flag }: { flag: MeetFlag }) {
 
 const KIND_LABEL: Record<MeetAccount['kind'], string> = { signed_in: 'Google', guest: 'Guest', phone: 'Phone' };
 
-function Track({ axis, row }: { axis: Axis; row: TimelineRow }) {
+function Track({ axis, row, heldBack }: { axis: Axis; row: TimelineRow; heldBack: boolean }) {
   const bandLeft = position(axis, axis.lessonStart);
   const bandWidth = position(axis, axis.lessonEnd) - bandLeft;
   const bars = row.presence.sessions
@@ -88,7 +89,8 @@ function Track({ axis, row }: { axis: Axis; row: TimelineRow }) {
       ))}
       {bars.length === 0 && (
         <span className="absolute inset-y-0 left-2 flex items-center text-[11px] text-muted-foreground">
-          Not in the room
+          {/* While someone in the room is unconfirmed, "not in the room" may simply be untrue. */}
+          {heldBack ? 'No confirmed account yet' : 'Not in the room'}
         </span>
       )}
     </div>
@@ -102,13 +104,15 @@ interface Props {
   /** When set, each linked account shows an × that makes it unknown again. */
   onUnlink?: (participantId: number) => void;
   busy?: boolean;
+  /** Some account in the room is unconfirmed, so an empty row is "not known yet", not "absent". */
+  heldBack?: boolean;
 }
 
 /**
  * One row per person over the lesson's time. The shaded band is the lesson itself; bars are
  * the stretches each person was in the room (overlapping devices already merged).
  */
-export function MeetTimeline({ axis, rows, compact = false, onUnlink, busy = false }: Props) {
+export function MeetTimeline({ axis, rows, compact = false, onUnlink, busy = false, heldBack = false }: Props) {
   const nameCol = compact ? '7.5rem' : 'minmax(9rem, 15rem)';
   return (
     <div role="table" aria-label="Who was in the room, and when" className="text-sm">
@@ -142,6 +146,9 @@ export function MeetTimeline({ axis, rows, compact = false, onUnlink, busy = fal
             <div role="cell" className="min-w-0">
               <div className="flex min-w-0 items-center gap-1.5">
                 {row.kind === 'student' && <MarkChip mark={row.mark} />}
+                {row.kind === 'unknown' && (
+                  <span title="Not confirmed yet" className="inline-flex h-4 w-4 flex-none items-center justify-center rounded bg-amber-100 text-[10px] font-bold text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">?</span>
+                )}
                 <span className={cn('truncate text-[13px]', row.kind === 'teacher' ? 'font-semibold' : 'font-medium')} title={row.name}>
                   {row.name}
                 </span>
@@ -174,7 +181,7 @@ export function MeetTimeline({ axis, rows, compact = false, onUnlink, busy = fal
               )}
             </div>
             <div role="cell">
-              <Track axis={axis} row={row} />
+              <Track axis={axis} row={row} heldBack={heldBack && (row.kind === 'student' || row.kind === 'teacher')} />
             </div>
           </div>
         ))}

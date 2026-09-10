@@ -202,7 +202,9 @@ export default function MeetAttendanceReview() {
                       <td className="px-4 py-3">
                         <div className="text-foreground">{item.teacher?.name ?? '—'}</div>
                         <div className="text-xs tabular-nums text-muted-foreground">
-                          {item.teacher?.first_join ? `${clock(item.teacher.first_join)} → ${clock(item.teacher.last_leave)}` : 'Not in the room'}
+                          {item.teacher?.first_join
+                            ? `${clock(item.teacher.first_join)} → ${clock(item.teacher.last_leave)}`
+                            : item.held_back ? 'Account not confirmed yet' : 'Not in the room'}
                         </div>
                         {teacherFlags.length > 0 && (
                           <div className="mt-1 flex flex-wrap gap-1">{teacherFlags.map((f) => <FlagChip key={f.code} flag={f} />)}</div>
@@ -211,6 +213,9 @@ export default function MeetAttendanceReview() {
                       <td className="px-4 py-3 text-right tabular-nums">
                         <span className="font-semibold text-foreground">{item.joined}</span>
                         <span className="text-muted-foreground"> / {item.students}</span>
+                        {item.unknown > 0 && (
+                          <div className="text-xs text-amber-700 dark:text-amber-300">+{item.unknown} unconfirmed</div>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <div className={cn('text-[13px]', needsAttention(item) ? 'text-foreground' : 'text-muted-foreground')}>

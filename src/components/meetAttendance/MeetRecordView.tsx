@@ -35,6 +35,26 @@ export function useMeetRecord(eventId: number | null, enabled = true) {
 
   const reload = useCallback(() => setGeneration((g) => g + 1), []);
 
+  /** Confirm several accounts one after another (never in parallel: each is a write). */
+  const confirmMany = useCallback(async (items: { participantId: number; identity: MeetIdentity }[]) => {
+    if (items.length === 0) return;
+    setBusyId(items[0].participantId);
+    let saved = 0;
+    try {
+      for (const item of items) {
+        setRecord(await confirmMeetAccount(item.participantId, item.identity));
+        saved += 1;
+      }
+      toast.success(`Saved ${saved}`, { description: 'Recognised from now on in every lesson they join.' });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not save who this is', {
+        description: saved ? `${saved} of ${items.length} were saved.` : undefined,
+      });
+    } finally {
+      setBusyId(null);
+    }
+  }, []);
+
   const confirm = useCallback(async (participantId: number, identity: MeetIdentity) => {
     setBusyId(participantId);
     try {
@@ -48,7 +68,7 @@ export function useMeetRecord(eventId: number | null, enabled = true) {
     }
   }, []);
 
-  return { record, loading, failed, busyId, confirm, reload };
+  return { record, loading, failed, busyId, confirm, confirmMany, reload };
 }
 
 function personRow(p: MeetPerson, kind: TimelineRow['kind'], note?: string): TimelineRow {
@@ -74,11 +94,12 @@ interface Props {
   record: MeetRecord;
   busyId: number | null;
   onConfirm: (participantId: number, identity: MeetIdentity) => void;
+  onConfirmMany: (items: { participantId: number; identity: MeetIdentity }[]) => void;
   compact?: boolean;
 }
 
 /** A finished lesson's Meet record: the headline numbers, the accounts to confirm, the timeline. */
-export function MeetRecordView({ record, busyId, onConfirm, compact = false }: Props) {
+export function MeetRecordView({ record, busyId, onConfirm, onConfirmMany, compact = false }: Props) {
   const [showHidden, setShowHidden] = useState(false);
   const students = useMemo(() => record.students ?? [], [record.students]);
   const joined = students.filter((s) => s.sessions.length > 0).length;
@@ -89,24 +110,32 @@ export function MeetRecordView({ record, busyId, onConfirm, compact = false }: P
   const rows: TimelineRow[] = useMemo(() => [
     ...(teacher ? [personRow(teacher, 'teacher')] : []),
     ...students.map((s) => personRow(s, 'student')),
+    // Unconfirmed accounts are still real time in the room: shown, marked "?", until named.
+    ...unknown.map((u): TimelineRow => ({
+      key: `p${u.participant_id}`, name: u.display_name || 'No name shown', kind: 'unknown',
+      presence: u, flags: [], accounts: [], note: u.kind === 'signed_in' ? 'Google account, not confirmed' : 'Guest, not confirmed',
+    })),
     ...(record.others ?? []).map((o) => personRow(o, 'other', o.role === 'student' ? 'Student of another group' : o.role.replace('_', ' '))),
-  ], [teacher, students, record.others]);
+  ], [teacher, students, unknown, record.others]);
   const hiddenRows: TimelineRow[] = notTracked.map((n) => ({
     key: `p${n.participant_id}`, name: n.display_name || 'No name shown', kind: 'not_tracked',
     presence: n, flags: [], accounts: [n], note: 'Not a student',
   }));
   const axis = useMemo(
-    () => buildAxis(record, [...rows.map((r) => r.presence), ...unknown, ...notTracked]),
-    [record, rows, unknown, notTracked],
+    () => buildAxis(record, [...rows.map((r) => r.presence), ...notTracked]),
+    [record, rows, notTracked],
   );
 
-  const teacherValue = teacher?.first_join ? `${clock(teacher.first_join)} → ${clock(teacher.last_leave)}` : 'Not in the room';
+  const teacherValue = teacher?.first_join
+    ? `${clock(teacher.first_join)} → ${clock(teacher.last_leave)}`
+    : record.held_back ? 'Not confirmed yet' : 'Not in the room';
 
   return (
     <div className="flex flex-col gap-4">
       <div className={cn('grid gap-3', compact ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-4')}>
-        <Stat label="Teacher" value={teacherValue} tone={teacher && !teacher.first_join && !record.held_back ? 'bad' : undefined} />
-        <Stat label="Students joined" value={`${joined} of ${students.length}`} />
+        <Stat label="Teacher" value={teacherValue}
+          tone={teacher && !teacher.first_join ? (record.held_back ? 'warn' : 'bad') : undefined} />
+        <Stat label="Students in the room" value={`${joined} of ${students.length}${unknown.length ? ' confirmed' : ''}`} />
         <Stat label="Marks disagree" value={String(record.mismatches ?? 0)} tone={record.mismatches ? 'bad' : undefined} />
         <Stat label="To confirm" value={String(unknown.length)} tone={unknown.length ? 'warn' : undefined} />
       </div>
@@ -120,7 +149,8 @@ export function MeetRecordView({ record, busyId, onConfirm, compact = false }: P
         <p className="text-xs text-muted-foreground">Part of this lesson hasn&apos;t come through from Google yet; more may appear.</p>
       )}
 
-      <WhoIsThis accounts={unknown} candidates={record.candidates ?? []} busyId={busyId} onConfirm={onConfirm} />
+      <WhoIsThis accounts={unknown} candidates={record.candidates ?? []} busyId={busyId}
+        onConfirm={onConfirm} onConfirmMany={onConfirmMany} />
 
       <MeetTimeline
         axis={axis}
@@ -128,6 +158,7 @@ export function MeetRecordView({ record, busyId, onConfirm, compact = false }: P
         compact={compact}
         onUnlink={compact ? undefined : (id) => onConfirm(id, {})}
         busy={busyId !== null}
+        heldBack={Boolean(record.held_back)}
       />
       {notTracked.length > 0 && (
         <button

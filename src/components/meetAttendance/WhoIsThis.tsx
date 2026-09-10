@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { HelpCircle } from 'lucide-react';
 import { SearchableSelect } from '../ui/searchable-select';
 import { clock } from '../../lib/meetAttendance';
@@ -9,6 +9,7 @@ interface Props {
   candidates: MeetCandidate[];
   busyId: number | null;
   onConfirm: (participantId: number, identity: MeetIdentity) => void;
+  onConfirmMany: (items: { participantId: number; identity: MeetIdentity }[]) => void;
 }
 
 const KIND: Record<MeetUnknownAccount['kind'], string> = {
@@ -17,22 +18,14 @@ const KIND: Record<MeetUnknownAccount['kind'], string> = {
   phone: 'Phone',
 };
 
-function AccountRow({ account, candidates, busy, onConfirm }: {
+function AccountRow({ account, options, choice, onChoose, busy, onConfirm }: {
   account: MeetUnknownAccount;
-  candidates: MeetCandidate[];
+  options: { value: string; label: string; hint?: string }[];
+  choice: string | null;
+  onChoose: (value: string) => void;
   busy: boolean;
   onConfirm: Props['onConfirm'];
 }) {
-  const [choice, setChoice] = useState<string | null>(account.suggestion ? String(account.suggestion.user_id) : null);
-  useEffect(() => {
-    setChoice(account.suggestion ? String(account.suggestion.user_id) : null);
-  }, [account.participant_id, account.suggestion]);
-
-  const options = candidates.map((c) => ({
-    value: String(c.user_id),
-    label: c.name,
-    hint: c.role === 'teacher' ? 'teacher' : undefined,
-  }));
   const suggested = account.suggestion && choice === String(account.suggestion.user_id);
 
   return (
@@ -52,7 +45,7 @@ function AccountRow({ account, candidates, busy, onConfirm }: {
         <SearchableSelect
           options={options}
           value={choice}
-          onChange={setChoice}
+          onChange={onChoose}
           placeholder="Who is this?"
           searchPlaceholder="Search this lesson's people…"
           emptyText="No one matches"
@@ -77,29 +70,66 @@ function AccountRow({ account, candidates, busy, onConfirm }: {
         </button>
         {suggested && <span className="text-[11px] text-amber-700 dark:text-amber-300">Suggested from the name</span>}
       </div>
-      <p className="mt-1.5 pl-6 text-[11px] text-muted-foreground">
-        {account.kind === 'signed_in'
-          ? 'Confirmed once, this account is recognised in every lesson.'
-          : 'A guest can only be matched for this lesson.'}
-      </p>
+      {account.kind !== 'signed_in' && (
+        <p className="mt-1.5 pl-6 text-[11px] text-muted-foreground">Joined without signing in: matched for this lesson only.</p>
+      )}
     </li>
   );
 }
 
 /** The accounts nobody has named yet, each with a suggestion and one-click confirm. */
-export function WhoIsThis({ accounts, candidates, busyId, onConfirm }: Props) {
+const suggestedChoice = (a: MeetUnknownAccount) => (a.suggestion ? String(a.suggestion.user_id) : null);
+
+export function WhoIsThis({ accounts, candidates, busyId, onConfirm, onConfirmMany }: Props) {
+  // Each row's current pick, starting from the suggestion. Kept here so "confirm all" saves
+  // what the rows show, including any pick a person changed.
+  const [choices, setChoices] = useState<Record<number, string | null>>({});
+  useEffect(() => {
+    setChoices((prev) => Object.fromEntries(accounts.map((a) => [
+      a.participant_id, a.participant_id in prev ? prev[a.participant_id] : suggestedChoice(a),
+    ])));
+  }, [accounts]);
+  const options = useMemo(() => candidates.map((c) => ({
+    value: String(c.user_id),
+    label: c.name,
+    hint: c.role === 'teacher' ? 'teacher' : undefined,
+  })), [candidates]);
+
   if (accounts.length === 0) return null;
+  const chosen = accounts
+    .map((a) => ({ a, pick: a.participant_id in choices ? choices[a.participant_id] : suggestedChoice(a) }))
+    .filter((c): c is { a: MeetUnknownAccount; pick: string } => Boolean(c.pick));
   return (
     <section aria-label="Accounts to confirm">
-      <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
-        Who is this? · {accounts.length}
-      </h4>
+      <div className="mb-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+          Who is this? · {accounts.length}
+        </h4>
+        {chosen.length > 1 && (
+          <button
+            type="button"
+            disabled={busyId !== null}
+            onClick={() => onConfirmMany(chosen.map(({ a, pick }) => ({
+              participantId: a.participant_id,
+              identity: { user_id: Number(pick) },
+            })))}
+            className="ml-auto rounded-md border border-amber-300 bg-card px-2.5 py-1 text-xs font-semibold text-amber-800 transition hover:bg-amber-50 disabled:opacity-50 dark:border-amber-800 dark:text-amber-300 dark:hover:bg-amber-950/40"
+          >
+            Confirm all {chosen.length} shown
+          </button>
+        )}
+      </div>
+      <p className="mb-2 text-[11px] text-muted-foreground">
+        Meet shows Google names, not emails. Confirm each account once and it&apos;s recognised in every lesson after.
+      </p>
       <ul className="flex flex-col gap-2">
         {accounts.map((a) => (
           <AccountRow
             key={a.participant_id}
             account={a}
-            candidates={candidates}
+            options={options}
+            choice={a.participant_id in choices ? choices[a.participant_id] : suggestedChoice(a)}
+            onChoose={(value) => setChoices((prev) => ({ ...prev, [a.participant_id]: value }))}
             busy={busyId !== null}
             onConfirm={onConfirm}
           />
