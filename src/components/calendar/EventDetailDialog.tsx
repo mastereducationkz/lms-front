@@ -4,6 +4,7 @@ import { openPlatformPage, parsePlatformUrl } from '../../lib/platformLinks';
 import { meetInvitationText, meetJoinUrl } from '../../lib/meetLinks';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import LessonRecordingSection from './LessonRecordingSection';
+import MeetAttendanceSection from './MeetAttendanceSection';
 import type { Event, LessonRequest } from '../../types';
 import { cx, formatTime, eventStyle, typeLabel, isSubstitutedForTeacher } from './calendarUtils';
 
@@ -149,6 +150,7 @@ export default function EventDetailDialog({ event, open, onOpenChange, user, myR
           )}
 
           {event.event_type === 'class' && <LessonRecordingSection event={event} />}
+          {event.event_type === 'class' && <MeetAttendanceSection event={event} role={user?.role} />}
 
           {canAct && (
             <div className="mt-5 border-t border-border pt-4">

@@ -24,6 +24,8 @@ import { Label } from '../components/ui/label';
 import { parseAsUTC } from '../lib/datetime';
 import { formatGroupCloseDate } from '../lib/groupList';
 import { isAttendanceLockedLesson } from '../lib/attendance';
+import { listMeetRecords, type MeetLessonFlag } from '../services/api/meetAttendance';
+import { mismatchIndex } from '../lib/meetAttendance';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import { toast } from '../components/Toast';
@@ -554,6 +556,9 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   // UI states
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<LeaderboardData | null>(null);
+  // Marks that disagree with who was in the lesson's Meet room ("eventId:studentId" → flags).
+  // Evidence only: the dot explains, the teacher still decides the mark.
+  const [meetMismatches, setMeetMismatches] = useState<Map<string, MeetLessonFlag[]>>(new Map());
   
   // Changes tracking: Set of student IDs that have changes
   const [changedEntries, setChangedEntries] = useState<Set<number>>(new Set());
@@ -683,6 +688,24 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         loadLeaderboard();
     }
   }, [selectedGroupId, currentWeek]);
+
+  useEffect(() => {
+    const starts = (data?.lessons ?? []).map((l) => parseAsUTC(l.start_datetime).getTime()).filter(Number.isFinite);
+    if (!selectedGroupId || starts.length === 0) {
+      setMeetMismatches(new Map());
+      return;
+    }
+    const DAY = 24 * 60 * 60 * 1000;
+    let cancelled = false;
+    listMeetRecords({
+      group_id: selectedGroupId,
+      date_from: new Date(Math.min(...starts) - DAY).toISOString(),
+      date_to: new Date(Math.max(...starts) + DAY).toISOString(),
+    })
+      .then((r) => { if (!cancelled) setMeetMismatches(mismatchIndex(r.items)); })
+      .catch(() => { if (!cancelled) setMeetMismatches(new Map()); });
+    return () => { cancelled = true; };
+  }, [selectedGroupId, data]);
 
   const loadLeaderboard = async () => {
     if (!selectedGroupId) return;
@@ -1743,6 +1766,16 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                 isFuture={cellIsFuture}
                                                 en={isTeacher}
                                             />
+                                            {meetMismatches.get(`${lessonInfo.event_id}:${student.student_id}`)?.map((f) => (
+                                                <span
+                                                    key={f.code}
+                                                    className="absolute left-0.5 top-0.5 h-2.5 w-2.5 rounded-full bg-rose-600 ring-2 ring-white dark:ring-card pointer-events-auto"
+                                                    title={f.code === 'marked_present_not_joined'
+                                                        ? t('Meet: отмечен, но не заходил на урок', 'Meet: marked present, never joined the lesson')
+                                                        : t(`Meet: отмечен отсутствующим, но был на уроке ${f.minutes ?? 0} мин`, `Meet: marked absent, but in the lesson ${f.minutes ?? 0} min`)}
+                                                    aria-label={t('Отметка расходится с Meet', 'Mark disagrees with Meet')}
+                                                />
+                                            ))}
                                             {lessonStatus?.activity_score != null && (
                                                 <span className="absolute top-0 right-0 text-[10px] px-1.5 bg-yellow-400 text-gray-900 rounded-bl font-bold pointer-events-none" title={t(`Активность: ${lessonStatus.activity_score}/10`, `Activity: ${lessonStatus.activity_score}/10`)}>
                                                     {lessonStatus.activity_score}
