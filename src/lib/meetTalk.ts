@@ -33,6 +33,13 @@ export function stamp(seconds: number): string {
   return h ? `${sign}${h}:${pad(m)}:${pad(s % 60)}` : `${sign}${m}:${pad(s % 60)}`;
 }
 
+/** A moment of the lesson on the Almaty clock, to the second: "20:09:56". */
+export function clockAt(start: string, seconds: number): string {
+  const moment = new Date(new Date(start).getTime() + seconds * 1000);
+  if (!Number.isFinite(moment.getTime())) return stamp(seconds);
+  return moment.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: APP_TIMEZONE });
+}
+
 /** 0..1 → "72%"; nothing known → "—". */
 export function percent(share: number | null | undefined): string {
   if (share == null || !Number.isFinite(share)) return '—';
@@ -142,6 +149,92 @@ export function spanBar(axis: TalkAxis, [a, b]: [number, number]): { left: numbe
   if (!(b > a) || b < axis.from || a > axis.to) return null;
   const left = axisPosition(axis, a);
   return { left: Math.min(left, 99.7), width: Math.max(0.3, axisPosition(axis, b) - left) };
+}
+
+// ── who spoke when, in blocks ────────────────────────────────────────────────────────────
+// The exact lanes are hard to read: a lesson is hundreds of slivers. Blocks of five minutes, each
+// saying how long that person spoke in it, answer "who talked, and when" at a glance.
+
+export interface TalkGridColumn {
+  /** Seconds from the lesson start. */
+  from: number;
+  to: number;
+  /** The block's start on the Almaty clock. */
+  label: string;
+}
+
+export interface TalkGridRow {
+  person: TalkPerson;
+  /** Seconds spoken in each column. */
+  cells: number[];
+}
+
+export interface TalkGrid {
+  binSeconds: number;
+  columns: TalkGridColumn[];
+  rows: TalkGridRow[];
+  /** Per column: the teacher's seconds, and the students' (unconfirmed voices included). */
+  teacher: number[];
+  students: number[];
+}
+
+/**
+ * Five-minute blocks (ten for a lesson over 90 minutes) across the lesson, stretched to whoever
+ * spoke before or after it. One row per person who spoke — and the teacher even if they did not.
+ */
+export function talkGrid(talk: Pick<TalkRecord, 'start' | 'lesson_seconds' | 'people'>): TalkGrid {
+  const lessonSeconds = talk.lesson_seconds ?? 3600;
+  const bin = lessonSeconds > 90 * 60 ? 600 : 300;
+  const people = (talk.people ?? []).filter((p) => p.seconds > 0 || p.role === 'teacher');
+  let from = 0;
+  let to = lessonSeconds;
+  for (const p of people) {
+    for (const [a, b] of p.spans) {
+      from = Math.min(from, a);
+      to = Math.max(to, b);
+    }
+  }
+  from = Math.floor(Math.max(from, -MARGIN) / bin) * bin;
+  to = Math.ceil(Math.min(to, lessonSeconds + MARGIN) / bin) * bin;
+  const base = new Date(talk.start).getTime();
+  const columns: TalkGridColumn[] = [];
+  for (let at = from; at < to; at += bin) {
+    columns.push({ from: at, to: at + bin, label: clock(new Date(base + at * 1000).toISOString()) });
+  }
+  const inside = (spans: [number, number][], a: number, b: number) =>
+    spans.reduce((sum, [x, y]) => sum + Math.max(0, Math.min(b, y) - Math.max(a, x)), 0);
+  const rows = people.map((person) => ({
+    person,
+    cells: columns.map((c) => Math.round(inside(person.spans, c.from, c.to))),
+  }));
+  const total = (roles: TalkPerson['role'][]) => columns.map((_, i) => rows
+    .filter((r) => roles.includes(r.person.role))
+    .reduce((sum, r) => sum + r.cells[i], 0));
+  return { binSeconds: bin, columns, rows, teacher: total(['teacher']), students: total(['student', 'unknown']) };
+}
+
+// Seconds in a five-minute block that make it one shade darker: a few words, a sentence or two,
+// a real answer, a long turn, most of the block.
+const SHADES = [15, 45, 90, 150];
+
+/** How dark a block is: 0 (said nothing) to 5. */
+export function blockShade(seconds: number, binSeconds = 300): number {
+  if (seconds <= 0) return 0;
+  const scaled = seconds * (300 / binSeconds);
+  return 1 + SHADES.filter((limit) => scaled >= limit).length;
+}
+
+/** A block's speech as "0:45" / "3:10" — short enough to sit inside the block. */
+export function blockTime(seconds: number): string {
+  if (seconds <= 0) return '';
+  const s = Math.round(seconds);
+  return `${Math.floor(s / 60)}:${pad(s % 60)}`;
+}
+
+/** The transcript lines said in one block — by one person, or by anyone (key null). */
+export function linesInBlock(lines: TranscriptLine[], focus: { key: string | null; from: number; to: number }): TranscriptLine[] {
+  return lines.filter((line) => line.lesson_at < focus.to && line.lesson_at + Math.max(0, line.end - line.at) > focus.from
+    && (focus.key === null || line.speaker_key === focus.key));
 }
 
 // ── summaries ────────────────────────────────────────────────────────────────────────────

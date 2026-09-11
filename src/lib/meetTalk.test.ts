@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   averageTeacherShare,
+  blockShade,
+  blockTime,
+  clockAt,
   formatDuration,
   groupTalkCsv,
   highlightParts,
@@ -12,11 +15,13 @@ import {
   spanBar,
   spokeNote,
   stamp,
+  linesInBlock,
   talkAxis,
+  talkGrid,
   talkSecondsIndex,
   talkSummaryLine,
 } from './meetTalk';
-import type { GroupTalk, TranscriptLine } from '../services/api/meetTalk';
+import type { GroupTalk, TalkPerson, TranscriptLine } from '../services/api/meetTalk';
 
 // Lesson 19:00–20:00 Almaty = 14:00–15:00 UTC.
 const START = '2026-09-10T14:00:00Z';
@@ -176,5 +181,62 @@ describe('the attendance journal', () => {
     expect(spokeNote(420, 'ru')).toBe('Говорил 7 мин в Meet');
     expect(spokeNote(0, 'ru')).toBe('В Meet не говорил');
     expect(spokeNote(undefined, 'en')).toBeNull();
+  });
+});
+
+
+describe('who spoke when, in five-minute blocks', () => {
+  const person = (key: string, role: TalkPerson['role'], spans: [number, number][]): TalkPerson => ({
+    key, user_id: 1, name: key, role, spans, turns: spans.length, longest_turn_seconds: 0, in_room: true,
+    questions: null, share: 0, seconds: spans.reduce((s, [a, b]) => s + b - a, 0),
+  });
+
+  it('adds up each person per block, on the Almaty clock', () => {
+    const grid = talkGrid({
+      start: START, lesson_seconds: 3600,
+      people: [
+        person('teacher', 'teacher', [[0, 250], [290, 320]]),
+        person('aya', 'student', [[310, 340]]),
+        person('silent', 'student', []),
+        person('phone', 'unknown', [[3590, 3620]]),
+      ],
+    });
+    expect(grid.binSeconds).toBe(300);
+    expect(grid.columns).toHaveLength(13);
+    expect(grid.columns[0]).toEqual({ from: 0, to: 300, label: '19:00' });
+    expect(grid.columns[12].label).toBe('20:00');
+    expect(grid.rows.map((r) => r.person.key)).toEqual(['teacher', 'aya', 'phone']);
+    expect(grid.rows[0].cells.slice(0, 2)).toEqual([260, 20]);
+    expect(grid.teacher[1]).toBe(20);
+    expect(grid.students[1]).toBe(30);
+    expect(grid.students[11] + grid.students[12]).toBe(30);
+  });
+
+  it('keeps a teacher who never spoke, and starts early when someone spoke early', () => {
+    const grid = talkGrid({ start: START, lesson_seconds: 3600,
+      people: [person('teacher', 'teacher', []), person('aya', 'student', [[-400, -380]])] });
+    expect(grid.rows[0].cells.every((c) => c === 0)).toBe(true);
+    expect(grid.columns[0].label).toBe('18:50');
+  });
+
+  it('shades by how long someone spoke, and says it in m:ss', () => {
+    expect([0, 5, 20, 60, 100, 200].map((s) => blockShade(s))).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(blockShade(60, 600)).toBe(2);
+    expect([0, 45, 190].map(blockTime)).toEqual(['', '0:45', '3:10']);
+  });
+
+  it('finds what was said in a block', () => {
+    const lines = [line(290, 'A', 'before'), line(400, 'A', 'in'), line(420, 'B', 'other'), line(700, 'A', 'after')]
+      .map((l, i) => ({ ...l, end: l.at + 20, speaker_key: ['a', 'a', 'b', 'a'][i] }));
+    expect(linesInBlock(lines, { key: 'a', from: 300, to: 600 }).map((l) => l.text)).toEqual(['before', 'in']);
+    expect(linesInBlock(lines, { key: null, from: 300, to: 600 })).toHaveLength(3);
+  });
+});
+
+
+describe('transcript times', () => {
+  it('reads on the Almaty clock, to the second, like the blocks above it', () => {
+    expect(clockAt(START, 596)).toBe('19:09:56');
+    expect(clockAt(START, -45)).toBe('18:59:15');
   });
 });

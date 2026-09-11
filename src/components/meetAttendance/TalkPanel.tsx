@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, Loader2, MessagesSquare, Play, Search } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, Loader2, MessagesSquare, Play, Search, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { clock } from '../../lib/meetAttendance';
 import {
   axisPosition,
   formatDuration,
+  clockAt,
   highlightParts,
+  linesInBlock,
   percent,
   searchTranscript,
   spanBar,
@@ -21,6 +23,7 @@ import {
   type TalkRole,
   type TalkTranscript,
 } from '../../services/api/meetTalk';
+import { TalkGrid, type TalkFocus } from './TalkGrid';
 
 /** Loads a lesson's talk time when `enabled`; null while loading, or when not the viewer's lesson. */
 export function useLessonTalk(eventId: number | null | undefined, enabled = true) {
@@ -53,7 +56,8 @@ const TEXT = {
     heldBack: 'Some speech came from Google accounts nobody has confirmed yet («?»). Confirm them in the Attendance tab and their talk time is named — here and in every lesson they join.',
     voices: 'Meet wasn’t recording who spoke in this lesson (it was before talk time was switched on), so the names come from the recording’s voices and who was in the room. A voice that could be more than one student stays «Голос N», and nobody is listed as silent.',
     notConfirmed: 'Not confirmed', notThisClass: 'Not in this class', notNamed: 'Could be more than one student',
-    timeline: 'Who spoke when', every10: 'Every 10 minutes',
+    timeline: 'Who spoke, and when', every10: 'Every 10 minutes', blocks: 'Blocks', exact: 'Exact',
+    showAll: 'Show the whole transcript', focusLines: (n: number) => `${n} line${n === 1 ? '' : 's'} in this block`,
     bucket: (from: string, to: string, t: string, s: string) => `${from}–${to} · teacher ${t}, students ${s}`,
     interaction: 'Interaction', teacherQuestions: 'Teacher questions', answered: 'Answered',
     medianWait: 'Median wait before an answer', studentQuestions: 'Student questions',
@@ -82,7 +86,8 @@ const TEXT = {
     heldBack: 'Часть речи пришла с Google-аккаунтов, которые ещё не подтверждены («?»). Когда их подтвердят, их время будет подписано.',
     voices: 'Meet не записывал, кто говорил на этом уроке (он был до включения), поэтому имена определены по голосам в записи и по тому, кто был в комнате. Голос, который может принадлежать нескольким ученикам, остаётся «Голос N», а молчавших не показываем.',
     notConfirmed: 'Не подтверждён', notThisClass: 'Не из этой группы', notNamed: 'Может быть одним из нескольких учеников',
-    timeline: 'Кто когда говорил', every10: 'Каждые 10 минут',
+    timeline: 'Кто, когда и сколько говорил', every10: 'Каждые 10 минут', blocks: 'Блоки', exact: 'Точно',
+    showAll: 'Показать всю расшифровку', focusLines: (n: number) => `${n} строк в этом блоке`,
     bucket: (from: string, to: string, t: string, s: string) => `${from}–${to} · преподаватель ${t}, ученики ${s}`,
     interaction: 'Взаимодействие', teacherQuestions: 'Вопросы преподавателя', answered: 'С ответом',
     medianWait: 'Медианное ожидание ответа', studentQuestions: 'Вопросы учеников',
@@ -184,32 +189,10 @@ function Headline({ talk, t, locale }: { talk: TalkRecord; t: Text; locale: Talk
   );
 }
 
-function People({ talk, t, locale }: { talk: TalkRecord; t: Text; locale: TalkLocale }) {
-  const people = (talk.people ?? []).filter((p) => p.seconds > 0 || p.role === 'teacher');
-  const most = Math.max(1, ...people.map((p) => p.seconds));
+function Notes({ talk, t }: { talk: TalkRecord; t: Text }) {
   const silent = talk.silent_students ?? [];
   return (
-    <Section title={t.whoSpoke}>
-      <ul className="flex flex-col gap-1.5">
-        {people.map((p) => (
-          <li key={p.key} className="grid grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-x-3 sm:grid-cols-[minmax(0,13rem)_1fr_auto]">
-            <span className="flex min-w-0 items-center gap-1.5">
-              {p.role === 'unknown' && (
-                <span title={talk.source === 'voices' ? t.notNamed : t.notConfirmed} className="inline-flex h-4 w-4 flex-none items-center justify-center rounded bg-amber-100 text-[10px] font-bold text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">?</span>
-              )}
-              <span className={cn('truncate text-[13px]', p.role === 'teacher' ? 'font-semibold' : 'font-medium')} title={p.name}>{p.name}</span>
-              {p.role === 'other' && <span className="flex-none text-[10px] text-muted-foreground">{t.notThisClass}</span>}
-            </span>
-            <span className="h-2 overflow-hidden rounded-full bg-muted/60" aria-hidden>
-              <span className={cn('block h-full rounded-full', BAR[p.role])} style={{ width: `${(p.seconds / most) * 100}%` }} />
-            </span>
-            <span className="text-right text-xs tabular-nums text-muted-foreground">
-              <span className="font-semibold text-foreground">{formatDuration(p.seconds, locale)}</span>
-              {p.role !== 'other' && ` · ${percent(p.share)}`}
-            </span>
-          </li>
-        ))}
-      </ul>
+    <>
       {silent.length > 0 && (
         <p className="text-[13px] text-muted-foreground">
           <span className="font-medium text-foreground">{t.didntSpeak}:</span> {silent.map((s) => s.name).join(', ')}
@@ -220,7 +203,7 @@ function People({ talk, t, locale }: { talk: TalkRecord; t: Text; locale: TalkLo
           {talk.source === 'voices' ? t.voices : t.heldBack}
         </p>
       )}
-    </Section>
+    </>
   );
 }
 
@@ -318,14 +301,20 @@ function Insights({ talk, t }: { talk: TalkRecord; t: Text }) {
   );
 }
 
-function Transcript({ transcript, t, onSeek, showErrors }: {
+function Transcript({ transcript, start, t, onSeek, showErrors, focus, onClearFocus }: {
   transcript: TalkTranscript | undefined;
+  /** The lesson's start: lines are stamped on the Almaty clock, the same as the blocks. */
+  start: string;
   t: Text;
   onSeek?: (recordingSeconds: number) => void;
   showErrors: boolean;
+  /** A block picked in the grid: only what was said in it. */
+  focus?: TalkFocus | null;
+  onClearFocus?: () => void;
 }) {
   const [query, setQuery] = useState('');
-  const lines = useMemo(() => transcript?.lines ?? [], [transcript]);
+  const all = useMemo(() => transcript?.lines ?? [], [transcript]);
+  const lines = useMemo(() => (focus ? linesInBlock(all, focus) : all), [all, focus]);
   const hits = useMemo(() => searchTranscript(lines, query), [lines, query]);
 
   if (!transcript) return null;
@@ -348,6 +337,17 @@ function Transcript({ transcript, t, onSeek, showErrors }: {
       title={t.transcript}
       aside={<span className="text-[11px] tabular-nums text-muted-foreground">{t.lines(query.trim() ? hits.length : lines.length)}</span>}
     >
+      {focus && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg bg-muted/60 px-3 py-2 text-[13px]">
+          <span className="font-semibold text-foreground">{focus.name}</span>
+          <span className="tabular-nums text-muted-foreground">{focus.label}</span>
+          <span className="text-muted-foreground">· {t.focusLines(lines.length)}</span>
+          <button type="button" onClick={onClearFocus}
+            className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium text-muted-foreground transition hover:bg-background hover:text-foreground">
+            <X className="h-3.5 w-3.5" aria-hidden /> {t.showAll}
+          </button>
+        </div>
+      )}
       <div className="relative">
         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
         <input
@@ -364,12 +364,12 @@ function Transcript({ transcript, t, onSeek, showErrors }: {
         <p className="px-1 py-3 text-[13px] text-muted-foreground">{t.noMatch}</p>
       ) : (
         <ol className="max-h-[26rem] divide-y divide-border/60 overflow-y-auto rounded-lg border border-border">
-          {hits.map(({ line, ranges }) => {
+          {hits.map(({ line, ranges }, index) => {
             const body = (
               <>
                 <span className="flex items-center gap-1 text-[11px] tabular-nums text-muted-foreground">
                   {onSeek && <Play className="h-3 w-3 flex-none opacity-60" aria-hidden />}
-                  {stamp(line.lesson_at)}
+                  {clockAt(start, line.lesson_at)}
                 </span>
                 <span className={cn('truncate text-xs font-semibold', line.role ? INK[line.role] : 'text-muted-foreground')} title={line.speaker_label}>
                   {line.speaker_label}
@@ -381,9 +381,10 @@ function Transcript({ transcript, t, onSeek, showErrors }: {
                 </span>
               </>
             );
-            const grid = 'grid w-full grid-cols-[3.5rem_minmax(0,1fr)] items-baseline gap-x-3 gap-y-0.5 px-3 py-1.5 text-left sm:grid-cols-[3.5rem_9rem_minmax(0,1fr)]';
+            const grid = 'grid w-full grid-cols-[4rem_minmax(0,1fr)] items-baseline gap-x-3 gap-y-0.5 px-3 py-1.5 text-left sm:grid-cols-[4rem_9rem_minmax(0,1fr)]';
             return (
-              <li key={`${line.at}-${line.speaker_label}`}>
+              // Position and time together: two lines can start in the same second.
+              <li key={`${index}:${line.at}`}>
                 {onSeek ? (
                   <button type="button" onClick={() => onSeek(line.at)} title={t.playFrom}
                     className={cn(grid, 'transition hover:bg-muted/50 focus-visible:bg-muted/60 focus-visible:outline-none')}>
@@ -419,6 +420,14 @@ interface Props {
  */
 export default function TalkPanel({ talk, onSeek, variant = 'full', locale = 'en', showErrors = false, className }: Props) {
   const t = TEXT[locale];
+  const [view, setView] = useState<'blocks' | 'exact'>('blocks');
+  const [focus, setFocus] = useState<TalkFocus | null>(null);
+  const transcriptRef = useRef<HTMLDivElement>(null);
+  const readable = variant === 'full' && talk.transcript?.state === 'ready';
+  const pick = (next: TalkFocus | null) => {
+    setFocus(next);
+    if (next) requestAnimationFrame(() => transcriptRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  };
 
   if (talk.state !== 'ready') {
     if (variant === 'compact' && talk.state !== 'waiting') return null;
@@ -437,13 +446,37 @@ export default function TalkPanel({ talk, onSeek, variant = 'full', locale = 'en
   return (
     <div className={cn('flex flex-col gap-5', className)}>
       <Headline talk={talk} t={t} locale={locale} />
-      <People talk={talk} t={t} locale={locale} />
-      <Section title={t.timeline}>
-        <Buckets talk={talk} t={t} locale={locale} />
-        <Lanes talk={talk} />
+      <Section
+        title={t.timeline}
+        aside={(
+          <div className="inline-flex gap-0.5 rounded-md border border-border bg-muted/40 p-0.5" role="group" aria-label={t.timeline}>
+            {(['blocks', 'exact'] as const).map((v) => (
+              <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)}
+                className={cn('rounded px-2 py-0.5 text-[11px] font-medium transition',
+                  view === v ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}>
+                {v === 'blocks' ? t.blocks : t.exact}
+              </button>
+            ))}
+          </div>
+        )}
+      >
+        {view === 'blocks'
+          ? <TalkGrid talk={talk} locale={locale} focus={focus} onPick={readable ? pick : undefined} />
+          : (
+            <>
+              <Buckets talk={talk} t={t} locale={locale} />
+              <Lanes talk={talk} />
+            </>
+          )}
+        <Notes talk={talk} t={t} />
       </Section>
       {variant === 'full' && <Insights talk={talk} t={t} />}
-      {variant === 'full' && <Transcript transcript={talk.transcript} t={t} onSeek={onSeek} showErrors={showErrors} />}
+      {variant === 'full' && (
+        <div ref={transcriptRef} className="scroll-mt-4">
+          <Transcript transcript={talk.transcript} start={talk.start} t={t} onSeek={onSeek} showErrors={showErrors}
+            focus={focus} onClearFocus={() => setFocus(null)} />
+        </div>
+      )}
     </div>
   );
 }
