@@ -7,9 +7,11 @@ import {
   gradeQuestion,
   getAnswerKey,
   getExpectedAnswers,
+  getGapSourceText,
   normalizeMcArray,
   normalizeText,
 } from '../lesson/quiz/scoring'
+import { parseGap } from '../../utils/gapParser'
 
 export const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F']
 
@@ -32,7 +34,12 @@ export type GapAnswerBucket = 'correct' | 'incorrect' | 'unanswered'
 export interface GapAnswerOption {
   /** Stable identity: the normalised (case/space-insensitive) text. */
   key: string
-  /** What to print — the answer exactly as a student typed it, first occurrence wins. */
+  /**
+   * What to print. For a fill_blank offered option: the option's own authored text (from
+   * the gap's `[[…]]` token), regardless of how students typed it before selecting it. For
+   * everything else (text_completion, and any answer not among a fill_blank's offered
+   * options): the answer exactly as a student typed it, first occurrence wins.
+   */
   text: string
   count: number
   /** Share of this gap's answered count, 1 dp. */
@@ -50,7 +57,16 @@ export interface GapStat {
   incorrect: number
   /** Share of answered that were correct; null when nobody answered this gap. */
   percentCorrect: number | null
-  /** What students typed for this gap, grouped case/space-insensitively, most common first. */
+  /**
+   * fill_blank: every option offered in the gap's own `[[…]]` token, in token order —
+   * including one nobody picked (count 0) — the same "show every option" treatment
+   * ReviewOptionBars gives a single_choice question. Any submitted answer that isn't among
+   * the offered options still gets a row, appended after the offered ones (grouped
+   * case/space-insensitively, most common first), so messy data is never silently dropped.
+   * text_completion (and a fill_blank whose token can't be located): what students typed
+   * for this gap, grouped case/space-insensitively, most common first — there is no option
+   * list to show.
+   */
   options: GapAnswerOption[]
   names: Record<GapAnswerBucket, string[]>
 }
@@ -139,6 +155,35 @@ export function parseAnswerBlob(json: string | null | undefined): Map<string, un
 
 export const isGapType = (type: string): boolean =>
   type === 'fill_blank' || type === 'text_completion'
+
+/**
+ * The options actually offered for one fill_blank gap, in token order — what a student
+ * picked from, not what they typed (fill_blank has no free typing; see
+ * FillInBlankRenderer.tsx, which renders a <select> of exactly this list). Parsed from the
+ * SAME source text and the SAME narrow `[[…]]` token pattern getExpectedAnswers (scoring.ts)
+ * uses to build its answer key, so gap index `gapIndex` here always names the same blank
+ * `getExpectedAnswers(question)[gapIndex]` does — mixing this with reviewStats' broader
+ * GAP_TOKEN_SOURCE pattern (used for blanking display text, not for indexing) is exactly the
+ * kind of index drift that caused a real disclosure bug before (see GAP_TOKEN_SOURCE's doc
+ * comment).
+ *
+ * Returns null — not an empty array — when the token can't be located (no source text, gap
+ * count mismatch, or the token parses to zero options), so the caller falls back to today's
+ * grouped-typed-answers behaviour instead of rendering an empty panel. Only correctOption is
+ * NOT used from parseGap's result here: which option is the key comes from
+ * getExpectedAnswers, the same place gradeQuestion gets it, never from this parse.
+ */
+function fillBlankTokenOptions(question: any, gapIndex: number): string[] | null {
+  if (question?.question_type !== 'fill_blank') return null
+  const sourceText = getGapSourceText(question)
+  // Narrow pattern, matching getExpectedAnswers exactly — see the doc comment above.
+  const tokens = sourceText.match(/\[\[(.*?)\]\]/g)
+  const token = tokens?.[gapIndex]
+  if (!token) return null
+  const inner = token.replace('[[', '').replace(']]', '')
+  const { options } = parseGap(inner, question.gap_separator || ',')
+  return options.length > 0 ? options : null
+}
 
 /**
  * Source pattern for a `[[…]]` gap token — shared by every place that needs to locate (not
@@ -488,20 +533,72 @@ export function buildQuestionStats(
             }))
             .sort((a, b) => b.count - a.count || a.text.localeCompare(b.text))
 
-    const gaps: GapStat[] = gapTotals.map((gap, g) => ({
-      ...gap,
-      percentCorrect: gap.answered > 0 ? round1((gap.correct / gap.answered) * 100) : null,
-      options: [...gapGroups[g].entries()]
+    // getExpectedAnswers's own gap order is the one gradeQuestion grades against — reused
+    // here (not parseGap's correctOption) to mark which offered option is the key, so this
+    // can never disagree with a student's own verdict.
+    const expectedAnswers = isGap ? getExpectedAnswers(question).map(normalizeText) : []
+
+    const typedRows = (g: number) =>
+      [...gapGroups[g].entries()]
         .map(([rowKey, row]) => ({
           key: rowKey,
           text: row.text,
           count: row.count,
-          percent: gap.answered > 0 ? round1((row.count / gap.answered) * 100) : 0,
+          percent: gapTotals[g].answered > 0
+            ? round1((row.count / gapTotals[g].answered) * 100)
+            : 0,
           isCorrect: row.isCorrect,
           names: row.names,
         }))
-        .sort((a, b) => b.count - a.count || a.text.localeCompare(b.text)),
-    }))
+        .sort((a, b) => b.count - a.count || a.text.localeCompare(b.text))
+
+    const gaps: GapStat[] = gapTotals.map((gap, g) => {
+      const tokenOptions = fillBlankTokenOptions(question, g)
+
+      let options: GapAnswerOption[]
+      if (tokenOptions) {
+        // fill_blank: every offered option, in token order — including one nobody picked
+        // (count 0) — then anything a student submitted that isn't among the offered
+        // options, appended after (same shape/order as the typed-answers fallback).
+        const expected = expectedAnswers[g]
+        const offeredKeys = new Set<string>()
+        const offered: GapAnswerOption[] = tokenOptions.map((text) => {
+          const rowKey = normalizeText(text)
+          offeredKeys.add(rowKey)
+          const row = gapGroups[g].get(rowKey)
+          return {
+            key: rowKey,
+            text,
+            count: row?.count ?? 0,
+            percent: gap.answered > 0 ? round1(((row?.count ?? 0) / gap.answered) * 100) : 0,
+            isCorrect: rowKey === expected,
+            names: row?.names ?? [],
+          }
+        })
+        const unexpected = [...gapGroups[g].entries()]
+          .filter(([rowKey]) => !offeredKeys.has(rowKey))
+          .map(([rowKey, row]) => ({
+            key: rowKey,
+            text: row.text,
+            count: row.count,
+            percent: gap.answered > 0 ? round1((row.count / gap.answered) * 100) : 0,
+            isCorrect: rowKey === expected,
+            names: row.names,
+          }))
+          .sort((a, b) => b.count - a.count || a.text.localeCompare(b.text))
+        options = [...offered, ...unexpected]
+      } else {
+        // text_completion, or a fill_blank whose token couldn't be located: fall back to
+        // what students typed, grouped, most common first — unchanged from before.
+        options = typedRows(g)
+      }
+
+      return {
+        ...gap,
+        percentCorrect: gap.answered > 0 ? round1((gap.correct / gap.answered) * 100) : null,
+        options,
+      }
+    })
 
     return {
       questionId: key,
