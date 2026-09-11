@@ -83,6 +83,8 @@ export interface RecordingLibraryQuery {
   teacher_id?: number | null;
   period?: RecordingPeriod;
   status?: 'ready' | 'pending' | 'failed' | null;
+  /** One Almaty day, "YYYY-MM-DD"; the server lets it win over `period`. */
+  date?: string | null;
 }
 
 /**
@@ -98,4 +100,25 @@ export async function listRecordings(query: RecordingLibraryQuery = {}): Promise
   });
   const response = await api.get('/recordings', { params, cache: false } as never);
   return response.data as RecordingLibraryPage;
+}
+
+/** How many recordings each Almaty day of a month holds; days without any are left out. */
+export interface RecordingDays {
+  month: string;
+  days: Record<string, number>;
+  total: number;
+}
+
+export type RecordingDaysQuery = Pick<RecordingLibraryQuery, 'q' | 'group_id' | 'teacher_id' | 'status'> & {
+  month: string;
+};
+
+/** The date picker's marks, under the list's own filters (not its period or date). */
+export async function listRecordingDays(query: RecordingDaysQuery): Promise<RecordingDays> {
+  const params: Record<string, string | number> = {};
+  Object.entries(query).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') params[key] = value as string | number;
+  });
+  const response = await api.get('/recordings/days', { params, cache: false } as never);
+  return response.data as RecordingDays;
 }

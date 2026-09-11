@@ -45,10 +45,10 @@ describe('Almaty days and times', () => {
 
   it('names today and yesterday, and other days in full', () => {
     const now = new Date('2026-09-10T17:00:00Z'); // 22:00 on the 10th in Almaty
-    expect(dayHeading('2026-09-10', now)).toBe('Today');
-    expect(dayHeading('2026-09-09', now)).toBe('Yesterday');
+    expect(dayHeading('2026-09-10', now)).toBe('Today · Thu, 10 Sep');
+    expect(dayHeading('2026-09-09', now)).toBe('Yesterday · Wed, 9 Sep');
     expect(dayHeading('2026-09-07', now)).toBe('Monday 7 September');
-    expect(dayHeading('2026-09-10', now, 'ru')).toBe('Сегодня');
+    expect(dayHeading('2026-09-10', now, 'ru')).toBe('Сегодня · чт, 10 сентября');
     expect(dayHeading('2026-09-07', now, 'ru')).toBe('Понедельник, 7 сентября');
   });
 

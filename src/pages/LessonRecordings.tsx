@@ -7,6 +7,7 @@ import {
 } from '../components/ui/select';
 import { Skeleton } from '../components/ui/skeleton';
 import RecordingCard from '../components/recordings/RecordingCard';
+import RecordingDatePicker from '../components/recordings/RecordingDatePicker';
 import RecordingPlayerDialog, { type RecordingMeta } from '../components/recordings/RecordingPlayerDialog';
 import { cx } from '../components/calendar/calendarUtils';
 import { getEventDetails } from '../services/api/events';
@@ -49,7 +50,7 @@ const TEXT = {
     emptyBody: 'Recordings appear here shortly after a lesson ends. You can also open any past lesson from the calendar.',
     openCalendar: 'Open the calendar',
     noMatchTitle: 'No recordings match these filters',
-    noMatchBody: 'Try another period, group or search.',
+    noMatchBody: 'Try another date, period, group or search.',
     error: 'The recordings could not be loaded.',
     retry: 'Try again',
     more: 'Show more',
@@ -75,7 +76,7 @@ const TEXT = {
     emptyBody: 'Записи появляются здесь вскоре после окончания урока. Любой прошедший урок можно открыть и из календаря.',
     openCalendar: 'Открыть календарь',
     noMatchTitle: 'Нет записей по этим фильтрам',
-    noMatchBody: 'Попробуйте другой период, группу или запрос.',
+    noMatchBody: 'Попробуйте другую дату, период, группу или запрос.',
     error: 'Не удалось загрузить записи.',
     retry: 'Повторить',
     more: 'Показать ещё',
@@ -117,6 +118,8 @@ export default function LessonRecordings() {
   const [query, setQuery] = useState('');
   const [q, setQ] = useState('');
   const [period, setPeriod] = useState<RecordingPeriod>('all');
+  // One Almaty day from the date picker; while set, it is the time range and no period is.
+  const [day, setDay] = useState<string | null>(null);
   const [groupId, setGroupId] = useState('all');
   const [teacherId, setTeacherId] = useState('all');
   const [status, setStatus] = useState<StatusFilter>('all');
@@ -137,14 +140,15 @@ export default function LessonRecordings() {
     return () => window.clearTimeout(handle);
   }, [query]);
 
-  const filters = useMemo(() => ({
+  // Everything but the time range: the date picker counts its days under exactly these.
+  const narrowing = useMemo(() => ({
     q: q || undefined,
-    period,
     group_id: groupId === 'all' ? null : Number(groupId),
     teacher_id: teacherId === 'all' ? null : Number(teacherId),
     status: status === 'all' ? null : status,
-  }), [q, period, groupId, teacherId, status]);
-  const filtering = !!q || period !== 'all' || groupId !== 'all' || teacherId !== 'all' || status !== 'all';
+  }), [q, groupId, teacherId, status]);
+  const filters = useMemo(() => ({ ...narrowing, period, date: day }), [narrowing, period, day]);
+  const filtering = !!q || !!day || period !== 'all' || groupId !== 'all' || teacherId !== 'all' || status !== 'all';
 
   useEffect(() => {
     const request = ++latest.current;
@@ -182,6 +186,7 @@ export default function LessonRecordings() {
     setQuery('');
     setQ('');
     setPeriod('all');
+    setDay(null);
     setGroupId('all');
     setTeacherId('all');
     setStatus('all');
@@ -283,17 +288,24 @@ export default function LessonRecordings() {
             <button
               key={p}
               type="button"
-              onClick={() => setPeriod(p)}
-              aria-pressed={period === p}
+              onClick={() => { setPeriod(p); setDay(null); }}
+              aria-pressed={!day && period === p}
               className={cx(
                 'rounded-md px-3 py-1.5 text-[13px] font-medium transition',
-                period === p ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+                !day && period === p ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
               )}
             >
               {t.periods[p]}
             </button>
           ))}
         </div>
+
+        <RecordingDatePicker
+          value={day}
+          onChange={(next) => { setDay(next); if (next) setPeriod('all'); }}
+          filters={narrowing}
+          locale={locale}
+        />
 
         {showGroups && (
           <Select value={groupId} onValueChange={setGroupId}>

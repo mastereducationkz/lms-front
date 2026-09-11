@@ -56,12 +56,28 @@ function capitalise(text: string): string {
   return text ? text[0].toLocaleUpperCase() + text.slice(1) : text;
 }
 
-/** "Today", "Yesterday", else "Monday 7 September" — with the year only when it is not this one. */
+/**
+ * "Fri, 11 Sep" / "пт, 11 сентября" — a day in a few characters, the year only when it is not
+ * this one. The date picker's label and the Today/Yesterday headings both say it this way.
+ */
+export function shortDate(dayKey: string, now: Date, locale: Locale = 'en'): string {
+  const [y, m, d] = dayKey.split('-').map(Number);
+  const noon = new Date(Date.UTC(y, m - 1, d, 12));
+  // Only the parts are used, in our own order; en-US because en-GB now abbreviates September "Sept".
+  const format = new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : 'en-US', {
+    timeZone: ALMATY_TZ, weekday: 'short', day: 'numeric', month: locale === 'ru' ? 'long' : 'short',
+  });
+  const parts = Object.fromEntries(format.formatToParts(noon).map((p) => [p.type, p.value]));
+  const year = String(y) === almatyDayKey(now).slice(0, 4) ? '' : ` ${y}`;
+  return `${parts.weekday}, ${parts.day} ${parts.month}${year}`;
+}
+
+/** "Today · Fri, 11 Sep", "Yesterday · …", else "Monday 7 September" — the year only when it is not this one. */
 export function dayHeading(dayKey: string, now: Date, locale: Locale = 'en'): string {
   const today = almatyDayKey(now);
-  if (dayKey === today) return locale === 'ru' ? 'Сегодня' : 'Today';
+  if (dayKey === today) return `${locale === 'ru' ? 'Сегодня' : 'Today'} · ${shortDate(dayKey, now, locale)}`;
   if (dayKey === almatyDayKey(new Date(now.getTime() - 86_400_000))) {
-    return locale === 'ru' ? 'Вчера' : 'Yesterday';
+    return `${locale === 'ru' ? 'Вчера' : 'Yesterday'} · ${shortDate(dayKey, now, locale)}`;
   }
   const [y, m, d] = dayKey.split('-').map(Number);
   // Noon UTC falls on the same calendar day in Almaty (UTC+5), so the date cannot drift.
