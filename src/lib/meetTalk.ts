@@ -208,6 +208,7 @@ export function publicTalkRecord(talk: PublicTalk, lesson: { title: string; star
     end: lesson.end,
     state: talk.state,
     enabled: true,
+    source: talk.source,
     lesson_seconds: lessonSeconds,
     speech_seconds: talk.speech_seconds,
     silence_seconds: talk.silence_seconds,

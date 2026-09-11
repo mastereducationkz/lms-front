@@ -97,6 +97,12 @@ export interface TalkRecord {
   state: TalkState;
   /** The admin switch. */
   enabled: boolean;
+  /**
+   * `meet`: Meet's own speaker timing names everyone. `voices`: the lesson was taught before talk
+   * time was on, so the transcript's voices stand in — named only where who was in the room
+   * leaves one choice, the rest «Голос N».
+   */
+  source?: TalkSource;
   // Everything below only when state === 'ready'.
   /** The scheduled length. */
   lesson_seconds?: number;
@@ -137,8 +143,11 @@ export interface MeetLessonTalk {
 }
 
 /** The watch-link page's talk time (`participants.talk`): no ids, no transcript, no insights. */
+export type TalkSource = 'meet' | 'voices';
+
 export interface PublicTalk {
   state: TalkState;
+  source?: TalkSource;
   speech_seconds: number;
   silence_seconds: number;
   teacher_share: number | null;

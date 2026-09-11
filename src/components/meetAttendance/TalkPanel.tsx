@@ -51,7 +51,8 @@ const TEXT = {
     per10: (n: number) => `${n.toLocaleString('en-GB', { maximumFractionDigits: 1 })} / 10 min`,
     whoSpoke: 'Who spoke', didntSpeak: 'Didn’t speak',
     heldBack: 'Some speech came from Google accounts nobody has confirmed yet («?»). Confirm them in the Attendance tab and their talk time is named — here and in every lesson they join.',
-    notConfirmed: 'Not confirmed', notThisClass: 'Not in this class',
+    voices: 'Meet wasn’t recording who spoke in this lesson (it was before talk time was switched on), so the names come from the recording’s voices and who was in the room. A voice that could be more than one student stays «Голос N», and nobody is listed as silent.',
+    notConfirmed: 'Not confirmed', notThisClass: 'Not in this class', notNamed: 'Could be more than one student',
     timeline: 'Who spoke when', every10: 'Every 10 minutes',
     bucket: (from: string, to: string, t: string, s: string) => `${from}–${to} · teacher ${t}, students ${s}`,
     interaction: 'Interaction', teacherQuestions: 'Teacher questions', answered: 'Answered',
@@ -79,7 +80,8 @@ const TEXT = {
     per10: (n: number) => `${n.toLocaleString('ru-RU', { maximumFractionDigits: 1 })} за 10 мин`,
     whoSpoke: 'Кто говорил', didntSpeak: 'Не говорили',
     heldBack: 'Часть речи пришла с Google-аккаунтов, которые ещё не подтверждены («?»). Когда их подтвердят, их время будет подписано.',
-    notConfirmed: 'Не подтверждён', notThisClass: 'Не из этой группы',
+    voices: 'Meet не записывал, кто говорил на этом уроке (он был до включения), поэтому имена определены по голосам в записи и по тому, кто был в комнате. Голос, который может принадлежать нескольким ученикам, остаётся «Голос N», а молчавших не показываем.',
+    notConfirmed: 'Не подтверждён', notThisClass: 'Не из этой группы', notNamed: 'Может быть одним из нескольких учеников',
     timeline: 'Кто когда говорил', every10: 'Каждые 10 минут',
     bucket: (from: string, to: string, t: string, s: string) => `${from}–${to} · преподаватель ${t}, ученики ${s}`,
     interaction: 'Взаимодействие', teacherQuestions: 'Вопросы преподавателя', answered: 'С ответом',
@@ -193,7 +195,7 @@ function People({ talk, t, locale }: { talk: TalkRecord; t: Text; locale: TalkLo
           <li key={p.key} className="grid grid-cols-[minmax(0,9rem)_1fr_auto] items-center gap-x-3 sm:grid-cols-[minmax(0,13rem)_1fr_auto]">
             <span className="flex min-w-0 items-center gap-1.5">
               {p.role === 'unknown' && (
-                <span title={t.notConfirmed} className="inline-flex h-4 w-4 flex-none items-center justify-center rounded bg-amber-100 text-[10px] font-bold text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">?</span>
+                <span title={talk.source === 'voices' ? t.notNamed : t.notConfirmed} className="inline-flex h-4 w-4 flex-none items-center justify-center rounded bg-amber-100 text-[10px] font-bold text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">?</span>
               )}
               <span className={cn('truncate text-[13px]', p.role === 'teacher' ? 'font-semibold' : 'font-medium')} title={p.name}>{p.name}</span>
               {p.role === 'other' && <span className="flex-none text-[10px] text-muted-foreground">{t.notThisClass}</span>}
@@ -213,9 +215,9 @@ function People({ talk, t, locale }: { talk: TalkRecord; t: Text; locale: TalkLo
           <span className="font-medium text-foreground">{t.didntSpeak}:</span> {silent.map((s) => s.name).join(', ')}
         </p>
       )}
-      {talk.held_back && (
+      {(talk.source === 'voices' || talk.held_back) && (
         <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
-          {t.heldBack}
+          {talk.source === 'voices' ? t.voices : t.heldBack}
         </p>
       )}
     </Section>
