@@ -16,6 +16,7 @@ import {
   LETTERS,
   splitPipeAnswers,
   wholeQuestionRevealed,
+  fillBlankTokenOptions,
   type QuestionStat,
 } from './reviewStats'
 
@@ -31,6 +32,10 @@ interface Props {
 }
 
 const PIPE_ANSWER_TYPES = new Set(['short_answer', 'media_open_question'])
+
+/** Display-only comparison for marking which offered choice is the key once revealed.
+ *  The verdict a student got still comes from gradeQuestion -- this only decides styling. */
+const normalizeChoice = (v: unknown): string => (v ?? '').toString().trim().toLowerCase()
 
 const BADGE = 'rounded-md border border-gray-200 dark:border-border px-2 py-0.5 text-xs font-medium text-gray-500 dark:text-gray-400'
 
@@ -174,6 +179,10 @@ export const ReviewQuestionView: React.FC<Props> = ({
   const gapStep = isGap ? gapStepHtml(gapSource, gapIndex, gapExpected, revealed) : null
   const gapSlotTotal = gapStep ? gapStep.slotCount : 0
 
+  // fill_blank only: the options this gap offered. text_completion is a free-text input,
+  // so it has no choice list and fillBlankTokenOptions returns null for it.
+  const gapChoices = isGap ? fillBlankTokenOptions(question, gapIndex) : null
+
   // What Reveal shows for questions with no option list of their own.
   let revealAnswers: string[] = []
   if (isGap) {
@@ -258,6 +267,34 @@ export const ReviewQuestionView: React.FC<Props> = ({
             >
               {EN.gapNext}
             </Button>
+          </div>
+        )}
+
+        {/* The choices a fill_blank gap offered. These belong to the QUESTION, not to the
+            statistics: a choice question lists its options in this card, and a fill_blank
+            gap renders as a select of exactly these (FillInBlankRenderer). They used to
+            live only inside ReviewGapBars -- i.e. inside the stats panel -- so pressing
+            "Hide stats" made them vanish and a teacher could not simply see what the class
+            was choosing between. Shown regardless of statsVisible, with no counts; which
+            one is the key stays gated on reveal, like everywhere else. */}
+        {isGap && gapChoices && gapChoices.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="font-medium text-gray-500 dark:text-gray-400">{EN.gapChoices}:</span>
+            {gapChoices.map((choice, i) => {
+              const isKey = revealed && normalizeChoice(choice) === normalizeChoice(gapExpected[gapIndex])
+              return (
+                <span
+                  key={`${i}-${choice}`}
+                  className={`rounded-full border px-2.5 py-0.5 ${
+                    isKey
+                      ? 'border-emerald-500 bg-emerald-50 font-semibold text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300'
+                      : 'border-gray-200 bg-white text-gray-700 dark:border-border dark:bg-card dark:text-gray-300'
+                  }`}
+                >
+                  {choice}
+                </span>
+              )
+            })}
           </div>
         )}
 

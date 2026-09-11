@@ -194,7 +194,7 @@ export const isGapType = (type: string): boolean =>
  * NOT used from parseGap's result here: which option is the key comes from
  * getExpectedAnswers, the same place gradeQuestion gets it, never from this parse.
  */
-function fillBlankTokenOptions(question: any, gapIndex: number): string[] | null {
+export function fillBlankTokenOptions(question: any, gapIndex: number): string[] | null {
   if (question?.question_type !== 'fill_blank') return null
   const sourceText = getGapSourceText(question)
   // Narrow pattern, matching getExpectedAnswers exactly — see the doc comment above.
