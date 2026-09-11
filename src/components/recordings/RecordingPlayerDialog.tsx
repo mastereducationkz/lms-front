@@ -192,7 +192,9 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
           </div>
         </div>
 
-        <div ref={playerBox} className="relative w-full bg-black">
+        {/* Side by side on a short laptop screen, the video leaves room for the details under it:
+            capped in height, it letterboxes rather than filling the column. */}
+        <div ref={playerBox} className={cn('relative w-full bg-black', sideBySide && '[&_.aspect-video]:max-h-[58vh]')}>
           {recording?.status === 'ready' && recording.url ? (
             <HlsVideoPlayer
               key={recording.url}
