@@ -8,7 +8,10 @@ import { getMeetRecord } from '../../services/api/meetAttendance';
 import { toParticipantsView, type ParticipantsView } from '../../lib/meetAttendance';
 import { ParticipantsPanel } from '../meetAttendance/ParticipantsPanel';
 import { TalkCard, useLessonTalk } from '../meetAttendance/TalkPanel';
+import { TalkSidePanel } from '../meetAttendance/TalkSidePanel';
+import { useVideoClock } from './useVideoClock';
 import { useAuth } from '../../contexts/AuthContext';
+import { cn } from '../../lib/utils';
 import {
   almatyDayKey, dayHeading, formatDurationWords, splitLessonTitle, timeRange, type Locale,
 } from '../../lib/recordings';
@@ -67,6 +70,32 @@ const TEXT = {
 /** Who may see the class beside a recording — the Meet record's readers; students never. */
 const RECORD_ROLES = new Set(['admin', 'head_curator', 'head_teacher', 'teacher', 'curator']);
 
+const WIDE = '(min-width: 1024px)';
+
+/** True on a screen wide enough for the video and its talk time side by side (Tailwind's lg). */
+function useWideScreen(): boolean {
+  const [wide, setWide] = useState(() => {
+    try {
+      return window.matchMedia(WIDE).matches;
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    let query: MediaQueryList;
+    try {
+      query = window.matchMedia(WIDE);
+    } catch {
+      return undefined;
+    }
+    const update = () => setWide(query.matches);
+    update();
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
+  return wide;
+}
+
 export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale = 'en' }: Props) {
   const t = TEXT[locale];
   const { user } = useAuth();
@@ -103,14 +132,16 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
     };
   }, [open, eventId, seesParticipants]);
 
-  // Who spoke, beside the video, for the same staff; its transcript lines play from where they were said.
+  // Who spoke, beside the video, for the same staff; its transcript follows the video and its
+  // lines play from where they were said.
   const { talk } = useLessonTalk(eventId, open && seesParticipants);
-  const seek = (seconds: number) => {
-    const video = playerBox.current?.querySelector('video');
-    if (!video) return;
-    video.currentTime = Math.max(0, seconds);
-    video.play().catch(() => { /* blocked by the browser: the controls remain */ });
-  };
+  const talkReady = talk?.state === 'ready';
+  const wide = useWideScreen();
+  // On a wide screen the talk time gets its own column: the video never scrolls out of view while
+  // the transcript is read (owner, 2026-09-11 — "not easy to scroll this way").
+  const sideBySide = talkReady && wide;
+  const { time, seek } = useVideoClock(playerBox, open && talkReady);
+  const playable = recording?.status === 'ready';
 
   if (!meta) return null;
 
@@ -135,10 +166,26 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
       ? t[recording.status]
       : null;
 
+  const talkPanel = (layout: 'side' | 'stacked') => talk && (
+    <TalkSidePanel
+      talk={talk}
+      locale={locale}
+      layout={layout}
+      playhead={playable ? time : null}
+      onSeek={playable ? seek : undefined}
+      showErrors={user?.role === 'admin'}
+    />
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[94vh] w-[calc(100vw-1.5rem)] max-w-5xl flex-col gap-0 overflow-hidden p-0 sm:rounded-2xl">
-        <div className="flex items-start gap-3 px-5 pb-3 pt-4 pr-12 sm:px-6">
+      <DialogContent className={cn(
+        'flex max-h-[94vh] w-[calc(100vw-1.5rem)] flex-col gap-0 overflow-hidden p-0 sm:rounded-2xl',
+        sideBySide ? 'h-[92vh] max-w-[1400px] flex-row' : 'max-w-5xl',
+      )}>
+        {/* The same element in both layouts, so the playing video is never remounted by a resize. */}
+        <div className={cn('flex min-h-0 min-w-0 flex-col', sideBySide ? 'basis-[62%]' : 'flex-1')}>
+        <div className={cn('flex items-start gap-3 px-5 pb-3 pt-4 sm:px-6', !sideBySide && 'pr-12')}>
           <div className="min-w-0">
             <DialogTitle className="truncate text-lg font-bold leading-snug sm:text-xl">{name}</DialogTitle>
             {lesson && <p className="mt-0.5 text-sm font-medium text-muted-foreground">{lesson}</p>}
@@ -219,14 +266,25 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
         </div>
         {(participants || talk) && (
           <div className="flex flex-col gap-3 px-5 pb-5 sm:px-6">
-            {participants && <ParticipantsPanel view={participants} locale={locale} />}
-            {talk && (
+            {/* Narrow screens: the talk time first, under the video it follows. */}
+            {talkReady && !sideBySide && talkPanel('stacked')}
+            {/* Open beside the talk column, where there is room; keyed so it takes that default when the layout changes. */}
+            {participants && (
+              <ParticipantsPanel key={sideBySide ? 'side' : 'stacked'} view={participants} locale={locale} defaultOpen={sideBySide} />
+            )}
+            {talk && !talkReady && (
               <TalkCard talk={talk} locale={locale} showErrors={user?.role === 'admin'}
-                onSeek={recording?.status === 'ready' ? seek : undefined} />
+                onSeek={playable ? seek : undefined} />
             )}
           </div>
         )}
         </div>
+        </div>
+        {sideBySide && (
+          <aside className="flex min-h-0 min-w-[22rem] basis-[38%] flex-col border-l border-border">
+            {talkPanel('side')}
+          </aside>
+        )}
       </DialogContent>
     </Dialog>
   );

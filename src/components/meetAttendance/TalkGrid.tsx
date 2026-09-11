@@ -8,6 +8,7 @@ import {
   talkGrid,
   type TalkLocale,
 } from '../../lib/meetTalk';
+import { columnAt } from '../../lib/transcriptFollow';
 import type { TalkRecord, TalkRole } from '../../services/api/meetTalk';
 
 /** One block picked in the grid: a person's (or, with key null, the class's) five minutes. */
@@ -27,6 +28,8 @@ const TEXT = {
     legend: (minutes: number) => `Each block is ${minutes} minutes; the darker it is, the longer that person spoke in it.`,
     classKey: 'Whole class:', rest: 'the rest is silence',
     pick: 'Click a block to read what was said then.',
+    pickPlay: 'Click a block to play it and read what was said.',
+    now: 'the video is here',
     few: 'a few words', long: '2½ min or more',
     said: (name: string, range: string, time: string) => `${name} · ${range} · spoke ${time}`,
     quiet: (name: string, range: string) => `${name} · ${range} · said nothing`,
@@ -38,6 +41,8 @@ const TEXT = {
     legend: (minutes: number) => `Каждый блок — ${minutes} минут; чем темнее, тем дольше человек говорил в нём.`,
     classKey: 'Весь класс:', rest: 'остальное — тишина',
     pick: 'Нажмите на блок, чтобы прочитать, что было сказано.',
+    pickPlay: 'Нажмите на блок, чтобы включить его и прочитать, что было сказано.',
+    now: 'видео здесь',
     few: 'пара слов', long: '2½ мин и больше',
     said: (name: string, range: string, time: string) => `${name} · ${range} · говорил ${time}`,
     quiet: (name: string, range: string) => `${name} · ${range} · ничего не сказал`,
@@ -64,6 +69,8 @@ const INK: Record<TalkRole, string> = {
 // Full height, and a shadow in the page colour over the gap beside it, so nothing peeks through.
 const STICKY = 'max-sm:sticky max-sm:left-0 max-sm:z-10 max-sm:self-stretch max-sm:bg-background '
   + 'max-sm:shadow-[6px_0_0_hsl(var(--background))]';
+// A side panel is narrow at every screen size.
+const STICKY_ALWAYS = 'sticky left-0 z-10 self-stretch bg-background shadow-[6px_0_0_hsl(var(--background))]';
 
 const DOT: Record<TalkRole, string> = {
   teacher: 'bg-violet-500', student: 'bg-emerald-500', unknown: 'bg-amber-500', other: 'bg-sky-500',
@@ -76,6 +83,12 @@ interface Props {
   focus?: TalkFocus | null;
   /** When given, blocks are buttons: picking one shows what was said in it. */
   onPick?: (focus: TalkFocus | null) => void;
+  /** Where the video is, in lesson seconds: its block column is marked. Beside a player only. */
+  playhead?: number | null;
+  /** Picking a block also plays the video from it (the legend says so). */
+  plays?: boolean;
+  /** A narrow side panel: slimmer blocks without their times (still in each block's tooltip). */
+  dense?: boolean;
 }
 
 /**
@@ -83,20 +96,32 @@ interface Props {
  * how long that person spoke in it — and saying it, «1:40». The top row is the whole class:
  * teacher and students against the silence. The exact stretches are one toggle away.
  */
-export function TalkGrid({ talk, locale, focus, onPick }: Props) {
+export function TalkGrid({ talk, locale, focus, onPick, playhead, plays = false, dense = false }: Props) {
   const t = TEXT[locale];
   const grid = useMemo(() => talkGrid(talk), [talk]);
   const n = grid.columns.length;
+  const nowColumn = columnAt(grid.columns, playhead);
   if (n === 0) return null;
   const range = (i: number) => `${grid.columns[i].label}–${grid.columns[i + 1]?.label ?? blockEnd(grid.columns[i].label, grid.binSeconds)}`;
-  const template = `minmax(6.5rem, 12rem) repeat(${n}, minmax(2.5rem, 1fr)) minmax(5.5rem, auto)`;
-  // Label every block when there is room, every other one on a narrow screen. Invisible, not
-  // hidden: a hidden label would leave the grid and pull the next ones into its column.
-  const labelled = (i: number) => (i % 2 === 0 ? '' : 'invisible sm:visible');
+  // A side panel is ~30rem wide: slim blocks and tight gaps keep a lesson's blocks and the totals
+  // in view without scrolling sideways.
+  const template = dense
+    ? `minmax(5rem, 7.5rem) repeat(${n}, minmax(0.9rem, 1fr)) minmax(3.75rem, auto)`
+    : `minmax(6.5rem, 12rem) repeat(${n}, minmax(2.5rem, 1fr)) minmax(5.5rem, auto)`;
+  // Label every block when there is room, every other one on a narrow screen (always in a side
+  // panel). Invisible, not hidden: a hidden label would leave the grid and pull the next ones
+  // into its column. The block the video is in keeps its label.
+  const labelled = (i: number) => (i === nowColumn ? ''
+    : dense ? (i % 3 === 0 && Math.abs(i - nowColumn) > 1 ? '' : 'invisible')
+      : i % 2 === 0 ? '' : 'invisible sm:visible');
+  const sticky = dense ? STICKY_ALWAYS : STICKY;
 
   const cell = (key: string | null, name: string, i: number, body: React.ReactNode, title: string, className: string) => {
     const picked = focus && focus.key === key && focus.from === grid.columns[i].from;
+    const now = i === nowColumn;
     const common = cn('relative flex h-7 items-center justify-center rounded-[5px] text-[10px] font-semibold tabular-nums', className,
+      // The block the video is in: a frame drawn by a pseudo-element, clear of the ring a picked block wears.
+      now && !picked && "after:pointer-events-none after:absolute after:-inset-[3px] after:rounded-[7px] after:border after:border-primary/60 after:content-['']",
       picked && 'ring-2 ring-foreground ring-offset-1 ring-offset-background');
     if (!onPick) return <div key={i} role="cell" title={title} className={common}>{body}</div>;
     return (
@@ -117,11 +142,15 @@ export function TalkGrid({ talk, locale, focus, onPick }: Props) {
   return (
     <div className="flex flex-col gap-2">
       <div className="overflow-x-auto">
-        <div role="table" aria-label={t.everyone} className="grid min-w-[36rem] items-center gap-x-1 gap-y-1" style={{ gridTemplateColumns: template }}>
+        <div role="table" aria-label={t.everyone} className={cn('grid items-center gap-y-1', dense ? 'min-w-[20rem] gap-x-0.5' : 'min-w-[36rem] gap-x-1')} style={{ gridTemplateColumns: template }}>
           <div role="row" className="contents">
-            <span role="columnheader" className={cn(STICKY, 'flex items-center text-[11px] font-medium uppercase tracking-wide text-muted-foreground')}>{t.person}</span>
+            <span role="columnheader" className={cn(sticky, 'flex items-center text-[11px] font-medium uppercase tracking-wide text-muted-foreground')}>{t.person}</span>
             {grid.columns.map((c, i) => (
-              <span key={c.from} role="columnheader" className={cn('text-center text-[10px] tabular-nums text-muted-foreground', labelled(i))}>
+              <span key={c.from} role="columnheader" title={i === nowColumn ? t.now : undefined}
+                className={cn('text-[10px] tabular-nums', labelled(i),
+                  // Slim side-panel columns: a label starts at its block and runs over the unlabelled ones after it.
+                  dense ? 'whitespace-nowrap text-left' : 'text-center',
+                  i === nowColumn ? 'font-bold text-primary' : 'text-muted-foreground')}>
                 {c.label}
               </span>
             ))}
@@ -130,7 +159,7 @@ export function TalkGrid({ talk, locale, focus, onPick }: Props) {
 
           {/* The whole class: teacher over students; the rest of the block is silence. */}
           <div role="row" className="contents">
-            <span role="rowheader" className={cn(STICKY, 'flex items-center truncate pr-1 text-xs font-semibold text-foreground')}>{t.everyone}</span>
+            <span role="rowheader" className={cn(sticky, 'flex items-center truncate pr-1 text-xs font-semibold text-foreground')}>{t.everyone}</span>
             {grid.teacher.map((teacher, i) => {
               const students = grid.students[i];
               const quiet = Math.max(0, grid.binSeconds - teacher - students);
@@ -148,14 +177,14 @@ export function TalkGrid({ talk, locale, focus, onPick }: Props) {
 
           {grid.rows.map(({ person, cells }) => (
             <div key={person.key} role="row" className="contents">
-              <span role="rowheader" className={cn(STICKY, 'flex min-w-0 items-center gap-1.5 pr-1')} title={person.name}>
+              <span role="rowheader" className={cn(sticky, 'flex min-w-0 items-center gap-1.5 pr-1')} title={person.name}>
                 <span className={cn('h-2 w-2 flex-none rounded-full', DOT[person.role])} aria-hidden />
                 <span className={cn('truncate text-xs', person.role === 'teacher' ? 'font-semibold' : 'font-medium')}>{person.name}</span>
               </span>
               {cells.map((seconds, i) => {
                 const shade = blockShade(seconds, grid.binSeconds);
                 return cell(person.key, person.name, i,
-                  shade > 0 && <span className="hidden sm:inline">{blockTime(seconds)}</span>,
+                  shade > 0 && !dense && <span className="hidden sm:inline">{blockTime(seconds)}</span>,
                   seconds > 0 ? t.said(person.name, range(i), blockTime(seconds)) : t.quiet(person.name, range(i)),
                   cn(shade > 0 ? SHADE[person.role][shade] : 'bg-muted/30',
                     shade >= 4 ? 'text-white dark:text-gray-950' : INK[person.role]));
@@ -182,7 +211,7 @@ export function TalkGrid({ talk, locale, focus, onPick }: Props) {
           <span className="ml-1 h-2.5 w-2.5 rounded-sm bg-emerald-500 dark:bg-emerald-400" /> {t.students},
           <span>{t.rest}</span>
         </span>
-        {onPick && <span>{t.pick}</span>}
+        {onPick && <span>{plays ? t.pickPlay : t.pick}</span>}
       </div>
     </div>
   );

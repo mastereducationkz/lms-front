@@ -1,15 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronDown, Loader2, MessagesSquare, Play, Search, X } from 'lucide-react';
+import { ChevronDown, MessagesSquare } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { clock } from '../../lib/meetAttendance';
 import {
   axisPosition,
   formatDuration,
-  clockAt,
-  highlightParts,
-  linesInBlock,
   percent,
-  searchTranscript,
   spanBar,
   stamp,
   talkAxis,
@@ -21,9 +17,9 @@ import {
   type TalkPerson,
   type TalkRecord,
   type TalkRole,
-  type TalkTranscript,
 } from '../../services/api/meetTalk';
 import { TalkGrid, type TalkFocus } from './TalkGrid';
+import { TalkTranscript } from './TalkTranscript';
 
 /** Loads a lesson's talk time when `enabled`; null while loading, or when not the viewer's lesson. */
 export function useLessonTalk(eventId: number | null | undefined, enabled = true) {
@@ -57,18 +53,9 @@ const TEXT = {
     voices: 'Meet wasn’t recording who spoke in this lesson (it was before talk time was switched on), so the names come from the recording’s voices and who was in the room. A voice that could be more than one student stays «Голос N», and nobody is listed as silent.',
     notConfirmed: 'Not confirmed', notThisClass: 'Not in this class', notNamed: 'Could be more than one student',
     timeline: 'Who spoke, and when', every10: 'Every 10 minutes', blocks: 'Blocks', exact: 'Exact',
-    showAll: 'Show the whole transcript', focusLines: (n: number) => `${n} line${n === 1 ? '' : 's'} in this block`,
     bucket: (from: string, to: string, t: string, s: string) => `${from}–${to} · teacher ${t}, students ${s}`,
     interaction: 'Interaction', teacherQuestions: 'Teacher questions', answered: 'Answered',
     medianWait: 'Median wait before an answer', studentQuestions: 'Student questions',
-    transcript: 'Transcript', search: 'Search the transcript', lines: (n: number) => `${n} line${n === 1 ? '' : 's'}`,
-    noMatch: 'Nothing in the transcript matches.', playFrom: 'Play the recording from here',
-    transcriptState: {
-      pending: 'The transcript is being prepared. It appears about half an hour after the recording is ready.',
-      off: 'Transcripts are switched off, so this lesson has no text and no interaction figures.',
-      failed: 'The transcript could not be made.',
-      not_available: 'No transcript for this lesson: it has no recording, or it is from before transcripts were switched on.',
-    },
     state: {
       off: 'Talk time is switched off.',
       waiting: 'Talk time appears here about half an hour after the lesson ends.',
@@ -87,18 +74,9 @@ const TEXT = {
     voices: 'Meet не записывал, кто говорил на этом уроке (он был до включения), поэтому имена определены по голосам в записи и по тому, кто был в комнате. Голос, который может принадлежать нескольким ученикам, остаётся «Голос N», а молчавших не показываем.',
     notConfirmed: 'Не подтверждён', notThisClass: 'Не из этой группы', notNamed: 'Может быть одним из нескольких учеников',
     timeline: 'Кто, когда и сколько говорил', every10: 'Каждые 10 минут', blocks: 'Блоки', exact: 'Точно',
-    showAll: 'Показать всю расшифровку', focusLines: (n: number) => `${n} строк в этом блоке`,
     bucket: (from: string, to: string, t: string, s: string) => `${from}–${to} · преподаватель ${t}, ученики ${s}`,
     interaction: 'Взаимодействие', teacherQuestions: 'Вопросы преподавателя', answered: 'С ответом',
     medianWait: 'Медианное ожидание ответа', studentQuestions: 'Вопросы учеников',
-    transcript: 'Расшифровка', search: 'Поиск по расшифровке', lines: (n: number) => `${n} строк`,
-    noMatch: 'В расшифровке ничего не найдено.', playFrom: 'Воспроизвести запись с этого места',
-    transcriptState: {
-      pending: 'Расшифровка готовится. Она появится примерно через полчаса после того, как будет готова запись.',
-      off: 'Расшифровки выключены, поэтому у этого урока нет текста и показателей взаимодействия.',
-      failed: 'Не удалось сделать расшифровку.',
-      not_available: 'Для этого урока нет расшифровки: нет записи, или урок был до включения расшифровок.',
-    },
     state: {
       off: 'Время речи выключено.',
       waiting: 'Время речи появится примерно через полчаса после урока.',
@@ -117,16 +95,12 @@ const BAR: Record<TalkRole, string> = {
   other: 'bg-sky-500 dark:bg-sky-400',
 };
 
-const INK: Record<TalkRole, string> = {
-  teacher: 'text-violet-700 dark:text-violet-300',
-  student: 'text-emerald-700 dark:text-emerald-300',
-  unknown: 'text-amber-700 dark:text-amber-300',
-  other: 'text-sky-700 dark:text-sky-300',
-};
-
 type Text = (typeof TEXT)[TalkLocale];
 
-function Section({ title, aside, children }: { title: string; aside?: React.ReactNode; children: React.ReactNode }) {
+/** The words the talk panel's pieces speak, for a layout that arranges them itself. */
+export const talkText = (locale: TalkLocale): Text => TEXT[locale];
+
+export function Section({ title, aside, children }: { title: string; aside?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section className="flex flex-col gap-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -148,7 +122,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 /** Teacher against students, as one bar. */
-function SplitBar({ teacher, students, className }: { teacher: number | null | undefined; students: number | null | undefined; className?: string }) {
+export function SplitBar({ teacher, students, className }: { teacher: number | null | undefined; students: number | null | undefined; className?: string }) {
   const t = Math.max(0, Math.min(1, teacher ?? 0));
   const s = Math.max(0, Math.min(1 - t, students ?? 0));
   return (
@@ -159,7 +133,7 @@ function SplitBar({ teacher, students, className }: { teacher: number | null | u
   );
 }
 
-function Headline({ talk, t, locale }: { talk: TalkRecord; t: Text; locale: TalkLocale }) {
+export function Headline({ talk, t, locale }: { talk: TalkRecord; t: Text; locale: TalkLocale }) {
   return (
     <div className="flex flex-col gap-3">
       <div>
@@ -189,7 +163,7 @@ function Headline({ talk, t, locale }: { talk: TalkRecord; t: Text; locale: Talk
   );
 }
 
-function Notes({ talk, t }: { talk: TalkRecord; t: Text }) {
+export function Notes({ talk, t }: { talk: TalkRecord; t: Text }) {
   const silent = talk.silent_students ?? [];
   return (
     <>
@@ -207,7 +181,7 @@ function Notes({ talk, t }: { talk: TalkRecord; t: Text }) {
   );
 }
 
-function Buckets({ talk, t, locale }: { talk: TalkRecord; t: Text; locale: TalkLocale }) {
+export function Buckets({ talk, t, locale }: { talk: TalkRecord; t: Text; locale: TalkLocale }) {
   const buckets = talk.buckets ?? [];
   if (buckets.length === 0) return null;
   const base = new Date(talk.start).getTime();
@@ -238,7 +212,7 @@ function Buckets({ talk, t, locale }: { talk: TalkRecord; t: Text; locale: TalkL
   );
 }
 
-function Lanes({ talk }: { talk: TalkRecord }) {
+export function Lanes({ talk }: { talk: TalkRecord }) {
   const people = useMemo(() => (talk.people ?? []).filter((p) => p.seconds > 0), [talk.people]);
   const lessonSeconds = talk.lesson_seconds ?? 3600;
   const axis = useMemo(() => talkAxis(talk.start, lessonSeconds, people), [talk.start, lessonSeconds, people]);
@@ -285,7 +259,7 @@ function Lanes({ talk }: { talk: TalkRecord }) {
   );
 }
 
-function Insights({ talk, t }: { talk: TalkRecord; t: Text }) {
+export function Insights({ talk, t }: { talk: TalkRecord; t: Text }) {
   const i = talk.insights;
   if (!i) return null;
   const answeredShare = i.teacher_questions ? ` (${percent(i.answered / i.teacher_questions)})` : '';
@@ -297,107 +271,6 @@ function Insights({ talk, t }: { talk: TalkRecord; t: Text }) {
         <Stat label={t.medianWait} value={i.median_wait_seconds == null ? '—' : `${i.median_wait_seconds.toLocaleString('en-GB', { maximumFractionDigits: 1 })} s`} />
         <Stat label={t.studentQuestions} value={String(i.student_questions)} />
       </div>
-    </Section>
-  );
-}
-
-function Transcript({ transcript, start, t, onSeek, showErrors, focus, onClearFocus }: {
-  transcript: TalkTranscript | undefined;
-  /** The lesson's start: lines are stamped on the Almaty clock, the same as the blocks. */
-  start: string;
-  t: Text;
-  onSeek?: (recordingSeconds: number) => void;
-  showErrors: boolean;
-  /** A block picked in the grid: only what was said in it. */
-  focus?: TalkFocus | null;
-  onClearFocus?: () => void;
-}) {
-  const [query, setQuery] = useState('');
-  const all = useMemo(() => transcript?.lines ?? [], [transcript]);
-  const lines = useMemo(() => (focus ? linesInBlock(all, focus) : all), [all, focus]);
-  const hits = useMemo(() => searchTranscript(lines, query), [lines, query]);
-
-  if (!transcript) return null;
-  if (transcript.state !== 'ready') {
-    return (
-      <Section title={t.transcript}>
-        <p className="text-[13px] text-muted-foreground">
-          {transcript.state === 'pending' && <Loader2 className="mr-1.5 inline h-3.5 w-3.5 animate-spin align-[-2px]" aria-hidden />}
-          {t.transcriptState[transcript.state]}
-          {transcript.state === 'failed' && showErrors && transcript.error && (
-            <span className="mt-1 block font-mono text-[11px] text-rose-600 dark:text-rose-400">{transcript.error}</span>
-          )}
-        </p>
-      </Section>
-    );
-  }
-
-  return (
-    <Section
-      title={t.transcript}
-      aside={<span className="text-[11px] tabular-nums text-muted-foreground">{t.lines(query.trim() ? hits.length : lines.length)}</span>}
-    >
-      {focus && (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg bg-muted/60 px-3 py-2 text-[13px]">
-          <span className="font-semibold text-foreground">{focus.name}</span>
-          <span className="tabular-nums text-muted-foreground">{focus.label}</span>
-          <span className="text-muted-foreground">· {t.focusLines(lines.length)}</span>
-          <button type="button" onClick={onClearFocus}
-            className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium text-muted-foreground transition hover:bg-background hover:text-foreground">
-            <X className="h-3.5 w-3.5" aria-hidden /> {t.showAll}
-          </button>
-        </div>
-      )}
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-        <input
-          id="talk-transcript-search"
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={t.search}
-          aria-label={t.search}
-          className="h-9 w-full rounded-md border border-border bg-background pl-8 pr-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        />
-      </div>
-      {hits.length === 0 ? (
-        <p className="px-1 py-3 text-[13px] text-muted-foreground">{t.noMatch}</p>
-      ) : (
-        <ol className="max-h-[26rem] divide-y divide-border/60 overflow-y-auto rounded-lg border border-border">
-          {hits.map(({ line, ranges }, index) => {
-            const body = (
-              <>
-                <span className="flex items-center gap-1 text-[11px] tabular-nums text-muted-foreground">
-                  {onSeek && <Play className="h-3 w-3 flex-none opacity-60" aria-hidden />}
-                  {clockAt(start, line.lesson_at)}
-                </span>
-                <span className={cn('truncate text-xs font-semibold', line.role ? INK[line.role] : 'text-muted-foreground')} title={line.speaker_label}>
-                  {line.speaker_label}
-                </span>
-                <span className="col-span-2 text-[13px] leading-snug text-foreground sm:col-span-1">
-                  {highlightParts(line.text, ranges).map((part, i) => (part.hit
-                    ? <mark key={i} className="rounded-sm bg-yellow-200 px-0.5 text-foreground dark:bg-yellow-500/40">{part.text}</mark>
-                    : <span key={i}>{part.text}</span>))}
-                </span>
-              </>
-            );
-            const grid = 'grid w-full grid-cols-[4rem_minmax(0,1fr)] items-baseline gap-x-3 gap-y-0.5 px-3 py-1.5 text-left sm:grid-cols-[4rem_9rem_minmax(0,1fr)]';
-            return (
-              // Position and time together: two lines can start in the same second.
-              <li key={`${index}:${line.at}`}>
-                {onSeek ? (
-                  <button type="button" onClick={() => onSeek(line.at)} title={t.playFrom}
-                    className={cn(grid, 'transition hover:bg-muted/50 focus-visible:bg-muted/60 focus-visible:outline-none')}>
-                    {body}
-                  </button>
-                ) : (
-                  <div className={grid}>{body}</div>
-                )}
-              </li>
-            );
-          })}
-        </ol>
-      )}
     </Section>
   );
 }
@@ -473,8 +346,8 @@ export default function TalkPanel({ talk, onSeek, variant = 'full', locale = 'en
       {variant === 'full' && <Insights talk={talk} t={t} />}
       {variant === 'full' && (
         <div ref={transcriptRef} className="scroll-mt-4">
-          <Transcript transcript={talk.transcript} start={talk.start} t={t} onSeek={onSeek} showErrors={showErrors}
-            focus={focus} onClearFocus={() => setFocus(null)} />
+          <TalkTranscript transcript={talk.transcript} start={talk.start} locale={locale} onSeek={onSeek}
+            showErrors={showErrors} focus={focus} onClearFocus={() => setFocus(null)} />
         </div>
       )}
     </div>
