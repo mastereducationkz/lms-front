@@ -577,7 +577,7 @@ export default function Router() {
           } />
 
           <Route path="/meet-attendance" element={
-            <ProtectedRoute allowedRoles={['admin', 'head_curator', 'head_teacher']}>
+            <ProtectedRoute allowedRoles={['admin', 'head_curator', 'head_teacher', 'teacher', 'curator']}>
               <AppLayout>
                 <MeetAttendanceReview />
               </AppLayout>

@@ -84,6 +84,9 @@ function getNavigationItems(
     ['/dashboard', ['head_curator', 'curator'].includes(_userRole || '') ? 'Дашборд' : 'Dashboard', Home, 0, null, 'dashboard-nav', 'primary'],
     ['/calendar', ['head_curator', 'curator'].includes(_userRole || '') ? 'Календарь' : 'Calendar', Calendar, 0, null, 'calendar-nav', 'primary'],
     ['/recordings', ['head_curator', 'curator'].includes(_userRole || '') ? 'Записи уроков' : 'Lesson Recordings', Video, 0, null, 'recordings-nav', 'primary'],
+    // Who was in each lesson's Meet room. Teachers see their lessons, curators their groups' — the
+    // backend scopes it; students never (the record is about marks, which are staff business).
+    ['/meet-attendance', ['head_curator', 'curator'].includes(_userRole || '') ? 'Посещаемость в Meet' : 'Meet Attendance', MonitorCheck, 0, ['admin', 'head_curator', 'head_teacher', 'teacher', 'curator'], 'meet-attendance-nav', 'primary'],
     ['/courses', 'My Courses', BookOpen, 0, ['student'], 'courses-nav', 'primary'],
     ['/homework', _userRole === 'student' ? 'My Homework' : 'Homework', ClipboardList, _userRole === 'student' ? unseenGradedCount : 0, ['student', 'teacher'], 'assignments-nav', 'primary'],
     ['/favorites', 'My Favorites', Heart, 0, ['student'], 'favorites-nav', 'primary'],
@@ -105,7 +108,6 @@ function getNavigationItems(
     ['/admin/users', 'Manage Users', Users, 0, ['admin', 'head_curator'], 'users-management', 'admin'],
     ['/admin/weekly-top-students', 'Weekly Top Students', Trophy, 0, ['admin'], 'weekly-top-students-nav', 'admin'],
     ['/admin/announcements', 'Telegram Announcements', Megaphone, 0, ['admin', 'head_curator', 'head_teacher'], 'announcements-nav', 'admin'],
-    ['/meet-attendance', _userRole === 'head_curator' ? 'Посещаемость в Meet' : 'Meet Attendance', MonitorCheck, 0, ['admin', 'head_curator', 'head_teacher'], 'meet-attendance-nav', 'admin'],
     ['/admin/checkpoints', 'SAT Checkpoints', ClipboardCheck, 0, ['admin', 'head_curator', 'head_teacher', 'teacher', 'curator'], 'checkpoints-admin-nav', 'admin'],
     ['/admin/events', 'Manage Events', Calendar, 0, ['admin'], 'events-management', 'admin'],
     ['/exam-results', ['head_curator', 'curator'].includes(_userRole || '') ? 'Результаты экзаменов' : 'Exam Results', ClipboardCheck, 0, ['teacher', 'curator', 'head_curator', 'head_teacher', 'admin'], 'exam-results-nav', 'primary'],
