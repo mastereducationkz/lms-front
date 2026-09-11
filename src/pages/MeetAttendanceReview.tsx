@@ -19,8 +19,11 @@ import {
 } from '../lib/meetAttendance';
 import { SearchableSelect } from '../components/ui/searchable-select';
 import { FlagChip, lessonReviewing } from '../components/meetAttendance/FlagReview';
-import MeetAttendanceDialog from '../components/meetAttendance/MeetAttendanceDialog';
+import MeetAttendanceDialog, { type MeetDialogTab } from '../components/meetAttendance/MeetAttendanceDialog';
 import { TeacherTallyTable } from '../components/meetAttendance/TeacherTallyTable';
+import { GroupTalkView } from '../components/meetAttendance/GroupTalkView';
+import { TalkSettingsButton } from '../components/meetAttendance/TalkSettingsButton';
+import { percent } from '../lib/meetTalk';
 import {
   listMeetRecords,
   type MeetFlagCode,
@@ -33,6 +36,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 type Show = 'attention' | 'all';
 type Period = 7 | 30;
+type View = 'lessons' | 'talk';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -87,6 +91,9 @@ export default function MeetAttendanceReview() {
   const [query, setQuery] = useState('');
   const [issue, setIssue] = useState<IssueKey | null>(null);
   const [openId, setOpenId] = useState<number | null>(null);
+  const [openTab, setOpenTab] = useState<MeetDialogTab>('attendance');
+  const [view, setView] = useState<View>('lessons');
+  const [talkEnabled, setTalkEnabled] = useState(false);
   // Reviewed flags are out of the list until asked for (owner, 2026-09-11).
   const [showReviewed, setShowReviewed] = useState(false);
   const [options, setOptions] = useState<MeetReviewOptions | undefined>(undefined);
@@ -96,7 +103,7 @@ export default function MeetAttendanceReview() {
     setError(false);
     if (!quiet) setItems(null);
     listMeetRecords({ date_from: new Date(Date.now() - period * DAY).toISOString() })
-      .then((r) => { setItems(r.items); setOptions(r.review_options); })
+      .then((r) => { setItems(r.items); setOptions(r.review_options); setTalkEnabled(Boolean(r.talk_enabled)); })
       .catch(() => { if (!quiet) setError(true); });
   }, [period]);
   useEffect(() => load(), [load]);
@@ -157,6 +164,9 @@ export default function MeetAttendanceReview() {
   )), [listed, issue, show, inAttention]);
 
   const filtered = Boolean(teacherId || groupId || query || issue);
+  // Talk time is a filter only where some lesson has it; otherwise the chip would sit there greyed out forever.
+  const anyTalk = useMemo(() => (items ?? []).some((i) => i.talk), [items]);
+  const openLesson = (eventId: number, tab: MeetDialogTab) => { setOpenTab(tab); setOpenId(eventId); };
 
   const exportCsv = () => {
     const blob = new Blob([reportCsv(visible)], { type: 'text/csv;charset=utf-8;' });
@@ -180,6 +190,8 @@ export default function MeetAttendanceReview() {
             {INTRO[audience]} Click a flag to answer it: with its reason it leaves Needs attention. Times are Almaty.
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+        <TalkSettingsButton role={user?.role} onChanged={(next) => { setTalkEnabled(next.enabled); load(true); }} />
         <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label="Period">
           {([7, 30] as Period[]).map((p) => (
             <button
@@ -194,8 +206,51 @@ export default function MeetAttendanceReview() {
             </button>
           ))}
         </div>
+        </div>
       </header>
 
+      <div className="flex gap-1 border-b border-border" role="tablist" aria-label="View">
+        {([['lessons', 'Lessons'], ['talk', 'Talk time']] as const).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={view === key}
+            onClick={() => setView(key)}
+            className={cn('-mb-px border-b-2 px-3 py-2 text-sm font-medium transition',
+              view === key ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground')}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {view === 'talk' && (
+        items === null ? (
+          error ? (
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card px-6 py-14 text-center shadow-sm">
+              <p className="text-sm text-muted-foreground">Couldn&apos;t load the lessons.</p>
+              <button type="button" onClick={() => load()} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted">
+                <RotateCcw className="h-4 w-4" /> Try again
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-1 py-10 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Loading lessons…
+            </div>
+          )
+        ) : (
+          <GroupTalkView
+            groups={groups}
+            periodDays={period}
+            initialGroupId={groupId}
+            talkEnabled={talkEnabled}
+            onOpenLesson={(eventId) => openLesson(eventId, 'talk')}
+          />
+        )
+      )}
+
+      {view === 'lessons' && (<>
       <div className="flex flex-wrap items-center gap-2.5">
         <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label="Show">
           {([['attention', 'Needs attention', attentionCount], ['all', 'All lessons', scoped.length]] as const).map(([key, label, n]) => (
@@ -260,7 +315,7 @@ export default function MeetAttendanceReview() {
       {items !== null && items.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter by issue">
           <span className="mr-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Issue</span>
-          {ISSUES.map(({ key, label, hint }) => {
+          {ISSUES.filter(({ key }) => key !== 'silent_students' || anyTalk).map(({ key, label, hint }) => {
             const active = issue === key;
             const none = counts[key] === 0;
             return (
@@ -350,8 +405,8 @@ export default function MeetAttendanceReview() {
                   return (
                     <tr
                       key={item.event_id}
-                      onClick={() => setOpenId(item.event_id)}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenId(item.event_id); } }}
+                      onClick={() => openLesson(item.event_id, 'attendance')}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLesson(item.event_id, 'attendance'); } }}
                       tabIndex={0}
                       aria-label={`Open ${item.title}`}
                       className="cursor-pointer align-top transition hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none"
@@ -374,6 +429,18 @@ export default function MeetAttendanceReview() {
                             {teacherFlags.map((f) => (
                               <FlagChip key={f.code} flag={f} userId={f.user_id} personName={f.name} reviewing={reviewing} />
                             ))}
+                          </div>
+                        )}
+                        {item.talk?.teacher_share != null && (
+                          <div className="mt-1.5 flex items-center gap-2" title="The teacher’s share of everything said in the lesson">
+                            <span className="h-1.5 w-14 overflow-hidden rounded-full bg-muted" aria-hidden>
+                              <span className="block h-full rounded-full bg-violet-500 dark:bg-violet-400"
+                                style={{ width: `${Math.min(100, item.talk.teacher_share * 100)}%` }} />
+                            </span>
+                            <span className="text-[11px] tabular-nums text-muted-foreground">
+                              Teacher talk {percent(item.talk.teacher_share)}
+                              {item.talk.silent.length > 0 && ` · ${item.talk.silent.length} didn’t speak`}
+                            </span>
                           </div>
                         )}
                       </td>
@@ -412,9 +479,11 @@ export default function MeetAttendanceReview() {
           </div>
         )
       )}
+      </>)}
 
       <MeetAttendanceDialog
         eventId={openId}
+        initialTab={openTab}
         open={openId !== null}
         onOpenChange={(open) => {
           if (!open) {

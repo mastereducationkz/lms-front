@@ -1,4 +1,5 @@
 import { api } from './client';
+import type { MeetLessonTalk } from './meetTalk';
 
 /**
  * Who was in a lesson's Meet room, from when to when — read from what Meet reported.
@@ -181,6 +182,8 @@ export interface MeetLessonSummary {
   mismatches: number;
   reviewed?: number;
   flags: MeetLessonFlag[];
+  /** Who spoke how much; null (or absent) when the lesson has no Meet transcript. */
+  talk?: MeetLessonTalk | null;
 }
 
 export interface MeetRecordsQuery {
@@ -196,6 +199,8 @@ export async function listMeetRecords(query: MeetRecordsQuery = {}): Promise<{
   from: string;
   to: string;
   review_options?: MeetReviewOptions;
+  /** The talk-time admin switch. */
+  talk_enabled?: boolean;
 }> {
   const params: Record<string, string | number> = {};
   Object.entries(query).forEach(([key, value]) => {

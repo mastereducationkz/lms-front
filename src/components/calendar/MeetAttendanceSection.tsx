@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Loader2, Maximize2, UsersRound } from 'lucide-react';
-import MeetAttendanceDialog from '../meetAttendance/MeetAttendanceDialog';
+import { Loader2, Maximize2, MessagesSquare, UsersRound } from 'lucide-react';
+import MeetAttendanceDialog, { type MeetDialogTab } from '../meetAttendance/MeetAttendanceDialog';
 import { MeetRecordView, recordStateText, useMeetRecord } from '../meetAttendance/MeetRecordView';
+import TalkPanel, { useLessonTalk } from '../meetAttendance/TalkPanel';
 import type { Event } from '../../types';
 
 /** Who may read a lesson's Meet record — the backend's rule, so the card doesn't ask in vain. */
@@ -30,7 +31,11 @@ function hasFinished(event: Event): boolean {
 export default function MeetAttendanceSection({ event, role }: Props) {
   const wanted = RECORD_ROLES.has(role ?? '') && isMeetLesson(event) && hasFinished(event);
   const { record, loading, busyId, confirm, confirmMany, reload, reviewing } = useMeetRecord(event.id, wanted);
+  // Talk time only once there is a record to go with it: most lessons on a calendar have neither.
+  const { talk } = useLessonTalk(event.id, wanted && record?.state === 'ready');
   const [expanded, setExpanded] = useState(false);
+  const [dialogTab, setDialogTab] = useState<MeetDialogTab>('attendance');
+  const openDialog = (tab: MeetDialogTab) => { setDialogTab(tab); setExpanded(true); };
 
   if (!wanted) return null;
   if (loading) {
@@ -52,7 +57,7 @@ export default function MeetAttendanceSection({ event, role }: Props) {
         {record.state === 'ready' && (
           <button
             type="button"
-            onClick={() => setExpanded(true)}
+            onClick={() => openDialog('attendance')}
             className="ml-auto inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Maximize2 className="h-3.5 w-3.5" aria-hidden />
@@ -64,8 +69,24 @@ export default function MeetAttendanceSection({ event, role }: Props) {
       {record.state === 'ready' && (
         <MeetRecordView record={record} busyId={busyId} onConfirm={confirm} onConfirmMany={confirmMany} reviewing={reviewing} compact />
       )}
+      {talk && (talk.state === 'ready' || talk.state === 'waiting') && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-muted/40 px-3 py-2">
+          <MessagesSquare className="h-4 w-4 flex-none text-muted-foreground/70" aria-hidden />
+          <TalkPanel talk={talk} variant="compact" className="min-w-0 flex-1" />
+          {talk.state === 'ready' && (
+            <button
+              type="button"
+              onClick={() => openDialog('talk')}
+              className="ml-auto inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              Talk time
+            </button>
+          )}
+        </div>
+      )}
       <MeetAttendanceDialog
         eventId={event.id}
+        initialTab={dialogTab}
         open={expanded}
         onOpenChange={(open) => {
           setExpanded(open);

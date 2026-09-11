@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { IssueKey, TeacherTally } from '../../lib/meetAttendance';
+import { percent } from '../../lib/meetTalk';
 
 interface Props {
   rows: TeacherTally[];
@@ -25,6 +26,8 @@ const COLUMNS: { key: IssueKey; label: string; tone: 'bad' | 'warn' }[] = [
 export function TeacherTallyTable({ rows, onPick }: Props) {
   const [open, setOpen] = useState(true);
   if (rows.length < 2) return null;
+  // Only once some lesson has talk time: an empty column says nothing.
+  const talk = rows.some((r) => r.talk_lessons > 0);
 
   return (
     <section className="rounded-2xl border border-border bg-card shadow-sm" aria-label="By teacher">
@@ -46,6 +49,7 @@ export function TeacherTallyTable({ rows, onPick }: Props) {
                 <th className="px-4 py-2">Teacher</th>
                 <th className="px-3 py-2 text-right">Lessons</th>
                 {COLUMNS.map((c) => <th key={c.key} className="px-3 py-2 text-right">{c.label}</th>)}
+                {talk && <th className="px-3 py-2 text-right" title="The teacher’s average share of everything said, over lessons with talk time">Avg teacher talk</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -80,6 +84,12 @@ export function TeacherTallyTable({ rows, onPick }: Props) {
                       </td>
                     );
                   })}
+                  {talk && (
+                    <td className="px-3 py-2 text-right tabular-nums text-muted-foreground"
+                      title={r.talk_lessons ? `Over ${r.talk_lessons} lesson${r.talk_lessons === 1 ? '' : 's'} with talk time` : undefined}>
+                      {r.avg_teacher_share == null ? <span className="text-muted-foreground/50">—</span> : <span className="font-semibold text-foreground">{percent(r.avg_teacher_share)}</span>}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

@@ -265,3 +265,31 @@ describe('reviewed flags (owner, 2026-09-11)', () => {
     expect(canFixMark('admin', 'late')).toBe(false);
   });
 });
+
+describe('talk time in the report (owner, 2026-09-11)', () => {
+  const talk = (teacher_share: number | null, silent: number[] = []) => ({
+    teacher_share, students_share: teacher_share == null ? null : 1 - teacher_share, speech_seconds: 3000,
+    teacher_seconds: 2000, silent, seconds: {},
+  });
+
+  it('filters by silent students without asking for attention', () => {
+    const quiet = summary(1, 1, [], { talk: talk(0.7, [7, 8]) });
+    expect(hasIssue(quiet, 'silent_students')).toBe(true);
+    expect(needsAttention(quiet)).toBe(false);
+    expect(issueCounts([quiet, summary(2, 1, [])]).silent_students).toBe(1);
+  });
+
+  it('averages each teacher’s share of the talk over the lessons that have it', () => {
+    const [row] = tallyByTeacher([
+      summary(1, 1, [], { talk: talk(0.8) }), summary(2, 1, [], { talk: talk(0.6) }), summary(3, 1, [], { talk: null }),
+    ]);
+    expect(row.talk_lessons).toBe(2);
+    expect(row.avg_teacher_share).toBeCloseTo(0.7);
+    expect(tallyByTeacher([summary(4, 2, [])])[0].avg_teacher_share).toBeNull();
+  });
+
+  it('puts the teacher’s share and the silent students in the spreadsheet', () => {
+    const row = reportCsv([summary(1, 1, [], { talk: talk(0.72, [7]) })]).split('\r\n')[1];
+    expect(row.endsWith('"72%","1"')).toBe(true);
+  });
+});

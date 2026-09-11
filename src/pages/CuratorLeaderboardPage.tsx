@@ -26,6 +26,7 @@ import { formatGroupCloseDate } from '../lib/groupList';
 import { isAttendanceLockedLesson } from '../lib/attendance';
 import { listMeetRecords, type MeetLessonFlag } from '../services/api/meetAttendance';
 import { flagText, flagTextRu, mismatchIndex, reasonText } from '../lib/meetAttendance';
+import { spokeNote, talkSecondsIndex } from '../lib/meetTalk';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import { toast } from '../components/Toast';
@@ -220,6 +221,7 @@ const AttendanceToggle = ({
     disabled = false,
     isFuture = false,
     en = false,
+    note = null,
 }: {
     initialStatus: string,
     onChange: (status: string) => void,
@@ -229,6 +231,8 @@ const AttendanceToggle = ({
     isFuture?: boolean,
     // Render status labels/titles in English (teacher view).
     en?: boolean,
+    // A second line for the hover, e.g. how long the student spoke in the lesson's Meet room.
+    note?: string | null,
 }) => {
   // Cycle: attended -> late -> missed -> cancelled -> attended
   const handleCycle = () => {
@@ -264,7 +268,7 @@ const AttendanceToggle = ({
             config.color,
             nonInteractive ? "cursor-default brightness-[0.9] grayscale-[0.2]" : "cursor-pointer active:brightness-95 hover:brightness-105"
         )}
-        title={isFuture ? config.title : (disabled ? (en ? `Status: ${config.title} (view only)` : `Статус: ${config.title} (Только просмотр)`) : (en ? `Status: ${config.title}. Click to cycle.` : `Статус: ${config.title}. Нажмите для переключения.`))}
+        title={(isFuture ? config.title : (disabled ? (en ? `Status: ${config.title} (view only)` : `Статус: ${config.title} (Только просмотр)`) : (en ? `Status: ${config.title}. Click to cycle.` : `Статус: ${config.title}. Нажмите для переключения.`))) + (note ? `\n${note}` : '')}
     >
         <span className="flex items-center gap-1">
             <span className="text-[10px] uppercase">{config.label}</span>
@@ -559,6 +563,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   // Marks that disagree with who was in the lesson's Meet room ("eventId:studentId" → flags).
   // Evidence only: the dot explains, the teacher still decides the mark.
   const [meetMismatches, setMeetMismatches] = useState<Map<string, MeetLessonFlag[]>>(new Map());
+  // How long each student spoke in each lesson ("eventId:studentId" → seconds), for the hover.
+  const [meetTalk, setMeetTalk] = useState<Map<string, number>>(new Map());
   
   // Changes tracking: Set of student IDs that have changes
   const [changedEntries, setChangedEntries] = useState<Set<number>>(new Set());
@@ -693,6 +699,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
     const starts = (data?.lessons ?? []).map((l) => parseAsUTC(l.start_datetime).getTime()).filter(Number.isFinite);
     if (!selectedGroupId || starts.length === 0) {
       setMeetMismatches(new Map());
+      setMeetTalk(new Map());
       return;
     }
     const DAY = 24 * 60 * 60 * 1000;
@@ -702,8 +709,12 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       date_from: new Date(Math.min(...starts) - DAY).toISOString(),
       date_to: new Date(Math.max(...starts) + DAY).toISOString(),
     })
-      .then((r) => { if (!cancelled) setMeetMismatches(mismatchIndex(r.items)); })
-      .catch(() => { if (!cancelled) setMeetMismatches(new Map()); });
+      .then((r) => {
+        if (cancelled) return;
+        setMeetMismatches(mismatchIndex(r.items));
+        setMeetTalk(talkSecondsIndex(r.items));
+      })
+      .catch(() => { if (!cancelled) { setMeetMismatches(new Map()); setMeetTalk(new Map()); } });
     return () => { cancelled = true; };
   }, [selectedGroupId, data]);
 
@@ -1765,6 +1776,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                 disabled={user?.role === 'curator'}
                                                 isFuture={cellIsFuture}
                                                 en={isTeacher}
+                                                note={spokeNote(meetTalk.get(`${lessonInfo.event_id}:${student.student_id}`), isTeacher ? 'en' : 'ru')}
                                             />
                                             {meetMismatches.get(`${lessonInfo.event_id}:${student.student_id}`)?.map((f) => {
                                                 // Answered in Meet attendance: grey with a tick and the reason, instead of red.

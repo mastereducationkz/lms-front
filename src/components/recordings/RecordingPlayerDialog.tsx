@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CalendarDays, Clock, Link2, Loader2, Timer, User, Users, VideoOff } from 'lucide-react';
 import { toast } from 'sonner';
 import HlsVideoPlayer from '../HlsVideoPlayer';
@@ -7,6 +7,7 @@ import { getLessonRecording, type LessonRecording } from '../../services/api/rec
 import { getMeetRecord } from '../../services/api/meetAttendance';
 import { toParticipantsView, type ParticipantsView } from '../../lib/meetAttendance';
 import { ParticipantsPanel } from '../meetAttendance/ParticipantsPanel';
+import { TalkCard, useLessonTalk } from '../meetAttendance/TalkPanel';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   almatyDayKey, dayHeading, formatDurationWords, splitLessonTitle, timeRange, type Locale,
@@ -73,6 +74,7 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
   const [failedToLoad, setFailedToLoad] = useState(false);
   const [participants, setParticipants] = useState<ParticipantsView | null>(null);
   const seesParticipants = RECORD_ROLES.has(user?.role ?? '');
+  const playerBox = useRef<HTMLDivElement>(null);
 
   const eventId = meta?.eventId;
   useEffect(() => {
@@ -100,6 +102,15 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
       cancelled = true;
     };
   }, [open, eventId, seesParticipants]);
+
+  // Who spoke, beside the video, for the same staff; its transcript lines play from where they were said.
+  const { talk } = useLessonTalk(eventId, open && seesParticipants);
+  const seek = (seconds: number) => {
+    const video = playerBox.current?.querySelector('video');
+    if (!video) return;
+    video.currentTime = Math.max(0, seconds);
+    video.play().catch(() => { /* blocked by the browser: the controls remain */ });
+  };
 
   if (!meta) return null;
 
@@ -134,7 +145,7 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
           </div>
         </div>
 
-        <div className="relative w-full bg-black">
+        <div ref={playerBox} className="relative w-full bg-black">
           {recording?.status === 'ready' && recording.url ? (
             <HlsVideoPlayer
               key={recording.url}
@@ -206,9 +217,13 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
             {t.copy}
           </button>
         </div>
-        {participants && (
-          <div className="px-5 pb-5 sm:px-6">
-            <ParticipantsPanel view={participants} locale={locale} />
+        {(participants || talk) && (
+          <div className="flex flex-col gap-3 px-5 pb-5 sm:px-6">
+            {participants && <ParticipantsPanel view={participants} locale={locale} />}
+            {talk && (
+              <TalkCard talk={talk} locale={locale} showErrors={user?.role === 'admin'}
+                onSeek={recording?.status === 'ready' ? seek : undefined} />
+            )}
           </div>
         )}
         </div>

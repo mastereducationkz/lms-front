@@ -6,7 +6,10 @@ import logoIco from '../assets/masteredlogo-ico.ico';
 import { APP_TIMEZONE } from '../lib/datetime';
 import { formatClock } from '../lib/recordings';
 import { ParticipantsPanel } from '../components/meetAttendance/ParticipantsPanel';
+import { TalkCard } from '../components/meetAttendance/TalkPanel';
 import type { ParticipantsView } from '../lib/meetAttendance';
+import { publicTalkRecord } from '../lib/meetTalk';
+import type { PublicTalk } from '../services/api/meetTalk';
 
 interface WatchPayload {
   title: string;
@@ -19,7 +22,7 @@ interface WatchPayload {
   poster_url: string | null;
   expires_at: string;
   /** The lesson's class — who was in the room, and everyone expected — as the server allows it. */
-  participants?: ParticipantsView | null;
+  participants?: (ParticipantsView & { talk?: PublicTalk | null }) | null;
 }
 
 type State =
@@ -133,6 +136,15 @@ export default function WatchRecordingPage() {
 
         {state.kind === 'ready' && state.data.participants && (
           <ParticipantsPanel view={state.data.participants} locale="ru" className="mt-4 shadow-sm" />
+        )}
+        {/* Who spoke and for how long — no transcript here: students' words stay inside the LMS. */}
+        {state.kind === 'ready' && state.data.participants?.talk && state.data.start && state.data.end && (
+          <TalkCard
+            talk={publicTalkRecord(state.data.participants.talk, { title: state.data.title, start: state.data.start, end: state.data.end })}
+            variant="public"
+            locale="ru"
+            className="mt-4 shadow-sm"
+          />
         )}
       </div>
     </div>

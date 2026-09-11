@@ -183,7 +183,8 @@ export type IssueKey =
   | 'marks_disagree'
   | 'students_late'
   | 'left_early'
-  | 'to_confirm';
+  | 'to_confirm'
+  | 'silent_students';
 
 /** The issues a head can filter by, in the order they matter for a report. */
 export const ISSUES: { key: IssueKey; label: string; hint: string }[] = [
@@ -194,9 +195,11 @@ export const ISSUES: { key: IssueKey; label: string; hint: string }[] = [
   { key: 'students_late', label: 'Students late', hint: 'A student joined more than 5 min after the start' },
   { key: 'left_early', label: 'Students left early', hint: 'A student left more than 10 min before the end' },
   { key: 'to_confirm', label: 'To confirm', hint: 'Google accounts nobody has named yet' },
+  // A filter for reports only: a quiet test lesson is normal, so it never asks for attention.
+  { key: 'silent_students', label: 'Silent students', hint: 'A student was in the room and never spoke (talk time)' },
 ];
 
-type Reportable = Pick<MeetLessonSummary, 'flags' | 'unknown' | 'mismatches'>;
+type Reportable = Pick<MeetLessonSummary, 'flags' | 'unknown' | 'mismatches'> & Partial<Pick<MeetLessonSummary, 'talk'>>;
 
 const hasCode = (item: Reportable, ...codes: MeetFlagCode[]) => item.flags.some((f) => codes.includes(f.code));
 
@@ -209,6 +212,7 @@ export function hasIssue(item: Reportable, key: IssueKey): boolean {
     case 'students_late': return hasCode(item, 'late');
     case 'left_early': return hasCode(item, 'left_early');
     case 'to_confirm': return item.unknown > 0;
+    case 'silent_students': return (item.talk?.silent.length ?? 0) > 0;
     default: return false;
   }
 }
@@ -249,6 +253,9 @@ export interface TeacherTally {
   teacher_not_joined: number;
   marks_disagree: number;
   to_confirm: number;
+  /** Lessons with talk time, and the teacher's average share of the speech in them. */
+  talk_lessons: number;
+  avg_teacher_share: number | null;
 }
 
 /** One row per teacher, the ones with most to talk about first. */
@@ -258,7 +265,7 @@ export function tallyByTeacher(items: MeetLessonSummary[]): TeacherTally[] {
     if (!item.teacher) continue;
     const row = rows.get(item.teacher.id) ?? {
       teacherId: item.teacher.id, name: item.teacher.name, lessons: 0, teacher_late: 0, late_minutes: 0,
-      ended_early: 0, teacher_not_joined: 0, marks_disagree: 0, to_confirm: 0,
+      ended_early: 0, teacher_not_joined: 0, marks_disagree: 0, to_confirm: 0, talk_lessons: 0, avg_teacher_share: null,
     };
     row.lessons += 1;
     const late = item.flags.find((f) => f.code === 'teacher_late');
@@ -267,6 +274,12 @@ export function tallyByTeacher(items: MeetLessonSummary[]): TeacherTally[] {
     if (hasIssue(item, 'teacher_not_joined')) row.teacher_not_joined += 1;
     if (hasIssue(item, 'marks_disagree')) row.marks_disagree += 1;
     if (hasIssue(item, 'to_confirm')) row.to_confirm += 1;
+    const share = item.talk?.teacher_share;
+    if (share != null) {
+      // A running average, so the row never has to carry a separate sum.
+      row.avg_teacher_share = ((row.avg_teacher_share ?? 0) * row.talk_lessons + share) / (row.talk_lessons + 1);
+      row.talk_lessons += 1;
+    }
     rows.set(item.teacher.id, row);
   }
   const weight = (r: TeacherTally) => r.teacher_late + r.ended_early + r.teacher_not_joined + r.marks_disagree;
@@ -295,7 +308,7 @@ const who = (item: MeetLessonSummary, ...codes: MeetFlagCode[]) =>
 export function reportCsv(items: MeetLessonSummary[]): string {
   const header = ['Date', 'Start', 'End', 'Lesson', 'Groups', 'Teacher', 'Teacher joined', 'Teacher left',
     'Teacher issues', 'Students joined', 'Students', 'Marks disagree', 'Students late', 'Students left early',
-    'Accounts to confirm'];
+    'Accounts to confirm', 'Teacher talk share', 'Students who didn’t speak'];
   const rows = items.map((item) => [
     almatyDate(item.start), clock(item.start), clock(item.end), item.title,
     item.groups.map((g) => g.name).join(', '), item.teacher?.name ?? '',
@@ -304,6 +317,8 @@ export function reportCsv(items: MeetLessonSummary[]): string {
     item.joined, item.students,
     who(item, 'marked_present_not_joined', 'marked_absent_was_in_room'), who(item, 'late'), who(item, 'left_early'),
     item.unknown,
+    item.talk?.teacher_share != null ? `${Math.round(item.talk.teacher_share * 100)}%` : '',
+    item.talk ? item.talk.silent.length : '',
   ]);
   return '﻿' + [header, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n');
 }
