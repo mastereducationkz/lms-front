@@ -38,7 +38,9 @@ const fmtBand = (v: number | null | undefined): string =>
 const fileHref = (fileUrl: string): string =>
   fileUrl.startsWith('http') ? fileUrl : `${API_BASE_URL}${fileUrl}`;
 
-const PDF_SECTIONS: { key: string; label: string }[] = [
+// `optIn`: left out of a PDF unless ticked — talk time, since the PDF is sometimes sent to
+// parents (owner, 2026-09-11). Shown only when the report has that section at all.
+const PDF_SECTIONS: { key: string; label: string; optIn?: boolean }[] = [
   { key: 'homework', label: 'Домашние задания' },
   { key: 'weekly', label: 'Еженедельные SAT/NUET тесты' },
   { key: 'ielts', label: 'Еженедельные IELTS тесты' },
@@ -46,8 +48,16 @@ const PDF_SECTIONS: { key: string; label: string }[] = [
   { key: 'quizzes', label: 'Квизы по курсам' },
   { key: 'courses', label: 'Прогресс в курсах' },
   { key: 'attendance', label: 'Посещаемость' },
+  { key: 'talk', label: 'Речь на уроках (сколько говорил)', optIn: true },
   { key: 'activity', label: 'Дополнительная активность' },
 ];
+
+/** "5 мин", "< 1 мин" for a few seconds, "—" for none. */
+const fmtTalk = (seconds: number | null | undefined): string => {
+  if (!seconds) return '—';
+  const minutes = Math.round(seconds / 60);
+  return minutes ? `${minutes} мин` : '< 1 мин';
+};
 
 const HW_STATUS: Record<ReportHomeworkItem['status'], { label: string; cls: string }> = {
   graded: { label: 'Проверено', cls: 'bg-green-50 text-green-700 border-green-200' },
@@ -92,7 +102,7 @@ export default function StudentReportPage() {
   const [downloading, setDownloading] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [exportSections, setExportSections] = useState<Record<string, boolean>>(
-    () => Object.fromEntries(PDF_SECTIONS.map(s => [s.key, true])),
+    () => Object.fromEntries(PDF_SECTIONS.map(s => [s.key, !s.optIn])),
   );
   const [exportFeedback, setExportFeedback] = useState(true);
   const [openHw, setOpenHw] = useState<number | null>(null);
@@ -116,12 +126,13 @@ export default function StudentReportPage() {
 
   const handleDownloadPdf = async () => {
     if (!report) return;
-    const chosen = PDF_SECTIONS.filter(s => exportSections[s.key]).map(s => s.key);
+    const chosen = pdfSections.filter(s => exportSections[s.key]).map(s => s.key);
     if (chosen.length === 0) return;
     setDownloading(true);
     try {
       await downloadStudentReportPdf(report.student.id, report.student.name, {
-        sections: chosen.length === PDF_SECTIONS.length ? undefined : chosen,
+        // Always named: "everything" on the server leaves the opt-in sections out.
+        sections: chosen,
         includeFeedback: exportFeedback,
       });
       setExportOpen(false);
@@ -131,6 +142,8 @@ export default function StudentReportPage() {
       setDownloading(false);
     }
   };
+
+  const pdfSections = PDF_SECTIONS.filter(s => s.key !== 'talk' || report?.talk);
 
   const openSubmission = async (submissionId: number) => {
     setViewer({ loading: true, data: null });
@@ -576,6 +589,54 @@ export default function StudentReportPage() {
         {attendance.marked_total === 0 && <p className="text-sm text-gray-400">Данных о посещаемости нет.</p>}
       </Section>
 
+      {/* Talk time in Meet lessons */}
+      {report.talk && (
+        <Section
+          title="Речь на уроках"
+          subtitle={`По записи Meet: уроков с данными ${report.talk.totals.lessons} · говорил(а) на ${report.talk.totals.lessons_spoke} · всего ${fmtTalk(report.talk.totals.total_seconds)} · в среднем за урок ${fmtTalk(report.talk.totals.avg_seconds)}${report.talk.totals.questions !== null ? ` · вопросов задал(а) ${report.talk.totals.questions}` : ''}`}
+        >
+          {report.talk.lessons.length === 0 ? (
+            <p className="text-sm text-gray-400">Пока нет уроков с данными о речи.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
+                    <th className="py-2 pr-3 font-medium">Дата</th>
+                    <th className="py-2 pr-3 font-medium">Урок</th>
+                    <th className="py-2 pr-3 font-medium">Говорил(а)</th>
+                    <th className="py-2 pr-3 font-medium">Доля среди учеников</th>
+                    <th className="py-2 pr-3 font-medium">Вопросы</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.talk.lessons.map(lesson => (
+                    <tr key={lesson.event_id} className="border-b border-gray-50">
+                      <td className="py-2 pr-3 whitespace-nowrap">{fmtDate(lesson.start)}</td>
+                      <td className="py-2 pr-3 text-gray-900">{lesson.group_name ?? lesson.title}</td>
+                      <td className="py-2 pr-3 tabular-nums">
+                        {lesson.in_room ? fmtTalk(lesson.seconds) : <span className="text-gray-400">не был(а)</span>}
+                      </td>
+                      <td className="py-2 pr-3">
+                        {lesson.in_room ? (
+                          <div className="flex items-center gap-2">
+                            <div className="h-1.5 w-20 overflow-hidden rounded-full bg-gray-100" aria-hidden>
+                              <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.round(lesson.share_of_students * 100)}%` }} />
+                            </div>
+                            <span className="tabular-nums text-xs text-gray-600">{fmtPct(lesson.share_of_students * 100)}</span>
+                          </div>
+                        ) : '—'}
+                      </td>
+                      <td className="py-2 pr-3 tabular-nums">{lesson.questions ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Section>
+      )}
+
       {/* Activity */}
       <Section title="Дополнительная активность">
         <div className="text-sm text-gray-600 space-y-1">
@@ -599,7 +660,7 @@ export default function StudentReportPage() {
               <p className="text-xs text-gray-400 mt-0.5">Выберите разделы, которые войдут в документ.</p>
             </div>
             <div className="space-y-2">
-              {PDF_SECTIONS.map(section => (
+              {pdfSections.map(section => (
                 <label key={section.key} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
                   <input
                     type="checkbox"
@@ -629,7 +690,7 @@ export default function StudentReportPage() {
               </Button>
               <Button
                 size="sm"
-                disabled={downloading || PDF_SECTIONS.every(s => !exportSections[s.key])}
+                disabled={downloading || pdfSections.every(s => !exportSections[s.key])}
                 onClick={handleDownloadPdf}
               >
                 {downloading ? 'Формируем…' : 'Скачать PDF'}

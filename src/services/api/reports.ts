@@ -156,7 +156,27 @@ export interface StudentReport {
     nuet: WeeklySatTest[];
     errors: string[];
   };
+  /** How much the student speaks in Meet lessons; null while talk time is switched off. */
+  talk?: ReportTalk | null;
   generated_at: string;
+}
+
+export interface ReportTalkLesson {
+  event_id: number;
+  start: string;
+  title: string;
+  group_name: string | null;
+  seconds: number;
+  /** Of all the students' speech in that lesson, 0–1. */
+  share_of_students: number;
+  in_room: boolean;
+  /** Needs the lesson's transcript; null without one. */
+  questions: number | null;
+}
+
+export interface ReportTalk {
+  lessons: ReportTalkLesson[];
+  totals: { lessons: number; lessons_spoke: number; total_seconds: number; avg_seconds: number; questions: number | null };
 }
 
 export interface SubmissionTask {
