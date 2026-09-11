@@ -4,6 +4,10 @@ import { toast } from 'sonner';
 import HlsVideoPlayer from '../HlsVideoPlayer';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../ui/dialog';
 import { getLessonRecording, type LessonRecording } from '../../services/api/recordings';
+import { getMeetRecord } from '../../services/api/meetAttendance';
+import { toParticipantsView, type ParticipantsView } from '../../lib/meetAttendance';
+import { ParticipantsPanel } from '../meetAttendance/ParticipantsPanel';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   almatyDayKey, dayHeading, formatDurationWords, splitLessonTitle, timeRange, type Locale,
 } from '../../lib/recordings';
@@ -59,10 +63,16 @@ const TEXT = {
  * minted for this viewer that expires, so nothing upstream may hold on to one. The video
  * starts on its own — the viewer opened this dialog in order to watch.
  */
+/** Who may see the class beside a recording — the Meet record's readers; students never. */
+const RECORD_ROLES = new Set(['admin', 'head_curator', 'head_teacher', 'teacher', 'curator']);
+
 export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale = 'en' }: Props) {
   const t = TEXT[locale];
+  const { user } = useAuth();
   const [recording, setRecording] = useState<LessonRecording | null>(null);
   const [failedToLoad, setFailedToLoad] = useState(false);
+  const [participants, setParticipants] = useState<ParticipantsView | null>(null);
+  const seesParticipants = RECORD_ROLES.has(user?.role ?? '');
 
   const eventId = meta?.eventId;
   useEffect(() => {
@@ -77,6 +87,19 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
       cancelled = true;
     };
   }, [open, eventId]);
+
+  // The class beside the video, for staff. A 404 (not this viewer's lesson) shows nothing.
+  useEffect(() => {
+    setParticipants(null);
+    if (!open || !eventId || !seesParticipants) return;
+    let cancelled = false;
+    getMeetRecord(eventId)
+      .then((record) => !cancelled && setParticipants(record ? toParticipantsView(record) : null))
+      .catch(() => { /* the video still plays; the list is a companion, not a requirement */ });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, eventId, seesParticipants]);
 
   if (!meta) return null;
 
@@ -138,6 +161,7 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
           )}
         </div>
 
+        <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <DialogDescription asChild>
             <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] text-muted-foreground">
@@ -181,6 +205,12 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
             <Link2 className="h-3.5 w-3.5" aria-hidden />
             {t.copy}
           </button>
+        </div>
+        {participants && (
+          <div className="px-5 pb-5 sm:px-6">
+            <ParticipantsPanel view={participants} locale={locale} />
+          </div>
+        )}
         </div>
       </DialogContent>
     </Dialog>

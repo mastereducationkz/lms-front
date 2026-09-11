@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   barFor,
   buildAxis,
+  classOrder,
   clock,
+  flagTextRu,
   flagText,
   hasIssue,
   isMismatch,
@@ -13,8 +15,9 @@ import {
   position,
   reportCsv,
   tallyByTeacher,
+  toParticipantsView,
 } from './meetAttendance';
-import type { MeetLessonSummary, MeetPresence } from '../services/api/meetAttendance';
+import type { MeetLessonSummary, MeetPresence, MeetRecord } from '../services/api/meetAttendance';
 
 // Lesson 19:00–20:00 Almaty = 14:00–15:00 UTC.
 const lesson = { start: '2026-09-10T14:00:00Z', end: '2026-09-10T15:00:00Z' };
@@ -166,5 +169,32 @@ describe('reporting', () => {
     expect(row1).toContain('"10/09/2026","19:00","20:00"');
     expect(row1).toContain('"Started 4 min late; Ended 8 min early"');
     expect(csv).toContain('"Шыңғыс, ""Шока"" (Marked present, never joined)"');
+  });
+});
+
+describe('the class beside a recording', () => {
+  const person = (name: string, first_join: string | null, mark: 'present' | 'absent' | null = 'present') => ({
+    user_id: 1, name, role: 'student', mark, accounts: [], flags: [], sessions: [], joins: first_join ? 1 : 0,
+    first_join, last_leave: first_join ? '2026-09-10T15:00:00Z' : null, minutes_in_lesson: first_join ? 60 : 0,
+  });
+
+  it('without a Meet record it is still the whole class, with marks', () => {
+    const view = toParticipantsView({
+      event_id: 1, title: 'L', start: '2026-09-10T14:00:00Z', end: '2026-09-10T15:00:00Z', state: 'no_room',
+      roster: [{ user_id: 1, name: 'Аяулым', mark: 'present' }, { user_id: 2, name: 'Елдана', mark: null }],
+    } as MeetRecord);
+    expect(view.students.map((s) => [s.name, s.mark, s.first_join])).toEqual([['Аяулым', 'present', null], ['Елдана', null, null]]);
+    expect(view.teacher).toBeNull();
+  });
+
+  it('lists who was in the room first, then who was not', () => {
+    const rows = classOrder([person('Шыңғыс', null), person('Елдана', '2026-09-10T14:00:00Z'), person('Аяулым', '2026-09-10T14:07:00Z'), person('Айым', null, 'absent')]);
+    expect(rows.map((r) => r.name)).toEqual(['Аяулым', 'Елдана', 'Айым', 'Шыңғыс']);
+  });
+
+  it('speaks Russian to accountants', () => {
+    expect(flagTextRu({ code: 'late', minutes: 7 })).toBe('Опоздал на 7 мин');
+    expect(flagTextRu({ code: 'marked_present_not_joined' })).toBe('Отмечен, но не заходил');
+    expect(flagTextRu({ code: 'teacher_late', minutes: 4 })).toBe('Начал на 4 мин позже');
   });
 });

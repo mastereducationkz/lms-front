@@ -102,6 +102,8 @@ export interface MeetRecord {
   flags?: MeetLessonFlag[];
   mismatches?: number;
   candidates?: MeetCandidate[];
+  /** The whole class with marks — present in every state, also without a Meet record. */
+  roster?: { user_id: number; name: string; mark: MeetMark }[];
 }
 
 const NO_CACHE = { cache: false } as never;

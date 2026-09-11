@@ -5,6 +5,7 @@ import type {
   MeetLessonFlag,
   MeetLessonSummary,
   MeetMark,
+  MeetPerson,
   MeetPresence,
   MeetRecord,
   MeetSpan,
@@ -250,4 +251,96 @@ export function reportCsv(items: MeetLessonSummary[]): string {
     item.unknown,
   ]);
   return '﻿' + [header, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n');
+}
+
+// ── the class beside a recording (watch pages) ───────────────────────────────────────────
+
+export interface ParticipantRow {
+  name: string;
+  mark: MeetMark;
+  first_join: string | null;
+  last_leave: string | null;
+  minutes_in_lesson: number;
+  joins: number;
+  flags: MeetFlag[];
+  role?: string | null;
+}
+
+export interface UnconfirmedRow {
+  display_name: string | null;
+  kind: 'signed_in' | 'guest' | 'phone';
+  first_join: string | null;
+  last_leave: string | null;
+  minutes_in_lesson: number;
+  joins: number;
+}
+
+/**
+ * Who was there, for a page beside a recording: the lesson's whole class with marks, and — when
+ * the lesson has a Meet record — each one's time in the room. The watch-link page gets exactly
+ * this from the server (`public_participants`); the Recordings player builds it from the record.
+ */
+export interface ParticipantsView {
+  state: MeetRecord['state'];
+  teacher: ParticipantRow | null;
+  students: ParticipantRow[];
+  unknown: UnconfirmedRow[];
+  others: ParticipantRow[];
+  held_back: boolean;
+  partial: boolean;
+}
+
+export function toParticipantsView(record: MeetRecord): ParticipantsView {
+  const row = (p: MeetPerson): ParticipantRow => ({
+    name: p.name, mark: p.mark, first_join: p.first_join, last_leave: p.last_leave,
+    minutes_in_lesson: p.minutes_in_lesson, joins: p.joins, flags: p.flags, role: p.role,
+  });
+  if (record.state !== 'ready') {
+    return {
+      state: record.state, teacher: null, unknown: [], others: [], held_back: false, partial: false,
+      students: (record.roster ?? []).map((r) => ({
+        name: r.name, mark: r.mark, first_join: null, last_leave: null, minutes_in_lesson: 0, joins: 0, flags: [],
+      })),
+    };
+  }
+  return {
+    state: 'ready',
+    teacher: record.teacher ? row(record.teacher) : null,
+    students: (record.students ?? []).map(row),
+    unknown: (record.unknown ?? []).map((u) => ({
+      display_name: u.display_name, kind: u.kind, first_join: u.first_join, last_leave: u.last_leave,
+      minutes_in_lesson: u.minutes_in_lesson, joins: u.joins,
+    })),
+    others: (record.others ?? []).map(row),
+    held_back: Boolean(record.held_back),
+    partial: Boolean(record.partial),
+  };
+}
+
+/** In the room first, then everyone who was not — each part alphabetical. */
+export function classOrder(rows: ParticipantRow[]): ParticipantRow[] {
+  const byName = (a: ParticipantRow, b: ParticipantRow) => a.name.localeCompare(b.name, 'ru', { sensitivity: 'base' });
+  return [...rows.filter((r) => r.first_join).sort(byName), ...rows.filter((r) => !r.first_join).sort(byName)];
+}
+
+export const MARK_LABEL_RU: Record<Exclude<MeetMark, null>, string> = {
+  present: 'Был',
+  late: 'Опоздал',
+  absent: 'Не был',
+  removed: 'Снят с урока',
+};
+
+/** A flag in Russian, for pages read by accountants and curators. */
+export function flagTextRu(flag: MeetFlag): string {
+  const m = flag.minutes ?? 0;
+  switch (flag.code) {
+    case 'late': return `Опоздал на ${m} мин`;
+    case 'left_early': return `Ушёл на ${m} мин раньше`;
+    case 'marked_present_not_joined': return 'Отмечен, но не заходил';
+    case 'marked_absent_was_in_room': return `Отмечен «не был», но был в комнате ${m} мин`;
+    case 'teacher_late': return `Начал на ${m} мин позже`;
+    case 'ended_early': return `Закончил на ${m} мин раньше`;
+    case 'teacher_not_joined': return 'Преподаватель не заходил';
+    default: return flag.code;
+  }
 }

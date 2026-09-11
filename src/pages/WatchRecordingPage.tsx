@@ -5,6 +5,8 @@ import HlsVideoPlayer from '../components/HlsVideoPlayer';
 import logoIco from '../assets/masteredlogo-ico.ico';
 import { APP_TIMEZONE } from '../lib/datetime';
 import { formatClock } from '../lib/recordings';
+import { ParticipantsPanel } from '../components/meetAttendance/ParticipantsPanel';
+import type { ParticipantsView } from '../lib/meetAttendance';
 
 interface WatchPayload {
   title: string;
@@ -16,6 +18,8 @@ interface WatchPayload {
   url: string;
   poster_url: string | null;
   expires_at: string;
+  /** The lesson's class — who was in the room, and everyone expected — as the server allows it. */
+  participants?: ParticipantsView | null;
 }
 
 type State =
@@ -125,6 +129,10 @@ export default function WatchRecordingPage() {
               </p>
             </div>
           </article>
+        )}
+
+        {state.kind === 'ready' && state.data.participants && (
+          <ParticipantsPanel view={state.data.participants} locale="ru" className="mt-4 shadow-sm" />
         )}
       </div>
     </div>
