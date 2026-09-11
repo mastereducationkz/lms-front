@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Clock, Loader2, Users, Video } from 'lucide-react';
 import HlsVideoPlayer from '../components/HlsVideoPlayer';
@@ -6,7 +6,9 @@ import logoIco from '../assets/masteredlogo-ico.ico';
 import { APP_TIMEZONE } from '../lib/datetime';
 import { formatClock } from '../lib/recordings';
 import { ParticipantsPanel } from '../components/meetAttendance/ParticipantsPanel';
-import { TalkCard } from '../components/meetAttendance/TalkPanel';
+import { TalkSidePanel } from '../components/meetAttendance/TalkSidePanel';
+import { useVideoClock } from '../components/recordings/useVideoClock';
+import { cn } from '../lib/utils';
 import type { ParticipantsView } from '../lib/meetAttendance';
 import { publicTalkRecord } from '../lib/meetTalk';
 import type { PublicTalk } from '../services/api/meetTalk';
@@ -44,10 +46,21 @@ function almaty(iso: string | null, options: Intl.DateTimeFormatOptions): string
  * The key in the URL is the permission: it opens this lesson only and lasts three hours (the
  * CRM makes a new one on every click). Plain `fetch`, not the app's API client: nobody here is
  * signed in, and the client's session handling has nothing to do for a visitor like this.
+ *
+ * Laid out like the LMS player (owner, 2026-09-11): on a wide screen the video, its details and the
+ * class on the left, and who spoke when on the right, following the video — never the words.
  */
 export default function WatchRecordingPage() {
   const { token = '' } = useParams();
   const [state, setState] = useState<State>({ kind: 'loading' });
+  const playerBox = useRef<HTMLDivElement>(null);
+  const data = state.kind === 'ready' ? state.data : null;
+  const talk = useMemo(() => {
+    const raw = data?.participants?.talk;
+    if (!raw || raw.state !== 'ready' || !data?.start || !data.end) return null;
+    return publicTalkRecord(raw, { title: data.title, start: data.start, end: data.end });
+  }, [data]);
+  const { time, seek } = useVideoClock(playerBox, Boolean(talk));
 
   useEffect(() => {
     let cancelled = false;
@@ -67,9 +80,49 @@ export default function WatchRecordingPage() {
     document.title = state.kind === 'ready' ? `Запись урока — ${state.data.title}` : 'Запись урока | Master Education';
   }, [state]);
 
+  const video = data && (
+    <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <div ref={playerBox}>
+        <HlsVideoPlayer
+          url={data.url}
+          poster={data.poster_url}
+          title={data.title}
+          className="aspect-video w-full bg-black !rounded-none"
+        />
+      </div>
+      <div className="space-y-2 px-5 py-4 sm:px-6">
+        <h1 className="text-lg font-bold leading-snug text-foreground sm:text-xl">{data.title}</h1>
+        <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-muted-foreground">
+          {data.start && (
+            <span className="inline-flex items-center gap-1.5">
+              <Clock className="h-4 w-4" aria-hidden />
+              {almaty(data.start, { weekday: 'long', day: 'numeric', month: 'long' })},{' '}
+              {almaty(data.start, { hour: '2-digit', minute: '2-digit' })}–{almaty(data.end, { hour: '2-digit', minute: '2-digit' })} (Алматы)
+            </span>
+          )}
+          {data.teacher && <span>Преподаватель: {data.teacher}</span>}
+          {data.groups.length > 0 && (
+            <span className="inline-flex items-center gap-1.5">
+              <Users className="h-4 w-4" aria-hidden />{data.groups.join(', ')}
+            </span>
+          )}
+          {formatClock(data.duration_seconds) && (
+            <span className="inline-flex items-center gap-1.5">
+              <Video className="h-4 w-4" aria-hidden />{formatClock(data.duration_seconds)}
+            </span>
+          )}
+        </div>
+        <p className="pt-1 text-xs text-muted-foreground">
+          Ссылка действует до {almaty(data.expires_at, { hour: '2-digit', minute: '2-digit' })} (Алматы).
+          Чтобы посмотреть позже, откройте запись заново из CRM.
+        </p>
+      </div>
+    </article>
+  );
+
   return (
     <div className="min-h-screen bg-muted/30 px-4 py-6 sm:py-10">
-      <div className="mx-auto w-full max-w-4xl">
+      <div className={cn('mx-auto w-full', talk ? 'max-w-[1400px]' : 'max-w-4xl')}>
         <div className="mb-5 flex items-center gap-2.5">
           <img src={logoIco} alt="" className="h-7 w-7 rounded" />
           <span className="text-sm font-semibold text-foreground">Master Education</span>
@@ -96,55 +149,31 @@ export default function WatchRecordingPage() {
           <Notice title="Не удалось открыть запись">Проверьте соединение и обновите страницу.</Notice>
         )}
 
-        {state.kind === 'ready' && (
-          <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-            <HlsVideoPlayer
-              url={state.data.url}
-              poster={state.data.poster_url}
-              title={state.data.title}
-              className="aspect-video w-full bg-black"
-            />
-            <div className="space-y-2 px-5 py-4 sm:px-6">
-              <h1 className="text-lg font-bold leading-snug text-foreground sm:text-xl">{state.data.title}</h1>
-              <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-muted-foreground">
-                {state.data.start && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Clock className="h-4 w-4" aria-hidden />
-                    {almaty(state.data.start, { weekday: 'long', day: 'numeric', month: 'long' })},{' '}
-                    {almaty(state.data.start, { hour: '2-digit', minute: '2-digit' })}–{almaty(state.data.end, { hour: '2-digit', minute: '2-digit' })} (Алматы)
-                  </span>
-                )}
-                {state.data.teacher && <span>Преподаватель: {state.data.teacher}</span>}
-                {state.data.groups.length > 0 && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Users className="h-4 w-4" aria-hidden />{state.data.groups.join(', ')}
-                  </span>
-                )}
-                {formatClock(state.data.duration_seconds) && (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Video className="h-4 w-4" aria-hidden />{formatClock(state.data.duration_seconds)}
-                  </span>
-                )}
+        {data && (
+          /* Wide: video and class on the left, who spoke on the right, following the video. Narrow:
+             video, then who spoke, then the class. The DOM keeps that narrow order. */
+          <div className={cn('grid items-start gap-4', talk && 'lg:grid-cols-[minmax(0,1fr)_26rem] xl:grid-cols-[minmax(0,1fr)_30rem]')}>
+            <div className="min-w-0 lg:col-start-1 lg:row-start-1">{video}</div>
+            {/* Who spoke and for how long — no transcript here: students' words stay inside the LMS. */}
+            {talk && (
+              <aside className="min-w-0 lg:sticky lg:top-4 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:h-[calc(100vh-2rem)]">
+                <TalkSidePanel
+                  talk={talk}
+                  locale="ru"
+                  variant="public"
+                  playhead={time}
+                  onSeek={seek}
+                  layout="side"
+                  className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm lg:h-full"
+                />
+              </aside>
+            )}
+            {data.participants && (
+              <div className="min-w-0 lg:col-start-1 lg:row-start-2">
+                <ParticipantsPanel view={data.participants} locale="ru" defaultOpen className="shadow-sm" />
               </div>
-              <p className="pt-1 text-xs text-muted-foreground">
-                Ссылка действует до {almaty(state.data.expires_at, { hour: '2-digit', minute: '2-digit' })} (Алматы).
-                Чтобы посмотреть позже, откройте запись заново из CRM.
-              </p>
-            </div>
-          </article>
-        )}
-
-        {state.kind === 'ready' && state.data.participants && (
-          <ParticipantsPanel view={state.data.participants} locale="ru" className="mt-4 shadow-sm" />
-        )}
-        {/* Who spoke and for how long — no transcript here: students' words stay inside the LMS. */}
-        {state.kind === 'ready' && state.data.participants?.talk && state.data.start && state.data.end && (
-          <TalkCard
-            talk={publicTalkRecord(state.data.participants.talk, { title: state.data.title, start: state.data.start, end: state.data.end })}
-            variant="public"
-            locale="ru"
-            className="mt-4 shadow-sm"
-          />
+            )}
+          </div>
         )}
       </div>
     </div>

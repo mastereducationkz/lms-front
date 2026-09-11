@@ -133,7 +133,8 @@ export function SplitBar({ teacher, students, className }: { teacher: number | n
   );
 }
 
-export function Headline({ talk, t, locale }: { talk: TalkRecord; t: Text; locale: TalkLocale }) {
+/** `columns`: 4 across a wide panel; 2 in a narrow column, where four would squeeze the labels. */
+export function Headline({ talk, t, locale, columns = 4 }: { talk: TalkRecord; t: Text; locale: TalkLocale; columns?: 2 | 4 }) {
   return (
     <div className="flex flex-col gap-3">
       <div>
@@ -149,7 +150,7 @@ export function Headline({ talk, t, locale }: { talk: TalkRecord; t: Text; local
         </div>
         <SplitBar teacher={talk.teacher_share} students={talk.students_share} />
       </div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className={cn('grid grid-cols-2 gap-3', columns === 4 && 'sm:grid-cols-4')}>
         <Stat label={t.speech} value={formatDuration(talk.speech_seconds, locale)} />
         <Stat label={t.silence} value={formatDuration(talk.silence_seconds, locale)} />
         {talk.longest_teacher_stretch_seconds != null && (
@@ -259,13 +260,13 @@ export function Lanes({ talk }: { talk: TalkRecord }) {
   );
 }
 
-export function Insights({ talk, t }: { talk: TalkRecord; t: Text }) {
+export function Insights({ talk, t, columns = 4 }: { talk: TalkRecord; t: Text; columns?: 2 | 4 }) {
   const i = talk.insights;
   if (!i) return null;
   const answeredShare = i.teacher_questions ? ` (${percent(i.answered / i.teacher_questions)})` : '';
   return (
     <Section title={t.interaction}>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className={cn('grid grid-cols-2 gap-3', columns === 4 && 'sm:grid-cols-4')}>
         <Stat label={t.teacherQuestions} value={String(i.teacher_questions)} />
         <Stat label={t.answered} value={`${i.answered}${answeredShare}`} />
         <Stat label={t.medianWait} value={i.median_wait_seconds == null ? '—' : `${i.median_wait_seconds.toLocaleString('en-GB', { maximumFractionDigits: 1 })} s`} />

@@ -189,10 +189,11 @@ export interface TalkGrid {
 /**
  * Five-minute blocks (ten for a lesson over 90 minutes) across the lesson, stretched to whoever
  * spoke before or after it. One row per person who spoke — and the teacher even if they did not.
+ * `binSeconds` asks for other blocks: the recording's side panel reads the lesson minute by minute.
  */
-export function talkGrid(talk: Pick<TalkRecord, 'start' | 'lesson_seconds' | 'people'>): TalkGrid {
+export function talkGrid(talk: Pick<TalkRecord, 'start' | 'lesson_seconds' | 'people'>, binSeconds?: number): TalkGrid {
   const lessonSeconds = talk.lesson_seconds ?? 3600;
-  const bin = lessonSeconds > 90 * 60 ? 600 : 300;
+  const bin = binSeconds && binSeconds > 0 ? binSeconds : lessonSeconds > 90 * 60 ? 600 : 300;
   const people = (talk.people ?? []).filter((p) => p.seconds > 0 || p.role === 'teacher');
   let from = 0;
   let to = lessonSeconds;
@@ -230,6 +231,26 @@ export function blockShade(seconds: number, binSeconds = 300): number {
   if (seconds <= 0) return 0;
   const scaled = seconds * (300 / binSeconds);
   return 1 + SHADES.filter((limit) => scaled >= limit).length;
+}
+
+/** How dark one minute of a person's strip is: 0 (nothing), 1 (a few words), 2 (a sentence or two), 3 (most of it). */
+export function minuteShade(seconds: number, binSeconds = 60): number {
+  if (seconds <= 0) return 0;
+  const scaled = seconds * (60 / binSeconds);
+  return scaled < 10 ? 1 : scaled < 30 ? 2 : 3;
+}
+
+/** Clock labels every quarter hour of the Almaty clock between two lesson seconds, placed in lesson seconds. */
+export function clockTicks(start: string, from: number, to: number, stepSeconds = 900): { at: number; label: string }[] {
+  const base = new Date(start).getTime();
+  if (!Number.isFinite(base) || !(to > from)) return [];
+  const step = stepSeconds * 1000;
+  // Almaty is a whole number of hours from UTC, so its quarter hours are UTC's.
+  const ticks: { at: number; label: string }[] = [];
+  for (let abs = Math.ceil((base + from * 1000) / step) * step; abs <= base + to * 1000; abs += step) {
+    ticks.push({ at: (abs - base) / 1000, label: clock(new Date(abs).toISOString()) });
+  }
+  return ticks;
 }
 
 /** A block's speech as "0:45" / "3:10" — short enough to sit inside the block. */
@@ -301,7 +322,8 @@ export function averageTeacherShare(items: Pick<MeetLessonSummary, 'talk'>[]): n
  * lesson's length comes from the page itself: the public shape does not repeat it.
  */
 export function publicTalkRecord(talk: PublicTalk, lesson: { title: string; start: string; end: string }): TalkRecord {
-  const lessonSeconds = Math.max(60, (new Date(lesson.end).getTime() - new Date(lesson.start).getTime()) / 1000);
+  const lessonSeconds = talk.lesson_seconds
+    ?? Math.max(60, (new Date(lesson.end).getTime() - new Date(lesson.start).getTime()) / 1000);
   return {
     event_id: 0,
     title: lesson.title,
@@ -322,6 +344,7 @@ export function publicTalkRecord(talk: PublicTalk, lesson: { title: string; star
     silent_students: talk.silent_students.map((name, i) => ({ user_id: -1 - i, name })),
     buckets: talk.buckets,
     insights: null,
+    recording_offset_seconds: talk.recording_offset_seconds ?? null,
   };
 }
 
@@ -350,7 +373,7 @@ export function perLesson(count: number | null | undefined, lessons: number | nu
   return Math.round((count / lessons) * 10) / 10;
 }
 
-// ── a student's lessons, as dots ─────────────────────────────────────────────────────────
+// ── a student's lessons: what each one was ───────────────────────────────────────────────
 
 const STATE_WORDS: Record<TalkLocale, Record<StudentLessonState, string>> = {
   en: { spoke: 'spoke', silent: 'silent — in the room, never spoke', present: 'in the room briefly, didn’t speak', absent: 'not in the room' },
@@ -364,12 +387,50 @@ function markDate(iso: string, locale: TalkLocale): string {
   return `${day} ${clock(iso)}`;
 }
 
-/** A lesson dot's tooltip: "Fri 11 Sep 20:00 · spoke 12 min", "… · silent — in the room, never spoke". */
+/** A lesson bar's tooltip: "Fri 11 Sep 20:00 · spoke 12 min", "… · silent — in the room, never spoke". */
 export function lessonMarkLabel(mark: StudentLessonMark, locale: TalkLocale = 'en'): string {
   const what = mark.state === 'spoke'
     ? `${STATE_WORDS[locale].spoke} ${formatDuration(mark.seconds, locale)}`
     : STATE_WORDS[locale][mark.state];
   return `${markDate(mark.start, locale)} · ${what}`;
+}
+
+// ── a student's lessons, as a sparkline ──────────────────────────────────────────────────
+// A dot per lesson wraps onto several lines once a group has had a few dozen lessons. One thin
+// bar per lesson, as tall as the minutes spoken, fits 48 lessons on a line and shows the trend.
+
+/** The most lessons one sparkline draws; older ones are counted, not drawn. */
+export const MAX_LESSON_BARS = 48;
+
+/** Which lessons a sparkline draws — the newest `max`, oldest first — and how many earlier ones it leaves out. */
+export function lessonBars<T>(marks: T[], max = MAX_LESSON_BARS): { shown: T[]; earlier: number } {
+  return marks.length > max ? { shown: marks.slice(marks.length - max), earlier: marks.length - max } : { shown: marks, earlier: 0 };
+}
+
+/** The group's longest speech by one student in one lesson — every sparkline's full height (a minute at least). */
+export function lessonPeakSeconds(students: { lessons?: StudentLessonMark[] }[]): number {
+  let peak = 60;
+  for (const s of students) for (const m of s.lessons ?? []) peak = Math.max(peak, m.seconds);
+  return peak;
+}
+
+/**
+ * A lesson bar's height, 0..1 of the sparkline: minutes spoken against the group's peak (never so
+ * short a few words vanish), a low stub for silent, nothing for "in briefly" and absent — those
+ * are drawn as ticks on the baseline.
+ */
+export function lessonBarHeight(mark: Pick<StudentLessonMark, 'state' | 'seconds'>, peakSeconds: number): number {
+  if (mark.state === 'spoke') return Math.min(1, Math.max(0.22, mark.seconds / Math.max(1, peakSeconds)));
+  if (mark.state === 'silent') return 0.16;
+  return 0;
+}
+
+/** Bar width and gap in px so `count` bars fit `space` px on one line: 10 px wide at most, 3 at least. */
+export function lessonBarSize(count: number, space = 200): { width: number; gap: number } {
+  if (count <= 0) return { width: 10, gap: 2 };
+  const gap = count > 20 ? 1 : 2;
+  const width = Math.floor((space - gap * (count - 1)) / count);
+  return { width: Math.min(10, Math.max(3, width)), gap };
 }
 
 /** "spoke in 8 of 10" — lessons they said something in, of this group's lessons with talk time. */
@@ -378,7 +439,7 @@ export function spokeInText(marks: StudentLessonMark[], locale: TalkLocale = 'en
   return locale === 'ru' ? `говорил на ${spoke} из ${marks.length}` : `spoke in ${spoke} of ${marks.length}`;
 }
 
-/** One line for the dots' row: in the room, spoke, silent, absent. */
+/** One line for the sparkline's row: in the room, spoke, silent, absent. */
 export function marksSummary(marks: StudentLessonMark[]): string {
   const count = (state: StudentLessonState) => marks.filter((m) => m.state === state).length;
   const inRoom = marks.length - count('absent');

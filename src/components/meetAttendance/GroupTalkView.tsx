@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Download, Loader2, RotateCcw } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { groupTalkCsv, marksSummary, percent, sortGroupStudents, spokeInText, type GroupStudentSort } from '../../lib/meetTalk';
+import { groupTalkCsv, lessonPeakSeconds, marksSummary, percent, sortGroupStudents, spokeInText, type GroupStudentSort } from '../../lib/meetTalk';
 import { getGroupTalk, TalkSwitchedOff, type GroupTalk } from '../../services/api/meetTalk';
 import { SearchableSelect, type SearchableOption } from '../ui/searchable-select';
 import {
   Card,
   DotsLegend,
-  LessonDots,
+  LessonBars,
   QuestionCards,
   ShareBar,
   SortHeader,
@@ -34,7 +34,7 @@ interface Props {
 
 const COLUMNS: { key: GroupStudentSort; label: string; hint?: string; left?: boolean }[] = [
   { key: 'name', label: 'Student', left: true },
-  { key: 'lessons_spoke', label: 'Lessons', hint: 'One dot per lesson with talk time, oldest first; sorted by how many they spoke in', left: true },
+  { key: 'lessons_spoke', label: 'Lessons', hint: 'One bar per lesson with talk time, oldest first — the taller, the longer they spoke; sorted by how many they spoke in', left: true },
   { key: 'total_seconds', label: 'Spoke, total' },
   { key: 'avg_seconds', label: 'Avg / lesson', hint: 'Average over the lessons they were in the room for' },
   { key: 'share_of_student_talk', label: 'Share', hint: 'Of all the students’ talk in these lessons' },
@@ -73,6 +73,8 @@ export function GroupTalkView({ groups, periodDays, groupId, onGroupChange, talk
   }, [groupId, periodDays, retry]);
 
   const students = useMemo(() => (data ? sortGroupStudents(data.students, sort.key, sort.direction) : []), [data, sort]);
+  // One scale for every row's sparkline: the group's longest speech in a single lesson.
+  const peak = useMemo(() => lessonPeakSeconds(data?.students ?? []), [data]);
   const onSort = (key: GroupStudentSort) => setSort((s) => nextSort(s, key, ['name']));
 
   const silentTimes = students.reduce((n, s) => n + s.silent_lessons, 0);
@@ -204,7 +206,7 @@ export function GroupTalkView({ groups, periodDays, groupId, onGroupChange, talk
                       <td className="px-3 py-2" title={marks.length ? marksSummary(marks) : undefined}>
                         {marks.length > 0 ? (
                           <div className="flex flex-col gap-0.5">
-                            <LessonDots marks={marks} />
+                            <LessonBars marks={marks} peakSeconds={peak} />
                             <span className="text-[11px] text-muted-foreground">{spokeInText(marks)}</span>
                           </div>
                         ) : (

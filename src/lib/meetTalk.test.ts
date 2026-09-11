@@ -5,6 +5,12 @@ import {
   blockShade,
   blockTime,
   clockAt,
+  clockTicks,
+  lessonBarHeight,
+  lessonBars,
+  lessonBarSize,
+  lessonPeakSeconds,
+  minuteShade,
   formatDuration,
   groupTalkCsv,
   highlightParts,
@@ -329,5 +335,80 @@ describe('every teacher side by side', () => {
     expect(one).toContain('"All groups","10","2","70%"');
     expect(one).toContain('"July 23 SAT","10","2","70%"');
     expect(one).toContain('"10/09/2026","19:00","Lesson 7","July 23 SAT","Gulzada","50%","50%","40.0","4.0","43","21","49%","35","5.3","10","2","yes"');
+  });
+});
+
+
+describe('the recording side panel, minute by minute', () => {
+  const person = (key: string, role: TalkPerson['role'], spans: [number, number][]): TalkPerson => ({
+    key, user_id: 1, name: key, role, spans, turns: spans.length, longest_turn_seconds: 0, in_room: true,
+    questions: null, share: 0, seconds: spans.reduce((s, [a, b]) => s + b - a, 0),
+  });
+
+  it('cuts the lesson into minutes when asked', () => {
+    const grid = talkGrid({ start: START, lesson_seconds: 3600, people: [person('t', 'teacher', [[30, 100]])] }, 60);
+    expect(grid.binSeconds).toBe(60);
+    expect(grid.columns).toHaveLength(60);
+    expect(grid.rows[0].cells.slice(0, 2)).toEqual([30, 40]);
+    expect(grid.columns[1].label).toBe('19:01');
+  });
+
+  it('shades a minute by how much of it someone spoke', () => {
+    expect([0, 4, 15, 45].map((s) => minuteShade(s))).toEqual([0, 1, 2, 3]);
+  });
+
+  it('labels the quarter hours of the Almaty clock, placed in lesson seconds', () => {
+    expect(clockTicks(START, 0, 3600)).toEqual([
+      { at: 0, label: '19:00' }, { at: 900, label: '19:15' }, { at: 1800, label: '19:30' },
+      { at: 2700, label: '19:45' }, { at: 3600, label: '20:00' },
+    ]);
+    expect(clockTicks(START, -120, 400)).toEqual([{ at: 0, label: '19:00' }]);
+    expect(clockTicks(START, 10, 10)).toEqual([]);
+  });
+
+  it('carries the watch page\'s offset and length into the panel\'s record', () => {
+    const record = publicTalkRecord({
+      state: 'ready', speech_seconds: 1, silence_seconds: 1, teacher_share: 1, students_share: 0, people: [],
+      silent_students: [], buckets: [], recording_offset_seconds: 129.5, lesson_seconds: 3000,
+    }, { title: 'L', start: START, end: '2026-09-10T15:00:00Z' });
+    expect(record.recording_offset_seconds).toBe(129.5);
+    expect(record.lesson_seconds).toBe(3000);
+  });
+});
+
+describe('a student\'s lessons as a sparkline', () => {
+  const mark = (i: number, state: StudentLessonMark['state'], seconds = 0): StudentLessonMark => ({
+    event_id: i, start: START, state, seconds,
+  });
+
+  it('draws the newest 48 lessons and counts the rest', () => {
+    const marks = Array.from({ length: 60 }, (_, i) => mark(i, 'spoke', 60));
+    const { shown, earlier } = lessonBars(marks);
+    expect(shown).toHaveLength(48);
+    expect(earlier).toBe(12);
+    expect(shown[0].event_id).toBe(12);
+    expect(lessonBars(marks.slice(0, 36))).toEqual({ shown: marks.slice(0, 36), earlier: 0 });
+  });
+
+  it('scales bars to the group\'s peak, keeps a few words visible, and gives silence a stub', () => {
+    expect(lessonPeakSeconds([{ lessons: [mark(1, 'spoke', 720)] }, { lessons: [mark(2, 'spoke', 30)] }, {}])).toBe(720);
+    expect(lessonPeakSeconds([])).toBe(60);
+    expect(lessonBarHeight(mark(1, 'spoke', 720), 720)).toBe(1);
+    expect(lessonBarHeight(mark(1, 'spoke', 360), 720)).toBe(0.5);
+    expect(lessonBarHeight(mark(1, 'spoke', 5), 720)).toBe(0.22);
+    expect(lessonBarHeight(mark(1, 'silent'), 720)).toBe(0.16);
+    expect(lessonBarHeight(mark(1, 'absent'), 720)).toBe(0);
+    expect(lessonBarHeight(mark(1, 'present'), 720)).toBe(0);
+  });
+
+  it('fits 36 lessons, and 48, on one line', () => {
+    const fits = (n: number) => {
+      const { width, gap } = lessonBarSize(n);
+      return n * width + (n - 1) * gap;
+    };
+    expect(lessonBarSize(4)).toEqual({ width: 10, gap: 2 });
+    expect(lessonBarSize(36).width).toBeGreaterThanOrEqual(3);
+    expect(fits(36)).toBeLessThanOrEqual(200);
+    expect(fits(48)).toBeLessThanOrEqual(200);
   });
 });

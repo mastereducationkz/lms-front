@@ -2,12 +2,21 @@ import { ArrowDown, ArrowUp, ChevronRight, Info } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { APP_TIMEZONE } from '../../lib/datetime';
 import { clock } from '../../lib/meetAttendance';
-import { answeredShare, formatDuration, lessonMarkLabel, percent, perLesson } from '../../lib/meetTalk';
+import {
+  answeredShare,
+  formatDuration,
+  lessonBarHeight,
+  lessonBars,
+  lessonBarSize,
+  lessonMarkLabel,
+  percent,
+  perLesson,
+} from '../../lib/meetTalk';
 import type { GroupTalkLesson, StudentLessonMark, TalkQuestions } from '../../services/api/meetTalk';
 
 /**
  * The pieces the Talk time reports share: the summary cards, sortable headers, share bars, a
- * student's lesson dots, and the lessons table (a group's and a teacher's are the same table).
+ * student's lesson sparkline, and the lessons table (a group's and a teacher's are the same table).
  */
 
 export function dayLabel(iso: string): string {
@@ -150,42 +159,59 @@ export function nextSort<K extends string>(current: { key: K; direction: 'asc' |
   return { key, direction: ascending.includes(key) ? 'asc' as const : 'desc' as const };
 }
 
-const DOT: Record<StudentLessonMark['state'], string> = {
-  spoke: 'h-2.5 w-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400',
-  silent: 'h-2.5 w-2.5 rounded-full bg-amber-400 dark:bg-amber-500',
-  present: 'h-2.5 w-2.5 rounded-full ring-1 ring-inset ring-muted-foreground/50',
-  absent: 'h-0.5 w-2.5 rounded-full bg-muted-foreground/25',
-};
+const BAR_HEIGHT = 18; // px: the sparkline's full height
+const BAR_SPACE = 200; // px: the width a sparkline fits into (≈ 13rem), however many lessons
 
-/** One dot per lesson, oldest first: spoke, silent, in the room briefly, or not there. */
-export function LessonDots({ marks }: { marks: StudentLessonMark[] }) {
+/**
+ * A student's lessons as one line of thin bars, oldest first: the taller, the longer they spoke;
+ * a low amber stub for silent; a hollow tick for "in briefly"; a faint dash for not there. Bars
+ * narrow as lessons add up, so 36 — and up to 48 — fit on one line; older ones are counted.
+ * `peakSeconds` is the group's longest speech in one lesson, so every row is on one scale.
+ */
+export function LessonBars({ marks, peakSeconds }: { marks: StudentLessonMark[]; peakSeconds: number }) {
+  const { shown, earlier } = lessonBars(marks);
+  const { width, gap } = lessonBarSize(shown.length, BAR_SPACE);
   return (
-    <span className="flex max-w-[13rem] flex-wrap items-center gap-1" role="img"
-      aria-label={marks.map((m) => lessonMarkLabel(m)).join('; ')}>
-      {marks.map((m) => (
-        <span key={m.event_id} title={lessonMarkLabel(m)} className="flex h-3 w-2.5 items-center justify-center">
-          <span className={DOT[m.state]} />
-        </span>
-      ))}
+    <span className="inline-flex items-end gap-1.5">
+      {earlier > 0 && <span className="self-center whitespace-nowrap text-[10px] text-muted-foreground">+{earlier}</span>}
+      <span className="flex items-end" style={{ gap, height: BAR_HEIGHT }} role="img"
+        aria-label={shown.map((m) => lessonMarkLabel(m)).join('; ')}>
+        {shown.map((m) => (
+          <span key={m.event_id} title={lessonMarkLabel(m)} className="flex h-full flex-none flex-col justify-end" style={{ width }}>
+            <LessonBar mark={m} peakSeconds={peakSeconds} />
+          </span>
+        ))}
+      </span>
     </span>
   );
 }
 
-/** What the dots mean, once, under the table. */
+function LessonBar({ mark, peakSeconds }: { mark: StudentLessonMark; peakSeconds: number }) {
+  if (mark.state === 'present') return <span className="h-1.5 w-full rounded-[1px] ring-1 ring-inset ring-muted-foreground/50" />;
+  if (mark.state === 'absent') return <span className="h-0.5 w-full rounded-full bg-muted-foreground/40" />;
+  const height = Math.max(2, Math.round(lessonBarHeight(mark, peakSeconds) * BAR_HEIGHT));
+  return (
+    <span className={cn('w-full rounded-t-[1px]', mark.state === 'spoke' ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-amber-400 dark:bg-amber-500')}
+      style={{ height }} />
+  );
+}
+
+/** What the bars mean, once, under the table. */
 export function DotsLegend() {
-  const item = (state: StudentLessonMark['state'], label: string) => (
-    <span className="inline-flex items-center gap-1.5">
-      <span className="flex h-3 w-2.5 items-center justify-center"><span className={DOT[state]} /></span>
-      {label}
-    </span>
+  const swatch = (className: string, height: number) => (
+    <span className="flex h-3 w-2 flex-col justify-end"><span className={cn('w-full', className)} style={{ height }} /></span>
   );
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[11px] text-muted-foreground">
-      <span>Each dot is one lesson, oldest first:</span>
-      {item('spoke', 'spoke')}
-      {item('silent', 'silent (in the room 10+ min, no words)')}
-      {item('present', 'in briefly, no words')}
-      {item('absent', 'not in the room')}
+      <span>Each bar is one lesson, oldest first:</span>
+      <span className="inline-flex items-center gap-1.5">
+        <span className="flex items-end gap-px">{swatch('rounded-t-[1px] bg-emerald-500', 5)}{swatch('rounded-t-[1px] bg-emerald-500', 12)}</span>
+        spoke — the taller, the longer
+      </span>
+      <span className="inline-flex items-center gap-1.5">{swatch('rounded-t-[1px] bg-amber-400', 3)}silent (in the room 10+ min, no words)</span>
+      <span className="inline-flex items-center gap-1.5">{swatch('h-1.5 rounded-[1px] ring-1 ring-inset ring-muted-foreground/50', 6)}in briefly, no words</span>
+      <span className="inline-flex items-center gap-1.5">{swatch('rounded-full bg-muted-foreground/40', 2)}not in the room</span>
+      <span>· up to 48 lessons are drawn; «+N» counts the earlier ones.</span>
     </div>
   );
 }

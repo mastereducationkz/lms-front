@@ -130,6 +130,11 @@ export interface TalkRecord {
   /** Null until the transcript exists. */
   insights?: TalkInsights | null;
   transcript?: TalkTranscript;
+  /**
+   * Where the lesson's start falls in the recording: video second = lesson second + offset. Known
+   * without a transcript too (from the recorded call's start); null when it cannot be placed.
+   */
+  recording_offset_seconds?: number | null;
 }
 
 /** What the lesson list carries per lesson; null when it has no Meet transcript. */
@@ -150,6 +155,10 @@ export type TalkSource = 'meet' | 'voices';
 export interface PublicTalk {
   state: TalkState;
   source?: TalkSource;
+  /** The scheduled length, when the server sends it. */
+  lesson_seconds?: number;
+  /** Video second = lesson second + offset; null when it cannot be placed. */
+  recording_offset_seconds?: number | null;
   speech_seconds: number;
   silence_seconds: number;
   teacher_share: number | null;
