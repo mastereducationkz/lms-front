@@ -39,6 +39,8 @@ export interface TalkPerson {
   in_room: boolean;
   /** Questions this person asked; null without a transcript. */
   questions: number | null;
+  /** Teacher questions this person answered first (within 20 s); null without a transcript. */
+  answers?: number | null;
   /** Speech stretches as [from, to] seconds from the lesson start. */
   spans: [number, number][];
 }
@@ -181,16 +183,50 @@ export async function getLessonTalk(eventId: number): Promise<TalkRecord | null>
   }
 }
 
+/** Questions added up over the lessons that have a transcript; null when none of them do. */
+export interface TalkQuestions {
+  /** Teacher lines ending in «?». */
+  teacher_questions: number;
+  /** …that a student answered within 20 s. */
+  answered: number;
+  student_questions: number;
+  lessons_with_transcript: number;
+}
+
+/** One lesson in the group, teacher and student views. */
 export interface GroupTalkLesson {
   event_id: number;
   title: string;
   start: string;
+  groups?: { id: number; name: string }[];
   teacher_name: string | null;
   teacher_share: number | null;
   students_share: number | null;
   speech_seconds: number;
+  /** The longest the teacher spoke with no student in between. */
+  longest_stretch_seconds?: number;
   students_in_room: number;
   silent: number;
+  /** Null without a transcript. */
+  teacher_questions?: number | null;
+  answered?: number | null;
+  student_questions?: number | null;
+  median_wait_seconds?: number | null;
+  /** 'voices': taught before talk time was on; names come from the recording's voices. */
+  source?: TalkSource;
+}
+
+/**
+ * How a student took part in one lesson. spoke: said something. silent: in the room 10+ min
+ * without a word. present: in the room briefly, no words. absent: not in the room.
+ */
+export type StudentLessonState = 'spoke' | 'silent' | 'present' | 'absent';
+
+export interface StudentLessonMark {
+  event_id: number;
+  start: string;
+  state: StudentLessonState;
+  seconds: number;
 }
 
 export interface GroupTalkStudent {
@@ -203,7 +239,12 @@ export interface GroupTalkStudent {
   /** Per lesson in the room. */
   avg_seconds: number;
   share_of_student_talk: number;
+  /** Questions they asked; null without transcripts. */
   questions: number | null;
+  /** Teacher questions they answered first; null without transcripts. */
+  answers?: number | null;
+  /** One mark per lesson, oldest first. */
+  lessons?: StudentLessonMark[];
 }
 
 export interface GroupTalk {
@@ -215,25 +256,87 @@ export interface GroupTalk {
   /** Most spoken first. */
   students: GroupTalkStudent[];
   teacher: { avg_share: number | null; lessons: number };
-  totals: { lessons: number; speech_seconds: number; teacher_seconds: number; student_seconds: number };
+  totals: { lessons: number; speech_seconds: number; teacher_seconds: number; student_seconds: number; unconfirmed_seconds?: number };
+  questions?: TalkQuestions | null;
 }
 
-/** One group's talk time over a period (default: the last 30 days); null when not the viewer's group. */
-export async function getGroupTalk(
-  groupId: number,
-  range: { date_from?: string | null; date_to?: string | null } = {},
-): Promise<GroupTalk | null> {
+/** A teacher's (or one of their groups') lessons added up. */
+export interface TalkTally {
+  lessons: number;
+  groups: number;
+  /** Averages over the lessons. */
+  teacher_share: number | null;
+  students_share: number | null;
+  /** Totals. */
+  teacher_seconds: number;
+  student_seconds: number;
+  speech_seconds: number;
+  /** The average of each lesson's longest teacher stretch. */
+  longest_stretch_seconds: number;
+  silent_per_lesson: number;
+  students_in_room_per_lesson: number;
+  questions: TalkQuestions | null;
+}
+
+export interface TeacherTalkRow extends TalkTally {
+  teacher_id: number;
+  name: string;
+}
+
+export interface TeachersTalk {
+  from: string;
+  to: string;
+  teachers: TeacherTalkRow[];
+}
+
+export interface TeacherTalk {
+  from: string;
+  to: string;
+  teacher: TeacherTalkRow;
+  groups: (TalkTally & { group_id: number | null; name: string | null })[];
+  /** Newest first. */
+  lessons: GroupTalkLesson[];
+}
+
+/** Talk time is switched off (409): the views say so instead of "couldn't load". */
+export class TalkSwitchedOff extends Error {
+  constructor() {
+    super('Talk time is switched off');
+    this.name = 'TalkSwitchedOff';
+  }
+}
+
+type Range = { date_from?: string | null; date_to?: string | null };
+
+/** A talk report: null when not the viewer's to see (404/403), TalkSwitchedOff on 409. */
+async function report<T>(url: string, range: Range, failure: string): Promise<T | null> {
   const params: Record<string, string> = {};
   if (range.date_from) params.date_from = range.date_from;
   if (range.date_to) params.date_to = range.date_to;
   try {
-    const response = await api.get(`/meet-attendance/talk/groups/${groupId}`, { params, cache: false } as never);
-    return response.data as GroupTalk;
+    const response = await api.get(url, { params, cache: false } as never);
+    return response.data as T;
   } catch (error: unknown) {
     const status = statusOf(error);
     if (status === 404 || status === 403) return null;
-    throw new Error('Failed to load the group’s talk time');
+    if (status === 409) throw new TalkSwitchedOff();
+    throw new Error(failure);
   }
+}
+
+/** Every teacher over a period (admins and heads; null for anyone else). */
+export function getTeachersTalk(range: Range = {}): Promise<TeachersTalk | null> {
+  return report<TeachersTalk>('/meet-attendance/talk/teachers', range, 'Failed to load the teachers’ talk time');
+}
+
+/** One teacher over a period: all their groups together, each group, each lesson. */
+export function getTeacherTalk(teacherId: number, range: Range = {}): Promise<TeacherTalk | null> {
+  return report<TeacherTalk>(`/meet-attendance/talk/teachers/${teacherId}`, range, 'Failed to load the teacher’s talk time');
+}
+
+/** One group's talk time over a period (default: the last 30 days); null when not the viewer's group. */
+export function getGroupTalk(groupId: number, range: Range = {}): Promise<GroupTalk | null> {
+  return report<GroupTalk>(`/meet-attendance/talk/groups/${groupId}`, range, 'Failed to load the group’s talk time');
 }
 
 export interface TalkSettings {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  answeredShare,
   averageTeacherShare,
   blockShade,
   blockTime,
@@ -15,13 +16,22 @@ import {
   spanBar,
   spokeNote,
   stamp,
+  lessonMarkLabel,
   linesInBlock,
+  marksSummary,
+  perLesson,
+  questionsLine,
+  sortTeachers,
+  spokeInText,
   talkAxis,
   talkGrid,
   talkSecondsIndex,
   talkSummaryLine,
+  teacherFigure,
+  teachersCsv,
+  teacherTalkCsv,
 } from './meetTalk';
-import type { GroupTalk, TalkPerson, TranscriptLine } from '../services/api/meetTalk';
+import type { GroupTalk, StudentLessonMark, TalkPerson, TeacherTalkRow, TranscriptLine } from '../services/api/meetTalk';
 
 // Lesson 19:00–20:00 Almaty = 14:00–15:00 UTC.
 const START = '2026-09-10T14:00:00Z';
@@ -143,8 +153,8 @@ describe('the group spreadsheet', () => {
   it('opens in Excel with Cyrillic intact and names quoted safely', () => {
     const csv = groupTalkCsv(data);
     expect(csv.startsWith('﻿"Group","August 19 SAT - Gulzada"')).toBe(true);
-    expect(csv).toContain('"Шыңғыс, ""Шока""","4","3","1","25.0","6.3","41%","5"');
-    expect(csv).toContain('"10/09/2026","19:00","Lesson 7","Гульзада","72%","28%","50.0","9","2"');
+    expect(csv).toContain('"Шыңғыс, ""Шока""","4","4","3","1","25.0","6.3","41%","5","",""');
+    expect(csv).toContain('"10/09/2026","19:00","Lesson 7","","Гульзада","72%","28%","50.0","","","","","","","9","2",""');
   });
 });
 
@@ -238,5 +248,86 @@ describe('transcript times', () => {
   it('reads on the Almaty clock, to the second, like the blocks above it', () => {
     expect(clockAt(START, 596)).toBe('19:09:56');
     expect(clockAt(START, -45)).toBe('18:59:15');
+  });
+});
+
+
+describe('questions, said plainly', () => {
+  it('gives the share answered and the line the cards use', () => {
+    expect(answeredShare({ teacher_questions: 43, answered: 21 })).toBeCloseTo(0.488, 3);
+    expect(answeredShare({ teacher_questions: 0, answered: 0 })).toBeNull();
+    expect(answeredShare(null)).toBeNull();
+    expect(questionsLine({ teacher_questions: 43, answered: 21 })).toBe('43 asked · 49% answered');
+    expect(questionsLine({ teacher_questions: 43, answered: 21 }, 'ru')).toBe('43 вопр. · 49% с ответом');
+    expect(questionsLine(null)).toBe('—');
+    expect(perLesson(43, 10)).toBe(4.3);
+    expect(perLesson(null, 10)).toBeNull();
+    expect(perLesson(5, 0)).toBeNull();
+  });
+});
+
+describe('a student’s lessons, one dot each', () => {
+  const marks: StudentLessonMark[] = [
+    { event_id: 1, start: '2026-09-08T14:00:00Z', state: 'spoke', seconds: 720 },
+    { event_id: 2, start: '2026-09-09T14:00:00Z', state: 'silent', seconds: 0 },
+    { event_id: 3, start: '2026-09-10T14:00:00Z', state: 'absent', seconds: 0 },
+    { event_id: 4, start: '2026-09-11T15:00:00Z', state: 'present', seconds: 0 },
+  ];
+
+  it('says what each dot means, on the Almaty clock', () => {
+    expect(lessonMarkLabel(marks[0])).toMatch(/^Tue 8 Sept? 19:00 · spoke 12 min$/);
+    expect(lessonMarkLabel(marks[1])).toMatch(/19:00 · silent — in the room, never spoke$/);
+    expect(lessonMarkLabel(marks[2])).toMatch(/19:00 · not in the room$/);
+    expect(lessonMarkLabel(marks[3], 'ru')).toContain('заходил ненадолго, не говорил');
+  });
+
+  it('sums the row up in words', () => {
+    expect(spokeInText(marks)).toBe('spoke in 1 of 4');
+    expect(spokeInText(marks, 'ru')).toBe('говорил на 1 из 4');
+    expect(marksSummary(marks)).toBe('In the room for 3 of 4 · spoke in 1 · silent in 1 · absent from 1');
+  });
+});
+
+describe('every teacher side by side', () => {
+  const tally = { lessons: 10, groups: 2, students_share: 0.3, teacher_seconds: 20000, student_seconds: 8000,
+    speech_seconds: 28000, longest_stretch_seconds: 480, students_in_room_per_lesson: 9.5 };
+  const teacher = (name: string, teacher_share: number | null, questions: TeacherTalkRow['questions'], silent = 1): TeacherTalkRow => ({
+    ...tally, teacher_id: name.length, name, teacher_share, questions, silent_per_lesson: silent,
+  });
+  const rows = [
+    teacher('Gulzada', 0.7, { teacher_questions: 430, answered: 210, student_questions: 350, lessons_with_transcript: 10 }),
+    teacher('Aisha', 0.85, null, 3),
+    teacher('Bakhyt', 0.6, { teacher_questions: 100, answered: 90, student_questions: 20, lessons_with_transcript: 5 }),
+  ];
+
+  it('works out the per-lesson figures from the counts', () => {
+    expect(teacherFigure(rows[0], 'questions_per_lesson')).toBe(43);
+    expect(teacherFigure(rows[0], 'student_questions_per_lesson')).toBe(35);
+    expect(teacherFigure(rows[2], 'answered_share')).toBeCloseTo(0.9, 5);
+    expect(teacherFigure(rows[1], 'answered_share')).toBeNull();
+  });
+
+  it('sorts by any figure, a missing one last either way', () => {
+    expect(sortTeachers(rows, 'teacher_share', 'desc').map((r) => r.name)).toEqual(['Aisha', 'Gulzada', 'Bakhyt']);
+    expect(sortTeachers(rows, 'answered_share', 'desc').map((r) => r.name)).toEqual(['Bakhyt', 'Gulzada', 'Aisha']);
+    expect(sortTeachers(rows, 'answered_share', 'asc').map((r) => r.name)).toEqual(['Gulzada', 'Bakhyt', 'Aisha']);
+    expect(sortTeachers(rows, 'name', 'asc').map((r) => r.name)).toEqual(['Aisha', 'Bakhyt', 'Gulzada']);
+  });
+
+  it('writes the comparison and one teacher’s detail as spreadsheets', () => {
+    const all = teachersCsv({ from: '2026-08-12T00:00:00Z', to: '2026-09-11T00:00:00Z', teachers: rows });
+    expect(all).toContain('"Gulzada","10","2","70%","30%","333.3","133.3","8.0","430","49%","43","350","35","1","9.5"');
+    expect(all).toContain('"Aisha","10","2","85%","30%","333.3","133.3","8.0","","","","","","3","9.5"');
+    const one = teacherTalkCsv({
+      from: '2026-08-12T00:00:00Z', to: '2026-09-11T00:00:00Z', teacher: rows[0],
+      groups: [{ ...tally, group_id: 1, name: 'July 23 SAT', teacher_share: 0.7, questions: null, silent_per_lesson: 1 }],
+      lessons: [{ event_id: 7, title: 'Lesson 7', start: START, groups: [{ id: 1, name: 'July 23 SAT' }],
+        teacher_name: 'Gulzada', teacher_share: 0.5, students_share: 0.5, speech_seconds: 2400, longest_stretch_seconds: 240,
+        students_in_room: 10, silent: 2, teacher_questions: 43, answered: 21, student_questions: 35,
+        median_wait_seconds: 5.3, source: 'voices' }],
+    });
+    expect(one).toContain('"All groups","10","2","70%"');
+    expect(one).toContain('"July 23 SAT","10","2","70%"');
+    expect(one).toContain('"10/09/2026","19:00","Lesson 7","July 23 SAT","Gulzada","50%","50%","40.0","4.0","43","21","49%","35","5.3","10","2","yes"');
   });
 });

@@ -172,11 +172,13 @@ export interface ReportTalkLesson {
   in_room: boolean;
   /** Needs the lesson's transcript; null without one. */
   questions: number | null;
+  /** Teacher questions the student answered first (within 20 s); null without a transcript. */
+  answers?: number | null;
 }
 
 export interface ReportTalk {
   lessons: ReportTalkLesson[];
-  totals: { lessons: number; lessons_spoke: number; total_seconds: number; avg_seconds: number; questions: number | null };
+  totals: { lessons: number; lessons_spoke: number; total_seconds: number; avg_seconds: number; questions: number | null; answers?: number | null };
 }
 
 export interface SubmissionTask {

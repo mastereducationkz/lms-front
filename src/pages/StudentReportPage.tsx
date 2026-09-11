@@ -593,7 +593,7 @@ export default function StudentReportPage() {
       {report.talk && (
         <Section
           title="Речь на уроках"
-          subtitle={`По записи Meet: уроков с данными ${report.talk.totals.lessons} · говорил(а) на ${report.talk.totals.lessons_spoke} · всего ${fmtTalk(report.talk.totals.total_seconds)} · в среднем за урок ${fmtTalk(report.talk.totals.avg_seconds)}${report.talk.totals.questions !== null ? ` · вопросов задал(а) ${report.talk.totals.questions}` : ''}`}
+          subtitle={`По записи Meet: уроков с данными ${report.talk.totals.lessons} · говорил(а) на ${report.talk.totals.lessons_spoke} · всего ${fmtTalk(report.talk.totals.total_seconds)} · в среднем за урок ${fmtTalk(report.talk.totals.avg_seconds)}${report.talk.totals.questions !== null ? ` · вопросов задал(а) ${report.talk.totals.questions}` : ''}${report.talk.totals.answers != null ? ` · ответил(а) на вопросы преподавателя ${report.talk.totals.answers}` : ''}`}
         >
           {report.talk.lessons.length === 0 ? (
             <p className="text-sm text-gray-400">Пока нет уроков с данными о речи.</p>
@@ -606,7 +606,8 @@ export default function StudentReportPage() {
                     <th className="py-2 pr-3 font-medium">Урок</th>
                     <th className="py-2 pr-3 font-medium">Говорил(а)</th>
                     <th className="py-2 pr-3 font-medium">Доля среди учеников</th>
-                    <th className="py-2 pr-3 font-medium">Вопросы</th>
+                    <th className="py-2 pr-3 font-medium" title="Вопросы, которые задал(а) сам(а)">Задал(а) вопросов</th>
+                    <th className="py-2 pr-3 font-medium" title="Вопросы преподавателя, на которые ответил(а) первым(ой) — в течение 20 секунд">Ответил(а) на вопросы преподавателя</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -628,6 +629,7 @@ export default function StudentReportPage() {
                         ) : '—'}
                       </td>
                       <td className="py-2 pr-3 tabular-nums">{lesson.questions ?? '—'}</td>
+                      <td className="py-2 pr-3 tabular-nums">{lesson.answers ?? '—'}</td>
                     </tr>
                   ))}
                 </tbody>

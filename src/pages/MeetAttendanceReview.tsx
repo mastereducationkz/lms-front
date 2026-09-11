@@ -22,6 +22,7 @@ import { FlagChip, lessonReviewing } from '../components/meetAttendance/FlagRevi
 import MeetAttendanceDialog, { type MeetDialogTab } from '../components/meetAttendance/MeetAttendanceDialog';
 import { TeacherTallyTable } from '../components/meetAttendance/TeacherTallyTable';
 import { GroupTalkView } from '../components/meetAttendance/GroupTalkView';
+import { TeacherTalkView } from '../components/meetAttendance/TeacherTalkView';
 import { TalkSettingsButton } from '../components/meetAttendance/TalkSettingsButton';
 import { percent } from '../lib/meetTalk';
 import {
@@ -37,6 +38,10 @@ import { useAuth } from '../contexts/AuthContext';
 type Show = 'attention' | 'all';
 type Period = 7 | 30;
 type View = 'lessons' | 'talk';
+type TalkMode = 'group' | 'teacher';
+
+// Every teacher side by side is for heads (owner, 2026-09-11); the backend says the same.
+const TALK_BY_TEACHER = new Set(['admin', 'head_curator', 'head_teacher']);
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -94,6 +99,9 @@ export default function MeetAttendanceReview() {
   const [openTab, setOpenTab] = useState<MeetDialogTab>('attendance');
   const [view, setView] = useState<View>('lessons');
   const [talkEnabled, setTalkEnabled] = useState(false);
+  const [talkMode, setTalkMode] = useState<TalkMode>('group');
+  const [talkGroupId, setTalkGroupId] = useState<string | null>(null);
+  const byTeacher = TALK_BY_TEACHER.has(user?.role ?? '');
   // Reviewed flags are out of the list until asked for (owner, 2026-09-11).
   const [showReviewed, setShowReviewed] = useState(false);
   const [options, setOptions] = useState<MeetReviewOptions | undefined>(undefined);
@@ -240,13 +248,40 @@ export default function MeetAttendanceReview() {
             </div>
           )
         ) : (
-          <GroupTalkView
-            groups={groups}
-            periodDays={period}
-            initialGroupId={groupId}
-            talkEnabled={talkEnabled}
-            onOpenLesson={(eventId) => openLesson(eventId, 'talk')}
-          />
+          <div className="space-y-4">
+            {byTeacher && (
+              <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label="Talk time by">
+                {([['group', 'By group'], ['teacher', 'By teacher']] as const).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={talkMode === key}
+                    onClick={() => setTalkMode(key)}
+                    className={cn('rounded-md px-3 py-1.5 text-[13px] font-medium transition',
+                      talkMode === key ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {byTeacher && talkMode === 'teacher' ? (
+              <TeacherTalkView
+                periodDays={period}
+                onOpenLesson={(eventId) => openLesson(eventId, 'talk')}
+                onOpenGroup={(id) => { setTalkGroupId(String(id)); setTalkMode('group'); }}
+              />
+            ) : (
+              <GroupTalkView
+                groups={groups}
+                periodDays={period}
+                groupId={talkGroupId ?? groupId}
+                onGroupChange={setTalkGroupId}
+                talkEnabled={talkEnabled}
+                onOpenLesson={(eventId) => openLesson(eventId, 'talk')}
+              />
+            )}
+          </div>
         )
       )}
 

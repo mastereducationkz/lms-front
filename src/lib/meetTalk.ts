@@ -3,9 +3,17 @@ import { clock } from './meetAttendance';
 import type { MeetLessonSummary } from '../services/api/meetAttendance';
 import type {
   GroupTalk,
+  GroupTalkLesson,
   PublicTalk,
+  StudentLessonMark,
+  StudentLessonState,
   TalkPerson,
+  TalkQuestions,
   TalkRecord,
+  TalkTally,
+  TeacherTalk,
+  TeacherTalkRow,
+  TeachersTalk,
   TranscriptLine,
 } from '../services/api/meetTalk';
 
@@ -317,15 +325,77 @@ export function publicTalkRecord(talk: PublicTalk, lesson: { title: string; star
   };
 }
 
+// ── questions ────────────────────────────────────────────────────────────────────────────
+
+/** The share of the teacher's questions a student answered (0..1); null without questions. */
+export function answeredShare(q: Pick<TalkQuestions, 'teacher_questions' | 'answered'> | null | undefined): number | null {
+  if (!q || !q.teacher_questions) return null;
+  return q.answered / q.teacher_questions;
+}
+
+/** "43 asked · 49% answered" (ru: «43 вопроса · 49% с ответом»); "—" without a transcript. */
+export function questionsLine(
+  q: Pick<TalkQuestions, 'teacher_questions' | 'answered'> | null | undefined,
+  locale: TalkLocale = 'en',
+): string {
+  if (!q) return '—';
+  const share = answeredShare(q);
+  if (locale === 'ru') return `${q.teacher_questions} вопр.${share == null ? '' : ` · ${percent(share)} с ответом`}`;
+  return `${q.teacher_questions} asked${share == null ? '' : ` · ${percent(share)} answered`}`;
+}
+
+/** Per lesson with a transcript, one decimal: 4.3. Null without transcripts. */
+export function perLesson(count: number | null | undefined, lessons: number | null | undefined): number | null {
+  if (count == null || !lessons) return null;
+  return Math.round((count / lessons) * 10) / 10;
+}
+
+// ── a student's lessons, as dots ─────────────────────────────────────────────────────────
+
+const STATE_WORDS: Record<TalkLocale, Record<StudentLessonState, string>> = {
+  en: { spoke: 'spoke', silent: 'silent — in the room, never spoke', present: 'in the room briefly, didn’t speak', absent: 'not in the room' },
+  ru: { spoke: 'говорил', silent: 'молчал — был в комнате, не сказал ни слова', present: 'заходил ненадолго, не говорил', absent: 'не был в комнате' },
+};
+
+function markDate(iso: string, locale: TalkLocale): string {
+  const day = new Date(iso).toLocaleDateString(locale === 'ru' ? 'ru-RU' : 'en-GB', {
+    weekday: 'short', day: 'numeric', month: 'short', timeZone: APP_TIMEZONE,
+  });
+  return `${day} ${clock(iso)}`;
+}
+
+/** A lesson dot's tooltip: "Fri 11 Sep 20:00 · spoke 12 min", "… · silent — in the room, never spoke". */
+export function lessonMarkLabel(mark: StudentLessonMark, locale: TalkLocale = 'en'): string {
+  const what = mark.state === 'spoke'
+    ? `${STATE_WORDS[locale].spoke} ${formatDuration(mark.seconds, locale)}`
+    : STATE_WORDS[locale][mark.state];
+  return `${markDate(mark.start, locale)} · ${what}`;
+}
+
+/** "spoke in 8 of 10" — lessons they said something in, of this group's lessons with talk time. */
+export function spokeInText(marks: StudentLessonMark[], locale: TalkLocale = 'en'): string {
+  const spoke = marks.filter((m) => m.state === 'spoke').length;
+  return locale === 'ru' ? `говорил на ${spoke} из ${marks.length}` : `spoke in ${spoke} of ${marks.length}`;
+}
+
+/** One line for the dots' row: in the room, spoke, silent, absent. */
+export function marksSummary(marks: StudentLessonMark[]): string {
+  const count = (state: StudentLessonState) => marks.filter((m) => m.state === state).length;
+  const inRoom = marks.length - count('absent');
+  return `In the room for ${inRoom} of ${marks.length} · spoke in ${count('spoke')} · silent in ${count('silent')}`
+    + (count('absent') ? ` · absent from ${count('absent')}` : '');
+}
+
 // ── the group's table ────────────────────────────────────────────────────────────────────
 
 export type GroupStudentSort =
   | 'name' | 'lessons_in_room' | 'lessons_spoke' | 'silent_lessons' | 'total_seconds' | 'avg_seconds'
-  | 'share_of_student_talk' | 'questions';
+  | 'share_of_student_talk' | 'questions' | 'answers';
 
-/** The students' rows in the chosen order; ties (and missing questions) fall back to the name. */
+const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, 'ru', { sensitivity: 'base' });
+
+/** The students' rows in the chosen order; ties (and missing figures) fall back to the name. */
 export function sortGroupStudents(rows: GroupTalk['students'], key: GroupStudentSort, direction: 'asc' | 'desc'): GroupTalk['students'] {
-  const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, 'ru', { sensitivity: 'base' });
   const sign = direction === 'asc' ? 1 : -1;
   return [...rows].sort((a, b) => {
     if (key === 'name') return sign * byName(a, b);
@@ -335,36 +405,124 @@ export function sortGroupStudents(rows: GroupTalk['students'], key: GroupStudent
   });
 }
 
-// ── the group's spreadsheet ──────────────────────────────────────────────────────────────
+// ── every teacher side by side ───────────────────────────────────────────────────────────
+
+export type TeacherSort =
+  | 'name' | 'lessons' | 'groups' | 'teacher_share' | 'teacher_seconds' | 'student_seconds'
+  | 'longest_stretch_seconds' | 'questions_per_lesson' | 'answered_share' | 'student_questions_per_lesson'
+  | 'silent_per_lesson';
+
+/** One figure of a teacher's row, worked out where the row only has the counts. */
+export function teacherFigure(row: TalkTally, key: Exclude<TeacherSort, 'name'>): number | null {
+  const q = row.questions;
+  switch (key) {
+    case 'questions_per_lesson': return perLesson(q?.teacher_questions, q?.lessons_with_transcript);
+    case 'student_questions_per_lesson': return perLesson(q?.student_questions, q?.lessons_with_transcript);
+    case 'answered_share': return answeredShare(q);
+    default: return row[key];
+  }
+}
+
+/** Teachers in the chosen order; a missing figure sorts last whichever way; ties by name. */
+export function sortTeachers(rows: TeacherTalkRow[], key: TeacherSort, direction: 'asc' | 'desc'): TeacherTalkRow[] {
+  const sign = direction === 'asc' ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    if (key === 'name') return sign * byName(a, b);
+    const x = teacherFigure(a, key);
+    const y = teacherFigure(b, key);
+    if (x == null || y == null) return x == null && y == null ? byName(a, b) : x == null ? 1 : -1;
+    return x === y ? byName(a, b) : sign * (x - y);
+  });
+}
+
+// ── spreadsheets ─────────────────────────────────────────────────────────────────────────
 
 const csvCell = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
 const minutes = (seconds: number) => (seconds / 60).toFixed(1);
+const blank = (value: number | null | undefined) => (value == null ? '' : value);
+const csv = (rows: (string | number)[][]) => '\uFEFF' + rows.map((r) => r.map(csvCell).join(',')).join('\r\n');
 
 function almatyDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: APP_TIMEZONE });
 }
+
+const LESSON_HEADER = ['Date', 'Start', 'Lesson', 'Groups', 'Teacher', 'Teacher share', 'Students share', 'Speech (min)',
+  'Longest teacher stretch (min)', 'Teacher questions', 'Answered', 'Answered %', 'Student questions',
+  'Median wait (s)', 'Students in the room', 'Didn’t speak', 'Names from voices'];
+
+function lessonCells(l: GroupTalkLesson): (string | number)[] {
+  return [
+    almatyDate(l.start), clock(l.start), l.title, (l.groups ?? []).map((g) => g.name).join(', '), l.teacher_name ?? '',
+    percent(l.teacher_share), percent(l.students_share), minutes(l.speech_seconds),
+    l.longest_stretch_seconds == null ? '' : minutes(l.longest_stretch_seconds),
+    blank(l.teacher_questions), blank(l.answered),
+    l.teacher_questions ? percent((l.answered ?? 0) / l.teacher_questions) : '',
+    blank(l.student_questions), blank(l.median_wait_seconds), l.students_in_room, l.silent,
+    l.source === 'voices' ? 'yes' : '',
+  ];
+}
+
+const TALLY_HEADER = ['Lessons', 'Groups', 'Teacher share (avg)', 'Students share (avg)', 'Teacher spoke (min)',
+  'Students spoke (min)', 'Longest teacher stretch, avg (min)', 'Teacher questions', 'Answered %',
+  'Teacher questions per lesson', 'Student questions', 'Student questions per lesson', 'Silent students per lesson',
+  'Students in the room per lesson'];
+
+function tallyCells(t: TalkTally): (string | number)[] {
+  const q = t.questions;
+  const share = answeredShare(q);
+  return [
+    t.lessons, t.groups, percent(t.teacher_share), percent(t.students_share), minutes(t.teacher_seconds),
+    minutes(t.student_seconds), minutes(t.longest_stretch_seconds), q ? q.teacher_questions : '',
+    share == null ? '' : percent(share), blank(teacherFigure(t, 'questions_per_lesson')),
+    q ? q.student_questions : '', blank(teacherFigure(t, 'student_questions_per_lesson')), t.silent_per_lesson,
+    t.students_in_room_per_lesson,
+  ];
+}
+
+const STATE_CSV: Record<StudentLessonState, string> = { spoke: 'spoke', silent: 'silent', present: 'brief', absent: 'absent' };
 
 /**
  * A group's talk time as a spreadsheet: the students, then the lessons. UTF-8 with a BOM so
  * Excel keeps Cyrillic names; dates and times are Almaty; durations in minutes.
  */
 export function groupTalkCsv(data: GroupTalk): string {
-  const rows: (string | number)[][] = [
+  return csv([
     ['Group', data.group.name, 'From', almatyDate(data.from), 'To', almatyDate(data.to)],
     [],
-    ['Student', 'Lessons in the room', 'Lessons spoke', 'Lessons silent', 'Total (min)', 'Average per lesson (min)',
-      'Share of student talk', 'Questions'],
+    ['Student', 'Lessons with talk time', 'In the room', 'Spoke in', 'Silent in', 'Total (min)',
+      'Average per lesson (min)', 'Share of student talk', 'Questions asked', 'Teacher questions answered',
+      'Lesson by lesson (oldest first)'],
     ...data.students.map((s) => [
-      s.name, s.lessons_in_room, s.lessons_spoke, s.silent_lessons, minutes(s.total_seconds), minutes(s.avg_seconds),
-      percent(s.share_of_student_talk), s.questions ?? '',
+      s.name, s.lessons?.length ?? s.lessons_in_room, s.lessons_in_room, s.lessons_spoke, s.silent_lessons,
+      minutes(s.total_seconds), minutes(s.avg_seconds), percent(s.share_of_student_talk), blank(s.questions),
+      blank(s.answers), (s.lessons ?? []).map((m) => STATE_CSV[m.state]).join(' '),
     ]),
     [],
-    ['Date', 'Start', 'Lesson', 'Teacher', 'Teacher share', 'Students share', 'Speech (min)', 'Students in the room',
-      'Didn’t speak'],
-    ...data.lessons.map((l) => [
-      almatyDate(l.start), clock(l.start), l.title, l.teacher_name ?? '', percent(l.teacher_share),
-      percent(l.students_share), minutes(l.speech_seconds), l.students_in_room, l.silent,
-    ]),
-  ];
-  return '﻿' + rows.map((r) => r.map(csvCell).join(',')).join('\r\n');
+    LESSON_HEADER,
+    ...data.lessons.map(lessonCells),
+  ]);
+}
+
+/** Every teacher, one row each. */
+export function teachersCsv(data: TeachersTalk): string {
+  return csv([
+    ['From', almatyDate(data.from), 'To', almatyDate(data.to)],
+    [],
+    ['Teacher', ...TALLY_HEADER],
+    ...data.teachers.map((t) => [t.name, ...tallyCells(t)]),
+  ]);
+}
+
+/** One teacher: all groups together, each group, each lesson. */
+export function teacherTalkCsv(data: TeacherTalk): string {
+  return csv([
+    ['Teacher', data.teacher.name, 'From', almatyDate(data.from), 'To', almatyDate(data.to)],
+    [],
+    ['', ...TALLY_HEADER],
+    ['All groups', ...tallyCells(data.teacher)],
+    ...data.groups.map((g) => [g.name ?? 'No group', ...tallyCells(g)]),
+    [],
+    LESSON_HEADER,
+    ...data.lessons.map(lessonCells),
+  ]);
 }
