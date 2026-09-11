@@ -4,12 +4,17 @@ import {
   buildAxis,
   clock,
   flagText,
+  hasIssue,
   isMismatch,
+  issueCounts,
   lessonHeadline,
   mismatchIndex,
+  needsAttention,
   position,
+  reportCsv,
+  tallyByTeacher,
 } from './meetAttendance';
-import type { MeetPresence } from '../services/api/meetAttendance';
+import type { MeetLessonSummary, MeetPresence } from '../services/api/meetAttendance';
 
 // Lesson 19:00–20:00 Almaty = 14:00–15:00 UTC.
 const lesson = { start: '2026-09-10T14:00:00Z', end: '2026-09-10T15:00:00Z' };
@@ -110,5 +115,56 @@ describe('flags', () => {
       ],
     }]);
     expect([...index.keys()]).toEqual(['5:1']);
+  });
+});
+
+
+const summary = (id: number, teacherId: number, flags: MeetLessonSummary['flags'], extra: Partial<MeetLessonSummary> = {}): MeetLessonSummary => ({
+  event_id: id, title: `Lesson ${id}`, start: '2026-09-10T14:00:00Z', end: '2026-09-10T15:00:00Z', state: 'ready',
+  groups: [{ id: 1, name: 'July 8 SAT - Gulzada' }],
+  teacher: { id: teacherId, name: teacherId === 1 ? 'Gulzada' : 'Aisha', first_join: '2026-09-10T14:04:00Z', last_leave: '2026-09-10T14:52:00Z' },
+  students: 11, joined: 10, unknown: 0, held_back: false,
+  mismatches: flags.filter((f) => f.code.startsWith('marked') || f.code === 'teacher_not_joined').length,
+  flags, ...extra,
+});
+const T = (code: MeetLessonSummary['flags'][number]['code'], minutes?: number) => ({ code, minutes, user_id: 1, name: 'Gulzada', role: 'teacher' });
+const S = (code: MeetLessonSummary['flags'][number]['code'], name = 'Аяулым', minutes?: number) => ({ code, minutes, user_id: 7, name, role: 'student' });
+
+describe('reporting', () => {
+  const items = [
+    summary(1, 1, [T('teacher_late', 4), T('ended_early', 8), S('late', 'Аяулым', 7)]),
+    summary(2, 1, [T('teacher_late', 12)]),
+    summary(3, 2, [S('marked_present_not_joined', 'Шыңғыс, "Шока"')], { unknown: 2 }),
+    summary(4, 2, [S('left_early', 'Елдана', 15)]),
+  ];
+
+  it('filters by issue, keeping teacher timing apart from student timing', () => {
+    expect(items.filter((i) => hasIssue(i, 'teacher_late')).map((i) => i.event_id)).toEqual([1, 2]);
+    expect(items.filter((i) => hasIssue(i, 'students_late')).map((i) => i.event_id)).toEqual([1]);
+    expect(items.filter((i) => hasIssue(i, 'marks_disagree')).map((i) => i.event_id)).toEqual([3]);
+    expect(items.filter((i) => hasIssue(i, 'to_confirm')).map((i) => i.event_id)).toEqual([3]);
+  });
+
+  it('counts each issue once per lesson', () => {
+    expect(issueCounts(items)).toMatchObject({ teacher_late: 2, ended_early: 1, marks_disagree: 1, students_late: 1, left_early: 1, to_confirm: 1, teacher_not_joined: 0 });
+  });
+
+  it('asks for attention only where someone must act', () => {
+    expect(items.map(needsAttention)).toEqual([true, true, true, false]);
+  });
+
+  it('tallies teachers, the one with most to discuss first', () => {
+    const [first, second] = tallyByTeacher(items);
+    expect(first).toMatchObject({ name: 'Gulzada', lessons: 2, teacher_late: 2, late_minutes: 16, ended_early: 1 });
+    expect(second).toMatchObject({ name: 'Aisha', lessons: 2, marks_disagree: 1, to_confirm: 1 });
+  });
+
+  it('writes a spreadsheet Excel reads, with names quoted safely', () => {
+    const csv = reportCsv(items);
+    expect(csv.startsWith('﻿"Date","Start"')).toBe(true);
+    const row1 = csv.split('\r\n')[1];
+    expect(row1).toContain('"10/09/2026","19:00","20:00"');
+    expect(row1).toContain('"Started 4 min late; Ended 8 min early"');
+    expect(csv).toContain('"Шыңғыс, ""Шока"" (Marked present, never joined)"');
   });
 });
