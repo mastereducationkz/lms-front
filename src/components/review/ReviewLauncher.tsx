@@ -59,6 +59,25 @@ export const ReviewLauncher: React.FC<Props> = ({ state, actions }) => {
   const quiz = unit?.quizzes.find((q) => q.step_id === state.selectedStepId) || null
   const busy = state.status === 'loading'
 
+  // A unit with only one quiz has no real choice to offer — whole-unit review and that one
+  // quiz are the same thing. Hiding the Quiz picker for that case (rather than showing a
+  // dropdown with a single, pointless option) is what "don't show a pointless choice" means
+  // here; Start still works, it just always means that one quiz (useReviewSession's start()
+  // collapses this case to the same plain single-step fetch picking it explicitly would do).
+  const singleQuizUnit = !!unit && unit.quizzes.length === 1
+  // Enabled once a unit is picked, even with no quiz chosen — that's what makes "leave Quiz
+  // empty and press Start" reach the whole unit at all. A unit with zero takeable quizzes
+  // (defensive; the noQuizzes message below already tells the teacher when that's the case)
+  // still leaves this disabled, since there is nothing start() could do with it.
+  const canStart = !!unit && unit.quizzes.length > 0 && !busy
+  // Which of the two start() will actually do, so the button never surprises the teacher —
+  // an explicit quiz pick, or a single-quiz unit's only quiz, both read as the ordinary
+  // single-quiz label; only a genuine "no quiz chosen, more than one on offer" leaves the
+  // whole-unit label showing.
+  const startLabel = busy
+    ? EN.loading
+    : (state.selectedStepId || singleQuizUnit) ? EN.start : EN.startUnit
+
   // Every quiz the group has taken, flattened across units, cheapest to recompute only
   // when the units list itself changes (not on every keystroke/toggle elsewhere on the
   // page).
@@ -172,7 +191,7 @@ export const ReviewLauncher: React.FC<Props> = ({ state, actions }) => {
               </div>
             )}
 
-            {unit && (
+            {unit && !singleQuizUnit && (
               <div className="space-y-1.5">
                 <Label htmlFor="review-quiz" className={FIELD_LABEL}>{EN.quizLabel}</Label>
                 <Select
@@ -208,9 +227,9 @@ export const ReviewLauncher: React.FC<Props> = ({ state, actions }) => {
             size="lg"
             className="w-full sm:w-auto"
             onClick={actions.start}
-            disabled={!state.selectedStepId || busy}
+            disabled={!canStart}
           >
-            {busy ? EN.loading : EN.start}
+            {startLabel}
           </Button>
         </CardContent>
       </Card>

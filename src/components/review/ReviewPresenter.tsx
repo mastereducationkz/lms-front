@@ -5,7 +5,7 @@ import { Button } from '../ui/button'
 import { ReviewQuestionView } from './ReviewQuestionView'
 import { ReviewQuestionGrid } from './ReviewQuestionGrid'
 import { ReviewStatsPanel } from './ReviewStatsPanel'
-import { isGapType } from './reviewStats'
+import { isGapType, questionKey } from './reviewStats'
 import { EN, format } from './strings'
 import type { ReviewSessionActions, ReviewSessionState } from './useReviewSession'
 
@@ -19,7 +19,14 @@ const BADGE = 'rounded-md border border-gray-200 dark:border-border px-2 py-0.5 
 export const ReviewPresenter: React.FC<Props> = ({ state, actions }) => {
   const total = state.questions.length
   const question = total > 0 ? state.questions[state.index] : null
-  const stat = question ? state.statsByQuestionId[String(question.id)] : undefined
+  // Current step's meta, aligned 1:1 with `questions` by position (see QuestionStepMeta) —
+  // used only to know WHICH step's stat to look up; the lookup itself still goes through the
+  // composite key, never `String(question.id)` alone (that collides across a unit's steps —
+  // see questionKey's doc comment in reviewStats.ts).
+  const currentStepMeta = total > 0 ? state.questionSteps[state.index] : undefined
+  const stat = question && currentStepMeta
+    ? state.statsByKey[questionKey(currentStepMeta.stepId, question)]
+    : undefined
   const isGapQuestion = question ? isGapType(question.question_type) : false
 
   // Matched on `event.code`, not `event.key`: teachers here run a Russian keyboard layout,
@@ -89,13 +96,20 @@ export const ReviewPresenter: React.FC<Props> = ({ state, actions }) => {
         <span className="text-lg font-bold text-gray-900 dark:text-foreground">
           {total > 0 ? format(EN.questionOf, { n: state.index + 1, total }) : EN.noData}
         </span>
-        {state.step && (
+        {/* Reads the CURRENT question's step, not a fixed step from the start of the
+            session: a whole-unit deck crosses step boundaries as the teacher advances, and
+            this badge must track that, exactly as it already tracked the single step it used
+            to be pinned to. */}
+        {state.unitTitle && currentStepMeta && (
           <span className={BADGE}>
-            {state.step.lesson_title} · {state.step.title}
+            {state.unitTitle} · {currentStepMeta.stepTitle}
           </span>
         )}
         <span className={BADGE}>
-          {EN.submitted}: {state.attempts.length}/{state.roster.length}
+          {/* Distinct students who submitted anything in the deck — NOT state.attempts.length,
+              which counts attempt ROWS and would double-count a student across a multi-step
+              unit review the moment they submitted more than one of its quizzes. */}
+          {EN.submitted}: {state.submittedCount}/{state.roster.length}
         </span>
 
         <div className="flex-1" />
@@ -157,7 +171,10 @@ export const ReviewPresenter: React.FC<Props> = ({ state, actions }) => {
         <div className="rounded-lg border border-gray-200 dark:border-border p-4">
           <ReviewQuestionGrid
             questions={state.questions}
-            statsByQuestionId={state.statsByQuestionId}
+            questionSteps={state.questionSteps}
+            steps={state.steps}
+            statsByKey={state.statsByKey}
+            rosterCount={state.roster.length}
             currentIndex={state.index}
             onJump={(index) => { actions.jumpTo(index); actions.closeGrid() }}
           />

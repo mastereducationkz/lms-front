@@ -19,6 +19,7 @@ import {
   buildQuestionStats,
   reviewQuestions,
   type ClassSummary,
+  type ClassSummaryGroup,
   type QuestionStat,
   type ReviewAttempt,
   type StudentRef,
@@ -26,6 +27,26 @@ import {
 
 export interface CourseOption { id: number; title: string }
 export interface GroupOption { id: number; name: string; studentCount: number }
+
+/** Which step a deck question at a given array position came from — a parallel array,
+ *  aligned 1:1 with `questions`/`stats`, never a lookup keyed by question id alone (see
+ *  questionKey's doc comment for why raw ids repeat across a unit's steps). */
+export interface QuestionStepMeta { stepId: number; stepTitle: string }
+
+/** One quiz step's slice of the deck, for the question-grid dividers and the unit-level
+ *  "submitted" math — `startIndex`/`questionCount` let a renderer slice `questions` into
+ *  per-step sections without re-deriving step boundaries from `questionSteps` itself. */
+export interface ReviewStepSummary {
+  stepId: number
+  stepTitle: string
+  startIndex: number
+  questionCount: number
+  submittedCount: number
+}
+
+/** Attempts stay tagged with the step they belong to once more than one step is merged into
+ *  one deck (see the module header note on `attempts` below) — this is the tag. */
+export type DeckAttempt = ReviewAttempt & { stepId: number }
 
 export interface ReviewSessionState {
   phase: 'launcher' | 'presenting' | 'summary'
@@ -42,14 +63,41 @@ export interface ReviewSessionState {
   selectedLessonId: number | null
   selectedStepId: number | null
 
+  // Populated only for a single-quiz review — the one step being presented. null for a
+  // whole-unit review, which spans several steps; use `unitTitle` + `questionSteps`/`steps`
+  // instead, which are populated for BOTH modes (a single-quiz review still fills them in
+  // with one step's worth of data) so the presenter/grid never need to branch on which mode
+  // produced the deck.
   step: ReviewSessionResponse['step'] | null
+  /** The unit's own title, spanning the whole deck regardless of how many steps it holds. */
+  unitTitle: string | null
   questions: any[]
+  /** Aligned 1:1 with `questions` — questionSteps[i] names the step question[i] came from. */
+  questionSteps: QuestionStepMeta[]
+  /** One entry per quiz step in the deck, in deck order (see ReviewStepSummary). */
+  steps: ReviewStepSummary[]
   stats: QuestionStat[]
-  statsByQuestionId: Record<string, QuestionStat>
+  // Keyed by the composite `questionKey(stepId, question)` — NEVER by a raw question id
+  // alone. Question ids are not unique across a unit's quiz steps (verified in production:
+  // two steps on one lesson sharing five identical ids), so an id-only key silently makes one
+  // step's stats overwrite another's, with no error, the moment two steps are merged into one
+  // deck. Every reader of this map (ReviewPresenter, ReviewQuestionGrid) must look up with
+  // questionKey(questionSteps[i].stepId, questions[i]), not String(question.id).
+  statsByKey: Record<string, QuestionStat>
   summary: ClassSummary | null
   roster: StudentRef[]
-  attempts: ReviewAttempt[]
+  // Tagged with the step each attempt belongs to (DeckAttempt = ReviewAttempt & { stepId }) —
+  // never flattened into a plain ReviewAttempt[] that loses which step an attempt answered.
+  // Scoring (buildClassSummary) groups these back up by stepId before matching any attempt
+  // against a question, so an attempt from step A is never graded against step B's
+  // identically-id'd question.
+  attempts: DeckAttempt[]
   notSubmitted: StudentRef[]
+  /** Distinct students who submitted anything in the deck — roster.length - notSubmitted.length
+   *  for a whole unit, attempts.length for a single quiz (where those two already agree, one
+   *  attempt per student). NOT attempts.length in general: that double-counts a student who
+   *  submitted more than one quiz in a multi-step unit. */
+  submittedCount: number
 
   index: number
   /**
@@ -77,13 +125,17 @@ export const initialState: ReviewSessionState = {
   selectedLessonId: null,
   selectedStepId: null,
   step: null,
+  unitTitle: null,
   questions: [],
+  questionSteps: [],
+  steps: [],
   stats: [],
-  statsByQuestionId: {},
+  statsByKey: {},
   summary: null,
   roster: [],
   attempts: [],
   notSubmitted: [],
+  submittedCount: 0,
   index: 0,
   gapIndex: 0,
   revealed: false,
@@ -105,6 +157,12 @@ export type Action =
   | { type: 'selectUnit'; lessonId: number | null }
   | { type: 'selectQuiz'; stepId: number | null }
   | { type: 'started'; payload: ReviewSessionResponse }
+  // One payload per quiz step of the unit, in the order /review/quizzes returned those steps
+  // (the server's deliberate curriculum order) — the caller (useReviewSession's runStartUnit)
+  // fetches them in parallel via Promise.all, which resolves in input order regardless of
+  // which request actually finished first, so this array is already in the right order by
+  // construction; the reducer below does not re-sort it.
+  | { type: 'startedUnit'; payloads: ReviewSessionResponse[] }
   | { type: 'index'; index: number }
   | { type: 'gapIndex'; gapIndex: number }
   | { type: 'toggleReveal' }
@@ -166,24 +224,119 @@ export function reducer(state: ReviewSessionState, action: Action): ReviewSessio
       const { step, attempts, roster, not_submitted: notSubmitted } = action.payload
       const questions = reviewQuestions(step.content)
       const nameById = new Map(roster.map((s) => [s.student_id, s.full_name]))
-      const stats = buildQuestionStats(questions, attempts, nameById)
-      const statsByQuestionId: Record<string, QuestionStat> = {}
-      // Keyed by question id, never by index: a question removed from the quiz after the
-      // attempts were stored would silently shift every stat if we keyed by position.
-      stats.forEach((stat) => { statsByQuestionId[stat.questionId] = stat })
+      // Single-quiz review still runs through the composite-key machinery (stepId = the
+      // step's own id) rather than a special-cased id-only path — that is what makes a
+      // single-step review provably identical to one group of a whole-unit review, not just
+      // similar to it.
+      const stats = buildQuestionStats(questions, attempts, nameById, step.step_id)
+      const statsByKey: Record<string, QuestionStat> = {}
+      // Keyed by the composite (step, question) identity, never by raw question id alone —
+      // see questionKey's doc comment (reviewStats.ts) and this file's own header comment.
+      stats.forEach((stat) => { statsByKey[stat.key] = stat })
+      const questionSteps: QuestionStepMeta[] = questions.map(() => (
+        { stepId: step.step_id, stepTitle: step.title }
+      ))
+      const steps: ReviewStepSummary[] = [{
+        stepId: step.step_id,
+        stepTitle: step.title,
+        startIndex: 0,
+        questionCount: questions.length,
+        submittedCount: attempts.length,
+      }]
+      const taggedAttempts: DeckAttempt[] = attempts.map((a) => ({ ...a, stepId: step.step_id }))
+      const groups: ClassSummaryGroup[] = [{ stepId: step.step_id, questions, attempts }]
       return {
         ...state,
         status: 'ready',
         error: null,
         phase: 'presenting',
         step,
+        unitTitle: step.lesson_title,
         questions,
+        questionSteps,
+        steps,
         stats,
-        statsByQuestionId,
-        summary: buildClassSummary(stats, questions, attempts, nameById, notSubmitted),
+        statsByKey,
+        summary: buildClassSummary(stats, groups, nameById, notSubmitted),
+        roster,
+        attempts: taggedAttempts,
+        notSubmitted,
+        submittedCount: attempts.length,
+        index: 0,
+        gapIndex: 0,
+        revealed: false,
+      }
+    }
+
+    case 'startedUnit': {
+      const { payloads } = action
+      if (payloads.length === 0) return state
+      // Roster is identical in every response (same group) — take the first.
+      const roster = payloads[0].roster
+      const nameById = new Map(roster.map((s) => [s.student_id, s.full_name]))
+
+      let questions: any[] = []
+      let questionSteps: QuestionStepMeta[] = []
+      let stats: QuestionStat[] = []
+      const statsByKey: Record<string, QuestionStat> = {}
+      const groups: ClassSummaryGroup[] = []
+      const attempts: DeckAttempt[] = []
+      const steps: ReviewStepSummary[] = []
+      const submittedStudentIds = new Set<number>()
+
+      // Deck order follows the order `payloads` arrived in, which is the order
+      // useReviewSession's runStartUnit fetched them in — i.e. /review/quizzes' own step
+      // order, the server's deliberate curriculum order. No re-sorting here.
+      for (const payload of payloads) {
+        const { step, attempts: stepAttempts } = payload
+        const stepQuestions = reviewQuestions(step.content)
+        // stepId = step.step_id here, not a shared/default one — this is the one thing that
+        // keeps two steps' identically-id'd questions from colliding once merged below.
+        const stepStats = buildQuestionStats(stepQuestions, stepAttempts, nameById, step.step_id)
+        stepStats.forEach((stat) => { statsByKey[stat.key] = stat })
+
+        const startIndex = questions.length
+        questions = questions.concat(stepQuestions)
+        questionSteps = questionSteps.concat(
+          stepQuestions.map(() => ({ stepId: step.step_id, stepTitle: step.title })),
+        )
+        stats = stats.concat(stepStats)
+        groups.push({ stepId: step.step_id, questions: stepQuestions, attempts: stepAttempts })
+        stepAttempts.forEach((a) => {
+          attempts.push({ ...a, stepId: step.step_id })
+          submittedStudentIds.add(a.student_id)
+        })
+        steps.push({
+          stepId: step.step_id,
+          stepTitle: step.title,
+          startIndex,
+          questionCount: stepQuestions.length,
+          submittedCount: stepAttempts.length,
+        })
+      }
+
+      // A student counts as not having submitted the UNIT only when they submitted NONE of
+      // its quizzes — not "submitted this particular step". Per-step submission counts stay
+      // visible on `steps[i].submittedCount` for the grid's dividers.
+      const notSubmitted = roster.filter((s) => !submittedStudentIds.has(s.student_id))
+
+      return {
+        ...state,
+        status: 'ready',
+        error: null,
+        phase: 'presenting',
+        step: null,
+        unitTitle: payloads[0].step.lesson_title,
+        questions,
+        questionSteps,
+        steps,
+        stats,
+        statsByKey,
+        summary: buildClassSummary(stats, groups, nameById, notSubmitted),
         roster,
         attempts,
         notSubmitted,
+        submittedCount: roster.length - notSubmitted.length,
         index: 0,
         gapIndex: 0,
         revealed: false,

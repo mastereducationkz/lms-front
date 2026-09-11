@@ -9,6 +9,7 @@ import {
   isBlankAnswer,
   isCorrectOption,
   parseAnswerBlob,
+  questionKey,
   replayAnswer,
   reviewQuestions,
   splitPipeAnswers,
@@ -336,7 +337,7 @@ describe('buildClassSummary', () => {
     attempt(3, [['q1', 0], ['q2', [1]]]),      // 0/2
   ]
   const stats = buildQuestionStats(questions, attempts, names)
-  const summary = buildClassSummary(stats, questions, attempts, names, [
+  const summary = buildClassSummary(stats, [{ stepId: 0, questions, attempts }], names, [
     { student_id: 4, full_name: 'Gagarin' },
   ])
 
@@ -382,7 +383,7 @@ describe('buildClassSummary', () => {
       { ...attempts[1], time_spent_seconds: 20 },
       { ...attempts[2], time_spent_seconds: 90 },
     ]
-    const asymmetricSummary = buildClassSummary(stats, questions, asymmetric, names, [])
+    const asymmetricSummary = buildClassSummary(stats, [{ stepId: 0, questions, attempts: asymmetric }], names, [])
     // Mean = 40; times[0] = 10, min = 10, max = 90 — a broken "average" landing on any
     // of those (or on the shared attempt() default of 60) would fail this.
     expect(asymmetricSummary.averageTimeSeconds).toBe(40)
@@ -394,7 +395,7 @@ describe('buildClassSummary', () => {
       { ...attempts[1], time_spent_seconds: null },
       { ...attempts[2], time_spent_seconds: 20 },
     ]
-    const summaryWithNull = buildClassSummary(stats, questions, withNull, names, [])
+    const summaryWithNull = buildClassSummary(stats, [{ stepId: 0, questions, attempts: withNull }], names, [])
     // Correct: mean of [100, 20] = 60. A null-coerced-to-0 average would give (100+0+20)/3 = 40.
     expect(summaryWithNull.averageTimeSeconds).toBe(60)
   })
@@ -415,7 +416,7 @@ describe('buildClassSummary — score distribution buckets a gap percentage', ()
     const answers = gapQuestions.map((q, i) => [q.id, i < correctCount ? 'yes' : 'no'])
     const gapAttempts = [attempt(1, answers)]
     const gapStats = buildQuestionStats(gapQuestions, gapAttempts, names)
-    const gapSummary = buildClassSummary(gapStats, gapQuestions, gapAttempts, names, [])
+    const gapSummary = buildClassSummary(gapStats, [{ stepId: 0, questions: gapQuestions, attempts: gapAttempts }], names, [])
 
     expect(gapSummary.top[0].percent).toBeCloseTo(79.3, 5)
     expect(gapSummary.distribution.reduce((n, b) => n + b.count, 0)).toBe(
@@ -429,7 +430,7 @@ describe('buildClassSummary — score distribution buckets a gap percentage', ()
 describe('buildClassSummary — empty case', () => {
   it('nulls the averages rather than dividing by zero', () => {
     const stats = buildQuestionStats([single], [], names)
-    const summary = buildClassSummary(stats, [single], [], names, [])
+    const summary = buildClassSummary(stats, [{ stepId: 0, questions: [single], attempts: [] }], names, [])
     expect(summary.participants).toBe(0)
     expect(summary.averagePercent).toBeNull()
     expect(summary.medianPercent).toBeNull()
@@ -601,7 +602,7 @@ describe('buildClassSummary — partial credit on multi-gap questions (I6)', () 
     const questions = [gaps]
     const attempts = [attempt(1, [['q4', ['cat', 'bat']]])] // 1 of 2 gaps correct
     const stats = buildQuestionStats(questions, attempts, names)
-    const summary = buildClassSummary(stats, questions, attempts, names, [])
+    const summary = buildClassSummary(stats, [{ stepId: 0, questions, attempts }], names, [])
     // An all-or-nothing scoring (gradeQuestion(...).isCorrect per question) would count
     // this as 0/1 = 0%. Scored gap-by-gap, like the student's own result screen, it is
     // 1/2 = 50%.
@@ -615,7 +616,7 @@ describe('buildClassSummary — partial credit on multi-gap questions (I6)', () 
       attempt(2, [['q1', 1], ['q2', [1]]]),
     ]
     const stats = buildQuestionStats(questions, attempts, names)
-    const summary = buildClassSummary(stats, questions, attempts, names, [])
+    const summary = buildClassSummary(stats, [{ stepId: 0, questions, attempts }], names, [])
     expect(summary.top[0]).toMatchObject({ correct: 2, total: 2, percent: 100 })
   })
 })
@@ -863,5 +864,52 @@ describe('wholeQuestionRevealed', () => {
     // (0 === -1, unreachable) and hide whole-question content forever.
     expect(wholeQuestionRevealed(true, 0, 0, true)).toBe(true)
     expect(wholeQuestionRevealed(true, 0, 0, false)).toBe(false)
+  })
+})
+
+// Question ids are NOT unique across the quiz steps of one unit (verified in production:
+// lesson 134 has two quiz steps sharing 5 identical question ids). questionKey and
+// buildQuestionStats's `key` field are what let a caller merge more than one step's stats
+// into one Record without one step's entry silently overwriting another's same-id entry.
+describe('questionKey / buildQuestionStats — composite (step, question) identity', () => {
+  it('two different steps produce different keys for the same raw question id', () => {
+    const q = { id: 'q1', question_type: 'short_answer', correct_answer: 'x' }
+    expect(questionKey('stepA', q)).not.toBe(questionKey('stepB', q))
+  })
+
+  it('buildQuestionStats tags each stat with its own stepId and a matching composite key', () => {
+    const q = { id: 'q1', question_type: 'short_answer', correct_answer: 'x' }
+    const [statA] = buildQuestionStats([q], [], names, 'stepA')
+    const [statB] = buildQuestionStats([q], [], names, 'stepB')
+    expect(statA.stepId).toBe('stepA')
+    expect(statA.key).toBe(questionKey('stepA', q))
+    expect(statB.key).toBe(questionKey('stepB', q))
+    expect(statA.key).not.toBe(statB.key)
+    // The raw, non-composite id is still exposed (questionId) for display purposes, and IS
+    // expected to collide -- that's the whole point of the fixture.
+    expect(statA.questionId).toBe(statB.questionId)
+  })
+
+  it('merging two steps\' stats into one Record by `key` keeps both entries distinct -- this is the collision the whole feature exists to avoid', () => {
+    // Two DIFFERENT questions that happen to share id 'q1', each with its own attempts and
+    // its own correct answer -- exactly lesson 134's shape, minimised.
+    const stepAQuestion = { id: 'q1', question_type: 'short_answer', correct_answer: 'red' }
+    const stepBQuestion = { id: 'q1', question_type: 'short_answer', correct_answer: 'blue' }
+    const stepAAttempts = [attempt(1, [['q1', 'red']])]  // correct for step A
+    const stepBAttempts = [attempt(1, [['q1', 'red']])]  // WRONG for step B (key is 'blue')
+
+    const statsA = buildQuestionStats([stepAQuestion], stepAAttempts, names, 'stepA')
+    const statsB = buildQuestionStats([stepBQuestion], stepBAttempts, names, 'stepB')
+
+    const merged: Record<string, ReturnType<typeof buildQuestionStats>[number]> = {}
+    ;[...statsA, ...statsB].forEach((stat) => { merged[stat.key] = stat })
+
+    // Against a `String(question.id)`-only implementation, questionKey collapses both
+    // entries to the same 'q1' string and this assertion is exactly what fails (see the
+    // collision-revert demonstration in useReviewSession.test.ts for the full failure output
+    // reproduced against that implementation).
+    expect(Object.keys(merged)).toHaveLength(2)
+    expect(merged[statsA[0].key].percentCorrect).toBe(100) // step A: 'red' is correct
+    expect(merged[statsB[0].key].percentCorrect).toBe(0)   // step B: 'red' is wrong ('blue' is the key)
   })
 })

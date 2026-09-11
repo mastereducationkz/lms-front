@@ -15,6 +15,7 @@ import {
 } from './reviewSessionReducer'
 import { createRequestGuard, type RequestGuard } from './requestGuard'
 import { EN } from './strings'
+import type { ReviewUnit } from '../../services/api/review'
 
 // Type-only re-export — deliberately NOT a value re-export of `initialState`/`reducer`. Those
 // were module-private before this file split off from reviewSessionReducer.ts, and nothing
@@ -164,11 +165,51 @@ export function useReviewSession(): [ReviewSessionState, ReviewSessionActions] {
     }
   }, [])
 
+  // Whole-unit review: fetch every quiz step's session in parallel and merge them into one
+  // deck (reviewSessionReducer's 'startedUnit'). Goes through the SAME request-token guard as
+  // runStart, on both branches, so a unit fetch superseded by a newer selection never lands —
+  // no special-casing for "this one has several requests in flight" beyond Promise.all itself.
+  // Promise.all also gives the exact "all or nothing" failure mode the spec calls for: if any
+  // one step's request rejects, the whole call rejects and no partial deck is ever dispatched.
+  const runStartUnit = useCallback(async (unit: ReviewUnit, groupId: number) => {
+    const token = guard.start()
+    dispatch({ type: 'loading' })
+    try {
+      // Promise.all resolves in input order regardless of which request actually finishes
+      // first, and `unit.quizzes` is already in /review/quizzes' own step order — so
+      // `payloads` lands in the server's deliberate curriculum order with no re-sorting here.
+      const payloads = await Promise.all(
+        unit.quizzes.map((quiz) => apiClient.getReviewSession(quiz.step_id, groupId)),
+      )
+      if (!guard.isCurrent(token)) return // superseded by a newer selection
+      dispatch({ type: 'startedUnit', payloads })
+    } catch (err) {
+      if (!guard.isCurrent(token)) return // superseded by a newer selection
+      dispatch({ type: 'error', message: messageFor(err) })
+    }
+  }, [])
+
+  // With a Quiz explicitly picked, behaves exactly as before (single step). With Quiz left
+  // empty, reviews the whole selected unit — unless that unit has only one quiz, in which
+  // case a "whole unit" fetch would be pointless machinery around what is already that one
+  // quiz; runStart's plain single-step path handles it instead, so a one-quiz unit's review
+  // is byte-identical to picking that quiz explicitly.
   const start = useCallback(async () => {
-    const { selectedStepId, selectedGroupId } = stateRef.current
-    if (!selectedStepId || !selectedGroupId) return
-    await runStart(selectedStepId, selectedGroupId)
-  }, [runStart])
+    const { selectedStepId, selectedGroupId, selectedLessonId, units } = stateRef.current
+    if (!selectedGroupId) return
+    if (selectedStepId) {
+      await runStart(selectedStepId, selectedGroupId)
+      return
+    }
+    if (!selectedLessonId) return
+    const unit = units.find((u) => u.lesson_id === selectedLessonId)
+    if (!unit || unit.quizzes.length === 0) return
+    if (unit.quizzes.length === 1) {
+      await runStart(unit.quizzes[0].step_id, selectedGroupId)
+      return
+    }
+    await runStartUnit(unit, selectedGroupId)
+  }, [runStart, runStartUnit])
 
   // A "Worth reviewing" row already knows exactly which lesson/quiz it wants started --
   // it doesn't need the two-step select-then-press-Start dance. It still dispatches
