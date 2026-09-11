@@ -61,6 +61,7 @@ const EditEvent = lazy(() => import('../pages/EditEvent.tsx'));
 const Calendar = lazy(() => import('../pages/Calendar.tsx'));
 const LessonRecordings = lazy(() => import('../pages/LessonRecordings.tsx'));
 const MeetAttendanceReview = lazy(() => import('../pages/MeetAttendanceReview.tsx'));
+const WatchRecordingPage = lazy(() => import('../pages/WatchRecordingPage.tsx'));
 const SubstitutionRequestPage = lazy(() => import('../pages/SubstitutionRequestPage.tsx'));
 const MyLessonRequests = lazy(() => import('../pages/MyLessonRequests.tsx'));
 const HeadTeacherLessonRequestsPage = lazy(() => import('../pages/HeadTeacherLessonRequestsPage.tsx'));
@@ -131,6 +132,11 @@ export default function Router() {
                   </ProtectedRoute>
                 } />
                 {/* Auth Routes */}
+                {/* A recording opened from the CRM with a three-hour watch link. No login and no
+                    ProtectedRoute: the people it is for (accountants) have no LMS account, and the
+                    key in the URL is the permission. */}
+                <Route path="/watch/:token" element={<WatchRecordingPage />} />
+
                 <Route path="/login" element={
                   <ProtectedRoute requireAuth={false}>
                       <LoginPage />
