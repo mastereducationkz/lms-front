@@ -15,6 +15,21 @@ import { parseGap } from '../../utils/gapParser'
 
 export const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F']
 
+/**
+ * Question ids are NOT unique across the quiz steps of one unit — verified in production
+ * (two quiz steps on the same lesson sharing five identical question ids). Every consumer
+ * that keys stats or matches an attempt to a question by id MUST use this composite instead
+ * of `getAnswerKey(question)` (== `String(question.id)`) alone once more than one step is in
+ * play, or a question from step B silently overwrites/grades against step A's identically-id'd
+ * question with no error (see buildQuestionStats's `key` field and buildClassSummary's
+ * per-group scoring, both below). Do not switch this to array position — position drifts the
+ * moment a question is inserted/removed from a quiz after attempts were stored, exactly the
+ * bug `questionId`-by-position keying was designed to avoid in the first place.
+ */
+export function questionKey(stepId: string | number, question: any): string {
+  return `${stepId}::${getAnswerKey(question)}`
+}
+
 export interface ReviewAttempt {
   student_id: number
   attempt_id: number
@@ -87,6 +102,12 @@ export interface OptionStat {
 
 export interface QuestionStat {
   questionId: string
+  /** Which quiz step this question came from — a raw plain id, meaningless on its own since
+   *  ids repeat across a unit's steps; always pair it with `questionId` via `key`/`questionKey`. */
+  stepId: string | number
+  /** Composite identity: `questionKey(stepId, question)`. The ONLY safe key for a Record
+   *  aggregating stats across more than one quiz step — see questionKey's doc comment. */
+  key: string
   index: number
   questionType: string
   questionText: string
@@ -353,6 +374,11 @@ export function buildQuestionStats(
   questions: any[],
   attempts: ReviewAttempt[],
   nameById: Map<number, string>,
+  // Optional and defaulted: every pre-existing single-quiz call site (this file's own tests
+  // included) passes 3 args and keeps working unchanged — the default stepId only matters
+  // once a caller starts merging stats from more than one step (see questionKey's doc
+  // comment), at which point it MUST pass the real step_id.
+  stepId: string | number = 0,
 ): QuestionStat[] {
   const parsed = attempts.map((a) => ({
     studentId: a.student_id,
@@ -602,6 +628,8 @@ export function buildQuestionStats(
 
     return {
       questionId: key,
+      stepId,
+      key: questionKey(stepId, question),
       index,
       questionType: type,
       // Gap questions (fill_blank, text_completion) mark their answer key with `*` inside
@@ -656,6 +684,10 @@ export interface StudentScore {
 
 export interface HardQuestion {
   questionId: string
+  /** Composite identity (see questionKey) — use this, not questionId, as a React list key:
+   *  the same raw questionId can legitimately appear twice in "hardest" when it names
+   *  questions from two different steps of the same unit. */
+  key: string
   index: number
   questionText: string
   answered: number
@@ -722,43 +754,72 @@ function median(values: number[]): number | null {
  * something this function tries to paper over — so treat any resemblance between this
  * summary's percentage and a given student's own score as coincidental whenever the quiz
  * contains long_text or unresolvable-key questions.
+ *
+ * Takes per-step groups, not one flat (questions, attempts) pair — a whole-unit review spans
+ * several quiz steps, and question ids repeat across them (see questionKey's doc comment), so
+ * an attempt must only ever be matched against questions from its OWN step's `gradable` list.
+ * Scoring one group at a time and only THEN summing by studentId is what keeps that true: the
+ * per-attempt loop below is untouched from before, just run once per group instead of once
+ * globally, so a single-step call (`groups` of length 1) walks the exact same gradable list
+ * against the exact same attempts it always did — see reviewStats.test.ts's regression
+ * coverage for byte-identical output on that path. A student who took every quiz in the unit
+ * gets one summed row (their unit score); a student in only one group's attempts contributes
+ * to the total exactly once, from that group alone.
  */
+export interface ClassSummaryGroup {
+  stepId: string | number
+  questions: any[]
+  attempts: ReviewAttempt[]
+}
+
 export function buildClassSummary(
   questionStats: QuestionStat[],
-  questions: any[],
-  attempts: ReviewAttempt[],
+  groups: ClassSummaryGroup[],
   nameById: Map<number, string>,
   notSubmitted: StudentRef[],
 ): ClassSummary {
-  const gradable = questions.filter((q) => isGradable(q))
+  const byStudent = new Map<number, { correct: number; total: number; fullName: string }>()
 
-  const scores: StudentScore[] = attempts.map((attempt) => {
-    const values = parseAnswerBlob(attempt.answers)
-    let correctParts = 0
-    let totalParts = 0
-    for (const question of gradable) {
-      const raw = values.get(getAnswerKey(question))
-      if (isGapType(question?.question_type)) {
-        const { gapAnswer } = replayAnswer(question, raw)
-        const result = gradeQuestion(question, undefined, gapAnswer)
-        correctParts += result.correctParts
-        totalParts += result.totalParts
-        continue
+  for (const group of groups) {
+    const gradable = group.questions.filter((q) => isGradable(q))
+    for (const att of group.attempts) {
+      const values = parseAnswerBlob(att.answers)
+      let correctParts = 0
+      let totalParts = 0
+      for (const question of gradable) {
+        const raw = values.get(getAnswerKey(question))
+        if (isGapType(question?.question_type)) {
+          const { gapAnswer } = replayAnswer(question, raw)
+          const result = gradeQuestion(question, undefined, gapAnswer)
+          correctParts += result.correctParts
+          totalParts += result.totalParts
+          continue
+        }
+        totalParts += 1
+        if (isBlankAnswer(question, raw)) continue
+        const { answer, gapAnswer } = replayAnswer(question, raw)
+        if (gradeQuestion(question, answer, gapAnswer).isCorrect) correctParts += 1
       }
-      totalParts += 1
-      if (isBlankAnswer(question, raw)) continue
-      const { answer, gapAnswer } = replayAnswer(question, raw)
-      if (gradeQuestion(question, answer, gapAnswer).isCorrect) correctParts += 1
+      const fullName = nameById.get(att.student_id) ?? `#${att.student_id}`
+      const existing = byStudent.get(att.student_id)
+      if (existing) {
+        existing.correct += correctParts
+        existing.total += totalParts
+      } else {
+        byStudent.set(att.student_id, { correct: correctParts, total: totalParts, fullName })
+      }
     }
-    return {
-      studentId: attempt.student_id,
-      fullName: nameById.get(attempt.student_id) ?? `#${attempt.student_id}`,
-      correct: correctParts,
-      total: totalParts,
-      percent: totalParts > 0 ? round1((correctParts / totalParts) * 100) : 0,
-    }
-  })
+  }
 
+  const scores: StudentScore[] = [...byStudent.entries()].map(([studentId, agg]) => ({
+    studentId,
+    fullName: agg.fullName,
+    correct: agg.correct,
+    total: agg.total,
+    percent: agg.total > 0 ? round1((agg.correct / agg.total) * 100) : 0,
+  }))
+
+  const attempts = groups.flatMap((g) => g.attempts)
   const percents = scores.map((s) => s.percent)
   const times = attempts
     .map((a) => a.time_spent_seconds)
@@ -772,6 +833,7 @@ export function buildClassSummary(
     .slice(0, 5)
     .map((stat) => ({
       questionId: stat.questionId,
+      key: stat.key,
       index: stat.index,
       questionText: stat.questionText,
       answered: stat.answered,
@@ -780,7 +842,12 @@ export function buildClassSummary(
     }))
 
   return {
-    participants: attempts.length,
+    // Distinct students who submitted anything in any group — NOT attempts.length, which
+    // double-counts a student across a multi-step unit the moment they submit more than one
+    // quiz in it. Single-group callers still get one attempt per student (the pre-existing
+    // assumption this file already made — see the header badge in ReviewPresenter, which
+    // reads this same count), so this equals attempts.length exactly when groups.length === 1.
+    participants: byStudent.size,
     notSubmitted,
     averagePercent: percents.length
       ? round1(percents.reduce((sum, p) => sum + p, 0) / percents.length)

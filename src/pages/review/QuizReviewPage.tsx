@@ -12,7 +12,10 @@ const QuizReviewPage: React.FC = () => {
   const [state, actions] = useReviewSession()
 
   const retry = () => {
-    if (state.selectedStepId && state.selectedGroupId) actions.start()
+    // A unit selection alone is enough for actions.start() to do the right thing (single
+    // quiz or whole unit) — see useReviewSession's start(), so retrying a failed start no
+    // longer requires a quiz to have been explicitly chosen too.
+    if ((state.selectedStepId || state.selectedLessonId) && state.selectedGroupId) actions.start()
     // A failed quizzes-load happens with a group already selected but no quiz chosen yet.
     // Falling through to selectCourse here would reset selectedGroupId and refetch the
     // group list instead of retrying the quiz list for the group the teacher already

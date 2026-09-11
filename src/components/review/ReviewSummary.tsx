@@ -102,8 +102,11 @@ export const ReviewSummary: React.FC<Props> = ({ summary, namesVisible, onRestar
         <CardHeader className="pb-3"><CardTitle className={SECTION_HEADING}>{EN.summaryHardest}</CardTitle></CardHeader>
         <CardContent className="divide-y divide-gray-100 dark:divide-border">
           {summary.hardest.length === 0 && <p className="text-sm text-gray-500 dark:text-gray-400">{EN.noData}</p>}
+          {/* key is the composite (step, question) identity, not questionId alone: the same
+              raw id can legitimately appear twice here when it names questions from two
+              different steps of the same unit (see questionKey's doc comment). */}
           {summary.hardest.map((question) => (
-            <div key={question.questionId} className="flex gap-3 py-2 text-sm text-gray-700 dark:text-gray-300 first:pt-0 last:pb-0">
+            <div key={question.key} className="flex gap-3 py-2 text-sm text-gray-700 dark:text-gray-300 first:pt-0 last:pb-0">
               <span className="w-8 shrink-0 font-semibold text-gray-900 dark:text-foreground">{question.index + 1}</span>
               <span className="flex-1 line-clamp-2">{question.questionText || '—'}</span>
               <span className="shrink-0 tabular-nums text-gray-500 dark:text-gray-400">

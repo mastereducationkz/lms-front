@@ -11,8 +11,11 @@ export const EN = {
   selectCourse: 'Select a course',
   selectGroup: 'Select a group',
   selectUnit: 'Select a unit',
-  selectQuiz: 'Select a quiz',
+  selectQuiz: 'Select a quiz (optional — leave empty for the whole unit)',
   start: 'Start review',
+  // Shown on the same button as `start` once a unit is picked but no specific quiz is — so
+  // the teacher is never surprised by which one Start is about to do.
+  startUnit: 'Review whole unit',
 
   questions: 'Questions',
   submitted: 'Submitted',
