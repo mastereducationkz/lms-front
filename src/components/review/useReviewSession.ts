@@ -6,16 +6,42 @@
 // its header comment). This file wires that reducer into a real useReducer() and adds every
 // async action creator (the actual network calls) around it.
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import apiClient from '../../services/api'
 import {
   initialState,
   reducer,
+  type CourseOption,
+  type GroupOption,
   type ReviewSessionState,
 } from './reviewSessionReducer'
 import { createRequestGuard, type RequestGuard } from './requestGuard'
 import { EN } from './strings'
+import {
+  buildReviewSearchParams,
+  parseReviewRestoreIntent,
+  type ReviewRestoreIntent,
+} from './reviewUrlState'
 import type { ReviewUnit } from '../../services/api/review'
+
+// Shared by loadCourses/selectCourse and restoreFromUrl -- the one place each response
+// shape gets turned into the option lists the reducer stores, so a restored session is
+// built from the exact same mapping a teacher-driven selection would produce, not a
+// second, driftable copy of it.
+function mapCourses(data: any): CourseOption[] {
+  return (data || []).map((c: any) => ({ id: Number(c.id), title: c.title }))
+}
+
+// No `!g.is_archived` filter here: getCourseGroupsAnalytics already excludes archived
+// groups unless asked otherwise (see selectCourse's own comment) -- this mapper mirrors
+// that as-is rather than re-deciding it.
+function mapGroups(data: any): GroupOption[] {
+  return (data?.groups || []).map((g: any) => ({
+    id: Number(g.group_id),
+    name: g.group_name,
+    studentCount: Number(g.students_count || 0),
+  }))
+}
 
 // Type-only re-export — deliberately NOT a value re-export of `initialState`/`reducer`. Those
 // were module-private before this file split off from reviewSessionReducer.ts, and nothing
@@ -62,6 +88,7 @@ export interface ReviewSessionActions {
 export function useReviewSession(): [ReviewSessionState, ReviewSessionActions] {
   const [state, dispatch] = useReducer(reducer, initialState)
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   // Async callbacks need the latest selection without being re-created on every change.
   const stateRef = useRef(state)
@@ -93,10 +120,7 @@ export function useReviewSession(): [ReviewSessionState, ReviewSessionActions] {
     dispatch({ type: 'loading' })
     try {
       const data = await apiClient.getCourses()
-      dispatch({
-        type: 'courses',
-        courses: (data || []).map((c: any) => ({ id: Number(c.id), title: c.title })),
-      })
+      dispatch({ type: 'courses', courses: mapCourses(data) })
     } catch (err) {
       dispatch({ type: 'error', message: messageFor(err) })
     }
@@ -110,16 +134,7 @@ export function useReviewSession(): [ReviewSessionState, ReviewSessionActions] {
     try {
       const data = await apiClient.getCourseGroupsAnalytics(String(courseId))
       if (!guard.isCurrent(token)) return // superseded by a newer selection
-      // No `!g.is_archived` filter here: getCourseGroupsAnalytics already excludes archived
-      // groups unless asked otherwise, so this would be a redundant (and silently
-      // divergent, if that default ever changes) second copy of that rule.
-      const groups = (data?.groups || [])
-        .map((g: any) => ({
-          id: Number(g.group_id),
-          name: g.group_name,
-          studentCount: Number(g.students_count || 0),
-        }))
-      dispatch({ type: 'groups', groups })
+      dispatch({ type: 'groups', groups: mapGroups(data) })
     } catch (err) {
       if (!guard.isCurrent(token)) return // superseded by a newer selection
       dispatch({ type: 'error', message: messageFor(err) })
@@ -227,6 +242,88 @@ export function useReviewSession(): [ReviewSessionState, ReviewSessionActions] {
     await runStart(stepId, groupId)
   }, [runStart])
 
+  // Re-establishes a session from a parsed URL intent on mount (refresh, browser restore,
+  // or a pasted link) -- the fix for "refreshing mid-review throws the teacher back to the
+  // launcher". Goes through the SAME shared guard as every other async action here, one
+  // token for the whole chain: this is inherently a multi-step cascade (courses -> this
+  // course's groups -> this group's quizzes -> the session itself), so a single token
+  // checked after every await is the natural extension of the guard, not a special case of
+  // it -- a click anywhere in the launcher while this is in flight bumps the SAME guard and
+  // supersedes it, exactly as it would supersede selectCourse/selectGroup/start.
+  //
+  // Deliberately does NOT chain the exposed selectCourse/selectGroup actions and then read
+  // stateRef afterwards: startQuiz's own comment above already documents why that races
+  // (dispatch is async; stateRef only catches up on the next render). Every value this
+  // needs -- the fetched courses/groups/units -- is kept in a local variable from the
+  // fetch's own response instead, never re-read back out of state.
+  //
+  // A deleted group, a removed unit, a step id that no longer belongs to it (or never did),
+  // a course the teacher lost access to -- every mismatch between the URL and what the
+  // server actually has falls through to the ordinary 'error' dispatch, landing on the
+  // launcher with the existing error banner (and, for a 403, the existing "no access to
+  // this group" copy via messageFor) -- never a crash, never a partial deck.
+  const restoreFromUrl = useCallback(async (intent: ReviewRestoreIntent) => {
+    const token = guard.start()
+    dispatch({ type: 'loading' })
+    try {
+      const coursesData = await apiClient.getCourses()
+      if (!guard.isCurrent(token)) return
+      dispatch({ type: 'courses', courses: mapCourses(coursesData) })
+      dispatch({ type: 'selectCourse', courseId: intent.courseId })
+
+      const groupsData = await apiClient.getCourseGroupsAnalytics(String(intent.courseId))
+      if (!guard.isCurrent(token)) return
+      dispatch({ type: 'groups', groups: mapGroups(groupsData) })
+      dispatch({ type: 'selectGroup', groupId: intent.groupId })
+
+      const quizzesData = await apiClient.getReviewQuizzes(intent.courseId, intent.groupId)
+      if (!guard.isCurrent(token)) return
+      const units: ReviewUnit[] = quizzesData.units || []
+      dispatch({ type: 'quizzes', units, rosterCount: quizzesData.roster_count || 0 })
+
+      const unit = units.find((u) => u.lesson_id === intent.lessonId)
+      if (!unit || unit.quizzes.length === 0) {
+        dispatch({ type: 'error', message: EN.loadError })
+        return
+      }
+      dispatch({ type: 'selectUnit', lessonId: intent.lessonId })
+
+      if (intent.mode === 'quiz') {
+        const step = unit.quizzes.find((q) => q.step_id === intent.stepId)
+        if (!step) {
+          dispatch({ type: 'error', message: EN.loadError })
+          return
+        }
+        dispatch({ type: 'selectQuiz', stepId: step.step_id })
+        const payload = await apiClient.getReviewSession(step.step_id, intent.groupId)
+        if (!guard.isCurrent(token)) return
+        dispatch({ type: 'started', payload })
+      } else if (unit.quizzes.length === 1) {
+        // Mirrors start()'s own single-quiz-unit collapse: a one-quiz unit's whole-unit
+        // review is byte-identical to picking that quiz explicitly, so restoring it goes
+        // through the same plain single-step path (and the URL self-corrects to mode=quiz
+        // on the next write-back below, same as a fresh start() of that unit would).
+        const payload = await apiClient.getReviewSession(unit.quizzes[0].step_id, intent.groupId)
+        if (!guard.isCurrent(token)) return
+        dispatch({ type: 'started', payload })
+      } else {
+        const payloads = await Promise.all(
+          unit.quizzes.map((quiz) => apiClient.getReviewSession(quiz.step_id, intent.groupId)),
+        )
+        if (!guard.isCurrent(token)) return
+        dispatch({ type: 'startedUnit', payloads })
+      }
+
+      if (!guard.isCurrent(token)) return
+      // clampIndex (reviewSessionReducer) clamps a stale/out-of-range index to the deck's
+      // real bounds -- never a crash from an index that no longer fits.
+      dispatch({ type: 'index', index: intent.index })
+    } catch (err) {
+      if (!guard.isCurrent(token)) return
+      dispatch({ type: 'error', message: messageFor(err) })
+    }
+  }, [])
+
   const next = useCallback(() => dispatch({ type: 'index', index: stateRef.current.index + 1 }), [])
   const prev = useCallback(() => dispatch({ type: 'index', index: stateRef.current.index - 1 }), [])
   const jumpTo = useCallback((index: number) => dispatch({ type: 'index', index }), [])
@@ -246,7 +343,54 @@ export function useReviewSession(): [ReviewSessionState, ReviewSessionActions] {
   const restart = useCallback(() => dispatch({ type: 'restart' }), [])
   const exit = useCallback(() => navigate('/dashboard'), [navigate])
 
-  useEffect(() => { loadCourses() }, [loadCourses])
+  // On mount only: a well-formed review URL restores that session (see restoreFromUrl
+  // above); otherwise this is the ordinary cold start. `restoredRef` (not just an empty
+  // dependency array) is the guard against React 18 StrictMode's dev-only double-invoke of
+  // mount effects -- without it, a restore's whole 3-4-request chain would fire twice on
+  // every dev mount. Deliberately NOT reactive to `searchParams`: the write-back effect
+  // below updates the URL as the teacher navigates, and re-running this on every one of
+  // those writes would re-attempt a restore (or a redundant loadCourses()) mid-review.
+  const restoredRef = useRef(false)
+  useEffect(() => {
+    if (restoredRef.current) return
+    restoredRef.current = true
+    const intent = parseReviewRestoreIntent(searchParams)
+    if (intent) {
+      restoreFromUrl(intent)
+    } else {
+      loadCourses()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Keeps the URL in step with the teacher's navigation once a review is under way, so a
+  // refresh, a browser Back/restore, or a copied link lands back on the same question --
+  // this is the write half of restoreFromUrl's read half above. `replace: true` throughout:
+  // within-review updates must not turn the browser's Back button into a question-by-
+  // question undo.
+  //
+  // Deliberately excludes `revealed` and `gapIndex` from what it writes -- see
+  // reviewUrlState.ts's header comment: this screen is projected live, and a refresh must
+  // always come back with the answer hidden, never mid-reveal on whatever gap the teacher
+  // last stopped on.
+  useEffect(() => {
+    if (state.phase !== 'presenting' && state.phase !== 'summary') return
+    const { selectedCourseId, selectedGroupId, selectedLessonId, step, index } = state
+    if (!selectedCourseId || !selectedGroupId || !selectedLessonId) return
+    const intent: ReviewRestoreIntent = step
+      ? {
+          courseId: selectedCourseId, groupId: selectedGroupId, lessonId: selectedLessonId,
+          mode: 'quiz', stepId: step.step_id, index,
+        }
+      : {
+          courseId: selectedCourseId, groupId: selectedGroupId, lessonId: selectedLessonId,
+          mode: 'unit', stepId: null, index,
+        }
+    setSearchParams(buildReviewSearchParams(intent), { replace: true })
+  }, [
+    state.phase, state.selectedCourseId, state.selectedGroupId, state.selectedLessonId,
+    state.step, state.index, setSearchParams,
+  ])
 
   const actions = useMemo<ReviewSessionActions>(() => ({
     loadCourses, selectCourse, selectGroup, selectUnit, selectQuiz, start, startQuiz,
