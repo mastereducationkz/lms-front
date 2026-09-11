@@ -66,9 +66,19 @@ const gapsInQuestionTextWrongType = {
 }
 
 // A richer cloze fixture for per-gap stats — three gaps, expected ['cat', 'mat', 'door'].
+// fill_blank: students PICK from the gap's own option list (FillInBlankRenderer renders a
+// <select>), so review mode must show every offered option, not just what was picked.
 const threeGaps = {
   id: 'q9',
   question_type: 'fill_blank',
+  content_text: 'The [[cat*,dog]] sat on the [[mat*,rug]] near the [[door*,window]]',
+}
+
+// Same three-gap passage, but text_completion: students TYPE into a free-text box
+// (TextCompletionRenderer), so there is no option list to show — only what was typed.
+const threeGapsTyped = {
+  id: 'q10',
+  question_type: 'text_completion',
   content_text: 'The [[cat*,dog]] sat on the [[mat*,rug]] near the [[door*,window]]',
 }
 
@@ -643,7 +653,7 @@ describe('buildQuestionStats — per-gap stats (gap stepper)', () => {
     expect(stat.gaps[2].names.unanswered).toEqual(['Borisov'])
   })
 
-  it('groups typed answers case/space-insensitively but shows the text as first typed, most common first', () => {
+  it('fill_blank: lists every option offered by the gap token, in token order, including one nobody chose', () => {
     const attempts = [
       attempt(1, [['q9', ['Cat', 'mat', 'door']]]),
       attempt(2, [['q9', [' cat ', 'mat', 'door']]]),
@@ -651,16 +661,40 @@ describe('buildQuestionStats — per-gap stats (gap stepper)', () => {
     ]
     const [stat] = buildQuestionStats([threeGaps], attempts, names)
     const gap0 = stat.gaps[0]
-    expect(gap0.options.map((o) => o.text)).toEqual(['Cat', 'dog'])
+    // Token order ('cat' offered before 'dog'), authored option text — not the typed casing
+    // ('Cat') and not sorted by count (this fixture's counts happen to agree with token
+    // order; the ordering asserted here is token order, not a count sort).
+    expect(gap0.options.map((o) => o.text)).toEqual(['cat', 'dog'])
     expect(gap0.options[0].count).toBe(2)
     expect(gap0.options[0].isCorrect).toBe(true)
     expect(gap0.options[0].names).toEqual(['Abenov', 'Borisov'])
     expect(gap0.options[1].text).toBe('dog')
     expect(gap0.options[1].count).toBe(1)
     expect(gap0.options[1].isCorrect).toBe(false)
+
+    // Gap 2 ('mat*,rug'): every attempt typed 'mat', so the offered 'rug' option nobody
+    // picked must still appear — count 0, percent 0 — the same "show every option" the
+    // single_choice bars already give a wrong distractor nobody chose.
+    const gap1 = stat.gaps[1]
+    expect(gap1.options.map((o) => o.text)).toEqual(['mat', 'rug'])
+    expect(gap1.options[1]).toMatchObject({ count: 0, percent: 0, isCorrect: false })
   })
 
-  it('reports a gap nobody answered as fully unanswered, with no options and a null percentCorrect', () => {
+  it('fill_blank: a submitted answer not among the offered options still gets its own row, after the offered ones', () => {
+    const attempts = [
+      attempt(1, [['q9', ['cat', 'mat', 'door']]]),
+      attempt(2, [['q9', ['mouse', 'mat', 'door']]]), // not one of the gap's own options
+    ]
+    const [stat] = buildQuestionStats([threeGaps], attempts, names)
+    const gap0 = stat.gaps[0]
+    // Offered options ('cat', 'dog') come first, in token order; the stray 'mouse' answer
+    // is appended after them rather than silently dropped.
+    expect(gap0.options.map((o) => o.text)).toEqual(['cat', 'dog', 'mouse'])
+    expect(gap0.options[2]).toMatchObject({ count: 1, isCorrect: false })
+    expect(gap0.options[2].names).toEqual(['Borisov'])
+  })
+
+  it('fill_blank: still lists its options, all-zero, when nobody submitted anything for this gap', () => {
     const attempts = [
       attempt(1, [['q9', ['cat', 'mat']]]), // nobody ever fills gap 3
       attempt(2, [['q9', ['cat', 'rug']]]),
@@ -672,8 +706,34 @@ describe('buildQuestionStats — per-gap stats (gap stepper)', () => {
     expect(gap2.correct).toBe(0)
     expect(gap2.incorrect).toBe(0)
     expect(gap2.percentCorrect).toBeNull()
-    expect(gap2.options).toEqual([])
+    // The old behaviour collapsed this to []; the fix still lists the gap's own options
+    // ('door', 'window') with all-zero counts, so the teacher can discuss the question even
+    // though nobody answered.
+    expect(gap2.options.map((o) => o.text)).toEqual(['door', 'window'])
+    expect(gap2.options.every((o) => o.count === 0 && o.percent === 0)).toBe(true)
+    expect(gap2.options[0].isCorrect).toBe(true)
+    expect(gap2.options[1].isCorrect).toBe(false)
     expect(gap2.names.unanswered).toEqual(['Abenov', 'Borisov'])
+  })
+
+  it('text_completion: keeps typed-answer rows, most common first, and does not gain option rows', () => {
+    const attempts = [
+      attempt(1, [['q10', ['Cat', 'mat', 'door']]]),
+      attempt(2, [['q10', [' cat ', 'mat', 'door']]]),
+      attempt(3, [['q10', ['dog', 'mat', 'door']]]),
+    ]
+    const [stat] = buildQuestionStats([threeGapsTyped], attempts, names)
+    const gap0 = stat.gaps[0]
+    // Typed casing preserved (first occurrence wins), most common first — unchanged from
+    // before this fix. No 'rug'-style zero-count option row appears: text_completion has no
+    // option list to draw one from.
+    expect(gap0.options.map((o) => o.text)).toEqual(['Cat', 'dog'])
+    expect(gap0.options[0].count).toBe(2)
+    expect(gap0.options[0].isCorrect).toBe(true)
+    expect(gap0.options[0].names).toEqual(['Abenov', 'Borisov'])
+    expect(gap0.options[1].text).toBe('dog')
+    expect(gap0.options[1].count).toBe(1)
+    expect(gap0.options[1].isCorrect).toBe(false)
   })
 
   it('marks every gap unanswered when the whole cloze was left blank, without needing to replay/grade it', () => {
