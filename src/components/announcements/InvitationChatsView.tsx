@@ -3,7 +3,7 @@ import { Search, X } from 'lucide-react';
 import { SearchableSelect } from '../ui/searchable-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import type { InvitationLinks } from '../../services/api/announcements';
-import { chatRows } from './invitationChats';
+import { chatRows, groupOptionsFor } from './invitationChats';
 
 type Filter = 'unlinked' | 'linked' | 'all';
 
@@ -38,17 +38,8 @@ export function InvitationChatsView({ data, busy, readOnly, onLink }: Props) {
     });
   }, [rows, filter, query]);
 
-  // Every running group can be chosen; one that already has a chat says which it would replace.
-  const groupOptions = useMemo(
-    () => [...data.groups]
-      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }))
-      .map((g) => ({
-        value: String(g.id),
-        label: g.name,
-        hint: g.link ? `now: ${g.link.chat_title ?? `chat ${g.link.chat_id}`}` : undefined,
-      })),
-    [data.groups],
-  );
+  // Every LMS group can be chosen — see groupOptionsFor for the order and the hints.
+  const groupOptions = useMemo(() => groupOptionsFor(data.groups), [data.groups]);
   const nameOf = (id: number) => data.groups.find((g) => g.id === id)?.name ?? `Group ${id}`;
 
   const FILTERS: { key: Filter; label: string }[] = [

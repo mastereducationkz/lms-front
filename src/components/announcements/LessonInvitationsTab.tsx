@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { toast } from '../Toast';
 import { errorMessage } from './shared';
 import { InvitationChatsView } from './InvitationChatsView';
-import { chatRows } from './invitationChats';
+import { GROUP_STATUS_LABEL, chatRows, isInactive } from './invitationChats';
 import {
   confirmInvitationLinks, getInvitationLinks, setInvitationLink,
   type InvitationGroupRow, type InvitationLinks,
@@ -43,6 +43,9 @@ export function LessonInvitationsTab() {
   const [query, setQuery] = useState('');
   // Two ways to read the same links: from the LMS side, or from Telegram's.
   const [mode, setMode] = useState<'groups' | 'chats'>('groups');
+  // Stopped and finished groups have nothing left to invite; they are listed when asked for (and
+  // always when they are linked, so a link can be seen and removed).
+  const [showInactive, setShowInactive] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -56,7 +59,12 @@ export function LessonInvitationsTab() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const groups = data?.groups ?? [];
+  const allGroups = data?.groups ?? [];
+  const hiddenInactive = allGroups.filter((g) => isInactive(g) && !g.link).length;
+  const groups = useMemo(
+    () => (showInactive ? allGroups : allGroups.filter((g) => !isInactive(g) || g.link)),
+    [allGroups, showInactive],
+  );
   const counts = useMemo(() => ({
     all: groups.length,
     suggested: groups.filter((g) => !g.link && g.suggestion).length,
@@ -221,6 +229,16 @@ export function LessonInvitationsTab() {
               </button>
             ))}
           </div>
+          {(hiddenInactive > 0 || showInactive) && (
+            <button
+              type="button"
+              onClick={() => setShowInactive((v) => !v)}
+              aria-pressed={showInactive}
+              className="rounded-md px-2 py-1 text-[13px] font-medium text-muted-foreground underline-offset-4 transition hover:text-foreground hover:underline"
+            >
+              {showInactive ? 'Hide stopped & finished' : `Show stopped & finished (${hiddenInactive})`}
+            </button>
+          )}
           {counts.suggested > 0 && !readOnly && (
             <Button size="sm" className="ml-auto gap-1.5" onClick={confirmAll} disabled={busy !== null}>
               <Link2 className="h-4 w-4" />
@@ -250,11 +268,26 @@ export function LessonInvitationsTab() {
                 <TableRow><TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">Loading…</TableCell></TableRow>
               ) : visible.length === 0 ? (
                 <TableRow><TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">
-                  {groups.length === 0 ? 'No running groups.' : 'No groups match.'}
+                  {groups.length === 0 ? 'No groups.' : 'No groups match.'}
                 </TableCell></TableRow>
               ) : visible.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell className="font-medium text-foreground">{row.name}</TableCell>
+                  <TableCell className="font-medium text-foreground">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {row.name}
+                      {row.status && row.status !== 'running' && (
+                        <Badge variant="secondary"
+                               className={row.status === 'not_started'
+                                 ? 'bg-sky-100 font-normal text-sky-800 dark:bg-sky-900/30 dark:text-sky-300'
+                                 : 'bg-slate-100 font-normal text-slate-600 dark:bg-slate-800 dark:text-slate-300'}
+                               title={row.status === 'not_started'
+                                 ? 'Switched on, nobody enrolled yet — invitations start once it has students'
+                                 : 'No invitations: the group is not running'}>
+                          {GROUP_STATUS_LABEL[row.status]}
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="text-sm">
                     {row.link ? (
                       <div className="flex flex-wrap items-center gap-1.5">

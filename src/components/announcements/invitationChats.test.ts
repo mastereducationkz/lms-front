@@ -30,3 +30,30 @@ describe('chats seen from Telegram', () => {
     expect(chatRows(data).map((r) => r.chat.id)).toEqual([12, 11, 10]);
   });
 });
+
+import { groupOptionsFor, isInactive } from './invitationChats';
+
+describe('every group can be linked', () => {
+  const g = (id: number, name: string, status: 'running' | 'not_started' | 'stopped' | 'finished', link = false) => ({
+    id, name, status, suggestion: null, last_invitation: null,
+    link: link ? { chat_id: 9, chat_title: 'SAT June 20', chat_available: true, linked_at: null } : null,
+  });
+
+  it('offers running groups first, then new ones, then stopped and finished — each marked', () => {
+    const options = groupOptionsFor([
+      g(1, 'June 20 SAT - Gulzada', 'finished', true),
+      g(2, 'September 10 SAT - Мадина', 'not_started'),
+      g(3, 'August 19 SAT - Gulzada', 'running'),
+      g(4, 'Gulzada - Сопровождение', 'stopped'),
+    ]);
+    expect(options.map((o) => o.label)).toEqual([
+      'August 19 SAT - Gulzada', 'September 10 SAT - Мадина', 'Gulzada - Сопровождение', 'June 20 SAT - Gulzada',
+    ]);
+    expect(options.map((o) => o.hint)).toEqual([undefined, 'not started', 'stopped', 'finished · now: SAT June 20']);
+  });
+
+  it('keeps stopped and finished groups out of the table unless asked', () => {
+    expect([g(1, 'a', 'running'), g(2, 'b', 'not_started'), g(3, 'c', 'stopped'), g(4, 'd', 'finished')].map(isInactive))
+      .toEqual([false, false, true, true]);
+  });
+});

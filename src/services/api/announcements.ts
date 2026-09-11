@@ -250,9 +250,16 @@ export interface InvitationChat {
   title: string;
 }
 
+/**
+ * Where a group stands. Every group can be linked; invitations still go only to lessons of
+ * running groups held in LMS Meet rooms. `not_started`: switched on, nobody enrolled yet.
+ */
+export type InvitationGroupStatus = 'running' | 'not_started' | 'stopped' | 'finished';
+
 export interface InvitationGroupRow {
   id: number;
   name: string;
+  status?: InvitationGroupStatus;
   link: {
     chat_id: number;
     chat_title: string | null;
