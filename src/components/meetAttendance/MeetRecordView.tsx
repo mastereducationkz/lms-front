@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
-import { buildAxis, clock } from '../../lib/meetAttendance';
+import { buildAxis, clock, isMismatch } from '../../lib/meetAttendance';
+import { useAuth } from '../../contexts/AuthContext';
 import {
   confirmMeetAccount,
   getMeetRecord,
@@ -9,11 +10,13 @@ import {
   type MeetPerson,
   type MeetRecord,
 } from '../../services/api/meetAttendance';
+import { lessonReviewing, type FlagReviewing } from './FlagReview';
 import { MeetTimeline, type TimelineRow } from './MeetTimeline';
 import { WhoIsThis } from './WhoIsThis';
 
-/** Loads a lesson's record and saves confirmations; shared by the lesson card and the review dialog. */
+/** Loads a lesson's record and saves confirmations and reviews; shared by the lesson card and the review dialog. */
 export function useMeetRecord(eventId: number | null, enabled = true) {
+  const { user } = useAuth();
   const [record, setRecord] = useState<MeetRecord | null>(null);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -68,11 +71,20 @@ export function useMeetRecord(eventId: number | null, enabled = true) {
     }
   }, []);
 
-  return { record, loading, failed, busyId, confirm, confirmMany, reload };
+  const options = record?.review_options;
+  const reviewing = useMemo(
+    () => (eventId == null ? undefined : lessonReviewing(eventId, user?.role, options, setRecord)),
+    [eventId, user?.role, options],
+  );
+
+  return { record, loading, failed, busyId, confirm, confirmMany, reload, reviewing };
 }
 
 function personRow(p: MeetPerson, kind: TimelineRow['kind'], note?: string): TimelineRow {
-  return { key: `u${p.user_id}`, name: p.name, kind, mark: p.mark, presence: p, flags: p.flags, accounts: p.accounts, note };
+  return {
+    key: `u${p.user_id}`, userId: p.user_id, name: p.name, kind, mark: p.mark, presence: p, flags: p.flags,
+    accounts: p.accounts, note,
+  };
 }
 
 function Stat({ label, value, tone }: { label: string; value: string; tone?: 'bad' | 'warn' }) {
@@ -96,10 +108,12 @@ interface Props {
   onConfirm: (participantId: number, identity: MeetIdentity) => void;
   onConfirmMany: (items: { participantId: number; identity: MeetIdentity }[]) => void;
   compact?: boolean;
+  /** Flags the viewer may answer open a review form (from `useMeetRecord`). */
+  reviewing?: FlagReviewing;
 }
 
 /** A finished lesson's Meet record: the headline numbers, the accounts to confirm, the timeline. */
-export function MeetRecordView({ record, busyId, onConfirm, onConfirmMany, compact = false }: Props) {
+export function MeetRecordView({ record, busyId, onConfirm, onConfirmMany, compact = false, reviewing }: Props) {
   const [showHidden, setShowHidden] = useState(false);
   const students = useMemo(() => record.students ?? [], [record.students]);
   const joined = students.filter((s) => s.sessions.length > 0).length;
@@ -126,6 +140,9 @@ export function MeetRecordView({ record, busyId, onConfirm, onConfirmMany, compa
     [record, rows, notTracked],
   );
 
+  // Disagreements someone answered, apart from the open ones (a reviewed late is not one of them).
+  const answered = (record.flags ?? []).filter((f) => f.review && isMismatch(f.code)).length;
+
   const teacherValue = teacher?.first_join
     ? `${clock(teacher.first_join)} → ${clock(teacher.last_leave)}`
     : record.held_back ? 'Not confirmed yet' : 'Not in the room';
@@ -136,7 +153,9 @@ export function MeetRecordView({ record, busyId, onConfirm, onConfirmMany, compa
         <Stat label="Teacher" value={teacherValue}
           tone={teacher && !teacher.first_join ? (record.held_back ? 'warn' : 'bad') : undefined} />
         <Stat label="Students in the room" value={`${joined} of ${students.length}${unknown.length ? ' confirmed' : ''}`} />
-        <Stat label="Marks disagree" value={String(record.mismatches ?? 0)} tone={record.mismatches ? 'bad' : undefined} />
+        <Stat label="Marks disagree"
+          value={`${record.mismatches ?? 0}${answered ? ` · ${answered} answered` : ''}`}
+          tone={record.mismatches ? 'bad' : undefined} />
         <Stat label="To confirm" value={String(unknown.length)} tone={unknown.length ? 'warn' : undefined} />
       </div>
 
@@ -159,6 +178,7 @@ export function MeetRecordView({ record, busyId, onConfirm, onConfirmMany, compa
         onUnlink={compact ? undefined : (id) => onConfirm(id, {})}
         busy={busyId !== null}
         heldBack={Boolean(record.held_back)}
+        reviewing={reviewing}
       />
       {notTracked.length > 0 && (
         <button

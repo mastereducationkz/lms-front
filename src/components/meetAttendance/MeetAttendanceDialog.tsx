@@ -16,7 +16,7 @@ function dateLabel(iso: string): string {
 
 /** The full record of one lesson, wide enough for the timeline — with account chips to correct mistakes. */
 export default function MeetAttendanceDialog({ eventId, open, onOpenChange }: Props) {
-  const { record, loading, failed, busyId, confirm, confirmMany } = useMeetRecord(eventId, open);
+  const { record, loading, failed, busyId, confirm, confirmMany, reviewing } = useMeetRecord(eventId, open);
   const stateText = recordStateText(record);
 
   return (
@@ -41,7 +41,7 @@ export default function MeetAttendanceDialog({ eventId, open, onOpenChange }: Pr
           )}
           {stateText && <p className="text-sm text-muted-foreground">{stateText}</p>}
           {record?.state === 'ready' && (
-            <MeetRecordView record={record} busyId={busyId} onConfirm={confirm} onConfirmMany={confirmMany} />
+            <MeetRecordView record={record} busyId={busyId} onConfirm={confirm} onConfirmMany={confirmMany} reviewing={reviewing} />
           )}
         </div>
       </DialogContent>

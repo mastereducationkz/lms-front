@@ -108,6 +108,8 @@ const INVALIDATION_RULES: Array<{ mutation: RegExp; invalidatePrefixes: string[]
   { mutation: /^\/groups(\/|$)/, invalidatePrefixes: ['/groups', '/users', '/courses', '/analytics'] },
   { mutation: /^\/admin(\/|$)/, invalidatePrefixes: ['/admin', '/users', '/courses', '/dashboard'] },
   { mutation: /^\/leaderboard(\/|$)/, invalidatePrefixes: ['/leaderboard', '/student-journal'] },
+  // Reviewing a Meet flag can correct the attendance mark itself, which the journal reads.
+  { mutation: /^\/meet-attendance(\/|$)/, invalidatePrefixes: ['/leaderboard', '/student-journal'] },
   { mutation: /^\/curator-tasks(\/|$)/, invalidatePrefixes: ['/curator-tasks', '/student-journal'] },
   { mutation: /^\/student-journal(\/|$)/, invalidatePrefixes: ['/student-journal', '/curator-tasks'] },
   { mutation: /^\/flashcards(\/|$)/, invalidatePrefixes: ['/flashcards'] },

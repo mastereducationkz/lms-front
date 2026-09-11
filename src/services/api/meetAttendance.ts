@@ -19,10 +19,30 @@ export type MeetFlagCode =
   | 'ended_early'
   | 'teacher_not_joined';
 
+/** A person looked at the flag and answered it; it stops asking for attention (owner, 2026-09-11). */
+export interface MeetFlagReview {
+  /** A preset key, `other` (free text), or null where a reason is optional and none was given. */
+  reason_code?: string | null;
+  reason_label: string | null;
+  text: string | null;
+  /** Who reviewed and when: inside the LMS only, the watch-link page gets neither. */
+  by?: string | null;
+  at?: string | null;
+}
+
 export interface MeetFlag {
   code: MeetFlagCode;
   minutes?: number | null;
+  review?: MeetFlagReview | null;
 }
+
+/** What the review form offers for one flag: its reasons (the last is always «Другое»). */
+export interface MeetReviewOption {
+  required: boolean;
+  reasons: { key: string; label: string }[];
+}
+
+export type MeetReviewOptions = Partial<Record<MeetFlagCode, MeetReviewOption>>;
 
 export interface MeetSpan {
   joined_at: string;
@@ -100,7 +120,11 @@ export interface MeetRecord {
   /** An unconfirmed account was in the room, so "never joined" flags are held back. */
   held_back?: boolean;
   flags?: MeetLessonFlag[];
+  /** Marks that disagree with the room and nobody has answered yet. */
   mismatches?: number;
+  /** Flags someone reviewed, with or without a reason. */
+  reviewed?: number;
+  review_options?: MeetReviewOptions;
   candidates?: MeetCandidate[];
   /** The whole class with marks — present in every state, also without a Meet record. */
   roster?: { user_id: number; name: string; mark: MeetMark }[];
@@ -155,6 +179,7 @@ export interface MeetLessonSummary {
   unknown: number;
   held_back: boolean;
   mismatches: number;
+  reviewed?: number;
   flags: MeetLessonFlag[];
 }
 
@@ -166,11 +191,58 @@ export interface MeetRecordsQuery {
 }
 
 /** Lessons with a Meet record in the range (default: the last 30 days), newest first. */
-export async function listMeetRecords(query: MeetRecordsQuery = {}): Promise<{ items: MeetLessonSummary[]; from: string; to: string }> {
+export async function listMeetRecords(query: MeetRecordsQuery = {}): Promise<{
+  items: MeetLessonSummary[];
+  from: string;
+  to: string;
+  review_options?: MeetReviewOptions;
+}> {
   const params: Record<string, string | number> = {};
   Object.entries(query).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') params[key] = value as string | number;
   });
   const response = await api.get('/meet-attendance/lessons', { params, cache: false } as never);
   return response.data;
+}
+
+export interface MeetReviewInput {
+  user_id: number;
+  code: MeetFlagCode;
+  reason_code?: string | null;
+  reason_text?: string | null;
+  /** Correct the mark instead of explaining it (marks that disagree with the room only). */
+  fix_mark?: boolean;
+}
+
+function reviewError(error: unknown, fallback: string): Error {
+  const response = (error as { response?: { status?: number; data?: { detail?: unknown } } })?.response;
+  if (response?.status === 404) return new Error('This lesson changed since it was opened. Reload it and try again.');
+  const detail = response?.data?.detail;
+  return new Error(typeof detail === 'string' ? detail : fallback);
+}
+
+/** Answer one flag — a reason, or a corrected mark. Returns the lesson's record as it now reads. */
+export async function reviewMeetFlag(eventId: number, input: MeetReviewInput): Promise<MeetRecord> {
+  try {
+    const response = await api.put(`/meet-attendance/lessons/${eventId}/reviews`, {
+      user_id: input.user_id,
+      code: input.code,
+      reason_code: input.reason_code ?? null,
+      reason_text: input.reason_text ?? null,
+      fix_mark: input.fix_mark ?? false,
+    });
+    return response.data as MeetRecord;
+  } catch (error: unknown) {
+    throw reviewError(error, 'Could not save the review');
+  }
+}
+
+/** Put a reviewed flag back into «Needs attention». Returns the updated record. */
+export async function restoreMeetFlag(eventId: number, userId: number, code: MeetFlagCode): Promise<MeetRecord> {
+  try {
+    const response = await api.delete(`/meet-attendance/lessons/${eventId}/reviews`, { params: { user_id: userId, code } });
+    return response.data as MeetRecord;
+  } catch (error: unknown) {
+    throw reviewError(error, 'Could not put it back');
+  }
 }

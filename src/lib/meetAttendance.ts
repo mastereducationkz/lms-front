@@ -2,6 +2,7 @@ import { APP_TIMEZONE } from './datetime';
 import type {
   MeetFlag,
   MeetFlagCode,
+  MeetFlagReview,
   MeetLessonFlag,
   MeetLessonSummary,
   MeetMark,
@@ -107,6 +108,34 @@ export function flagText(flag: MeetFlag): string {
   }
 }
 
+// ── reviewing a flag (owner, 2026-09-11) ─────────────────────────────────────────────────
+
+const TEACHER_FLAGS: ReadonlySet<MeetFlagCode> = new Set(['teacher_late', 'ended_early', 'teacher_not_joined']);
+const RECORD_READERS = new Set(['admin', 'head_curator', 'head_teacher', 'teacher', 'curator']);
+const TEACHER_FLAG_REVIEWERS = new Set(['admin', 'head_curator', 'head_teacher']);
+// The journal's own rule: curators read marks but never write them.
+const MARKERS = new Set(['admin', 'head_curator', 'head_teacher', 'teacher']);
+const OTHER_LABEL = 'Другое';
+
+export const isTeacherFlag = (code: MeetFlagCode) => TEACHER_FLAGS.has(code);
+
+/** Teachers and curators answer their students' flags; a teacher's own are for admins and heads. */
+export function canReviewFlag(role: string | undefined, code: MeetFlagCode): boolean {
+  return (isTeacherFlag(code) ? TEACHER_FLAG_REVIEWERS : RECORD_READERS).has(role ?? '');
+}
+
+/** Only a mark that contradicts the room can be corrected, and only by someone who marks. */
+export function canFixMark(role: string | undefined, code: MeetFlagCode): boolean {
+  return (code === 'marked_present_not_joined' || code === 'marked_absent_was_in_room') && MARKERS.has(role ?? '');
+}
+
+/** The reason in words: the preset, the comment, or — for «Другое» — just what was written. */
+export function reasonText(review: MeetFlagReview | null | undefined): string | null {
+  if (!review) return null;
+  const label = review.reason_code === 'other' || review.reason_label === OTHER_LABEL ? null : review.reason_label;
+  return [label, review.text?.trim()].filter(Boolean).join(' — ') || null;
+}
+
 export const MARK_LABEL: Record<Exclude<MeetMark, null>, string> = {
   present: 'Present',
   late: 'Late',
@@ -114,19 +143,25 @@ export const MARK_LABEL: Record<Exclude<MeetMark, null>, string> = {
   removed: 'Removed',
 };
 
-/** The review list's one-line reading of a lesson, most serious first. */
+/** The review list's one-line reading of a lesson, most serious first; answered flags last. */
 export function lessonHeadline(item: Pick<MeetLessonSummary, 'mismatches' | 'unknown' | 'flags'>): string {
+  const open = item.flags.filter((f) => !f.review);
   const parts: string[] = [];
-  if (item.mismatches) parts.push(`${item.mismatches} mark${item.mismatches === 1 ? '' : 's'} disagree`);
-  const teacherTiming = item.flags.filter((f) => f.code === 'teacher_late' || f.code === 'ended_early');
-  teacherTiming.forEach((f) => parts.push(flagText(f)));
-  const late = item.flags.filter((f) => f.code === 'late').length;
+  const disagree = open.filter((f) => isMismatch(f.code) && !isTeacherFlag(f.code)).length;
+  if (disagree) parts.push(`${disagree} mark${disagree === 1 ? '' : 's'} disagree`);
+  open.filter((f) => isTeacherFlag(f.code)).forEach((f) => parts.push(flagText(f)));
+  const late = open.filter((f) => f.code === 'late').length;
   if (late) parts.push(`${late} late`);
   if (item.unknown) parts.push(`${item.unknown} to confirm`);
+  const reviewed = item.flags.length - open.length;
+  if (reviewed) parts.push(`${reviewed} reviewed`);
   return parts.length ? parts.join(' · ') : 'All clear';
 }
 
-/** "eventId:userId" → the disagreeing flags, for the attendance journal's warning dots. */
+/**
+ * "eventId:userId" → the disagreeing flags, for the attendance journal's warning dots. Reviewed
+ * ones stay in, carrying their reason: the journal shows them answered rather than hiding them.
+ */
 export function mismatchIndex(items: Pick<MeetLessonSummary, 'event_id' | 'flags'>[]): Map<string, MeetLessonFlag[]> {
   const index = new Map<string, MeetLessonFlag[]>();
   for (const item of items) {
@@ -178,9 +213,23 @@ export function hasIssue(item: Reportable, key: IssueKey): boolean {
   }
 }
 
-/** "Needs attention": something a person has to act on — not every late student. */
+/** "Needs attention": something a person has to act on — not every late student, nothing reviewed. */
 export function needsAttention(item: Reportable): boolean {
-  return item.mismatches > 0 || item.unknown > 0 || item.flags.some((f) => f.role === 'teacher');
+  return item.unknown > 0 || item.flags.some((f) => !f.review && (isMismatch(f.code) || f.role === 'teacher'));
+}
+
+/** Out of «Needs attention» only because someone answered what put it there: what «Show reviewed» brings back. */
+export function clearedByReview(item: Reportable): boolean {
+  return !needsAttention(item) && item.flags.some((f) => f.review && (isMismatch(f.code) || f.role === 'teacher'));
+}
+
+/** The lesson without its reviewed flags — how the list reads until «Show reviewed» is on. */
+export function withoutReviewed<T extends Reportable>(item: T): T {
+  return item.flags.some((f) => f.review) ? { ...item, flags: item.flags.filter((f) => !f.review) } : item;
+}
+
+export function reviewedCount(items: Reportable[]): number {
+  return items.reduce((n, item) => n + item.flags.filter((f) => f.review).length, 0);
 }
 
 export function issueCounts(items: Reportable[]): Record<IssueKey, number> {
@@ -230,8 +279,14 @@ function almatyDate(iso: string): string {
 
 const csvCell = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
 
+/** A flag for the spreadsheet: what happened and, once reviewed, the answer. */
+function flagCell(flag: MeetFlag): string {
+  if (!flag.review) return flagText(flag);
+  return `${flagText(flag)}; reviewed: ${reasonText(flag.review) ?? 'no reason given'}`;
+}
+
 const who = (item: MeetLessonSummary, ...codes: MeetFlagCode[]) =>
-  item.flags.filter((f) => codes.includes(f.code)).map((f) => `${f.name} (${flagText(f)})`).join('; ');
+  item.flags.filter((f) => codes.includes(f.code)).map((f) => `${f.name} (${flagCell(f)})`).join('; ');
 
 /**
  * The review list as a spreadsheet, for reporting. Opens correctly in Excel (UTF-8 with BOM, so
@@ -245,7 +300,7 @@ export function reportCsv(items: MeetLessonSummary[]): string {
     almatyDate(item.start), clock(item.start), clock(item.end), item.title,
     item.groups.map((g) => g.name).join(', '), item.teacher?.name ?? '',
     item.teacher?.first_join ? clock(item.teacher.first_join) : '', item.teacher?.last_leave ? clock(item.teacher.last_leave) : '',
-    item.flags.filter((f) => f.role === 'teacher').map(flagText).join('; '),
+    item.flags.filter((f) => f.role === 'teacher').map(flagCell).join('; '),
     item.joined, item.students,
     who(item, 'marked_present_not_joined', 'marked_absent_was_in_room'), who(item, 'late'), who(item, 'left_early'),
     item.unknown,

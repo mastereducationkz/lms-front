@@ -25,7 +25,7 @@ import { parseAsUTC } from '../lib/datetime';
 import { formatGroupCloseDate } from '../lib/groupList';
 import { isAttendanceLockedLesson } from '../lib/attendance';
 import { listMeetRecords, type MeetLessonFlag } from '../services/api/meetAttendance';
-import { mismatchIndex } from '../lib/meetAttendance';
+import { flagText, flagTextRu, mismatchIndex, reasonText } from '../lib/meetAttendance';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import { toast } from '../components/Toast';
@@ -1766,16 +1766,26 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                 isFuture={cellIsFuture}
                                                 en={isTeacher}
                                             />
-                                            {meetMismatches.get(`${lessonInfo.event_id}:${student.student_id}`)?.map((f) => (
-                                                <span
-                                                    key={f.code}
-                                                    className="absolute left-0.5 top-0.5 h-2.5 w-2.5 rounded-full bg-rose-600 ring-2 ring-white dark:ring-card pointer-events-auto"
-                                                    title={f.code === 'marked_present_not_joined'
-                                                        ? t('Meet: отмечен, но не заходил на урок', 'Meet: marked present, never joined the lesson')
-                                                        : t(`Meet: отмечен отсутствующим, но был на уроке ${f.minutes ?? 0} мин`, `Meet: marked absent, but in the lesson ${f.minutes ?? 0} min`)}
-                                                    aria-label={t('Отметка расходится с Meet', 'Mark disagrees with Meet')}
-                                                />
-                                            ))}
+                                            {meetMismatches.get(`${lessonInfo.event_id}:${student.student_id}`)?.map((f) => {
+                                                // Answered in Meet attendance: grey with a tick and the reason, instead of red.
+                                                const reason = reasonText(f.review);
+                                                const answered = f.review
+                                                    ? t(` · Проверено${reason ? `: ${reason}` : ''}${f.review.by ? ` (${f.review.by})` : ''}`,
+                                                        ` · Reviewed${reason ? `: ${reason}` : ''}${f.review.by ? ` (${f.review.by})` : ''}`)
+                                                    : '';
+                                                return (
+                                                    <span
+                                                        key={f.code}
+                                                        className={`absolute left-0.5 top-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full ring-2 ring-white dark:ring-card pointer-events-auto ${f.review ? 'bg-slate-400 dark:bg-slate-500' : 'bg-rose-600'}`}
+                                                        title={`Meet: ${t(flagTextRu(f), flagText(f))}${answered}`}
+                                                        aria-label={f.review
+                                                            ? t('Расхождение с Meet проверено', 'Mark disagreement reviewed')
+                                                            : t('Отметка расходится с Meet', 'Mark disagrees with Meet')}
+                                                    >
+                                                        {f.review && <Check className="h-2 w-2 text-white" strokeWidth={4} aria-hidden />}
+                                                    </span>
+                                                );
+                                            })}
                                             {lessonStatus?.activity_score != null && (
                                                 <span className="absolute top-0 right-0 text-[10px] px-1.5 bg-yellow-400 text-gray-900 rounded-bl font-bold pointer-events-none" title={t(`Активность: ${lessonStatus.activity_score}/10`, `Activity: ${lessonStatus.activity_score}/10`)}>
                                                     {lessonStatus.activity_score}

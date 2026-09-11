@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, Users } from 'lucide-react';
+import { Check, ChevronDown, Users } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import {
   MARK_LABEL,
@@ -9,6 +9,7 @@ import {
   flagText,
   flagTextRu,
   isMismatch,
+  reasonText,
   type ParticipantRow,
   type ParticipantsView,
 } from '../../lib/meetAttendance';
@@ -25,6 +26,8 @@ const TEXT = {
     classSize: (n: number) => `Учеников в группе: ${n}`,
     teacher: 'Преподаватель',
     disagree: (n: number) => `${n} ${n === 1 ? 'отметка расходится' : 'отметки расходятся'} с Meet`,
+    explained: (n: number) => `${n} с объяснением`,
+    reviewed: 'Проверено', reason: 'Причина',
     noMeet: 'Подключения к Meet для этого урока не записаны — ниже список учеников и их отметки.',
     waiting: 'Кто подключался, появится примерно через 20 минут после урока. Пока — список учеников и отметки.',
     heldBack: 'Некоторые аккаунты в комнате ещё не подтверждены, поэтому «не заходил» может быть неточным.',
@@ -43,6 +46,8 @@ const TEXT = {
     classSize: (n: number) => `${n} students in the class`,
     teacher: 'Teacher',
     disagree: (n: number) => `${n} mark${n === 1 ? '' : 's'} disagree with Meet`,
+    explained: (n: number) => `${n} explained`,
+    reviewed: 'Reviewed', reason: 'Reason',
     noMeet: 'No Meet joins were recorded for this lesson — below is the class with its marks.',
     waiting: 'Who joined appears about 20 minutes after the lesson. Until then, the class and its marks.',
     heldBack: 'Some accounts in the room are not confirmed yet, so "not in the room" may be wrong.',
@@ -74,15 +79,30 @@ function Mark({ mark, locale }: { mark: MeetMark; locale: Locale }) {
   );
 }
 
+const isOpenMismatch = (flag: MeetFlag) => isMismatch(flag.code) && !flag.review;
+
+/** A flag, and once someone answered it, the answer on its own line — in words an accountant can read. */
 function Flag({ flag, locale }: { flag: MeetFlag; locale: Locale }) {
+  const t = TEXT[locale];
+  const reason = reasonText(flag.review);
   return (
-    <span className={cn(
-      'inline-flex rounded px-1.5 py-px text-[11px] font-medium leading-4 ring-1 ring-inset',
-      isMismatch(flag.code)
-        ? 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-900'
-        : 'bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-900',
-    )}>
-      {locale === 'ru' ? flagTextRu(flag) : flagText(flag)}
+    <span className="inline-flex max-w-full flex-col items-start gap-0.5">
+      <span className={cn(
+        'inline-flex max-w-full items-center gap-1 rounded px-1.5 py-px text-[11px] font-medium leading-4 ring-1 ring-inset',
+        flag.review
+          ? 'bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800/60 dark:text-slate-300 dark:ring-slate-700'
+          : isMismatch(flag.code)
+            ? 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-900'
+            : 'bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-900',
+      )}>
+        {flag.review && <Check className="h-3 w-3 flex-none" aria-label={t.reviewed} />}
+        <span className="min-w-0">{locale === 'ru' ? flagTextRu(flag) : flagText(flag)}</span>
+      </span>
+      {flag.review && (
+        <span className="px-0.5 text-[11px] leading-snug text-muted-foreground">
+          {reason ? `${t.reason}: ${reason}` : t.reviewed}
+        </span>
+      )}
     </span>
   );
 }
@@ -117,13 +137,16 @@ export function ParticipantsPanel({ view, locale = 'en', defaultOpen = false, cl
   const ready = view.state === 'ready';
   const students = classOrder(view.students);
   const joined = students.filter((s) => s.first_join).length;
-  const disagree = students.filter((s) => s.flags.some((f) => isMismatch(f.code))).length;
+  // Answered disagreements are not "disagreeing" any more — they are counted apart, with their reasons below.
+  const disagree = students.filter((s) => s.flags.some(isOpenMismatch)).length;
+  const explained = students.filter((s) => !s.flags.some(isOpenMismatch) && s.flags.some((f) => f.review && isMismatch(f.code))).length;
 
   const summary = ready
     ? [
         t.inRoom(joined, students.length),
         view.teacher?.first_join ? `${t.teacher} ${clock(view.teacher.first_join)}–${clock(view.teacher.last_leave)}` : null,
         disagree ? t.disagree(disagree) : null,
+        explained ? t.explained(explained) : null,
       ].filter(Boolean).join(' · ')
     : t.classSize(students.length);
   const note = !ready
@@ -179,7 +202,7 @@ export function ParticipantsPanel({ view, locale = 'en', defaultOpen = false, cl
                   className={cn(
                     'grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1 px-4 py-2',
                     ready ? 'sm:grid-cols-[minmax(0,1.5fr)_7.5rem_minmax(0,1.3fr)_minmax(0,1.5fr)]' : 'sm:grid-cols-[minmax(0,1.5fr)_7.5rem]',
-                    s.flags.some((f) => isMismatch(f.code)) && 'bg-rose-50/60 dark:bg-rose-950/20',
+                    s.flags.some(isOpenMismatch) && 'bg-rose-50/60 dark:bg-rose-950/20',
                   )}
                 >
                   <span role="cell" className={cn('truncate', s.first_join || !ready ? 'text-foreground' : 'text-muted-foreground')} title={s.name}>{s.name}</span>

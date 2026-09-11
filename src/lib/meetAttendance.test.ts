@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   barFor,
   buildAxis,
+  canFixMark,
+  canReviewFlag,
   classOrder,
+  clearedByReview,
   clock,
   flagTextRu,
   flagText,
@@ -13,9 +16,12 @@ import {
   mismatchIndex,
   needsAttention,
   position,
+  reasonText,
   reportCsv,
+  reviewedCount,
   tallyByTeacher,
   toParticipantsView,
+  withoutReviewed,
 } from './meetAttendance';
 import type { MeetLessonSummary, MeetPresence, MeetRecord } from '../services/api/meetAttendance';
 
@@ -196,5 +202,66 @@ describe('the class beside a recording', () => {
     expect(flagTextRu({ code: 'late', minutes: 7 })).toBe('Опоздал на 7 мин');
     expect(flagTextRu({ code: 'marked_present_not_joined' })).toBe('Отмечен, но не заходил');
     expect(flagTextRu({ code: 'teacher_late', minutes: 4 })).toBe('Начал на 4 мин позже');
+  });
+});
+
+describe('reviewed flags (owner, 2026-09-11)', () => {
+  const excused = { reason_code: 'excused', reason_label: 'Отпросился', text: null, by: 'Гульзада', at: '2026-09-11T16:40:00Z' };
+  const answered = { ...S('marked_present_not_joined', 'Аяулым'), review: excused };
+  const open = S('marked_present_not_joined', 'Шыңғыс');
+
+  it('says the reason: the preset, the comment, or only the words for «Другое»', () => {
+    expect(reasonText(excused)).toBe('Отпросился');
+    expect(reasonText({ ...excused, text: 'написала куратору' })).toBe('Отпросился — написала куратору');
+    expect(reasonText({ reason_code: 'other', reason_label: 'Другое', text: 'Сидела у брата' })).toBe('Сидела у брата');
+    expect(reasonText({ reason_label: 'Другое', text: 'С телефона мамы' })).toBe('С телефона мамы');
+    expect(reasonText({ reason_code: null, reason_label: null, text: null })).toBeNull();
+    expect(reasonText(null)).toBeNull();
+  });
+
+  it('takes a lesson out of Needs attention once everything that put it there is answered', () => {
+    const cleared = summary(1, 1, [answered], { mismatches: 0 });
+    expect(needsAttention(cleared)).toBe(false);
+    expect(clearedByReview(cleared)).toBe(true);
+    const half = summary(2, 1, [answered, open], { mismatches: 1 });
+    expect(needsAttention(half)).toBe(true);
+    expect(clearedByReview(half)).toBe(false);
+    const teacher = summary(3, 1, [{ ...T('teacher_late', 9), review: { reason_code: 'tech', reason_label: 'Технические проблемы', text: null } }]);
+    expect(needsAttention(teacher)).toBe(false);
+    expect(clearedByReview(teacher)).toBe(true);
+    // A late student never needed attention, so answering one brings nothing back.
+    expect(clearedByReview(summary(4, 1, [{ ...S('late', 'Елдана', 7), review: excused }]))).toBe(false);
+  });
+
+  it('hides reviewed flags from issues and tallies until «Show reviewed»', () => {
+    const items = [summary(1, 1, [answered, T('teacher_late', 4)]), summary(2, 1, [open])];
+    expect(reviewedCount(items)).toBe(1);
+    expect(issueCounts(items.map(withoutReviewed)).marks_disagree).toBe(1);
+    expect(issueCounts(items).marks_disagree).toBe(2);
+    expect(withoutReviewed(items[1])).toBe(items[1]);
+  });
+
+  it('reads the headline without the answered ones, and says how many were', () => {
+    expect(lessonHeadline(summary(1, 1, [answered, open]))).toBe('1 mark disagree · 1 reviewed');
+    expect(lessonHeadline(summary(2, 1, [T('teacher_not_joined')]))).toBe('Teacher never joined');
+  });
+
+  it('keeps the answer in the journal index and the spreadsheet', () => {
+    const index = mismatchIndex([summary(5, 1, [answered])]);
+    expect(index.get('5:7')?.[0].review?.reason_label).toBe('Отпросился');
+    expect(reportCsv([summary(6, 1, [answered])])).toContain('"Аяулым (Marked present, never joined; reviewed: Отпросился)"');
+  });
+
+  it('lets teachers and curators answer students, and only heads answer the teacher', () => {
+    for (const role of ['teacher', 'curator', 'head_curator', 'head_teacher', 'admin']) {
+      expect(canReviewFlag(role, 'marked_present_not_joined')).toBe(true);
+    }
+    expect(canReviewFlag('student', 'late')).toBe(false);
+    expect(canReviewFlag('teacher', 'teacher_late')).toBe(false);
+    expect(canReviewFlag('curator', 'teacher_not_joined')).toBe(false);
+    expect(canReviewFlag('head_teacher', 'ended_early')).toBe(true);
+    expect(canFixMark('teacher', 'marked_present_not_joined')).toBe(true);
+    expect(canFixMark('curator', 'marked_present_not_joined')).toBe(false);
+    expect(canFixMark('admin', 'late')).toBe(false);
   });
 });

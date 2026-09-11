@@ -1,25 +1,34 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronRight, Download, Loader2, MonitorCheck, RotateCcw, Search } from 'lucide-react';
+import { CheckCheck, ChevronRight, Download, Loader2, MonitorCheck, RotateCcw, Search } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { APP_TIMEZONE } from '../lib/datetime';
 import {
   ISSUES,
+  clearedByReview,
   clock,
-  flagText,
   hasIssue,
   isMismatch,
   issueCounts,
   lessonHeadline,
   needsAttention,
   reportCsv,
+  reviewedCount,
   tallyByTeacher,
+  withoutReviewed,
   type IssueKey,
 } from '../lib/meetAttendance';
 import { SearchableSelect } from '../components/ui/searchable-select';
-import { FlagChip } from '../components/meetAttendance/MeetTimeline';
+import { FlagChip, lessonReviewing } from '../components/meetAttendance/FlagReview';
 import MeetAttendanceDialog from '../components/meetAttendance/MeetAttendanceDialog';
 import { TeacherTallyTable } from '../components/meetAttendance/TeacherTallyTable';
-import { listMeetRecords, type MeetLessonSummary } from '../services/api/meetAttendance';
+import {
+  listMeetRecords,
+  type MeetFlagCode,
+  type MeetLessonFlag,
+  type MeetLessonSummary,
+  type MeetRecord,
+  type MeetReviewOptions,
+} from '../services/api/meetAttendance';
 import { useAuth } from '../contexts/AuthContext';
 
 type Show = 'attention' | 'all';
@@ -33,6 +42,15 @@ function dayLabel(iso: string): string {
 
 function byName(a: { name: string }, b: { name: string }) {
   return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+}
+
+// Student timing is listed by name only where it is what the list is filtered by.
+const LISTED_TIMING: Partial<Record<IssueKey, MeetFlagCode>> = { students_late: 'late', left_early: 'left_early' };
+
+/** The student flags a row spells out: marks that disagree, and the timing being filtered by. */
+function studentFlagsFor(item: MeetLessonSummary, issue: IssueKey | null): MeetLessonFlag[] {
+  const timing = issue ? LISTED_TIMING[issue] : undefined;
+  return item.flags.filter((f) => f.role !== 'teacher' && (isMismatch(f.code) || f.code === timing));
 }
 
 type Audience = 'heads' | 'teacher' | 'curator';
@@ -69,16 +87,34 @@ export default function MeetAttendanceReview() {
   const [query, setQuery] = useState('');
   const [issue, setIssue] = useState<IssueKey | null>(null);
   const [openId, setOpenId] = useState<number | null>(null);
+  // Reviewed flags are out of the list until asked for (owner, 2026-09-11).
+  const [showReviewed, setShowReviewed] = useState(false);
+  const [options, setOptions] = useState<MeetReviewOptions | undefined>(undefined);
 
   // `quiet` refreshes in place (after confirming accounts) instead of blanking the list.
   const load = useCallback((quiet = false) => {
     setError(false);
     if (!quiet) setItems(null);
     listMeetRecords({ date_from: new Date(Date.now() - period * DAY).toISOString() })
-      .then((r) => setItems(r.items))
+      .then((r) => { setItems(r.items); setOptions(r.review_options); })
       .catch(() => { if (!quiet) setError(true); });
   }, [period]);
   useEffect(() => load(), [load]);
+
+  // A review saved from the list returns the lesson's record: its row takes the new flags.
+  const applyRecord = useCallback((record: MeetRecord) => {
+    setItems((prev) => prev?.map((i) => (i.event_id !== record.event_id ? i : {
+      ...i,
+      flags: record.flags ?? [],
+      mismatches: record.mismatches ?? 0,
+      reviewed: record.reviewed ?? 0,
+      unknown: record.unknown?.length ?? i.unknown,
+    })) ?? prev);
+  }, []);
+  const reviewingFor = useCallback(
+    (eventId: number) => lessonReviewing(eventId, user?.role, options, applyRecord),
+    [user?.role, options, applyRecord],
+  );
 
   const teachers = useMemo(() => {
     const seen = new Map<number, string>();
@@ -105,13 +141,20 @@ export default function MeetAttendanceReview() {
     () => (teacherId ? base.filter((i) => String(i.teacher?.id) === teacherId) : base),
     [base, teacherId],
   );
-  const tally = useMemo(() => tallyByTeacher(base), [base]);
-  const counts = useMemo(() => issueCounts(scoped), [scoped]);
-  const attentionCount = scoped.filter(needsAttention).length;
+  // Everything below reads the lessons without their reviewed flags, unless «Show reviewed» is on.
+  const listed = useMemo(() => (showReviewed ? scoped : scoped.map(withoutReviewed)), [scoped, showReviewed]);
+  const tally = useMemo(() => tallyByTeacher(showReviewed ? base : base.map(withoutReviewed)), [base, showReviewed]);
+  const counts = useMemo(() => issueCounts(listed), [listed]);
+  const reviewedTotal = useMemo(() => reviewedCount(scoped), [scoped]);
+  const inAttention = useCallback(
+    (i: MeetLessonSummary) => needsAttention(i) || (showReviewed && clearedByReview(i)),
+    [showReviewed],
+  );
+  const attentionCount = listed.filter(inAttention).length;
   // An issue picked is its own view; otherwise "needs attention" or everything.
-  const visible = useMemo(() => scoped.filter((i) => (
-    issue ? hasIssue(i, issue) : show === 'all' || needsAttention(i)
-  )), [scoped, issue, show]);
+  const visible = useMemo(() => listed.filter((i) => (
+    issue ? hasIssue(i, issue) : show === 'all' || inAttention(i)
+  )), [listed, issue, show, inAttention]);
 
   const filtered = Boolean(teacherId || groupId || query || issue);
 
@@ -134,7 +177,7 @@ export default function MeetAttendanceReview() {
             Meet attendance
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            {INTRO[audience]} Times are Almaty.
+            {INTRO[audience]} Click a flag to answer it: with its reason it leaves Needs attention. Times are Almaty.
           </p>
         </div>
         <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label="Period">
@@ -168,6 +211,22 @@ export default function MeetAttendanceReview() {
             </button>
           ))}
         </div>
+        {(reviewedTotal > 0 || showReviewed) && (
+          <button
+            type="button"
+            aria-pressed={showReviewed}
+            onClick={() => setShowReviewed((v) => !v)}
+            title="Flags someone has already answered, with their reasons"
+            className={cn('inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[13px] font-medium transition',
+              showReviewed
+                ? 'border-slate-400 bg-slate-100 text-slate-800 dark:border-slate-500 dark:bg-slate-800 dark:text-slate-100'
+                : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground')}
+          >
+            <CheckCheck className="h-3.5 w-3.5" aria-hidden />
+            {showReviewed ? 'Showing reviewed' : 'Show reviewed'}
+            <span className="tabular-nums opacity-70">{reviewedTotal}</span>
+          </button>
+        )}
         <div className="relative w-full sm:w-64">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -264,7 +323,9 @@ export default function MeetAttendanceReview() {
             {items.length === 0
               ? EMPTY[audience](period)
               : show === 'attention' && !filtered
-                ? 'Nothing needs attention: every mark agrees with the room and every account is confirmed.'
+                ? reviewedTotal > 0 && !showReviewed
+                  ? `Nothing needs attention. ${reviewedTotal} reviewed ${reviewedTotal === 1 ? 'flag is' : 'flags are'} hidden; «Show reviewed» brings them back.`
+                  : 'Nothing needs attention: every mark agrees with the room and every account is confirmed.'
                 : issue
                   ? `No lessons with “${ISSUES.find((i) => i.key === issue)?.label}” here.`
                   : 'No lessons match.'}
@@ -284,7 +345,8 @@ export default function MeetAttendanceReview() {
               <tbody className="divide-y divide-border">
                 {visible.map((item) => {
                   const teacherFlags = item.flags.filter((f) => f.role === 'teacher');
-                  const studentMismatches = item.flags.filter((f) => f.role !== 'teacher' && isMismatch(f.code));
+                  const studentFlags = studentFlagsFor(item, issue);
+                  const reviewing = reviewingFor(item.event_id);
                   return (
                     <tr
                       key={item.event_id}
@@ -308,7 +370,11 @@ export default function MeetAttendanceReview() {
                             : item.held_back ? 'Account not confirmed yet' : 'Not in the room'}
                         </div>
                         {teacherFlags.length > 0 && (
-                          <div className="mt-1 flex flex-wrap gap-1">{teacherFlags.map((f) => <FlagChip key={f.code} flag={f} />)}</div>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {teacherFlags.map((f) => (
+                              <FlagChip key={f.code} flag={f} userId={f.user_id} personName={f.name} reviewing={reviewing} />
+                            ))}
+                          </div>
                         )}
                       </td>
                       <td className="px-4 py-3 text-right tabular-nums">
@@ -322,12 +388,18 @@ export default function MeetAttendanceReview() {
                         <div className={cn('text-[13px]', needsAttention(item) ? 'text-foreground' : 'text-muted-foreground')}>
                           {lessonHeadline(item)}
                         </div>
-                        {studentMismatches.length > 0 && (
-                          <ul className="mt-1 space-y-0.5 text-xs text-rose-700 dark:text-rose-300">
-                            {studentMismatches.slice(0, 4).map((f) => (
-                              <li key={`${f.user_id}-${f.code}`}>{f.name}: {flagText(f).toLowerCase()}</li>
+                        {studentFlags.length > 0 && (
+                          <ul className="mt-1.5 space-y-1 text-xs">
+                            {studentFlags.slice(0, 6).map((f) => (
+                              <li key={`${f.user_id}-${f.code}`} className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                                <span className="text-foreground">{f.name}</span>
+                                <FlagChip flag={f} userId={f.user_id} personName={f.name} reviewing={reviewing}
+                                  lateToo={item.flags.some((g) => g.user_id === f.user_id && g.code === 'late')} />
+                              </li>
                             ))}
-                            {studentMismatches.length > 4 && <li>and {studentMismatches.length - 4} more</li>}
+                            {studentFlags.length > 6 && (
+                              <li className="text-muted-foreground">and {studentFlags.length - 6} more: open the lesson</li>
+                            )}
                           </ul>
                         )}
                       </td>

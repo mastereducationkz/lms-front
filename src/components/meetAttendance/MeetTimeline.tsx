@@ -1,7 +1,10 @@
 import { X } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { barFor, clock, flagText, flagTone, position, MARK_LABEL, type Axis } from '../../lib/meetAttendance';
+import { barFor, clock, flagTone, position, MARK_LABEL, type Axis } from '../../lib/meetAttendance';
 import type { MeetAccount, MeetFlag, MeetMark, MeetPresence } from '../../services/api/meetAttendance';
+import { FlagChip, type FlagReviewing } from './FlagReview';
+
+export { FlagChip };
 
 export type RowKind = 'teacher' | 'student' | 'unknown' | 'other' | 'not_tracked';
 
@@ -9,6 +12,8 @@ export interface TimelineRow {
   key: string;
   name: string;
   kind: RowKind;
+  /** The LMS person the row is; what a review of their flags is saved against. */
+  userId?: number;
   /** Students only: the mark the teacher saved. */
   mark?: MeetMark;
   presence: MeetPresence;
@@ -45,22 +50,6 @@ function MarkChip({ mark }: { mark: MeetMark | undefined }) {
       )}
     >
       {mark ? MARK_LABEL[mark][0] : '–'}
-    </span>
-  );
-}
-
-export function FlagChip({ flag }: { flag: MeetFlag }) {
-  const tone = flagTone(flag.code);
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center rounded px-1.5 py-px text-[11px] font-medium leading-4',
-        tone === 'mismatch'
-          ? 'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-900'
-          : 'bg-amber-50 text-amber-800 ring-1 ring-inset ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-900',
-      )}
-    >
-      {flagText(flag)}
     </span>
   );
 }
@@ -106,13 +95,15 @@ interface Props {
   busy?: boolean;
   /** Some account in the room is unconfirmed, so an empty row is "not known yet", not "absent". */
   heldBack?: boolean;
+  /** When set, flags the viewer may answer open the review form. */
+  reviewing?: FlagReviewing;
 }
 
 /**
  * One row per person over the lesson's time. The shaded band is the lesson itself; bars are
  * the stretches each person was in the room (overlapping devices already merged).
  */
-export function MeetTimeline({ axis, rows, compact = false, onUnlink, busy = false, heldBack = false }: Props) {
+export function MeetTimeline({ axis, rows, compact = false, onUnlink, busy = false, heldBack = false, reviewing }: Props) {
   const nameCol = compact ? '7.5rem' : 'minmax(9rem, 15rem)';
   return (
     <div role="table" aria-label="Who was in the room, and when" className="text-sm">
@@ -139,7 +130,7 @@ export function MeetTimeline({ axis, rows, compact = false, onUnlink, busy = fal
             key={row.key}
             className={cn(
               'grid items-center gap-x-3 py-1.5',
-              row.flags.some((f) => flagTone(f.code) === 'mismatch') && 'bg-rose-50/50 dark:bg-rose-950/20',
+              row.flags.some((f) => !f.review && flagTone(f.code) === 'mismatch') && 'bg-rose-50/50 dark:bg-rose-950/20',
             )}
             style={{ gridTemplateColumns: `${nameCol} 1fr` }}
           >
@@ -157,7 +148,10 @@ export function MeetTimeline({ axis, rows, compact = false, onUnlink, busy = fal
               {row.note && <div className="truncate text-[11px] text-muted-foreground">{row.note}</div>}
               {row.flags.length > 0 && (
                 <div className="mt-1 flex flex-wrap gap-1">
-                  {row.flags.map((f) => <FlagChip key={f.code} flag={f} />)}
+                  {row.flags.map((f) => (
+                    <FlagChip key={f.code} flag={f} userId={row.userId} personName={row.name} reviewing={reviewing}
+                      lateToo={row.flags.some((g) => g.code === 'late')} />
+                  ))}
                 </div>
               )}
               {!compact && onUnlink && row.accounts.length > 0 && (
