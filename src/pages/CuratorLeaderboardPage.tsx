@@ -234,13 +234,14 @@ const AttendanceToggle = ({
     // A second line for the hover, e.g. how long the student spoke in the lesson's Meet room.
     note?: string | null,
 }) => {
-  // Cycle: attended -> late -> missed -> cancelled -> attended
+  // Attendance belongs to one student; cancelling belongs to the whole lesson
+  // and goes through an approved lesson request.  Keeping those controls apart
+  // prevents one cell from claiming that an otherwise scheduled class vanished.
   const handleCycle = () => {
-    if (disabled || isFuture) return;
+    if (disabled || isFuture || initialStatus === 'cancelled') return;
     if (initialStatus === 'attended') onChange('late');
     else if (initialStatus === 'late') onChange('missed');
-    else if (initialStatus === 'cancelled') onChange('attended');
-    else if (initialStatus === 'absent' || initialStatus === 'registered' || initialStatus === 'missed') onChange('cancelled');
+    else if (initialStatus === 'absent' || initialStatus === 'registered' || initialStatus === 'missed') onChange('attended');
     else onChange('attended');
   };
 
@@ -258,7 +259,9 @@ const AttendanceToggle = ({
   };
 
   const config = getStatusConfig();
-  const nonInteractive = disabled || isFuture;
+  // A real cancellation is rendered from the lesson-request flow and is
+  // historical/view-only in this grid; it cannot be undone student by student.
+  const nonInteractive = disabled || isFuture || initialStatus === 'cancelled';
 
   return (
     <div
