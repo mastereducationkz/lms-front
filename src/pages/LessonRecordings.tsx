@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { CalendarDays, Loader2, RotateCcw, Search, Video, X } from 'lucide-react';
+import { CalendarDays, Folder, LayoutGrid, Loader2, RotateCcw, Search, Video, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '../components/ui/select';
 import { Skeleton } from '../components/ui/skeleton';
+import { SearchableSelect, type SearchableOption } from '../components/ui/searchable-select';
 import RecordingCard from '../components/recordings/RecordingCard';
 import RecordingDatePicker from '../components/recordings/RecordingDatePicker';
+import RecordingFoldersView from '../components/recordings/RecordingFoldersView';
 import RecordingPlayerDialog, { type RecordingMeta } from '../components/recordings/RecordingPlayerDialog';
 import { cx } from '../components/calendar/calendarUtils';
 import { getEventDetails } from '../services/api/events';
@@ -18,6 +20,7 @@ import { dayHeading, groupByDay, parseWatchParam, recordingsLocale, type Locale 
 
 const PAGE_SIZE = 24;
 type StatusFilter = 'all' | 'ready' | 'pending' | 'failed';
+type RecordingView = 'gallery' | 'folders';
 
 function plural(n: number, locale: Locale, [one, few, many]: [string, string, string]): string {
   if (locale === 'en') return `${n} ${n === 1 ? one : few}`;
@@ -44,6 +47,12 @@ const TEXT = {
     periods: { all: 'All time', '30d': 'Last 30 days', '7d': 'Last 7 days' } as Record<RecordingPeriod, string>,
     allGroups: 'All groups',
     allTeachers: 'All teachers',
+    searchGroups: 'Search groups…',
+    noGroup: 'No group matches',
+    searchTeachers: 'Search teachers…',
+    noTeacher: 'No teacher matches',
+    groupState: { finished: 'Finished', archived: 'Archived' },
+    views: { gallery: 'Gallery', folders: 'Folders' },
     statuses: { all: 'Any status', ready: 'Ready to watch', pending: 'Processing', failed: 'Failed' } as Record<StatusFilter, string>,
     clear: 'Clear filters',
     emptyTitle: 'No recordings yet',
@@ -70,6 +79,12 @@ const TEXT = {
     periods: { all: 'Всё время', '30d': 'Последние 30 дней', '7d': 'Последние 7 дней' } as Record<RecordingPeriod, string>,
     allGroups: 'Все группы',
     allTeachers: 'Все учителя',
+    searchGroups: 'Поиск групп…',
+    noGroup: 'Группы не найдены',
+    searchTeachers: 'Поиск учителей…',
+    noTeacher: 'Учителя не найдены',
+    groupState: { finished: 'Завершена', archived: 'Архивная' },
+    views: { gallery: 'Галерея', folders: 'Папки' },
     statuses: { all: 'Любой статус', ready: 'Готовы к просмотру', pending: 'Обрабатываются', failed: 'С ошибкой' } as Record<StatusFilter, string>,
     clear: 'Сбросить фильтры',
     emptyTitle: 'Записей пока нет',
@@ -123,6 +138,8 @@ export default function LessonRecordings() {
   const [groupId, setGroupId] = useState('all');
   const [teacherId, setTeacherId] = useState('all');
   const [status, setStatus] = useState<StatusFilter>('all');
+  // Gallery is deliberately the default; folders is an extra way to browse the same library.
+  const [view, setView] = useState<RecordingView>('gallery');
 
   const [items, setItems] = useState<RecordingLibraryItem[]>([]);
   const [total, setTotal] = useState<number | null>(null);
@@ -241,6 +258,20 @@ export default function LessonRecordings() {
         : t.scope.student;
   const showGroups = (facets?.groups.length ?? 0) > 1;
   const showTeachers = staff && (facets?.teachers.length ?? 0) > 1;
+  const groupOptions = useMemo<SearchableOption[]>(() => [
+    { value: 'all', label: t.allGroups },
+    ...(facets?.groups.map((group) => ({
+      value: String(group.id),
+      label: group.name,
+      hint: group.is_over ? t.groupState.finished : group.is_active === false ? t.groupState.archived : undefined,
+    })) ?? []),
+  ], [facets?.groups, t]);
+  const teacherOptions = useMemo<SearchableOption[]>(() => [
+    { value: 'all', label: t.allTeachers },
+    ...(facets?.teachers.map((teacher) => ({
+      value: String(teacher.id), label: teacher.name ?? `#${teacher.id}`,
+    })) ?? []),
+  ], [facets?.teachers, t]);
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-5 px-3 py-5 sm:px-6 sm:py-8">
@@ -308,31 +339,15 @@ export default function LessonRecordings() {
         />
 
         {showGroups && (
-          <Select value={groupId} onValueChange={setGroupId}>
-            <SelectTrigger className="h-9 w-[180px]" aria-label={t.allGroups}>
-              <SelectValue placeholder={t.allGroups} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t.allGroups}</SelectItem>
-              {facets!.groups.map((g) => (
-                <SelectItem key={g.id} value={String(g.id)}>{g.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SearchableSelect options={groupOptions} value={groupId} onChange={setGroupId}
+            placeholder={t.allGroups} searchPlaceholder={t.searchGroups} emptyText={t.noGroup}
+            ariaLabel={t.allGroups} className="h-9 w-[190px] text-sm" />
         )}
 
         {showTeachers && (
-          <Select value={teacherId} onValueChange={setTeacherId}>
-            <SelectTrigger className="h-9 w-[180px]" aria-label={t.allTeachers}>
-              <SelectValue placeholder={t.allTeachers} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t.allTeachers}</SelectItem>
-              {facets!.teachers.map((tr) => (
-                <SelectItem key={tr.id} value={String(tr.id)}>{tr.name ?? `#${tr.id}`}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SearchableSelect options={teacherOptions} value={teacherId} onChange={setTeacherId}
+            placeholder={t.allTeachers} searchPlaceholder={t.searchTeachers} emptyText={t.noTeacher}
+            ariaLabel={t.allTeachers} className="h-9 w-[190px] text-sm" />
         )}
 
         {staff && (
@@ -348,6 +363,20 @@ export default function LessonRecordings() {
           </Select>
         )}
 
+        <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label={t.views.gallery}>
+          {([
+            ['gallery', LayoutGrid, t.views.gallery],
+            ['folders', Folder, t.views.folders],
+          ] as const).map(([option, Icon, label]) => (
+            <button key={option} type="button" onClick={() => setView(option)} aria-pressed={view === option}
+              className={cx('inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition',
+                view === option ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}>
+              <Icon className="h-3.5 w-3.5" aria-hidden />
+              <span className="hidden sm:inline">{label}</span>
+            </button>
+          ))}
+        </div>
+
         {filtering && (
           <button
             type="button"
@@ -361,7 +390,9 @@ export default function LessonRecordings() {
       </div>
 
       {/* Content */}
-      {failed && items.length === 0 ? (
+      {view === 'folders' ? (
+        <RecordingFoldersView filters={filters} locale={locale} onOpen={openItem} />
+      ) : failed && items.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card px-6 py-14 text-center shadow-sm">
           <p className="text-sm text-muted-foreground">{t.error}</p>
           <button

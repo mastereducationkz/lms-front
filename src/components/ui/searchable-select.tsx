@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Check, ChevronsUpDown, Search } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 import { Button } from './button';
@@ -20,13 +20,16 @@ interface SearchableSelectProps {
   emptyText?: string;
   disabled?: boolean;
   className?: string;
+  ariaLabel?: string;
 }
 
 /** A single-choice dropdown with a search box: type part of a name to filter, Enter picks the first match. */
 export function SearchableSelect({
   options, value, onChange, placeholder = 'Choose…', searchPlaceholder = 'Type to search…',
-  emptyText = 'Nothing matches', disabled, className,
+  emptyText = 'Nothing matches', disabled, className, ariaLabel,
 }: SearchableSelectProps) {
+  const id = useId();
+  const listId = `${id}-list`;
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
@@ -67,7 +70,7 @@ export function SearchableSelect({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" role="combobox" aria-expanded={open} disabled={disabled}
+        <Button type="button" variant="outline" role="combobox" aria-label={ariaLabel} aria-expanded={open} disabled={disabled}
                 className={`justify-between font-normal ${className ?? ''}`}>
           <span className={`truncate ${selected ? '' : 'text-muted-foreground'}`}>{selected ? selected.label : placeholder}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" aria-hidden="true" />
@@ -93,18 +96,18 @@ export function SearchableSelect({
             }}
             role="combobox"
             aria-expanded={open}
-            aria-controls="searchable-select-list"
-            aria-activedescendant={filtered[active] ? `searchable-option-${active}` : undefined}
+            aria-controls={listId}
+            aria-activedescendant={filtered[active] ? `${id}-option-${active}` : undefined}
           />
         </div>
-        <ul ref={listRef} id="searchable-select-list" role="listbox" className="max-h-72 overflow-y-auto py-1">
+        <ul ref={listRef} id={listId} role="listbox" className="max-h-72 overflow-y-auto py-1">
           {filtered.length === 0 && <li className="px-3 py-2 text-sm text-muted-foreground">{emptyText}</li>}
           {filtered.map((o, i) => (
             <li key={o.value}>
               <button
                 type="button"
                 role="option"
-                id={`searchable-option-${i}`}
+                id={`${id}-option-${i}`}
                 data-index={i}
                 aria-selected={o.value === value}
                 onClick={() => pick(o.value)}

@@ -60,7 +60,8 @@ export interface RecordingLibraryItem {
 }
 
 export interface RecordingFacets {
-  groups: { id: number; name: string }[];
+  /** Includes completed and archived groups: recording history must remain findable. */
+  groups: { id: number; name: string; is_active: boolean | null; is_over: boolean | null }[];
   teachers: { id: number; name: string | null }[];
 }
 
@@ -87,6 +88,32 @@ export interface RecordingLibraryQuery {
   date?: string | null;
 }
 
+export type RecordingGroupState = 'active' | 'finished' | 'archived';
+
+/** One group folder under the teacher who actually taught its recorded lessons. */
+export interface RecordingFolderGroup {
+  id: number;
+  name: string;
+  state: RecordingGroupState;
+  video_count: number;
+  /** How many recordings were taught by a substitute for this group's regular teacher. */
+  substitution_count: number;
+  regular_teacher: { id: number; name: string | null } | null;
+}
+
+export interface RecordingFolderTeacher {
+  id: number | null;
+  name: string | null;
+  video_count: number;
+  group_count: number;
+  groups: RecordingFolderGroup[];
+}
+
+/** Compact navigation data for Folders view; it never contains a media URL. */
+export interface RecordingFolders {
+  teachers: RecordingFolderTeacher[];
+}
+
 /**
  * A page of the viewer's Recordings library. **Never cached**: the preview links carry a
  * media token minted for this viewer, exactly like the playback URL.
@@ -100,6 +127,23 @@ export async function listRecordings(query: RecordingLibraryQuery = {}): Promise
   });
   const response = await api.get('/recordings', { params, cache: false } as never);
   return response.data as RecordingLibraryPage;
+}
+
+/**
+ * The server-side Teacher → Group index, narrowed by the exact same search and filters as the
+ * recording cards. This prevents older videos disappearing because they are beyond gallery page one.
+ */
+export async function listRecordingFolders(
+  query: Omit<RecordingLibraryQuery, 'limit' | 'cursor'>,
+): Promise<RecordingFolders> {
+  const params: Record<string, string | number> = {};
+  Object.entries(query).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '' && !(key === 'period' && value === 'all')) {
+      params[key] = value as string | number;
+    }
+  });
+  const response = await api.get('/recordings/folders', { params, cache: false } as never);
+  return response.data as RecordingFolders;
 }
 
 /** How many recordings each Almaty day of a month holds; days without any are left out. */

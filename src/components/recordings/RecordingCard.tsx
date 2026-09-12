@@ -5,8 +5,8 @@ import { formatClock, splitLessonTitle, timeRange, type Locale } from '../../lib
 import { cx } from '../calendar/calendarUtils';
 
 const TEXT = {
-  en: { pending: 'Processing', failed: 'Could not process', removed: 'No longer available', watch: 'Watch' },
-  ru: { pending: 'Обрабатывается', failed: 'Не обработалась', removed: 'Больше недоступна', watch: 'Смотреть' },
+  en: { pending: 'Processing', failed: 'Could not process', removed: 'No longer available', watch: 'Watch', substitution: (name: string) => `Substitution · regular teacher: ${name}` },
+  ru: { pending: 'Обрабатывается', failed: 'Не обработалась', removed: 'Больше недоступна', watch: 'Смотреть', substitution: (name: string) => `Замена · основной учитель: ${name}` },
 } as const;
 
 /** Stored media paths are relative to the API host; images need the host spelled out. */
@@ -20,13 +20,15 @@ interface Props {
   item: RecordingLibraryItem;
   locale: Locale;
   onOpen: (item: RecordingLibraryItem) => void;
+  /** Present only while browsing a substitute's group folder. */
+  substitutionFor?: string | null;
 }
 
 /**
  * One recording in the library: the preview the ingest chose (the most detailed frame, not
  * the webcam tile Drive shows), how long it runs, when it was, which group and who taught it.
  */
-export default function RecordingCard({ item, locale, onOpen }: Props) {
+export default function RecordingCard({ item, locale, onOpen, substitutionFor }: Props) {
   const t = TEXT[locale];
   const [posterBroken, setPosterBroken] = useState(false);
   const [posterLoaded, setPosterLoaded] = useState(false);
@@ -123,6 +125,9 @@ export default function RecordingCard({ item, locale, onOpen }: Props) {
             <User className="h-3.5 w-3.5 flex-none" aria-hidden />
             <span className="truncate">{item.teacher.name}</span>
           </span>
+        )}
+        {substitutionFor && (
+          <span className="mt-0.5 line-clamp-1 text-[12px] text-muted-foreground">{t.substitution(substitutionFor)}</span>
         )}
       </div>
     </button>
