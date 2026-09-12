@@ -87,10 +87,14 @@ export async function getMyEvents(params?: {
   }
 }
 
-export async function getCalendarEvents(year: number, month: number): Promise<Event[]> {
+export async function getCalendarEvents(
+  year: number,
+  month: number,
+  includeFinished: boolean = false,
+): Promise<Event[]> {
   try {
     const response = await api.get('/events/calendar', {
-      params: { year, month }
+      params: { year, month, include_finished: includeFinished }
     });
     return response.data;
   } catch (error) {

@@ -52,8 +52,11 @@ export default function Calendar() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [eventTypeFilter, setEventTypeFilter] = useState<EventType | 'all'>('all');
-  const [groups, setGroups] = useState<{ id: number; name: string }[]>([]);
+  const [groups, setGroups] = useState<{ id: number; name: string; is_active?: boolean; is_over?: boolean }[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string>('all');
+  // Finished groups (and their lessons, past included) are hidden by default since
+  // recordings moved to their own calendar (/recordings) — this is the opt-in to see them.
+  const [showArchived, setShowArchived] = useState(false);
   const [myRequests, setMyRequests] = useState<Map<number, LessonRequest>>(new Map());
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [dayPeek, setDayPeek] = useState<Date | null>(null);
@@ -70,7 +73,7 @@ export default function Calendar() {
   useEffect(() => {
     loadEvents();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [monthKey]);
+  }, [monthKey, showArchived]);
 
   useEffect(() => {
     loadGroups();
@@ -106,7 +109,7 @@ export default function Calendar() {
       // The requests fetch failing must not blank the calendar — it only powers
       // the substitution badges, so degrade to an empty list.
       const [monthResults, requests] = await Promise.all([
-        Promise.allSettled(months.map((m) => getCalendarEvents(m.year, m.month))),
+        Promise.allSettled(months.map((m) => getCalendarEvents(m.year, m.month, showArchived))),
         user?.role === 'teacher'
           ? getMyLessonRequests().catch((e) => {
               console.error('Failed to load lesson requests for calendar:', e);
@@ -153,10 +156,11 @@ export default function Calendar() {
   // "August 19 SAT - Gulzada"; the teacher is part of the name).
   const groupOptions = useMemo(() => [
     { value: 'all', label: 'All groups' },
-    ...[...groups]
+    ...groups
+      .filter((g) => showArchived || (g.is_active !== false && !g.is_over))
       .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }))
       .map((g) => ({ value: String(g.id), label: g.name })),
-  ], [groups]);
+  ], [groups, showArchived]);
 
   const monthDays = useMemo(() => buildMonthDays(viewDate, filtered), [viewDate, filtered]);
   const weekDays = useMemo(() => buildWeekDays(viewDate), [viewDate]);
@@ -320,6 +324,22 @@ export default function Calendar() {
                 emptyText="No group matches"
                 className="h-9 w-[150px] sm:w-48"
               />
+            </div>
+          )}
+
+          {/* Archived/finished groups toggle (staff) */}
+          {showGroupFilter && (
+            <div className="flex h-9 items-center gap-2 rounded-lg border border-border bg-muted/40 px-2.5">
+              <input
+                type="checkbox"
+                id="show-archived"
+                checked={showArchived}
+                onChange={(e) => setShowArchived(e.target.checked)}
+                className="h-4 w-4 cursor-pointer rounded border-border text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor="show-archived" className="cursor-pointer whitespace-nowrap text-[13px] font-medium text-muted-foreground">
+                Show finished
+              </label>
             </div>
           )}
 
