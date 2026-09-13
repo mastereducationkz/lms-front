@@ -104,7 +104,9 @@ export async function submitAssignment(assignmentId: string, submissionData: any
 }
 
 export async function getStudentAnswerKeys(assignmentId: string): Promise<any[]> {
-  const response = await api.get(`/assignments/${assignmentId}/answer-keys`);
+  // Manual releases can happen while a student has this page open.  Do not serve
+  // a cached key list on reload, or the teacher's release remains invisible.
+  const response = await api.get(`/assignments/${assignmentId}/answer-keys`, { cache: false });
   return response.data;
 }
 
