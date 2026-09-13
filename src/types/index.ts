@@ -675,6 +675,7 @@ export interface Assignment {
   updated_at: string;
   late_penalty_enabled?: boolean;
   late_penalty_multiplier?: number;
+  max_attempts?: number | null;
 }
 
 export type AssignmentType =
@@ -722,6 +723,8 @@ export interface AssignmentSubmission {
   user_name?: string;
   grader_name?: string;
   is_late?: boolean;
+  attempt_number?: number;
+  is_current?: boolean;
 }
 
 export type SubmissionStatus = 'draft' | 'submitted' | 'graded' | 'needs_revision' | 'overdue';
@@ -744,7 +747,11 @@ export interface SubmitAssignmentRequest {
 
 export interface AssignmentStatus {
   status: string;
-  attemptsLeft: number;
+  attempts_left?: number | null;
+  attempts_used?: number;
+  max_attempts?: number | null;
+  can_resubmit?: boolean;
+  attempt_number?: number;
   late?: boolean;
   score?: number;
   feedback?: string;

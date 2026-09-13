@@ -76,6 +76,7 @@ export async function createAssignment(assignmentData: {
   event_mapping?: Record<number, number>;
   allowed_file_types: string[];
   max_file_size_mb: number;
+  max_attempts?: number | null;
 }): Promise<any> {
   try {
     const response = await api.post('/assignments/', assignmentData);
@@ -259,7 +260,7 @@ export async function getAssignmentStatusForStudent(assignmentId: string): Promi
     return response.data;
   } catch (error) {
     console.error('getAssignmentStatusForStudent error:', error);
-    return { status: 'not_started', attempts_left: 1, late: false };
+    return { status: 'not_started', attempts_left: 1, attempts_used: 0, can_resubmit: true, late: false };
   }
 }
 

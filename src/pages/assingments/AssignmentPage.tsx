@@ -54,6 +54,14 @@ export default function AssignmentPage() {
   const [fieldAnswers, setFieldAnswers] = useState<Record<string, string>>({});
   const [answerKeys, setAnswerKeys] = useState<any[]>([]);
 
+  const startReplacement = () => {
+    setSubmission(null);
+    setViewMode('details');
+    setText('');
+    setFiles([]);
+    setFieldAnswers({});
+  };
+
   // Stable reference: MultiTaskSubmission resets its local answers state whenever this
   // object's IDENTITY changes, so a fresh `{ tasks: ... }` literal on every render here
   // would wipe in-progress edits (and any auto-completing task) on every unrelated
@@ -376,6 +384,15 @@ export default function AssignmentPage() {
                     <p className="text-gray-500 dark:text-gray-400 italic">No feedback provided yet</p>
                   )}
                 </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-muted-foreground">
+                    Attempt {(status as any)?.attempts_used || 1}
+                    {(status as any)?.max_attempts == null ? ' of unlimited' : ` of ${(status as any).max_attempts}`}
+                  </span>
+                  {(status as any)?.can_resubmit && (
+                    <Button variant="outline" onClick={startReplacement}>Submit replacement</Button>
+                  )}
+                </div>
 
                 {/* Action Button */}
                 <Button 
@@ -496,6 +513,18 @@ export default function AssignmentPage() {
     }
 
     // Not submitted yet - show submission form
+    if ((status as any)?.can_resubmit === false) {
+      return (
+        <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/20">
+          <CardContent className="p-6 text-sm text-amber-900 dark:text-amber-200">
+            {(status as any)?.late
+              ? 'The deadline has passed. Ask your teacher to reopen this homework before submitting.'
+              : 'No attempts remain for this homework.'}
+          </CardContent>
+        </Card>
+      );
+    }
+
     const readinessBanner = !submission && (status as any)?.unit_gate && (status as any).unit_gate.total > 0 && (
       (status as any).unit_gate.ready ? (
         <div className="mb-3 rounded-md border border-green-300 bg-green-50 dark:bg-green-950/30 px-3 py-2 text-sm text-green-800 dark:text-green-200">

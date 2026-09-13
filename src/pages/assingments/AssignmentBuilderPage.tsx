@@ -45,6 +45,7 @@ interface AssignmentFormData {
   due_date_mapping?: Record<number, string>; // group_id -> ISO due date
   late_penalty_enabled?: boolean;
   late_penalty_multiplier?: number;
+  max_attempts?: number | null;
 }
 
 export default function AssignmentBuilderPage() {
@@ -69,7 +70,8 @@ export default function AssignmentBuilderPage() {
     lesson_number_mapping: {},
     due_date_mapping: {},
     late_penalty_enabled: false,
-    late_penalty_multiplier: 0.6
+    late_penalty_multiplier: 0.6,
+    max_attempts: null
   });
 
   const [loading, setLoading] = useState(false);
@@ -177,6 +179,7 @@ export default function AssignmentBuilderPage() {
           : {},
         late_penalty_enabled: assignment.late_penalty_enabled || false,
         late_penalty_multiplier: assignment.late_penalty_multiplier || 0.6
+        ,max_attempts: assignment.max_attempts ?? null
       });
 
       if (assignment.group_id) {
@@ -526,7 +529,8 @@ export default function AssignmentBuilderPage() {
             return acc;
         }, {} as Record<number, string>),
         late_penalty_enabled: formData.late_penalty_enabled,
-        late_penalty_multiplier: formData.late_penalty_multiplier
+        late_penalty_multiplier: formData.late_penalty_multiplier,
+        max_attempts: formData.max_attempts
       };
       
       console.log('Submitting assignment with data:', assignmentData);
@@ -770,6 +774,26 @@ export default function AssignmentBuilderPage() {
                   />
                 </div>
 
+
+                {/* Late Penalty Settings */}
+                <div className="pt-4 border-t space-y-3">
+                  <Label>Resubmissions</Label>
+                  <Select
+                    value={formData.max_attempts == null ? 'unlimited' : 'fixed'}
+                    onValueChange={(value) => handleInputChange('max_attempts', value === 'unlimited' ? null : Math.max(1, formData.max_attempts || 1))}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unlimited">Unlimited attempts until deadline</SelectItem>
+                      <SelectItem value="fixed">Fixed number of attempts</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {formData.max_attempts != null && (
+                    <Input type="number" min="1" value={formData.max_attempts}
+                      onChange={(e) => handleInputChange('max_attempts', Math.max(1, parseInt(e.target.value) || 1))} />
+                  )}
+                  <p className="text-xs text-gray-500">Teachers can reopen a completed homework after its deadline. All attempts remain in history.</p>
+                </div>
 
                 {/* Late Penalty Settings */}
                 <div className="pt-4 border-t space-y-4">
