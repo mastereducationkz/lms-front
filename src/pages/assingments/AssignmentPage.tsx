@@ -40,6 +40,8 @@ export default function AssignmentPage() {
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [status, setStatus] = useState<AssignmentStatus | null>(null);
   const [submission, setSubmission] = useState<Submission | null>(null);
+  const [previousAttempts, setPreviousAttempts] = useState<Submission[]>([]);
+  const [showPreviousAttempts, setShowPreviousAttempts] = useState(false);
   const [extension, setExtension] = useState<any>(null);
   
   // View mode: 'status' shows grading panel, 'details' shows actual submission
@@ -92,9 +94,13 @@ export default function AssignmentPage() {
 
   const loadSubmission = async (assignmentId: string) => {
     try {
-      const statusResult = await apiClient.getAssignmentStatusForStudent(assignmentId);
+      const [statusResult, attempts] = await Promise.all([
+        apiClient.getAssignmentStatusForStudent(assignmentId),
+        apiClient.getAssignmentSubmissions(assignmentId),
+      ]);
       setStatus(statusResult as AssignmentStatus);
       setAnswerKeys(await apiClient.getStudentAnswerKeys(assignmentId));
+      setPreviousAttempts((attempts as Submission[]).filter((attempt) => !attempt.is_current));
 
       
       if (statusResult.submission_id) {
@@ -124,6 +130,7 @@ export default function AssignmentPage() {
         }
       } else {
         setSubmission(null);
+        setPreviousAttempts([]);
       }
     } catch (err) {
       console.error('Failed to load submission status:', err);
@@ -394,6 +401,43 @@ export default function AssignmentPage() {
                   )}
                 </div>
 
+                {previousAttempts.length > 0 && (
+                  <div className="rounded-lg border border-border bg-white dark:bg-card">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-between"
+                      onClick={() => setShowPreviousAttempts((visible) => !visible)}
+                    >
+                      {showPreviousAttempts ? 'Hide previous attempts' : `Show previous attempts (${previousAttempts.length})`}
+                    </Button>
+                    {showPreviousAttempts && (
+                      <div className="border-t border-border divide-y divide-border">
+                        {previousAttempts.map((attempt) => (
+                          <div key={attempt.id} className="flex items-center justify-between gap-3 p-3">
+                            <div>
+                              <div className="font-medium text-sm">Attempt {attempt.attempt_number || 1}</div>
+                              <div className="text-xs text-muted-foreground">Submitted {new Date(attempt.submitted_at).toLocaleString()}</div>
+                              {attempt.is_graded
+                                ? <div className="text-sm mt-1">Historical score: {attempt.score ?? 0}/{attempt.max_score}</div>
+                                : <div className="text-sm mt-1 text-muted-foreground">Not graded</div>}
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSubmission({ ...attempt, status: attempt.is_graded ? 'graded' : 'submitted' } as Submission);
+                                setViewMode('details');
+                              }}
+                            >
+                              View attempt
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Action Button */}
                 <Button 
                   onClick={() => setViewMode('details')} 
@@ -420,7 +464,7 @@ export default function AssignmentPage() {
       return (
         <div className="space-y-4">
           <Button 
-            onClick={() => setViewMode('status')} 
+            onClick={() => { setViewMode('status'); if (id) loadSubmission(id); }}
             variant="ghost" 
             size="sm"
             className="mb-2"
