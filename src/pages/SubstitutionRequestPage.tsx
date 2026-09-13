@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getAvailableTeachers, createLessonRequest } from '../services/api';
 import { toast } from '../components/Toast';
-import { formatInKZ } from '../lib/datetime';
+import { formatInKZ, fromDatetimeLocalKZ } from '../lib/datetime';
 import type { AvailableTeacher } from '../types';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
@@ -63,8 +63,10 @@ export default function SubstitutionRequestPage() {
   const handleSubmit = async () => {
     try {
       setSubmitting(true);
+      // datetime-local is deliberately timezone-free. Its wall-clock value is the
+      // school's time, not the browser/device timezone of the person filing it.
       const newDatetimeIso = requestType === 'reschedule' && newDatetime
-        ? new Date(newDatetime).toISOString()
+        ? fromDatetimeLocalKZ(newDatetime)
         : undefined;
       const created = await createLessonRequest({
         request_type: requestType,
@@ -209,7 +211,7 @@ export default function SubstitutionRequestPage() {
 
               <TabsContent value="reschedule" className="space-y-4 mt-4">
                 <div className="space-y-2">
-                  <Label htmlFor="new-date">New Date & Time</Label>
+                  <Label htmlFor="new-date">New Date & Time (Kazakhstan time)</Label>
                   <Input
                     id="new-date"
                     type="datetime-local"

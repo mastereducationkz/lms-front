@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { almatyCivilDate, installAppTimeZone, parseAsUTC, todayInAlmaty, uninstallAppTimeZone } from './datetime';
+import { almatyCivilDate, fromDatetimeLocalKZ, installAppTimeZone, parseAsUTC, todayInAlmaty, uninstallAppTimeZone } from './datetime';
 import { eventsOnDay } from '../components/calendar/calendarUtils';
 import type { Event } from '../types';
 
@@ -103,6 +103,14 @@ describe('Almaty days', () => {
     } as unknown as Event;
     expect(eventsOnDay(new Date(2026, 8, 10), [lesson, early]).map((e) => e.id)).toEqual([1]);
     expect(eventsOnDay(new Date(2026, 8, 11), [lesson, early]).map((e) => e.id)).toEqual([1, 2]);
+  });
+});
+
+describe('Almaty form values', () => {
+  it('submits a reschedule wall-clock time as Kazakhstan time, not the operator laptop time', () => {
+    laptopIn('Europe/Stockholm');
+    // The same value used to be parsed in Stockholm, then displayed as 19:00 in Almaty.
+    expect(fromDatetimeLocalKZ('2026-09-13T16:00')).toBe('2026-09-13T11:00:00.000Z');
   });
 });
 
