@@ -25,6 +25,7 @@ import MultiTaskSubmission from '../../components/assignments/MultiTaskSubmissio
 import PlatformTestPanel from '../../components/assignments/PlatformTestPanel.tsx';
 import { compressImage } from '../../utils/imageCompression';
 import { AudioPlayer } from '../../components/AudioPlayer';
+import { formatAssignmentStatus } from '../../lib/assignmentStatus';
 
 function resolveFileUrl(url: string): string {
   if (!url) return url;
@@ -781,16 +782,9 @@ export default function AssignmentPage() {
             </div>
             <div className="flex flex-col items-end space-y-2">
               {status && (
-                status.status.charAt(0) === 'not_started' ? (
-                <Badge variant="outline" className="text-sm">
-                  Not started
-                </Badge>
-                ) : (
                 <Badge variant={getStatusBadgeVariant()} className="text-sm">
-                  {status.status.charAt(0).toUpperCase() + status.status.slice(1)}
+                  {formatAssignmentStatus(status.status)}
                 </Badge>
-                )
-               
               )}
               {!submission && isOverdue && !extension && (
                 <span className="text-sm text-amber-700 dark:text-amber-300">
