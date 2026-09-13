@@ -14,6 +14,7 @@ import { cn } from '../../lib/utils';
 import { AudioPlayer } from '../AudioPlayer';
 import { parseBluebookReport } from '../../services/api/exams';
 import { BluebookGraderPanel } from './BluebookGraderPanel';
+import { formatAssignmentTaskLabel } from '../../lib/assignmentTask';
 
 interface Task {
   id: string;
@@ -1497,7 +1498,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-slate-900 dark:text-slate-100">{task.title}</h4>
+                        <h4 className="font-medium text-slate-900 dark:text-slate-100">{formatAssignmentTaskLabel(task.title, index)}</h4>
                         {task.is_optional && (
                           <span className="text-xs px-2 py-0.5 bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 rounded-full flex items-center gap-1">
                             <Star className="w-3 h-3" />
@@ -1550,7 +1551,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
               <div className="text-sm text-muted-foreground space-y-1">
                 {requiredTasks.filter(t => !checkTaskCompletion(t)).length > 0 && (
                   <div>
-                    Still needed: {requiredTasks.filter(t => !checkTaskCompletion(t)).map(t => t.title || `Task ${t.id}`).join(', ')}
+                    Still needed: {requiredTasks.filter(t => !checkTaskCompletion(t)).map(t => formatAssignmentTaskLabel(t.title, tasks.indexOf(t))).join(', ')}
                   </div>
                 )}
                 {unitsBlocked && (
