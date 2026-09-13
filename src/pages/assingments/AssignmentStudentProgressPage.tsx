@@ -202,6 +202,11 @@
         // Fetch just this one submission instead of the whole group's list (which re-ran the
         // submissions N+1 on every grade-dialog open).
         const sub = await apiClient.getSubmission(id!, String(submissionId));
+        if (!sub?.is_current) {
+          toast('Only the latest attempt can be graded.', 'error');
+          setGradingDialog({ open: false, submissionId: null });
+          return;
+        }
 
         setSelectedSubmission(sub);
         setScoreInput(sub?.score != null ? String(sub.score) : '');
@@ -369,6 +374,11 @@
               <h1 className="text-3xl font-bold text-foreground">{data.assignment.title}</h1>
             </div>
           </div>
+          {(user?.role === 'teacher' || user?.role === 'admin') && (
+            <Button variant="outline" onClick={() => navigate(`/homework/${id}/grade`)}>
+              View submission history
+            </Button>
+          )}
         </div>
 
         {/* Assignment Info */}
@@ -632,8 +642,8 @@
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    title="Grade submission"
-                                    aria-label="Grade submission"
+                                    title="Grade current attempt"
+                                    aria-label="Grade current attempt"
                                     onClick={() => openGradeDialog(student.submission_id!)}
                                   >
                                     <Pencil className="w-4 h-4" />

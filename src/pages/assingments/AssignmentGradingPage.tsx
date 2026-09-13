@@ -182,6 +182,18 @@ export default function AssignmentGradingPage() {
     setIsGradingModalOpen(true);
   };
 
+  // One homework row per student, with their current attempt first and the older
+  // attempts retained beneath it as reference-only history.
+  const submissionGroups = Object.values(
+    submissions.reduce<Record<string, Submission[]>>((groups, submission) => {
+      const key = String(submission.user_id);
+      (groups[key] ||= []).push(submission);
+      return groups;
+    }, {})
+  ).map((studentSubmissions) => studentSubmissions.sort(
+    (a, b) => (b.attempt_number || 1) - (a.attempt_number || 1)
+  ));
+
   if (loading) {
     return <div className="text-center py-8 text-muted-foreground">Loading...</div>;
   }
@@ -201,7 +213,7 @@ export default function AssignmentGradingPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Submission History ({submissions.length})</CardTitle>
+          <CardTitle>Submission History ({submissionGroups.length} students)</CardTitle>
         </CardHeader>
         <CardContent>
           {submissions.length === 0 ? (
@@ -209,70 +221,29 @@ export default function AssignmentGradingPage() {
               No submissions yet.
             </div>
           ) : (
-            submissions.map((submission) => {
-              const studentExtension = extensions.find(ext => ext.student_id === parseInt(submission.user_id));
+            submissionGroups.map((studentSubmissions) => {
+              const currentSubmission = studentSubmissions.find(submission => submission.is_current) || studentSubmissions[0];
+              const studentExtension = extensions.find(ext => ext.student_id === parseInt(currentSubmission.user_id));
               
               return (
-              <div key={submission.id} className="border dark:border-border rounded-lg p-4 mb-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <div className="font-medium text-lg text-foreground">{submission.user_name || `User ${submission.user_id}`}</div>
-                      <Badge variant={submission.is_current ? 'default' : 'secondary'}>
-                        Attempt {submission.attempt_number || 1}{submission.is_current ? ' · Current' : ' · Previous'}
-                      </Badge>
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center mt-1">
-                      <Clock className="w-3 h-3 mr-1" />
-                      Submitted: {new Date(submission.submitted_at).toLocaleString()}
-                    </div>
-                    {studentExtension && (
-                      <div className="text-sm text-green-600 dark:text-green-400 flex items-center mt-1">
-                        <Calendar className="w-3 h-3 mr-1" />
-                        Extended Deadline: {new Date(studentExtension.extended_deadline).toLocaleDateString()}
-                        {studentExtension.reason && ` - ${studentExtension.reason}`}
-                      </div>
-                    )}
-                    {submission.is_late && (
-                      <div className="text-sm text-amber-600 dark:text-amber-400 flex items-center mt-1 font-medium">
-                        <AlertCircle className="w-3 h-3 mr-1" />
-                        Late Submission
-                        {assignment?.late_penalty_enabled && (
-                          <span className="ml-1 text-xs text-amber-500 dark:text-amber-500/80">
-                            (Penalty Applied: {assignment.late_penalty_multiplier}x)
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    {submission.is_graded ? (
-                      <Badge variant={(submission.score || 0) >= (submission.max_score * 0.6) ? "default" : "destructive"}>
-                        Score: {submission.score || 0}/{submission.max_score}
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary">Pending Grading</Badge>
-                    )}
-                    {submission.is_current ? (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openExtensionModal(submission)}
-                        >
-                          {studentExtension ? 'Edit Extension' : 'Grant Extension'}
-                        </Button>
-                        <Button onClick={() => openGradingModal(submission)}>
-                          {submission.is_graded ? 'Update Grade' : 'Grade'}
-                        </Button>
-                      </>
-                    ) : (
-                      <Button variant="outline" onClick={() => openAttemptPreview(submission)}>
-                        View attempt
-                      </Button>
-                    )}
+              <div key={currentSubmission.user_id} className="border dark:border-border rounded-lg p-4 mb-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="font-medium text-lg text-foreground">{currentSubmission.user_name || `User ${currentSubmission.user_id}`}</div>
+                    <div className="text-sm text-muted-foreground">{studentSubmissions.length} attempt{studentSubmissions.length === 1 ? '' : 's'}</div>
+                    {studentExtension && <div className="text-sm text-green-600 dark:text-green-400 flex items-center mt-1"><Calendar className="w-3 h-3 mr-1" />Extended Deadline: {new Date(studentExtension.extended_deadline).toLocaleDateString()}{studentExtension.reason && ` - ${studentExtension.reason}`}</div>}
                   </div>
                 </div>
+                {studentSubmissions.map((submission) => (
+                  <div key={submission.id} className="rounded-md border border-border p-3 flex items-center justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2"><Badge variant={submission.is_current ? 'default' : 'secondary'}>Attempt {submission.attempt_number || 1}{submission.is_current ? ' · Current' : ' · Previous'}</Badge>{submission.is_graded ? <Badge variant={(submission.score || 0) >= (submission.max_score * 0.6) ? 'default' : 'destructive'}>Score: {submission.score || 0}/{submission.max_score}</Badge> : <Badge variant="secondary">Pending Grading</Badge>}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center mt-2"><Clock className="w-3 h-3 mr-1" />Submitted: {new Date(submission.submitted_at).toLocaleString()}</div>
+                      {submission.is_late && <div className="text-sm text-amber-600 dark:text-amber-400 flex items-center mt-1 font-medium"><AlertCircle className="w-3 h-3 mr-1" />Late Submission</div>}
+                    </div>
+                    {submission.is_current ? <div className="flex items-center gap-2"><Button variant="outline" size="sm" onClick={() => openExtensionModal(submission)}>{studentExtension ? 'Edit Extension' : 'Grant Extension'}</Button><Button onClick={() => openGradingModal(submission)}>{submission.is_graded ? 'Update Grade' : 'Grade'}</Button></div> : <Button variant="outline" onClick={() => openAttemptPreview(submission)}>View attempt</Button>}
+                  </div>
+                ))}
               </div>
             );
             })
