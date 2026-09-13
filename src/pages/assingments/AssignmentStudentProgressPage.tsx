@@ -12,7 +12,8 @@
     ArrowLeft,
     Award,
     Pencil,
-    Download
+    Download,
+    History
   } from 'lucide-react';
   import { Button } from '../../components/ui/button';
   import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -375,9 +376,14 @@
             </div>
           </div>
           {(user?.role === 'teacher' || user?.role === 'admin') && (
-            <Button variant="outline" onClick={() => navigate(`/homework/${id}/grade`)}>
-              View submission history
-            </Button>
+            <div className="text-right">
+              <Badge className="mb-1" variant="secondary">New</Badge>
+              <Button onClick={() => navigate(`/homework/${id}/grade`)}>
+                <History className="w-4 h-4 mr-2" />
+                Submission history
+              </Button>
+              <p className="text-xs text-muted-foreground mt-1">Review every attempt</p>
+            </div>
           )}
         </div>
 
@@ -670,7 +676,12 @@
           <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
             <DialogHeader>
               <DialogTitle>Grade Submission</DialogTitle>
+              <DialogDescription>Only the latest attempt can be graded.</DialogDescription>
             </DialogHeader>
+            <Button variant="outline" size="sm" className="w-fit" onClick={() => navigate(`/homework/${id}/grade`)}>
+              <History className="w-4 h-4 mr-2" />
+              Show previous attempts
+            </Button>
             <div className="p-2 h-full overflow-y-auto">
               {loadingSubmission ? (
                 <div className="text-sm text-gray-500 dark:text-gray-400">Loading submission...</div>

@@ -71,7 +71,7 @@ export default function AssignmentBuilderPage() {
     due_date_mapping: {},
     late_penalty_enabled: false,
     late_penalty_multiplier: 0.6,
-    max_attempts: null
+    max_attempts: 1
   });
 
   const [loading, setLoading] = useState(false);

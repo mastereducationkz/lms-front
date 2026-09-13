@@ -55,6 +55,7 @@ export default function AssignmentGradingPage() {
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [isGradingModalOpen, setIsGradingModalOpen] = useState(false);
   const [isViewingPreviousAttempt, setIsViewingPreviousAttempt] = useState(false);
+  const [expandedPreviousAttempts, setExpandedPreviousAttempts] = useState<Record<string, boolean>>({});
   const [gradingScore, setGradingScore] = useState<number | string>(''); // Allow empty string for better UX
   const [gradingFeedback, setGradingFeedback] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -224,6 +225,11 @@ export default function AssignmentGradingPage() {
             submissionGroups.map((studentSubmissions) => {
               const currentSubmission = studentSubmissions.find(submission => submission.is_current) || studentSubmissions[0];
               const studentExtension = extensions.find(ext => ext.student_id === parseInt(currentSubmission.user_id));
+              const studentKey = String(currentSubmission.user_id);
+              const previousAttempts = studentSubmissions.filter(submission => !submission.is_current);
+              const visibleAttempts = expandedPreviousAttempts[studentKey]
+                ? studentSubmissions
+                : [currentSubmission];
               
               return (
               <div key={currentSubmission.user_id} className="border dark:border-border rounded-lg p-4 mb-4 space-y-3">
@@ -234,7 +240,7 @@ export default function AssignmentGradingPage() {
                     {studentExtension && <div className="text-sm text-green-600 dark:text-green-400 flex items-center mt-1"><Calendar className="w-3 h-3 mr-1" />Extended Deadline: {new Date(studentExtension.extended_deadline).toLocaleDateString()}{studentExtension.reason && ` - ${studentExtension.reason}`}</div>}
                   </div>
                 </div>
-                {studentSubmissions.map((submission) => (
+                {visibleAttempts.map((submission) => (
                   <div key={submission.id} className="rounded-md border border-border p-3 flex items-center justify-between gap-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-2"><Badge variant={submission.is_current ? 'default' : 'secondary'}>Attempt {submission.attempt_number || 1}{submission.is_current ? ' · Current' : ' · Previous'}</Badge>{submission.is_graded ? <Badge variant={(submission.score || 0) >= (submission.max_score * 0.6) ? 'default' : 'destructive'}>Score: {submission.score || 0}/{submission.max_score}</Badge> : <Badge variant="secondary">Pending Grading</Badge>}</div>
@@ -244,6 +250,20 @@ export default function AssignmentGradingPage() {
                     {submission.is_current ? <div className="flex items-center gap-2"><Button variant="outline" size="sm" onClick={() => openExtensionModal(submission)}>{studentExtension ? 'Edit Extension' : 'Grant Extension'}</Button><Button onClick={() => openGradingModal(submission)}>{submission.is_graded ? 'Update Grade' : 'Grade'}</Button></div> : <Button variant="outline" onClick={() => openAttemptPreview(submission)}>View attempt</Button>}
                   </div>
                 ))}
+                {previousAttempts.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => setExpandedPreviousAttempts((current) => ({
+                      ...current,
+                      [studentKey]: !current[studentKey],
+                    }))}
+                  >
+                    {expandedPreviousAttempts[studentKey]
+                      ? 'Hide previous attempts'
+                      : `Show previous attempts (${previousAttempts.length})`}
+                  </Button>
+                )}
               </div>
             );
             })
