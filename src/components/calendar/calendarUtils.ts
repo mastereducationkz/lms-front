@@ -155,7 +155,15 @@ export function layoutDayColumns(dayEvents: Event[]): LaidEvent[] {
   return items;
 }
 
-/** Visible hour window for the week grid, widened to fit all events (clamped 06:00–23:00). */
+/**
+ * Visible hour window for the week grid.
+ *
+ * The ordinary timetable starts at 06:00, but that is a default, not a data-loss
+ * boundary: an occasional 05:00 lesson must expand the grid just far enough to
+ * be visible.  We therefore extend the compact daytime window only to the first
+ * actual early lesson rather than permanently rendering an empty 00:00–06:00
+ * overnight block.
+ */
 export function weekTimeWindow(weekEvents: Event[]): { startMin: number; endMin: number } {
   let earliest = 8 * 60;
   let latest = 20 * 60;
@@ -165,8 +173,8 @@ export function weekTimeWindow(weekEvents: Event[]): { startMin: number; endMin:
     earliest = Math.min(earliest, s);
     latest = Math.max(latest, en);
   });
-  const startHour = Math.max(6, Math.floor(earliest / 60));
-  const endHour = Math.min(23, Math.max(startHour + 1, Math.ceil(latest / 60)));
+  const startHour = Math.max(0, Math.min(6, Math.floor(earliest / 60)));
+  const endHour = Math.min(24, Math.max(startHour + 1, Math.ceil(latest / 60)));
   return { startMin: startHour * 60, endMin: endHour * 60 };
 }
 

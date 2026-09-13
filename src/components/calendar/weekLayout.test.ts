@@ -4,6 +4,7 @@ import {
   countLabel, lanesForWidth, maxConcurrency, planDay, tileDots, tileLabel, tileTooltip,
   type HourTile,
 } from './weekLayout';
+import { weekTimeWindow } from './calendarUtils';
 
 let nextId = 1;
 
@@ -49,6 +50,16 @@ describe('maxConcurrency', () => {
   it('gives a zero-length event the same half hour the card layout does', () => {
     // An assignment deadline starts and ends at 22:00 but is drawn 30 minutes tall.
     expect(maxConcurrency([ev('22:00', '22:00'), ev('22:10', '22:10')])).toBe(2);
+  });
+});
+
+describe('weekTimeWindow', () => {
+  it('keeps the compact 06:00 start when the week has no early lesson', () => {
+    expect(weekTimeWindow([ev('08:00', '09:00')]).startMin).toBe(360);
+  });
+
+  it('extends only as far as an actual early lesson instead of hiding it at 06:00', () => {
+    expect(weekTimeWindow([ev('05:00', '06:00')]).startMin).toBe(300);
   });
 });
 
