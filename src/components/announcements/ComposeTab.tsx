@@ -12,10 +12,13 @@ import { errorMessage } from './shared';
 import { MAX_IMAGES, TEXT_LIMIT, visibleLength, visibleText } from './telegramText';
 import { createAnnouncement, testSendPreview } from '../../services/api/announcements';
 import type { RecipientSummary, TelegramGroup } from '../../services/api/announcements';
+import type { RecipientSelection } from './resend';
 
 interface ComposeTabProps {
   approvedGroups: TelegramGroup[];
   summary: RecipientSummary | null;
+  /** Recipient selection copied from a History entry; message content stays blank. */
+  recipientSelection?: RecipientSelection;
   onSent: () => void;
 }
 
@@ -26,11 +29,13 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
  * are presentational; everything that determines WHAT is sent and to WHOM —
  * validation, the payload, the recipient count — lives here, in one place.
  */
-export function ComposeTab({ approvedGroups, summary, onSent }: ComposeTabProps) {
+export function ComposeTab({ approvedGroups, summary, recipientSelection, onSent }: ComposeTabProps) {
   const [body, setBody] = useState('');
   const [images, setImages] = useState<File[]>([]);
-  const [selectedGroups, setSelectedGroups] = useState<Set<number>>(new Set());
-  const [allStudents, setAllStudents] = useState(false);
+  const [selectedGroups, setSelectedGroups] = useState<Set<number>>(
+    () => new Set(recipientSelection?.groupIds ?? []),
+  );
+  const [allStudents, setAllStudents] = useState(recipientSelection?.allStudents ?? false);
   const [pin, setPin] = useState(false);
   const [silent, setSilent] = useState(false);
   const [scheduledFor, setScheduledFor] = useState('');

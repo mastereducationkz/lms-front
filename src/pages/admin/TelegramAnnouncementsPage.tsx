@@ -7,8 +7,10 @@ import { GroupsTab } from '../../components/announcements/GroupsTab';
 import { HistoryTab } from '../../components/announcements/HistoryTab';
 import { LessonInvitationsTab } from '../../components/announcements/LessonInvitationsTab';
 import { errorMessage } from '../../components/announcements/shared';
+import { recipientSelectionFromAnnouncement } from '../../components/announcements/resend';
 import { getGroups, getRecipientSummary } from '../../services/api/announcements';
-import type { RecipientSummary, TelegramGroup } from '../../services/api/announcements';
+import type { AnnouncementDetail, RecipientSummary, TelegramGroup } from '../../services/api/announcements';
+import type { RecipientSelection } from '../../components/announcements/resend';
 
 /**
  * Admin → Telegram Announcements.
@@ -37,6 +39,10 @@ export default function TelegramAnnouncementsPage() {
   const [groups, setGroups] = useState<TelegramGroup[]>([]);
   const [summary, setSummary] = useState<RecipientSummary | null>(null);
   const [loadingGroups, setLoadingGroups] = useState(true);
+  const [recipientSelection, setRecipientSelection] = useState<RecipientSelection | undefined>();
+  // A copied selection must initialise a fresh composer rather than overwrite
+  // an announcement the staff member is already writing.
+  const [composeVersion, setComposeVersion] = useState(0);
 
   const loadGroups = useCallback(async () => {
     try {
@@ -63,6 +69,12 @@ export default function TelegramAnnouncementsPage() {
     () => groups.filter((group) => group.status === 'pending').length,
     [groups],
   );
+
+  const startAgain = (announcement: AnnouncementDetail) => {
+    setRecipientSelection(recipientSelectionFromAnnouncement(announcement, approvedGroups));
+    setComposeVersion((version) => version + 1);
+    setTab('compose');
+  };
 
   return (
     <div className="mx-auto max-w-[90rem] space-y-6">
@@ -121,9 +133,19 @@ export default function TelegramAnnouncementsPage() {
       </div>
 
       {tab === 'compose' && (
-        <ComposeTab approvedGroups={approvedGroups} summary={summary} onSent={() => setTab('history')} />
+        <ComposeTab
+          key={composeVersion}
+          approvedGroups={approvedGroups}
+          summary={summary}
+          recipientSelection={recipientSelection}
+          onSent={() => {
+            setRecipientSelection(undefined);
+            setComposeVersion((version) => version + 1);
+            setTab('history');
+          }}
+        />
       )}
-      {tab === 'history' && <HistoryTab />}
+      {tab === 'history' && <HistoryTab onSendAgain={startAgain} />}
       {tab === 'groups' && <GroupsTab groups={groups} loading={loadingGroups} onChanged={loadGroups} />}
       {tab === 'invitations' && <LessonInvitationsTab />}
     </div>

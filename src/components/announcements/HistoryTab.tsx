@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Trash2, Undo2 } from 'lucide-react';
+import { Repeat2, Trash2, Undo2 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
@@ -19,7 +19,11 @@ import type { Announcement, AnnouncementDetail } from '../../services/api/announ
 /** How often to refresh while a broadcast is still going out. */
 const POLL_MS = 5000;
 
-export function HistoryTab() {
+interface HistoryTabProps {
+  onSendAgain: (announcement: AnnouncementDetail) => void;
+}
+
+export function HistoryTab({ onSendAgain }: HistoryTabProps) {
   const [rows, setRows] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<AnnouncementDetail | null>(null);
@@ -96,6 +100,17 @@ export function HistoryTab() {
     }
   };
 
+  const handleSendAgain = async (id: number) => {
+    setBusy(true);
+    try {
+      onSendAgain(await getAnnouncement(id));
+    } catch (error) {
+      toast(errorMessage(error, 'Failed to load the announcement recipients'), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const emptyRow = (text: string) => (
     <TableRow>
       <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
@@ -163,6 +178,16 @@ export function HistoryTab() {
                             {formatDateTime(row.scheduled_for || row.created_at)}
                           </TableCell>
                           <TableCell onClick={(event) => event.stopPropagation()}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleSendAgain(row.id)}
+                              disabled={busy}
+                              aria-label="Send again to the same recipients"
+                            >
+                              <Repeat2 className="mr-1 h-4 w-4" />
+                              Send again
+                            </Button>
                             {row.status === 'scheduled' && (
                               <Button
                                 variant="ghost"
