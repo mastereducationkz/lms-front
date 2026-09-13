@@ -29,6 +29,7 @@ interface Task {
 interface MultiTaskEditorProps {
   content: any;
   onContentChange: (content: any) => void;
+  assignmentId?: string;
 }
 
 const TASK_TYPES = [
@@ -45,7 +46,7 @@ const TASK_TYPES = [
 // the selector is a convenience, not a security boundary.
 const BLUEBOOK_TEST_NUMBERS = [4, 5, 6, 7, 8, 9, 10, 11];
 
-export default function MultiTaskEditor({ content, onContentChange }: MultiTaskEditorProps) {
+export default function MultiTaskEditor({ content, onContentChange, assignmentId }: MultiTaskEditorProps) {
   const [tasks, setTasks] = useState<Task[]>(content.tasks || []);
   const [instructions, setInstructions] = useState(content.instructions || '');
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -354,6 +355,8 @@ export default function MultiTaskEditor({ content, onContentChange }: MultiTaskE
                 <AnswerKeyEditor
                   answerKeys={task.answer_keys || []}
                   onChange={(answer_keys) => updateTask(index, { answer_keys })}
+                  assignmentId={assignmentId}
+                  taskId={task.id}
                 />
               </CardContent>
             </Card>

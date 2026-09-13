@@ -552,6 +552,7 @@ export default function AssignmentBuilderPage() {
       return <MultiTaskEditor
         content={formData.content}
         onContentChange={handleContentChange}
+        assignmentId={isEditing ? assignmentId : undefined}
       />;
     }
 

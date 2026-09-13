@@ -112,6 +112,10 @@ export async function acknowledgeAnswerKey(assignmentId: string, taskId: string,
   await api.post(`/assignments/${assignmentId}/answer-keys/${taskId}/${answerKeyId}/acknowledge`);
 }
 
+export async function releaseAnswerKey(assignmentId: string, taskId: string, answerKeyId: string): Promise<void> {
+  await api.put(`/assignments/${assignmentId}/answer-keys/${taskId}/${answerKeyId}/release`);
+}
+
 export async function getMySubmissions(courseId = null) {
   try {
     const params = courseId ? { course_id: courseId } : {};
