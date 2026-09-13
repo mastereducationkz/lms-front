@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Repeat2, Trash2, Undo2 } from 'lucide-react';
+import { Copy, Repeat2, Trash2, Undo2 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
@@ -8,6 +8,7 @@ import { toast } from '../Toast';
 import { DeliveryReportDialog } from './DeliveryReportDialog';
 import { STATUS_LABELS, STATUS_STYLES, canRecall, errorMessage, formatDateTime } from './shared';
 import { visibleText } from './telegramText';
+import { copyAnnouncementHtml } from './announcementClipboard';
 import {
   cancelAnnouncement,
   getAnnouncement,
@@ -111,6 +112,15 @@ export function HistoryTab({ onSendAgain }: HistoryTabProps) {
     }
   };
 
+  const handleCopyMessage = async (body: string) => {
+    try {
+      await copyAnnouncementHtml(body);
+      toast('HTML message copied — paste it into Compose', 'success');
+    } catch (error) {
+      toast(errorMessage(error, 'Could not copy the message'), 'error');
+    }
+  };
+
   const emptyRow = (text: string) => (
     <TableRow>
       <TableCell colSpan={6} className="py-12 text-center text-muted-foreground">
@@ -178,6 +188,16 @@ export function HistoryTab({ onSendAgain }: HistoryTabProps) {
                             {formatDateTime(row.scheduled_for || row.created_at)}
                           </TableCell>
                           <TableCell onClick={(event) => event.stopPropagation()}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCopyMessage(row.body)}
+                              disabled={busy || !row.body}
+                              aria-label="Copy message as HTML"
+                            >
+                              <Copy className="mr-1 h-4 w-4" />
+                              Copy message
+                            </Button>
                             <Button
                               variant="ghost"
                               size="sm"
