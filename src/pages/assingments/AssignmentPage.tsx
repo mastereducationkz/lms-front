@@ -387,6 +387,7 @@ export default function AssignmentPage() {
                 </Button>
               </CardContent>
             </Card>
+            {answerKeyPanel}
           </div>
         );
       }
@@ -488,6 +489,7 @@ export default function AssignmentPage() {
               </CardContent>
             </Card>
           )}
+          {answerKeyPanel}
         </div>
       );
     }
