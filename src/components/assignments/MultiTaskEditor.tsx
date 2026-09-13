@@ -12,6 +12,7 @@ import TextTaskEditor from './TextTaskEditor';
 import LinkTaskEditor from './LinkTaskEditor';
 import FileUploadEditor from './FileUploadEditor';
 import PdfTextTaskEditor from './PdfTextTaskEditor';
+import { AnswerKeyEditor } from './AnswerKeyEditor';
 
 interface Task {
   id: string;
@@ -22,6 +23,7 @@ interface Task {
   points: number;
   content: any;
   is_optional?: boolean; // Optional/bonus tasks give extra points
+  answer_keys?: any[];
 }
 
 interface MultiTaskEditorProps {
@@ -349,6 +351,10 @@ export default function MultiTaskEditor({ content, onContentChange }: MultiTaskE
               </CardHeader>
               <CardContent>
                 {renderTaskEditor(task, index)}
+                <AnswerKeyEditor
+                  answerKeys={task.answer_keys || []}
+                  onChange={(answer_keys) => updateTask(index, { answer_keys })}
+                />
               </CardContent>
             </Card>
           );

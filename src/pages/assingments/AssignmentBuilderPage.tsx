@@ -443,9 +443,21 @@ export default function AssignmentBuilderPage() {
           return task;
         }));
 
+        const tasksWithAnswerKeyFiles = await Promise.all(updatedTasks.map(async (task: any) => {
+          const answer_keys = await Promise.all((task.answer_keys || []).map(async (answerKey: any) => {
+            const resources = await Promise.all((answerKey.resources || []).map(async (resource: any) => {
+              if (!(resource.file instanceof File)) return resource;
+              const uploaded = await apiClient.uploadTeacherFile(resource.file);
+              const { file, ...persisted } = resource;
+              return { ...persisted, file_url: uploaded.file_url || uploaded.url, file_name: resource.file.name };
+            }));
+            return { ...answerKey, resources };
+          }));
+          return { ...task, answer_keys };
+        }));
         finalContent = {
           ...finalContent,
-          tasks: updatedTasks
+          tasks: tasksWithAnswerKeyFiles
         };
 
       } else {
@@ -1210,4 +1222,3 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
     </div>
   );
 }
-

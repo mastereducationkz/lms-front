@@ -103,6 +103,15 @@ export async function submitAssignment(assignmentId: string, submissionData: any
   }
 }
 
+export async function getStudentAnswerKeys(assignmentId: string): Promise<any[]> {
+  const response = await api.get(`/assignments/${assignmentId}/answer-keys`);
+  return response.data;
+}
+
+export async function acknowledgeAnswerKey(assignmentId: string, taskId: string, answerKeyId: string): Promise<void> {
+  await api.post(`/assignments/${assignmentId}/answer-keys/${taskId}/${answerKeyId}/acknowledge`);
+}
+
 export async function getMySubmissions(courseId = null) {
   try {
     const params = courseId ? { course_id: courseId } : {};

@@ -51,6 +51,7 @@ export default function AssignmentPage() {
   const [error, setError] = useState<string>('');
   const [isCompressing, setIsCompressing] = useState<boolean>(false);
   const [fieldAnswers, setFieldAnswers] = useState<Record<string, string>>({});
+  const [answerKeys, setAnswerKeys] = useState<any[]>([]);
 
   // Stable reference: MultiTaskSubmission resets its local answers state whenever this
   // object's IDENTITY changes, so a fresh `{ tasks: ... }` literal on every render here
@@ -84,6 +85,7 @@ export default function AssignmentPage() {
     try {
       const statusResult = await apiClient.getAssignmentStatusForStudent(assignmentId);
       setStatus(statusResult as AssignmentStatus);
+      setAnswerKeys(await apiClient.getStudentAnswerKeys(assignmentId));
 
       
       if (statusResult.submission_id) {
@@ -128,6 +130,19 @@ export default function AssignmentPage() {
 
   const isOverdue = assignment?.due_date && new Date(assignment.due_date) < new Date();
   const isReadOnlyPrevious = status?.is_read_only === true;
+
+  const answerKeyPanel = answerKeys.length === 0 ? null : (
+    <Card className="border-blue-200 dark:border-blue-900">
+      <CardHeader><CardTitle className="text-base">Check your work</CardTitle><CardDescription>Answer keys and worked examples released by your teacher.</CardDescription></CardHeader>
+      <CardContent className="space-y-4">{answerKeys.flatMap((task: any) => task.answer_keys.map((key: any) => (
+        <div key={`${task.task_id}-${key.id}`} className="rounded-md border p-3 space-y-2">
+          <div className="font-medium">{key.title}</div>
+          {key.resources?.map((resource: any) => resource.kind === 'file' ? <a key={resource.id} className="block text-blue-600 hover:underline" href={resolveFileUrl(resource.file_url)} target="_blank" rel="noreferrer">{resource.file_name || 'Open answer-key file'}</a> : <p key={resource.id} className="whitespace-pre-wrap text-sm">{resource.body}</p>)}
+          {!key.acknowledged ? <Button size="sm" variant="outline" onClick={async () => { await apiClient.acknowledgeAnswerKey(id!, task.task_id, key.id); setAnswerKeys(prev => prev.map((item: any) => item.task_id !== task.task_id ? item : { ...item, answer_keys: item.answer_keys.map((candidate: any) => candidate.id === key.id ? { ...candidate, acknowledged: true } : candidate) })); }}>I checked my work</Button> : <span className="text-sm text-green-700">Checked</span>}
+        </div>
+      )))}</CardContent>
+    </Card>
+  );
 
   const getStatusBadgeVariant = () => {
     if (!status) return 'secondary';
@@ -508,6 +523,7 @@ export default function AssignmentPage() {
             onAutosave={async (answers) => { await apiClient.saveDraft(assignment.id.toString(), { answers }); }}
             unitGate={(status as any)?.unit_gate}
           />
+          {answerKeyPanel}
         </>
       );
     }
