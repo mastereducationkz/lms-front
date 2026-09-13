@@ -74,6 +74,8 @@ export interface Announcement {
   created_by_name: string;
   pin: boolean;
   silent: boolean;
+  /** Original audience choice, retained even when no linked students were eligible. */
+  target_all_students: boolean;
   scheduled_for: string | null;
   total_count: number;
   sent_count: number;

@@ -39,6 +39,7 @@ const announcement = (targets: AnnouncementDetail['targets']): AnnouncementDetai
   created_by_name: 'Admin',
   pin: false,
   silent: false,
+  target_all_students: false,
   scheduled_for: null,
   total_count: targets.length,
   sent_count: targets.length,
@@ -75,5 +76,14 @@ describe('recipientSelectionFromAnnouncement', () => {
 
     expect([...selection.groupIds]).toEqual([]);
     expect(selection.allStudents).toBe(false);
+  });
+
+  it('retains an explicitly selected student audience even when it had no targets', () => {
+    const selection = recipientSelectionFromAnnouncement(
+      { ...announcement([]), target_all_students: true },
+      approvedGroups,
+    );
+
+    expect(selection.allStudents).toBe(true);
   });
 });

@@ -26,6 +26,7 @@ export function recipientSelectionFromAnnouncement(
         .filter((group) => selectedChatIds.has(group.telegram_chat_id))
         .map((group) => group.id),
     ),
-    allStudents: announcement.targets.some((target) => target.kind === 'chat'),
+    allStudents:
+      announcement.target_all_students || announcement.targets.some((target) => target.kind === 'chat'),
   };
 }
