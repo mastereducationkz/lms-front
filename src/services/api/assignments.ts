@@ -273,9 +273,14 @@ export async function getAssignmentStudentProgress(assignmentId: string): Promis
   }
 }
 
-export async function allowResubmission(submissionId: string | number): Promise<any> {
+export type ResubmissionPolicy = {
+  mode?: 'one_extra' | 'until_expiry';
+  expires_at?: string;
+};
+
+export async function allowResubmission(submissionId: string | number, policy: ResubmissionPolicy = {}): Promise<any> {
   try {
-    const response = await api.put(`/assignments/submissions/${submissionId}/allow-resubmit`);
+    const response = await api.put(`/assignments/submissions/${submissionId}/allow-resubmit`, policy);
     return response.data;
   } catch (error) {
     console.error('Failed to allow resubmission:', error);

@@ -751,6 +751,7 @@ export interface AssignmentStatus {
   attempts_used?: number;
   max_attempts?: number | null;
   can_resubmit?: boolean;
+  is_grade_superseded?: boolean;
   attempt_number?: number;
   late?: boolean;
   score?: number;

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../../services/api';
 import { toast } from '../../components/Toast';
-import { ArrowLeft, Download, FileText, Clock, Calendar, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Download, FileText, Clock, Calendar, AlertCircle, RotateCcw } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -65,6 +65,10 @@ export default function AssignmentGradingPage() {
   const [extensionStudentId, setExtensionStudentId] = useState<number | null>(null);
   const [extensionDeadline, setExtensionDeadline] = useState<string>('');
   const [extensionReason, setExtensionReason] = useState<string>('');
+  const [isResubmissionModalOpen, setIsResubmissionModalOpen] = useState(false);
+  const [resubmissionSubmission, setResubmissionSubmission] = useState<Submission | null>(null);
+  const [resubmissionMode, setResubmissionMode] = useState<'one_extra' | 'until_expiry'>('one_extra');
+  const [resubmissionExpiry, setResubmissionExpiry] = useState('');
 
   useEffect(() => {
     if (!id) return;
@@ -137,6 +141,34 @@ export default function AssignmentGradingPage() {
       loadData(); // Reload to get updated extensions
     } catch (error) {
       toast('Failed to revoke extension', 'error');
+    }
+  };
+
+  const openResubmissionModal = (submission: Submission) => {
+    setResubmissionSubmission(submission);
+    setResubmissionMode('one_extra');
+    setResubmissionExpiry('');
+    setIsResubmissionModalOpen(true);
+  };
+
+  const handleAllowResubmission = async () => {
+    if (!resubmissionSubmission) return;
+    if (resubmissionMode === 'until_expiry' && !resubmissionExpiry) {
+      toast('Choose an expiry for repeated replacements', 'error');
+      return;
+    }
+    try {
+      setIsSubmitting(true);
+      await apiClient.allowResubmission(resubmissionSubmission.id, {
+        mode: resubmissionMode,
+        ...(resubmissionMode === 'until_expiry' ? { expires_at: new Date(resubmissionExpiry).toISOString() } : {}),
+      });
+      toast(resubmissionMode === 'one_extra' ? 'One extra attempt allowed' : 'Repeated replacements allowed until the selected expiry', 'success');
+      setIsResubmissionModalOpen(false);
+    } catch (error) {
+      toast('Failed to allow another attempt', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -243,11 +275,11 @@ export default function AssignmentGradingPage() {
                 {visibleAttempts.map((submission) => (
                   <div key={submission.id} className="rounded-md border border-border p-3 flex items-center justify-between gap-3">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2"><Badge variant={submission.is_current ? 'default' : 'secondary'}>Attempt {submission.attempt_number || 1}{submission.is_current ? ' · Current' : ' · Previous'}</Badge>{submission.is_graded ? <Badge variant={(submission.score || 0) >= (submission.max_score * 0.6) ? 'default' : 'destructive'}>Score: {submission.score || 0}/{submission.max_score}</Badge> : <Badge variant="secondary">Pending Grading</Badge>}</div>
+                      <div className="flex items-center gap-2"><Badge variant={submission.is_current ? 'default' : 'secondary'}>Attempt {submission.attempt_number || 1}{submission.is_current ? ' · Current' : ' · Previous'}</Badge>{submission.is_graded ? <Badge variant={(submission.score || 0) >= (submission.max_score * 0.6) ? 'default' : 'destructive'}>{submission.is_grade_superseded ? 'Superseded score' : 'Score'}: {submission.score || 0}/{submission.max_score}</Badge> : <Badge variant="secondary">Pending Grading</Badge>}</div>
                       <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center mt-2"><Clock className="w-3 h-3 mr-1" />Submitted: {new Date(submission.submitted_at).toLocaleString()}</div>
                       {submission.is_late && <div className="text-sm text-amber-600 dark:text-amber-400 flex items-center mt-1 font-medium"><AlertCircle className="w-3 h-3 mr-1" />Late Submission</div>}
                     </div>
-                    {submission.is_current ? <div className="flex items-center gap-2"><Button variant="outline" size="sm" onClick={() => openExtensionModal(submission)}>{studentExtension ? 'Edit Extension' : 'Grant Extension'}</Button><Button onClick={() => openGradingModal(submission)}>{submission.is_graded ? 'Update Grade' : 'Grade'}</Button></div> : <Button variant="outline" onClick={() => openAttemptPreview(submission)}>View attempt</Button>}
+                    {submission.is_current ? <div className="flex items-center gap-2"><Button variant="outline" size="sm" onClick={() => openExtensionModal(submission)}>{studentExtension ? 'Edit Extension' : 'Grant Extension'}</Button>{submission.is_graded && <Button variant="outline" size="sm" onClick={() => openResubmissionModal(submission)}><RotateCcw className="w-4 h-4 mr-1" />Allow another attempt</Button>}<Button onClick={() => openGradingModal(submission)}>{submission.is_graded ? 'Update Grade' : 'Grade'}</Button></div> : <Button variant="outline" onClick={() => openAttemptPreview(submission)}>View attempt</Button>}
                   </div>
                 ))}
                 {previousAttempts.length > 0 && (
@@ -396,6 +428,32 @@ export default function AssignmentGradingPage() {
             {!isViewingPreviousAttempt && <Button onClick={handleGradeSubmission} disabled={isSubmitting}>
               {isSubmitting ? 'Saving...' : 'Save Grade'}
             </Button>}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isResubmissionModalOpen} onOpenChange={setIsResubmissionModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Allow another attempt</DialogTitle>
+            <DialogDescription>
+              The current grade will remain visible in history but will be superseded when the student submits a replacement. Its grade points will be reversed until the new attempt is graded.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <label className="flex gap-3 rounded-lg border border-border p-3 cursor-pointer">
+              <input type="radio" checked={resubmissionMode === 'one_extra'} onChange={() => setResubmissionMode('one_extra')} />
+              <span><span className="font-medium block">One extra attempt</span><span className="text-sm text-muted-foreground">Default. It works even after the deadline or attempt limit, then closes automatically.</span></span>
+            </label>
+            <label className="flex gap-3 rounded-lg border border-border p-3 cursor-pointer">
+              <input type="radio" checked={resubmissionMode === 'until_expiry'} onChange={() => setResubmissionMode('until_expiry')} />
+              <span><span className="font-medium block">Allow replacements until a chosen time</span><span className="text-sm text-muted-foreground">Overrides the normal attempt limit only through the expiry you set.</span></span>
+            </label>
+            {resubmissionMode === 'until_expiry' && <div className="space-y-2"><Label htmlFor="resubmission-expiry">Replacement window ends</Label><Input id="resubmission-expiry" type="datetime-local" value={resubmissionExpiry} onChange={(event) => setResubmissionExpiry(event.target.value)} min={new Date().toISOString().slice(0, 16)} /></div>}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsResubmissionModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleAllowResubmission} disabled={isSubmitting}>{isSubmitting ? 'Allowing...' : 'Allow attempt'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
