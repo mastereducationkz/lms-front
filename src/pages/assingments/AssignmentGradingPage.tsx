@@ -54,6 +54,7 @@ export default function AssignmentGradingPage() {
   const [loading, setLoading] = useState(true);
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [isGradingModalOpen, setIsGradingModalOpen] = useState(false);
+  const [isViewingPreviousAttempt, setIsViewingPreviousAttempt] = useState(false);
   const [gradingScore, setGradingScore] = useState<number | string>(''); // Allow empty string for better UX
   const [gradingFeedback, setGradingFeedback] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -162,11 +163,22 @@ export default function AssignmentGradingPage() {
   };
 
   const openGradingModal = (submission: Submission) => {
+    if (!submission.is_current) {
+      toast('Only the latest attempt can be graded.', 'error');
+      return;
+    }
     setSelectedSubmission(submission);
+    setIsViewingPreviousAttempt(false);
     // Use nullish coalescing to strictly check for null/undefined, preserving 0 as a valid score
     // If score is null/undefined, set to '' (empty) so input is empty
     setGradingScore(submission.score ?? '');
     setGradingFeedback(submission.feedback || '');
+    setIsGradingModalOpen(true);
+  };
+
+  const openAttemptPreview = (submission: Submission) => {
+    setSelectedSubmission(submission);
+    setIsViewingPreviousAttempt(true);
     setIsGradingModalOpen(true);
   };
 
@@ -189,7 +201,7 @@ export default function AssignmentGradingPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Student Submissions ({submissions.length})</CardTitle>
+          <CardTitle>Submission History ({submissions.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {submissions.length === 0 ? (
@@ -204,7 +216,12 @@ export default function AssignmentGradingPage() {
               <div key={submission.id} className="border dark:border-border rounded-lg p-4 mb-4">
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <div className="font-medium text-lg text-foreground">{submission.user_name || `User ${submission.user_id}`}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium text-lg text-foreground">{submission.user_name || `User ${submission.user_id}`}</div>
+                      <Badge variant={submission.is_current ? 'default' : 'secondary'}>
+                        Attempt {submission.attempt_number || 1}{submission.is_current ? ' · Current' : ' · Previous'}
+                      </Badge>
+                    </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center mt-1">
                       <Clock className="w-3 h-3 mr-1" />
                       Submitted: {new Date(submission.submitted_at).toLocaleString()}
@@ -236,16 +253,24 @@ export default function AssignmentGradingPage() {
                     ) : (
                       <Badge variant="secondary">Pending Grading</Badge>
                     )}
-                    <Button 
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openExtensionModal(submission)}
-                    >
-                      {studentExtension ? 'Edit Extension' : 'Grant Extension'}
-                    </Button>
-                    <Button onClick={() => openGradingModal(submission)}>
-                      {submission.is_graded ? 'Update Grade' : 'Grade'}
-                    </Button>
+                    {submission.is_current ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openExtensionModal(submission)}
+                        >
+                          {studentExtension ? 'Edit Extension' : 'Grant Extension'}
+                        </Button>
+                        <Button onClick={() => openGradingModal(submission)}>
+                          {submission.is_graded ? 'Update Grade' : 'Grade'}
+                        </Button>
+                      </>
+                    ) : (
+                      <Button variant="outline" onClick={() => openAttemptPreview(submission)}>
+                        View attempt
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -258,9 +283,11 @@ export default function AssignmentGradingPage() {
       <Dialog open={isGradingModalOpen} onOpenChange={setIsGradingModalOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Grade Submission</DialogTitle>
+            <DialogTitle>{isViewingPreviousAttempt ? 'Previous Attempt' : 'Grade Submission'}</DialogTitle>
             <DialogDescription>
-              Review the student's work and provide a score and feedback.
+              {isViewingPreviousAttempt
+                ? 'This earlier attempt is preserved for reference and cannot be graded.'
+                : 'Review the student\'s work and provide a score and feedback.'}
             </DialogDescription>
           </DialogHeader>
           
@@ -328,7 +355,7 @@ export default function AssignmentGradingPage() {
             </div>
 
             {/* Grading Controls */}
-            <div className="grid grid-cols-1 gap-6 rounded-lg border border-border bg-card p-4 text-card-foreground md:grid-cols-2">
+            {!isViewingPreviousAttempt && <div className="grid grid-cols-1 gap-6 rounded-lg border border-border bg-card p-4 text-card-foreground md:grid-cols-2">
               {assignment?.late_penalty_enabled && selectedSubmission?.is_late && (
                 <div className="md:col-span-2 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded text-sm text-amber-800 dark:text-amber-200 flex items-start">
                    <AlertCircle className="w-5 h-5 mr-2 text-amber-600 dark:text-amber-400 flex-shrink-0" />
@@ -368,16 +395,16 @@ export default function AssignmentGradingPage() {
                   className="min-h-[100px]"
                 />
               </div>
-            </div>
+            </div>}
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsGradingModalOpen(false)}>
-              Cancel
+              {isViewingPreviousAttempt ? 'Close' : 'Cancel'}
             </Button>
-            <Button onClick={handleGradeSubmission} disabled={isSubmitting}>
+            {!isViewingPreviousAttempt && <Button onClick={handleGradeSubmission} disabled={isSubmitting}>
               {isSubmitting ? 'Saving...' : 'Save Grade'}
-            </Button>
+            </Button>}
           </DialogFooter>
         </DialogContent>
       </Dialog>
