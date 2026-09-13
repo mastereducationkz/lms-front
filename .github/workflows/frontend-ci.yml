@@ -1,7 +1,7 @@
 name: Frontend CI
 
-# Changes to this workflow are intentionally covered by the paths filter below,
-# so edits to the production pipeline always validate the same pipeline.
+# Workflow edits are included in the paths filter below, so pipeline changes
+# validate the same production build they affect.
 
 on:
   pull_request:
