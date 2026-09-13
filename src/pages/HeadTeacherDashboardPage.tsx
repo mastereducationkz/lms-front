@@ -534,13 +534,13 @@ export default function HeadTeacherDashboardPage() {
 
         <Card className="border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">Homework Checked</CardTitle>
+            <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">Grading Actions</CardTitle>
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{totalHomeworksChecked}</div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              out of {teachersData?.teachers.reduce((sum, t) => sum + t.total_submissions_count, 0) || 0} submitted
+              out of {teachersData?.teachers.reduce((sum, t) => sum + t.total_submissions_count, 0) || 0} submission attempts
             </p>
           </CardContent>
         </Card>
@@ -713,7 +713,7 @@ export default function HeadTeacherDashboardPage() {
                         onClick={() => handleSort('checked_homeworks_count')} 
                         className="flex items-center gap-1 mx-auto hover:text-blue-600 transition-colors"
                       >
-                        HW Checked {getSortIcon('checked_homeworks_count')}
+                        Grading Actions {getSortIcon('checked_homeworks_count')}
                       </button>
                     </TableHead>
                     <TableHead className="text-center font-bold text-slate-900 dark:text-foreground">
