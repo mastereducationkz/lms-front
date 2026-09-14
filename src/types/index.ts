@@ -422,6 +422,7 @@ export interface UpdateUserRequest {
   is_active?: boolean;
   password?: string;
   course_ids?: number[]; // Courses for head teachers
+  workspace_email?: string | null; // Connect teacher to recordings (@mastereducation.kz); null disconnects
 }
 
 export interface BulkCreateUsersResponse {

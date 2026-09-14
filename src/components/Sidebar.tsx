@@ -110,6 +110,7 @@ function getNavigationItems(
     ['/admin/announcements', 'Telegram Announcements', Megaphone, 0, ['admin', 'head_curator', 'head_teacher'], 'announcements-nav', 'admin'],
     ['/admin/checkpoints', 'SAT Checkpoints', ClipboardCheck, 0, ['admin', 'head_curator', 'head_teacher', 'teacher', 'curator'], 'checkpoints-admin-nav', 'admin'],
     ['/admin/events', 'Manage Events', Calendar, 0, ['admin'], 'events-management', 'admin'],
+    ['/admin/recordings', 'Recordings Rollout', Video, 0, ['admin', 'head_curator', 'head_teacher'], 'recordings-admin-nav', 'admin'],
     ['/exam-results', ['head_curator', 'curator'].includes(_userRole || '') ? 'Результаты экзаменов' : 'Exam Results', ClipboardCheck, 0, ['teacher', 'curator', 'head_curator', 'head_teacher', 'admin'], 'exam-results-nav', 'primary'],
     ['/bluebook-results', 'Bluebook Results', ClipboardCheck, 0, ['teacher', 'curator', 'head_curator', 'head_teacher', 'admin'], 'bluebook-results-nav', 'primary'],
     ['/admin/question-reports', 'Question Reports', AlertTriangle, 0, ['admin'], 'question-reports-nav', 'admin'],

@@ -52,6 +52,7 @@ const UserManagement = lazy(() => import('../pages/UserManagement.tsx'));
 const ManualUnlocksPage = lazy(() => import('../pages/admin/ManualUnlocksPage.tsx'));
 const TrialAccessPage = lazy(() => import('../pages/admin/TrialAccessPage.tsx'));
 const LessonRequestManagement = lazy(() => import('../pages/admin/LessonRequestManagement.tsx'));
+const RecordingsTeachersPage = lazy(() => import('../pages/admin/RecordingsTeachersPage.tsx'));
 const LessonPage = lazy(() => import('../pages/LessonPage.tsx'));
 const PracticePrintPage = lazy(() => import('../pages/PracticePrintPage.tsx'));
 const CourseProgressPage = lazy(() => import('../pages/CourseProgressPage.tsx'));
@@ -534,6 +535,17 @@ export default function Router() {
             <ProtectedRoute allowedRoles={['admin']}>
               <AppLayout>
                 <LessonRequestManagement />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          {/* Recordings rollout: who is connected to their Workspace account and who still
+              needs one. Heads may watch; only admins connect — the same split the backend
+              enforces in src/admin/routes/recordings.py. */}
+          <Route path="/admin/recordings" element={
+            <ProtectedRoute allowedRoles={['admin', 'head_curator', 'head_teacher']}>
+              <AppLayout>
+                <RecordingsTeachersPage />
               </AppLayout>
             </ProtectedRoute>
           } />

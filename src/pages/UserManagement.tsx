@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../services/api';
 import { toggleCuratorAnalyticsHidden, provisionUserToPlatform } from '../services/api/admin';
+import { getRecordingTeacher } from '../services/api/recordingsAdmin';
 import { toast } from '../components/Toast';
 import type { User, CreateUserRequest, UpdateUserRequest, UpdateGroupRequest, Group, Course, GroupType, CourseType } from '../types';
 
@@ -93,6 +94,7 @@ interface UserFormData {
   group_ids: number[]; // Multiple groups for students
   course_ids: number[]; // Multiple courses for head teachers
   child_ids: number[]; // Linked students when role === 'parent'
+  workspace_email?: string; // @mastereducation.kz account — connects teachers to recordings
 }
 
 interface GroupFormData {
@@ -359,6 +361,7 @@ export default function UserManagement() {
   const [originalEditGroupStudentIds, setOriginalEditGroupStudentIds] = useState<number[]>([]);
   const [originalUserGroupIds, setOriginalUserGroupIds] = useState<number[]>([]);
   const [originalChildIds, setOriginalChildIds] = useState<number[]>([]);
+  const [originalWorkspaceEmail, setOriginalWorkspaceEmail] = useState('');
 
   // When auth loads and user is head_curator, lock filters and form to curator role
   useEffect(() => {
@@ -594,6 +597,11 @@ export default function UserManagement() {
       }
     }
 
+    const workspaceEmail = (formData.workspace_email || '').trim();
+    if (workspaceEmail && !workspaceEmail.endsWith('@mastereducation.kz')) {
+      errors.workspace_email = 'Must end with @mastereducation.kz';
+    }
+
     return errors;
   };
 
@@ -703,6 +711,13 @@ export default function UserManagement() {
         is_active: formData.is_active,
         course_ids: formData.role === 'head_teacher' ? formData.course_ids : undefined
       };
+
+      // Only a change is sent: an untouched field must never silently disconnect a teacher
+      // (e.g. when the recordings lookup failed and the input simply stayed empty).
+      const nextWorkspace = (formData.workspace_email || '').trim();
+      if (nextWorkspace !== originalWorkspaceEmail) {
+        userData.workspace_email = nextWorkspace || null;
+      }
 
       if (
         formData.role === 'student' &&
@@ -974,6 +989,19 @@ export default function UserManagement() {
     }
     setOriginalChildIds(childIds);
 
+    // The recordings connection lives on a different endpoint than the user record, so the
+    // current value is fetched separately; a miss just leaves the field empty and — because
+    // only diffs are submitted — can never disconnect anyone by accident.
+    let workspaceEmail = '';
+    if (user.role === 'teacher' || user.role === 'head_teacher') {
+      try {
+        workspaceEmail = (await getRecordingTeacher(Number(user.id))).workspace_email ?? '';
+      } catch {
+        workspaceEmail = '';
+      }
+    }
+    setOriginalWorkspaceEmail(workspaceEmail);
+
     setFormData({
       name: user.name || user.full_name || '',
       email: user.email,
@@ -983,7 +1011,8 @@ export default function UserManagement() {
       is_active: user.is_active ?? true,
       group_ids: groupIds,
       course_ids: user.course_ids || [],
-      child_ids: childIds
+      child_ids: childIds,
+      workspace_email: workspaceEmail
     });
     setShowEditModal(true);
   };
@@ -1003,11 +1032,13 @@ export default function UserManagement() {
       is_active: true,
       group_ids: [],
       course_ids: [],
-      child_ids: []
+      child_ids: [],
+      workspace_email: ''
     });
     setSelectedUser(null);
     setOriginalUserGroupIds([])
     setOriginalChildIds([])
+    setOriginalWorkspaceEmail('')
     setFormErrors({});
   };
 
@@ -1997,6 +2028,32 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
           </Select>
         </div>
         
+        {/* Recordings connection — the teacher's @mastereducation.kz account. Only in edit
+            mode: creating it here would run before the user row exists. */}
+        {isEdit && (formData.role === 'teacher' || formData.role === 'head_teacher') && (
+          <div className="p-1">
+            <Label htmlFor="workspace_email" className="text-sm font-medium">
+              Workspace email (recordings)
+            </Label>
+            <Input
+              id="workspace_email"
+              type="email"
+              value={formData.workspace_email || ''}
+              onChange={(e) => setFormData({ ...formData, workspace_email: e.target.value })}
+              placeholder="name@mastereducation.kz"
+              className={errors.workspace_email ? 'border-red-500' : ''}
+            />
+            {errors.workspace_email && (
+              <p className="text-red-500 text-xs mt-1">{errors.workspace_email}</p>
+            )}
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              Connecting gives this teacher's lessons Meet rooms, recordings and Telegram
+              invitations. Clear it to disconnect. Managed in bulk under Admin → Recordings
+              Rollout.
+            </p>
+          </div>
+        )}
+
         {/* Groups field — searchable multi-select (students only) */}
         {formData.role === 'student' && (
           <div className="p-1">
