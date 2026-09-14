@@ -4,6 +4,7 @@ import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { FormatToolbar, insertLink, wrapSelection } from './FormatToolbar';
 import { ImagePicker } from './ImagePicker';
+import { MarkdownHtmlConverter } from './MarkdownHtmlConverter';
 import {
   CAPTION_LIMIT,
   TEXT_LIMIT,
@@ -57,11 +58,12 @@ export function MessageEditor({ body, onBodyChange, images, onImagesChange }: Me
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">Message</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Message</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
         <div className="space-y-1.5">
           <FormatToolbar textareaRef={bodyRef} value={body} onChange={onBodyChange} />
           <Textarea
@@ -99,7 +101,11 @@ export function MessageEditor({ body, onBodyChange, images, onImagesChange }: Me
         </div>
 
         <ImagePicker images={images} onChange={onImagesChange} />
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+      <MarkdownHtmlConverter
+        onUse={(converted) => onBodyChange(body ? `${body}\n${converted}` : converted)}
+      />
+    </div>
   );
 }
