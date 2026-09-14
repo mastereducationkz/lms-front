@@ -62,6 +62,10 @@ export function MarkdownHtmlConverter({ onUse }: MarkdownHtmlConverterProps) {
       <CardContent className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="markdown-source">Formatted text</Label>
+          <p className="text-xs text-muted-foreground">
+            Links are preserved only when you paste the rich link itself. If you only have visible
+            link text, add the URL with the Link button or use <code>[text](https://...)</code>.
+          </p>
           <Textarea
             id="markdown-source"
             value={source}

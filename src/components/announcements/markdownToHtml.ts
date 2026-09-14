@@ -24,6 +24,9 @@ export function richHtmlToTelegramHtml(source: string): string {
     if (node.nodeType !== Node.ELEMENT_NODE) return '';
     const element = node as HTMLElement;
     const tag = element.tagName.toLowerCase();
+    // Rich clipboard payloads often include the source page's CSS and metadata.
+    // Those are document chrome, never announcement content.
+    if (['head', 'meta', 'link', 'style', 'script', 'title'].includes(tag)) return '';
     if (tag === 'br') return '\n';
 
     const content = Array.from(element.childNodes).map(render).join('');
