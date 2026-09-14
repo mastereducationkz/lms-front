@@ -2048,8 +2048,8 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
             )}
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               Connecting gives this teacher's lessons Meet rooms, recordings and Telegram
-              invitations. Clear it to disconnect. Managed in bulk under Admin → Recordings
-              Rollout.
+              invitations. The account must already exist in the Workspace users list uploaded
+              on Admin → Recordings Rollout. Clear the field to disconnect.
             </p>
           </div>
         )}
