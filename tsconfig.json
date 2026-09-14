@@ -20,8 +20,8 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
 
-    /* Path mapping */
-    "baseUrl": ".",
+    /* Path mapping — `paths` resolves relative to this file since TS 4.1, so no
+       `baseUrl` (deprecated in TS 7.0); nothing here uses bare root-relative imports. */
     "paths": {
       "@/*": ["./src/*"]
     },
