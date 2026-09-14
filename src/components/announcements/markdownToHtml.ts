@@ -8,6 +8,49 @@ function escapeAttribute(value: string): string {
   return escapeHtml(value).replace(/"/g, '&quot;');
 }
 
+function safeHref(value: string): string | null {
+  return /^(https?:\/\/|tg:\/\/)/i.test(value) ? value : null;
+}
+
+/** Convert rich clipboard HTML (used by browser editors and some Telegram clients). */
+export function richHtmlToTelegramHtml(source: string): string {
+  if (!source.trim() || typeof DOMParser === 'undefined') return '';
+  const parsed = new DOMParser().parseFromString(`<div>${source}</div>`, 'text/html');
+  const root = parsed.body.firstElementChild;
+  if (!root) return '';
+
+  const render = (node: Node): string => {
+    if (node.nodeType === Node.TEXT_NODE) return escapeHtml(node.textContent ?? '');
+    if (node.nodeType !== Node.ELEMENT_NODE) return '';
+    const element = node as HTMLElement;
+    const tag = element.tagName.toLowerCase();
+    if (tag === 'br') return '\n';
+
+    const content = Array.from(element.childNodes).map(render).join('');
+    const style = element.getAttribute('style') ?? '';
+    const bold = ['b', 'strong'].includes(tag) || /font-weight\s*:\s*(bold|[6-9]00)/i.test(style);
+    const italic = ['i', 'em'].includes(tag) || /font-style\s*:\s*italic/i.test(style);
+    const underline = ['u', 'ins'].includes(tag) || /text-decoration[^;]*underline/i.test(style);
+    const strike = ['s', 'del', 'strike'].includes(tag) || /text-decoration[^;]*line-through/i.test(style);
+
+    if (tag === 'a') {
+      const href = safeHref(element.getAttribute('href') ?? '');
+      return href ? `<a href="${escapeAttribute(href)}">${content}</a>` : content;
+    }
+    if (tag === 'blockquote') return `<blockquote>${content}</blockquote>`;
+    if (tag === 'code' || tag === 'pre') return `<code>${content}</code>`;
+    if (bold) return `<b>${content}</b>`;
+    if (italic) return `<i>${content}</i>`;
+    if (underline) return `<u>${content}</u>`;
+    if (strike) return `<s>${content}</s>`;
+
+    const block = ['address', 'article', 'dd', 'div', 'dl', 'dt', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'p', 'section'].includes(tag);
+    return block ? `\n${content}\n` : content;
+  };
+
+  return render(root).replace(/\n{3,}/g, '\n\n').trim();
+}
+
 /** Inline formatting supported by Telegram's HTML parse mode. */
 export function markdownInlineToHtml(value: string): string {
   const tokens: string[] = [];
