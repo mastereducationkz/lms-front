@@ -144,7 +144,10 @@ export default function AssignmentPage() {
   }, [id]);
 
 
-  const isOverdue = assignment?.due_date && new Date(assignment.due_date) < new Date();
+  // An approved extension is the student's effective deadline.  Until that
+  // date, a submission is on time even though the class-wide deadline passed.
+  const effectiveDeadline = extension?.extended_deadline ?? assignment?.due_date;
+  const isOverdue = effectiveDeadline && new Date(effectiveDeadline) < new Date();
   const isReadOnlyPrevious = status?.is_read_only === true;
 
   const answerKeyPanel = answerKeys.length === 0 ? null : (
@@ -203,7 +206,7 @@ export default function AssignmentPage() {
       }
       
       // Submit assignment
-      await apiClient.submitAssignment(id, { 
+      const submitted = await apiClient.submitAssignment(id, {
         answers: { 
             text,
             files: uploadedFiles, // Store all files in answers JSON
@@ -213,7 +216,7 @@ export default function AssignmentPage() {
         submitted_file_name: fileName // Top-level legacy column
       });
       
-      toast('Assignment submitted successfully!', 'success');
+      toast(submitted.is_late ? 'Assignment submitted late.' : 'Assignment submitted successfully!', 'success');
       
       // Reload submission to show updated status
       await loadSubmission(id);
@@ -271,13 +274,13 @@ export default function AssignmentPage() {
     setError('');
 
     try {
-      await apiClient.submitAssignment(assignment.id, {
+      const submitted = await apiClient.submitAssignment(assignment.id, {
         answers: answers.tasks,
         file_url: null,
         submitted_file_name: null
       });
       
-      toast('Assignment submitted successfully!', 'success');
+      toast(submitted.is_late ? 'Assignment submitted late.' : 'Assignment submitted successfully!', 'success');
       
       // Reload submission to show updated status
       await loadSubmission(assignment.id.toString());
@@ -352,6 +355,7 @@ export default function AssignmentPage() {
                 </CardTitle>
                 <CardDescription>
                   Submitted: {new Date(submission.submitted_at).toLocaleString()}
+                  {(status as any)?.late && <span className="ml-2 font-medium text-amber-700 dark:text-amber-300">Late submission</span>}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -859,9 +863,9 @@ export default function AssignmentPage() {
                   {formatAssignmentStatus(status.status)}
                 </Badge>
               )}
-              {!submission && isOverdue && !extension && (
+              {!submission && isOverdue && (
                 <span className="text-sm text-amber-700 dark:text-amber-300">
-                  Deadline passed — not submitted yet
+                  Deadline passed — submissions are accepted and marked late
                 </span>
               )}
             </div>
@@ -870,10 +874,10 @@ export default function AssignmentPage() {
         <CardContent>
           <div className="flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
             {assignment.due_date && (
-              <div className={`flex items-center space-x-2 ${isOverdue && !extension ? 'text-red-600 dark:text-red-400' : ''}`}>
+              <div className={`flex items-center space-x-2 ${isOverdue ? 'text-red-600 dark:text-red-400' : ''}`}>
                 <Calendar className="w-4 h-4" />
                 <span>Due: {new Date(assignment.due_date).toLocaleDateString()}</span>
-                {isOverdue && !extension && <AlertCircle className="w-4 h-4" />}
+                {isOverdue && <AlertCircle className="w-4 h-4" />}
               </div>
             )}
             {extension && (
