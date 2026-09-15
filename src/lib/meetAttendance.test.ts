@@ -19,6 +19,7 @@ import {
   reasonText,
   reportCsv,
   reviewedCount,
+  stillLoading,
   tallyByTeacher,
   toParticipantsView,
   withoutReviewed,
@@ -175,6 +176,17 @@ describe('reporting', () => {
     expect(row1).toContain('"10/09/2026","19:00","20:00"');
     expect(row1).toContain('"Started 4 min late; Ended 8 min early"');
     expect(csv).toContain('"Шыңғыс, ""Шока"" (Marked present, never joined)"');
+  });
+
+  it('reads a lesson whose call has not come through as loading, never as an empty room (2026-09-15)', () => {
+    const loading = summary(5, 1, [], { state: 'waiting', teacher: null, students: 0, joined: 0 });
+    expect(stillLoading(loading)).toBe(true);
+    expect(items.some(stillLoading)).toBe(false);
+    expect(needsAttention(loading)).toBe(false);
+    const row = reportCsv([loading]).split('\r\n')[1].split(',');
+    expect(row).toHaveLength(17);
+    expect(row[6]).toBe('"Loading"');
+    expect(row.slice(7)).toEqual(Array(10).fill('""'));
   });
 });
 

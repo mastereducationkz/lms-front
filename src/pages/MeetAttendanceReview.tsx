@@ -13,6 +13,7 @@ import {
   needsAttention,
   reportCsv,
   reviewedCount,
+  stillLoading,
   tallyByTeacher,
   withoutReviewed,
   type IssueKey,
@@ -452,59 +453,68 @@ export default function MeetAttendanceReview() {
                           {dayLabel(item.start)} · {clock(item.start)}–{clock(item.end)}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="text-foreground">{item.teacher?.name ?? '—'}</div>
-                        <div className="text-xs tabular-nums text-muted-foreground">
-                          {item.teacher?.first_join
-                            ? `${clock(item.teacher.first_join)} → ${clock(item.teacher.last_leave)}`
-                            : item.held_back ? 'Account not confirmed yet' : 'Not in the room'}
-                        </div>
-                        {teacherFlags.length > 0 && (
-                          <div className="mt-1 flex flex-wrap gap-1">
-                            {teacherFlags.map((f) => (
-                              <FlagChip key={f.code} flag={f} userId={f.user_id} personName={f.name} reviewing={reviewing} />
-                            ))}
+                      {stillLoading(item) ? (
+                        <td colSpan={3} className="px-4 py-3">
+                          <div className="flex items-center gap-2 text-[13px] text-muted-foreground"
+                            title="Google hasn’t handed over this lesson’s call yet; it shows here on its own once it has">
+                            <Loader2 className="h-3.5 w-3.5 flex-none animate-spin" aria-hidden /> Loading…
                           </div>
-                        )}
-                        {item.talk?.teacher_share != null && (
-                          <div className="mt-1.5 flex items-center gap-2" title="The teacher’s share of everything said in the lesson">
-                            <span className="h-1.5 w-14 overflow-hidden rounded-full bg-muted" aria-hidden>
-                              <span className="block h-full rounded-full bg-violet-500 dark:bg-violet-400"
-                                style={{ width: `${Math.min(100, item.talk.teacher_share * 100)}%` }} />
-                            </span>
-                            <span className="text-[11px] tabular-nums text-muted-foreground">
-                              Teacher talk {percent(item.talk.teacher_share)}
-                              {item.talk.silent.length > 0 && ` · ${item.talk.silent.length} didn’t speak`}
-                            </span>
+                        </td>
+                      ) : (<>
+                        <td className="px-4 py-3">
+                          <div className="text-foreground">{item.teacher?.name ?? '—'}</div>
+                          <div className="text-xs tabular-nums text-muted-foreground">
+                            {item.teacher?.first_join
+                              ? `${clock(item.teacher.first_join)} → ${clock(item.teacher.last_leave)}`
+                              : item.held_back ? 'Account not confirmed yet' : 'Not in the room'}
                           </div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-right tabular-nums">
-                        <span className="font-semibold text-foreground">{item.joined}</span>
-                        <span className="text-muted-foreground"> / {item.students}</span>
-                        {item.unknown > 0 && (
-                          <div className="text-xs text-amber-700 dark:text-amber-300">+{item.unknown} unconfirmed</div>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className={cn('text-[13px]', needsAttention(item) ? 'text-foreground' : 'text-muted-foreground')}>
-                          {lessonHeadline(item)}
-                        </div>
-                        {studentFlags.length > 0 && (
-                          <ul className="mt-1.5 space-y-1 text-xs">
-                            {studentFlags.slice(0, 6).map((f) => (
-                              <li key={`${f.user_id}-${f.code}`} className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
-                                <span className="text-foreground">{f.name}</span>
-                                <FlagChip flag={f} userId={f.user_id} personName={f.name} reviewing={reviewing}
-                                  lateToo={item.flags.some((g) => g.user_id === f.user_id && g.code === 'late')} />
-                              </li>
-                            ))}
-                            {studentFlags.length > 6 && (
-                              <li className="text-muted-foreground">and {studentFlags.length - 6} more: open the lesson</li>
-                            )}
-                          </ul>
-                        )}
-                      </td>
+                          {teacherFlags.length > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {teacherFlags.map((f) => (
+                                <FlagChip key={f.code} flag={f} userId={f.user_id} personName={f.name} reviewing={reviewing} />
+                              ))}
+                            </div>
+                          )}
+                          {item.talk?.teacher_share != null && (
+                            <div className="mt-1.5 flex items-center gap-2" title="The teacher’s share of everything said in the lesson">
+                              <span className="h-1.5 w-14 overflow-hidden rounded-full bg-muted" aria-hidden>
+                                <span className="block h-full rounded-full bg-violet-500 dark:bg-violet-400"
+                                  style={{ width: `${Math.min(100, item.talk.teacher_share * 100)}%` }} />
+                              </span>
+                              <span className="text-[11px] tabular-nums text-muted-foreground">
+                                Teacher talk {percent(item.talk.teacher_share)}
+                                {item.talk.silent.length > 0 && ` · ${item.talk.silent.length} didn’t speak`}
+                              </span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right tabular-nums">
+                          <span className="font-semibold text-foreground">{item.joined}</span>
+                          <span className="text-muted-foreground"> / {item.students}</span>
+                          {item.unknown > 0 && (
+                            <div className="text-xs text-amber-700 dark:text-amber-300">+{item.unknown} unconfirmed</div>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className={cn('text-[13px]', needsAttention(item) ? 'text-foreground' : 'text-muted-foreground')}>
+                            {lessonHeadline(item)}
+                          </div>
+                          {studentFlags.length > 0 && (
+                            <ul className="mt-1.5 space-y-1 text-xs">
+                              {studentFlags.slice(0, 6).map((f) => (
+                                <li key={`${f.user_id}-${f.code}`} className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                                  <span className="text-foreground">{f.name}</span>
+                                  <FlagChip flag={f} userId={f.user_id} personName={f.name} reviewing={reviewing}
+                                    lateToo={item.flags.some((g) => g.user_id === f.user_id && g.code === 'late')} />
+                                </li>
+                              ))}
+                              {studentFlags.length > 6 && (
+                                <li className="text-muted-foreground">and {studentFlags.length - 6} more: open the lesson</li>
+                              )}
+                            </ul>
+                          )}
+                        </td>
+                      </>)}
                       <td className="px-2 py-3 text-muted-foreground"><ChevronRight className="h-4 w-4" aria-hidden /></td>
                     </tr>
                   );

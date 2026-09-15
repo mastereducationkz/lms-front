@@ -217,6 +217,14 @@ export function hasIssue(item: Reportable, key: IssueKey): boolean {
   }
 }
 
+/**
+ * Google hasn't handed over the lesson's own call yet, so nothing about the room can be read:
+ * the lesson is loading, not empty. How long that takes varies, so no time is promised.
+ */
+export function stillLoading(item: Pick<MeetLessonSummary, 'state'>): boolean {
+  return item.state === 'waiting' || item.state === 'not_started';
+}
+
 /** "Needs attention": something a person has to act on — not every late student, nothing reviewed. */
 export function needsAttention(item: Reportable): boolean {
   return item.unknown > 0 || item.flags.some((f) => !f.review && (isMismatch(f.code) || f.role === 'teacher'));
@@ -309,17 +317,21 @@ export function reportCsv(items: MeetLessonSummary[]): string {
   const header = ['Date', 'Start', 'End', 'Lesson', 'Groups', 'Teacher', 'Teacher joined', 'Teacher left',
     'Teacher issues', 'Students joined', 'Students', 'Marks disagree', 'Students late', 'Students left early',
     'Accounts to confirm', 'Teacher talk share', 'Students who didn’t speak'];
-  const rows = items.map((item) => [
-    almatyDate(item.start), clock(item.start), clock(item.end), item.title,
-    item.groups.map((g) => g.name).join(', '), item.teacher?.name ?? '',
-    item.teacher?.first_join ? clock(item.teacher.first_join) : '', item.teacher?.last_leave ? clock(item.teacher.last_leave) : '',
-    item.flags.filter((f) => f.role === 'teacher').map(flagCell).join('; '),
-    item.joined, item.students,
-    who(item, 'marked_present_not_joined', 'marked_absent_was_in_room'), who(item, 'late'), who(item, 'left_early'),
-    item.unknown,
-    item.talk?.teacher_share != null ? `${Math.round(item.talk.teacher_share * 100)}%` : '',
-    item.talk ? item.talk.silent.length : '',
-  ]);
+  const rows = items.map((item) => {
+    const lesson = [almatyDate(item.start), clock(item.start), clock(item.end), item.title,
+      item.groups.map((g) => g.name).join(', '), item.teacher?.name ?? ''];
+    // Zeros here would read as "nobody came"; the lesson's call simply hasn't come through yet.
+    if (stillLoading(item)) return [...lesson, 'Loading', ...Array(header.length - lesson.length - 1).fill('')];
+    return [...lesson,
+      item.teacher?.first_join ? clock(item.teacher.first_join) : '', item.teacher?.last_leave ? clock(item.teacher.last_leave) : '',
+      item.flags.filter((f) => f.role === 'teacher').map(flagCell).join('; '),
+      item.joined, item.students,
+      who(item, 'marked_present_not_joined', 'marked_absent_was_in_room'), who(item, 'late'), who(item, 'left_early'),
+      item.unknown,
+      item.talk?.teacher_share != null ? `${Math.round(item.talk.teacher_share * 100)}%` : '',
+      item.talk ? item.talk.silent.length : '',
+    ];
+  });
   return '﻿' + [header, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n');
 }
 

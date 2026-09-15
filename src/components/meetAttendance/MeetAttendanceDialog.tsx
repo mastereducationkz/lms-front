@@ -70,7 +70,12 @@ export default function MeetAttendanceDialog({ eventId, open, onOpenChange, init
               {!loading && !failed && record === null && eventId != null && (
                 <p className="text-sm text-muted-foreground">This lesson&apos;s record isn&apos;t available to you.</p>
               )}
-              {stateText && <p className="text-sm text-muted-foreground">{stateText}</p>}
+              {!loading && stateText && (
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                  {record?.state === 'waiting' && <Loader2 className="h-4 w-4 flex-none animate-spin" aria-hidden />}
+                  {stateText}
+                </p>
+              )}
               {record?.state === 'ready' && (
                 <MeetRecordView record={record} busyId={busyId} onConfirm={confirm} onConfirmMany={confirmMany} reviewing={reviewing} />
               )}

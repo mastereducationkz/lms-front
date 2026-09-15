@@ -197,7 +197,7 @@ export function MeetRecordView({ record, busyId, onConfirm, onConfirmMany, compa
 export function recordStateText(record: MeetRecord | null): string | null {
   if (!record) return null;
   switch (record.state) {
-    case 'waiting': return 'Who joined appears here about 20 minutes after the lesson ends.';
+    case 'waiting': return 'Loading who joined…';
     case 'none': return 'No one joined this lesson’s Meet room, or it wasn’t held in an LMS Meet room.';
     default: return null;
   }

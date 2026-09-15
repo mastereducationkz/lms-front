@@ -58,7 +58,7 @@ const TEXT = {
     medianWait: 'Median wait before an answer', studentQuestions: 'Student questions',
     state: {
       off: 'Talk time is switched off.',
-      waiting: 'Talk time appears here about half an hour after the lesson ends.',
+      waiting: 'Talk time is still loading…',
       none: 'No talk time for this lesson: Meet wasn’t transcribing it.',
       no_room: 'This lesson wasn’t held in an LMS Meet room, so there is no talk time.',
       unavailable: 'Too old: Google no longer keeps this lesson’s data.',
@@ -79,7 +79,7 @@ const TEXT = {
     medianWait: 'Медианное ожидание ответа', studentQuestions: 'Вопросы учеников',
     state: {
       off: 'Время речи выключено.',
-      waiting: 'Время речи появится примерно через полчаса после урока.',
+      waiting: 'Время речи ещё загружается…',
       none: 'Для этого урока нет времени речи: Meet его не расшифровывал.',
       no_room: 'Урок проходил не в Meet-комнате LMS, поэтому времени речи нет.',
       unavailable: 'Слишком давно: Google больше не хранит данные этого урока.',

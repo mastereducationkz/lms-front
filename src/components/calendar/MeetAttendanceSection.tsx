@@ -65,7 +65,12 @@ export default function MeetAttendanceSection({ event, role }: Props) {
           </button>
         )}
       </div>
-      {stateText && <p className="text-sm text-muted-foreground">{stateText}</p>}
+      {stateText && (
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          {record.state === 'waiting' && <Loader2 className="h-4 w-4 flex-none animate-spin" aria-hidden />}
+          {stateText}
+        </p>
+      )}
       {record.state === 'ready' && (
         <MeetRecordView record={record} busyId={busyId} onConfirm={confirm} onConfirmMany={confirmMany} reviewing={reviewing} compact />
       )}
