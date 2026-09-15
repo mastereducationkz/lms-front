@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ChevronLeft, ChevronRight, Plus, Filter, Users, Video, Link2, Link2Off, Play, Loader2,
+  ChevronLeft, ChevronRight, Plus, Filter, Users, Video, Link2, Link2Off, Play, Loader2, CalendarPlus,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -32,6 +32,9 @@ import { matchesRecordingFilter, recordingsLocale, type RecordingFilter } from '
 import { matchesMeetFilter, seesMeetMarks, type MeetFilter } from '../lib/meetLinks';
 import MeetMark from '../components/calendar/MeetMark';
 import { todayInAlmaty } from '../lib/datetime';
+import SubscribeDialog from '../components/calendar/SubscribeDialog';
+import { getEventDetails } from '../services/api/events';
+import { eventIdFromSearch } from '../lib/calendarFeeds';
 
 type CalView = 'month' | 'week' | 'agenda';
 const VIEWS: { id: CalView; label: string }[] = [
@@ -68,6 +71,19 @@ export default function Calendar() {
   // Staff: class lessons with / without their Google Meet room.
   const [meetFilter, setMeetFilter] = useState<MeetFilter>('all');
   const [player, setPlayer] = useState<RecordingMeta | null>(null);
+  const [subscribeOpen, setSubscribeOpen] = useState(false);
+
+  // A calendar entry (Google/Apple subscription) links here as ?event=<id>: open that lesson,
+  // where «Join» picks the right account. Unknown or inaccessible ids simply open nothing.
+  useEffect(() => {
+    const eventId = eventIdFromSearch(window.location.search);
+    if (eventId === null) return;
+    let cancelled = false;
+    getEventDetails(eventId)
+      .then((event) => { if (!cancelled && event) setSelectedEvent(event); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('calendar_view', view);
@@ -278,6 +294,11 @@ export default function Calendar() {
 
         <Button variant="outline" size="sm" onClick={() => setViewDate(todayInAlmaty())} className="text-xs sm:text-sm">
           Today
+        </Button>
+
+        <Button variant="outline" size="sm" onClick={() => setSubscribeOpen(true)} className="text-xs sm:text-sm">
+          <CalendarPlus className="mr-1.5 h-4 w-4" />
+          Подписаться
         </Button>
 
         <div className="ml-auto flex flex-wrap items-center gap-2.5">
@@ -549,6 +570,8 @@ export default function Calendar() {
         onOpenChange={(o) => !o && setPlayer(null)}
         locale={recordingsLocale(user?.role)}
       />
+
+      <SubscribeDialog open={subscribeOpen} onOpenChange={setSubscribeOpen} />
     </div>
   );
 }
