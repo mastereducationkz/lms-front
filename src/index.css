@@ -567,7 +567,9 @@
   * {
     @apply border-border;
   }
-  .dark .prose *:not(.katex *):not(code):not(pre) {
+  /* Strip hard-coded colors from authored lesson HTML in dark mode.
+     `mark` is excluded: quiz text highlights rely on their own background. */
+  .dark .prose *:not(.katex *):not(code):not(pre):not(mark):not(mark *) {
     color: inherit !important;
     background-color: transparent !important;
   }

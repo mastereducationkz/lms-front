@@ -61,7 +61,7 @@ export const applyHighlightsToDOM = (root: HTMLElement, highlights: TextHighligh
     let inWhitespace = false;
     for (let i = 0; i < charMap.length; i++) {
       const char = charMap[i].char;
-      const isWhitespace = /\\s/.test(char);
+      const isWhitespace = /\s/.test(char);
       
       if (isWhitespace) {
         if (!inWhitespace) {
