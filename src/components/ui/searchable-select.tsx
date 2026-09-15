@@ -68,16 +68,24 @@ export function SearchableSelect({
   const pick = (v: string) => { onChange(v); setOpen(false); };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    // `modal`: inside a Dialog the list is portalled outside it, and the Dialog's scroll lock swallowed
+    // every wheel and touch scroll over it (2026-09-15, «Who is this?»). A modal popover's own lock
+    // sits on top of the Dialog's, so its list scrolls; the page behind stays still, as with a select.
+    <Popover open={open} onOpenChange={setOpen} modal>
       <PopoverTrigger asChild>
         <Button type="button" variant="outline" role="combobox" aria-label={ariaLabel} aria-expanded={open} disabled={disabled}
                 className={`justify-between font-normal ${className ?? ''}`}>
-          <span className={`truncate ${selected ? '' : 'text-muted-foreground'}`}>{selected ? selected.label : placeholder}</span>
+          <span className={`truncate ${selected ? '' : 'text-muted-foreground'}`} title={selected?.label}>{selected ? selected.label : placeholder}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" aria-hidden="true" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-[18rem] p-0" align="start">
-        <div className="flex items-center gap-2 border-b px-2">
+      {/* Never taller than the room left on screen: the list shrinks and scrolls instead of running off the edge. */}
+      <PopoverContent
+        className="flex max-h-[var(--radix-popover-content-available-height)] w-[var(--radix-popover-trigger-width)] min-w-[18rem] flex-col p-0"
+        align="start"
+        collisionPadding={8}
+      >
+        <div className="flex shrink-0 items-center gap-2 border-b px-2">
           <Search className="h-4 w-4 shrink-0 opacity-50" aria-hidden="true" />
           <Input
             ref={inputRef}
@@ -100,7 +108,8 @@ export function SearchableSelect({
             aria-activedescendant={filtered[active] ? `${id}-option-${active}` : undefined}
           />
         </div>
-        <ul ref={listRef} id={listId} role="listbox" className="max-h-72 overflow-y-auto py-1">
+        {/* overscroll-contain: reaching either end of the list never scrolls what is behind it. */}
+        <ul ref={listRef} id={listId} role="listbox" className="max-h-72 min-h-0 flex-1 overflow-y-auto overscroll-contain py-1">
           {filtered.length === 0 && <li className="px-3 py-2 text-sm text-muted-foreground">{emptyText}</li>}
           {filtered.map((o, i) => (
             <li key={o.value}>
@@ -115,7 +124,7 @@ export function SearchableSelect({
                 className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm ${i === active ? 'bg-muted' : o.value === value ? 'bg-muted/40' : ''}`}
               >
                 <Check className={`h-4 w-4 shrink-0 ${o.value === value ? 'opacity-100' : 'opacity-0'}`} aria-hidden="true" />
-                <span className="truncate">{o.label}</span>
+                <span className="truncate" title={o.label}>{o.label}</span>
                 {o.hint && <span className="ml-auto shrink-0 text-xs text-muted-foreground">{o.hint}</span>}
               </button>
             </li>
