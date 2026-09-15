@@ -91,6 +91,18 @@ describe('what a recording on its way says (2026-09-15)', () => {
   });
 });
 
+describe('a step that has only just begun (owner’s screenshot, 2026-09-15)', () => {
+  it('reads «starting», not «0%» under a bar already half full', () => {
+    const justUploading = progress({ phase: 'uploading', phase_percent: 0, percent: 50 });
+    expect(phaseLine(justUploading)).toBe('Uploading · starting');
+    expect(phaseLine(justUploading, 'ru')).toBe('Загружаем · начинаем');
+    expect(phaseLine(progress({ phase: 'uploading', phase_percent: 12, percent: 56 }))).toBe('Uploading · 12%');
+    const active = recordingSteps(justUploading).find((step) => step.status === 'active');
+    expect(active?.key).toBe('uploading');
+    expect(active?.detail).toBe('starting');
+  });
+});
+
 describe('the steps to a watchable recording', () => {
   const statuses = (p: RecordingProgress) => recordingSteps(p).map((s) => s.status);
 

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
-import { Play } from 'lucide-react';
 import MeetMark from './MeetMark';
+import RecordingMark from './RecordingMark';
 import type { Event } from '../../types';
 import {
   cx, formatTime, eventStyle, isSubstitutedForTeacher,
@@ -51,9 +51,7 @@ function EventCard({ event, user, now, style, onClick }: {
     >
       <div className={cx('flex items-center gap-1 text-[10.5px] font-bold tabular-nums', s.time)}>
         {isAssignment ? '⚑ ' : ''}{formatTime(event.start_datetime)}
-        {event.recording?.status === 'ready' && (
-          <Play className="h-2.5 w-2.5 flex-none fill-current" aria-label="Recorded" />
-        )}
+        <RecordingMark event={event} role={user?.role} className="h-2.5 w-2.5" />
         <MeetMark event={event} role={user?.role} className="h-2.5 w-2.5" />
       </div>
       <div className="truncate text-[11.5px] font-medium text-foreground">{cardTitle(event)}</div>

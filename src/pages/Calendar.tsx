@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ChevronLeft, ChevronRight, Plus, Filter, Users, Video, Link2, Link2Off, Play, Loader2, CalendarPlus,
+  ChevronLeft, ChevronRight, Plus, Filter, Users, Video, Link2, Link2Off, Play, CalendarPlus,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -31,6 +31,11 @@ import { countLabel } from '../components/calendar/weekLayout';
 import { matchesRecordingFilter, recordingsLocale, type RecordingFilter } from '../lib/recordings';
 import { matchesMeetFilter, seesMeetMarks, type MeetFilter } from '../lib/meetLinks';
 import MeetMark from '../components/calendar/MeetMark';
+import { useNow } from '../components/meetAttendance/MeetSyncStatus';
+import { RecordingStatusInline } from '../components/recordings/RecordingProgress';
+import { useRecordingStatuses } from '../components/recordings/useRecordingStatuses';
+import { liveRecordingIds, seesRecordingProgress } from '../lib/calendarRecordingStatus';
+import { badgeText, progressFor } from '../lib/recordingProgress';
 import { todayInAlmaty } from '../lib/datetime';
 import SubscribeDialog from '../components/calendar/SubscribeDialog';
 import { getEventDetails } from '../services/api/events';
@@ -255,6 +260,16 @@ export default function Calendar() {
     user?.role === 'admin' || user?.role === 'head_curator' || user?.role === 'head_teacher' ||
     recordingFilter !== 'all' || events.some((e) => e.recording);
   const showMeetFilter = seesMeetMarks(user?.role);
+
+  // The open day's recordings still on their way, live (2026-09-15): staff only, the lessons on
+  // screen only — never the month — in one batched request that stops once none is on its way.
+  const liveNow = useNow(60_000);
+  const liveIds = useMemo(
+    () => (dayPeek ? liveRecordingIds(eventsOnDay(dayPeek, filtered), user?.role, liveNow) : []),
+    [dayPeek, filtered, user?.role, liveNow],
+  );
+  const liveStatuses = useRecordingStatuses(liveIds, !!dayPeek);
+  const peekLocale = recordingsLocale(user?.role);
 
   if (loading && events.length === 0) {
     return <Loader size="xl" animation="spin" color="#2563eb" />;
@@ -503,7 +518,11 @@ export default function Calendar() {
               dayPeekEvents.map((event) => {
                 const s = eventStyle(event);
                 const past = new Date(event.end_datetime).getTime() < Date.now();
-                const rec = event.recording?.status;
+                // Staff read the live status while the day is open; everyone else the calendar's summary.
+                const live = seesRecordingProgress(user?.role) ? liveStatuses[String(event.id)] : undefined;
+                const rec = live ? live.status : event.recording?.status;
+                const onItsWay = seesRecordingProgress(user?.role) && rec && rec !== 'ready' && rec !== 'missing'
+                  ? progressFor(rec, live?.progress) : null;
                 return (
                   // Two controls side by side, not one inside the other: a button cannot hold a button.
                   <div key={event.id} className="flex items-center gap-2 rounded-xl pr-2 transition hover:bg-muted">
@@ -540,11 +559,15 @@ export default function Calendar() {
                         <span className="sm:hidden">Watch</span>
                       </button>
                     )}
-                    {rec === 'pending' && (
-                      <span className="inline-flex flex-none items-center gap-1.5 text-[12px] text-muted-foreground">
-                        <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
-                        Processing
-                      </span>
+                    {onItsWay && (
+                      <button
+                        type="button"
+                        onClick={() => openRecording(event)}
+                        aria-label={`${badgeText(onItsWay, peekLocale)}: ${eventTitle(event)}, ${formatTime(event.start_datetime)}`}
+                        className="flex-none rounded-lg px-2 py-1 text-right transition hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <RecordingStatusInline progress={onItsWay} locale={peekLocale} />
+                      </button>
                     )}
                   </div>
                 );

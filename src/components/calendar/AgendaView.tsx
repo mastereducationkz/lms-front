@@ -3,8 +3,9 @@ import {
   cx, formatTime, eventStyle, eventTitle, typeLabel, isSubstitutedForTeacher, startOfDay, isSameDay,
 } from './calendarUtils';
 import { almatyCivilDate, todayInAlmaty } from '../../lib/datetime';
-import { CalendarDays, Play } from 'lucide-react';
+import { CalendarDays } from 'lucide-react';
 import MeetMark from './MeetMark';
+import RecordingMark from './RecordingMark';
 
 interface Props {
   events: Event[];
@@ -109,9 +110,8 @@ export default function AgendaView({ events, user, onEventClick }: Props) {
                     <span className="block truncate text-[14px] font-medium text-foreground">
                       {eventTitle(event)}
                       {sub && <span className={cx('ml-2 text-[10px] font-bold', s.time)}>SUB</span>}
-                      {event.recording?.status === 'ready' && (
-                        <Play className="ml-2 inline h-3 w-3 fill-current align-[-1px] text-muted-foreground" aria-label="Recorded" />
-                      )}
+                      <RecordingMark event={event} role={user?.role} className="h-3 w-3 text-muted-foreground"
+                        wrapperClassName="ml-2 align-[-1px]" />
                       <span className="ml-2 inline-flex align-[-2px]">
                         <MeetMark event={event} role={user?.role} className="h-3 w-3" />
                       </span>

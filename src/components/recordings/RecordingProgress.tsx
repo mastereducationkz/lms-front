@@ -2,6 +2,7 @@ import {
   AlertTriangle, Check, Clock3, Hourglass, ListOrdered, PauseCircle, RefreshCw, RotateCcw, VideoOff, X,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import BrandMark from '../BrandMark';
 import { useNow } from '../meetAttendance/MeetSyncStatus';
 import {
   attemptsText, badgeText, isTerminal, missingAfterText, overallPercent, phaseLabel, phaseLine, queueText,
@@ -55,16 +56,6 @@ const TEXT = {
   },
 } as const;
 
-/** Something under way somewhere else — softer than a spinner, which reads as this page loading. */
-function PulseDot({ className }: { className?: string }) {
-  return (
-    <span className={cn('relative flex h-2 w-2 flex-none', className)} aria-hidden>
-      <span className="absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-60 motion-safe:animate-ping" />
-      <span className="relative inline-flex h-2 w-2 rounded-full bg-sky-500" />
-    </span>
-  );
-}
-
 function StageIcon({ progress, className }: { progress: RecordingProgress; className?: string }) {
   switch (progress.stage) {
     case 'lesson_running': return <Clock3 className={className} aria-hidden />;
@@ -72,7 +63,9 @@ function StageIcon({ progress, className }: { progress: RecordingProgress; class
     case 'queued': return progress.held_for_disk
       ? <PauseCircle className={className} aria-hidden />
       : <ListOrdered className={className} aria-hidden />;
-    case 'processing': return <PulseDot />;
+    // Our own work under way: the Master Education mark, turning slowly (owner, 2026-09-15 — the
+    // pulsing dot "looked too AI-ish"). Waiting and queued keep icons that say what is awaited.
+    case 'processing': return <BrandMark spinning className={className} />;
     case 'retrying': return <RefreshCw className={className} aria-hidden />;
     case 'failed': return <AlertTriangle className={className} aria-hidden />;
     case 'removed': return <VideoOff className={className} aria-hidden />;
@@ -146,6 +139,70 @@ export function RecordingCardStage({ progress, locale, name }: { progress: Recor
   );
 }
 
+const INLINE_TEXT: Record<ProgressTone, string> = {
+  progress: 'text-sky-700 dark:text-sky-300',
+  warning: 'text-amber-700 dark:text-amber-300',
+  danger: 'text-rose-700 dark:text-rose-300',
+  neutral: 'text-muted-foreground',
+  success: 'text-emerald-700 dark:text-emerald-300',
+};
+
+/**
+ * A recording on its way in a light list row — the calendar's open day: the stage with its percent
+ * or place in line, and a thin bar while it is being prepared.
+ */
+export function RecordingStatusInline({ progress, locale, className }: { progress: RecordingProgress; locale: Locale; className?: string }) {
+  const tone = stageTone(progress);
+  const label = badgeText(progress, locale);
+  return (
+    <span className={cn('inline-flex min-w-0 flex-col items-end gap-1', className)}>
+      <span className={cn('inline-flex items-center gap-1.5 whitespace-nowrap text-[12px] font-medium tabular-nums', INLINE_TEXT[tone])}>
+        <StageIcon progress={progress} className="h-3.5 w-3.5" />
+        {label}
+      </span>
+      {progress.stage === 'processing' && (
+        <ProgressBar percent={overallPercent(progress)} tone={tone} label={label} className="h-1 w-24 bg-muted" />
+      )}
+    </span>
+  );
+}
+
+/**
+ * A recording on its way inside the light lesson dialog: the stage and why, the step under way with
+ * its bar, the place in line — and, for staff, why it failed. The player shows the full steps.
+ */
+export function RecordingStatusCard({ progress, locale, className }: { progress: RecordingProgress; locale: Locale; className?: string }) {
+  const tone = stageTone(progress);
+  const title = stageTitle(progress, locale);
+  const percent = overallPercent(progress);
+  const detail = phaseLine(progress, locale) ?? queueText(progress, locale) ?? attemptsText(progress, locale);
+  return (
+    <div className={cn('space-y-2', className)}>
+      <div role="status" aria-live="polite" className={cn('flex items-center gap-2 text-sm font-semibold', INLINE_TEXT[tone])}>
+        <StageIcon progress={progress} className="h-4 w-4" />
+        {title}
+      </div>
+      <p className="text-sm text-muted-foreground">{stageSentence(progress, locale)}</p>
+      {progress.stage === 'processing' ? (
+        <div className="space-y-1">
+          <div className="flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
+            <span className="min-w-0 truncate tabular-nums">{detail ?? ' '}</span>
+            {percent != null && <span className="flex-none font-semibold tabular-nums text-foreground">{percent}%</span>}
+          </div>
+          <ProgressBar percent={percent} tone={tone} label={title} className="bg-muted" />
+        </div>
+      ) : !isTerminal(progress.stage) && detail && (
+        <p className="text-xs tabular-nums text-muted-foreground">{detail}</p>
+      )}
+      {progress.stage === 'failed' && progress.error && (
+        <p className="break-words rounded-md bg-rose-50 px-2.5 py-1.5 font-mono text-[12px] leading-relaxed text-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
+          {progress.error}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function StepDot({ status }: { status: StepStatus }) {
   if (status === 'done') {
     return (
@@ -164,7 +221,7 @@ function StepDot({ status }: { status: StepStatus }) {
   if (status === 'active') {
     return (
       <span className="relative z-10 flex h-4 w-4 flex-none items-center justify-center rounded-full bg-sky-400/15 ring-1 ring-sky-400/60">
-        <PulseDot className="h-1.5 w-1.5 [&>span]:h-1.5 [&>span]:w-1.5" />
+        <BrandMark spinning className="h-2.5 w-2.5 text-sky-300" />
       </span>
     );
   }

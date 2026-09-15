@@ -13,6 +13,7 @@ import {
   type SyncStatus,
 } from '../../lib/meetSync';
 import type { MeetSync, MeetWaiting } from '../../services/api/meetAttendance';
+import BrandMark from '../BrandMark';
 
 /**
  * A lesson waiting on Google Meet, shown as what it is (2026-09-15): the stage it is in, how long it
@@ -30,14 +31,12 @@ export function useNow(intervalMs = 30_000): number {
   return now;
 }
 
-/** Something under way somewhere else — softer than a spinner, which reads as this page loading. */
-function PulseDot({ className }: { className?: string }) {
-  return (
-    <span className={cn('relative flex h-2 w-2 flex-none', className)} aria-hidden>
-      <span className="absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-60 motion-safe:animate-ping" />
-      <span className="relative inline-flex h-2 w-2 rounded-full bg-sky-500" />
-    </span>
-  );
+/**
+ * Work under way: the Master Education mark turning slowly — the same mark the recordings show
+ * (owner, 2026-09-15: the pulsing dot "looked too AI-ish"). Still for reduced motion.
+ */
+function WorkingMark({ className }: { className?: string }) {
+  return <BrandMark spinning className={cn('h-3.5 w-3.5 text-sky-600 dark:text-sky-400', className)} />;
 }
 
 function StepIcon({ status }: { status: StepStatus }) {
@@ -51,7 +50,7 @@ function StepIcon({ status }: { status: StepStatus }) {
   if (status === 'active') {
     return (
       <span className="relative z-10 flex h-5 w-5 flex-none items-center justify-center rounded-full bg-sky-100 ring-1 ring-sky-300 dark:bg-sky-900/50 dark:ring-sky-700">
-        <PulseDot />
+        <WorkingMark className="h-3 w-3" />
       </span>
     );
   }
@@ -74,14 +73,14 @@ export function MeetWaitingSummary({ waiting, now }: { waiting?: MeetWaiting | n
   if (!waiting) {
     return (
       <div className="flex items-center gap-2 text-[13px] font-medium text-foreground">
-        <PulseDot /> Waiting for Google Meet
+        <WorkingMark /> Waiting for Google Meet
       </div>
     );
   }
   return (
     <div className="flex min-w-0 flex-col gap-0.5">
       <div className="flex items-center gap-2 text-[13px] font-medium text-foreground">
-        <PulseDot /> {STAGE_TITLE[waiting.stage]}
+        <WorkingMark /> {STAGE_TITLE[waiting.stage]}
       </div>
       <div className="text-xs tabular-nums text-muted-foreground">{waitedText(waiting, now)}</div>
       <div className="text-xs text-muted-foreground">{stageText(waiting)}</div>
@@ -103,7 +102,7 @@ export function MeetWaitingProgress({ waiting, sync, className }: { waiting: Mee
     <div className={cn('space-y-3', className)}>
       <div>
         <div role="status" className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          <PulseDot /> {STAGE_TITLE[waiting.stage]}
+          <WorkingMark className="h-4 w-4" /> {STAGE_TITLE[waiting.stage]}
         </div>
         <p className="mt-1 text-sm text-muted-foreground">{stageText(waiting)}</p>
       </div>
@@ -167,7 +166,7 @@ export function MeetSyncBanner({ sync, waiting, updatedAt, refreshing, onRefresh
       )}
     >
       <div className="flex min-w-0 flex-1 items-start gap-3">
-        <PulseDot className="mt-1.5" />
+        <WorkingMark className="mt-0.5 h-4 w-4" />
         <div className="min-w-0 space-y-0.5">
           <div role="status" className="text-sm font-medium text-foreground">
             {waiting

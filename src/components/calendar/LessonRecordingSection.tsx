@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Play, Video } from 'lucide-react';
 import HlsVideoPlayer from '../HlsVideoPlayer';
+import { RecordingStatusCard } from '../recordings/RecordingProgress';
 import { getLessonRecording, type LessonRecording } from '../../services/api/recordings';
 import type { Event } from '../../types';
-import { formatClock } from '../../lib/recordings';
+import { formatClock, recordingsLocale } from '../../lib/recordings';
+import { pollInterval, progressFor } from '../../lib/recordingProgress';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface Props {
   event: Event;
@@ -18,7 +21,7 @@ function hasFinished(event: Event): boolean {
 /**
  * The recording of a finished lesson, inside the lesson dialog.
  *
- * Three deliberate choices:
+ * Four deliberate choices:
  *
  * **Nothing is requested for a lesson that has not ended.** Opening any future lesson
  * would otherwise fire a request that can only ever answer "missing", on a calendar where
@@ -29,11 +32,16 @@ function hasFinished(event: Event): boolean {
  * and "not yours to see". Rendering an empty state would tell a student in another group
  * that a recording exists — the exact thing the 404 exists to prevent.
  *
+ * **A recording on its way says where it is, and fills in by itself** (2026-09-15): waiting on
+ * Google Meet, in line, which step and how far — asked again at the stage's pace while the
+ * dialog is open and the tab in view, until it is ready.
+ *
  * **The video only loads once the student asks for it.** The signed URL is already in
  * hand, but mounting a player per dialog open would start fetching HLS segments for
  * anyone who merely clicked a lesson to check its time.
  */
 export default function LessonRecordingSection({ event }: Props) {
+  const { user } = useAuth();
   const [recording, setRecording] = useState<LessonRecording | null>(null);
   const [loading, setLoading] = useState(false);
   const [watching, setWatching] = useState(false);
@@ -64,6 +72,26 @@ export default function LessonRecordingSection({ event }: Props) {
     };
   }, [event.id, event.end_datetime]);
 
+  const progress = recording && recording.status !== 'ready' && recording.status !== 'missing'
+    ? progressFor(recording.status, recording.progress)
+    : null;
+  const interval = pollInterval(progress);
+
+  useEffect(() => {
+    if (interval == null) return undefined;
+    let cancelled = false;
+    const timer = window.setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+      getLessonRecording(event.id)
+        .then((next) => { if (!cancelled) setRecording(next); })
+        .catch(() => { /* the next round tries again */ });
+    }, interval);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [event.id, interval]);
+
   if (!hasFinished(event)) return null;
 
   if (loading) {
@@ -77,27 +105,20 @@ export default function LessonRecordingSection({ event }: Props) {
 
   if (!recording || recording.status === 'missing') return null;
 
-  if (recording.status === 'pending') {
+  if (progress) {
     return (
       <div className="mt-4 border-t border-border pt-4">
-        <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 flex-none animate-spin" />
-          <span>The recording is still being processed. Check back a little later.</span>
-        </div>
+        <RecordingStatusCard progress={progress} locale={recordingsLocale(user?.role)} />
       </div>
     );
   }
 
-  if (recording.status === 'failed' || recording.status === 'removed' || !recording.url) {
+  if (!recording.url) {
     return (
       <div className="mt-4 border-t border-border pt-4">
         <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
           <Video className="h-4 w-4 flex-none text-muted-foreground/70" />
-          <span>
-            {recording.status === 'removed'
-              ? 'The recording of this lesson is no longer available.'
-              : 'The recording of this lesson is not available.'}
-          </span>
+          <span>The recording of this lesson is not available.</span>
         </div>
       </div>
     );

@@ -1,5 +1,5 @@
-import { Play } from 'lucide-react';
 import MeetMark from './MeetMark';
+import RecordingMark from './RecordingMark';
 import type { Event } from '../../types';
 import {
   cx, formatTime, eventStyle, eventTitle, isSubstitutedForTeacher, DAY_NAMES, type MonthDay,
@@ -95,9 +95,7 @@ export default function MonthView({ days, user, onDayClick, onEventClick }: Prop
                       <span className="truncate text-foreground/90">{eventTitle(event)}</span>
                       <span className="ml-auto flex flex-none items-center gap-1">
                         <MeetMark event={event} role={user?.role} className="h-2.5 w-2.5" />
-                        {event.recording?.status === 'ready' && (
-                          <Play className="h-2.5 w-2.5 flex-none fill-current text-muted-foreground" aria-label="Recorded" />
-                        )}
+                        <RecordingMark event={event} role={user?.role} className="h-2.5 w-2.5 text-muted-foreground" />
                       </span>
                       {sub && (
                         <span className={cx('flex-none text-[9px] font-bold tracking-tight', s.time)}>SUB</span>

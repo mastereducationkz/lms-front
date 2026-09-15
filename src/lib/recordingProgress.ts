@@ -67,6 +67,7 @@ const TEXT = {
       removed: 'No longer available',
     } as Record<RecordingStage, string>,
     position: (n: number) => `#${n}`,
+    starting: 'starting',
     lessThanMinute: 'less than a minute left',
     minutesLeft: (m: number) => `about ${m} min left`,
     inLine: (n: number, total: number) => `${n}${EN_SUFFIX(n)} in line · ${total} waiting`,
@@ -148,6 +149,7 @@ const TEXT = {
       removed: 'Больше недоступна',
     } as Record<RecordingStage, string>,
     position: (n: number) => `№${n}`,
+    starting: 'начинаем',
     lessThanMinute: 'осталось меньше минуты',
     minutesLeft: (m: number) => `осталось около ${m} мин`,
     inLine: (n: number, total: number) => `${n}-я в очереди · всего ${total}`,
@@ -264,11 +266,20 @@ export function attemptsText(progress: RecordingProgress, locale: Locale = 'en')
   return null;
 }
 
+/**
+ * How far into the step: "64%", or "starting" at 0 — «Uploading · 0%» under a bar already half full
+ * read as broken (owner's screenshot, 2026-09-15). Nothing when the step has no measure.
+ */
+function phaseAmount(progress: RecordingProgress, locale: Locale): string | null {
+  const percent = clampPercent(progress.phase_percent);
+  if (percent === 0) return TEXT[locale].starting;
+  return percent != null ? `${percent}%` : null;
+}
+
 /** "Downloading from Google Drive · 64% · about 2 min left" — the step under way. */
 export function phaseLine(progress: RecordingProgress, locale: Locale = 'en'): string | null {
   if (progress.stage !== 'processing' || !progress.phase) return null;
-  const percent = clampPercent(progress.phase_percent);
-  return [phaseLabel(progress.phase, locale), percent != null ? `${percent}%` : null, etaText(progress.eta_seconds, locale)]
+  return [phaseLabel(progress.phase, locale), phaseAmount(progress, locale), etaText(progress.eta_seconds, locale)]
     .filter(Boolean).join(' · ');
 }
 
@@ -382,7 +393,7 @@ export function recordingSteps(progress: RecordingProgress, locale: Locale = 'en
         .filter(Boolean).join(' · ') || null;
     } else if (PHASES.includes(key as RecordingPhase) && status === 'active') {
       percent = clampPercent(progress.phase_percent);
-      detail = [percent != null ? `${percent}%` : null, etaText(progress.eta_seconds, locale), attemptsText(progress, locale)]
+      detail = [phaseAmount(progress, locale), etaText(progress.eta_seconds, locale), attemptsText(progress, locale)]
         .filter(Boolean).join(' · ') || null;
     } else if (key === 'ready' && status === 'failed') {
       detail = attemptsText(progress, locale);
