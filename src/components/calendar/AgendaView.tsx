@@ -4,6 +4,7 @@ import {
 } from './calendarUtils';
 import { almatyCivilDate, todayInAlmaty } from '../../lib/datetime';
 import { CalendarDays, Play } from 'lucide-react';
+import MeetMark from './MeetMark';
 
 interface Props {
   events: Event[];
@@ -111,6 +112,9 @@ export default function AgendaView({ events, user, onEventClick }: Props) {
                       {event.recording?.status === 'ready' && (
                         <Play className="ml-2 inline h-3 w-3 fill-current align-[-1px] text-muted-foreground" aria-label="Recorded" />
                       )}
+                      <span className="ml-2 inline-flex align-[-2px]">
+                        <MeetMark event={event} role={user?.role} className="h-3 w-3" />
+                      </span>
                     </span>
                     <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-muted-foreground">
                       <span className={cx('text-[10.5px] font-semibold uppercase tracking-wide', s.time)}>

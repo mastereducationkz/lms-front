@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { meetInvitationText, meetJoinUrl } from './meetLinks';
+import { isMeetLink, matchesMeetFilter, meetInvitationText, meetJoinUrl, seesMeetMarks } from './meetLinks';
 
 const MEET = 'https://meet.google.com/nee-tsrk-vap';
 
@@ -77,5 +77,52 @@ describe('meetInvitationText', () => {
   it('copes with a lesson that has no number', () => {
     const text = meetInvitationText({ ...lesson, title: 'Mock exam', groups: [] });
     expect(text.split('\n')[1]).toBe('Mock exam');
+  });
+});
+
+describe('isMeetLink', () => {
+  it('recognises a Google Meet room and nothing else', () => {
+    expect(isMeetLink(MEET)).toBe(true);
+    expect(isMeetLink(`${MEET}?authuser=gulzada@mastereducation.kz`)).toBe(true);
+    expect(isMeetLink('https://zoom.us/j/123')).toBe(false);
+    expect(isMeetLink('not a url')).toBe(false);
+    expect(isMeetLink('')).toBe(false);
+    expect(isMeetLink(null)).toBe(false);
+    expect(isMeetLink(undefined)).toBe(false);
+  });
+});
+
+describe('matchesMeetFilter', () => {
+  const withMeet = { event_type: 'class', meeting_url: MEET };
+  const zoom = { event_type: 'class', meeting_url: 'https://zoom.us/j/123' };
+  const none = { event_type: 'class', meeting_url: null };
+  const webinar = { event_type: 'webinar', meeting_url: MEET };
+
+  it('lets everything through when off', () => {
+    for (const e of [withMeet, zoom, none, webinar]) expect(matchesMeetFilter(e, 'all')).toBe(true);
+  });
+
+  it('"with" keeps class lessons that have a Meet room', () => {
+    expect(matchesMeetFilter(withMeet, 'with')).toBe(true);
+    expect(matchesMeetFilter(zoom, 'with')).toBe(false);
+    expect(matchesMeetFilter(none, 'with')).toBe(false);
+  });
+
+  it('"without" keeps class lessons with no Meet room, a non-Meet link included', () => {
+    expect(matchesMeetFilter(none, 'without')).toBe(true);
+    expect(matchesMeetFilter(zoom, 'without')).toBe(true);
+    expect(matchesMeetFilter(withMeet, 'without')).toBe(false);
+  });
+
+  it('never matches events that are not class lessons', () => {
+    expect(matchesMeetFilter(webinar, 'with')).toBe(false);
+    expect(matchesMeetFilter({ event_type: 'weekly_test', meeting_url: null }, 'without')).toBe(false);
+  });
+});
+
+describe('seesMeetMarks', () => {
+  it('is staff only', () => {
+    for (const role of ['admin', 'head_curator', 'head_teacher', 'curator', 'teacher']) expect(seesMeetMarks(role)).toBe(true);
+    for (const role of ['student', '', null, undefined]) expect(seesMeetMarks(role)).toBe(false);
   });
 });

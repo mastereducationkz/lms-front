@@ -7,8 +7,11 @@
 // surname initial as well («Мирас А.» / «Мирас Қ.»). Same rule as crm-master
 // frontend/src/lib/groupNames.ts — keep the two in step.
 
+// Heads' ФИО carries their title: «Head of NUET Керимхан Альбар».
+const TITLE_PREFIX = /^\s*head\s+of\s+\S+\s+/i;
+
 const words = (name: string | null | undefined): string[] =>
-  (name ?? '').trim().split(/\s+/).filter(Boolean);
+  (name ?? '').replace(TITLE_PREFIX, '').trim().split(/\s+/).filter(Boolean);
 
 const fold = (value: string): string => value.trim().toLocaleLowerCase('ru');
 

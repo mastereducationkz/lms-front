@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ChevronLeft, ChevronRight, Plus, Filter, Users, Video, Play, Loader2,
+  ChevronLeft, ChevronRight, Plus, Filter, Users, Video, VideoOff, Link2, Play, Loader2,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -29,6 +29,8 @@ import {
 } from '../components/calendar/calendarUtils';
 import { countLabel } from '../components/calendar/weekLayout';
 import { matchesRecordingFilter, recordingsLocale, type RecordingFilter } from '../lib/recordings';
+import { matchesMeetFilter, seesMeetMarks, type MeetFilter } from '../lib/meetLinks';
+import MeetMark from '../components/calendar/MeetMark';
 import { todayInAlmaty } from '../lib/datetime';
 
 type CalView = 'month' | 'week' | 'agenda';
@@ -63,6 +65,8 @@ export default function Calendar() {
   // Set when the week view's hour tile opened the day list: show just that hour.
   const [peekHour, setPeekHour] = useState<number | null>(null);
   const [recordingFilter, setRecordingFilter] = useState<RecordingFilter>('all');
+  // Staff: class lessons with / without their Google Meet room.
+  const [meetFilter, setMeetFilter] = useState<MeetFilter>('all');
   const [player, setPlayer] = useState<RecordingMeta | null>(null);
 
   useEffect(() => {
@@ -149,8 +153,9 @@ export default function Calendar() {
       const now = Date.now();
       list = list.filter((e) => matchesRecordingFilter(e, recordingFilter, now));
     }
+    if (meetFilter !== 'all') list = list.filter((e) => matchesMeetFilter(e, meetFilter));
     return list;
-  }, [events, eventTypeFilter, selectedGroupId, user, recordingFilter]);
+  }, [events, eventTypeFilter, selectedGroupId, user, recordingFilter, meetFilter]);
 
   // Alphabetical, so a long list can be scanned as well as searched ("aug gulz" finds
   // "August 19 SAT - Gulzada"; the teacher is part of the name).
@@ -233,6 +238,7 @@ export default function Calendar() {
   const showRecordingFilter =
     user?.role === 'admin' || user?.role === 'head_curator' || user?.role === 'head_teacher' ||
     recordingFilter !== 'all' || events.some((e) => e.recording);
+  const showMeetFilter = seesMeetMarks(user?.role);
 
   if (loading && events.length === 0) {
     return <Loader size="xl" animation="spin" color="#2563eb" />;
@@ -360,6 +366,23 @@ export default function Calendar() {
             </div>
           )}
 
+          {/* Google Meet link filter (staff) */}
+          {showMeetFilter && (
+            <div className="flex items-center gap-1.5">
+              <Link2 className="h-4 w-4 flex-none text-muted-foreground" />
+              <Select value={meetFilter} onValueChange={(v) => setMeetFilter(v as MeetFilter)}>
+                <SelectTrigger className="h-9 w-[160px] sm:w-48" aria-label="Google Meet link">
+                  <SelectValue placeholder="Any Meet link" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any Meet link</SelectItem>
+                  <SelectItem value="with">With Meet link</SelectItem>
+                  <SelectItem value="without">Without Meet link</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {canCreate && (
             <Button
               size="sm"
@@ -392,6 +415,18 @@ export default function Calendar() {
             </span>
           );
         })}
+        {showMeetFilter && (
+          <>
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Video className="h-3 w-3 text-emerald-600 dark:text-emerald-400" aria-hidden />
+              Meet link
+            </span>
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <VideoOff className="h-3 w-3 text-muted-foreground/70" aria-hidden />
+              No Meet link
+            </span>
+          </>
+        )}
       </div>
 
       {/* Active view */}
@@ -467,6 +502,7 @@ export default function Calendar() {
                         <span className="block truncate text-sm font-medium text-foreground">{eventTitle(event)}</span>
                         <span className="text-xs text-muted-foreground">
                           <span className={cx('font-semibold', s.time)}>{typeLabel(event.event_type)}</span>
+                          <MeetMark event={event} role={user?.role} className="ml-1.5 h-3 w-3" />
                           {event.event_type !== 'class' && event.groups && event.groups.length > 0 && ` · ${event.groups.join(', ')}`}
                         </span>
                       </span>

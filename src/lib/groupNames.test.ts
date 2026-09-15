@@ -9,6 +9,11 @@ describe('teacherFirstName', () => {
     expect(teacherFirstName('  Есен   Нұрғалы  Беғалыұлы ')).toBe('Нұрғалы');
   });
 
+  it("ignores a head's title in the ФИО", () => {
+    expect(teacherFirstName('Head of NUET Керимхан Альбар')).toBe('Альбар');
+    expect(surnameInitial('Head of SAT Абдураимов Азамат')).toBe('А.');
+  });
+
   it('treats a one-word name as the first name and never returns undefined', () => {
     expect(teacherFirstName('Коркем')).toBe('Коркем');
     expect(teacherFirstName('')).toBe('');

@@ -65,3 +65,30 @@ export function meetInvitationText(lesson: {
     'Подключайтесь за пару минут до начала.',
   ].join('\n');
 }
+
+/** A Google Meet room, not just any meeting URL — only Meet rooms record and take attendance. */
+export function isMeetLink(url: string | null | undefined): boolean {
+  if (!url) return false;
+  try {
+    return new URL(url).hostname === 'meet.google.com';
+  } catch {
+    return false;
+  }
+}
+
+export type MeetFilter = 'all' | 'with' | 'without';
+
+/** The calendar's Google Meet filter. Class lessons only: webinars and tests have no room to set up. */
+export function matchesMeetFilter(
+  event: { event_type?: string | null; meeting_url?: string | null },
+  filter: MeetFilter,
+): boolean {
+  if (filter === 'all') return true;
+  if (event.event_type !== 'class') return false;
+  return filter === 'with' ? isMeetLink(event.meeting_url) : !isMeetLink(event.meeting_url);
+}
+
+/** Staff see which lessons have their Meet room; a student only needs the join button. */
+export function seesMeetMarks(role?: string | null): boolean {
+  return role === 'admin' || role === 'head_curator' || role === 'head_teacher' || role === 'curator' || role === 'teacher';
+}
