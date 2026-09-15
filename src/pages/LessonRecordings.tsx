@@ -11,6 +11,7 @@ import RecordingCard from '../components/recordings/RecordingCard';
 import RecordingDatePicker from '../components/recordings/RecordingDatePicker';
 import RecordingFoldersView from '../components/recordings/RecordingFoldersView';
 import RecordingPlayerDialog, { type RecordingMeta } from '../components/recordings/RecordingPlayerDialog';
+import { useLiveRecordings } from '../components/recordings/useLiveRecordings';
 import { cx } from '../components/calendar/calendarUtils';
 import { getEventDetails } from '../services/api/events';
 import {
@@ -150,6 +151,8 @@ export default function LessonRecordings() {
   const [failed, setFailed] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const latest = useRef(0);
+  // Cards still on their way update in place — one batched request, visible tab only.
+  useLiveRecordings(items, setItems, view === 'gallery');
 
   // Search as you type, without a request per keystroke.
   useEffect(() => {

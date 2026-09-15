@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ChevronRight, Folder, FolderOpen, Loader2, RotateCcw, UserRound, Video } from 'lucide-react';
 import RecordingCard from './RecordingCard';
+import { useLiveRecordings } from './useLiveRecordings';
 import { cx } from '../calendar/calendarUtils';
 import {
   listRecordingFolders, listRecordings,
@@ -91,6 +92,8 @@ export default function RecordingFoldersView({ filters, locale, onOpen }: Props)
   const [videosReload, setVideosReload] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const videoRequest = useRef(0);
+  // A group's cards still on their way update in place, like the gallery's.
+  useLiveRecordings(items, setItems);
 
   useEffect(() => {
     const request = ++videoRequest.current;

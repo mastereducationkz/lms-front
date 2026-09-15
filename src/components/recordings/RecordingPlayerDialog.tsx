@@ -3,7 +3,9 @@ import { CalendarDays, Clock, Link2, Loader2, Timer, User, Users, VideoOff } fro
 import { toast } from 'sonner';
 import HlsVideoPlayer from '../HlsVideoPlayer';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../ui/dialog';
-import { getLessonRecording, type LessonRecording } from '../../services/api/recordings';
+import { getLessonRecording, retryRecording, type LessonRecording } from '../../services/api/recordings';
+import { pollInterval, progressFor } from '../../lib/recordingProgress';
+import { RecordingProgressPanel } from './RecordingProgress';
 import { getMeetRecord } from '../../services/api/meetAttendance';
 import { toParticipantsView, type ParticipantsView } from '../../lib/meetAttendance';
 import { ParticipantsPanel } from '../meetAttendance/ParticipantsPanel';
@@ -42,10 +44,13 @@ const TEXT = {
     failed: 'This recording could not be processed.',
     removed: 'This recording is no longer available.',
     missing: 'There is no recording for this lesson.',
+    waiting: 'The recording appears here once Google Meet has finished it.',
     error: 'The recording could not be loaded. Please try again.',
     copy: 'Copy link',
     copied: 'Link copied',
     copyFailed: 'Could not copy the link',
+    nowReady: 'The recording is ready',
+    retryFailed: 'Could not try the recording again',
   },
   ru: {
     loading: 'Загружаем запись…',
@@ -53,10 +58,13 @@ const TEXT = {
     failed: 'Не удалось обработать эту запись.',
     removed: 'Эта запись больше недоступна.',
     missing: 'Для этого урока нет записи.',
+    waiting: 'Запись появится здесь, когда Google Meet её закончит.',
     error: 'Не удалось загрузить запись. Попробуйте ещё раз.',
     copy: 'Скопировать ссылку',
     copied: 'Ссылка скопирована',
     copyFailed: 'Не удалось скопировать ссылку',
+    nowReady: 'Запись готова',
+    retryFailed: 'Не удалось запустить запись снова',
   },
 } as const;
 
@@ -101,8 +109,11 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
   const { user } = useAuth();
   const [recording, setRecording] = useState<LessonRecording | null>(null);
   const [failedToLoad, setFailedToLoad] = useState(false);
+  const [retrying, setRetrying] = useState(false);
   const [participants, setParticipants] = useState<ParticipantsView | null>(null);
   const seesParticipants = RECORD_ROLES.has(user?.role ?? '');
+  // Trying a failed recording again is for the people who answer for the pipeline.
+  const canRetry = ['admin', 'head_teacher', 'head_curator'].includes(user?.role ?? '');
   const playerBox = useRef<HTMLDivElement>(null);
 
   const eventId = meta?.eventId;
@@ -118,6 +129,47 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
       cancelled = true;
     };
   }, [open, eventId]);
+
+  // A recording on its way fills in by itself: look again at the pace its stage needs, only while
+  // the tab is in view (and at once when it comes back), until it plays or has failed.
+  const live = recording && recording.status !== 'ready' ? progressFor(recording.status, recording.progress) : null;
+  const every = pollInterval(live);
+  useEffect(() => {
+    if (!open || !eventId || every == null) return;
+    let cancelled = false;
+    let inFlight = false;
+    let timer: number | undefined;
+    const later = () => { if (!cancelled) timer = window.setTimeout(refresh, every); };
+    function refresh() {
+      if (cancelled || inFlight) return;
+      if (document.visibilityState !== 'visible') { later(); return; }
+      inFlight = true;
+      getLessonRecording(eventId as number)
+        .then((data) => { if (!cancelled) setRecording(data); })
+        .catch(() => { /* the next look tries again */ })
+        .finally(() => { inFlight = false; later(); });
+    }
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return;
+      window.clearTimeout(timer);
+      refresh();
+    };
+    later();
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [open, eventId, every]);
+
+  // When the recording the viewer waited on becomes watchable, say so once; the video starts by itself.
+  const lastStatus = useRef<string | null>(null);
+  useEffect(() => {
+    const status = recording?.status ?? null;
+    if (lastStatus.current && lastStatus.current !== 'ready' && status === 'ready') toast.success(t.nowReady);
+    lastStatus.current = status;
+  }, [recording?.status, t.nowReady]);
 
   // The class beside the video, for staff. A 404 (not this viewer's lesson) shows nothing.
   useEffect(() => {
@@ -160,11 +212,32 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
     }
   };
 
+  // A recording on its way shows where it is; one retired by retention or never made says so plainly.
+  const showsProgress = !failedToLoad && live !== null && live.stage !== 'removed';
   const message = failedToLoad
     ? t.error
     : recording && recording.status !== 'ready'
       ? t[recording.status]
       : null;
+
+  const retry = async () => {
+    if (!eventId || !recording) return;
+    const before = recording;
+    const current = progressFor(before.status, before.progress);
+    setRetrying(true);
+    // Back in line at once; the answer then says exactly where.
+    if (current) setRecording({ ...before, status: 'pending', progress: { ...current, stage: 'queued', error: null } });
+    try {
+      const entry = await retryRecording(eventId);
+      setRecording({ status: entry.status, url: null, progress: entry.progress, poster_url: entry.poster_url, duration_seconds: entry.duration_seconds });
+      if (entry.status === 'ready') setRecording(await getLessonRecording(eventId)); // needs its signed link
+    } catch (e) {
+      setRecording(before);
+      toast.error(e instanceof Error ? e.message : t.retryFailed);
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   const talkPanel = (layout: 'side' | 'stacked') => talk && (
     <TalkSidePanel
@@ -204,6 +277,17 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
               autoPlay
               className="!rounded-none"
             />
+          ) : showsProgress && live ? (
+            <div className="flex min-h-[18rem] w-full items-center overflow-y-auto sm:aspect-video sm:max-h-[70vh] sm:min-h-0">
+              <RecordingProgressPanel
+                progress={live}
+                locale={locale}
+                staff={seesParticipants}
+                canRetry={canRetry}
+                retrying={retrying}
+                onRetry={retry}
+              />
+            </div>
           ) : (
             <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 px-6 text-center text-sm text-white/75">
               {message ? (

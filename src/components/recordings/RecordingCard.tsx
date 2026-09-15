@@ -1,13 +1,18 @@
-import { useState } from 'react';
-import { AlertTriangle, Loader2, Play, User, Video, VideoOff } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { Check, Play, User, Video } from 'lucide-react';
 import type { RecordingLibraryItem } from '../../services/api/recordings';
 import { formatClock, splitLessonTitle, timeRange, type Locale } from '../../lib/recordings';
+import { badgeText, overallPercent, progressFor, stageTitle } from '../../lib/recordingProgress';
 import { cx } from '../calendar/calendarUtils';
+import { ProgressBar, RecordingCardStage, RecordingStageBadge } from './RecordingProgress';
 
 const TEXT = {
-  en: { pending: 'Processing', failed: 'Could not process', removed: 'No longer available', watch: 'Watch', substitution: (name: string) => `Substitution · regular teacher: ${name}` },
-  ru: { pending: 'Обрабатывается', failed: 'Не обработалась', removed: 'Больше недоступна', watch: 'Смотреть', substitution: (name: string) => `Замена · основной учитель: ${name}` },
+  en: { ready: 'Ready', watch: 'Watch', substitution: (name: string) => `Substitution · regular teacher: ${name}` },
+  ru: { ready: 'Готова', watch: 'Смотреть', substitution: (name: string) => `Замена · основной учитель: ${name}` },
 } as const;
+
+// How long a card that has just become watchable says so, before it looks like every other card.
+const JUST_READY_MS = 4_000;
 
 /** Stored media paths are relative to the API host; images need the host spelled out. */
 function mediaUrl(path: string): string {
@@ -27,6 +32,8 @@ interface Props {
 /**
  * One recording in the library: the preview the ingest chose (the most detailed frame, not
  * the webcam tile Drive shows), how long it runs, when it was, which group and who taught it.
+ * Until it is watchable the preview's place says where it is — in line, preparing and how far,
+ * retrying or failed — and it updates in place while the library is open.
  */
 export default function RecordingCard({ item, locale, onOpen, substitutionFor }: Props) {
   const t = TEXT[locale];
@@ -36,12 +43,28 @@ export default function RecordingCard({ item, locale, onOpen, substitutionFor }:
   const clock = formatClock(item.duration_seconds);
   const ready = item.status === 'ready';
   const poster = ready && item.poster_url && !posterBroken ? mediaUrl(item.poster_url) : null;
+  const progress = ready ? null : progressFor(item.status, item.progress);
+
+  // A card that turns watchable while in view says so for a moment.
+  const previous = useRef(item.status);
+  const [justReady, setJustReady] = useState(false);
+  useEffect(() => {
+    if (previous.current !== 'ready' && item.status === 'ready') {
+      setJustReady(true);
+      const timer = window.setTimeout(() => setJustReady(false), JUST_READY_MS);
+      previous.current = item.status;
+      return () => window.clearTimeout(timer);
+    }
+    previous.current = item.status;
+    return undefined;
+  }, [item.status]);
 
   return (
     <button
       type="button"
       onClick={() => onOpen(item)}
-      aria-label={[name, lesson, timeRange(item.start_datetime, item.end_datetime), clock].filter(Boolean).join(', ')}
+      aria-label={[name, lesson, timeRange(item.start_datetime, item.end_datetime), clock, progress && badgeText(progress, locale)]
+        .filter(Boolean).join(', ')}
       className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className="relative aspect-video w-full overflow-hidden bg-slate-900">
@@ -62,20 +85,11 @@ export default function RecordingCard({ item, locale, onOpen, substitutionFor }:
               )}
             />
           </>
+        ) : progress ? (
+          <RecordingCardStage progress={progress} locale={locale} name={name} />
         ) : (
-          <div
-            className={cx(
-              'flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-slate-700 to-slate-900 px-4 text-center',
-              item.status === 'pending' && 'animate-pulse',
-            )}
-          >
-            {item.status === 'pending' ? (
-              <Loader2 className="h-6 w-6 animate-spin text-white/60" aria-hidden />
-            ) : item.status === 'failed' || item.status === 'removed' ? (
-              <VideoOff className="h-6 w-6 text-white/45" aria-hidden />
-            ) : (
-              <Video className="h-6 w-6 text-white/45" aria-hidden />
-            )}
+          <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-slate-700 to-slate-900 px-4 text-center">
+            <Video className="h-6 w-6 text-white/45" aria-hidden />
             <span className="line-clamp-1 text-xs font-medium text-white/55">{name}</span>
           </div>
         )}
@@ -100,16 +114,21 @@ export default function RecordingCard({ item, locale, onOpen, substitutionFor }:
           </span>
         )}
 
-        {item.status !== 'ready' && (
-          <span
-            className={cx(
-              'absolute left-2 top-2 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-semibold',
-              item.status === 'pending' ? 'bg-amber-100 text-amber-900' : 'bg-rose-100 text-rose-900',
-            )}
-          >
-            {item.status !== 'pending' && <AlertTriangle className="h-3 w-3" aria-hidden />}
-            {t[item.status]}
+        {progress && <RecordingStageBadge progress={progress} locale={locale} className="absolute left-2 top-2" />}
+
+        {justReady && (
+          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-md bg-emerald-100 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-900 shadow-sm animate-in fade-in zoom-in-95">
+            <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
+            {t.ready}
           </span>
+        )}
+
+        {progress?.stage === 'processing' && (
+          <ProgressBar
+            percent={overallPercent(progress)}
+            label={stageTitle(progress, locale)}
+            className="absolute inset-x-0 bottom-0 h-1 rounded-none bg-black/30"
+          />
         )}
       </div>
 

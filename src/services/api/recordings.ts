@@ -1,4 +1,5 @@
 import { api } from './client';
+import type { MeetSync } from './meetAttendance';
 import type { RecordingStatus } from '../../types';
 
 /**
@@ -7,9 +8,45 @@ import type { RecordingStatus } from '../../types';
  * `missing` covers both "this lesson was never recorded" and "you may not see it" — the
  * endpoint returns 404 to anyone outside the group rather than 403, so that the existence
  * of a recording is not confirmed to someone who cannot watch it. The UI must therefore
- * treat "missing" as "show nothing", never as an error.
+ * treat "missing" as "show nothing", never as an error. `waiting` means no recording yet on
+ * purpose: the lesson is still on, or Google Meet is finishing the file.
  */
-export type LessonRecordingStatus = 'ready' | 'pending' | 'failed' | 'removed' | 'missing';
+export type LessonRecordingStatus = 'ready' | 'pending' | 'failed' | 'removed' | 'missing' | 'waiting';
+
+/** Where a recording is on its way to watchable (2026-09-15). `ready`, `failed` and `removed` are final. */
+export type RecordingStage =
+  | 'lesson_running' | 'waiting_for_google' | 'queued' | 'processing' | 'retrying' | 'ready' | 'failed' | 'removed';
+
+/** The step of preparing a recording under way — only while `processing`. */
+export type RecordingPhase = 'downloading' | 'packaging' | 'preview' | 'uploading';
+
+export interface RecordingProgress {
+  stage: RecordingStage;
+  phase: RecordingPhase | null;
+  /** 0–100, when the step's size is known. */
+  phase_percent: number | null;
+  /** 0–100 across every step, while processing. */
+  percent: number | null;
+  /** Left in the step under way — only from a rate the server measured, never a guess. */
+  eta_seconds: number | null;
+  /** 1-based place in the line (queued, retrying). */
+  position: number | null;
+  queue_length: number | null;
+  /** The worker holds the line: the server's disk is nearly full. */
+  held_for_disk: boolean;
+  attempts: number;
+  max_attempts: number;
+  /** Staff only: the last failure, first line. */
+  error: string | null;
+  lesson_ended_at: string | null;
+  /** Waiting on Google: when the lesson would be flagged as having no recording. */
+  missing_after: string | null;
+  /** When the LMS found the recording file. */
+  claimed_at: string | null;
+  /** When the worker last reported this progress. */
+  updated_at: string | null;
+  sync: MeetSync | null;
+}
 
 export interface LessonRecording {
   status: LessonRecordingStatus;
@@ -18,6 +55,8 @@ export interface LessonRecording {
   /** Signed preview image under the same token. Only when ready, and only if one was made. */
   poster_url?: string | null;
   duration_seconds?: number | null;
+  /** While not ready: stage, step, percent, place in line. Absent from an older server. */
+  progress?: RecordingProgress | null;
 }
 
 /**
@@ -57,6 +96,43 @@ export interface RecordingLibraryItem {
   /** Signed for this viewer; null while processing, when removed, or if no preview exists. */
   poster_url: string | null;
   ingested_at: string | null;
+  /** While not ready: stage, step, percent, place in line. Absent from an older server. */
+  progress?: RecordingProgress | null;
+}
+
+/** One lesson's news for a card or the player: what `GET /recordings/status` returns per lesson. */
+export interface RecordingStatusEntry {
+  status: LessonRecordingStatus;
+  progress: RecordingProgress | null;
+  /** Signed for this viewer, once ready. */
+  poster_url: string | null;
+  duration_seconds: number | null;
+}
+
+/** The most lessons one status request may ask about. */
+export const RECORDING_STATUS_BATCH = 48;
+
+/**
+ * The live status of several lessons at once — the library asks this for every card still on its
+ * way in one request, never one request per card. Lessons the viewer may not see are left out.
+ * **Never cached**: a ready entry's preview link carries a token minted for this viewer.
+ */
+export async function getRecordingStatuses(eventIds: number[]): Promise<Record<string, RecordingStatusEntry>> {
+  const ids = eventIds.slice(0, RECORDING_STATUS_BATCH);
+  if (!ids.length) return {};
+  const response = await api.get('/recordings/status', { params: { event_ids: ids.join(',') }, cache: false } as never);
+  return (response.data?.items ?? {}) as Record<string, RecordingStatusEntry>;
+}
+
+/** Try a failed recording again (admins, head teachers, head curators). Returns its new status. */
+export async function retryRecording(eventId: number): Promise<RecordingStatusEntry> {
+  try {
+    const response = await api.post(`/recordings/${eventId}/retry`);
+    return response.data as RecordingStatusEntry;
+  } catch (error: unknown) {
+    const detail = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+    throw new Error(typeof detail === 'string' ? detail : 'Could not try the recording again');
+  }
 }
 
 export interface RecordingFacets {
