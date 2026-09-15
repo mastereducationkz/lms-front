@@ -83,6 +83,7 @@ import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { UsersTable } from '../components/users/UsersTable';
 import { BulkActionsBar } from '../components/users/BulkActionsBar';
 import { AddToGroupDialog } from '../components/users/AddToGroupDialog';
+import { teacherGroupTail } from '../lib/groupNames';
 
 interface UserFormData {
   name: string;
@@ -2285,9 +2286,11 @@ function GroupForm({
 }: GroupFormProps) {
   const [studentSearchQuery, setStudentSearchQuery] = useState('');
 
-  // Функция для генерации названия группы
-  const generateGroupName = (teacherName: string, description?: string) => {
-    const firstName = teacherName.split(" ")[0]; // Берем только первое имя
+  // Функция для генерации названия группы. Curators keep their first word; a teacher's name is
+  // «Фамилия Имя Отчество», so their part comes from teacherGroupTail (first name, plus the
+  // surname initial when two teachers share it).
+  const generateGroupName = (personName: string, description?: string, tail?: string) => {
+    const firstName = tail || personName.split(" ")[0];
     const suffix = description?.trim() || 'Group';
     return `${suffix} - ${firstName}`;
   };
@@ -2307,7 +2310,8 @@ function GroupForm({
       const selectedTeacher = teachers.find((t) => Number(t.id) === formData.teacher_id);
       if (selectedTeacher) {
         const teacherName = selectedTeacher.name || selectedTeacher.full_name;
-        const newName = generateGroupName(teacherName, formData.description);
+        const tail = teacherGroupTail(teacherName, teachers.map((t) => t.name || t.full_name || ''));
+        const newName = generateGroupName(teacherName, formData.description, tail);
         setFormData((prev: GroupFormData) => ({ ...prev, name: newName }));
       }
     }
