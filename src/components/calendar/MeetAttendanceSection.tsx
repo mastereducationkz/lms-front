@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Loader2, Maximize2, MessagesSquare, UsersRound } from 'lucide-react';
 import MeetAttendanceDialog, { type MeetDialogTab } from '../meetAttendance/MeetAttendanceDialog';
 import { MeetRecordView, recordStateText, useMeetRecord } from '../meetAttendance/MeetRecordView';
+import { MeetWaitingProgress } from '../meetAttendance/MeetSyncStatus';
 import TalkPanel, { useLessonTalk } from '../meetAttendance/TalkPanel';
 import type { Event } from '../../types';
 
@@ -65,11 +66,10 @@ export default function MeetAttendanceSection({ event, role }: Props) {
           </button>
         )}
       </div>
-      {stateText && (
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
-          {record.state === 'waiting' && <Loader2 className="h-4 w-4 flex-none animate-spin" aria-hidden />}
-          {stateText}
-        </p>
+      {record.state === 'waiting' && record.waiting ? (
+        <MeetWaitingProgress waiting={record.waiting} sync={record.sync} />
+      ) : stateText && (
+        <p className="text-sm text-muted-foreground">{stateText}</p>
       )}
       {record.state === 'ready' && (
         <MeetRecordView record={record} busyId={busyId} onConfirm={confirm} onConfirmMany={confirmMany} reviewing={reviewing} compact />

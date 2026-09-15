@@ -38,6 +38,19 @@ export function useMeetRecord(eventId: number | null, enabled = true) {
 
   const reload = useCallback(() => setGeneration((g) => g + 1), []);
 
+  // A lesson waiting on Google Meet fills in by itself: look again every minute while the tab is in view.
+  const waiting = record?.state === 'waiting';
+  useEffect(() => {
+    if (eventId == null || !enabled || !waiting) return;
+    const id = window.setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+      getMeetRecord(eventId)
+        .then((next) => { if (next && next.event_id === eventId) setRecord(next); })
+        .catch(() => { /* the next minute tries again */ });
+    }, 60_000);
+    return () => window.clearInterval(id);
+  }, [eventId, enabled, waiting]);
+
   /** Confirm several accounts one after another (never in parallel: each is a write). */
   const confirmMany = useCallback(async (items: { participantId: number; identity: MeetIdentity }[]) => {
     if (items.length === 0) return;
@@ -197,7 +210,7 @@ export function MeetRecordView({ record, busyId, onConfirm, onConfirmMany, compa
 export function recordStateText(record: MeetRecord | null): string | null {
   if (!record) return null;
   switch (record.state) {
-    case 'waiting': return 'Loading who joined…';
+    case 'waiting': return 'Waiting for Google Meet to hand over the lesson’s call.';
     case 'none': return 'No one joined this lesson’s Meet room, or it wasn’t held in an LMS Meet room.';
     default: return null;
   }

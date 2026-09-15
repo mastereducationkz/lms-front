@@ -29,7 +29,15 @@ const TEXT = {
     explained: (n: number) => `${n} с объяснением`,
     reviewed: 'Проверено', reason: 'Причина',
     noMeet: 'Подключения к Meet для этого урока не записаны — ниже список учеников и их отметки.',
-    waiting: 'Кто подключался — ещё загружается из Meet. Пока — список учеников и отметки.',
+    waiting: 'Ждём данные из Google Meet. Пока — список учеников и отметки.',
+    untilThen: 'Пока — список учеников и отметки.',
+    stage: {
+      lesson_running: 'Урок ещё идёт — кто подключался, появится после его окончания.',
+      call_open: 'В Google Meet звонок ещё открыт — кто подключался, появится, когда все выйдут.',
+      collecting: 'Google Meet передал звонок — LMS сохраняет, кто подключался.',
+      awaiting_google: 'Ждём, пока Google Meet передаст звонок урока.',
+      settling: 'Звонок урока сохранён — осталось сравнить его с отметками.',
+    },
     heldBack: 'Некоторые аккаунты в комнате ещё не подтверждены, поэтому «не заходил» может быть неточным.',
     partial: 'Часть данных из Google ещё не пришла.',
     student: 'Ученик', mark: 'Отметка', room: 'В комнате', notes: 'Замечания',
@@ -49,7 +57,15 @@ const TEXT = {
     explained: (n: number) => `${n} explained`,
     reviewed: 'Reviewed', reason: 'Reason',
     noMeet: 'No Meet joins were recorded for this lesson — below is the class with its marks.',
-    waiting: 'Who joined is still loading from Meet. Until then, the class and its marks.',
+    waiting: 'Waiting for Google Meet. Until then, the class and its marks.',
+    untilThen: 'Until then, the class and its marks.',
+    stage: {
+      lesson_running: 'The lesson is still on — who joined appears once it ends.',
+      call_open: 'Google Meet still shows the call as open — who joined appears once everyone has left.',
+      collecting: 'Google Meet has handed over the call — the LMS is saving who joined.',
+      awaiting_google: 'Waiting for Google Meet to hand over the lesson’s call.',
+      settling: 'The lesson’s call is saved — comparing it with the marks next.',
+    },
     heldBack: 'Some accounts in the room are not confirmed yet, so "not in the room" may be wrong.',
     partial: 'Part of this lesson has not come through from Google yet.',
     student: 'Student', mark: 'Mark', room: 'In the room', notes: 'Notes',
@@ -150,7 +166,8 @@ export function ParticipantsPanel({ view, locale = 'en', defaultOpen = false, cl
       ].filter(Boolean).join(' · ')
     : t.classSize(students.length);
   const note = !ready
-    ? (view.state === 'waiting' || view.state === 'not_started' ? t.waiting : t.noMeet)
+    ? (view.waiting ? `${t.stage[view.waiting.stage]} ${t.untilThen}`
+      : view.state === 'waiting' || view.state === 'not_started' ? t.waiting : t.noMeet)
     : view.held_back ? t.heldBack : view.partial ? t.partial : null;
 
   if (students.length === 0 && !view.teacher && view.unknown.length === 0) return null;

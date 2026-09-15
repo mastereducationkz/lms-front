@@ -21,6 +21,7 @@ import {
 import { SearchableSelect } from '../components/ui/searchable-select';
 import { FlagChip, lessonReviewing } from '../components/meetAttendance/FlagReview';
 import MeetAttendanceDialog, { type MeetDialogTab } from '../components/meetAttendance/MeetAttendanceDialog';
+import { MeetSyncBanner, MeetWaitingSummary, useNow } from '../components/meetAttendance/MeetSyncStatus';
 import { TeacherTallyTable } from '../components/meetAttendance/TeacherTallyTable';
 import { GroupTalkView } from '../components/meetAttendance/GroupTalkView';
 import { TeacherTalkView } from '../components/meetAttendance/TeacherTalkView';
@@ -33,6 +34,7 @@ import {
   type MeetLessonSummary,
   type MeetRecord,
   type MeetReviewOptions,
+  type MeetSync,
 } from '../services/api/meetAttendance';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -107,15 +109,39 @@ export default function MeetAttendanceReview() {
   const [showReviewed, setShowReviewed] = useState(false);
   const [options, setOptions] = useState<MeetReviewOptions | undefined>(undefined);
 
-  // `quiet` refreshes in place (after confirming accounts) instead of blanking the list.
+  // What the check with Google Meet is doing, when the list was read, and whether a read is under way.
+  const [sync, setSync] = useState<MeetSync | null>(null);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const now = useNow();
+
+  // `quiet` refreshes in place (after confirming accounts, and while lessons wait on Google Meet) instead of blanking the list.
   const load = useCallback((quiet = false) => {
     setError(false);
     if (!quiet) setItems(null);
+    setRefreshing(true);
     listMeetRecords({ date_from: new Date(Date.now() - period * DAY).toISOString() })
-      .then((r) => { setItems(r.items); setOptions(r.review_options); setTalkEnabled(Boolean(r.talk_enabled)); })
-      .catch(() => { if (!quiet) setError(true); });
+      .then((r) => {
+        setItems(r.items); setOptions(r.review_options); setTalkEnabled(Boolean(r.talk_enabled));
+        setSync(r.sync ?? null); setUpdatedAt(Date.now());
+      })
+      .catch(() => { if (!quiet) setError(true); })
+      .finally(() => setRefreshing(false));
   }, [period]);
   useEffect(() => load(), [load]);
+
+  // Lessons waiting on Google Meet fill in by themselves: the list is read again every minute while
+  // the tab is in view, and straight away when it comes back into view.
+  const waitingCount = useMemo(() => (items ?? []).filter(stillLoading).length, [items]);
+  const watching = waitingCount > 0 || Boolean(sync?.running);
+  useEffect(() => {
+    if (!watching) return;
+    const visible = () => document.visibilityState === 'visible';
+    const id = window.setInterval(() => { if (visible()) load(true); }, 60_000);
+    const onVisible = () => { if (visible()) load(true); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { window.clearInterval(id); document.removeEventListener('visibilitychange', onVisible); };
+  }, [watching, load]);
 
   // A review saved from the list returns the lesson's record: its row takes the new flags.
   const applyRecord = useCallback((record: MeetRecord) => {
@@ -386,6 +412,17 @@ export default function MeetAttendanceReview() {
         </div>
       )}
 
+      {items !== null && (
+        <MeetSyncBanner
+          sync={sync}
+          waiting={waitingCount}
+          updatedAt={updatedAt}
+          refreshing={refreshing}
+          onRefresh={() => load(true)}
+          onShowWaiting={show === 'attention' || issue ? () => { setIssue(null); setShow('all'); } : undefined}
+        />
+      )}
+
       {audience !== 'teacher' && items !== null && (
         <TeacherTallyTable
           rows={tally}
@@ -455,10 +492,7 @@ export default function MeetAttendanceReview() {
                       </td>
                       {stillLoading(item) ? (
                         <td colSpan={3} className="px-4 py-3">
-                          <div className="flex items-center gap-2 text-[13px] text-muted-foreground"
-                            title="Google hasn’t handed over this lesson’s call yet; it shows here on its own once it has">
-                            <Loader2 className="h-3.5 w-3.5 flex-none animate-spin" aria-hidden /> Loading…
-                          </div>
+                          <MeetWaitingSummary waiting={item.waiting} now={now} />
                         </td>
                       ) : (<>
                         <td className="px-4 py-3">

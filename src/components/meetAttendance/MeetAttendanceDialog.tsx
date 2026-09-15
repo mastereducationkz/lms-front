@@ -6,6 +6,7 @@ import { clock } from '../../lib/meetAttendance';
 import { APP_TIMEZONE } from '../../lib/datetime';
 import { useAuth } from '../../contexts/AuthContext';
 import { MeetRecordView, recordStateText, useMeetRecord } from './MeetRecordView';
+import { MeetWaitingProgress } from './MeetSyncStatus';
 import TalkPanel, { useLessonTalk } from './TalkPanel';
 
 export type MeetDialogTab = 'attendance' | 'talk';
@@ -70,11 +71,10 @@ export default function MeetAttendanceDialog({ eventId, open, onOpenChange, init
               {!loading && !failed && record === null && eventId != null && (
                 <p className="text-sm text-muted-foreground">This lesson&apos;s record isn&apos;t available to you.</p>
               )}
-              {!loading && stateText && (
-                <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                  {record?.state === 'waiting' && <Loader2 className="h-4 w-4 flex-none animate-spin" aria-hidden />}
-                  {stateText}
-                </p>
+              {!loading && record?.state === 'waiting' && record.waiting ? (
+                <MeetWaitingProgress waiting={record.waiting} sync={record.sync} />
+              ) : !loading && stateText && (
+                <p className="text-sm text-muted-foreground">{stateText}</p>
               )}
               {record?.state === 'ready' && (
                 <MeetRecordView record={record} busyId={busyId} onConfirm={confirm} onConfirmMany={confirmMany} reviewing={reviewing} />
