@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ChevronLeft, ChevronRight, Plus, Filter, Users, Video, VideoOff, Link2, Play, Loader2,
+  ChevronLeft, ChevronRight, Plus, Filter, Users, Video, Link2, Link2Off, Play, Loader2,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -418,11 +418,11 @@ export default function Calendar() {
         {showMeetFilter && (
           <>
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <Video className="h-3 w-3 text-emerald-600 dark:text-emerald-400" aria-hidden />
+              <Link2 className="h-3 w-3 text-emerald-600 dark:text-emerald-400" aria-hidden />
               Meet link
             </span>
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <VideoOff className="h-3 w-3 text-muted-foreground/70" aria-hidden />
+              <Link2Off className="h-3 w-3 text-muted-foreground/70" aria-hidden />
               No Meet link
             </span>
           </>
