@@ -84,7 +84,14 @@ export function ExcusePopover({
           onChange={(e) => setValue(e.target.value)}
           rows={3}
           className={cn(
-            'min-h-0 resize-none px-2 py-1 text-xs',
+            // `md:text-sm` on the base Textarea only loses to an unprefixed
+            // `text-xs` when there's an explicit `md:` override too — twMerge
+            // treats the two breakpoints as separate groups. And the base's
+            // auto-resize effect sets an inline `height` on mount from
+            // `scrollHeight`, which can come back shorter than three lines
+            // once `rows={3}`'s own sizing is overridden — an explicit
+            // min-height is a floor inline `height` can't shrink below.
+            'min-h-[4.5rem] resize-none px-2 py-1 text-xs md:text-xs',
             touched && !valid ? 'border-rose-500' : 'border-input',
           )}
           placeholder={en ? 'e.g. warned in advance, ill' : 'например: предупредил заранее, болел'}

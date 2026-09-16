@@ -24,7 +24,7 @@ import { Label } from '../components/ui/label';
 import { parseAsUTC } from '../lib/datetime';
 import { formatGroupCloseDate } from '../lib/groupList';
 import { isAttendanceLockedLesson } from '../lib/attendance';
-import { canBeExcused, excusePayload } from '../lib/excusedAbsence';
+import { canBeExcused, excusePayload, isAbsenceStatus } from '../lib/excusedAbsence';
 import { ExcusePopover } from '../components/attendance/ExcusePopover';
 import { listMeetRecords, type MeetLessonFlag } from '../services/api/meetAttendance';
 import { flagText, flagTextRu, mismatchIndex, reasonText } from '../lib/meetAttendance';
@@ -270,9 +270,13 @@ const AttendanceToggle = ({
     else onChange('attended');
   };
 
+  // Normalized once so the excuse affordance can key off exactly what the cell
+  // displays (registered/absent both paint as "Не был"), not the raw stored status.
+  const normalizedStatus = (initialStatus === 'absent' || initialStatus === 'registered' || initialStatus === 'missed') ? 'missed' : initialStatus;
+
   const getStatusConfig = () => {
     if (initialStatus === 'cancelled') return { label: en ? 'Cancelled' : 'Отменён', color: 'bg-slate-400 text-white', title: en ? 'Lesson cancelled' : 'Урок отменён' };
-    const s = (initialStatus === 'absent' || initialStatus === 'registered' || initialStatus === 'missed') ? 'missed' : initialStatus;
+    const s = normalizedStatus;
 
     // A lesson that hasn't happened yet shouldn't read as "Не был" — the backend
     // just defaults an unmarked lesson to "missed". Show a neutral "—" instead.
@@ -299,7 +303,7 @@ const AttendanceToggle = ({
   // Only offered on an actual "Не был" (never future/cancelled/frozen/blocked — those
   // never reach this component with initialStatus indicating a real absence while
   // interactive), and only for a caller that wired up onExcuseChange in the first place.
-  const showExcuseAffordance = Boolean(onExcuseChange) && !nonInteractive && canBeExcused(initialStatus, isFuture);
+  const showExcuseAffordance = Boolean(onExcuseChange) && !nonInteractive && canBeExcused(normalizedStatus, isFuture);
 
   return (
     <div
@@ -963,7 +967,14 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                   
                   const lesson = s.lessons[lessonNumber];
                   if (!lesson) return s;
-                  
+
+                  // A status that no longer means "absent" can't carry an excuse — the
+                  // server refuses (422, whole batch) an `excused: true` sent alongside
+                  // a non-absent status. Clearing it here mirrors what the server already
+                  // does when a persisted excuse's status changes, so a cell excused and
+                  // then cycled to "Был" within the same session doesn't poison the save.
+                  const clearsExcuse = !isAbsenceStatus(status);
+
                   return {
                       ...s,
                       lessons: {
@@ -974,7 +985,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                               // Editing an unmarked lesson makes it marked, so the
                               // "Не отмечено" state clears immediately and it re-enters
                               // the % denominator.
-                              marked: true
+                              marked: true,
+                              ...(clearsExcuse ? { excused: false, excuse_note: null } : {})
                           }
                       }
                   };
@@ -993,6 +1005,10 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       if (!canMarkAttendance) return;
       const guarded = data?.students.find(s => s.student_id === studentId)?.lessons[lessonNumber];
       if (guarded?.frozen || guarded?.blocked) return;
+      // No lesson at this key for this student — nothing will change below, so
+      // don't mark the row as touched (a silent no-op shouldn't make Save think
+      // there's something to save).
+      if (!guarded) return;
       setData(prev => {
           if (!prev) return null;
           return {
@@ -1185,7 +1201,11 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
             // A validation failure (e.g. an excuse without a reason) comes back as a
             // Russian 422 detail from the backend — show that message verbatim rather
             // than replacing it with a generic one.
-            attendanceErrorDetail = (attendanceResult.reason as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+            // FastAPI's request-validation 422 sends `detail` as an array of error
+            // objects rather than a string — only show it when it's actually text,
+            // otherwise fall back to the generic message below.
+            const rawDetail = (attendanceResult.reason as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
+            attendanceErrorDetail = typeof rawDetail === 'string' ? rawDetail : undefined;
             console.error('Failed to save attendance', attendanceResult.reason);
         }
 

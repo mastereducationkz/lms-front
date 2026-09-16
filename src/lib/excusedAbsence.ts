@@ -9,11 +9,22 @@
 /** UI-статусы, означающие пропуск. `absent` приходит от старых ответов, `missed` — от новых. */
 const ABSENT_UI_STATUSES = new Set(['missed', 'absent']);
 
+/**
+ * Значит ли этот (уже нормализованный) статус пропуск урока — без учёта того,
+ * будущий урок или нет. Отдельно от `canBeExcused`, потому что тот отвечает
+ * на вопрос «показывать ли значок сейчас», а вызывающему коду (сетке) иногда
+ * нужен именно факт «это статус пропуска», например когда меняется статус
+ * посещаемости и надо решить, снимать ли уважительность.
+ */
+export function isAbsenceStatus(status: string): boolean {
+  return ABSENT_UI_STATUSES.has(status);
+}
+
 export function canBeExcused(status: string, isFuture: boolean): boolean {
   // Урок, который ещё не прошёл, приезжает как «missed» просто потому, что отметки нет.
   // Оправдывать там нечего, и значок на такой ячейке предлагал бы записать небывшее.
   if (isFuture) return false;
-  return ABSENT_UI_STATUSES.has(status);
+  return isAbsenceStatus(status);
 }
 
 export function isValidExcuseNote(note: string | null | undefined): boolean {
