@@ -5,6 +5,7 @@ import {
   normalizeScheduleTime,
   parseScheduleShorthand,
   scheduleSlotsFromConfig,
+  type ScheduleConfig,
 } from './scheduleShorthand';
 
 // Ported from crm-master frontend/tests/scheduleShorthand.test.mjs (2026-09-16).
@@ -86,88 +87,86 @@ describe('normalizeScheduleTime', () => {
 
 describe('applyShorthand', () => {
   it('replaces the selected day set instead of merging into it, so retyping removes a day', () => {
-    // Ruling I: the old parser fully replaced the day set on every keystroke; a bare-time
-    // merge would make it impossible to drop a day by leaving it out of the new line.
-    const current = { 0: d('18:00', 60), 5: d('19:00', 90) };
-    const { config, problems } = applyShorthand('сб 19:00', current);
+    // Ruling I: retyping the line fully replaces the day set; a bare-time merge would make it
+    // impossible to drop a day by leaving it out of the new line.
+    const base = { 0: d('18:00', 60), 5: d('19:00', 90) };
+    const { config, problems } = applyShorthand('сб 19:00', base, base);
     expect(config).toEqual({ 5: d('19:00', 90) }); // Monday gone, Saturday keeps its 90 min
     expect(problems).toEqual([]);
   });
 
-  it('leaves the current config untouched when the line is empty or parses to nothing', () => {
-    const current = { 0: d('18:00', 60), 5: d('19:00', 90) };
-    expect(applyShorthand('', current).config).toBe(current);
-    expect(applyShorthand('хз', current).config).toBe(current);
+  it('falls back to `current` — not `base` — when the line is empty or parses to nothing', () => {
+    // Review finding (Ruling L follow-up, "Important"): `applyShorthand` took a single
+    // `current` argument that doubled as both the length source AND the empty-parse fallback.
+    // Once the component started passing the stable base as that argument (Ruling L), an empty
+    // or unparseable line snapped the schedule back to the ORIGINALLY LOADED base, discarding
+    // whatever a previous valid parse had already applied. `base` and `current` are now two
+    // separate arguments: lengths always come from `base`, but the fallback is `current` — the
+    // schedule as currently displayed — by reference.
+    const base = { 0: d('18:00', 60), 5: d('19:00', 90) };
+    const current = applyShorthand('сб 19:00', base, base).config; // { 5: d('19:00', 90) }
+    expect(applyShorthand('', base, current).config).toBe(current); // not `base`
+    const garbage = applyShorthand('хз', base, current);
+    expect(garbage.config).toBe(current);
+    expect(garbage.problems.some((p) => p.includes('хз'))).toBe(true);
   });
 });
 
 describe('applyShorthand against a fixed base — Ruling L regression', () => {
-  // The saved schedule: Mon/Fri 18:00×60, Sat/Sun 19:00×90. Every call below parses against
-  // this SAME fixed snapshot — never against a previous call's result — because that is what
-  // the component now does (the base is refreshed only by row edits, never by a shorthand
-  // parse). Before the fix, the component fed each keystroke's own output back in as the next
-  // keystroke's `current`, so a half-typed line dropped Sat/Sun out of it and they came back
-  // at 60 minutes instead of their real 90.
-  const base = { 0: d('18:00', 60), 4: d('18:00', 60), 5: d('19:00', 90), 6: d('19:00', 90) };
-  const fullLine = 'пн пт 18:00-19:00 сб вс 19:00-20:30';
+  // Ported from crm-master frontend/tests/scheduleShorthand.test.mjs's
+  // `nextConfigFromShorthand` regression suite (2026-09-16/17) — same function shape, same
+  // scenarios. The saved schedule: Mon/Fri 18:00×60, Sat/Sun 19:00×90.
+  const saved: ScheduleConfig = { 0: d('18:00', 60), 4: d('18:00', 60), 5: d('19:00', 90), 6: d('19:00', 90) };
+  const FULL = 'пн пт 18:00-19:00 сб вс 19:00-20:30';
 
-  it('keeps Sat/Sun correct through every prefix of the full line typed forward', () => {
-    const stem = 'пн пт 18:00-19:00 сб вс ';
-    // «пн» / «пн пт» alone complete nothing yet (Ruling I: an unparseable/empty-so-far line
-    // leaves the current schedule untouched) — the base, Sat/Sun included, is shown as-is.
-    for (const prefix of ['пн', 'пн пт']) {
-      expect(applyShorthand(prefix, base).config).toEqual(base);
-    }
-    // Once Mon/Fri's range completes, the parse is non-empty and REPLACES the day set (Ruling
-    // I) — Sat/Sun aren't mentioned yet, so they correctly drop out of the display for now.
-    for (const prefix of ['пн пт 18:00-19:00', 'пн пт 18:00-19:00 сб', stem.trim()]) {
-      const { config } = applyShorthand(prefix, base);
-      expect(config[5]).toBeUndefined();
-      expect(config[6]).toBeUndefined();
-    }
-    // The moment «19:00» is typed for Sat/Sun, before any dash follows, it's a bare time and
-    // must inherit the base's 90 — this is the exact moment the pre-fix bug corrupted, because
-    // the live, already-replaced scheduleConfig no longer had Sat/Sun's 90 stored by then.
-    expect(applyShorthand(`${stem}19:00`, base).config[5]).toEqual(d('19:00', 90));
-    expect(applyShorthand(`${stem}19:00`, base).config[6]).toEqual(d('19:00', 90));
-    // «-20» (no minutes yet) is a genuinely different, complete hour-only range — 19:00 to
-    // 20:00 is 60 minutes for real, not a bug; the parser has always accepted hour-only ranges
-    // (see the «18-19» test above).
-    expect(applyShorthand(`${stem}19:00-20`, base).config[5]).toEqual(d('19:00', 60));
-    // Finishing the range restores the intended 90-minute lesson.
-    expect(applyShorthand(fullLine, base).config).toEqual({
+  /** What the component does per keystroke: the base stays put, the config follows the text. */
+  const typeSequence = (texts: string[], base: ScheduleConfig, start: ScheduleConfig): ScheduleConfig => {
+    let config = start;
+    for (const text of texts) config = applyShorthand(text, base, config).config;
+    return config;
+  };
+
+  it('typing the schedule key by key ends with Sat/Sun at 90', () => {
+    const prefixes = Array.from({ length: FULL.length }, (_, index) => FULL.slice(0, index + 1));
+    expect(typeSequence(prefixes, saved, saved)).toEqual(saved);
+  });
+
+  it('backspacing the range off Saturday/Sunday keeps their saved 90', () => {
+    const target = 'пн пт 18:00-19:00 сб вс 19:00';
+    const backspaces: string[] = [];
+    for (let length = FULL.length - 1; length >= target.length; length -= 1) backspaces.push(FULL.slice(0, length));
+    expect(backspaces[backspaces.length - 1]).toBe(target);
+    expect(typeSequence(backspaces, saved, saved)).toEqual(saved);
+  });
+
+  it('a bare time typed from scratch keeps the saved length of that day', () => {
+    const text = 'пн пт 18:00-19:00 сб вс 18:00';
+    const prefixes = Array.from({ length: text.length }, (_, index) => text.slice(0, index + 1));
+    expect(typeSequence(prefixes, saved, {})).toEqual({
       0: d('18:00', 60),
       4: d('18:00', 60),
-      5: d('19:00', 90),
-      6: d('19:00', 90),
+      5: d('18:00', 90),
+      6: d('18:00', 90),
     });
   });
 
-  it('restores Sat/Sun to their base length once the range is backspaced down to a bare time', () => {
-    // «…сб вс 19:00-20:30» -> «…19:00-20:3» -> «…19:00-20» -> «…19:00», one keystroke at a time.
-    const stem = 'пн пт 18:00-19:00 сб вс ';
-    const afterFullRange = applyShorthand(`${stem}19:00-20:30`, base).config;
-    const afterTrimmedDigit = applyShorthand(`${stem}19:00-20:3`, base).config;
-    const afterBareTime = applyShorthand(`${stem}19:00`, base).config;
-
-    expect(afterFullRange[5]).toEqual(d('19:00', 90));
-    expect(afterFullRange[6]).toEqual(d('19:00', 90));
-    // «…20:3» doesn't parse as a range or a time — Sat/Sun drop out of this step's config
-    // entirely (reported, not silently kept) rather than freezing at a wrong duration.
-    expect(afterTrimmedDigit[5]).toBeUndefined();
-    expect(afterTrimmedDigit[6]).toBeUndefined();
-    // The fully-backspaced, bare-time state inherits the BASE's 90 — not 60, and not whatever
-    // the «…20:3» step happened to hold (it held nothing for these days at all).
-    expect(afterBareTime[5]).toEqual(d('19:00', 90));
-    expect(afterBareTime[6]).toEqual(d('19:00', 90));
+  it('chaining against the live config instead of the base is the old bug, reproduced on purpose', () => {
+    // This is what the component did before Ruling L: feed each keystroke's own output back in
+    // as the NEXT keystroke's base (`base === current` at every step). It loses Sat/Sun's
+    // length — proving why `base` must stay fixed and separate from `current`.
+    let live = saved;
+    const target = 'пн пт 18:00-19:00 сб вс 19:00';
+    for (let length = FULL.length - 1; length >= target.length; length -= 1) {
+      live = applyShorthand(FULL.slice(0, length), live, live).config;
+    }
+    expect(live[5].duration).toBe(60); // wrong — should be 90 — this is the bug, not the fix
   });
 
-  it('keeps Sat/Sun at their base length when a fresh line gives them a bare time', () => {
-    // The other reported regression: typing the whole line in one go, with Sat/Sun getting a
-    // bare time, must inherit 90 from the base rather than default to 60.
-    const { config } = applyShorthand('пн пт 18:00-19:00 сб вс 18:00', base);
-    expect(config[5]).toEqual(d('18:00', 90));
-    expect(config[6]).toEqual(d('18:00', 90));
+  it('text that yields no day leaves the config as it is, but still reports why', () => {
+    const { config, problems } = applyShorthand('хз', saved, saved);
+    expect(config).toBe(saved);
+    expect(problems.some((problem) => problem.includes('хз'))).toBe(true);
+    expect(applyShorthand('', saved, saved)).toEqual({ config: saved, problems: [] });
   });
 });
 

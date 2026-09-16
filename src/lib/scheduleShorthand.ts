@@ -201,19 +201,25 @@ export const scheduleSlotsFromConfig = (config: ScheduleConfig): ScheduleSlot[] 
     .sort((left, right) => left.day_of_week - right.day_of_week);
 
 /**
- * The quick-entry box's effect on the day set: retyping the line REPLACES the selected days
- * with what it parses (so removing a day is as simple as leaving it out of the new line), not
- * a merge. `current` is only passed through to `parseScheduleShorthand` so a bare time keeps
- * that day's existing length. An empty or unparseable line (`parsed` has no days) leaves
- * `current` untouched — the field is not a way to blank the whole schedule.
+ * One keystroke in the quick-entry field: the text read against a fixed BASE, not against the
+ * config the previous keystroke produced.
+ *
+ * The base is the schedule as the dialog opened it, refreshed only by edits in the day rows
+ * (never by a shorthand parse). Parsing against the live config lost lengths while typing:
+ * «сб вс 19:00-20:3» has no time for Sat/Sun, so they vanished; «19:00-20» brought them back at
+ * 60; «19:00» then kept that 60, and the saved 90 was gone for good.
+ *
+ * `base` is only the length source — it never appears in the result. Retyping the line REPLACES
+ * the selected day set with what it parses against `base` (so leaving a day out removes it,
+ * matching the CRM editor). A text that yields no day at all leaves `current` untouched, by
+ * reference — the field is not a way to blank out or revert whatever schedule is already
+ * showing — but its problems are still reported.
  */
 export const applyShorthand = (
   text: string,
+  base: ScheduleConfig,
   current: ScheduleConfig,
 ): { config: ScheduleConfig; problems: string[] } => {
-  const { config: parsed, problems } = parseScheduleShorthand(text, current);
-  if (Object.keys(parsed).length === 0) {
-    return { config: current, problems };
-  }
-  return { config: parsed, problems };
+  const { config, problems } = parseScheduleShorthand(text, base);
+  return { config: Object.keys(config).length > 0 ? config : current, problems };
 };

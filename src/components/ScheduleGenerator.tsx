@@ -141,11 +141,13 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
 
     const handleShorthandChange = (text: string) => {
         setShorthandText(text);
-        // Retyping the line REPLACES the selected days with what it parses (Ruling I), but a
-        // bare time's inherited duration always comes from the stable base (Ruling L), never
-        // from the config a previous keystroke's parse produced. An empty/unparseable line
-        // leaves the current schedule untouched.
-        const { config, problems } = applyShorthand(text, baseConfigRef.current);
+        // Two separate roles, per Ruling L / Ruling I: `baseConfigRef.current` supplies the
+        // length a bare time inherits (never the config a previous keystroke's parse produced),
+        // and a non-empty parse REPLACES the selected day set. When nothing parses, the result
+        // falls back to `scheduleConfig` — the live, currently-displayed schedule — not the
+        // base, so clearing the box or typing garbage after a valid parse never discards what
+        // was just typed.
+        const { config, problems } = applyShorthand(text, baseConfigRef.current, scheduleConfig);
         setShorthandProblems(problems);
         setScheduleConfig(config);
     };
