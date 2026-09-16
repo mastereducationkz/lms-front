@@ -191,6 +191,24 @@ export const configFromScheduleSlots = (
   return config;
 };
 
+// A time the generate API accepts once `normalizeScheduleTime` has padded the hour: «9:05» is
+// fine, «24:00», «18:60», «1800» or an empty box are not.
+const VALID_TIME_RE = /^(\d{1,2}):([0-5]\d)$/;
+
+/**
+ * The weekdays (0 = Monday, ascending) whose typed time is not a real HH:MM. Checked before a
+ * save so the dialog can point at the day instead of the API answering 422 — or, worse,
+ * `normalizeScheduleTime` quietly clamping «25:00» to «23:00».
+ */
+export const invalidScheduleTimes = (config: ScheduleConfig): number[] =>
+  Object.entries(config)
+    .filter(([, value]) => {
+      const match = VALID_TIME_RE.exec((value?.time ?? '').trim());
+      return !match || Number(match[1]) > 23;
+    })
+    .map(([day]) => Number(day))
+    .sort((left, right) => left - right);
+
 export const scheduleSlotsFromConfig = (config: ScheduleConfig): ScheduleSlot[] =>
   Object.entries(config)
     .map(([day, value]) => ({

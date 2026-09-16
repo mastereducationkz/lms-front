@@ -15,6 +15,7 @@ import {
     DEFAULT_LESSON_MINUTES,
     applyShorthand,
     configFromScheduleSlots,
+    invalidScheduleTimes,
     scheduleSlotsFromConfig,
     type ScheduleConfig,
 } from '../lib/scheduleShorthand';
@@ -64,6 +65,9 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
     const [scheduleConfig, setScheduleConfig] = useState<ScheduleConfig>({});
     const [shorthandText, setShorthandText] = useState('');
     const [shorthandProblems, setShorthandProblems] = useState<string[]>([]);
+    // Set by a Generate attempt; the list itself is recomputed live, so fixing a time clears it.
+    const [showTimeErrors, setShowTimeErrors] = useState(false);
+    const badTimeDays = showTimeErrors ? invalidScheduleTimes(scheduleConfig) : [];
 
     // Ruling L: the quick-entry box parses against this BASE snapshot, not against the live
     // `scheduleConfig` — which a shorthand parse itself keeps replacing (Ruling I). Parsing
@@ -82,6 +86,7 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
             baseConfigRef.current = {};
             setShorthandText('');
             setShorthandProblems([]);
+            setShowTimeErrors(false);
             loadExistingSchedule(groupId);
         }
     }, [open, groupId]);
@@ -159,6 +164,11 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
 
         if (items.length === 0) {
             toast("Please select at least one day", "error");
+            return;
+        }
+
+        if (invalidScheduleTimes(scheduleConfig).length > 0) {
+            setShowTimeErrors(true);
             return;
         }
 
@@ -275,6 +285,11 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
                                         );
                                     })}
                                 </div>
+                                {badTimeDays.length > 0 && (
+                                    <p role="alert" className="text-xs text-red-500 dark:text-red-400">
+                                        Время в формате ЧЧ:ММ (00:00–23:59): {badTimeDays.map((day) => DAYS[day]).join(', ')}
+                                    </p>
+                                )}
                             </div>
 
                             <div className="grid gap-2">
@@ -286,7 +301,11 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
                                     max={100}
                                     value={lessons}
                                     onChange={(e) => setLessons(parseInt(e.target.value) || 48)}
+                                    aria-describedby="lessons-hint"
                                 />
+                                <p id="lessons-hint" className="text-xs text-muted-foreground">
+                                    Всего за курс, включая прошедшие уроки
+                                </p>
                             </div>
                         </>
                     )}

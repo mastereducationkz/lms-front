@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   applyShorthand,
   configFromScheduleSlots,
+  invalidScheduleTimes,
   normalizeScheduleTime,
   parseScheduleShorthand,
   scheduleSlotsFromConfig,
@@ -181,5 +182,26 @@ describe('configFromScheduleSlots / scheduleSlotsFromConfig', () => {
       { day_of_week: 0, time_of_day: '18:00', duration_minutes: 60 },
       { day_of_week: 5, time_of_day: '19:00', duration_minutes: 90 },
     ]);
+  });
+});
+
+describe('invalidScheduleTimes', () => {
+  it('passes a schedule whose every day has a real HH:MM time', () => {
+    expect(invalidScheduleTimes({ 0: d('18:00', 60), 5: d('09:30', 90), 6: d('23:59', 60) })).toEqual([]);
+    expect(invalidScheduleTimes({ 1: d('00:00', 60), 2: d(' 9:05 ', 60) })).toEqual([]);
+    expect(invalidScheduleTimes({})).toEqual([]);
+  });
+
+  it('names every weekday whose time the API would refuse, in weekday order', () => {
+    const config: ScheduleConfig = {
+      6: d('', 60),
+      0: d('1800', 60),
+      2: d('24:00', 60),
+      3: d('18:60', 60),
+      4: d('18:0', 60),
+      5: d('19:00', 90),
+      1: d('abc', 60),
+    };
+    expect(invalidScheduleTimes(config)).toEqual([0, 1, 2, 3, 4, 6]);
   });
 });
