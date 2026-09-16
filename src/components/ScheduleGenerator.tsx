@@ -65,10 +65,21 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
     const [shorthandText, setShorthandText] = useState('');
     const [shorthandProblems, setShorthandProblems] = useState<string[]>([]);
 
+    // Ruling L: the quick-entry box parses against this BASE snapshot, not against the live
+    // `scheduleConfig` — which a shorthand parse itself keeps replacing (Ruling I). Parsing
+    // against the live config meant a half-typed line dropped days out of it, and once the day
+    // came back (e.g. backspacing a range down to a bare time) it inherited whatever duration
+    // that transient, already-mutated config happened to hold instead of the day's real stored
+    // length. The base is set on load and refreshed ONLY by row edits (time, length, day
+    // toggle) — never by a shorthand parse — so a bare time always inherits the day's true
+    // current length regardless of what was typed and undone along the way.
+    const baseConfigRef = React.useRef<ScheduleConfig>({});
+
     React.useEffect(() => {
         if (open && groupId) {
             // Reset to avoid showing previous group's data while loading
             setScheduleConfig({});
+            baseConfigRef.current = {};
             setShorthandText('');
             setShorthandProblems([]);
             loadExistingSchedule(groupId);
@@ -82,9 +93,12 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
             if (data.schedule_items && data.schedule_items.length > 0) {
                 setStartDate(data.start_date);
                 setLessons(data.lessons_count || (data.weeks_count * (data.schedule_items.length || 3)));
-                setScheduleConfig(configFromScheduleSlots(data.schedule_items));
+                const loaded = configFromScheduleSlots(data.schedule_items);
+                baseConfigRef.current = loaded;
+                setScheduleConfig(loaded);
             } else {
                 // Reset to defaults if no schedule
+                baseConfigRef.current = {};
                 setScheduleConfig({});
                 setStartDate(new Date().toISOString().split('T')[0]);
                 setLessons(48);
@@ -97,36 +111,41 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
     };
 
     const handleToggleDay = (dayIndex: number) => {
-        setScheduleConfig(prev => {
-            const next = { ...prev };
-            if (next[dayIndex]) {
-                delete next[dayIndex];
-            } else {
-                next[dayIndex] = { time: "19:00", duration: DEFAULT_LESSON_MINUTES }; // Default time
-            }
-            return next;
-        });
+        const next = { ...scheduleConfig };
+        if (next[dayIndex]) {
+            delete next[dayIndex];
+        } else {
+            next[dayIndex] = { time: "19:00", duration: DEFAULT_LESSON_MINUTES }; // Default time
+        }
+        baseConfigRef.current = next;
+        setScheduleConfig(next);
     };
 
     const handleTimeChange = (dayIndex: number, time: string) => {
-        setScheduleConfig(prev => ({
-            ...prev,
-            [dayIndex]: { time, duration: prev[dayIndex]?.duration ?? DEFAULT_LESSON_MINUTES }
-        }));
+        const next = {
+            ...scheduleConfig,
+            [dayIndex]: { time, duration: scheduleConfig[dayIndex]?.duration ?? DEFAULT_LESSON_MINUTES }
+        };
+        baseConfigRef.current = next;
+        setScheduleConfig(next);
     };
 
     const handleDurationChange = (dayIndex: number, duration: number) => {
-        setScheduleConfig(prev => ({
-            ...prev,
-            [dayIndex]: { time: prev[dayIndex]?.time ?? "19:00", duration }
-        }));
+        const next = {
+            ...scheduleConfig,
+            [dayIndex]: { time: scheduleConfig[dayIndex]?.time ?? "19:00", duration }
+        };
+        baseConfigRef.current = next;
+        setScheduleConfig(next);
     };
 
     const handleShorthandChange = (text: string) => {
         setShorthandText(text);
-        // Retyping the line REPLACES the selected days with what it parses (so leaving a day
-        // out removes it); an empty/unparseable line leaves the current schedule untouched.
-        const { config, problems } = applyShorthand(text, scheduleConfig);
+        // Retyping the line REPLACES the selected days with what it parses (Ruling I), but a
+        // bare time's inherited duration always comes from the stable base (Ruling L), never
+        // from the config a previous keystroke's parse produced. An empty/unparseable line
+        // leaves the current schedule untouched.
+        const { config, problems } = applyShorthand(text, baseConfigRef.current);
         setShorthandProblems(problems);
         setScheduleConfig(config);
     };
