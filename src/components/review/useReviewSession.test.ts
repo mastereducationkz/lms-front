@@ -208,5 +208,36 @@ describe('useReviewSession reducer — startedUnit (whole-unit review)', () => {
     expect(viaStartedUnit.attempts).toEqual(viaStarted.attempts)
     expect(viaStartedUnit.notSubmitted).toEqual(viaStarted.notSubmitted)
     expect(viaStartedUnit.submittedCount).toBe(viaStarted.submittedCount)
+    expect(viaStartedUnit.materials).toEqual(viaStarted.materials)
+  })
+
+  // Review mode showed questions without what they were answered from: a step's audio, document
+  // or passage, and the image_content maps between questions. The deck keeps each step's
+  // material; the blocks themselves must still never become questions or stats.
+  it('keeps each step\'s material by step id, without adding image_content blocks to the deck', () => {
+    const withMedia: ReviewSessionResponse = {
+      ...payloadA,
+      step: {
+        ...payloadA.step,
+        content: {
+          quiz_media_type: 'audio',
+          quiz_media_url: '/uploads/questions/part1.mp3',
+          questions: [{ id: 'map', question_type: 'image_content', media_url: '/uploads/questions/map.png' }, stepAQuestion],
+        },
+      },
+    }
+    const plain = reducer(initialState, { type: 'startedUnit', payloads: [payloadA, payloadB] } as Action)
+    const next = reducer(initialState, { type: 'startedUnit', payloads: [withMedia, payloadB] } as Action)
+
+    expect(next.questions).toEqual(plain.questions)
+    expect(next.statsByKey).toEqual(plain.statsByKey)
+    expect(next.materials[10]).toEqual({
+      quiz: { kind: 'audio', path: '/uploads/questions/part1.mp3' },
+      references: [{ key: 0, images: [{ path: '/uploads/questions/map.png', caption: null }] }],
+    })
+    expect(next.materials[11]).toEqual({ quiz: null, references: [null] })
+
+    const single = reducer(initialState, { type: 'started', payload: withMedia } as Action)
+    expect(single.materials).toEqual({ 10: next.materials[10] })
   })
 })

@@ -7,13 +7,15 @@ interface ZoomableImageProps {
   alt?: string;
   className?: string;
   caption?: string;
+  /** Called when the image fails to load, so the caller can say so instead of showing a blank box. */
+  onError?: () => void;
 }
 
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 3;
 const ZOOM_STEP = 0.25;
 
-export const ZoomableImage = ({ src, alt = 'Image', className = '', caption }: ZoomableImageProps) => {
+export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onError }: ZoomableImageProps) => {
   const [zoom, setZoom] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fullscreenZoom, setFullscreenZoom] = useState(1);
@@ -214,6 +216,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption }: Z
               transition: isDragging ? 'none' : 'transform 0.2s ease-out'
             }}
             draggable={false}
+            onError={onError}
           />
         </div>
 

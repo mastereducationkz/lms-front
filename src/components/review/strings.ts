@@ -58,6 +58,21 @@ export const EN = {
   gapBreakdown: 'This gap',
   gapNoAnswer: 'No answer',
 
+  // What a question was answered from: the quiz's audio, document or passage, a map between
+  // questions, a media question's attachment.
+  materialAudio: 'Audio',
+  materialDocument: 'Document',
+  materialPassage: 'Reading passage',
+  materialImage: 'Image',
+  materialImages: 'Images',
+  materialShow: 'Show',
+  materialHide: 'Hide',
+  questionImage: 'Question image',
+  questionDocument: 'Question document',
+  optionImage: 'Option {letter}',
+  mediaUnavailable: "This file couldn't be loaded",
+  openFile: 'Open in a new tab',
+
   summaryTitle: 'Review summary',
   summaryDistribution: 'Score distribution',
   summaryTop: 'Top results',

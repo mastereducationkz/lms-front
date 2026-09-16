@@ -5,6 +5,8 @@ import { Button } from '../ui/button'
 import { ReviewQuestionView } from './ReviewQuestionView'
 import { ReviewQuestionGrid } from './ReviewQuestionGrid'
 import { ReviewStatsPanel } from './ReviewStatsPanel'
+import { ReviewMaterial } from './ReviewMaterial'
+import { materialAt } from './reviewMedia'
 import { isGapType, questionKey } from './reviewStats'
 import { EN, format } from './strings'
 import type { ReviewSessionActions, ReviewSessionState } from './useReviewSession'
@@ -28,6 +30,9 @@ export const ReviewPresenter: React.FC<Props> = ({ state, actions }) => {
     ? state.statsByKey[questionKey(currentStepMeta.stepId, question)]
     : undefined
   const isGapQuestion = question ? isGapType(question.question_type) : false
+  // What the current question was answered from: its quiz's audio/document/passage and the
+  // image_content maps introducing it — looked up through its own step, like `stat` above.
+  const material = total > 0 ? materialAt(state.materials, state.steps, state.questionSteps, state.index) : null
 
   // Matched on `event.code`, not `event.key`: teachers here run a Russian keyboard layout,
   // where R reports key === 'к'. `code === 'KeyR'` is layout-proof.
@@ -139,15 +144,20 @@ export const ReviewPresenter: React.FC<Props> = ({ state, actions }) => {
       </div>
 
       <div className={`grid gap-4 ${state.statsVisible ? 'lg:grid-cols-[1.35fr_1fr]' : 'grid-cols-1'}`}>
-        <ReviewQuestionView
-          question={question}
-          stat={stat}
-          revealed={state.revealed}
-          statsVisible={state.statsVisible}
-          gapIndex={state.gapIndex}
-          onPrevGap={actions.prevGap}
-          onNextGap={actions.nextGap}
-        />
+        <div className="min-w-0 space-y-4">
+          {material && (
+            <ReviewMaterial stepId={material.stepId} quiz={material.quiz} references={material.references} />
+          )}
+          <ReviewQuestionView
+            question={question}
+            stat={stat}
+            revealed={state.revealed}
+            statsVisible={state.statsVisible}
+            gapIndex={state.gapIndex}
+            onPrevGap={actions.prevGap}
+            onNextGap={actions.nextGap}
+          />
+        </div>
         {state.statsVisible && (
           <ReviewStatsPanel
             stat={stat}
