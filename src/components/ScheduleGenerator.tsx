@@ -1,15 +1,23 @@
 
 import React, { useState } from 'react';
-import { 
-    Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter 
+import {
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter
 } from './ui/dialog';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { Checkbox } from './ui/checkbox';
 import { Button } from './ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Clock, Loader2 } from 'lucide-react';
 import apiClient, { generateSchedule } from '../services/api';
 import { toast } from './Toast';
+import {
+    DEFAULT_LESSON_MINUTES,
+    configFromScheduleSlots,
+    parseScheduleShorthand,
+    scheduleSlotsFromConfig,
+    type ScheduleConfig,
+} from '../lib/scheduleShorthand';
 
 interface ScheduleGeneratorProps {
     groupId: number | null;
@@ -21,19 +29,48 @@ interface ScheduleGeneratorProps {
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
+// The lengths offered in the per-day select. A stored value outside this set (e.g. a group
+// generated before per-day lengths existed with something non-standard) is added to the list
+// for that day so it stays visible instead of silently snapping to 60.
+const STANDARD_LESSON_LENGTHS = [60, 90, 120];
+
+const LESSON_LENGTH_LABELS: Record<number, string> = {
+    60: '1 ч',
+    90: '1 ч 30 мин',
+    120: '2 ч',
+};
+
+const lessonLengthLabel = (minutes: number): string => {
+    if (LESSON_LENGTH_LABELS[minutes]) return LESSON_LENGTH_LABELS[minutes];
+    const hours = Math.floor(minutes / 60);
+    const rest = minutes % 60;
+    if (!hours) return `${rest} мин`;
+    if (!rest) return `${hours} ч`;
+    return `${hours} ч ${rest} мин`;
+};
+
+const lessonLengthOptions = (current: number): number[] =>
+    STANDARD_LESSON_LENGTHS.includes(current)
+        ? STANDARD_LESSON_LENGTHS
+        : [...STANDARD_LESSON_LENGTHS, current].sort((a, b) => a - b);
+
 export default function ScheduleGenerator({ groupId, open, onOpenChange, onSuccess, trigger }: ScheduleGeneratorProps) {
     const [isGenerating, setIsGenerating] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [lessons, setLessons] = useState(48);
-    
-    // Config: { dayIndex: timeString }
-    const [scheduleConfig, setScheduleConfig] = useState<Record<number, string>>({});
+
+    // Config: { dayIndex: { time, duration } }
+    const [scheduleConfig, setScheduleConfig] = useState<ScheduleConfig>({});
+    const [shorthandText, setShorthandText] = useState('');
+    const [shorthandProblems, setShorthandProblems] = useState<string[]>([]);
 
     React.useEffect(() => {
         if (open && groupId) {
             // Reset to avoid showing previous group's data while loading
             setScheduleConfig({});
+            setShorthandText('');
+            setShorthandProblems([]);
             loadExistingSchedule(groupId);
         }
     }, [open, groupId]);
@@ -45,12 +82,7 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
             if (data.schedule_items && data.schedule_items.length > 0) {
                 setStartDate(data.start_date);
                 setLessons(data.lessons_count || (data.weeks_count * (data.schedule_items.length || 3)));
-                
-                const config: Record<number, string> = {};
-                data.schedule_items.forEach((item: { day_of_week: number; time_of_day: string }) => {
-                    config[item.day_of_week] = item.time_of_day;
-                });
-                setScheduleConfig(config);
+                setScheduleConfig(configFromScheduleSlots(data.schedule_items));
             } else {
                 // Reset to defaults if no schedule
                 setScheduleConfig({});
@@ -70,7 +102,7 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
             if (next[dayIndex]) {
                 delete next[dayIndex];
             } else {
-                next[dayIndex] = "19:00"; // Default time
+                next[dayIndex] = { time: "19:00", duration: DEFAULT_LESSON_MINUTES }; // Default time
             }
             return next;
         });
@@ -79,56 +111,30 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
     const handleTimeChange = (dayIndex: number, time: string) => {
         setScheduleConfig(prev => ({
             ...prev,
-            [dayIndex]: time
+            [dayIndex]: { time, duration: prev[dayIndex]?.duration ?? DEFAULT_LESSON_MINUTES }
         }));
     };
 
-    const parseShorthand = (text: string) => {
-        const dayMap: Record<string, number> = {
-            'пн': 0, 'вт': 1, 'ср': 2, 'чт': 3, 'пт': 4, 'сб': 5, 'вс': 6,
-            'mon': 0, 'tue': 1, 'wed': 2, 'thu': 3, 'fri': 4, 'sat': 5, 'sun': 6
-        };
-        
-        const newConfig: Record<number, string> = {};
-        const normalized = text.toLowerCase().replace(/:/g, ' ');
-        const tokens = normalized.split(/\s+/).filter(Boolean);
-        
-        let currentDays: number[] = [];
-        
-        for (let i = 0; i < tokens.length; i++) {
-            const token = tokens[i];
-            const nextToken = tokens[i + 1];
-            
-            if (dayMap[token] !== undefined) {
-                currentDays.push(dayMap[token]);
-            } else if (/^\d{1,2}$/.test(token) && nextToken && /^\d{2}$/.test(nextToken)) {
-                // Time format: HH MM
-                const hh = token.padStart(2, '0');
-                const mm = nextToken;
-                const time = `${hh}:${mm}`;
-                currentDays.forEach(d => {
-                    newConfig[d] = time;
-                });
-                currentDays = [];
-                i++; // Skip nextToken
-            } else if (/^\d{1,2}:\d{2}$/.test(token)) {
-                // Time format: HH:MM (already handled by replace but safe)
-                newConfig[currentDays[0]] = token; // This case shouldn't be reached with replace(/:/g, ' ')
-            }
-        }
-        
-        if (Object.keys(newConfig).length > 0) {
-            setScheduleConfig(newConfig);
+    const handleDurationChange = (dayIndex: number, duration: number) => {
+        setScheduleConfig(prev => ({
+            ...prev,
+            [dayIndex]: { time: prev[dayIndex]?.time ?? "19:00", duration }
+        }));
+    };
+
+    const handleShorthandChange = (text: string) => {
+        setShorthandText(text);
+        const { config: parsed, problems } = parseScheduleShorthand(text, scheduleConfig);
+        setShorthandProblems(problems);
+        if (Object.keys(parsed).length > 0) {
+            setScheduleConfig(prev => ({ ...prev, ...parsed }));
         }
     };
 
     const handleGenerate = async () => {
         if (!groupId) return;
-        
-        const items = Object.entries(scheduleConfig).map(([day, time]) => ({
-            day_of_week: parseInt(day),
-            time_of_day: time
-        }));
+
+        const items = scheduleSlotsFromConfig(scheduleConfig);
 
         if (items.length === 0) {
             toast("Please select at least one day", "error");
@@ -169,20 +175,28 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
                     ) : (
                         <>
                             <div className="grid gap-2">
-                                <Label htmlFor="shorthand" className="text-gray-900 dark:text-foreground font-semibold">Быстрый ввод (пн ср пт 19:00)</Label>
-                                <Input 
-                                    id="shorthand" 
+                                <Label htmlFor="shorthand" className="text-gray-900 dark:text-foreground font-semibold">Быстрый ввод (пн ср пт 19:00-20:30)</Label>
+                                <Input
+                                    id="shorthand"
                                     placeholder="вт чт 20 00 сб 12 00"
-                                    onChange={(e) => parseShorthand(e.target.value)}
+                                    value={shorthandText}
+                                    onChange={(e) => handleShorthandChange(e.target.value)}
                                     className="border-gray-300 dark:border-border focus:border-blue-500"
                                 />
+                                {shorthandProblems.length > 0 && (
+                                    <ul className="text-xs text-red-500 dark:text-red-400 space-y-0.5">
+                                        {shorthandProblems.map((problem, i) => (
+                                            <li key={i}>{problem}</li>
+                                        ))}
+                                    </ul>
+                                )}
                             </div>
 
                             <div className="grid gap-2">
                                 <Label htmlFor="start-date" className="text-gray-900 dark:text-foreground font-semibold">Start Date</Label>
-                                <Input 
-                                    id="start-date" 
-                                    type="date" 
+                                <Input
+                                    id="start-date"
+                                    type="date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
                                     className="border-gray-300 dark:border-border focus:border-blue-500"
@@ -194,11 +208,12 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
                                 <div className="grid gap-4 border dark:border-border rounded-md p-3">
                                     {DAYS.map((day, i) => {
                                         const isSelected = scheduleConfig[i] !== undefined;
+                                        const duration = scheduleConfig[i]?.duration ?? DEFAULT_LESSON_MINUTES;
                                         return (
-                                            <div key={day} className="flex items-center justify-between">
+                                            <div key={day} className="flex items-center justify-between gap-2">
                                                 <div className="flex items-center space-x-2">
-                                                    <Checkbox 
-                                                        id={`day-${i}`} 
+                                                    <Checkbox
+                                                        id={`day-${i}`}
                                                         checked={isSelected}
                                                         onCheckedChange={() => handleToggleDay(i)}
                                                     />
@@ -207,15 +222,32 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
                                                     </Label>
                                                 </div>
                                                 {isSelected && (
-                                                    <div className="flex items-center w-28">
-                                                        <Clock className="w-3 h-3 mr-2 text-muted-foreground" />
-                                                        <Input 
-                                                            type="text" 
-                                                            className="h-7 text-xs"
-                                                            placeholder="19:00"
-                                                            value={scheduleConfig[i]}
-                                                            onChange={(e) => handleTimeChange(i, e.target.value)}
-                                                        />
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="flex items-center w-24">
+                                                            <Clock className="w-3 h-3 mr-2 text-muted-foreground" />
+                                                            <Input
+                                                                type="text"
+                                                                className="h-7 text-xs"
+                                                                placeholder="19:00"
+                                                                value={scheduleConfig[i]?.time ?? ''}
+                                                                onChange={(e) => handleTimeChange(i, e.target.value)}
+                                                            />
+                                                        </div>
+                                                        <Select
+                                                            value={String(duration)}
+                                                            onValueChange={(value) => handleDurationChange(i, Number(value))}
+                                                        >
+                                                            <SelectTrigger className="h-7 w-24 text-xs">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {lessonLengthOptions(duration).map((minutes) => (
+                                                                    <SelectItem key={minutes} value={String(minutes)}>
+                                                                        {lessonLengthLabel(minutes)}
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
                                                     </div>
                                                 )}
                                             </div>
@@ -226,10 +258,10 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
 
                             <div className="grid gap-2">
                                 <Label htmlFor="lessons">Duration (Lessons)</Label>
-                                <Input 
-                                    id="lessons" 
-                                    type="number" 
-                                    min={1} 
+                                <Input
+                                    id="lessons"
+                                    type="number"
+                                    min={1}
                                     max={100}
                                     value={lessons}
                                     onChange={(e) => setLessons(parseInt(e.target.value) || 48)}
