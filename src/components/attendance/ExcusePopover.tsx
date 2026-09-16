@@ -1,5 +1,7 @@
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { Popover, PopoverAnchor, PopoverContent } from '../ui/popover';
+import { Label } from '../ui/label';
+import { Textarea } from '../ui/textarea';
 import { isValidExcuseNote } from '../../lib/excusedAbsence';
 import { cn } from '../../lib/utils';
 
@@ -37,6 +39,7 @@ export function ExcusePopover({
   const [value, setValue] = useState(note ?? '');
   const [touched, setTouched] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const formId = useId();
 
   const valid = isValidExcuseNote(value);
 
@@ -62,22 +65,26 @@ export function ExcusePopover({
           inputRef.current?.focus();
         }}
         onKeyDown={(e) => {
+          // Rendered in a portal, but React still bubbles its events to the cell that owns
+          // the trigger — this grid is about to get a cell-level click handler.
+          e.stopPropagation();
           // Ctrl/Cmd+Enter сохраняет: причину пишут между двумя отметками, и тянуться к
           // мыши на каждой строке — это и есть та задержка, из-за которой перестают
           // заполнять. Escape закрывает через сам примитив (onOpenChange выше).
           if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) save();
         }}
       >
-        <div className="mb-1 text-xs font-medium">
+        <Label htmlFor={`${formId}-note`} className="mb-1 block text-xs font-medium">
           {en ? 'Reason for the absence' : 'Причина пропуска'}
-        </div>
-        <textarea
+        </Label>
+        <Textarea
+          id={`${formId}-note`}
           ref={inputRef}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           rows={3}
           className={cn(
-            'w-full resize-none rounded border px-2 py-1 text-xs dark:bg-background',
+            'min-h-0 resize-none px-2 py-1 text-xs',
             touched && !valid ? 'border-rose-500' : 'border-input',
           )}
           placeholder={en ? 'e.g. warned in advance, ill' : 'например: предупредил заранее, болел'}

@@ -24,6 +24,8 @@ import { Label } from '../components/ui/label';
 import { parseAsUTC } from '../lib/datetime';
 import { formatGroupCloseDate } from '../lib/groupList';
 import { isAttendanceLockedLesson } from '../lib/attendance';
+import { canBeExcused, excusePayload } from '../lib/excusedAbsence';
+import { ExcusePopover } from '../components/attendance/ExcusePopover';
 import { listMeetRecords, type MeetLessonFlag } from '../services/api/meetAttendance';
 import { flagText, flagTextRu, mismatchIndex, reasonText } from '../lib/meetAttendance';
 import { spokeNote, talkSecondsIndex } from '../lib/meetTalk';
@@ -86,6 +88,13 @@ interface StudentLessonStatus {
     // their login was off. Not a freeze (labelled «Нет доступа»), but it leaves the
     // attendance and homework denominators the same way. Undefined → not blocked.
     blocked?: boolean;
+    // True = this absence has a reason on file and does not count against the student —
+    // the cell still reads as a marked lesson (it's in the denominator), just amber
+    // instead of red. Only meaningful when attendance_status is a "missed" variant.
+    // Undefined on older payloads → not excused.
+    excused?: boolean;
+    // The reason text, required whenever `excused` is true. Null/undefined otherwise.
+    excuse_note?: string | null;
 }
 
 interface IeltsSpeakingFeedback {
@@ -222,6 +231,9 @@ const AttendanceToggle = ({
     isFuture = false,
     en = false,
     note = null,
+    excused = false,
+    excuseNote = null,
+    onExcuseChange,
 }: {
     initialStatus: string,
     onChange: (status: string) => void,
@@ -233,10 +245,23 @@ const AttendanceToggle = ({
     en?: boolean,
     // A second line for the hover, e.g. how long the student spoke in the lesson's Meet room.
     note?: string | null,
+    // Whether this "Не был" already carries an excuse, and its reason.
+    excused?: boolean,
+    excuseNote?: string | null,
+    // Presence of this callback — not just the status — is what turns the excuse
+    // affordance on. This component is also reused for the (non-attendance)
+    // study_buddy toggle, whose "absent" state has nothing to do with excused
+    // absences; that caller simply never passes this prop.
+    onExcuseChange?: (excused: boolean, note: string | null) => void,
 }) => {
+  const [excusePopoverOpen, setExcusePopoverOpen] = useState(false);
+
   // Attendance belongs to one student; cancelling belongs to the whole lesson
   // and goes through an approved lesson request.  Keeping those controls apart
   // prevents one cell from claiming that an otherwise scheduled class vanished.
+  // Excusing an absence is a separate affordance (the corner icon below), not a
+  // fourth step here — a fourth click on the cycle would tax every ordinary
+  // correction, and marking a group fast is the point of this screen.
   const handleCycle = () => {
     if (disabled || isFuture || initialStatus === 'cancelled') return;
     if (initialStatus === 'attended') onChange('late');
@@ -253,6 +278,14 @@ const AttendanceToggle = ({
     // just defaults an unmarked lesson to "missed". Show a neutral "—" instead.
     if (isFuture && s === 'missed') return { label: '—', color: 'bg-gray-100 text-gray-400 dark:bg-secondary dark:text-gray-500', title: en ? "Lesson hasn't happened yet" : 'Занятие ещё не прошло' };
 
+    if (s === 'missed' && excused) {
+      return {
+        label: en ? 'Exc.' : 'Ув.',
+        color: 'bg-amber-500 text-white',
+        title: (en ? 'Excused absence' : 'Уважительная причина') + (excuseNote ? `: ${excuseNote}` : ''),
+      };
+    }
+
     if (s === 'attended') return { label: en ? 'Present' : 'Был', color: 'bg-emerald-500 text-white', title: en ? 'Present' : 'Был' };
     if (s === 'late') return { label: en ? 'Late' : 'Опоздал', color: 'bg-amber-400 text-gray-900 font-bold', title: en ? 'Late' : 'Опоздал' };
     return { label: en ? 'Absent' : 'Не был', color: 'bg-rose-500 text-white', title: en ? 'Absent' : 'Не был' };
@@ -263,11 +296,16 @@ const AttendanceToggle = ({
   // historical/view-only in this grid; it cannot be undone student by student.
   const nonInteractive = disabled || isFuture || initialStatus === 'cancelled';
 
+  // Only offered on an actual "Не был" (never future/cancelled/frozen/blocked — those
+  // never reach this component with initialStatus indicating a real absence while
+  // interactive), and only for a caller that wired up onExcuseChange in the first place.
+  const showExcuseAffordance = Boolean(onExcuseChange) && !nonInteractive && canBeExcused(initialStatus, isFuture);
+
   return (
     <div
         onClick={handleCycle}
         className={cn(
-            "flex items-center justify-center w-full h-full text-[11px] font-bold transition-all select-none",
+            "relative flex items-center justify-center w-full h-full text-[11px] font-bold transition-all select-none",
             config.color,
             nonInteractive ? "cursor-default brightness-[0.9] grayscale-[0.2]" : "cursor-pointer active:brightness-95 hover:brightness-105"
         )}
@@ -276,6 +314,36 @@ const AttendanceToggle = ({
         <span className="flex items-center gap-1">
             <span className="text-[10px] uppercase">{config.label}</span>
         </span>
+        {showExcuseAffordance && (
+            <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setExcusePopoverOpen(true); }}
+                // Bottom-left corner: the Meet-mismatch marker already owns top-left, the
+                // activity-score badge top-right, the activity-score button bottom-right.
+                // Always visible (not hover-only) — the grid is dense and a hidden icon
+                // would never be found.
+                className={cn(
+                    "absolute left-0.5 bottom-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full ring-2 ring-white dark:ring-card pointer-events-auto",
+                    excused ? "bg-amber-600" : "bg-transparent border border-amber-500"
+                )}
+                title={excused
+                    ? (en ? `Excused absence${excuseNote ? `: ${excuseNote}` : ''} — click to edit` : `Уважительная причина${excuseNote ? `: ${excuseNote}` : ''} — нажмите, чтобы изменить`)
+                    : (en ? 'Mark this absence as excused' : 'Отметить пропуск уважительной причиной')}
+                aria-label={excused
+                    ? (en ? 'Excused absence, edit reason' : 'Уважительная причина, изменить')
+                    : (en ? 'Mark absence as excused' : 'Отметить пропуск уважительным')}
+            />
+        )}
+        {excusePopoverOpen && onExcuseChange && (
+            <ExcusePopover
+                excused={excused}
+                note={excuseNote}
+                en={en}
+                onSave={(savedNote) => { onExcuseChange(true, savedNote); setExcusePopoverOpen(false); }}
+                onClear={() => { onExcuseChange(false, null); setExcusePopoverOpen(false); }}
+                onClose={() => setExcusePopoverOpen(false)}
+            />
+        )}
     </div>
   );
 };
@@ -571,6 +639,11 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   
   // Changes tracking: Set of student IDs that have changes
   const [changedEntries, setChangedEntries] = useState<Set<number>>(new Set());
+  // "studentId:lessonNumber" pairs whose excuse the user actually edited this session.
+  // The save loop below walks every lesson of every changed student — without this,
+  // it would send `excused: false` for cells nobody touched and erase reasons another
+  // teacher had typed.
+  const [touchedExcuses, setTouchedExcuses] = useState<Set<string>>(new Set());
   const [configChanged, setConfigChanged] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [enabledCols, setEnabledCols] = useState({
@@ -724,7 +797,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   const loadLeaderboard = async () => {
     if (!selectedGroupId) return;
     setLoading(true);
-    setChangedEntries(new Set()); 
+    setChangedEntries(new Set());
+    setTouchedExcuses(new Set());
     setConfigChanged(false);
     try {
         const result = await getWeeklyLessonsWithHwStatus(selectedGroupId, currentWeek);
@@ -910,6 +984,44 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       setChangedEntries(prev => new Set(prev).add(studentId));
   };
 
+  const handleExcuseChange = (
+    studentId: number,
+    lessonNumber: string,
+    excused: boolean,
+    note: string | null,
+  ) => {
+      if (!canMarkAttendance) return;
+      const guarded = data?.students.find(s => s.student_id === studentId)?.lessons[lessonNumber];
+      if (guarded?.frozen || guarded?.blocked) return;
+      setData(prev => {
+          if (!prev) return null;
+          return {
+              ...prev,
+              students: prev.students.map(s => {
+                  if (s.student_id !== studentId) return s;
+                  const lesson = s.lessons[lessonNumber];
+                  if (!lesson) return s;
+                  return {
+                      ...s,
+                      lessons: {
+                          ...s.lessons,
+                          [lessonNumber]: {
+                              ...lesson,
+                              excused,
+                              excuse_note: note,
+                              // Отметка уважительности — тоже отметка: урок перестаёт быть
+                              // неотмеченным и входит в знаменатель процента.
+                              marked: true,
+                          },
+                      },
+                  };
+              }),
+          };
+      });
+      setChangedEntries(prev => new Set(prev).add(studentId));
+      setTouchedExcuses(prev => new Set(prev).add(`${studentId}:${lessonNumber}`));
+  };
+
   const markAllPresentForLesson = (lesson: LessonMeta) => {
     if (!canMarkAttendance || !data) return;
     if (isAttendanceLockedLesson(lesson.start_datetime)) return;
@@ -970,6 +1082,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
     setIsSaving(true);
     let successCount = 0;
     let attendanceFailures = 0;
+    let attendanceErrorDetail: string | undefined;
 
     try {
         // 1. Save Column Visibility Config — teachers can't touch manual columns, so skip entirely.
@@ -1044,6 +1157,15 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                         status: lessonStatus.attendance_status,
                         event_id: lessonStatus.event_id ?? null,
                         activity_score: lessonStatus.activity_score ?? undefined,
+                        // Only present when the user actually touched this cell's excuse —
+                        // an absent field means "leave the stored value alone" server-side,
+                        // while this loop otherwise walks every lesson of every changed
+                        // student, touched or not.
+                        ...excusePayload(
+                            touchedExcuses.has(`${student.student_id}:${lessonKey}`),
+                            Boolean(lessonStatus.excused),
+                            lessonStatus.excuse_note ?? null,
+                        ),
                     });
                 }
             }
@@ -1060,6 +1182,10 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         }
         if (attendanceResult.status === 'rejected') {
             attendanceFailures = attendanceUpdates.length;
+            // A validation failure (e.g. an excuse without a reason) comes back as a
+            // Russian 422 detail from the backend — show that message verbatim rather
+            // than replacing it with a generic one.
+            attendanceErrorDetail = (attendanceResult.reason as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
             console.error('Failed to save attendance', attendanceResult.reason);
         }
 
@@ -1069,6 +1195,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         if (successCount === entriesToSave.length && attendanceFailures === 0) {
             toast(t("Все изменения сохранены", "All changes saved"), "success");
             setChangedEntries(new Set());
+            setTouchedExcuses(new Set());
             setConfigChanged(false);
             
             // Reload config from server to ensure it's persisted
@@ -1089,7 +1216,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                 console.error('Failed to reload config:', reloadErr);
             }
         } else if (attendanceFailures > 0) {
-            toast(t(
+            toast(attendanceErrorDetail || t(
                 `Сохранено с ошибками (не сохранилось ${attendanceFailures} отметок). Попробуйте ещё раз.`,
                 `Saved with errors (${attendanceFailures} marks failed). Please try again.`
             ), "error");
@@ -1780,6 +1907,9 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                 isFuture={cellIsFuture}
                                                 en={isTeacher}
                                                 note={spokeNote(meetTalk.get(`${lessonInfo.event_id}:${student.student_id}`), isTeacher ? 'en' : 'ru')}
+                                                excused={Boolean(lessonStatus?.excused)}
+                                                excuseNote={lessonStatus?.excuse_note ?? null}
+                                                onExcuseChange={(excused, excuseNote) => handleExcuseChange(student.student_id, lessonKey, excused, excuseNote)}
                                             />
                                             {meetMismatches.get(`${lessonInfo.event_id}:${student.student_id}`)?.map((f) => {
                                                 // Answered in Meet attendance: grey with a tick and the reason, instead of red.
