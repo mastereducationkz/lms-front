@@ -1,5 +1,6 @@
 import { api } from './client';
 import type { MeetLessonTalk } from './meetTalk';
+import type { LessonRecordingStatus } from './recordings';
 
 /**
  * Who was in a lesson's Meet room, from when to when — read from what Meet reported.
@@ -15,6 +16,7 @@ export type MeetFlagCode =
   | 'late'
   | 'left_early'
   | 'marked_present_not_joined'
+  | 'marked_present_too_short'
   | 'marked_absent_was_in_room'
   | 'teacher_late'
   | 'ended_early'
@@ -34,7 +36,62 @@ export interface MeetFlagReview {
 export interface MeetFlag {
   code: MeetFlagCode;
   minutes?: number | null;
+  /** `marked_present_too_short`: the minutes the lesson needed. */
+  required?: number | null;
   review?: MeetFlagReview | null;
+}
+
+/**
+ * Meet's verdict on a student (owner, 2026-09-16): what the register would say if Meet took it.
+ * Late after more than 5 whole minutes, absent under 75% of the lesson actually held, timed on the
+ * teacher's clock, rounded in the student's favour. Beside the mark, never instead of it.
+ */
+export type MeetVerdictValue = 'present' | 'late' | 'absent';
+
+export interface MeetVerdict {
+  /** Null while held back: an unconfirmed account in the room may be this student. */
+  verdict: MeetVerdictValue | null;
+  held_back: boolean;
+  /** Present or late — what billing reads; null when it can't be told yet. */
+  attended?: boolean | null;
+  /** Whole minutes in the lesson, rounded up. */
+  minutes: number;
+  /** Whole minutes the lesson needed: 75% of what was held, rounded down. */
+  required: number;
+  /** Whole minutes after the lesson began, rounded down. */
+  late_minutes: number;
+}
+
+/** A lesson's verdicts counted. `compared`/`agree`: marked students Meet can judge, and how many marks agree about attending. */
+export interface MeetVerdictSummary {
+  present: number;
+  late: number;
+  absent: number;
+  held_back: number;
+  /** Students nobody has marked yet. */
+  unmarked: number;
+  /** Of those, how many have a verdict that «Apply Meet's verdicts» would write. */
+  applicable: number;
+  compared: number;
+  agree: number;
+}
+
+/** The rules as numbers, for the legend. */
+export interface MeetVerdictRules {
+  late_after_minutes: number;
+  present_share: number;
+}
+
+/** The stretch students were judged by: the timetable narrowed to the teacher. */
+export interface MeetLessonClock {
+  start: string;
+  end: string;
+  /** Overrun while the teacher still taught counts for students up to here. */
+  count_until: string;
+  held_minutes: number;
+  required_minutes: number;
+  /** False: the teacher wasn't in the lesson, so the timetable decided. */
+  follows_teacher: boolean;
 }
 
 /** What the review form offers for one flag: its reasons (the last is always «Другое»). */
@@ -77,6 +134,8 @@ export interface MeetPerson extends MeetPresence {
   mark: MeetMark;
   accounts: MeetAccount[];
   flags: MeetFlag[];
+  /** Students only. */
+  verdict?: MeetVerdict;
 }
 
 export interface MeetUnknownAccount extends MeetAccount, MeetPresence {
@@ -178,6 +237,10 @@ export interface MeetRecord {
   candidates?: MeetCandidate[];
   /** The whole class with marks — present in every state, also without a Meet record. */
   roster?: { user_id: number; name: string; mark: MeetMark }[];
+  /** Ready records from a server with verdicts (2026-09-16). */
+  rules?: MeetVerdictRules;
+  clock?: MeetLessonClock;
+  verdict_summary?: MeetVerdictSummary;
 }
 
 const NO_CACHE = { cache: false } as never;
@@ -235,6 +298,21 @@ export interface MeetLessonSummary {
   flags: MeetLessonFlag[];
   /** Who spoke how much; null (or absent) when the lesson has no Meet transcript. */
   talk?: MeetLessonTalk | null;
+  /** The lesson's recording in two words — no link: the player fetches its own. Absent from an older server. */
+  recording?: MeetLessonRecording | null;
+  /** Ready lessons only; absent from an older server. */
+  verdict_summary?: MeetVerdictSummary | null;
+  /** Each student's verdict, for the attendance journal. */
+  verdicts?: MeetStudentVerdict[];
+}
+
+export interface MeetStudentVerdict extends Omit<MeetVerdict, 'attended'> {
+  user_id: number;
+}
+
+export interface MeetLessonRecording {
+  status: LessonRecordingStatus;
+  duration_seconds: number | null;
 }
 
 export interface MeetRecordsQuery {
@@ -254,6 +332,7 @@ export async function listMeetRecords(query: MeetRecordsQuery = {}): Promise<{
   talk_enabled?: boolean;
   /** What the check with Google Meet is doing; null before it has ever run. */
   sync?: MeetSync | null;
+  verdict_rules?: MeetVerdictRules;
 }> {
   const params: Record<string, string | number> = {};
   Object.entries(query).forEach(([key, value]) => {
@@ -302,5 +381,18 @@ export async function restoreMeetFlag(eventId: number, userId: number, code: Mee
     return response.data as MeetRecord;
   } catch (error: unknown) {
     throw reviewError(error, 'Could not put it back');
+  }
+}
+
+/**
+ * Write Meet's verdict for students nobody has marked (all of them, or `userIds`). Held-back
+ * verdicts and existing marks are left alone; the journal's marking rights apply. Returns the record.
+ */
+export async function applyMeetVerdicts(eventId: number, userIds?: number[]): Promise<MeetRecord> {
+  try {
+    const response = await api.post(`/meet-attendance/lessons/${eventId}/apply-verdicts`, { user_ids: userIds ?? null });
+    return response.data as MeetRecord;
+  } catch (error: unknown) {
+    throw reviewError(error, 'Could not apply Meet’s verdicts');
   }
 }

@@ -13,8 +13,10 @@ import {
   needsAttention,
   reportCsv,
   reviewedCount,
+  rulesText,
   stillLoading,
   tallyByTeacher,
+  verdictLine,
   withoutReviewed,
   type IssueKey,
 } from '../lib/meetAttendance';
@@ -26,6 +28,11 @@ import { TeacherTallyTable } from '../components/meetAttendance/TeacherTallyTabl
 import { GroupTalkView } from '../components/meetAttendance/GroupTalkView';
 import { TeacherTalkView } from '../components/meetAttendance/TeacherTalkView';
 import { TalkSettingsButton } from '../components/meetAttendance/TalkSettingsButton';
+import { LessonRecordingCell, recordingMeta } from '../components/meetAttendance/LessonRecordingCell';
+import RecordingPlayerDialog, { type RecordingMeta } from '../components/recordings/RecordingPlayerDialog';
+import { useRecordingStatuses } from '../components/recordings/useRecordingStatuses';
+import { liveEventIds } from '../lib/recordingProgress';
+import { recordingsLocale } from '../lib/recordings';
 import { percent } from '../lib/meetTalk';
 import {
   listMeetRecords,
@@ -35,6 +42,7 @@ import {
   type MeetRecord,
   type MeetReviewOptions,
   type MeetSync,
+  type MeetVerdictRules,
 } from '../services/api/meetAttendance';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -100,6 +108,7 @@ export default function MeetAttendanceReview() {
   const [issue, setIssue] = useState<IssueKey | null>(null);
   const [openId, setOpenId] = useState<number | null>(null);
   const [openTab, setOpenTab] = useState<MeetDialogTab>('attendance');
+  const [playing, setPlaying] = useState<RecordingMeta | null>(null);
   const [view, setView] = useState<View>('lessons');
   const [talkEnabled, setTalkEnabled] = useState(false);
   const [talkMode, setTalkMode] = useState<TalkMode>('group');
@@ -108,6 +117,7 @@ export default function MeetAttendanceReview() {
   // Reviewed flags are out of the list until asked for (owner, 2026-09-11).
   const [showReviewed, setShowReviewed] = useState(false);
   const [options, setOptions] = useState<MeetReviewOptions | undefined>(undefined);
+  const [rules, setRules] = useState<MeetVerdictRules | undefined>(undefined);
 
   // What the check with Google Meet is doing, when the list was read, and whether a read is under way.
   const [sync, setSync] = useState<MeetSync | null>(null);
@@ -122,7 +132,7 @@ export default function MeetAttendanceReview() {
     setRefreshing(true);
     listMeetRecords({ date_from: new Date(Date.now() - period * DAY).toISOString() })
       .then((r) => {
-        setItems(r.items); setOptions(r.review_options); setTalkEnabled(Boolean(r.talk_enabled));
+        setItems(r.items); setOptions(r.review_options); setRules(r.verdict_rules); setTalkEnabled(Boolean(r.talk_enabled));
         setSync(r.sync ?? null); setUpdatedAt(Date.now());
       })
       .catch(() => { if (!quiet) setError(true); })
@@ -151,6 +161,8 @@ export default function MeetAttendanceReview() {
       mismatches: record.mismatches ?? 0,
       reviewed: record.reviewed ?? 0,
       unknown: record.unknown?.length ?? i.unknown,
+      // A corrected mark changes what agrees with Meet and who is left unmarked.
+      verdict_summary: record.verdict_summary ?? i.verdict_summary,
     })) ?? prev);
   }, []);
   const reviewingFor = useCallback(
@@ -197,6 +209,11 @@ export default function MeetAttendanceReview() {
   const visible = useMemo(() => listed.filter((i) => (
     issue ? hasIssue(i, issue) : show === 'all' || inAttention(i)
   )), [listed, issue, show, inAttention]);
+  // Recordings still on their way in the rows on screen: one batched status poll, never one per row.
+  const liveIds = useMemo(() => liveEventIds(visible.flatMap((i) => (
+    i.recording ? [{ event_id: i.event_id, status: i.recording.status }] : []
+  ))), [visible]);
+  const liveRecordings = useRecordingStatuses(liveIds, view === 'lessons');
 
   const filtered = Boolean(teacherId || groupId || query || issue);
   // Talk time is a filter only where some lesson has it; otherwise the chip would sit there greyed out forever.
@@ -224,6 +241,11 @@ export default function MeetAttendanceReview() {
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
             {INTRO[audience]} Click a flag to answer it: with its reason it leaves Needs attention. Times are Almaty.
           </p>
+          {rules && (
+            <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
+              {rulesText(rules)} It sits beside the teacher’s mark and is never written by itself.
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
         <TalkSettingsButton role={user?.role} onChanged={(next) => { setTalkEnabled(next.enabled); load(true); }} />
@@ -460,13 +482,14 @@ export default function MeetAttendanceReview() {
           </div>
         ) : (
           <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm">
-            <table className="w-full min-w-[760px] text-sm">
+            <table className="w-full min-w-[880px] text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                   <th className="px-4 py-2.5">Lesson</th>
                   <th className="px-4 py-2.5">Teacher in the room</th>
                   <th className="px-4 py-2.5 text-right">Students</th>
                   <th className="px-4 py-2.5">What stands out</th>
+                  <th className="px-4 py-2.5">Recording</th>
                   <th className="w-10 px-2 py-2.5" aria-label="Open" />
                 </tr>
               </thead>
@@ -475,6 +498,7 @@ export default function MeetAttendanceReview() {
                   const teacherFlags = item.flags.filter((f) => f.role === 'teacher');
                   const studentFlags = studentFlagsFor(item, issue);
                   const reviewing = reviewingFor(item.event_id);
+                  const live = liveRecordings[String(item.event_id)];
                   return (
                     <tr
                       key={item.event_id}
@@ -533,6 +557,9 @@ export default function MeetAttendanceReview() {
                           <div className={cn('text-[13px]', needsAttention(item) ? 'text-foreground' : 'text-muted-foreground')}>
                             {lessonHeadline(item)}
                           </div>
+                          {verdictLine(item.verdict_summary) && (
+                            <div className="mt-0.5 text-xs text-muted-foreground">{verdictLine(item.verdict_summary)}</div>
+                          )}
                           {studentFlags.length > 0 && (
                             <ul className="mt-1.5 space-y-1 text-xs">
                               {studentFlags.slice(0, 6).map((f) => (
@@ -549,6 +576,16 @@ export default function MeetAttendanceReview() {
                           )}
                         </td>
                       </>)}
+                      <td className="px-4 py-3">
+                        {item.recording && (
+                          <LessonRecordingCell
+                            status={live?.status ?? item.recording.status}
+                            durationSeconds={live?.duration_seconds ?? item.recording.duration_seconds}
+                            progress={live?.progress}
+                            onWatch={() => setPlaying(recordingMeta(item, live?.duration_seconds))}
+                          />
+                        )}
+                      </td>
                       <td className="px-2 py-3 text-muted-foreground"><ChevronRight className="h-4 w-4" aria-hidden /></td>
                     </tr>
                   );
@@ -570,6 +607,12 @@ export default function MeetAttendanceReview() {
             load(true); // confirmations inside change this list
           }
         }}
+      />
+      <RecordingPlayerDialog
+        meta={playing}
+        open={playing !== null}
+        onOpenChange={(open) => { if (!open) setPlaying(null); }}
+        locale={recordingsLocale(user?.role)}
       />
     </div>
   );

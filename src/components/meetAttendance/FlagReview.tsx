@@ -153,7 +153,7 @@ function ReviewPopover({ flag, userId, personName, reviewing, lateToo, title }: 
   const isOther = chosen === 'other';
   const valid = (!required || chosen !== null) && (!isOther || text.trim() !== '');
   const fixable = canFixMark(reviewing.role, flag.code);
-  const fixLabel = flag.code === 'marked_present_not_joined' ? '«Не был»' : lateToo ? '«Опоздал»' : '«Был»';
+  const fixLabel = flag.code === 'marked_absent_was_in_room' ? (lateToo ? '«Опоздал»' : '«Был»') : '«Не был»';
   const showForm = !flag.review || editing;
 
   const reset = () => {

@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { barFor, clock, flagTone, position, MARK_LABEL, type Axis } from '../../lib/meetAttendance';
-import type { MeetAccount, MeetFlag, MeetMark, MeetPresence } from '../../services/api/meetAttendance';
+import { barFor, clock, flagTone, position, verdictDiffers, verdictText, MARK_LABEL, type Axis } from '../../lib/meetAttendance';
+import type { MeetAccount, MeetFlag, MeetMark, MeetPresence, MeetVerdict } from '../../services/api/meetAttendance';
 import { FlagChip, type FlagReviewing } from './FlagReview';
 
 export { FlagChip };
@@ -21,6 +21,8 @@ export interface TimelineRow {
   accounts: MeetAccount[];
   /** A short second line, e.g. the person's role for "others". */
   note?: string;
+  /** Students only: Meet's verdict under the rules (2026-09-16). */
+  verdict?: MeetVerdict;
 }
 
 const BAR: Record<RowKind, string> = {
@@ -50,6 +52,40 @@ function MarkChip({ mark }: { mark: MeetMark | undefined }) {
       )}
     >
       {mark ? MARK_LABEL[mark][0] : '–'}
+    </span>
+  );
+}
+
+const VERDICT_TONE: Record<string, string> = {
+  present: 'text-emerald-700 ring-emerald-300 dark:text-emerald-300 dark:ring-emerald-800',
+  late: 'text-amber-800 ring-amber-300 dark:text-amber-300 dark:ring-amber-800',
+  absent: 'text-rose-700 ring-rose-300 dark:text-rose-300 dark:ring-rose-800',
+  unknown: 'text-muted-foreground ring-border',
+};
+
+/**
+ * Meet's verdict beside the mark: a lettered square where the name column is narrow, words where
+ * there is room. Outlined, so it never reads as a mark; «≠» when the two say different things.
+ */
+export function VerdictChip({ verdict, mark, compact = false }: { verdict: MeetVerdict; mark: MeetMark | undefined; compact?: boolean }) {
+  const text = `Meet: ${verdictText(verdict)}`;
+  const differs = verdictDiffers(mark, verdict);
+  const title = differs ? `${text} — the mark says ${mark ? MARK_LABEL[mark] : 'nothing'}` : text;
+  const tone = VERDICT_TONE[verdict.verdict ?? 'unknown'];
+  if (compact) {
+    return (
+      <span title={title} aria-label={title}
+        className={cn('inline-flex h-4 w-4 flex-none items-center justify-center rounded text-[9px] font-bold ring-1 ring-inset',
+          tone)}>
+        {verdict.verdict ? MARK_LABEL[verdict.verdict][0] : '?'}
+      </span>
+    );
+  }
+  return (
+    <span title={title}
+      className={cn('inline-flex max-w-full items-center gap-1 rounded px-1.5 py-px text-[11px] font-medium leading-4 ring-1 ring-inset', tone)}>
+      {differs && <span aria-hidden>≠</span>}
+      <span className="min-w-0 truncate">{text}</span>
     </span>
   );
 }
@@ -137,6 +173,7 @@ export function MeetTimeline({ axis, rows, compact = false, onUnlink, busy = fal
             <div role="cell" className="min-w-0">
               <div className="flex min-w-0 items-center gap-1.5">
                 {row.kind === 'student' && <MarkChip mark={row.mark} />}
+                {row.kind === 'student' && compact && row.verdict && <VerdictChip verdict={row.verdict} mark={row.mark} compact />}
                 {row.kind === 'unknown' && (
                   <span title="Not confirmed yet" className="inline-flex h-4 w-4 flex-none items-center justify-center rounded bg-amber-100 text-[10px] font-bold text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">?</span>
                 )}
@@ -146,6 +183,9 @@ export function MeetTimeline({ axis, rows, compact = false, onUnlink, busy = fal
                 {row.kind === 'teacher' && <span className="flex-none text-[10px] uppercase tracking-wide text-violet-600 dark:text-violet-300">Teacher</span>}
               </div>
               {row.note && <div className="truncate text-[11px] text-muted-foreground">{row.note}</div>}
+              {row.kind === 'student' && !compact && row.verdict && (
+                <div className="mt-1 flex"><VerdictChip verdict={row.verdict} mark={row.mark} /></div>
+              )}
               {row.flags.length > 0 && (
                 <div className="mt-1 flex flex-wrap gap-1">
                   {row.flags.map((f) => (

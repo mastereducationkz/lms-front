@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '../../lib/utils';
-import { buildAxis, clock, isMismatch } from '../../lib/meetAttendance';
+import { buildAxis, canMark, clock, isMismatch, rulesText } from '../../lib/meetAttendance';
 import { useAuth } from '../../contexts/AuthContext';
 import {
+  applyMeetVerdicts,
   confirmMeetAccount,
   getMeetRecord,
   type MeetIdentity,
@@ -90,13 +92,31 @@ export function useMeetRecord(eventId: number | null, enabled = true) {
     [eventId, user?.role, options],
   );
 
-  return { record, loading, failed, busyId, confirm, confirmMany, reload, reviewing };
+  // Meet's verdicts for the students nobody has marked — pressed by a person, never by itself.
+  const [applying, setApplying] = useState(false);
+  const applyVerdicts = useMemo(() => {
+    if (eventId == null || !canMark(user?.role)) return undefined;
+    return async () => {
+      setApplying(true);
+      try {
+        const next = await applyMeetVerdicts(eventId);
+        setRecord(next);
+        toast.success('Marks saved from Meet', { description: 'Only students who had no mark. Change any of them in the journal.' });
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : 'Could not apply Meet’s verdicts');
+      } finally {
+        setApplying(false);
+      }
+    };
+  }, [eventId, user?.role]);
+
+  return { record, loading, failed, busyId, confirm, confirmMany, reload, reviewing, applyVerdicts, applying };
 }
 
 function personRow(p: MeetPerson, kind: TimelineRow['kind'], note?: string): TimelineRow {
   return {
     key: `u${p.user_id}`, userId: p.user_id, name: p.name, kind, mark: p.mark, presence: p, flags: p.flags,
-    accounts: p.accounts, note,
+    accounts: p.accounts, note, verdict: p.verdict,
   };
 }
 
@@ -123,10 +143,21 @@ interface Props {
   compact?: boolean;
   /** Flags the viewer may answer open a review form (from `useMeetRecord`). */
   reviewing?: FlagReviewing;
+  /** Writes Meet's verdicts for unmarked students; only for viewers who may mark (from `useMeetRecord`). */
+  onApplyVerdicts?: () => void;
+  applying?: boolean;
+}
+
+/** "This lesson: 19:04–19:52, 36 of 48 min needed" — what the verdicts below were judged on. */
+function clockText(record: MeetRecord): string | null {
+  const c = record.clock;
+  if (!c) return null;
+  const how = c.follows_teacher ? '' : ' — by the timetable, the teacher wasn’t in the lesson';
+  return `This lesson: ${clock(c.start)}–${clock(c.end)}, ${c.required_minutes} of ${c.held_minutes} min needed${how}.`;
 }
 
 /** A finished lesson's Meet record: the headline numbers, the accounts to confirm, the timeline. */
-export function MeetRecordView({ record, busyId, onConfirm, onConfirmMany, compact = false, reviewing }: Props) {
+export function MeetRecordView({ record, busyId, onConfirm, onConfirmMany, compact = false, reviewing, onApplyVerdicts, applying = false }: Props) {
   const [showHidden, setShowHidden] = useState(false);
   const students = useMemo(() => record.students ?? [], [record.students]);
   const joined = students.filter((s) => s.sessions.length > 0).length;
@@ -160,6 +191,15 @@ export function MeetRecordView({ record, busyId, onConfirm, onConfirmMany, compa
     ? `${clock(teacher.first_join)} → ${clock(teacher.last_leave)}`
     : record.held_back ? 'Not confirmed yet' : 'Not in the room';
 
+  // Unmarked students Meet can already judge: what «Apply» would write, counted by verdict.
+  const applicable = students.filter((s) => s.mark == null && s.verdict?.verdict);
+  const applyCounts = (['present', 'late', 'absent'] as const)
+    .map((v) => [v, applicable.filter((s) => s.verdict?.verdict === v).length] as const)
+    .filter(([, n]) => n > 0)
+    .map(([v, n]) => `${n} ${v}`)
+    .join(', ');
+  const legend = compact ? null : [rulesText(record.rules), clockText(record)].filter(Boolean).join(' ');
+
   return (
     <div className="flex flex-col gap-4">
       <div className={cn('grid gap-3', compact ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-4')}>
@@ -174,11 +214,30 @@ export function MeetRecordView({ record, busyId, onConfirm, onConfirmMany, compa
 
       {record.held_back && (
         <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
-          Someone in the room isn&apos;t confirmed yet, so nobody is flagged as &ldquo;never joined&rdquo; until they are.
+          Someone in the room isn&apos;t confirmed yet, so nobody is flagged as &ldquo;never joined&rdquo;, and Meet&apos;s
+          &ldquo;absent&rdquo; and &ldquo;late&rdquo; wait, until they are.
         </p>
       )}
       {record.partial && (
         <p className="text-xs text-muted-foreground">Part of this lesson hasn&apos;t come through from Google yet; more may appear.</p>
+      )}
+      {legend && <p className="text-xs text-muted-foreground">{legend}</p>}
+      {onApplyVerdicts && applicable.length > 0 && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-200">
+          <span className="min-w-0 flex-1">
+            {applicable.length} {applicable.length === 1 ? 'student has' : 'students have'} no mark yet — Meet says {applyCounts}.
+          </span>
+          <button
+            type="button"
+            onClick={onApplyVerdicts}
+            disabled={applying}
+            title="Writes these marks into the journal. Students who already have a mark are left alone."
+            className="inline-flex items-center gap-1.5 rounded-md border border-sky-300 bg-white px-2.5 py-1 font-medium text-sky-900 transition hover:bg-sky-100 disabled:opacity-60 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-100 dark:hover:bg-sky-900"
+          >
+            {applying && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
+            Apply Meet&apos;s verdicts ({applicable.length})
+          </button>
+        </div>
       )}
 
       <WhoIsThis accounts={unknown} candidates={record.candidates ?? []} busyId={busyId}
