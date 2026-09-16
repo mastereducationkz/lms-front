@@ -10,6 +10,8 @@ import {
   flagTextRu,
   isMismatch,
   reasonText,
+  verdictDiffers,
+  verdictText,
   type ParticipantRow,
   type ParticipantsView,
 } from '../../lib/meetAttendance';
@@ -223,7 +225,15 @@ export function ParticipantsPanel({ view, locale = 'en', defaultOpen = false, cl
                   )}
                 >
                   <span role="cell" className={cn('truncate', s.first_join || !ready ? 'text-foreground' : 'text-muted-foreground')} title={s.name}>{s.name}</span>
-                  <span role="cell"><Mark mark={s.mark} locale={locale} /></span>
+                  <span role="cell" className="flex flex-col items-start gap-0.5">
+                    <Mark mark={s.mark} locale={locale} />
+                    {/* Staff pages only: the watch-link page's view never carries a verdict. */}
+                    {s.verdict && (
+                      <span className={cn('text-[10px] leading-tight', verdictDiffers(s.mark, s.verdict) ? 'text-amber-700 dark:text-amber-300' : 'text-muted-foreground')}>
+                        Meet: {verdictText(s.verdict, locale)}
+                      </span>
+                    )}
+                  </span>
                   {ready && <span role="cell" className="col-span-2 text-[13px] sm:col-span-1"><Stretch row={s} locale={locale} heldBack={view.held_back} /></span>}
                   {ready && (
                     <span role="cell" className="col-span-2 flex flex-wrap gap-1 sm:col-span-1">

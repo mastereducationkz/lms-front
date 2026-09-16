@@ -37,7 +37,7 @@ export default function MeetAttendanceDialog({ eventId, open, onOpenChange, init
   const [tab, setTab] = useState<MeetDialogTab>(initialTab);
   useEffect(() => { if (open) setTab(initialTab); }, [open, eventId, initialTab]);
 
-  const { record, loading, failed, busyId, confirm, confirmMany, reviewing } = useMeetRecord(eventId, open);
+  const { record, loading, failed, busyId, confirm, confirmMany, reviewing, applyVerdicts, applying } = useMeetRecord(eventId, open);
   const { talk, loading: talkLoading, failed: talkFailed } = useLessonTalk(eventId, open);
   const stateText = recordStateText(record);
   // A switched-off feature is only news to the admin who can switch it on.
@@ -91,7 +91,8 @@ export default function MeetAttendanceDialog({ eventId, open, onOpenChange, init
                 <p className="text-sm text-muted-foreground">{stateText}</p>
               )}
               {record?.state === 'ready' && (
-                <MeetRecordView record={record} busyId={busyId} onConfirm={confirm} onConfirmMany={confirmMany} reviewing={reviewing} />
+                <MeetRecordView record={record} busyId={busyId} onConfirm={confirm} onConfirmMany={confirmMany} reviewing={reviewing}
+                  onApplyVerdicts={applyVerdicts} applying={applying} />
               )}
             </>
           ) : (

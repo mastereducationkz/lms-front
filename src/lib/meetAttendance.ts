@@ -12,6 +12,10 @@ import type {
   MeetPresence,
   MeetRecord,
   MeetSpan,
+  MeetStudentVerdict,
+  MeetVerdict,
+  MeetVerdictRules,
+  MeetVerdictSummary,
 } from '../services/api/meetAttendance';
 
 const MINUTE = 60_000;
@@ -81,6 +85,7 @@ export function barFor(axis: Axis, span: MeetSpan, now: number = Date.now()): { 
 
 const MISMATCH: ReadonlySet<MeetFlagCode> = new Set([
   'marked_present_not_joined',
+  'marked_present_too_short',
   'marked_absent_was_in_room',
   'teacher_not_joined',
 ]);
@@ -102,7 +107,8 @@ export function flagText(flag: MeetFlag): string {
     case 'late': return `Late ${m} min`;
     case 'left_early': return `Left ${m} min early`;
     case 'marked_present_not_joined': return 'Marked present, never joined';
-    case 'marked_absent_was_in_room': return `Marked absent, in the room ${m} min`;
+    case 'marked_present_too_short': return `Marked present, in the lesson ${m} of ${flag.required ?? '?'} min`;
+    case 'marked_absent_was_in_room': return `Marked absent, in the lesson ${m} min`;
     case 'teacher_late': return `Started ${m} min late`;
     case 'ended_early': return `Ended ${m} min early`;
     case 'teacher_not_joined': return 'Teacher never joined';
@@ -126,9 +132,74 @@ export function canReviewFlag(role: string | undefined, code: MeetFlagCode): boo
   return (isTeacherFlag(code) ? TEACHER_FLAG_REVIEWERS : RECORD_READERS).has(role ?? '');
 }
 
+/** Who writes marks: the journal's rule (curators read them only). */
+export function canMark(role: string | undefined): boolean {
+  return MARKERS.has(role ?? '');
+}
+
 /** Only a mark that contradicts the room can be corrected, and only by someone who marks. */
 export function canFixMark(role: string | undefined, code: MeetFlagCode): boolean {
-  return (code === 'marked_present_not_joined' || code === 'marked_absent_was_in_room') && MARKERS.has(role ?? '');
+  return (code === 'marked_present_not_joined' || code === 'marked_present_too_short' || code === 'marked_absent_was_in_room')
+    && canMark(role);
+}
+
+// ── Meet's verdict (owner, 2026-09-16) ───────────────────────────────────────────────────
+
+type VerdictLocale = 'en' | 'ru';
+
+const VERDICT_WORD: Record<VerdictLocale, Record<NonNullable<MeetVerdict['verdict']>, string>> = {
+  en: { present: 'Present', late: 'Late', absent: 'Absent' },
+  ru: { present: 'Был', late: 'Опоздал', absent: 'Не был' },
+};
+
+/** "Present", "Late 12 min", "Absent · 30 of 45 min", "Not known yet…" — the verdict with its reason. */
+export function verdictText(v: Pick<MeetVerdict, 'verdict' | 'minutes' | 'required' | 'late_minutes'>, locale: VerdictLocale = 'en'): string {
+  const ru = locale === 'ru';
+  if (!v.verdict) return ru ? 'Пока неизвестно: есть неподтверждённые аккаунты' : 'Not known yet: an account in the room isn’t confirmed';
+  const word = VERDICT_WORD[locale][v.verdict];
+  if (v.verdict === 'late') return ru ? `${word} на ${v.late_minutes} мин` : `${word} ${v.late_minutes} min`;
+  if (v.verdict === 'absent') {
+    if (v.minutes <= 0) return ru ? `${word} на уроке` : `${word} · not in the lesson`;
+    return ru ? `${word}: ${v.minutes} из ${v.required} мин` : `${word} · ${v.minutes} of ${v.required} min`;
+  }
+  return word;
+}
+
+/** The mark and the verdict say different things — about attending, or only present versus late. */
+export function verdictDiffers(mark: MeetMark | undefined, v: Pick<MeetVerdict, 'verdict'> | null | undefined): boolean {
+  if (!v?.verdict || !mark || mark === 'removed') return false;
+  return mark !== v.verdict;
+}
+
+/** The rules in one line, for the pages' legends; null from a server without verdicts. */
+export function rulesText(rules: MeetVerdictRules | undefined, locale: VerdictLocale = 'en'): string | null {
+  if (!rules) return null;
+  const share = Math.round(rules.present_share * 100);
+  const hour = Math.floor(60 * rules.present_share);
+  return locale === 'ru'
+    ? `Вердикт Meet: опоздание — позже ${rules.late_after_minutes} мин, «не был» — меньше ${share}% урока (${hour} из 60 мин); время — от прихода до ухода преподавателя.`
+    : `Meet’s verdict: late after ${rules.late_after_minutes} min, absent under ${share}% of the lesson (${hour} of 60 min), timed from when the teacher came to when the teacher left.`;
+}
+
+/** "Meet: 12 present · 2 late · 1 absent · 3 not marked" for a list row; null without verdicts. */
+export function verdictLine(summary: MeetVerdictSummary | null | undefined): string | null {
+  if (!summary) return null;
+  const parts = [
+    summary.present && `${summary.present} present`,
+    summary.late && `${summary.late} late`,
+    summary.absent && `${summary.absent} absent`,
+    summary.held_back && `${summary.held_back} not known yet`,
+  ].filter(Boolean);
+  if (!parts.length) return null;
+  const unmarked = summary.unmarked ? ` · ${summary.unmarked} not marked` : '';
+  return `Meet: ${parts.join(' · ')}${unmarked}`;
+}
+
+/** "eventId:userId" → the student's verdict, for the attendance journal. */
+export function verdictIndex(items: Pick<MeetLessonSummary, 'event_id' | 'verdicts'>[]): Map<string, MeetStudentVerdict> {
+  const index = new Map<string, MeetStudentVerdict>();
+  for (const item of items) for (const v of item.verdicts ?? []) index.set(`${item.event_id}:${v.user_id}`, v);
+  return index;
 }
 
 /** The reason in words: the preset, the comment, or — for «Другое» — just what was written. */
@@ -185,6 +256,7 @@ export type IssueKey =
   | 'marks_disagree'
   | 'students_late'
   | 'left_early'
+  | 'not_marked'
   | 'to_confirm'
   | 'silent_students';
 
@@ -193,15 +265,16 @@ export const ISSUES: { key: IssueKey; label: string; hint: string }[] = [
   { key: 'teacher_late', label: 'Teacher late', hint: 'The teacher joined more than 2 min after the start' },
   { key: 'ended_early', label: 'Ended early', hint: 'The teacher left more than 5 min before the end' },
   { key: 'teacher_not_joined', label: 'Teacher never joined', hint: 'No confirmed account of the teacher was in the room' },
-  { key: 'marks_disagree', label: 'Marks disagree', hint: 'Marked present but never joined, or marked absent but in the room 10+ min' },
-  { key: 'students_late', label: 'Students late', hint: 'A student joined more than 5 min after the start' },
-  { key: 'left_early', label: 'Students left early', hint: 'A student left more than 10 min before the end' },
+  { key: 'marks_disagree', label: 'Marks disagree', hint: 'Marked present but in under 75% of the lesson (or never joined), or marked absent but in for 75% or more' },
+  { key: 'students_late', label: 'Students late', hint: 'A student joined more than 5 min after the lesson began (the teacher’s start, when later)' },
+  { key: 'left_early', label: 'Students left early', hint: 'A student left more than 10 min before the lesson ended (the teacher’s end, when earlier)' },
+  { key: 'not_marked', label: 'Not marked', hint: 'Students the teacher hasn’t marked yet; Meet’s verdict can be applied in the lesson' },
   { key: 'to_confirm', label: 'To confirm', hint: 'Google accounts nobody has named yet' },
   // A filter for reports only: a quiet test lesson is normal, so it never asks for attention.
   { key: 'silent_students', label: 'Silent students', hint: 'A student was in the room and never spoke (talk time)' },
 ];
 
-type Reportable = Pick<MeetLessonSummary, 'flags' | 'unknown' | 'mismatches'> & Partial<Pick<MeetLessonSummary, 'talk'>>;
+type Reportable = Pick<MeetLessonSummary, 'flags' | 'unknown' | 'mismatches'> & Partial<Pick<MeetLessonSummary, 'talk' | 'verdict_summary'>>;
 
 const hasCode = (item: Reportable, ...codes: MeetFlagCode[]) => item.flags.some((f) => codes.includes(f.code));
 
@@ -210,7 +283,8 @@ export function hasIssue(item: Reportable, key: IssueKey): boolean {
     case 'teacher_late': return hasCode(item, 'teacher_late');
     case 'ended_early': return hasCode(item, 'ended_early');
     case 'teacher_not_joined': return hasCode(item, 'teacher_not_joined');
-    case 'marks_disagree': return hasCode(item, 'marked_present_not_joined', 'marked_absent_was_in_room');
+    case 'marks_disagree': return hasCode(item, 'marked_present_not_joined', 'marked_present_too_short', 'marked_absent_was_in_room');
+    case 'not_marked': return (item.verdict_summary?.unmarked ?? 0) > 0;
     case 'students_late': return hasCode(item, 'late');
     case 'left_early': return hasCode(item, 'left_early');
     case 'to_confirm': return item.unknown > 0;
@@ -266,6 +340,9 @@ export interface TeacherTally {
   /** Lessons with talk time, and the teacher's average share of the speech in them. */
   talk_lessons: number;
   avg_teacher_share: number | null;
+  /** Marked students Meet could judge, and how many of those marks agree with it about attending. */
+  verdict_compared: number;
+  verdict_agree: number;
 }
 
 /** One row per teacher, the ones with most to talk about first. */
@@ -276,6 +353,7 @@ export function tallyByTeacher(items: MeetLessonSummary[]): TeacherTally[] {
     const row = rows.get(item.teacher.id) ?? {
       teacherId: item.teacher.id, name: item.teacher.name, lessons: 0, teacher_late: 0, late_minutes: 0,
       ended_early: 0, teacher_not_joined: 0, marks_disagree: 0, to_confirm: 0, talk_lessons: 0, avg_teacher_share: null,
+      verdict_compared: 0, verdict_agree: 0,
     };
     row.lessons += 1;
     const late = item.flags.find((f) => f.code === 'teacher_late');
@@ -284,6 +362,8 @@ export function tallyByTeacher(items: MeetLessonSummary[]): TeacherTally[] {
     if (hasIssue(item, 'teacher_not_joined')) row.teacher_not_joined += 1;
     if (hasIssue(item, 'marks_disagree')) row.marks_disagree += 1;
     if (hasIssue(item, 'to_confirm')) row.to_confirm += 1;
+    row.verdict_compared += item.verdict_summary?.compared ?? 0;
+    row.verdict_agree += item.verdict_summary?.agree ?? 0;
     const share = item.talk?.teacher_share;
     if (share != null) {
       // A running average, so the row never has to carry a separate sum.
@@ -323,6 +403,13 @@ function recordingCell(item: MeetLessonSummary): string {
   return length ? `${RECORDING_CSV.ready} · ${length}` : RECORDING_CSV[recording.status] ?? recording.status;
 }
 
+/** Counts by verdict, not marked, and "agree of compared" — blank for a lesson without verdicts. */
+function verdictCells(summary: MeetVerdictSummary | null | undefined): (string | number)[] {
+  if (!summary) return ['', '', '', '', '', ''];
+  return [summary.present, summary.late, summary.absent, summary.held_back, summary.unmarked,
+    summary.compared ? `${summary.agree} of ${summary.compared}` : ''];
+}
+
 /**
  * The review list as a spreadsheet, for reporting. Opens correctly in Excel (UTF-8 with BOM, so
  * Cyrillic names survive); dates and times are Almaty.
@@ -330,7 +417,8 @@ function recordingCell(item: MeetLessonSummary): string {
 export function reportCsv(items: MeetLessonSummary[]): string {
   const header = ['Date', 'Start', 'End', 'Lesson', 'Groups', 'Teacher', 'Teacher joined', 'Teacher left',
     'Teacher issues', 'Students joined', 'Students', 'Marks disagree', 'Students late', 'Students left early',
-    'Accounts to confirm', 'Teacher talk share', 'Students who didn’t speak', 'Recording'];
+    'Accounts to confirm', 'Meet: present', 'Meet: late', 'Meet: absent', 'Meet: not known yet', 'Not marked',
+    'Marks agree with Meet', 'Teacher talk share', 'Students who didn’t speak', 'Recording'];
   const rows = items.map((item) => {
     const lesson = [almatyDate(item.start), clock(item.start), clock(item.end), item.title,
       item.groups.map((g) => g.name).join(', '), item.teacher?.name ?? ''];
@@ -341,8 +429,9 @@ export function reportCsv(items: MeetLessonSummary[]): string {
       item.teacher?.first_join ? clock(item.teacher.first_join) : '', item.teacher?.last_leave ? clock(item.teacher.last_leave) : '',
       item.flags.filter((f) => f.role === 'teacher').map(flagCell).join('; '),
       item.joined, item.students,
-      who(item, 'marked_present_not_joined', 'marked_absent_was_in_room'), who(item, 'late'), who(item, 'left_early'),
+      who(item, 'marked_present_not_joined', 'marked_present_too_short', 'marked_absent_was_in_room'), who(item, 'late'), who(item, 'left_early'),
       item.unknown,
+      ...verdictCells(item.verdict_summary),
       item.talk?.teacher_share != null ? `${Math.round(item.talk.teacher_share * 100)}%` : '',
       item.talk ? item.talk.silent.length : '',
       recordingCell(item),
@@ -362,6 +451,8 @@ export interface ParticipantRow {
   joins: number;
   flags: MeetFlag[];
   role?: string | null;
+  /** Staff pages only; the watch-link page never gets one. */
+  verdict?: MeetVerdict | null;
 }
 
 export interface UnconfirmedRow {
@@ -393,7 +484,7 @@ export interface ParticipantsView {
 export function toParticipantsView(record: MeetRecord): ParticipantsView {
   const row = (p: MeetPerson): ParticipantRow => ({
     name: p.name, mark: p.mark, first_join: p.first_join, last_leave: p.last_leave,
-    minutes_in_lesson: p.minutes_in_lesson, joins: p.joins, flags: p.flags, role: p.role,
+    minutes_in_lesson: p.minutes_in_lesson, joins: p.joins, flags: p.flags, role: p.role, verdict: p.verdict ?? null,
   });
   if (record.state !== 'ready') {
     return {
@@ -437,7 +528,8 @@ export function flagTextRu(flag: MeetFlag): string {
     case 'late': return `Опоздал на ${m} мин`;
     case 'left_early': return `Ушёл на ${m} мин раньше`;
     case 'marked_present_not_joined': return 'Отмечен, но не заходил';
-    case 'marked_absent_was_in_room': return `Отмечен «не был», но был в комнате ${m} мин`;
+    case 'marked_present_too_short': return `Отмечен, но на уроке ${m} из ${flag.required ?? '?'} мин`;
+    case 'marked_absent_was_in_room': return `Отмечен «не был», но был на уроке ${m} мин`;
     case 'teacher_late': return `Начал на ${m} мин позже`;
     case 'ended_early': return `Закончил на ${m} мин раньше`;
     case 'teacher_not_joined': return 'Преподаватель не заходил';

@@ -24,8 +24,9 @@ import { Label } from '../components/ui/label';
 import { parseAsUTC } from '../lib/datetime';
 import { formatGroupCloseDate } from '../lib/groupList';
 import { isAttendanceLockedLesson } from '../lib/attendance';
-import { listMeetRecords, type MeetLessonFlag } from '../services/api/meetAttendance';
-import { flagText, flagTextRu, mismatchIndex, reasonText } from '../lib/meetAttendance';
+import { listMeetRecords, type MeetLessonFlag, type MeetStudentVerdict } from '../services/api/meetAttendance';
+import { flagText, flagTextRu, mismatchIndex, reasonText, verdictIndex } from '../lib/meetAttendance';
+import { MeetVerdictBadge, verdictNote } from '../components/meetAttendance/MeetVerdictBadge';
 import { spokeNote, talkSecondsIndex } from '../lib/meetTalk';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
@@ -568,6 +569,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   const [meetMismatches, setMeetMismatches] = useState<Map<string, MeetLessonFlag[]>>(new Map());
   // How long each student spoke in each lesson ("eventId:studentId" → seconds), for the hover.
   const [meetTalk, setMeetTalk] = useState<Map<string, number>>(new Map());
+  // Meet's verdict on each student in each lesson ("eventId:studentId"): beside the mark, never instead of it.
+  const [meetVerdicts, setMeetVerdicts] = useState<Map<string, MeetStudentVerdict>>(new Map());
   
   // Changes tracking: Set of student IDs that have changes
   const [changedEntries, setChangedEntries] = useState<Set<number>>(new Set());
@@ -703,6 +706,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
     if (!selectedGroupId || starts.length === 0) {
       setMeetMismatches(new Map());
       setMeetTalk(new Map());
+      setMeetVerdicts(new Map());
       return;
     }
     const DAY = 24 * 60 * 60 * 1000;
@@ -716,8 +720,9 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         if (cancelled) return;
         setMeetMismatches(mismatchIndex(r.items));
         setMeetTalk(talkSecondsIndex(r.items));
+        setMeetVerdicts(verdictIndex(r.items));
       })
-      .catch(() => { if (!cancelled) { setMeetMismatches(new Map()); setMeetTalk(new Map()); } });
+      .catch(() => { if (!cancelled) { setMeetMismatches(new Map()); setMeetTalk(new Map()); setMeetVerdicts(new Map()); } });
     return () => { cancelled = true; };
   }, [selectedGroupId, data]);
 
@@ -1746,17 +1751,23 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                         ) : unmarked ? (
                                         <div
                                             className={cn(
-                                                "w-1/2 border-r border-gray-300 dark:border-border flex items-center justify-center p-1",
+                                                "relative w-1/2 border-r border-gray-300 dark:border-border flex items-center justify-center p-1",
                                                 canMarkAttendance ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-secondary/40 transition-colors" : "cursor-default"
                                             )}
                                             onClick={() => { if (canMarkAttendance) handleAttendanceChange(student.student_id, lessonKey, 'attended'); }}
-                                            title={canMarkAttendance
+                                            title={(canMarkAttendance
                                                 ? t('Не отмечено — нажмите, чтобы отметить (Был)', 'Not marked — click to mark (Present)')
-                                                : t('Посещаемость ещё не отмечена', 'Attendance not recorded yet')}
+                                                : t('Посещаемость ещё не отмечена', 'Attendance not recorded yet'))
+                                                + (meetVerdicts.has(`${lessonInfo.event_id}:${student.student_id}`)
+                                                    ? `\n${verdictNote(meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`), isTeacher ? 'en' : 'ru')}`
+                                                    : '')}
                                         >
                                             <span className="w-full text-center text-[9px] md:text-[10px] leading-tight font-semibold uppercase text-gray-400 dark:text-gray-500 border border-dashed border-gray-300 dark:border-border rounded px-1 py-1">
                                                 {isTeacher ? <>Not<br/>marked</> : <>Не<br/>отмечено</>}
                                             </span>
+                                            {meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`) && (
+                                                <MeetVerdictBadge verdict={meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`)!} locale={isTeacher ? 'en' : 'ru'} />
+                                            )}
                                         </div>
                                         ) : (
                                         <div
@@ -1779,8 +1790,14 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                 disabled={user?.role === 'curator'}
                                                 isFuture={cellIsFuture}
                                                 en={isTeacher}
-                                                note={spokeNote(meetTalk.get(`${lessonInfo.event_id}:${student.student_id}`), isTeacher ? 'en' : 'ru')}
+                                                note={[
+                                                    verdictNote(meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`), isTeacher ? 'en' : 'ru'),
+                                                    spokeNote(meetTalk.get(`${lessonInfo.event_id}:${student.student_id}`), isTeacher ? 'en' : 'ru'),
+                                                ].filter(Boolean).join('\n') || null}
                                             />
+                                            {!cellIsFuture && meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`) && (
+                                                <MeetVerdictBadge verdict={meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`)!} locale={isTeacher ? 'en' : 'ru'} />
+                                            )}
                                             {meetMismatches.get(`${lessonInfo.event_id}:${student.student_id}`)?.map((f) => {
                                                 // Answered in Meet attendance: grey with a tick and the reason, instead of red.
                                                 const reason = reasonText(f.review);

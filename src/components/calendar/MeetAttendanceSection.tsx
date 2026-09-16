@@ -31,7 +31,7 @@ function hasFinished(event: Event): boolean {
  */
 export default function MeetAttendanceSection({ event, role }: Props) {
   const wanted = RECORD_ROLES.has(role ?? '') && isMeetLesson(event) && hasFinished(event);
-  const { record, loading, busyId, confirm, confirmMany, reload, reviewing } = useMeetRecord(event.id, wanted);
+  const { record, loading, busyId, confirm, confirmMany, reload, reviewing, applyVerdicts, applying } = useMeetRecord(event.id, wanted);
   // Talk time only once there is a record to go with it: most lessons on a calendar have neither.
   const { talk } = useLessonTalk(event.id, wanted && record?.state === 'ready');
   const [expanded, setExpanded] = useState(false);
@@ -72,7 +72,8 @@ export default function MeetAttendanceSection({ event, role }: Props) {
         <p className="text-sm text-muted-foreground">{stateText}</p>
       )}
       {record.state === 'ready' && (
-        <MeetRecordView record={record} busyId={busyId} onConfirm={confirm} onConfirmMany={confirmMany} reviewing={reviewing} compact />
+        <MeetRecordView record={record} busyId={busyId} onConfirm={confirm} onConfirmMany={confirmMany} reviewing={reviewing}
+          onApplyVerdicts={applyVerdicts} applying={applying} compact />
       )}
       {talk && (talk.state === 'ready' || talk.state === 'waiting') && (
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-lg bg-muted/40 px-3 py-2">

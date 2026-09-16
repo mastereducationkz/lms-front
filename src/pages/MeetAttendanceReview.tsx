@@ -13,8 +13,10 @@ import {
   needsAttention,
   reportCsv,
   reviewedCount,
+  rulesText,
   stillLoading,
   tallyByTeacher,
+  verdictLine,
   withoutReviewed,
   type IssueKey,
 } from '../lib/meetAttendance';
@@ -40,6 +42,7 @@ import {
   type MeetRecord,
   type MeetReviewOptions,
   type MeetSync,
+  type MeetVerdictRules,
 } from '../services/api/meetAttendance';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -114,6 +117,7 @@ export default function MeetAttendanceReview() {
   // Reviewed flags are out of the list until asked for (owner, 2026-09-11).
   const [showReviewed, setShowReviewed] = useState(false);
   const [options, setOptions] = useState<MeetReviewOptions | undefined>(undefined);
+  const [rules, setRules] = useState<MeetVerdictRules | undefined>(undefined);
 
   // What the check with Google Meet is doing, when the list was read, and whether a read is under way.
   const [sync, setSync] = useState<MeetSync | null>(null);
@@ -128,7 +132,7 @@ export default function MeetAttendanceReview() {
     setRefreshing(true);
     listMeetRecords({ date_from: new Date(Date.now() - period * DAY).toISOString() })
       .then((r) => {
-        setItems(r.items); setOptions(r.review_options); setTalkEnabled(Boolean(r.talk_enabled));
+        setItems(r.items); setOptions(r.review_options); setRules(r.verdict_rules); setTalkEnabled(Boolean(r.talk_enabled));
         setSync(r.sync ?? null); setUpdatedAt(Date.now());
       })
       .catch(() => { if (!quiet) setError(true); })
@@ -157,6 +161,8 @@ export default function MeetAttendanceReview() {
       mismatches: record.mismatches ?? 0,
       reviewed: record.reviewed ?? 0,
       unknown: record.unknown?.length ?? i.unknown,
+      // A corrected mark changes what agrees with Meet and who is left unmarked.
+      verdict_summary: record.verdict_summary ?? i.verdict_summary,
     })) ?? prev);
   }, []);
   const reviewingFor = useCallback(
@@ -235,6 +241,11 @@ export default function MeetAttendanceReview() {
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
             {INTRO[audience]} Click a flag to answer it: with its reason it leaves Needs attention. Times are Almaty.
           </p>
+          {rules && (
+            <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
+              {rulesText(rules)} It sits beside the teacher’s mark and is never written by itself.
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-2">
         <TalkSettingsButton role={user?.role} onChanged={(next) => { setTalkEnabled(next.enabled); load(true); }} />
@@ -546,6 +557,9 @@ export default function MeetAttendanceReview() {
                           <div className={cn('text-[13px]', needsAttention(item) ? 'text-foreground' : 'text-muted-foreground')}>
                             {lessonHeadline(item)}
                           </div>
+                          {verdictLine(item.verdict_summary) && (
+                            <div className="mt-0.5 text-xs text-muted-foreground">{verdictLine(item.verdict_summary)}</div>
+                          )}
                           {studentFlags.length > 0 && (
                             <ul className="mt-1.5 space-y-1 text-xs">
                               {studentFlags.slice(0, 6).map((f) => (

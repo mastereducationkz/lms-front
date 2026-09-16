@@ -28,6 +28,8 @@ export function TeacherTallyTable({ rows, onPick }: Props) {
   if (rows.length < 2) return null;
   // Only once some lesson has talk time: an empty column says nothing.
   const talk = rows.some((r) => r.talk_lessons > 0);
+  // How far each teacher's register already matches Meet's verdict — what switching teachers off would change.
+  const agreement = rows.some((r) => r.verdict_compared > 0);
 
   return (
     <section className="rounded-2xl border border-border bg-card shadow-sm" aria-label="By teacher">
@@ -49,6 +51,7 @@ export function TeacherTallyTable({ rows, onPick }: Props) {
                 <th className="px-4 py-2">Teacher</th>
                 <th className="px-3 py-2 text-right">Lessons</th>
                 {COLUMNS.map((c) => <th key={c.key} className="px-3 py-2 text-right">{c.label}</th>)}
+                {agreement && <th className="px-3 py-2 text-right" title="Of the marks Meet could judge, how many agree with Meet’s verdict about attending (present or late vs absent)">Agrees with Meet</th>}
                 {talk && <th className="px-3 py-2 text-right" title="The teacher’s average share of everything said, over lessons with talk time">Avg teacher talk</th>}
               </tr>
             </thead>
@@ -84,6 +87,16 @@ export function TeacherTallyTable({ rows, onPick }: Props) {
                       </td>
                     );
                   })}
+                  {agreement && (
+                    <td className="px-3 py-2 text-right tabular-nums text-muted-foreground"
+                      title={r.verdict_compared ? `${r.verdict_agree} of ${r.verdict_compared} marks agree with Meet` : 'No marks Meet could judge yet'}>
+                      {r.verdict_compared === 0 ? <span className="text-muted-foreground/50">—</span> : (
+                        <span className={cn('font-semibold', r.verdict_agree < r.verdict_compared ? 'text-amber-700 dark:text-amber-300' : 'text-foreground')}>
+                          {percent(r.verdict_agree / r.verdict_compared)}
+                        </span>
+                      )}
+                    </td>
+                  )}
                   {talk && (
                     <td className="px-3 py-2 text-right tabular-nums text-muted-foreground"
                       title={r.talk_lessons ? `Over ${r.talk_lessons} lesson${r.talk_lessons === 1 ? '' : 's'} with talk time` : undefined}>
