@@ -1,5 +1,5 @@
 import { cn } from '../../lib/utils';
-import { verdictText } from '../../lib/meetAttendance';
+import { verdictHint, verdictText } from '../../lib/meetAttendance';
 import type { MeetStudentVerdict } from '../../services/api/meetAttendance';
 
 const TONE: Record<string, string> = {
@@ -13,7 +13,7 @@ const MARK: Record<string, string> = { present: '✓', absent: '✗', unknown: '
 
 /** The journal cell's hover line: what Meet says about this student in this lesson. */
 export function verdictNote(verdict: MeetStudentVerdict | undefined, locale: 'en' | 'ru'): string | null {
-  return verdict ? `Meet: ${verdictText(verdict, locale)}` : null;
+  return verdict ? [`Meet: ${verdictText(verdict, locale)}`, verdictHint(verdict, locale)].filter(Boolean).join('\n') : null;
 }
 
 /**
@@ -22,8 +22,10 @@ export function verdictNote(verdict: MeetStudentVerdict | undefined, locale: 'en
  * instead of it — the teacher still decides.
  */
 export function MeetVerdictBadge({ verdict, locale, className }: { verdict: MeetStudentVerdict; locale: 'en' | 'ru'; className?: string }) {
+  // Held back, the badge shows what the confirmed accounts say, with a «?» (see verdictText).
+  const shown = verdict.verdict ?? verdict.provisional ?? null;
   const key = verdict.verdict ?? 'unknown';
-  const face = verdict.verdict === 'late' ? `${verdict.late_minutes}′` : MARK[key];
+  const face = (shown === 'late' ? `${verdict.late_minutes}′` : MARK[shown ?? 'unknown']) + (verdict.verdict || !shown ? '' : '?');
   const title = verdictNote(verdict, locale) ?? undefined;
   return (
     <span

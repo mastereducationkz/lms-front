@@ -11,6 +11,7 @@ import {
   isMismatch,
   reasonText,
   verdictDiffers,
+  verdictHint,
   verdictText,
   type ParticipantRow,
   type ParticipantsView,
@@ -229,7 +230,8 @@ export function ParticipantsPanel({ view, locale = 'en', defaultOpen = false, cl
                     <Mark mark={s.mark} locale={locale} />
                     {/* Staff pages only: the watch-link page's view never carries a verdict. */}
                     {s.verdict && (
-                      <span className={cn('text-[10px] leading-tight', verdictDiffers(s.mark, s.verdict) ? 'text-amber-700 dark:text-amber-300' : 'text-muted-foreground')}>
+                      <span title={verdictHint(s.verdict, locale) ?? undefined}
+                        className={cn('text-[10px] leading-tight', verdictDiffers(s.mark, s.verdict) ? 'text-amber-700 dark:text-amber-300' : 'text-muted-foreground')}>
                         Meet: {verdictText(s.verdict, locale)}
                       </span>
                     )}

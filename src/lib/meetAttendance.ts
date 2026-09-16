@@ -152,17 +152,36 @@ const VERDICT_WORD: Record<VerdictLocale, Record<NonNullable<MeetVerdict['verdic
   ru: { present: 'Был', late: 'Опоздал', absent: 'Не был' },
 };
 
-/** "Present", "Late 12 min", "Absent · 30 of 45 min", "Not known yet…" — the verdict with its reason. */
-export function verdictText(v: Pick<MeetVerdict, 'verdict' | 'minutes' | 'required' | 'late_minutes'>, locale: VerdictLocale = 'en'): string {
+type VerdictFields = Pick<MeetVerdict, 'verdict' | 'minutes' | 'required' | 'late_minutes'> & Partial<Pick<MeetVerdict, 'provisional'>>;
+
+function verdictWords(value: NonNullable<MeetVerdict['verdict']>, v: VerdictFields, locale: VerdictLocale): string {
   const ru = locale === 'ru';
-  if (!v.verdict) return ru ? 'Пока неизвестно: есть неподтверждённые аккаунты' : 'Not known yet: an account in the room isn’t confirmed';
-  const word = VERDICT_WORD[locale][v.verdict];
-  if (v.verdict === 'late') return ru ? `${word} на ${v.late_minutes} мин` : `${word} ${v.late_minutes} min`;
-  if (v.verdict === 'absent') {
+  const word = VERDICT_WORD[locale][value];
+  if (value === 'late') return ru ? `${word} на ${v.late_minutes} мин` : `${word} ${v.late_minutes} min`;
+  if (value === 'absent') {
     if (v.minutes <= 0) return ru ? `${word} на уроке` : `${word} · not in the lesson`;
     return ru ? `${word}: ${v.minutes} из ${v.required} мин` : `${word} · ${v.minutes} of ${v.required} min`;
   }
   return word;
+}
+
+/**
+ * "Present", "Late 12 min", "Absent · 30 of 45 min" — the verdict with its reason. Held back, it is the
+ * verdict on the confirmed accounts with a «?» ("Late 9 min?"): a bare «not known yet» beside the
+ * student's own confirmed account read as if that account were the unconfirmed one (2026-09-17).
+ */
+export function verdictText(v: VerdictFields, locale: VerdictLocale = 'en'): string {
+  if (v.verdict) return verdictWords(v.verdict, v, locale);
+  if (v.provisional) return `${verdictWords(v.provisional, v, locale)}?`;
+  return locale === 'ru' ? 'Пока неизвестно' : 'Not known yet';
+}
+
+/** Why a held-back verdict may still change — for the hover; null when it is final. */
+export function verdictHint(v: Pick<MeetVerdict, 'held_back'>, locale: VerdictLocale = 'en'): string | null {
+  if (!v.held_back) return null;
+  return locale === 'ru'
+    ? 'В комнате был ещё один неподтверждённый аккаунт. Если это тот же ученик с другого устройства (или преподаватель), вердикт может измениться — подтвердите аккаунт в «Who is this?».'
+    : 'Someone else in the room isn’t confirmed yet. If it’s this student on another device (or the teacher), this can change — name them under «Who is this?».';
 }
 
 /** The mark and the verdict say different things — about attending, or only present versus late. */

@@ -52,6 +52,8 @@ export interface MeetVerdict {
   /** Null while held back: an unconfirmed account in the room may be this student. */
   verdict: MeetVerdictValue | null;
   held_back: boolean;
+  /** The verdict on the confirmed accounts alone — also while held back, so a page can say «Late 9 min?». Absent from an older server. */
+  provisional?: MeetVerdictValue;
   /** Present or late — what billing reads; null when it can't be told yet. */
   attended?: boolean | null;
   /** Whole minutes in the lesson, rounded up. */
