@@ -1,5 +1,6 @@
 import { api } from './client';
 import type { MeetLessonTalk } from './meetTalk';
+import type { LessonRecordingStatus } from './recordings';
 
 /**
  * Who was in a lesson's Meet room, from when to when — read from what Meet reported.
@@ -235,6 +236,13 @@ export interface MeetLessonSummary {
   flags: MeetLessonFlag[];
   /** Who spoke how much; null (or absent) when the lesson has no Meet transcript. */
   talk?: MeetLessonTalk | null;
+  /** The lesson's recording in two words — no link: the player fetches its own. Absent from an older server. */
+  recording?: MeetLessonRecording | null;
+}
+
+export interface MeetLessonRecording {
+  status: LessonRecordingStatus;
+  duration_seconds: number | null;
 }
 
 export interface MeetRecordsQuery {

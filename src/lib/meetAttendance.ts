@@ -1,4 +1,6 @@
 import { APP_TIMEZONE } from './datetime';
+import { formatDurationWords } from './recordings';
+import type { LessonRecordingStatus } from '../services/api/recordings';
 import type {
   MeetFlag,
   MeetFlagCode,
@@ -309,6 +311,18 @@ function flagCell(flag: MeetFlag): string {
 const who = (item: MeetLessonSummary, ...codes: MeetFlagCode[]) =>
   item.flags.filter((f) => codes.includes(f.code)).map((f) => `${f.name} (${flagCell(f)})`).join('; ');
 
+const RECORDING_CSV: Record<LessonRecordingStatus, string> = {
+  ready: 'Ready', pending: 'Processing', waiting: 'Waiting for Google Meet', failed: 'Failed', removed: 'Removed', missing: 'None',
+};
+
+/** "Ready · 58 min", "Processing", "None" — empty when the server said nothing about it. */
+function recordingCell(item: MeetLessonSummary): string {
+  const recording = item.recording;
+  if (!recording) return '';
+  const length = recording.status === 'ready' ? formatDurationWords(recording.duration_seconds) : null;
+  return length ? `${RECORDING_CSV.ready} · ${length}` : RECORDING_CSV[recording.status] ?? recording.status;
+}
+
 /**
  * The review list as a spreadsheet, for reporting. Opens correctly in Excel (UTF-8 with BOM, so
  * Cyrillic names survive); dates and times are Almaty.
@@ -316,12 +330,13 @@ const who = (item: MeetLessonSummary, ...codes: MeetFlagCode[]) =>
 export function reportCsv(items: MeetLessonSummary[]): string {
   const header = ['Date', 'Start', 'End', 'Lesson', 'Groups', 'Teacher', 'Teacher joined', 'Teacher left',
     'Teacher issues', 'Students joined', 'Students', 'Marks disagree', 'Students late', 'Students left early',
-    'Accounts to confirm', 'Teacher talk share', 'Students who didn’t speak'];
+    'Accounts to confirm', 'Teacher talk share', 'Students who didn’t speak', 'Recording'];
   const rows = items.map((item) => {
     const lesson = [almatyDate(item.start), clock(item.start), clock(item.end), item.title,
       item.groups.map((g) => g.name).join(', '), item.teacher?.name ?? ''];
     // Zeros here would read as "nobody came"; the lesson's call simply hasn't come through yet.
-    if (stillLoading(item)) return [...lesson, 'Loading', ...Array(header.length - lesson.length - 1).fill('')];
+    // The recording is its own news and is known either way.
+    if (stillLoading(item)) return [...lesson, 'Loading', ...Array(header.length - lesson.length - 2).fill(''), recordingCell(item)];
     return [...lesson,
       item.teacher?.first_join ? clock(item.teacher.first_join) : '', item.teacher?.last_leave ? clock(item.teacher.last_leave) : '',
       item.flags.filter((f) => f.role === 'teacher').map(flagCell).join('; '),
@@ -330,6 +345,7 @@ export function reportCsv(items: MeetLessonSummary[]): string {
       item.unknown,
       item.talk?.teacher_share != null ? `${Math.round(item.talk.teacher_share * 100)}%` : '',
       item.talk ? item.talk.silent.length : '',
+      recordingCell(item),
     ];
   });
   return '﻿' + [header, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n');

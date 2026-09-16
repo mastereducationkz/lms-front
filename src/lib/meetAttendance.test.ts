@@ -184,9 +184,25 @@ describe('reporting', () => {
     expect(items.some(stillLoading)).toBe(false);
     expect(needsAttention(loading)).toBe(false);
     const row = reportCsv([loading]).split('\r\n')[1].split(',');
-    expect(row).toHaveLength(17);
+    expect(row).toHaveLength(18);
     expect(row[6]).toBe('"Loading"');
-    expect(row.slice(7)).toEqual(Array(10).fill('""'));
+    expect(row.slice(7)).toEqual(Array(11).fill('""'));
+    // The recording is known whether or not the call has come through.
+    const recorded = reportCsv([{ ...loading, recording: { status: 'waiting', duration_seconds: null } }]).split('\r\n')[1].split(',');
+    expect(recorded).toHaveLength(18);
+    expect(recorded[17]).toBe('"Waiting for Google Meet"');
+  });
+
+  it('says where each lesson’s recording is, with its length once it can be watched', () => {
+    const cell = (recording: MeetLessonSummary['recording']) =>
+      reportCsv([summary(1, 1, [], { recording })]).split('\r\n')[1].split(',').pop();
+    expect(reportCsv([]).split('\r\n')[0].endsWith('"Recording"')).toBe(true);
+    expect(cell({ status: 'ready', duration_seconds: 3480 })).toBe('"Ready · 58 min"');
+    expect(cell({ status: 'ready', duration_seconds: null })).toBe('"Ready"');
+    expect(cell({ status: 'pending', duration_seconds: null })).toBe('"Processing"');
+    expect(cell({ status: 'failed', duration_seconds: null })).toBe('"Failed"');
+    expect(cell({ status: 'missing', duration_seconds: null })).toBe('"None"');
+    expect(cell(undefined)).toBe('""');
   });
 });
 
@@ -302,6 +318,6 @@ describe('talk time in the report (owner, 2026-09-11)', () => {
 
   it('puts the teacher’s share and the silent students in the spreadsheet', () => {
     const row = reportCsv([summary(1, 1, [], { talk: talk(0.72, [7]) })]).split('\r\n')[1];
-    expect(row.endsWith('"72%","1"')).toBe(true);
+    expect(row.endsWith('"72%","1",""')).toBe(true);
   });
 });
