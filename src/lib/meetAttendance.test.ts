@@ -27,6 +27,7 @@ import {
   verdictDiffers,
   verdictIndex,
   verdictLine,
+  verdictHint,
   verdictText,
   withoutReviewed,
 } from './meetAttendance';
@@ -225,7 +226,13 @@ describe('Meet’s verdict (owner, 2026-09-16)', () => {
     expect(verdictText(v('late', { late_minutes: 12 }))).toBe('Late 12 min');
     expect(verdictText(v('absent', { minutes: 30 }))).toBe('Absent · 30 of 45 min');
     expect(verdictText(v('absent', { minutes: 0 }))).toBe('Absent · not in the lesson');
-    expect(verdictText(v(null))).toContain('Not known yet');
+    expect(verdictText(v(null))).toBe('Not known yet');
+    // Held back, it says what the confirmed accounts show, with a «?» — never a bare «not known» beside a
+    // confirmed account (2026-09-17: «Google · Алуа» read as the unconfirmed one).
+    expect(verdictText({ ...v(null, { late_minutes: 9 }), provisional: 'late' })).toBe('Late 9 min?');
+    expect(verdictText({ ...v(null, { minutes: 20 }), provisional: 'absent' }, 'ru')).toBe('Не был: 20 из 45 мин?');
+    expect(verdictHint(v(null))).toContain('Someone else in the room');
+    expect(verdictHint(v('present'))).toBeNull();
     expect(verdictText(v('absent', { minutes: 30 }), 'ru')).toBe('Не был: 30 из 45 мин');
     expect(verdictText(v('late', { late_minutes: 7 }), 'ru')).toBe('Опоздал на 7 мин');
   });

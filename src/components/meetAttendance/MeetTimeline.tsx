@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { barFor, clock, flagTone, position, verdictDiffers, verdictText, MARK_LABEL, type Axis } from '../../lib/meetAttendance';
+import { barFor, clock, flagTone, position, verdictDiffers, verdictHint, verdictText, MARK_LABEL, type Axis } from '../../lib/meetAttendance';
 import type { MeetAccount, MeetFlag, MeetMark, MeetPresence, MeetVerdict } from '../../services/api/meetAttendance';
 import { FlagChip, type FlagReviewing } from './FlagReview';
 
@@ -70,14 +70,15 @@ const VERDICT_TONE: Record<string, string> = {
 export function VerdictChip({ verdict, mark, compact = false }: { verdict: MeetVerdict; mark: MeetMark | undefined; compact?: boolean }) {
   const text = `Meet: ${verdictText(verdict)}`;
   const differs = verdictDiffers(mark, verdict);
-  const title = differs ? `${text} — the mark says ${mark ? MARK_LABEL[mark] : 'nothing'}` : text;
+  const hint = verdictHint(verdict);
+  const title = [differs ? `${text} — the mark says ${mark ? MARK_LABEL[mark] : 'nothing'}` : text, hint].filter(Boolean).join('\n');
   const tone = VERDICT_TONE[verdict.verdict ?? 'unknown'];
   if (compact) {
     return (
       <span title={title} aria-label={title}
         className={cn('inline-flex h-4 w-4 flex-none items-center justify-center rounded text-[9px] font-bold ring-1 ring-inset',
           tone)}>
-        {verdict.verdict ? MARK_LABEL[verdict.verdict][0] : '?'}
+        {verdict.verdict ? MARK_LABEL[verdict.verdict][0] : verdict.provisional ? `${MARK_LABEL[verdict.provisional][0]}?` : '?'}
       </span>
     );
   }
