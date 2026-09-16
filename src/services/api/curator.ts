@@ -178,6 +178,8 @@ export async function updateAttendanceBulk(data: {
     status: string;
     event_id: number | null;
     activity_score?: number | null;
+    excused?: boolean;
+    excuse_note?: string | null;
   }>;
 }): Promise<any> {
   try {

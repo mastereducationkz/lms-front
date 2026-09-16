@@ -1271,12 +1271,18 @@ export interface EventStudent {
   attendance_status: string; // "attended", "missed", "late", "registered", "cancelled"
   activity_score?: number;
   last_updated?: string;
+  /** Пропуск по уважительной причине. Надстройка над «Не был», а не новый статус. */
+  excused?: boolean;
+  excuse_note?: string | null;
 }
 
 export interface AttendanceRecord {
   student_id: number;
   status: string;
   activity_score?: number;
+  /** Отсутствие поля = «не трогать». См. src/lib/excusedAbsence.ts. */
+  excused?: boolean;
+  excuse_note?: string | null;
 }
 
 export interface AttendanceBulkUpdate {
