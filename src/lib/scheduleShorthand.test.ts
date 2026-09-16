@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  applyShorthand,
   configFromScheduleSlots,
   normalizeScheduleTime,
   parseScheduleShorthand,
@@ -80,6 +81,23 @@ describe('normalizeScheduleTime', () => {
     expect(normalizeScheduleTime('9:5')).toBe('9:5'); // not HH:MM shaped, left as-is
     expect(normalizeScheduleTime('09:05')).toBe('09:05');
     expect(normalizeScheduleTime('23:59')).toBe('23:59');
+  });
+});
+
+describe('applyShorthand', () => {
+  it('replaces the selected day set instead of merging into it, so retyping removes a day', () => {
+    // Ruling I: the old parser fully replaced the day set on every keystroke; a bare-time
+    // merge would make it impossible to drop a day by leaving it out of the new line.
+    const current = { 0: d('18:00', 60), 5: d('19:00', 90) };
+    const { config, problems } = applyShorthand('сб 19:00', current);
+    expect(config).toEqual({ 5: d('19:00', 90) }); // Monday gone, Saturday keeps its 90 min
+    expect(problems).toEqual([]);
+  });
+
+  it('leaves the current config untouched when the line is empty or parses to nothing', () => {
+    const current = { 0: d('18:00', 60), 5: d('19:00', 90) };
+    expect(applyShorthand('', current).config).toBe(current);
+    expect(applyShorthand('хз', current).config).toBe(current);
   });
 });
 

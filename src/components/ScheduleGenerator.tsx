@@ -13,8 +13,8 @@ import apiClient, { generateSchedule } from '../services/api';
 import { toast } from './Toast';
 import {
     DEFAULT_LESSON_MINUTES,
+    applyShorthand,
     configFromScheduleSlots,
-    parseScheduleShorthand,
     scheduleSlotsFromConfig,
     type ScheduleConfig,
 } from '../lib/scheduleShorthand';
@@ -124,11 +124,11 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
 
     const handleShorthandChange = (text: string) => {
         setShorthandText(text);
-        const { config: parsed, problems } = parseScheduleShorthand(text, scheduleConfig);
+        // Retyping the line REPLACES the selected days with what it parses (so leaving a day
+        // out removes it); an empty/unparseable line leaves the current schedule untouched.
+        const { config, problems } = applyShorthand(text, scheduleConfig);
         setShorthandProblems(problems);
-        if (Object.keys(parsed).length > 0) {
-            setScheduleConfig(prev => ({ ...prev, ...parsed }));
-        }
+        setScheduleConfig(config);
     };
 
     const handleGenerate = async () => {

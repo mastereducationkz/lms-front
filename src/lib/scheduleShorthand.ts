@@ -199,3 +199,21 @@ export const scheduleSlotsFromConfig = (config: ScheduleConfig): ScheduleSlot[] 
       duration_minutes: value.duration,
     }))
     .sort((left, right) => left.day_of_week - right.day_of_week);
+
+/**
+ * The quick-entry box's effect on the day set: retyping the line REPLACES the selected days
+ * with what it parses (so removing a day is as simple as leaving it out of the new line), not
+ * a merge. `current` is only passed through to `parseScheduleShorthand` so a bare time keeps
+ * that day's existing length. An empty or unparseable line (`parsed` has no days) leaves
+ * `current` untouched — the field is not a way to blank the whole schedule.
+ */
+export const applyShorthand = (
+  text: string,
+  current: ScheduleConfig,
+): { config: ScheduleConfig; problems: string[] } => {
+  const { config: parsed, problems } = parseScheduleShorthand(text, current);
+  if (Object.keys(parsed).length === 0) {
+    return { config: current, problems };
+  }
+  return { config: parsed, problems };
+};
