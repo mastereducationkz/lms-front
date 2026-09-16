@@ -24,6 +24,21 @@ describe('hasCurator', () => {
     expect(hasCurator('June 14 IELTS with mentor')).toBe(true);
   });
 
+  it('reads the role tagged after a separator', () => {
+    // How the chats created in September are named.
+    for (const title of [
+      'SAT August 19|Curator',
+      'SAT July 3|Curator',
+      'SAT September 1 | curator',
+      'SAT July 7 // Mentor',
+      'IELTS July 2 - Curator 🤍',
+      'SAT July 8 (curator)',
+      'SAT сентябрь | Куратор',
+    ]) {
+      expect(hasCurator(title), title).toBe(true);
+    }
+  });
+
   it('does not read "without curator" as having one', () => {
     expect(hasCurator('SAT October without curator')).toBe(false);
     expect(hasCurator('IELTS without mentor')).toBe(false);
@@ -50,6 +65,13 @@ describe('hasCurator', () => {
     expect(hasCurator('Curators team')).toBe(false);
     expect(hasCurator('Кураторы')).toBe(false);
     expect(hasCurator('IELTS with curatorship')).toBe(false);
+  });
+
+  it('does not read a staff chat named after the team as a tagged role', () => {
+    expect(hasCurator('Master | Curators')).toBe(false);
+    expect(hasCurator('Отдел | Кураторы')).toBe(false);
+    expect(hasCurator('SAT|Curatorship')).toBe(false);
+    expect(hasCurator('SAT July 3|No curator')).toBe(false);
   });
 
   it('treats an empty title as without', () => {
