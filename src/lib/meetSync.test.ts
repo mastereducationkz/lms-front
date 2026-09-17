@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { judgeText, spanText, stageText, syncStatus, waitedText, waitingSteps } from './meetSync';
+import { judgeText, spanText, stageText, syncStatus, waitedText, waitingBannerText, waitingSteps } from './meetSync';
 import type { MeetSync, MeetWaiting } from '../services/api/meetAttendance';
 
 // Lesson 19:00–20:00 Almaty = 14:00–15:00 UTC; "now" is 21:25 Almaty.
@@ -33,6 +33,26 @@ describe('how long, never a promise', () => {
   it('says how long a lesson has waited since it ended', () => {
     expect(waitedText(waiting(), NOW)).toBe('Lesson ended 20:00 · waiting 1 h 25 min');
     expect(waitedText(waiting({ stage: 'lesson_running' }), Date.parse('2026-09-15T14:30:00Z'))).toBe('Ends at 20:00');
+  });
+});
+
+describe('the banner says what each lesson is waiting for (2026-09-17)', () => {
+  it('a lesson still on is «in progress», not waiting for Google Meet', () => {
+    expect(waitingBannerText([waiting({ stage: 'lesson_running' })])).toBe('1 lesson in progress');
+    expect(waitingBannerText([waiting(), waiting()])).toBe('2 lessons waiting for Google Meet to hand over their calls');
+    expect(waitingBannerText([waiting({ stage: 'collecting' })])).toBe('1 lesson: saving who joined');
+  });
+
+  it('mixed stages are listed in the order a lesson moves through them', () => {
+    expect(waitingBannerText([
+      waiting({ stage: 'settling' }), waiting({ stage: 'lesson_running' }), waiting(), waiting({ stage: 'lesson_running' }),
+    ])).toBe('4 lessons not final yet: 2 in progress · 1 waiting for Google Meet to hand over its call · 1 almost ready');
+    expect(waitingBannerText([waiting({ stage: 'call_open' }), null])).toBe(
+      '2 lessons not final yet: 1 with its call still open in Google Meet · 1 waiting for Google Meet to hand over its call');
+  });
+
+  it('with nothing waiting it is only the sync running', () => {
+    expect(waitingBannerText([])).toBe('Syncing with Google Meet');
   });
 });
 
