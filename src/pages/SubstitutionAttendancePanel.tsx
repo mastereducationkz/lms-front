@@ -11,6 +11,8 @@ import { SubstitutionLesson, EventStudent } from '../types';
 import { isAttendanceLockedLesson } from '../lib/attendance';
 import { parseAsUTC } from '../lib/datetime';
 import { cn } from '../lib/utils';
+import { canBeExcused, excusePayload, isAbsenceStatus } from '../lib/excusedAbsence';
+import { ExcusePopover } from '../components/attendance/ExcusePopover';
 
 // UI statuses. `registered` (from the API) == unmarked; we display it as "-".
 const STATUS_NEXT: Record<string, string> = {
@@ -21,7 +23,12 @@ const STATUS_NEXT: Record<string, string> = {
   missed: 'attended',
 };
 
-function statusColor(status: string) {
+// `excused` takes only "missed": it's an overlay on that one status, not a status of
+// its own — matches CuratorLeaderboardPage's AttendanceToggle. A second optional
+// argument disturbs the existing call sites less than branching there instead, since
+// both callers already have `s.excused` sitting right next to `s.attendance_status`.
+function statusColor(status: string, excused = false) {
+  if (status === 'missed' && excused) return 'bg-rose-200 text-rose-900 dark:bg-rose-300 dark:text-rose-950';
   switch (status) {
     case 'attended': return 'bg-green-200 dark:bg-green-900/40 text-green-700 dark:text-green-400';
     case 'late': return 'bg-yellow-200 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400';
@@ -30,7 +37,8 @@ function statusColor(status: string) {
   }
 }
 
-function statusLabel(status: string) {
+function statusLabel(status: string, excused = false) {
+  if (status === 'missed' && excused) return 'Exc.';
   switch (status) {
     case 'attended': return 'Present';
     case 'late': return 'Late';
@@ -57,6 +65,15 @@ export default function SubstitutionAttendancePanel() {
   const [rosterLoading, setRosterLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // student_id whose excuse the substitute actually edited this dialog session. This
+  // panel resends the whole roster on every save (see `save` below), so without this
+  // set the payload would carry `excused`/`excuse_note` for every row — including ones
+  // nobody touched — and one "Save" would erase reasons someone else recorded.
+  const [touchedExcuses, setTouchedExcuses] = useState<Set<number>>(new Set());
+  // student_id whose excuse popover is currently open (one at a time; the row markup
+  // is a flat list, not a self-contained component per Task 3's AttendanceToggle).
+  const [excusePopoverFor, setExcusePopoverFor] = useState<number | null>(null);
+
   // Activity score modal state
   const [activityModal, setActivityModal] = useState<{
     open: boolean; studentId: number | null; studentName: string; currentScore: number;
@@ -79,6 +96,8 @@ export default function SubstitutionAttendancePanel() {
   const openRoster = async (lesson: SubstitutionLesson) => {
     setOpenLesson(lesson);
     setRoster([]);
+    setTouchedExcuses(new Set());
+    setExcusePopoverFor(null);
     setRosterLoading(true);
     try {
       const students = await getEventParticipants(lesson.event_id, lesson.group_id);
@@ -94,14 +113,36 @@ export default function SubstitutionAttendancePanel() {
   const closeRoster = () => {
     setOpenLesson(null);
     setRoster([]);
+    setTouchedExcuses(new Set());
+    setExcusePopoverFor(null);
   };
 
   const cycleStatus = (studentId: number) => {
-    setRoster(prev => prev.map(s =>
-      s.student_id === studentId
-        ? { ...s, attendance_status: STATUS_NEXT[s.attendance_status] ?? 'attended' }
-        : s
-    ));
+    let clearedStoredExcuse = false;
+    setRoster(prev => prev.map(s => {
+      if (s.student_id !== studentId) return s;
+      const nextStatus = STATUS_NEXT[s.attendance_status] ?? 'attended';
+      // A status that no longer means "absent" can't carry an excuse locally either —
+      // otherwise cycling missed->attended within this session would leave `excused:
+      // true` sitting on an "attended" row, and if that row is later touched again it
+      // would go out as `{status: 'attended', excused: true}`, which the backend
+      // rejects (422, whole batch, names nobody). Mirrors CuratorLeaderboardPage.
+      const clearsExcuse = !isAbsenceStatus(nextStatus);
+      // Cycling missed -> attended -> late -> missed is the natural way to "remove" an
+      // excuse without opening the popover. If a *stored* excuse (already true) is
+      // being cleared here, that's a real edit — mark it touched below so the save
+      // actually sends `excused: false` instead of silently leaving the old value
+      // (and the billing decision keyed on it) on the server.
+      if (clearsExcuse && s.excused) clearedStoredExcuse = true;
+      return {
+        ...s,
+        attendance_status: nextStatus,
+        ...(clearsExcuse ? { excused: false, excuse_note: null } : {}),
+      };
+    }));
+    if (clearedStoredExcuse) {
+      setTouchedExcuses(prev => new Set(prev).add(studentId));
+    }
   };
 
   const setActivity = (studentId: number, score: number) => {
@@ -111,7 +152,25 @@ export default function SubstitutionAttendancePanel() {
   };
 
   const markAllPresent = () => {
-    setRoster(prev => prev.map(s => ({ ...s, attendance_status: 'attended' })));
+    // Same reasoning as `cycleStatus`: any row whose stored excuse (already true) is
+    // being wiped by this bulk action is a real edit to that row's excuse and must be
+    // marked touched, or the save omits `excused` for it and the old value survives.
+    const clearedIds = roster.filter(s => s.excused).map(s => s.student_id);
+    setRoster(prev => prev.map(s => ({ ...s, attendance_status: 'attended', excused: false, excuse_note: null })));
+    if (clearedIds.length) {
+      setTouchedExcuses(prev => {
+        const next = new Set(prev);
+        clearedIds.forEach(id => next.add(id));
+        return next;
+      });
+    }
+  };
+
+  const handleExcuseChange = (studentId: number, excused: boolean, note: string | null) => {
+    setRoster(prev => prev.map(s =>
+      s.student_id === studentId ? { ...s, excused, excuse_note: note } : s
+    ));
+    setTouchedExcuses(prev => new Set(prev).add(studentId));
   };
 
   const save = async () => {
@@ -124,12 +183,19 @@ export default function SubstitutionAttendancePanel() {
           student_id: s.student_id,
           status: s.attendance_status,
           activity_score: (s.attendance_status === 'attended' || s.attendance_status === 'late') ? s.activity_score : 0,
+          // Present only for rows the substitute actually touched this session — see
+          // `touchedExcuses` above. An absent field means "leave the stored value
+          // alone" server-side; this panel resends every row on every save.
+          ...excusePayload(touchedExcuses.has(s.student_id), Boolean(s.excused), s.excuse_note ?? null),
         }));
       await updateEventAttendance(openLesson.event_id, { attendance });
       toast.success('Attendance saved');
       closeRoster();
     } catch (err: any) {
       console.error('Failed to save attendance:', err);
+      // A validation failure (e.g. an excuse without a reason) comes back as a Russian
+      // 422 detail from the backend — `err.message` already carries it (see
+      // updateEventAttendance in services/api/events.ts), so show it verbatim.
       toast.error(err?.message || 'Failed to save attendance');
     } finally {
       setSaving(false);
@@ -281,7 +347,15 @@ export default function SubstitutionAttendancePanel() {
                   </button>
                 </div>
                 <div className="max-h-[50vh] overflow-y-auto divide-y divide-gray-100 dark:divide-border">
-                  {roster.map(s => (
+                  {roster.map(s => {
+                    // The dialog itself never opens for a locked (future) lesson — see the
+                    // card's onClick guard above — so this is always false in practice.
+                    // Passed explicitly anyway rather than assumed, since `canBeExcused`
+                    // is exactly the function that answers "is this a real absence to
+                    // excuse", not just "is the status missed".
+                    const lessonIsFuture = openLesson ? isAttendanceLockedLesson(openLesson.start_datetime) : false;
+                    const showExcuseAffordance = canBeExcused(s.attendance_status, lessonIsFuture);
+                    return (
                     <div key={s.student_id} className="flex items-center justify-between gap-3 py-2">
                       <span className="text-sm text-gray-900 dark:text-foreground truncate">{s.name}</span>
                       <div className="flex items-center gap-2 shrink-0">
@@ -303,18 +377,52 @@ export default function SubstitutionAttendancePanel() {
                             </span>
                           </button>
                         )}
-                        <button
-                          className={cn(
-                            'w-20 rounded-md py-1 text-xs font-bold',
-                            statusColor(s.attendance_status)
+                        {/* `relative` here (not on the row) is the popover's anchor: the
+                            corner marker and ExcusePopover position against this box, not
+                            the whole roster row, so they sit right under the status pill. */}
+                        <div className="relative">
+                          <button
+                            className={cn(
+                              'w-20 rounded-md py-1 text-xs font-bold',
+                              statusColor(s.attendance_status, Boolean(s.excused))
+                            )}
+                            onClick={() => cycleStatus(s.student_id)}
+                          >
+                            {statusLabel(s.attendance_status, Boolean(s.excused))}
+                          </button>
+                          {showExcuseAffordance && (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setExcusePopoverFor(s.student_id); }}
+                              className={cn(
+                                'absolute left-0.5 bottom-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full ring-2 ring-white dark:ring-card pointer-events-auto',
+                                s.excused ? 'bg-rose-600' : 'bg-transparent border border-white/80'
+                              )}
+                              title={s.excused
+                                ? `Excused absence${s.excuse_note ? `: ${s.excuse_note}` : ''} — click to edit`
+                                : 'Mark this absence as excused'}
+                              aria-label={s.excused ? 'Excused absence, edit reason' : 'Mark absence as excused'}
+                            />
                           )}
-                          onClick={() => cycleStatus(s.student_id)}
-                        >
-                          {statusLabel(s.attendance_status)}
-                        </button>
+                          {excusePopoverFor === s.student_id && (
+                            <ExcusePopover
+                              excused={Boolean(s.excused)}
+                              note={s.excuse_note ?? null}
+                              onSave={(note) => { handleExcuseChange(s.student_id, true, note); setExcusePopoverFor(null); }}
+                              onClear={() => { handleExcuseChange(s.student_id, false, null); setExcusePopoverFor(null); }}
+                              onClose={() => setExcusePopoverFor(null)}
+                              // This panel is English throughout — «Present», «Absent»,
+                              // «Mark attendance», «Save» — because it is the substitute
+                              // teachers' screen. Without this the reason form would be the
+                              // one Russian island on it.
+                              en
+                            />
+                          )}
+                        </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </>
             )}

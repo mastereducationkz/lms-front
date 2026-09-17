@@ -141,8 +141,15 @@ export interface StudentReport {
     attended: number;
     late: number;
     absent: number;
+    // Of `absent`, how many carry a recorded excuse. Optional — older payloads (and any
+    // caller that doesn't care) never send it. `absent` itself is unaffected: an excused
+    // absence is still an absence, just one that doesn't hit billing.
+    absent_excused?: number;
     attendance_pct: number | null;
-    absences: { date: string | null; title: string }[];
+    // `excused`/`excuse_note` are only ever set on an absence row — a late arrival has
+    // no notion of an excuse — and both are optional since older report payloads (and
+    // the `lates` rows) never carry them.
+    absences: { date: string | null; title: string; excused?: boolean; excuse_note?: string | null }[];
     lates: { date: string | null; title: string }[];
   };
   activity: {

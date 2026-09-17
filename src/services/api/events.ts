@@ -154,7 +154,13 @@ export async function updateEventAttendance(eventId: number, data: AttendanceBul
   try {
     await api.post(`/events/${eventId}/attendance`, data);
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to update attendance');
+    // FastAPI's own request-validation 422 (malformed body, wrong types) sends `detail`
+    // as an array of error objects, not a string — `new Error(thatArray)` stringifies
+    // it to `[object Object]`. Our excused-absence 422 (whole-batch rejection) sends a
+    // plain Russian string, which must reach the caller verbatim. Only pass through the
+    // string case; fall back to the generic message otherwise, same guard the grid uses.
+    const detail = error.response?.data?.detail;
+    throw new Error(typeof detail === 'string' ? detail : 'Failed to update attendance');
   }
 }
 

@@ -572,12 +572,24 @@ export default function StudentReportPage() {
       {/* Attendance */}
       <Section
         title="Посещаемость"
-        subtitle={`Занятий с отметкой ${attendance.marked_total} · Присутствие ${fmtPct(attendance.attendance_pct)} · Опозданий ${attendance.late} · Пропусков ${attendance.absent}`}
+        subtitle={`Занятий с отметкой ${attendance.marked_total} · Присутствие ${fmtPct(attendance.attendance_pct)} · Опозданий ${attendance.late} · Пропусков ${attendance.absent}${attendance.absent_excused ? ` (из них по уважительной: ${attendance.absent_excused})` : ''}`}
       >
         {attendance.absences.length > 0 && (
           <div className="text-xs text-gray-600">
             <p className="font-medium text-gray-700 mb-1">Пропуски</p>
-            {attendance.absences.map((a, i) => <p key={i}>{fmtDate(a.date)} — {a.title}</p>)}
+            {attendance.absences.map((a, i) => (
+              <p key={i}>
+                {fmtDate(a.date)} — {a.title}
+                {a.excused && (
+                  <span
+                    className="ml-1.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-700 align-middle"
+                    title={'Уважительная причина' + (a.excuse_note ? `: ${a.excuse_note}` : '')}
+                  >
+                    Ув.
+                  </span>
+                )}
+              </p>
+            ))}
           </div>
         )}
         {attendance.lates.length > 0 && (

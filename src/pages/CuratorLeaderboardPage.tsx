@@ -24,6 +24,8 @@ import { Label } from '../components/ui/label';
 import { parseAsUTC } from '../lib/datetime';
 import { formatGroupCloseDate } from '../lib/groupList';
 import { isAttendanceLockedLesson } from '../lib/attendance';
+import { canBeExcused, displaysAsAbsence, excuseAwareStatus, excusePayload, isAbsenceStatus } from '../lib/excusedAbsence';
+import { ExcusePopover } from '../components/attendance/ExcusePopover';
 import { listMeetRecords, type MeetLessonFlag, type MeetStudentVerdict } from '../services/api/meetAttendance';
 import { flagText, flagTextRu, mismatchIndex, reasonText, verdictIndex } from '../lib/meetAttendance';
 import { MeetVerdictBadge, verdictNote } from '../components/meetAttendance/MeetVerdictBadge';
@@ -87,6 +89,13 @@ interface StudentLessonStatus {
     // their login was off. Not a freeze (labelled «Нет доступа»), but it leaves the
     // attendance and homework denominators the same way. Undefined → not blocked.
     blocked?: boolean;
+    // True = this absence has a reason on file and does not count against the student —
+    // the cell still reads as a marked lesson (it's in the denominator), just a lighter red
+    // instead of red. Only meaningful when attendance_status is a "missed" variant.
+    // Undefined on older payloads → not excused.
+    excused?: boolean;
+    // The reason text, required whenever `excused` is true. Null/undefined otherwise.
+    excuse_note?: string | null;
 }
 
 interface IeltsSpeakingFeedback {
@@ -223,6 +232,9 @@ const AttendanceToggle = ({
     isFuture = false,
     en = false,
     note = null,
+    excused = false,
+    excuseNote = null,
+    onExcuseChange,
 }: {
     initialStatus: string,
     onChange: (status: string) => void,
@@ -234,10 +246,23 @@ const AttendanceToggle = ({
     en?: boolean,
     // A second line for the hover, e.g. how long the student spoke in the lesson's Meet room.
     note?: string | null,
+    // Whether this "Не был" already carries an excuse, and its reason.
+    excused?: boolean,
+    excuseNote?: string | null,
+    // Presence of this callback — not just the status — is what turns the excuse
+    // affordance on. This component is also reused for the (non-attendance)
+    // study_buddy toggle, whose "absent" state has nothing to do with excused
+    // absences; that caller simply never passes this prop.
+    onExcuseChange?: (excused: boolean, note: string | null) => void,
 }) => {
+  const [excusePopoverOpen, setExcusePopoverOpen] = useState(false);
+
   // Attendance belongs to one student; cancelling belongs to the whole lesson
   // and goes through an approved lesson request.  Keeping those controls apart
   // prevents one cell from claiming that an otherwise scheduled class vanished.
+  // Excusing an absence is a separate affordance (the corner icon below), not a
+  // fourth step here — a fourth click on the cycle would tax every ordinary
+  // correction, and marking a group fast is the point of this screen.
   const handleCycle = () => {
     if (disabled || isFuture || initialStatus === 'cancelled') return;
     if (initialStatus === 'attended') onChange('late');
@@ -246,13 +271,25 @@ const AttendanceToggle = ({
     else onChange('attended');
   };
 
+  // Normalized once so the excuse affordance can key off exactly what the cell
+  // displays (registered/absent both paint as "Не был"), not the raw stored status.
+  const normalizedStatus = displaysAsAbsence(initialStatus) ? 'missed' : initialStatus;
+
   const getStatusConfig = () => {
     if (initialStatus === 'cancelled') return { label: en ? 'Cancelled' : 'Отменён', color: 'bg-slate-400 text-white', title: en ? 'Lesson cancelled' : 'Урок отменён' };
-    const s = (initialStatus === 'absent' || initialStatus === 'registered' || initialStatus === 'missed') ? 'missed' : initialStatus;
+    const s = normalizedStatus;
 
     // A lesson that hasn't happened yet shouldn't read as "Не был" — the backend
     // just defaults an unmarked lesson to "missed". Show a neutral "—" instead.
     if (isFuture && s === 'missed') return { label: '—', color: 'bg-gray-100 text-gray-400 dark:bg-secondary dark:text-gray-500', title: en ? "Lesson hasn't happened yet" : 'Занятие ещё не прошло' };
+
+    if (s === 'missed' && excused) {
+      return {
+        label: en ? 'Exc.' : 'Ув.',
+        color: 'bg-rose-200 text-rose-900 dark:bg-rose-300 dark:text-rose-950',
+        title: (en ? 'Excused absence' : 'Уважительная причина') + (excuseNote ? `: ${excuseNote}` : ''),
+      };
+    }
 
     if (s === 'attended') return { label: en ? 'Present' : 'Был', color: 'bg-emerald-500 text-white', title: en ? 'Present' : 'Был' };
     if (s === 'late') return { label: en ? 'Late' : 'Опоздал', color: 'bg-amber-400 text-gray-900 font-bold', title: en ? 'Late' : 'Опоздал' };
@@ -264,11 +301,16 @@ const AttendanceToggle = ({
   // historical/view-only in this grid; it cannot be undone student by student.
   const nonInteractive = disabled || isFuture || initialStatus === 'cancelled';
 
+  // Only offered on an actual "Не был" (never future/cancelled/frozen/blocked — those
+  // never reach this component with initialStatus indicating a real absence while
+  // interactive), and only for a caller that wired up onExcuseChange in the first place.
+  const showExcuseAffordance = Boolean(onExcuseChange) && !nonInteractive && canBeExcused(normalizedStatus, isFuture);
+
   return (
     <div
         onClick={handleCycle}
         className={cn(
-            "flex items-center justify-center w-full h-full text-[11px] font-bold transition-all select-none",
+            "relative flex items-center justify-center w-full h-full text-[11px] font-bold transition-all select-none",
             config.color,
             nonInteractive ? "cursor-default brightness-[0.9] grayscale-[0.2]" : "cursor-pointer active:brightness-95 hover:brightness-105"
         )}
@@ -276,7 +318,42 @@ const AttendanceToggle = ({
     >
         <span className="flex items-center gap-1">
             <span className="text-[10px] uppercase">{config.label}</span>
+        {showExcuseAffordance && (
+            <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setExcusePopoverOpen(true); }}
+                // INLINE, beside the status label — not in a corner. All four corners are
+                // taken: the Meet-mismatch marker owns top-left, MeetVerdictBadge owns
+                // bottom-left (`absolute bottom-0 left-0` with an opaque background, and it
+                // renders AFTER this toggle so it paints on top), the activity-score badge
+                // top-right and its button bottom-right. This control sat at bottom-left and
+                // was completely hidden by the Meet verdict badge on every lesson that has
+                // one — which is most of them — so the feature was unreachable on the screen
+                // teachers actually use. Always visible, never hover-only: the grid is dense
+                // and a hidden icon is a feature nobody finds.
+                className={cn(
+                    "shrink-0 h-2.5 w-2.5 rounded-full ring-1 ring-white/80 dark:ring-card/80 pointer-events-auto",
+                    excused ? "bg-rose-600" : "bg-transparent border border-white/80"
+                )}
+                title={excused
+                    ? (en ? `Excused absence${excuseNote ? `: ${excuseNote}` : ''} — click to edit` : `Уважительная причина${excuseNote ? `: ${excuseNote}` : ''} — нажмите, чтобы изменить`)
+                    : (en ? 'Mark this absence as excused' : 'Отметить пропуск уважительной причиной')}
+                aria-label={excused
+                    ? (en ? 'Excused absence, edit reason' : 'Уважительная причина, изменить')
+                    : (en ? 'Mark absence as excused' : 'Отметить пропуск уважительным')}
+            />
+        )}
         </span>
+        {excusePopoverOpen && onExcuseChange && (
+            <ExcusePopover
+                excused={excused}
+                note={excuseNote}
+                en={en}
+                onSave={(savedNote) => { onExcuseChange(true, savedNote); setExcusePopoverOpen(false); }}
+                onClear={() => { onExcuseChange(false, null); setExcusePopoverOpen(false); }}
+                onClose={() => setExcusePopoverOpen(false)}
+            />
+        )}
     </div>
   );
 };
@@ -574,6 +651,11 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   
   // Changes tracking: Set of student IDs that have changes
   const [changedEntries, setChangedEntries] = useState<Set<number>>(new Set());
+  // "studentId:lessonNumber" pairs whose excuse the user actually edited this session.
+  // The save loop below walks every lesson of every changed student — without this,
+  // it would send `excused: false` for cells nobody touched and erase reasons another
+  // teacher had typed.
+  const [touchedExcuses, setTouchedExcuses] = useState<Set<string>>(new Set());
   const [configChanged, setConfigChanged] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [enabledCols, setEnabledCols] = useState({
@@ -729,7 +811,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   const loadLeaderboard = async () => {
     if (!selectedGroupId) return;
     setLoading(true);
-    setChangedEntries(new Set()); 
+    setChangedEntries(new Set());
+    setTouchedExcuses(new Set());
     setConfigChanged(false);
     try {
         const result = await getWeeklyLessonsWithHwStatus(selectedGroupId, currentWeek);
@@ -894,7 +977,14 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                   
                   const lesson = s.lessons[lessonNumber];
                   if (!lesson) return s;
-                  
+
+                  // A status that no longer means "absent" can't carry an excuse — the
+                  // server refuses (422, whole batch) an `excused: true` sent alongside
+                  // a non-absent status. Clearing it here mirrors what the server already
+                  // does when a persisted excuse's status changes, so a cell excused and
+                  // then cycled to "Был" within the same session doesn't poison the save.
+                  const clearsExcuse = !isAbsenceStatus(status);
+
                   return {
                       ...s,
                       lessons: {
@@ -905,7 +995,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                               // Editing an unmarked lesson makes it marked, so the
                               // "Не отмечено" state clears immediately and it re-enters
                               // the % denominator.
-                              marked: true
+                              marked: true,
+                              ...(clearsExcuse ? { excused: false, excuse_note: null } : {})
                           }
                       }
                   };
@@ -913,6 +1004,57 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
           };
       });
       setChangedEntries(prev => new Set(prev).add(studentId));
+      // The three-click cycle (missed -> attended -> late -> missed) is the natural way
+      // a teacher "removes" an excuse without ever opening the popover. If this change
+      // actually cleared a *stored* excuse (it was true before this click), that is a
+      // real edit to the excuse, not just a status change — without marking it touched,
+      // the save would omit `excused` entirely ("leave the stored value alone") and the
+      // excuse — and the billing decision keyed on it — would silently survive server-side.
+      if (!isAbsenceStatus(status) && guarded?.excused) {
+          setTouchedExcuses(prev => new Set(prev).add(`${studentId}:${lessonNumber}`));
+      }
+  };
+
+  const handleExcuseChange = (
+    studentId: number,
+    lessonNumber: string,
+    excused: boolean,
+    note: string | null,
+  ) => {
+      if (!canMarkAttendance) return;
+      const guarded = data?.students.find(s => s.student_id === studentId)?.lessons[lessonNumber];
+      if (guarded?.frozen || guarded?.blocked) return;
+      // No lesson at this key for this student — nothing will change below, so
+      // don't mark the row as touched (a silent no-op shouldn't make Save think
+      // there's something to save).
+      if (!guarded) return;
+      setData(prev => {
+          if (!prev) return null;
+          return {
+              ...prev,
+              students: prev.students.map(s => {
+                  if (s.student_id !== studentId) return s;
+                  const lesson = s.lessons[lessonNumber];
+                  if (!lesson) return s;
+                  return {
+                      ...s,
+                      lessons: {
+                          ...s.lessons,
+                          [lessonNumber]: {
+                              ...lesson,
+                              excused,
+                              excuse_note: note,
+                              // Отметка уважительности — тоже отметка: урок перестаёт быть
+                              // неотмеченным и входит в знаменатель процента.
+                              marked: true,
+                          },
+                      },
+                  };
+              }),
+          };
+      });
+      setChangedEntries(prev => new Set(prev).add(studentId));
+      setTouchedExcuses(prev => new Set(prev).add(`${studentId}:${lessonNumber}`));
   };
 
   const markAllPresentForLesson = (lesson: LessonMeta) => {
@@ -975,6 +1117,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
     setIsSaving(true);
     let successCount = 0;
     let attendanceFailures = 0;
+    let attendanceErrorDetail: string | undefined;
 
     try {
         // 1. Save Column Visibility Config — teachers can't touch manual columns, so skip entirely.
@@ -1040,15 +1183,29 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
             for (const student of entriesToSave) {
                 for (const [lessonKey, lessonStatus] of Object.entries(student.lessons)) {
                     if (lockedLessonKeys.has(lessonKey)) continue;
+                    const excuseTouched = touchedExcuses.has(`${student.student_id}:${lessonKey}`);
+                    const excuseValue = Boolean(lessonStatus.excused);
                     attendanceUpdates.push({
                         group_id: selectedGroupId,
                         week_number: currentWeek,
                         lesson_index: parseInt(lessonKey),
                         student_id: student.student_id,
                         score: lessonStatus.attendance_status === 'attended' ? 10 : 0,
-                        status: lessonStatus.attendance_status,
+                        // Raw status normally — but a row whose excuse we're writing this
+                        // save must send a spelling the backend actually recognises as an
+                        // absence. A row painted "Не был" can have a raw status of
+                        // `registered` (the backend's catch-all for legacy import
+                        // spellings like `no`/`0`), which normalizes to "unknown" server
+                        // side — `excused: true` alongside it 422s the WHOLE batch. See
+                        // `excuseAwareStatus`.
+                        status: excuseAwareStatus(lessonStatus.attendance_status, excuseTouched, excuseValue),
                         event_id: lessonStatus.event_id ?? null,
                         activity_score: lessonStatus.activity_score ?? undefined,
+                        // Only present when the user actually touched this cell's excuse —
+                        // an absent field means "leave the stored value alone" server-side,
+                        // while this loop otherwise walks every lesson of every changed
+                        // student, touched or not.
+                        ...excusePayload(excuseTouched, excuseValue, lessonStatus.excuse_note ?? null),
                     });
                 }
             }
@@ -1065,6 +1222,14 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         }
         if (attendanceResult.status === 'rejected') {
             attendanceFailures = attendanceUpdates.length;
+            // A validation failure (e.g. an excuse without a reason) comes back as a
+            // Russian 422 detail from the backend — show that message verbatim rather
+            // than replacing it with a generic one.
+            // FastAPI's request-validation 422 sends `detail` as an array of error
+            // objects rather than a string — only show it when it's actually text,
+            // otherwise fall back to the generic message below.
+            const rawDetail = (attendanceResult.reason as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
+            attendanceErrorDetail = typeof rawDetail === 'string' ? rawDetail : undefined;
             console.error('Failed to save attendance', attendanceResult.reason);
         }
 
@@ -1074,6 +1239,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         if (successCount === entriesToSave.length && attendanceFailures === 0) {
             toast(t("Все изменения сохранены", "All changes saved"), "success");
             setChangedEntries(new Set());
+            setTouchedExcuses(new Set());
             setConfigChanged(false);
             
             // Reload config from server to ensure it's persisted
@@ -1094,7 +1260,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                 console.error('Failed to reload config:', reloadErr);
             }
         } else if (attendanceFailures > 0) {
-            toast(t(
+            toast(attendanceErrorDetail || t(
                 `Сохранено с ошибками (не сохранилось ${attendanceFailures} отметок). Попробуйте ещё раз.`,
                 `Saved with errors (${attendanceFailures} marks failed). Please try again.`
             ), "error");
@@ -1513,7 +1679,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     {data.lessons.map(lesson => {
                         const lessonIsFuture = isAttendanceLockedLesson(lesson.start_datetime);
                         return (
-                        <TableHead key={`lesson-${lesson.lesson_number}`} className="p-0 text-center border-r border-gray-300 dark:border-border h-auto min-w-[140px] md:min-w-[160px] align-top bg-gray-100 dark:bg-secondary">
+                        <TableHead key={`lesson-${lesson.lesson_number}`} className="p-0 text-center border-r border-gray-300 dark:border-border h-auto min-w-[168px] md:min-w-[196px] align-top bg-gray-100 dark:bg-secondary">
                             <div className="flex flex-col h-full">
                                 <div
                                     className={cn(
@@ -1685,7 +1851,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                 {data.students.map((student, index) => {
                     const percent = calculatePercent(student);
                     return (
-                    <TableRow key={student.student_id} className="hover:bg-blue-50/50 dark:hover:bg-secondary/50 border-b border-gray-300 dark:border-border h-12">
+                    <TableRow key={student.student_id} className="hover:bg-blue-50/50 dark:hover:bg-secondary/50 border-b border-gray-300 dark:border-border h-16">
                         <TableCell className="p-2 sticky left-0 z-30 bg-white dark:bg-card border-r border-gray-300 dark:border-border">
                              <div className="flex items-center gap-2">
                                 <span className="text-[10px] text-gray-400 w-4 text-right font-mono">{index + 1}</span>
@@ -1732,7 +1898,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
 
                             return (
                                 <TableCell key={`cell-${lessonKey}`} className="p-0 border-r border-gray-300 dark:border-border">
-                                    <div className="flex w-full h-14 md:h-12 items-stretch">
+                                    <div className="flex w-full h-16 items-stretch">
                                         {preEnroll ? (
                                         <div
                                             className="w-1/2 border-r border-gray-300 dark:border-border flex items-center justify-center text-[11px] text-gray-300 dark:text-gray-600 select-none"
@@ -1794,6 +1960,9 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                     verdictNote(meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`), isTeacher ? 'en' : 'ru'),
                                                     spokeNote(meetTalk.get(`${lessonInfo.event_id}:${student.student_id}`), isTeacher ? 'en' : 'ru'),
                                                 ].filter(Boolean).join('\n') || null}
+                                                excused={Boolean(lessonStatus?.excused)}
+                                                excuseNote={lessonStatus?.excuse_note ?? null}
+                                                onExcuseChange={(excused, excuseNote) => handleExcuseChange(student.student_id, lessonKey, excused, excuseNote)}
                                             />
                                             {!cellIsFuture && meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`) && (
                                                 <MeetVerdictBadge verdict={meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`)!} locale={isTeacher ? 'en' : 'ru'} />
@@ -1823,7 +1992,11 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                     {lessonStatus.activity_score}
                                                 </span>
                                             )}
-                                            {canMarkAttendance && lessonStatus && !cellIsFuture && (
+                                            {/* No activity star on an absence: a student who was not
+                                                there had no activity to score, and the button sat on top
+                                                of the excuse control. The right-click shortcut on the cell
+                                                still opens the same dialog for anyone who needs it. */}
+                                            {canMarkAttendance && lessonStatus && !cellIsFuture && !displaysAsAbsence(status) && (
                                                 <button
                                                     type="button"
                                                     className="absolute bottom-0.5 right-0.5 p-1.5 rounded-full bg-black/20 text-white hover:bg-black/35 opacity-100 md:opacity-0 md:group-hover/att:opacity-100 transition-opacity"
@@ -1936,7 +2109,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                         })}
 
                         {!isTeacher && (
-                        <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border h-12", !enabledCols.curator_hour && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
+                        <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border h-16", !enabledCols.curator_hour && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
                             <ScoreSelect value={student.curator_hour} max={MAX_SCORES.curator_hour} onChange={(v) => handleManualScoreChange(student.student_id, 'curator_hour', v)} disabled={isTeacher} />
                         </TableCell>
                         )}
@@ -1947,7 +2120,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     const verbalHasData = student.sat_verbal_correct_count != null;
                                     return (
                                         <>
-                                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-12">
+                                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-16">
                                                 <div
                                                     className={cn(
                                                         "w-full h-full flex items-center justify-center text-xs font-semibold transition-colors",
@@ -1973,7 +2146,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                     {renderExamSectionContent(student.sat_math_correct_count, student.sat_math_total_count)}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-12">
+                                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-16">
                                                 <div
                                                     className={cn(
                                                         "w-full h-full flex items-center justify-center text-xs font-semibold transition-colors",
@@ -2004,7 +2177,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 })()}
                             </>
                         ) : isIeltsGroup ? (
-                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-12">
+                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-16">
                                 <div
                                     className={cn(
                                         "w-full h-full flex items-center justify-center text-xs font-semibold transition-colors",
@@ -2043,7 +2216,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 </div>
                             </TableCell>
                         ) : (
-                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-12">
+                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-16">
                                 <div className="w-full h-full flex items-center justify-center text-xs font-medium">
                                     {student.mock_exam > 0 ? (
                                         <span className="text-gray-900 dark:text-foreground">{student.mock_exam}%</span>
@@ -2055,7 +2228,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                         )}
                         {!isTeacher && (<>
                         <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border", !enabledCols.study_buddy && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
-                            <div className="h-12 w-full">
+                            <div className="h-16 w-full">
                                 <AttendanceToggle
                                     initialStatus={student.study_buddy === 15 ? 'attended' : 'absent'}
                                     onChange={(s) => handleManualScoreChange(student.student_id, 'study_buddy', s === 'attended' ? '15' : '0')}
