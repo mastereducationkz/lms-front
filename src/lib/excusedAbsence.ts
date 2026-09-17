@@ -20,6 +20,19 @@ export function isAbsenceStatus(status: string): boolean {
   return ABSENT_UI_STATUSES.has(status);
 }
 
+/**
+ * Does this cell READ as «Не был» on screen?
+ *
+ * Wider than {@link isAbsenceStatus}: `registered` is not stored as an absence, but the grid
+ * paints it red «Не был» — and the backend's `attendance_status_to_ui` collapses every status
+ * it does not recognise into `registered`, so the legacy spellings land here too. Anything
+ * keyed to what the teacher SEES — the excuse dot, and hiding the activity star — has to ask
+ * this question rather than the storage one, and ask it in one place so the two cannot drift.
+ */
+export function displaysAsAbsence(status: string): boolean {
+  return isAbsenceStatus(status) || status === 'registered';
+}
+
 export function canBeExcused(status: string, isFuture: boolean): boolean {
   // Урок, который ещё не прошёл, приезжает как «missed» просто потому, что отметки нет.
   // Оправдывать там нечего, и значок на такой ячейке предлагал бы записать небывшее.

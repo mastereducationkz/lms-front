@@ -24,7 +24,7 @@ import { Label } from '../components/ui/label';
 import { parseAsUTC } from '../lib/datetime';
 import { formatGroupCloseDate } from '../lib/groupList';
 import { isAttendanceLockedLesson } from '../lib/attendance';
-import { canBeExcused, excuseAwareStatus, excusePayload, isAbsenceStatus } from '../lib/excusedAbsence';
+import { canBeExcused, displaysAsAbsence, excuseAwareStatus, excusePayload, isAbsenceStatus } from '../lib/excusedAbsence';
 import { ExcusePopover } from '../components/attendance/ExcusePopover';
 import { listMeetRecords, type MeetLessonFlag, type MeetStudentVerdict } from '../services/api/meetAttendance';
 import { flagText, flagTextRu, mismatchIndex, reasonText, verdictIndex } from '../lib/meetAttendance';
@@ -273,7 +273,7 @@ const AttendanceToggle = ({
 
   // Normalized once so the excuse affordance can key off exactly what the cell
   // displays (registered/absent both paint as "Не был"), not the raw stored status.
-  const normalizedStatus = (initialStatus === 'absent' || initialStatus === 'registered' || initialStatus === 'missed') ? 'missed' : initialStatus;
+  const normalizedStatus = displaysAsAbsence(initialStatus) ? 'missed' : initialStatus;
 
   const getStatusConfig = () => {
     if (initialStatus === 'cancelled') return { label: en ? 'Cancelled' : 'Отменён', color: 'bg-slate-400 text-white', title: en ? 'Lesson cancelled' : 'Урок отменён' };
@@ -1992,7 +1992,11 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                     {lessonStatus.activity_score}
                                                 </span>
                                             )}
-                                            {canMarkAttendance && lessonStatus && !cellIsFuture && (
+                                            {/* No activity star on an absence: a student who was not
+                                                there had no activity to score, and the button sat on top
+                                                of the excuse control. The right-click shortcut on the cell
+                                                still opens the same dialog for anyone who needs it. */}
+                                            {canMarkAttendance && lessonStatus && !cellIsFuture && !displaysAsAbsence(status) && (
                                                 <button
                                                     type="button"
                                                     className="absolute bottom-0.5 right-0.5 p-1.5 rounded-full bg-black/20 text-white hover:bg-black/35 opacity-100 md:opacity-0 md:group-hover/att:opacity-100 transition-opacity"

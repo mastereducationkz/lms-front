@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canBeExcused, excuseAwareStatus, excusePayload, isValidExcuseNote } from './excusedAbsence';
+import { canBeExcused, displaysAsAbsence, excuseAwareStatus, excusePayload, isValidExcuseNote } from './excusedAbsence';
 
 describe('canBeExcused', () => {
   it('только отметка о пропуске может быть уважительной', () => {
@@ -77,5 +77,18 @@ describe('excuseAwareStatus', () => {
 
   it('нормальный статус вне пропуска едет как есть', () => {
     expect(excuseAwareStatus('attended', false, false)).toBe('attended');
+  });
+});
+
+describe('displaysAsAbsence', () => {
+  it('охватывает всё, что рисуется как «Не был»', () => {
+    // Шире, чем isAbsenceStatus: `registered` не хранится как пропуск, но сетка красит его
+    // красным «Не был», а бэкенд сворачивает в него любой нераспознанный статус.
+    expect(displaysAsAbsence('missed')).toBe(true);
+    expect(displaysAsAbsence('absent')).toBe(true);
+    expect(displaysAsAbsence('registered')).toBe(true);
+    expect(displaysAsAbsence('attended')).toBe(false);
+    expect(displaysAsAbsence('late')).toBe(false);
+    expect(displaysAsAbsence('cancelled')).toBe(false);
   });
 });
