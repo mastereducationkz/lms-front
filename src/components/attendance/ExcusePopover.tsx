@@ -95,7 +95,9 @@ export function ExcusePopover({
             'min-h-[4.5rem] resize-none px-2 py-1 text-xs md:text-xs',
             touched && !valid ? 'border-rose-500' : 'border-input',
           )}
-          placeholder={en ? 'e.g. warned in advance, ill' : 'например: предупредил заранее, болел'}
+          // Namely NOT «предупредил заранее»: warning in advance is how the school hears
+        // about the absence, not what makes it excusable. The reason has to be the reason.
+        placeholder={en ? 'e.g. ill, family matter, competition' : 'например: болел, семейные обстоятельства, олимпиада'}
         />
         {touched && !valid && (
           <div className="mt-1 text-[11px] text-rose-600">
