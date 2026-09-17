@@ -62,6 +62,7 @@ const EditEvent = lazy(() => import('../pages/EditEvent.tsx'));
 const Calendar = lazy(() => import('../pages/Calendar.tsx'));
 const LessonRecordings = lazy(() => import('../pages/LessonRecordings.tsx'));
 const MeetAttendanceReview = lazy(() => import('../pages/MeetAttendanceReview.tsx'));
+const TeacherDisciplinePage = lazy(() => import('../pages/TeacherDisciplinePage.tsx'));
 const WatchRecordingPage = lazy(() => import('../pages/WatchRecordingPage.tsx'));
 const SubstitutionRequestPage = lazy(() => import('../pages/SubstitutionRequestPage.tsx'));
 const MyLessonRequests = lazy(() => import('../pages/MyLessonRequests.tsx'));
@@ -598,6 +599,16 @@ export default function Router() {
             <ProtectedRoute allowedRoles={['admin', 'head_curator', 'head_teacher', 'teacher', 'curator']}>
               <AppLayout>
                 <MeetAttendanceReview />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          {/* The head teachers' register: lateness, missed lessons and their fines. A teacher
+              sees only their own row — the backend scopes it. */}
+          <Route path="/teacher-discipline" element={
+            <ProtectedRoute allowedRoles={['admin', 'head_teacher', 'teacher']}>
+              <AppLayout>
+                <TeacherDisciplinePage />
               </AppLayout>
             </ProtectedRoute>
           } />
