@@ -577,7 +577,19 @@ export default function StudentReportPage() {
         {attendance.absences.length > 0 && (
           <div className="text-xs text-gray-600">
             <p className="font-medium text-gray-700 mb-1">Пропуски</p>
-            {attendance.absences.map((a, i) => <p key={i}>{fmtDate(a.date)} — {a.title}</p>)}
+            {attendance.absences.map((a, i) => (
+              <p key={i}>
+                {fmtDate(a.date)} — {a.title}
+                {a.excused && (
+                  <span
+                    className="ml-1.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 align-middle"
+                    title={'Уважительная причина' + (a.excuse_note ? `: ${a.excuse_note}` : '')}
+                  >
+                    Ув.
+                  </span>
+                )}
+              </p>
+            ))}
           </div>
         )}
         {attendance.lates.length > 0 && (
