@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
+import { ExternalLink, RotateCcw, TriangleAlert } from 'lucide-react';
 import { validateAndExtractYouTubeInfo } from '../utils/youtube';
+import { resumeSecond, youtubeWatchAt } from '../lib/youtubePlayback';
+import { Button } from './ui/button';
 
 interface YouTubeVideoPlayerProps {
   url: string;
@@ -18,6 +21,10 @@ export default function YouTubeVideoPlayer({
 }: YouTubeVideoPlayerProps) {
   const [player, setPlayer] = useState<any>(null);
   const [isPlayerActive, setIsPlayerActive] = useState(false);
+  // Bumped by «Reload video»: the player is rebuilt (a fresh decoder) and resumes at resumeAtRef.
+  const [reloadCount, setReloadCount] = useState(0);
+  const [troubleOpen, setTroubleOpen] = useState(false);
+  const resumeAtRef = useRef<number>();
   const playerRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<number>();
   const playerInstanceRef = useRef<any>(null);
@@ -41,10 +48,22 @@ export default function YouTubeVideoPlayer({
     );
   }
 
-  // handleIframeError removed
+  const currentSecond = (): number | undefined => {
+    try {
+      return playerInstanceRef.current?.getCurrentTime?.();
+    } catch {
+      return undefined;
+    }
+  };
 
-  const openInNewWindow = () => {
-    window.open(videoInfo.clean_url, '_blank', 'noopener,noreferrer');
+  const openOnYouTube = () => {
+    window.open(youtubeWatchAt(videoInfo.video_id!, currentSecond()), '_blank', 'noopener,noreferrer');
+  };
+
+  const reloadPlayer = () => {
+    resumeAtRef.current = currentSecond();
+    setPlayer(null);
+    setReloadCount(count => count + 1);
   };
 
   // Keep latest onProgress in a ref to avoid effect re-runs
@@ -97,14 +116,21 @@ export default function YouTubeVideoPlayer({
             onError?.('Unable to initialize YouTube player. Please try opening the video in a new tab.');
           }, 12000);
 
-          playerInstanceRef.current = new window.YT.Player(playerRef.current as any, {
+          // The API swaps the element it is given for its iframe, so give it one React does not
+          // own; the host div stays put and a reload can start over inside it.
+          const mountPoint = document.createElement('div');
+          playerRef.current.replaceChildren(mountPoint);
+          const start = resumeSecond(resumeAtRef.current);
+
+          playerInstanceRef.current = new window.YT.Player(mountPoint as any, {
             videoId: videoInfo.video_id,
             width: '100%',
             height: '100%',
             playerVars: {
               autoplay: 1, // Autoplay when activated
               modestbranding: 1,
-              rel: 0
+              rel: 0,
+              ...(start !== undefined ? { start } : {})
             },
             events: {
               onReady: (event: any) => {
@@ -182,56 +208,88 @@ export default function YouTubeVideoPlayer({
         }
         playerInstanceRef.current = null;
       }
+      playerRef.current?.replaceChildren();
     };
-  }, [videoInfo.video_id, isPlayerActive]);
+  }, [videoInfo.video_id, isPlayerActive, reloadCount]);
 
   return (
-    <div className={`bg-gray-900 rounded-lg overflow-hidden relative youtube-iframe-container ${className}`}>
-      {/* Video player */}
-      <div className="aspect-video w-full relative group">
-        {!isPlayerActive ? (
-          /* Thumbnail and Play Button */
-          <div 
-            className="w-full h-full relative cursor-pointer"
-            onClick={() => setIsPlayerActive(true)}
-          >
-            <img 
-              src={videoInfo.thumbnail_url} 
-              alt={title} 
-              className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-            />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
-                <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
+    <div className={className}>
+      <div className="bg-gray-900 rounded-lg overflow-hidden relative youtube-iframe-container">
+        {/* Video player */}
+        <div className="aspect-video w-full relative group">
+          {!isPlayerActive ? (
+            /* Thumbnail and Play Button */
+            <div 
+              className="w-full h-full relative cursor-pointer"
+              onClick={() => setIsPlayerActive(true)}
+            >
+              <img 
+                src={videoInfo.thumbnail_url} 
+                alt={title} 
+                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+                  <svg className="w-8 h-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-          /* Player Container */
-          <>
-            <div ref={playerRef} className="absolute inset-0 w-full h-full youtube-player-frame" />
+          ) : (
+            /* Player Container */
+            <>
+              <div ref={playerRef} className="absolute inset-0 w-full h-full youtube-player-frame" />
             
-            {/* Loading spinner while player is initializing */}
-            {!player && (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-900 text-white">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div>
-              </div>
-            )}
-          </>
-        )}
+              {/* Loading spinner while player is initializing */}
+              {!player && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-900 text-white">
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white"></div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Fallback button for Zen browser */}
-      <div className="absolute top-2 right-2 z-10">
-        <button
-          onClick={openInNewWindow}
-          className="bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded hover:bg-opacity-90 transition-all duration-200 opacity-0 hover:opacity-100"
-          title="Открыть в новом окне"
-        >
-          ↗
-        </button>
+      {/* Stripes or green/pink frames come from the student's GPU decoding YouTube, not the lesson:
+          a fresh player, youtube.com, or Chrome without graphics acceleration are the ways out. */}
+      <div className="px-3 py-2 text-sm">
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setTroubleOpen(open => !open)}
+            aria-expanded={troubleOpen}
+            className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            <TriangleAlert className="h-3.5 w-3.5" />
+            Video glitching or not playing?
+          </button>
+        </div>
+        {troubleOpen && (
+          <div className="mt-2 space-y-3 rounded-md border border-gray-200 bg-white p-3 text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+            <p>
+              Stripes, green or pink blocks, or a frozen picture come from how your computer's graphics
+              card plays YouTube video, not from the lesson itself.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {isPlayerActive && (
+                <Button variant="outline" size="sm" onClick={reloadPlayer}>
+                  <RotateCcw className="mr-1.5 h-4 w-4" />
+                  Reload video
+                </Button>
+              )}
+              <Button variant="outline" size="sm" onClick={openOnYouTube}>
+                <ExternalLink className="mr-1.5 h-4 w-4" />
+                Open on YouTube
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Still broken? Update Chrome and your graphics driver, or open Chrome's Settings → System,
+              turn off «Use graphics acceleration when available» and relaunch Chrome.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

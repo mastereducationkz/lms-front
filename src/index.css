@@ -268,11 +268,9 @@
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
-    /* Force GPU compositing to prevent rendering artifacts */
-    transform: translateZ(0);
-    -webkit-transform: translateZ(0);
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
+    /* No forced GPU layer (translateZ / backface-visibility) here: it moves YouTube's
+       hardware-decoded video onto another compositing path, and students on some Windows
+       laptops saw striped, green/pink frames in the lesson player (Sept 2026). */
   }
 
   /* Ensure YouTube iframe fills its container properly */
