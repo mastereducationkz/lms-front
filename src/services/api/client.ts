@@ -10,6 +10,7 @@ import {
   setCached,
   trackInflight,
 } from './cache';
+import { watchUpload, type UploadRequestConfig } from './uploadWatchdog';
 
 const RAW_API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 let API_BASE_URL = RAW_API_BASE_URL;
@@ -298,6 +299,8 @@ api.interceptors.request.use(
       } else if (headers && typeof headers === 'object') {
         delete (headers as Record<string, unknown>)['Content-Type']
       }
+      // Uploads get no fixed timeout: they fail only when bytes stop moving (see uploadWatchdog).
+      watchUpload(config as UploadRequestConfig)
     }
     const token = tokenManager.getAccessToken();
     if (token) {
@@ -394,6 +397,19 @@ api.interceptors.response.use(
       }
     }
 
+    return Promise.reject(error);
+  }
+);
+
+// Registered last so it runs after a token-refresh retry has settled: the upload watchdog of a
+// finished request must never fire.
+api.interceptors.response.use(
+  (response) => {
+    (response.config as UploadRequestConfig | undefined)?.stopUploadWatch?.();
+    return response;
+  },
+  (error) => {
+    (error?.config as UploadRequestConfig | undefined)?.stopUploadWatch?.();
     return Promise.reject(error);
   }
 );

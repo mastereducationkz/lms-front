@@ -1,45 +1,39 @@
 import { api, API_BASE_URL } from './client';
+import { UploadFailedError, tooLargeReason, uploadFailureReason } from '../../lib/uploadFailure';
 
-export async function uploadAssignmentFile(assignmentId: string, file: File): Promise<any> {
+/** POST a file, refusing it up front when it is over the size limit, and fail with the real reason. */
+async function postFile<T>(url: string, formData: FormData, file: File): Promise<T> {
+  const tooLarge = tooLargeReason(file);
+  if (tooLarge) throw new UploadFailedError(file.name, tooLarge);
   try {
-    const formData = new FormData();
-    formData.append('assignment_id', assignmentId);
-    formData.append('file', file);
-    const response = await api.post('/media/assignments/upload', formData, {
+    const response = await api.post(url, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return response.data;
   } catch (error) {
-    throw new Error('Failed to upload assignment file');
+    throw new UploadFailedError(file.name, uploadFailureReason(error));
   }
+}
+
+export async function uploadAssignmentFile(assignmentId: string, file: File): Promise<any> {
+  const formData = new FormData();
+  formData.append('assignment_id', assignmentId);
+  formData.append('file', file);
+  return postFile('/media/assignments/upload', formData, file);
 }
 
 export async function uploadTeacherFile(file: File): Promise<any> {
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('file_type', 'teacher_assignment');
-    const response = await api.post('/media/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return response.data;
-  } catch (error) {
-    throw new Error('Failed to upload teacher file');
-  }
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('file_type', 'teacher_assignment');
+  return postFile('/media/upload', formData, file);
 }
 
 export async function uploadSubmissionFile(assignmentId: string, file: File): Promise<any> {
-  try {
-    const formData = new FormData();
-    formData.append('assignment_id', assignmentId);
-    formData.append('file', file);
-    const response = await api.post('/media/submissions/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return response.data;
-  } catch (error) {
-    throw new Error('Failed to upload submission file');
-  }
+  const formData = new FormData();
+  formData.append('assignment_id', assignmentId);
+  formData.append('file', file);
+  return postFile('/media/submissions/upload', formData, file);
 }
 
 export async function uploadQuestionMedia(file: File): Promise<{
@@ -48,17 +42,10 @@ export async function uploadQuestionMedia(file: File): Promise<{
   original_filename: string;
   file_size: number;
 }> {
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('file_type', 'question_media');
-    const response = await api.post('/media/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return response.data;
-  } catch (error) {
-    throw new Error('Failed to upload question media file');
-  }
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('file_type', 'question_media');
+  return postFile('/media/upload', formData, file);
 }
 
 export async function downloadFile(fileType: string, filename: string): Promise<Blob> {

@@ -26,6 +26,7 @@ import PlatformTestPanel from '../../components/assignments/PlatformTestPanel.ts
 import { compressImage } from '../../utils/imageCompression';
 import { AudioPlayer } from '../../components/AudioPlayer';
 import { formatAssignmentStatus } from '../../lib/assignmentStatus';
+import { UploadFailedError } from '../../lib/uploadFailure';
 
 function resolveFileUrl(url: string): string {
   if (!url) return url;
@@ -223,6 +224,8 @@ export default function AssignmentPage() {
     } catch (err: any) {
       if (err?.response?.status === 409) {
         toast(err.response.data?.detail || 'Complete the linked units first', 'error');
+      } else if (err instanceof UploadFailedError) {
+        toast(err.message, 'error');
       } else {
         console.error('Assignment submission error:', err);
         toast('Failed to submit assignment', 'error');

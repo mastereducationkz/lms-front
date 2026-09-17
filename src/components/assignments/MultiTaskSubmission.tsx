@@ -15,6 +15,7 @@ import { AudioPlayer } from '../AudioPlayer';
 import { parseBluebookReport } from '../../services/api/exams';
 import { BluebookGraderPanel } from './BluebookGraderPanel';
 import { formatAssignmentTaskLabel } from '../../lib/assignmentTask';
+import { UploadFailedError } from '../../lib/uploadFailure';
 
 interface Task {
   id: string;
@@ -709,7 +710,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
       toast('Files uploaded successfully', 'success');
     } catch (error) {
       console.error('File upload failed:', error);
-      toast('Failed to upload files. Please try again.', 'error');
+      toast(error instanceof UploadFailedError ? error.message : 'Failed to upload files. Please try again.', 'error');
     } finally {
       setUploading(prev => ({ ...prev, [taskId]: false }));
     }

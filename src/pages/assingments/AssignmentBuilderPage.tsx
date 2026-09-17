@@ -27,6 +27,7 @@ import { DateTimePicker } from '../../components/ui/date-time-picker';
 import MultiTaskEditor from '../../components/assignments/MultiTaskEditor';
 import { parseAsUTC, formatInKZ } from '../../lib/datetime';
 import { prepareTeacherGroupList } from '../../lib/groupList';
+import { taskUploadMessage } from '../../lib/uploadFailure';
 
 interface AssignmentFormData {
   title: string;
@@ -381,7 +382,7 @@ export default function AssignmentBuilderPage() {
 
       if (formData.assignment_type === 'multi_task' && formData.content.tasks) {
         // Handle multi-task file uploads
-        const updatedTasks = await Promise.all(formData.content.tasks.map(async (task: any) => {
+        const updatedTasks = await Promise.all(formData.content.tasks.map(async (task: any, taskIndex: number) => {
           // Handle file_task
           if (task.task_type === 'file_task' && task.content.teacher_file instanceof File) {
             try {
@@ -399,10 +400,7 @@ export default function AssignmentBuilderPage() {
               };
             } catch (err) {
               console.error(`Failed to upload file for task ${task.id}:`, err);
-              // Keep the task as is, or maybe throw error? 
-              // For now, we'll just log it and maybe the user will try again.
-              // Ideally we should stop submission.
-              throw new Error(`Failed to upload file for task: ${task.title}`);
+              throw new Error(taskUploadMessage(taskIndex, task.title, err));
             }
           } else if (task.task_type === 'file_task') {
              // Ensure teacher_file is removed if it's not a File object (e.g. null or empty object)
@@ -431,7 +429,7 @@ export default function AssignmentBuilderPage() {
               };
             } catch (err) {
               console.error(`Failed to upload PDF for task ${task.id}:`, err);
-              throw new Error(`Failed to upload PDF for task: ${task.title}`);
+              throw new Error(taskUploadMessage(taskIndex, task.title, err));
             }
           } else if (task.task_type === 'pdf_text_task') {
              // Ensure teacher_file is removed if it's not a File object
@@ -476,7 +474,7 @@ export default function AssignmentBuilderPage() {
             teacherFileName = formData.content.teacher_file_name || formData.content.teacher_file.name;
           } catch (fileError) {
             console.error('Failed to upload teacher file:', fileError);
-            setError('Failed to upload teacher file. Please try again.');
+            setError(fileError instanceof Error ? fileError.message : 'Failed to upload teacher file. Please try again.');
             setLoading(false);
             return;
           }
