@@ -28,6 +28,7 @@ import MultiTaskEditor from '../../components/assignments/MultiTaskEditor';
 import { parseAsUTC, formatInKZ } from '../../lib/datetime';
 import { prepareTeacherGroupList } from '../../lib/groupList';
 import { taskUploadMessage } from '../../lib/uploadFailure';
+import { createUploadCache } from '../../lib/uploadOnce';
 
 interface AssignmentFormData {
   title: string;
@@ -310,6 +311,8 @@ export default function AssignmentBuilderPage() {
   // lesson_number_mapping and the due date. Runs once; no match → teacher picks manually.
   const lessonNumberParam = searchParams.get('lesson_number');
   const lessonPrefillDone = useRef(false);
+  // Files already uploaded while this form is open: pressing Save again re-sends only what failed.
+  const uploadedFiles = useRef(createUploadCache());
   useEffect(() => {
       if (lessonPrefillDone.current || !groupId || !lessonNumberParam) return;
       const gid = parseInt(groupId);
@@ -387,7 +390,7 @@ export default function AssignmentBuilderPage() {
           if (task.task_type === 'file_task' && task.content.teacher_file instanceof File) {
             try {
               console.log(`Uploading teacher file for task ${task.id}:`, task.content.teacher_file.name);
-              const uploadResult = await apiClient.uploadTeacherFile(task.content.teacher_file);
+              const uploadResult = await uploadedFiles.current.upload(task.content.teacher_file, (f) => apiClient.uploadTeacherFile(f));
               
               return {
                 ...task,
@@ -416,7 +419,7 @@ export default function AssignmentBuilderPage() {
           if (task.task_type === 'pdf_text_task' && task.content.teacher_file instanceof File) {
             try {
               console.log(`Uploading PDF file for task ${task.id}:`, task.content.teacher_file.name);
-              const uploadResult = await apiClient.uploadTeacherFile(task.content.teacher_file);
+              const uploadResult = await uploadedFiles.current.upload(task.content.teacher_file, (f) => apiClient.uploadTeacherFile(f));
               
               return {
                 ...task,
@@ -448,7 +451,7 @@ export default function AssignmentBuilderPage() {
           const answer_keys = await Promise.all((task.answer_keys || []).map(async (answerKey: any) => {
             const resources = await Promise.all((answerKey.resources || []).map(async (resource: any) => {
               if (!(resource.file instanceof File)) return resource;
-              const uploaded = await apiClient.uploadTeacherFile(resource.file);
+              const uploaded = await uploadedFiles.current.upload(resource.file, (f) => apiClient.uploadTeacherFile(f));
               const { file, ...persisted } = resource;
               return { ...persisted, file_url: uploaded.file_url || uploaded.url, file_name: resource.file.name };
             }));
@@ -469,7 +472,7 @@ export default function AssignmentBuilderPage() {
         if (formData.content.teacher_file instanceof File) {
           try {
             console.log('Uploading teacher file:', formData.content.teacher_file.name);
-            const uploadResult = await apiClient.uploadTeacherFile(formData.content.teacher_file);
+            const uploadResult = await uploadedFiles.current.upload(formData.content.teacher_file, (f) => apiClient.uploadTeacherFile(f));
             teacherFileUrl = uploadResult.file_url || uploadResult.url;
             teacherFileName = formData.content.teacher_file_name || formData.content.teacher_file.name;
           } catch (fileError) {
