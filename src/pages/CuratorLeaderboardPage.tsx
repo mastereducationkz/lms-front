@@ -1679,7 +1679,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     {data.lessons.map(lesson => {
                         const lessonIsFuture = isAttendanceLockedLesson(lesson.start_datetime);
                         return (
-                        <TableHead key={`lesson-${lesson.lesson_number}`} className="p-0 text-center border-r border-gray-300 dark:border-border h-auto min-w-[140px] md:min-w-[160px] align-top bg-gray-100 dark:bg-secondary">
+                        <TableHead key={`lesson-${lesson.lesson_number}`} className="p-0 text-center border-r border-gray-300 dark:border-border h-auto min-w-[168px] md:min-w-[196px] align-top bg-gray-100 dark:bg-secondary">
                             <div className="flex flex-col h-full">
                                 <div
                                     className={cn(
@@ -1851,7 +1851,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                 {data.students.map((student, index) => {
                     const percent = calculatePercent(student);
                     return (
-                    <TableRow key={student.student_id} className="hover:bg-blue-50/50 dark:hover:bg-secondary/50 border-b border-gray-300 dark:border-border h-12">
+                    <TableRow key={student.student_id} className="hover:bg-blue-50/50 dark:hover:bg-secondary/50 border-b border-gray-300 dark:border-border h-16">
                         <TableCell className="p-2 sticky left-0 z-30 bg-white dark:bg-card border-r border-gray-300 dark:border-border">
                              <div className="flex items-center gap-2">
                                 <span className="text-[10px] text-gray-400 w-4 text-right font-mono">{index + 1}</span>
@@ -1898,7 +1898,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
 
                             return (
                                 <TableCell key={`cell-${lessonKey}`} className="p-0 border-r border-gray-300 dark:border-border">
-                                    <div className="flex w-full h-14 md:h-12 items-stretch">
+                                    <div className="flex w-full h-16 items-stretch">
                                         {preEnroll ? (
                                         <div
                                             className="w-1/2 border-r border-gray-300 dark:border-border flex items-center justify-center text-[11px] text-gray-300 dark:text-gray-600 select-none"
@@ -2105,7 +2105,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                         })}
 
                         {!isTeacher && (
-                        <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border h-12", !enabledCols.curator_hour && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
+                        <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border h-16", !enabledCols.curator_hour && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
                             <ScoreSelect value={student.curator_hour} max={MAX_SCORES.curator_hour} onChange={(v) => handleManualScoreChange(student.student_id, 'curator_hour', v)} disabled={isTeacher} />
                         </TableCell>
                         )}
@@ -2116,7 +2116,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     const verbalHasData = student.sat_verbal_correct_count != null;
                                     return (
                                         <>
-                                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-12">
+                                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-16">
                                                 <div
                                                     className={cn(
                                                         "w-full h-full flex items-center justify-center text-xs font-semibold transition-colors",
@@ -2142,7 +2142,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                     {renderExamSectionContent(student.sat_math_correct_count, student.sat_math_total_count)}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-12">
+                                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-16">
                                                 <div
                                                     className={cn(
                                                         "w-full h-full flex items-center justify-center text-xs font-semibold transition-colors",
@@ -2173,7 +2173,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 })()}
                             </>
                         ) : isIeltsGroup ? (
-                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-12">
+                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-16">
                                 <div
                                     className={cn(
                                         "w-full h-full flex items-center justify-center text-xs font-semibold transition-colors",
@@ -2212,7 +2212,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 </div>
                             </TableCell>
                         ) : (
-                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-12">
+                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-16">
                                 <div className="w-full h-full flex items-center justify-center text-xs font-medium">
                                     {student.mock_exam > 0 ? (
                                         <span className="text-gray-900 dark:text-foreground">{student.mock_exam}%</span>
@@ -2224,7 +2224,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                         )}
                         {!isTeacher && (<>
                         <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border", !enabledCols.study_buddy && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
-                            <div className="h-12 w-full">
+                            <div className="h-16 w-full">
                                 <AttendanceToggle
                                     initialStatus={student.study_buddy === 15 ? 'attended' : 'absent'}
                                     onChange={(s) => handleManualScoreChange(student.student_id, 'study_buddy', s === 'attended' ? '15' : '0')}
