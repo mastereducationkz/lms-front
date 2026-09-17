@@ -1,5 +1,6 @@
 import React from 'react';
 import { TextCompletionRenderer } from '../TextCompletionRenderer';
+import { gapMarks } from './scoring';
 
 interface TextCompletionQuestionProps {
   question: any;
@@ -32,6 +33,8 @@ export const TextCompletionQuestion: React.FC<TextCompletionQuestionProps> = ({
 
   // Get the text from either content_text or question_text
   const textToRender = question.content_text || question.question_text || '';
+  // The review marks what the score counted, gap by gap — never a second grader.
+  const review = showResult ? gapMarks(question, answers) : null;
 
   return (
     <div className="p-1">
@@ -46,6 +49,8 @@ export const TextCompletionQuestion: React.FC<TextCompletionQuestionProps> = ({
         revealCorrect={revealCorrect}
         correctAnswers={correctAnswers}
         showNumbering={question.show_numbering || false}
+        marks={review?.marks}
+        expectedAnswers={review?.expected}
       />
     </div>
   );

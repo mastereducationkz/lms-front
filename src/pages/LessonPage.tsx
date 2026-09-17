@@ -23,7 +23,7 @@ import QuizRenderer from '../components/lesson/QuizRenderer';
 import SummaryStepRenderer from '../components/lesson/SummaryStepRenderer';
 import TextLookupPopover from '../components/lesson/TextLookupPopover';
 import { toast } from '../components/Toast';
-import { gradeQuestion, getAnswerKey } from '../components/lesson/quiz/scoring';
+import { getAnswerKey, scoreQuiz } from '../components/lesson/quiz/scoring';
 import { isQuizScorePassing, resolveQuizPassingScorePercent } from '../utils/quizPassingScore';
 
 // Utility function to extract correct answers from gap text
@@ -1849,38 +1849,13 @@ export default function LessonPage() {
   // Uses the shared `gradeQuestion` helper so QuizRenderer review badges and
   // these stats stay aligned. Long-text for special-group students is excluded
   // from regular question count because their long_text answers must be teacher-graded.
-  const getGapStatistics = () => {
-    let totalGaps = 0;
-    let correctGaps = 0;
-    let regularQuestions = 0;
-    let correctRegular = 0;
-
-    questions.forEach(question => {
-      if (question.question_type === 'image_content') return;
-      const key = getAnswerKey(question);
-
-      if (question.question_type === 'fill_blank' || question.question_type === 'text_completion') {
-        const provided = gapAnswers.get(key) || [];
-        const result = gradeQuestion(question, undefined, provided);
-        totalGaps += result.totalParts;
-        correctGaps += result.correctParts;
-        return;
-      }
-
-      if (question.question_type === 'long_text' && isSpecialGroupStudent) {
-        // Excluded — these are graded by the teacher; counting them locally would
-        // distort the displayed denominator before grading completes.
-        return;
-      }
-
-      regularQuestions++;
-      const answer = quizAnswers.get(key);
-      const result = gradeQuestion(question, answer, undefined, { isSpecialGroupStudent });
-      if (result.isCorrect) correctRegular++;
-    });
-
-    return { totalGaps, correctGaps, regularQuestions, correctRegular };
-  };
+  // The rules live in scoring.scoreQuiz, beside the review marks they must agree with.
+  const getGapStatistics = () => scoreQuiz(
+    questions,
+    (question) => quizAnswers.get(getAnswerKey(question)),
+    (question) => gapAnswers.get(getAnswerKey(question)),
+    { isSpecialGroupStudent },
+  );
 
   const renderAttachments = (attachmentsJson?: string) => {
     if (!attachmentsJson) return null;
