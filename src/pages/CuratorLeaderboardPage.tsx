@@ -24,7 +24,7 @@ import { Label } from '../components/ui/label';
 import { parseAsUTC } from '../lib/datetime';
 import { formatGroupCloseDate } from '../lib/groupList';
 import { isAttendanceLockedLesson } from '../lib/attendance';
-import { canBeExcused, excusePayload, isAbsenceStatus } from '../lib/excusedAbsence';
+import { canBeExcused, excuseAwareStatus, excusePayload, isAbsenceStatus } from '../lib/excusedAbsence';
 import { ExcusePopover } from '../components/attendance/ExcusePopover';
 import { listMeetRecords, type MeetLessonFlag, type MeetStudentVerdict } from '../services/api/meetAttendance';
 import { flagText, flagTextRu, mismatchIndex, reasonText, verdictIndex } from '../lib/meetAttendance';
@@ -1169,24 +1169,29 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
             for (const student of entriesToSave) {
                 for (const [lessonKey, lessonStatus] of Object.entries(student.lessons)) {
                     if (lockedLessonKeys.has(lessonKey)) continue;
+                    const excuseTouched = touchedExcuses.has(`${student.student_id}:${lessonKey}`);
+                    const excuseValue = Boolean(lessonStatus.excused);
                     attendanceUpdates.push({
                         group_id: selectedGroupId,
                         week_number: currentWeek,
                         lesson_index: parseInt(lessonKey),
                         student_id: student.student_id,
                         score: lessonStatus.attendance_status === 'attended' ? 10 : 0,
-                        status: lessonStatus.attendance_status,
+                        // Raw status normally — but a row whose excuse we're writing this
+                        // save must send a spelling the backend actually recognises as an
+                        // absence. A row painted "Не был" can have a raw status of
+                        // `registered` (the backend's catch-all for legacy import
+                        // spellings like `no`/`0`), which normalizes to "unknown" server
+                        // side — `excused: true` alongside it 422s the WHOLE batch. See
+                        // `excuseAwareStatus`.
+                        status: excuseAwareStatus(lessonStatus.attendance_status, excuseTouched, excuseValue),
                         event_id: lessonStatus.event_id ?? null,
                         activity_score: lessonStatus.activity_score ?? undefined,
                         // Only present when the user actually touched this cell's excuse —
                         // an absent field means "leave the stored value alone" server-side,
                         // while this loop otherwise walks every lesson of every changed
                         // student, touched or not.
-                        ...excusePayload(
-                            touchedExcuses.has(`${student.student_id}:${lessonKey}`),
-                            Boolean(lessonStatus.excused),
-                            lessonStatus.excuse_note ?? null,
-                        ),
+                        ...excusePayload(excuseTouched, excuseValue, lessonStatus.excuse_note ?? null),
                     });
                 }
             }

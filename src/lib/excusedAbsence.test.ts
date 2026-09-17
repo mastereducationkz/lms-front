@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canBeExcused, excusePayload, isValidExcuseNote } from './excusedAbsence';
+import { canBeExcused, excuseAwareStatus, excusePayload, isValidExcuseNote } from './excusedAbsence';
 
 describe('canBeExcused', () => {
   it('только отметка о пропуске может быть уважительной', () => {
@@ -48,5 +48,34 @@ describe('excusePayload', () => {
       excused: false,
       excuse_note: null,
     });
+  });
+});
+
+describe('excuseAwareStatus', () => {
+  it('уважительная строка со статусом "registered" едет как "missed"', () => {
+    // `registered` — это то, во что бэкенд переписывает легаси-спеллинги импорта
+    // (`no`, `0`...). Сетка красит такую ячейку обычным амбером «Ув.», но отправка
+    // сырого `registered` вместе с `excused: true` роняет весь батч 422-й — сервер
+    // не считает `registered` пропуском.
+    expect(excuseAwareStatus('registered', true, true)).toBe('missed');
+  });
+
+  it('нетронутая строка продолжает слать сырой статус, даже если уважительна', () => {
+    // Нетронутая строка не несёт `excused` в payload вообще (см. excusePayload),
+    // так что подменять статус ей незачем — и не нужно, раз никакой `excused: true`
+    // рядом с ним не летит.
+    expect(excuseAwareStatus('registered', false, true)).toBe('registered');
+  });
+
+  it('снятая уважительность не подменяет статус', () => {
+    expect(excuseAwareStatus('registered', true, false)).toBe('registered');
+  });
+
+  it('обычный пропуск с уважительностью и так уже "missed" — статус не меняется', () => {
+    expect(excuseAwareStatus('missed', true, true)).toBe('missed');
+  });
+
+  it('нормальный статус вне пропуска едет как есть', () => {
+    expect(excuseAwareStatus('attended', false, false)).toBe('attended');
   });
 });
