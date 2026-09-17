@@ -390,6 +390,11 @@ export default function SubstitutionAttendancePanel() {
                               onSave={(note) => { handleExcuseChange(s.student_id, true, note); setExcusePopoverFor(null); }}
                               onClear={() => { handleExcuseChange(s.student_id, false, null); setExcusePopoverFor(null); }}
                               onClose={() => setExcusePopoverFor(null)}
+                              // This panel is English throughout — «Present», «Absent»,
+                              // «Mark attendance», «Save» — because it is the substitute
+                              // teachers' screen. Without this the reason form would be the
+                              // one Russian island on it.
+                              en
                             />
                           )}
                         </div>
