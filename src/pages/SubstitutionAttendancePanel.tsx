@@ -118,6 +118,7 @@ export default function SubstitutionAttendancePanel() {
   };
 
   const cycleStatus = (studentId: number) => {
+    let clearedStoredExcuse = false;
     setRoster(prev => prev.map(s => {
       if (s.student_id !== studentId) return s;
       const nextStatus = STATUS_NEXT[s.attendance_status] ?? 'attended';
@@ -127,12 +128,21 @@ export default function SubstitutionAttendancePanel() {
       // would go out as `{status: 'attended', excused: true}`, which the backend
       // rejects (422, whole batch, names nobody). Mirrors CuratorLeaderboardPage.
       const clearsExcuse = !isAbsenceStatus(nextStatus);
+      // Cycling missed -> attended -> late -> missed is the natural way to "remove" an
+      // excuse without opening the popover. If a *stored* excuse (already true) is
+      // being cleared here, that's a real edit — mark it touched below so the save
+      // actually sends `excused: false` instead of silently leaving the old value
+      // (and the billing decision keyed on it) on the server.
+      if (clearsExcuse && s.excused) clearedStoredExcuse = true;
       return {
         ...s,
         attendance_status: nextStatus,
         ...(clearsExcuse ? { excused: false, excuse_note: null } : {}),
       };
     }));
+    if (clearedStoredExcuse) {
+      setTouchedExcuses(prev => new Set(prev).add(studentId));
+    }
   };
 
   const setActivity = (studentId: number, score: number) => {
@@ -142,7 +152,18 @@ export default function SubstitutionAttendancePanel() {
   };
 
   const markAllPresent = () => {
+    // Same reasoning as `cycleStatus`: any row whose stored excuse (already true) is
+    // being wiped by this bulk action is a real edit to that row's excuse and must be
+    // marked touched, or the save omits `excused` for it and the old value survives.
+    const clearedIds = roster.filter(s => s.excused).map(s => s.student_id);
     setRoster(prev => prev.map(s => ({ ...s, attendance_status: 'attended', excused: false, excuse_note: null })));
+    if (clearedIds.length) {
+      setTouchedExcuses(prev => {
+        const next = new Set(prev);
+        clearedIds.forEach(id => next.add(id));
+        return next;
+      });
+    }
   };
 
   const handleExcuseChange = (studentId: number, excused: boolean, note: string | null) => {

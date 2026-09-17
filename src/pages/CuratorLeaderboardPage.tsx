@@ -999,6 +999,15 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
           };
       });
       setChangedEntries(prev => new Set(prev).add(studentId));
+      // The three-click cycle (missed -> attended -> late -> missed) is the natural way
+      // a teacher "removes" an excuse without ever opening the popover. If this change
+      // actually cleared a *stored* excuse (it was true before this click), that is a
+      // real edit to the excuse, not just a status change — without marking it touched,
+      // the save would omit `excused` entirely ("leave the stored value alone") and the
+      // excuse — and the billing decision keyed on it — would silently survive server-side.
+      if (!isAbsenceStatus(status) && guarded?.excused) {
+          setTouchedExcuses(prev => new Set(prev).add(`${studentId}:${lessonNumber}`));
+      }
   };
 
   const handleExcuseChange = (
