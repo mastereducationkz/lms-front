@@ -1,4 +1,5 @@
 import type { Group, StudentProgress } from '../../types';
+import type { SchedulePreview, SchedulePreviewPayload } from '../../lib/schedulePreview';
 import { api } from './client';
 
 export async function getCuratorPendingSubmissions(): Promise<any[]> {
@@ -271,6 +272,26 @@ export async function generateSchedule(data: {
     console.error('Failed to generate schedule:', error);
     throw error;
   }
+}
+
+/**
+ * What `generateSchedule` would do with this body — computed on the server, nothing written.
+ *
+ * Sent through `api.request`, not `api.post`: the client's POST wrapper treats every POST as a
+ * mutation and drops all cached `/leaderboard` reads, which a preview fired while typing must
+ * not do. Pass `signal` so an edit can abort the answer to the previous one.
+ */
+export async function previewSchedule(
+  data: SchedulePreviewPayload,
+  signal?: AbortSignal,
+): Promise<SchedulePreview> {
+  const response = await api.request<SchedulePreview>({
+    method: 'post',
+    url: '/leaderboard/curator/schedule/preview',
+    data,
+    signal,
+  });
+  return response.data;
 }
 
 export async function getGroupSchedules(groupId: number, weeksBack: number = 4, weeksAhead: number = 8): Promise<{
