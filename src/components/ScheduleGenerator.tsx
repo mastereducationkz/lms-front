@@ -19,6 +19,8 @@ import {
     scheduleSlotsFromConfig,
     type ScheduleConfig,
 } from '../lib/scheduleShorthand';
+import { schedulePreviewPayload } from '../lib/schedulePreview';
+import SchedulePreviewPanel from './SchedulePreviewPanel';
 
 interface ScheduleGeneratorProps {
     groupId: number | null;
@@ -68,6 +70,11 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
     // Set by a Generate attempt; the list itself is recomputed live, so fixing a time clears it.
     const [showTimeErrors, setShowTimeErrors] = useState(false);
     const badTimeDays = showTimeErrors ? invalidScheduleTimes(scheduleConfig) : [];
+    // What «Generate» would do, previewed while the form is valid; null (no request, no panel)
+    // while the stored schedule is still loading or the form is not something the API accepts.
+    const previewPayload = isLoading
+        ? null
+        : schedulePreviewPayload({ groupId, startDate, lessonsCount: lessons, config: scheduleConfig });
 
     // Ruling L: the quick-entry box parses against this BASE snapshot, not against the live
     // `scheduleConfig` — which a shorthand parse itself keeps replacing (Ruling I). Parsing
@@ -194,7 +201,8 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-            <DialogContent className="sm:max-w-[425px]">
+            {/* The preview panel makes the dialog taller than a laptop screen can show at once. */}
+            <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>Generate Class Schedule</DialogTitle>
                 </DialogHeader>
@@ -307,6 +315,8 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
                                     Всего за курс, включая прошедшие уроки
                                 </p>
                             </div>
+
+                            <SchedulePreviewPanel payload={previewPayload} />
                         </>
                     )}
                 </div>
