@@ -318,18 +318,22 @@ const AttendanceToggle = ({
     >
         <span className="flex items-center gap-1">
             <span className="text-[10px] uppercase">{config.label}</span>
-        </span>
         {showExcuseAffordance && (
             <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setExcusePopoverOpen(true); }}
-                // Bottom-left corner: the Meet-mismatch marker already owns top-left, the
-                // activity-score badge top-right, the activity-score button bottom-right.
-                // Always visible (not hover-only) — the grid is dense and a hidden icon
-                // would never be found.
+                // INLINE, beside the status label — not in a corner. All four corners are
+                // taken: the Meet-mismatch marker owns top-left, MeetVerdictBadge owns
+                // bottom-left (`absolute bottom-0 left-0` with an opaque background, and it
+                // renders AFTER this toggle so it paints on top), the activity-score badge
+                // top-right and its button bottom-right. This control sat at bottom-left and
+                // was completely hidden by the Meet verdict badge on every lesson that has
+                // one — which is most of them — so the feature was unreachable on the screen
+                // teachers actually use. Always visible, never hover-only: the grid is dense
+                // and a hidden icon is a feature nobody finds.
                 className={cn(
-                    "absolute left-0.5 bottom-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full ring-2 ring-white dark:ring-card pointer-events-auto",
-                    excused ? "bg-amber-600" : "bg-transparent border border-amber-500"
+                    "shrink-0 h-2.5 w-2.5 rounded-full ring-1 ring-white/80 dark:ring-card/80 pointer-events-auto",
+                    excused ? "bg-amber-200" : "bg-transparent border border-white/70"
                 )}
                 title={excused
                     ? (en ? `Excused absence${excuseNote ? `: ${excuseNote}` : ''} — click to edit` : `Уважительная причина${excuseNote ? `: ${excuseNote}` : ''} — нажмите, чтобы изменить`)
@@ -339,6 +343,7 @@ const AttendanceToggle = ({
                     : (en ? 'Mark absence as excused' : 'Отметить пропуск уважительным')}
             />
         )}
+        </span>
         {excusePopoverOpen && onExcuseChange && (
             <ExcusePopover
                 excused={excused}
