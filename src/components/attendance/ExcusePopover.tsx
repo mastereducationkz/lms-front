@@ -58,6 +58,7 @@ export function ExcusePopover({
         className="w-64 p-3"
         align="start"
         onClick={(e) => e.stopPropagation()}
+        onContextMenu={(e) => e.stopPropagation()}
         onOpenAutoFocus={(e) => {
           // Фокус по умолчанию уходит на сам контейнер поповера — переносим его на поле
           // ввода, чтобы можно было сразу печатать.
