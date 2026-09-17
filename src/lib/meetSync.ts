@@ -49,6 +49,38 @@ export const STAGE_TITLE: Record<MeetWaitingStage, string> = {
   settling: 'Almost ready',
 };
 
+// The banner's words per stage, in the order a lesson moves through them.
+const BANNER_STAGE: [MeetWaitingStage, (n: number) => string][] = [
+  ['lesson_running', () => 'in progress'],
+  ['call_open', (n) => `with ${n === 1 ? 'its call' : 'their calls'} still open in Google Meet`],
+  ['awaiting_google', (n) => `waiting for Google Meet to hand over ${n === 1 ? 'its call' : 'their calls'}`],
+  ['collecting', () => 'saving who joined'],
+  ['settling', () => 'almost ready'],
+];
+
+/**
+ * The review page's banner, stage by stage (2026-09-17): a lesson still on read «1 lesson is waiting
+ * for Google Meet to hand over its call», because every lesson not final yet was said as that one stage.
+ * «1 lesson in progress»; «2 lessons not final yet: 1 in progress · 1 waiting for Google Meet to hand
+ * over its call». A lesson without a stage is counted as waiting for Google Meet.
+ */
+export function waitingBannerText(lessons: (MeetWaiting | null | undefined)[]): string {
+  const total = lessons.length;
+  if (total === 0) return 'Syncing with Google Meet';
+  const counts = new Map<MeetWaitingStage, number>();
+  for (const waiting of lessons) {
+    const stage = waiting?.stage ?? 'awaiting_google';
+    counts.set(stage, (counts.get(stage) ?? 0) + 1);
+  }
+  const present = BANNER_STAGE.filter(([stage]) => counts.has(stage));
+  const noun = (n: number) => `${n} lesson${n === 1 ? '' : 's'}`;
+  if (present.length === 1) {
+    const [stage, words] = present[0];
+    return `${noun(total)}${stage === 'collecting' ? ': ' : ' '}${words(total)}`;
+  }
+  return `${noun(total)} not final yet: ${present.map(([stage, words]) => `${counts.get(stage)} ${words(counts.get(stage)!)}`).join(' · ')}`;
+}
+
 const roomChecks = (calls: MeetWaitingCall[]) => calls.filter((c) => !c.lesson_call && c.started_at);
 
 /** One sentence: what the lesson is waiting for right now. */

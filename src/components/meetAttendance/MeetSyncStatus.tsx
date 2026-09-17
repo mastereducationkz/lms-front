@@ -8,6 +8,7 @@ import {
   stageText,
   syncStatus,
   waitedText,
+  waitingBannerText,
   waitingSteps,
   type StepStatus,
   type SyncStatus,
@@ -139,21 +140,23 @@ export function MeetWaitingProgress({ waiting, sync, className }: { waiting: Mee
 
 interface BannerProps {
   sync?: MeetSync | null;
-  /** Lessons in the list still waiting on Google Meet. */
-  waiting: number;
+  /** The lessons in the list not final yet — each one's waiting stage (running, call open, …). */
+  waiting: (MeetWaiting | null | undefined)[];
   /** When the list was last read from the LMS. */
   updatedAt: number | null;
   refreshing: boolean;
   onRefresh: () => void;
-  /** Offered while the waiting lessons are filtered out of view. */
+  /** Lists exactly those lessons; offered while the list shows anything else. */
   onShowWaiting?: () => void;
+  /** Back from that list to every lesson. */
+  onShowAll?: () => void;
 }
 
-/** The review page's line about Google Meet: how many lessons wait, what the check is doing, and a refresh. */
-export function MeetSyncBanner({ sync, waiting, updatedAt, refreshing, onRefresh, onShowWaiting }: BannerProps) {
+/** The review page's line about Google Meet: which lessons are not final yet and why, what the check is doing, and a refresh. */
+export function MeetSyncBanner({ sync, waiting, updatedAt, refreshing, onRefresh, onShowWaiting, onShowAll }: BannerProps) {
   const now = useNow();
   const status = syncStatus(sync, now);
-  if (!waiting && !status?.tone.match(/active|slow/)) return null;
+  if (!waiting.length && !status?.tone.match(/active|slow/)) return null;
   const slow = status?.tone === 'slow';
 
   return (
@@ -169,13 +172,17 @@ export function MeetSyncBanner({ sync, waiting, updatedAt, refreshing, onRefresh
         <WorkingMark className="mt-0.5 h-4 w-4" />
         <div className="min-w-0 space-y-0.5">
           <div role="status" className="text-sm font-medium text-foreground">
-            {waiting
-              ? `${waiting} lesson${waiting === 1 ? ' is' : 's are'} waiting for Google Meet to hand over ${waiting === 1 ? 'its call' : 'their calls'}`
-              : 'Syncing with Google Meet'}
-            {waiting > 0 && onShowWaiting && (
+            {waitingBannerText(waiting)}
+            {waiting.length > 0 && onShowWaiting && (
               <button type="button" onClick={onShowWaiting}
                 className="ml-2 text-[13px] font-medium text-sky-700 underline-offset-4 hover:underline dark:text-sky-300">
-                Show
+                Show {waiting.length === 1 ? 'it' : 'them'}
+              </button>
+            )}
+            {onShowAll && (
+              <button type="button" onClick={onShowAll}
+                className="ml-2 text-[13px] font-medium text-sky-700 underline-offset-4 hover:underline dark:text-sky-300">
+                Show all lessons
               </button>
             )}
           </div>

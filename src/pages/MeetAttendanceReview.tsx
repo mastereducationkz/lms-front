@@ -46,7 +46,8 @@ import {
 } from '../services/api/meetAttendance';
 import { useAuth } from '../contexts/AuthContext';
 
-type Show = 'attention' | 'all';
+// 'waiting': the lessons not final yet, and nothing else — what the banner's «Show them» opens.
+type Show = 'attention' | 'all' | 'waiting';
 type Period = 7 | 30;
 type View = 'lessons' | 'talk';
 type TalkMode = 'group' | 'teacher';
@@ -142,7 +143,8 @@ export default function MeetAttendanceReview() {
 
   // Lessons waiting on Google Meet fill in by themselves: the list is read again every minute while
   // the tab is in view, and straight away when it comes back into view.
-  const waitingCount = useMemo(() => (items ?? []).filter(stillLoading).length, [items]);
+  const waitingLessons = useMemo(() => (items ?? []).filter(stillLoading), [items]);
+  const waitingCount = waitingLessons.length;
   const watching = waitingCount > 0 || Boolean(sync?.running);
   useEffect(() => {
     if (!watching) return;
@@ -207,7 +209,7 @@ export default function MeetAttendanceReview() {
   const attentionCount = listed.filter(inAttention).length;
   // An issue picked is its own view; otherwise "needs attention" or everything.
   const visible = useMemo(() => listed.filter((i) => (
-    issue ? hasIssue(i, issue) : show === 'all' || inAttention(i)
+    issue ? hasIssue(i, issue) : show === 'waiting' ? stillLoading(i) : show === 'all' || inAttention(i)
   )), [listed, issue, show, inAttention]);
   // Recordings still on their way in the rows on screen: one batched status poll, never one per row.
   const liveIds = useMemo(() => liveEventIds(visible.flatMap((i) => (
@@ -388,7 +390,7 @@ export default function MeetAttendanceReview() {
         {filtered && (
           <button
             type="button"
-            onClick={() => { setTeacherId(null); setGroupId(null); setQuery(''); setIssue(null); }}
+            onClick={() => { setTeacherId(null); setGroupId(null); setQuery(''); setIssue(null); if (show === 'waiting') setShow('all'); }}
             className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
           >
             <RotateCcw className="h-3.5 w-3.5" /> Clear
@@ -437,11 +439,12 @@ export default function MeetAttendanceReview() {
       {items !== null && (
         <MeetSyncBanner
           sync={sync}
-          waiting={waitingCount}
+          waiting={waitingLessons.map((i) => i.waiting)}
           updatedAt={updatedAt}
           refreshing={refreshing}
           onRefresh={() => load(true)}
-          onShowWaiting={show === 'attention' || issue ? () => { setIssue(null); setShow('all'); } : undefined}
+          onShowWaiting={show !== 'waiting' || issue ? () => { setIssue(null); setShow('waiting'); } : undefined}
+          onShowAll={show === 'waiting' && !issue ? () => setShow('all') : undefined}
         />
       )}
 
@@ -478,7 +481,9 @@ export default function MeetAttendanceReview() {
                   : 'Nothing needs attention: every mark agrees with the room and every account is confirmed.'
                 : issue
                   ? `No lessons with “${ISSUES.find((i) => i.key === issue)?.label}” here.`
-                  : 'No lessons match.'}
+                  : show === 'waiting'
+                    ? 'Every lesson here is final: nothing is in progress or waiting for Google Meet.'
+                    : 'No lessons match.'}
           </div>
         ) : (
           <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm">
