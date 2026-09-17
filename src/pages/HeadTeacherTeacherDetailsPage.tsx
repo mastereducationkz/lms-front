@@ -107,7 +107,18 @@ interface AttendanceLessonMeta {
 interface AttendanceStudentRow {
   student_id: number;
   student_name: string;
-  lessons: { [key: string]: { event_id: number; attendance_status: string; activity_score?: number } };
+  lessons: {
+    [key: string]: {
+      event_id: number;
+      attendance_status: string;
+      activity_score?: number;
+      // The endpoint (`/leaderboard/curator/full-attendance/{id}`) was extended to
+      // return these alongside `attendance_status` — unlike a genuinely field-less
+      // endpoint, this one has the data, so it must be rendered, not just recorded.
+      excused?: boolean;
+      excuse_note?: string | null;
+    };
+  };
 }
 
 interface AttendanceData {
@@ -226,7 +237,10 @@ export default function HeadTeacherTeacherDetailsPage() {
 
   const isFutureLesson = isAttendanceLockedLesson;
 
-  const getAttendanceStatusColor = (status: string) => {
+  // `excused` is an overlay on "missed"/"absent" only, matching CuratorLeaderboardPage's
+  // AttendanceToggle and SubstitutionAttendancePanel — same amber, same short label.
+  const getAttendanceStatusColor = (status: string, excused = false) => {
+    if ((status === 'missed' || status === 'absent') && excused) return 'bg-amber-500 text-white';
     switch (status) {
       case 'attended': return 'bg-green-200 text-green-700';
       case 'late': return 'bg-yellow-200 text-yellow-700';
@@ -237,7 +251,8 @@ export default function HeadTeacherTeacherDetailsPage() {
     }
   };
 
-  const getAttendanceStatusLabel = (status: string) => {
+  const getAttendanceStatusLabel = (status: string, excused = false) => {
+    if ((status === 'missed' || status === 'absent') && excused) return 'Exc.';
     switch (status) {
       case 'attended': return 'Present';
       case 'late': return 'Late';
@@ -707,14 +722,17 @@ export default function HeadTeacherTeacherDetailsPage() {
                             const lessonKey = lesson.lesson_number.toString();
                             const lessonData = student.lessons[lessonKey];
                             const status = lessonData?.attendance_status || 'pending';
+                            const excused = Boolean(lessonData?.excused);
+                            const excuseNote = lessonData?.excuse_note;
                             const activityScore = lessonData?.activity_score;
                             const isFuture = isFutureLesson(lesson.start_datetime);
                             return (
                               <TableCell
                                 key={`${student.student_id}-${lesson.event_id}`}
+                                title={!isFuture && excused ? `Excused absence${excuseNote ? `: ${excuseNote}` : ''}` : undefined}
                                 className={cn(
                                   'p-2 text-center border-r border-slate-100 min-w-[100px]',
-                                  isFuture ? 'bg-slate-50/30' : getAttendanceStatusColor(status)
+                                  isFuture ? 'bg-slate-50/30' : getAttendanceStatusColor(status, excused)
                                 )}
                               >
                                 {isFuture ? (
@@ -722,7 +740,7 @@ export default function HeadTeacherTeacherDetailsPage() {
                                 ) : (
                                   <div className="flex flex-col items-center gap-0.5">
                                     <span className="font-bold text-[11px]">
-                                      {getAttendanceStatusLabel(status)}
+                                      {getAttendanceStatusLabel(status, excused)}
                                     </span>
                                     {(status === 'attended' || status === 'late') && activityScore !== undefined && activityScore > 0 && (
                                       <span className="text-[9px] font-medium text-slate-600">
