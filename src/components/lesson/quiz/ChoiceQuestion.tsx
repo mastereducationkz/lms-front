@@ -197,6 +197,12 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
           </div>
         )
       })}
+      {/* Nothing picked (or the pick cleared to -1) is scored wrong — say so, or no option shows it. */}
+      {showResult && !(question.options || []).some((_: unknown, i: number) => isSelected(i)) && (
+        <p className="flex items-center gap-1.5 text-sm font-medium text-red-600 dark:text-red-400">
+          <X className="h-4 w-4" aria-hidden="true" /> No answer selected
+        </p>
+      )}
     </div>
   )
 }

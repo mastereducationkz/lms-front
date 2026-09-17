@@ -1,6 +1,7 @@
 import { parseGap } from '../../../utils/gapParser'
 
-export type QuestionStatusKey = 'correct' | 'incorrect' | 'partial' | 'review'
+/** ``unscored``: nothing to score (an image block, a gap question with no gaps) — never «Incorrect». */
+export type QuestionStatusKey = 'correct' | 'incorrect' | 'partial' | 'review' | 'unscored'
 
 export interface QuestionStatus {
   key: QuestionStatusKey
@@ -24,14 +25,13 @@ export interface GradeQuestionResult {
    * same expected[i] === provided[i] comparison the loop below already makes to produce
    * correctParts/totalParts, just not thrown away. Absent (not just empty) for every other
    * question type — a caller can tell "no per-part detail here" from "this gap was answered
-   * wrong" without inspecting question_type itself. NOT absent for a gap question with zero
-   * gaps: gap questions take this branch regardless of how many gaps they have, and `total`
-   * is `Math.max(expected.length, provided.length)` — so `expected.length === 0` does NOT
-   * mean the loop below never runs; a submission with a non-empty `provided` array still
-   * runs it and still returns `partResults` full of `false` (nothing at `expected[i]` to
-   * match anything against), not an early-exited `[]`. Either way `partResults` comes back
-   * present and truthy. Review mode's per-gap stats (reviewStats.ts) read this instead of
-   * re-deriving gap correctness themselves — one grader, one answer key.
+   * wrong" without inspecting question_type itself. One entry per gap the question draws on
+   * screen (visibleGapCount) — no more, however long the stored answer array is: a slot with no
+   * gap on screen can neither be answered nor be marked, so it is never scored (2026-09-17: a
+   * stale answer array cost students points no review showed). A gap question with no gaps
+   * returns `[]` — present and truthy, scoring nothing. Review mode's per-gap stats
+   * (reviewStats.ts) and the quiz review's gap marks (gapMarks) read this instead of re-deriving
+   * gap correctness themselves — one grader, one answer key.
    */
   partResults?: boolean[]
 }
@@ -176,7 +176,8 @@ export const gradeQuestion = (
   if (type === 'fill_blank' || type === 'text_completion') {
     const expected = getExpectedAnswers(question).map(normalizeText)
     const provided = (gapAnswer || []).map(normalizeText)
-    const total = Math.max(expected.length, provided.length)
+    // The gaps on screen, and only those: the review marks exactly these.
+    const total = visibleGapCount(question)
     let correct = 0
     const partResults: boolean[] = []
     for (let i = 0; i < total; i += 1) {
@@ -224,10 +225,12 @@ export const gradeQuestion = (
 
   if (type === 'matching') {
     const map = toMatchingMap(answer)
-    const total = (question.matching_pairs?.length || map.size || 0)
+    const pairs = question.matching_pairs?.length || 0
+    const total = (pairs || map.size || 0)
     let correct = 0
     for (const [left, right] of map.entries()) {
-      if (left === right) correct += 1
+      // An entry for a pair the question no longer has is not a right answer (nothing shows it).
+      if (left === right && (!pairs || (left >= 0 && left < pairs))) correct += 1
     }
     return { isCorrect: total > 0 && correct === total, correctParts: correct, totalParts: total, isReview: false }
   }
@@ -255,10 +258,12 @@ export const getQuestionStatus = (
     }
   }
   if (result.totalParts === 0) {
+    // Nothing scored (an image block, a gap question with no gaps): it cost no point, so it is
+    // never «Incorrect» — before 2026-09-17 image blocks turned the navigator square red.
     return {
-      key: 'incorrect',
-      label: 'Incorrect',
-      className: ERROR_CLASS,
+      key: 'unscored',
+      label: 'Not scored',
+      className: REVIEW_CLASS,
       correctParts: 0,
       totalParts: 0
     }
@@ -268,6 +273,20 @@ export const getQuestionStatus = (
       key: 'correct',
       label: 'Correct',
       className: SUCCESS_CLASS,
+      correctParts: result.correctParts,
+      totalParts: result.totalParts
+    }
+  }
+  const scoredPerPart = question?.question_type === 'fill_blank' || question?.question_type === 'text_completion'
+  if (result.correctParts > 0 && !scoredPerPart) {
+    // Scored whole (one item, lost unless every pair is right) — the badge says «Incorrect», as
+    // the score does, and keeps how close it was.
+    return {
+      key: 'incorrect',
+      label: question?.question_type === 'matching'
+        ? `Incorrect · ${result.correctParts}/${result.totalParts} pairs`
+        : 'Incorrect',
+      className: ERROR_CLASS,
       correctParts: result.correctParts,
       totalParts: result.totalParts
     }
@@ -291,21 +310,107 @@ export const getQuestionStatus = (
   }
 }
 
+export type GapMark = 'correct' | 'incorrect' | null
+
+const GAP_TOKEN = /\[\[(.*?)\]\]/g
+
+/** How many gaps a fill_blank / text_completion question draws — the renderers' own tokenizer. */
+export const visibleGapCount = (question: any): number => (getGapSourceText(question).match(GAP_TOKEN) || []).length
+
+/**
+ * What the review draws on each gap it renders, in gap order: the answer key it reveals and a
+ * green/red mark. FillInBlankQuestion / TextCompletionQuestion render exactly this.
+ *
+ * Both come from gradeQuestion — the key from getExpectedAnswers, each mark from its partResults —
+ * so a gap is red exactly when it cost a point: an empty gap too, and a text_completion gap judged
+ * by its `[[…*…]]` token, not by a `correct_answer` field that may be missing or stale (2026-09-17:
+ * 40/45 showed only 4 answers marked incorrect).
+ */
+export const gapMarks = (question: any, gapAnswer: string[] | undefined): { expected: string[]; marks: GapMark[] } => {
+  const expected = getExpectedAnswers(question).slice(0, visibleGapCount(question))
+  const { partResults = [] } = gradeQuestion(question, undefined, gapAnswer || [])
+  return { expected, marks: partResults.map((right): GapMark => (right ? 'correct' : 'incorrect')) }
+}
+
+export interface QuizScoreStats {
+  totalGaps: number
+  correctGaps: number
+  regularQuestions: number
+  correctRegular: number
+}
+
+/**
+ * The quiz's score as LessonPage saves it and the completed screen shows it: every gap of a
+ * fill_blank / text_completion question is an item, every other scored question is one item.
+ * Long text for special-group students is teacher-graded and left out.
+ */
+export const scoreQuiz = (
+  questions: any[],
+  answerFor: (question: any) => unknown,
+  gapAnswerFor: (question: any) => string[] | undefined,
+  options: GradeQuestionOptions = {},
+): QuizScoreStats => {
+  const stats: QuizScoreStats = { totalGaps: 0, correctGaps: 0, regularQuestions: 0, correctRegular: 0 }
+  for (const question of questions) {
+    const type = question?.question_type
+    if (type === 'image_content') continue
+    if (type === 'fill_blank' || type === 'text_completion') {
+      const result = gradeQuestion(question, undefined, gapAnswerFor(question) || [])
+      stats.totalGaps += result.totalParts
+      stats.correctGaps += result.correctParts
+      continue
+    }
+    if (type === 'long_text' && options.isSpecialGroupStudent) continue
+    stats.regularQuestions += 1
+    if (gradeQuestion(question, answerFor(question), undefined, options).isCorrect) stats.correctRegular += 1
+  }
+  return stats
+}
+
+/**
+ * How many items the review visibly marks incorrect: each red gap of a gap question, and each
+ * other question whose badge / navigator square reads «Incorrect». The completed screen's
+ * «Incorrect» (items − correct items of scoreQuiz) must equal this.
+ */
+export const visibleIncorrectItems = (
+  questions: any[],
+  answerFor: (question: any) => unknown,
+  gapAnswerFor: (question: any) => string[] | undefined,
+  options: GradeQuestionOptions = {},
+): number => {
+  let count = 0
+  for (const question of questions) {
+    const type = question?.question_type
+    if (type === 'fill_blank' || type === 'text_completion') {
+      count += gapMarks(question, gapAnswerFor(question)).marks.filter((mark) => mark === 'incorrect').length
+      continue
+    }
+    if (getQuestionStatus(question, answerFor(question), gapAnswerFor(question), options).key === 'incorrect') count += 1
+  }
+  return count
+}
+
 export const isAnswerComplete = (question: any, answer: unknown, gapAnswer: string[] | undefined): boolean => {
   if (!question) return false
   const type = question.question_type
   if (type === 'image_content') return true
   if (type === 'fill_blank' || type === 'text_completion') {
+    // Every gap on screen filled — a longer stored array's extra slots don't block, a shorter
+    // one's missing gaps don't pass (both are what the score counts).
     const gaps = gapAnswer || []
-    if (gaps.length === 0) return false
-    return gaps.every((v) => (v || '').toString().trim() !== '')
+    const count = visibleGapCount(question)
+    return Array.from({ length: count }, (_, i) => (gaps[i] || '').toString().trim() !== '').every(Boolean)
   }
   if (type === 'short_answer' || type === 'long_text' || type === 'media_open_question') {
     return !!answer && (answer as string).toString().trim() !== ''
   }
   if (type === 'multiple_choice') {
     const need = Array.isArray(question.correct_answer) ? question.correct_answer.length : 1
-    return Array.isArray(answer) && answer.length === need
+    return Array.isArray(answer) && answer.length === need && answer.every((v) => Number(v) >= 0)
+  }
+  if (type === 'single_choice' || type === 'media_question') {
+    // ChoiceQuestion stores -1 when the chosen option is clicked again: no answer.
+    return answer !== undefined && answer !== null && !(typeof answer === 'number' && answer < 0)
   }
   if (type === 'matching') {
     const map = toMatchingMap(answer)

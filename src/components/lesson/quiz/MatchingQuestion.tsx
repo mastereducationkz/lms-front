@@ -84,7 +84,8 @@ export const MatchingQuestion = ({
       }
       return 'matched';
     }
-    return 'default';
+    // Left unmatched, it is scored wrong — mark it so, like a wrong match.
+    return showResult ? 'incorrect' : 'default';
   };
 
   const getRightStatus = (rightIdx: number): 'available' | 'matched' | 'correct' | 'incorrect' | 'default' => {

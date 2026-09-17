@@ -1,5 +1,6 @@
 import React from 'react';
 import { FillInBlankRenderer } from '../FillInBlankRenderer';
+import { gapMarks } from './scoring';
 
 interface FillInBlankQuestionProps {
   question: any;
@@ -29,6 +30,8 @@ export const FillInBlankQuestion: React.FC<FillInBlankQuestionProps> = ({
   answers.forEach((val, idx) => {
     answersObj[idx] = val;
   });
+  // The review marks what the score counted, gap by gap — never a second grader.
+  const review = showResult ? gapMarks(question, answers) : null;
 
   return (
     <div className="p-1">
@@ -44,6 +47,8 @@ export const FillInBlankQuestion: React.FC<FillInBlankQuestionProps> = ({
         revealCorrect={revealCorrect}
         correctAnswers={correctAnswers}
         shuffleOptions={true}
+        marks={review?.marks}
+        expectedAnswers={review?.expected}
       />
     </div>
   );

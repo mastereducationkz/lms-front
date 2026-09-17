@@ -66,7 +66,7 @@ type QuizQuestion = any;
 type QuizData = any;
 type HighlightColor = 'yellow' | 'pink' | 'blue';
 type TextHighlight = { text: string; color: HighlightColor };
-type ReviewStatusKey = 'correct' | 'incorrect' | 'partial' | 'review';
+type ReviewStatusKey = 'correct' | 'incorrect' | 'partial' | 'review' | 'unscored';
 
 interface QuizRendererProps {
   quizState: 'title' | 'question' | 'result' | 'completed' | 'feed';
@@ -1268,6 +1268,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
               tone = 'bg-red-500 text-white'; label = 'incorrect';
             } else if (status.key === 'partial') {
               tone = 'bg-amber-500 text-white'; label = 'partly correct';
+            } else if (status.key === 'unscored') {
+              label = 'not scored'; // an image block: no point, never red
             } else {
               tone = 'bg-muted-foreground/40 text-white'; label = 'needs review';
             }

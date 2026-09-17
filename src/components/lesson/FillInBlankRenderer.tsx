@@ -4,6 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { renderTextWithLatex } from '../../utils/latex';
 import { parseGap } from '../../utils/gapParser';
 import { applyHighlightsToDOM } from '../../utils/highlightUtils';
+import type { GapMark } from './quiz/scoring';
 
 interface FillInBlankRendererProps {
   text: string;
@@ -17,6 +18,10 @@ interface FillInBlankRendererProps {
   revealCorrect?: boolean;
   correctAnswers?: string[];
   shuffleOptions?: boolean;
+  /** The grader's verdict per gap (scoring.gapMarks): a gap is red exactly when it cost a point. */
+  marks?: GapMark[];
+  /** The answer key the grader used, per gap — what a revealed correction shows. */
+  expectedAnswers?: string[];
 }
 
 interface GapData {
@@ -38,6 +43,8 @@ export const FillInBlankRenderer: React.FC<FillInBlankRendererProps> = ({
   revealCorrect = false,
   correctAnswers = [],
   shuffleOptions = false,
+  marks,
+  expectedAnswers,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [gaps, setGaps] = useState<GapData[]>([]);
@@ -101,14 +108,16 @@ export const FillInBlankRenderer: React.FC<FillInBlankRendererProps> = ({
         if (!gap.container) return null;
 
         const value = answers[gap.index] || '';
-        // Use the correct option extracted from the gap text (with asterisk marker)
-        // Falls back to correctAnswers prop if needed (for backward compatibility)
-        const correctAnswer = gap.correctOption || correctAnswers[gap.index];
+        // A quiz passes the grader's own marks (scoring.gapMarks), so a gap is red exactly when it
+        // cost a point. Without them (the editor's preview) the option with the asterisk decides.
+        const correctAnswer = expectedAnswers ? expectedAnswers[gap.index] : (gap.correctOption || correctAnswers[gap.index]);
 
-        const isCorrect = showCorrectAnswers && value && correctAnswer &&
-          value.trim().toLowerCase() === correctAnswer.trim().toLowerCase();
-        const isIncorrect = showCorrectAnswers && value && correctAnswer &&
-          value.trim().toLowerCase() !== correctAnswer.trim().toLowerCase();
+        const isCorrect = showCorrectAnswers && (marks
+          ? marks[gap.index] === 'correct'
+          : value && correctAnswer && value.trim().toLowerCase() === correctAnswer.trim().toLowerCase());
+        const isIncorrect = showCorrectAnswers && (marks
+          ? marks[gap.index] === 'incorrect'
+          : value && correctAnswer && value.trim().toLowerCase() !== correctAnswer.trim().toLowerCase());
 
         return createPortal(
           <span key={gap.index} className="inline-flex items-center align-baseline gap-1">
