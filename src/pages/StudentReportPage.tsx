@@ -572,7 +572,7 @@ export default function StudentReportPage() {
       {/* Attendance */}
       <Section
         title="Посещаемость"
-        subtitle={`Занятий с отметкой ${attendance.marked_total} · Присутствие ${fmtPct(attendance.attendance_pct)} · Опозданий ${attendance.late} · Пропусков ${attendance.absent}`}
+        subtitle={`Занятий с отметкой ${attendance.marked_total} · Присутствие ${fmtPct(attendance.attendance_pct)} · Опозданий ${attendance.late} · Пропусков ${attendance.absent}${attendance.absent_excused ? ` (из них по уважительной: ${attendance.absent_excused})` : ''}`}
       >
         {attendance.absences.length > 0 && (
           <div className="text-xs text-gray-600">
