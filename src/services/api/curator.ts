@@ -104,7 +104,7 @@ export async function getGroupSchedule(groupId: number): Promise<{
   start_date: string;
   weeks_count: number;
   lessons_count?: number;
-  schedule_items: { day_of_week: number; time_of_day: string }[];
+  schedule_items: { day_of_week: number; time_of_day: string; duration_minutes?: number }[];
 }> {
   try {
     const response = await api.get(`/leaderboard/curator/schedule/${groupId}`);
@@ -262,7 +262,7 @@ export async function updateAttendance(data: {
 export async function generateSchedule(data: {
   group_id: number;
   start_date: string;
-  schedule_items: { day_of_week: number; time_of_day: string }[];
+  schedule_items: { day_of_week: number; time_of_day: string; duration_minutes?: number }[];
   weeks_count?: number;
   lessons_count?: number;
 }): Promise<any> {

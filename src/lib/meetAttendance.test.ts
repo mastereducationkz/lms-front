@@ -22,6 +22,13 @@ import {
   stillLoading,
   tallyByTeacher,
   toParticipantsView,
+  canMark,
+  rulesText,
+  verdictDiffers,
+  verdictIndex,
+  verdictLine,
+  verdictHint,
+  verdictText,
   withoutReviewed,
 } from './meetAttendance';
 import type { MeetLessonSummary, MeetPresence, MeetRecord } from '../services/api/meetAttendance';
@@ -93,12 +100,15 @@ describe('bars', () => {
 describe('flags', () => {
   it('says each flag the same way everywhere', () => {
     expect(flagText({ code: 'late', minutes: 7 })).toBe('Late 7 min');
-    expect(flagText({ code: 'marked_absent_was_in_room', minutes: 15 })).toBe('Marked absent, in the room 15 min');
+    expect(flagText({ code: 'marked_absent_was_in_room', minutes: 50 })).toBe('Marked absent, in the lesson 50 min');
+    expect(flagText({ code: 'marked_present_too_short', minutes: 30, required: 45 })).toBe('Marked present, in the lesson 30 of 45 min');
+    expect(flagTextRu({ code: 'marked_present_too_short', minutes: 30, required: 45 })).toBe('Отмечен, но на уроке 30 из 45 мин');
     expect(flagText({ code: 'teacher_not_joined' })).toBe('Teacher never joined');
   });
 
   it('tells marks-disagree flags from timing ones', () => {
     expect(isMismatch('marked_present_not_joined')).toBe(true);
+    expect(isMismatch('marked_present_too_short')).toBe(true);
     expect(isMismatch('late')).toBe(false);
   });
 
@@ -184,9 +194,97 @@ describe('reporting', () => {
     expect(items.some(stillLoading)).toBe(false);
     expect(needsAttention(loading)).toBe(false);
     const row = reportCsv([loading]).split('\r\n')[1].split(',');
-    expect(row).toHaveLength(17);
+    expect(row).toHaveLength(24);
     expect(row[6]).toBe('"Loading"');
-    expect(row.slice(7)).toEqual(Array(10).fill('""'));
+    expect(row.slice(7)).toEqual(Array(17).fill('""'));
+    // The recording is known whether or not the call has come through.
+    const recorded = reportCsv([{ ...loading, recording: { status: 'waiting', duration_seconds: null } }]).split('\r\n')[1].split(',');
+    expect(recorded).toHaveLength(24);
+    expect(recorded[23]).toBe('"Waiting for Google Meet"');
+  });
+
+  it('says where each lesson’s recording is, with its length once it can be watched', () => {
+    const cell = (recording: MeetLessonSummary['recording']) =>
+      reportCsv([summary(1, 1, [], { recording })]).split('\r\n')[1].split(',').pop();
+    expect(reportCsv([]).split('\r\n')[0].endsWith('"Recording"')).toBe(true);
+    expect(cell({ status: 'ready', duration_seconds: 3480 })).toBe('"Ready · 58 min"');
+    expect(cell({ status: 'ready', duration_seconds: null })).toBe('"Ready"');
+    expect(cell({ status: 'pending', duration_seconds: null })).toBe('"Processing"');
+    expect(cell({ status: 'failed', duration_seconds: null })).toBe('"Failed"');
+    expect(cell({ status: 'missing', duration_seconds: null })).toBe('"None"');
+    expect(cell(undefined)).toBe('""');
+  });
+});
+
+describe('Meet’s verdict (owner, 2026-09-16)', () => {
+  const v = (verdict: 'present' | 'late' | 'absent' | null, extra: Record<string, number> = {}) => ({
+    verdict, held_back: verdict === null, minutes: 60, required: 45, late_minutes: 0, ...extra,
+  });
+
+  it('says the verdict with its reason, in both languages', () => {
+    expect(verdictText(v('present'))).toBe('Present');
+    expect(verdictText(v('late', { late_minutes: 12 }))).toBe('Late 12 min');
+    expect(verdictText(v('absent', { minutes: 30 }))).toBe('Absent · 30 of 45 min');
+    expect(verdictText(v('absent', { minutes: 0 }))).toBe('Absent · not in the lesson');
+    expect(verdictText(v(null))).toBe('Not known yet');
+    // Held back, it says what the confirmed accounts show, with a «?» — never a bare «not known» beside a
+    // confirmed account (2026-09-17: «Google · Алуа» read as the unconfirmed one).
+    expect(verdictText({ ...v(null, { late_minutes: 9 }), provisional: 'late' })).toBe('Late 9 min?');
+    expect(verdictText({ ...v(null, { minutes: 20 }), provisional: 'absent' }, 'ru')).toBe('Не был: 20 из 45 мин?');
+    expect(verdictHint(v(null))).toContain('Someone else in the room');
+    expect(verdictHint(v('present'))).toBeNull();
+    expect(verdictText(v('absent', { minutes: 30 }), 'ru')).toBe('Не был: 30 из 45 мин');
+    expect(verdictText(v('late', { late_minutes: 7 }), 'ru')).toBe('Опоздал на 7 мин');
+  });
+
+  it('tells a mark that says something else, ignoring what can’t be compared', () => {
+    expect(verdictDiffers('present', v('late'))).toBe(true);
+    expect(verdictDiffers('absent', v('absent'))).toBe(false);
+    expect(verdictDiffers(null, v('absent'))).toBe(false);
+    expect(verdictDiffers('present', v(null))).toBe(false);
+    expect(verdictDiffers('removed', v('absent'))).toBe(false);
+  });
+
+  it('states the rules from the server’s numbers', () => {
+    expect(rulesText({ late_after_minutes: 5, present_share: 0.75 })).toContain('late after 5 min, absent under 75% of the lesson (45 of 60 min)');
+    expect(rulesText(undefined)).toBeNull();
+  });
+
+  it('reads a lesson’s verdicts in one line and indexes them for the journal', () => {
+    const counts = { present: 12, late: 2, absent: 1, held_back: 0, unmarked: 3, applicable: 3, compared: 12, agree: 11 };
+    expect(verdictLine(counts)).toBe('Meet: 12 present · 2 late · 1 absent · 3 not marked');
+    expect(verdictLine(null)).toBeNull();
+    const index = verdictIndex([{ event_id: 5, verdicts: [{ user_id: 7, ...v('late', { late_minutes: 9 }) }] }, { event_id: 6 }]);
+    expect(index.get('5:7')?.late_minutes).toBe(9);
+    expect(index.size).toBe(1);
+  });
+
+  it('files unmarked students and the new disagreement under their issues, and tallies agreement', () => {
+    const counts = (unmarked: number, compared: number, agree: number) => ({
+      present: 0, late: 0, absent: 0, held_back: 0, unmarked, applicable: unmarked, compared, agree,
+    });
+    const lessons = [
+      summary(1, 1, [S('marked_present_too_short', 'Аяулым', 30)], { verdict_summary: counts(0, 10, 9) }),
+      summary(2, 1, [], { verdict_summary: counts(4, 6, 6) }),
+      summary(3, 2, []),
+    ];
+    expect(lessons.filter((i) => hasIssue(i, 'marks_disagree')).map((i) => i.event_id)).toEqual([1]);
+    expect(lessons.filter((i) => hasIssue(i, 'not_marked')).map((i) => i.event_id)).toEqual([2]);
+    expect(needsAttention(lessons[1])).toBe(false); // not marked is a filter, not attention
+    const gulzada = tallyByTeacher(lessons).find((r) => r.name === 'Gulzada');
+    expect(gulzada).toMatchObject({ verdict_compared: 16, verdict_agree: 15 });
+    const header = reportCsv([]).split('\r\n')[0];
+    expect(header).toContain('"Meet: present","Meet: late","Meet: absent","Meet: not known yet","Not marked","Marks agree with Meet"');
+    const row = reportCsv([lessons[0]]).split('\r\n')[1];
+    expect(row).toContain('"0","0","0","0","0","9 of 10"');
+    expect(row).toContain('Аяулым (Marked present, in the lesson 30 of ? min)');
+  });
+
+  it('lets only people who mark correct the new disagreement', () => {
+    expect(canFixMark('teacher', 'marked_present_too_short')).toBe(true);
+    expect(canFixMark('curator', 'marked_present_too_short')).toBe(false);
+    expect(canMark('head_curator')).toBe(true);
+    expect(canMark('curator')).toBe(false);
   });
 });
 
@@ -302,6 +400,6 @@ describe('talk time in the report (owner, 2026-09-11)', () => {
 
   it('puts the teacher’s share and the silent students in the spreadsheet', () => {
     const row = reportCsv([summary(1, 1, [], { talk: talk(0.72, [7]) })]).split('\r\n')[1];
-    expect(row.endsWith('"72%","1"')).toBe(true);
+    expect(row.endsWith('"72%","1",""')).toBe(true);
   });
 });

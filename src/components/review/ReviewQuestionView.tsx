@@ -7,6 +7,9 @@ import { Button } from '../ui/button'
 import { renderTextWithLatex } from '../../utils/latex'
 import { getExpectedAnswers, getGapSourceText } from '../lesson/quiz/scoring'
 import { EN, format, questionTypeLabel } from './strings'
+import { questionAttachment } from './reviewMedia'
+import { MediaImage, MediaPdf } from './ReviewMaterial'
+import { mediaUrl } from '../../lib/mediaUrl'
 import {
   blankHeading,
   displayText,
@@ -146,6 +149,9 @@ export const ReviewQuestionView: React.FC<Props> = ({
   // only place that decides what the accepted answers are.
   const passage = question.content_text
   const options: any[] = Array.isArray(question.options) ? question.options : []
+  // A media question's own image or PDF — shown where the student's screen shows it, above the
+  // passage and the question (QuizRenderer.tsx). Other types never show a media_url to students.
+  const attachment = questionAttachment(question)
 
   // The gap stepper renders one field at a time, one gap at a time — see gapStepHtml above.
   // getGapSourceText mirrors getExpectedAnswers's own content_text-then-question_text
@@ -218,6 +224,12 @@ export const ReviewQuestionView: React.FC<Props> = ({
             <span className={BADGE}>{question.difficulty}</span>
           )}
         </div>
+
+        {attachment && (
+          attachment.kind === 'pdf'
+            ? <MediaPdf path={attachment.path} title={EN.questionDocument} />
+            : <MediaImage path={attachment.path} alt={EN.questionImage} />
+        )}
 
         {/* renderTextWithLatex returns an HTML string (KaTeX + markdown), so every use of it
             goes through dangerouslySetInnerHTML — the same way ChoiceQuestion uses it. This
@@ -298,10 +310,6 @@ export const ReviewQuestionView: React.FC<Props> = ({
           </div>
         )}
 
-        {question.media_url && (
-          <img src={question.media_url} alt="" className="max-h-72 rounded-lg object-contain" />
-        )}
-
         {/* Same leak this component's passage above already guards against (see the comment
             on `isGap`): a gap question can carry its [[…*…]] tokens in question_text instead
             of content_text, so this heading needs blanking too — a raw question_text here is
@@ -324,6 +332,8 @@ export const ReviewQuestionView: React.FC<Props> = ({
             {options.map((option: any, index: number) => {
               const correct = revealed && isCorrectOption(question, index)
               const count = stat?.options.find((o) => o.key === String(index))?.count ?? 0
+              const letter = option?.letter || LETTERS[index] || index + 1
+              const imageUrl = mediaUrl(option?.image_url)
               return (
                 <div
                   key={index}
@@ -334,12 +344,22 @@ export const ReviewQuestionView: React.FC<Props> = ({
                   }`}
                 >
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-gray-300 dark:border-border text-sm font-bold text-gray-700 dark:text-gray-200">
-                    {option?.letter || LETTERS[index] || index + 1}
+                    {letter}
                   </span>
-                  <span
-                    className="flex-1 text-sm text-gray-700 dark:text-gray-300"
-                    dangerouslySetInnerHTML={{ __html: renderTextWithLatex(String(option?.text ?? '')) }}
-                  />
+                  <div className="min-w-0 flex-1">
+                    <span
+                      className="block text-sm text-gray-700 dark:text-gray-300"
+                      dangerouslySetInnerHTML={{ __html: renderTextWithLatex(String(option?.text ?? '')) }}
+                    />
+                    {/* An option can be a picture (ChoiceQuestion.tsx draws option.image_url under its text). */}
+                    {imageUrl && (
+                      <img
+                        src={imageUrl}
+                        alt={format(EN.optionImage, { letter })}
+                        className="mt-2 max-h-60 rounded border border-gray-200 dark:border-border object-contain"
+                      />
+                    )}
+                  </div>
                   {statsVisible && (
                     <span className="shrink-0 text-sm tabular-nums text-gray-500 dark:text-gray-400">{count}</span>
                   )}

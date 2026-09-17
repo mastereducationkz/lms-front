@@ -4,7 +4,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { clock } from '../../lib/meetAttendance';
 import { APP_TIMEZONE } from '../../lib/datetime';
+import { recordingsLocale } from '../../lib/recordings';
 import { useAuth } from '../../contexts/AuthContext';
+import RecordingPlayerDialog from '../recordings/RecordingPlayerDialog';
+import { useRecordingStatuses } from '../recordings/useRecordingStatuses';
+import { WatchRecordingButton } from './LessonRecordingCell';
 import { MeetRecordView, recordStateText, useMeetRecord } from './MeetRecordView';
 import { MeetWaitingProgress } from './MeetSyncStatus';
 import TalkPanel, { useLessonTalk } from './TalkPanel';
@@ -33,23 +37,33 @@ export default function MeetAttendanceDialog({ eventId, open, onOpenChange, init
   const [tab, setTab] = useState<MeetDialogTab>(initialTab);
   useEffect(() => { if (open) setTab(initialTab); }, [open, eventId, initialTab]);
 
-  const { record, loading, failed, busyId, confirm, confirmMany, reviewing } = useMeetRecord(eventId, open);
+  const { record, loading, failed, busyId, confirm, confirmMany, reviewing, applyVerdicts, applying } = useMeetRecord(eventId, open);
   const { talk, loading: talkLoading, failed: talkFailed } = useLessonTalk(eventId, open);
   const stateText = recordStateText(record);
   // A switched-off feature is only news to the admin who can switch it on.
   const showTalk = tab === 'talk' || (talk !== null && (talk.state !== 'off' || isAdmin));
   const start = record?.start ?? talk?.start;
   const end = record?.end ?? talk?.end;
+  const title = record?.title ?? talk?.title ?? 'Lesson';
+  // The lesson's recording, asked for on its own: this dialog also opens from the calendar, where no
+  // list has said anything about it. The player takes the dialog's place and gives it back on close.
+  const recording = useRecordingStatuses(eventId == null ? [] : [eventId], open)[String(eventId)];
+  const [watching, setWatching] = useState(false);
+  useEffect(() => { if (!open) setWatching(false); }, [open, eventId]);
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+  return (<>
+    <Dialog open={open && !watching} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[90vh] w-[calc(100vw-2rem)] max-w-4xl flex-col gap-0 overflow-hidden p-0">
         <DialogHeader className="flex-none space-y-1 border-b border-border px-6 pb-3 pt-4 text-left">
           <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Lesson in Meet</div>
-          <DialogTitle className="text-lg font-bold leading-snug">{record?.title ?? talk?.title ?? 'Lesson'}</DialogTitle>
+          <DialogTitle className="text-lg font-bold leading-snug">{title}</DialogTitle>
           <DialogDescription>
             {start && end ? `${dateLabel(start)} · ${clock(start)}–${clock(end)} (Almaty)` : ' '}
           </DialogDescription>
+          {recording?.status === 'ready' && (
+            <WatchRecordingButton label="Watch recording" durationSeconds={recording.duration_seconds}
+              onWatch={() => setWatching(true)} className="w-fit" />
+          )}
           {showTalk && (
             <Tabs value={tab} onValueChange={(v) => setTab(v as MeetDialogTab)} className="pt-2">
               <TabsList className="h-9">
@@ -77,7 +91,8 @@ export default function MeetAttendanceDialog({ eventId, open, onOpenChange, init
                 <p className="text-sm text-muted-foreground">{stateText}</p>
               )}
               {record?.state === 'ready' && (
-                <MeetRecordView record={record} busyId={busyId} onConfirm={confirm} onConfirmMany={confirmMany} reviewing={reviewing} />
+                <MeetRecordView record={record} busyId={busyId} onConfirm={confirm} onConfirmMany={confirmMany} reviewing={reviewing}
+                  onApplyVerdicts={applyVerdicts} applying={applying} />
               )}
             </>
           ) : (
@@ -97,5 +112,13 @@ export default function MeetAttendanceDialog({ eventId, open, onOpenChange, init
         </div>
       </DialogContent>
     </Dialog>
-  );
+    <RecordingPlayerDialog
+      meta={watching && eventId != null
+        ? { eventId, title, start, end, teacher: record?.teacher?.name ?? null, durationSeconds: recording?.duration_seconds }
+        : null}
+      open={watching}
+      onOpenChange={(next) => { if (!next) setWatching(false); }}
+      locale={recordingsLocale(user?.role)}
+    />
+  </>);
 }

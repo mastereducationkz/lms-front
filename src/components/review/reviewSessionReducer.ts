@@ -24,6 +24,7 @@ import {
   type ReviewAttempt,
   type StudentRef,
 } from './reviewStats'
+import { stepMaterial, type StepMaterial } from './reviewMedia'
 
 export interface CourseOption { id: number; title: string }
 export interface GroupOption { id: number; name: string; studentCount: number }
@@ -76,6 +77,8 @@ export interface ReviewSessionState {
   questionSteps: QuestionStepMeta[]
   /** One entry per quiz step in the deck, in deck order (see ReviewStepSummary). */
   steps: ReviewStepSummary[]
+  /** Each step's quiz-level material and image_content references, by stepId (see reviewMedia.ts). */
+  materials: Record<number, StepMaterial>
   stats: QuestionStat[]
   // Keyed by the composite `questionKey(stepId, question)` — NEVER by a raw question id
   // alone. Question ids are not unique across a unit's quiz steps (verified in production:
@@ -129,6 +132,7 @@ export const initialState: ReviewSessionState = {
   questions: [],
   questionSteps: [],
   steps: [],
+  materials: {},
   stats: [],
   statsByKey: {},
   summary: null,
@@ -243,6 +247,7 @@ export function reducer(state: ReviewSessionState, action: Action): ReviewSessio
         questionCount: questions.length,
         submittedCount: attempts.length,
       }]
+      const materials: Record<number, StepMaterial> = { [step.step_id]: stepMaterial(step.content) }
       const taggedAttempts: DeckAttempt[] = attempts.map((a) => ({ ...a, stepId: step.step_id }))
       const groups: ClassSummaryGroup[] = [{ stepId: step.step_id, questions, attempts }]
       return {
@@ -255,6 +260,7 @@ export function reducer(state: ReviewSessionState, action: Action): ReviewSessio
         questions,
         questionSteps,
         steps,
+        materials,
         stats,
         statsByKey,
         summary: buildClassSummary(stats, groups, nameById, notSubmitted),
@@ -282,6 +288,7 @@ export function reducer(state: ReviewSessionState, action: Action): ReviewSessio
       const groups: ClassSummaryGroup[] = []
       const attempts: DeckAttempt[] = []
       const steps: ReviewStepSummary[] = []
+      const materials: Record<number, StepMaterial> = {}
       const submittedStudentIds = new Set<number>()
 
       // Deck order follows the order `payloads` arrived in, which is the order
@@ -290,6 +297,7 @@ export function reducer(state: ReviewSessionState, action: Action): ReviewSessio
       for (const payload of payloads) {
         const { step, attempts: stepAttempts } = payload
         const stepQuestions = reviewQuestions(step.content)
+        materials[step.step_id] = stepMaterial(step.content)
         // stepId = step.step_id here, not a shared/default one — this is the one thing that
         // keeps two steps' identically-id'd questions from colliding once merged below.
         const stepStats = buildQuestionStats(stepQuestions, stepAttempts, nameById, step.step_id)
@@ -330,6 +338,7 @@ export function reducer(state: ReviewSessionState, action: Action): ReviewSessio
         questions,
         questionSteps,
         steps,
+        materials,
         stats,
         statsByKey,
         summary: buildClassSummary(stats, groups, nameById, notSubmitted),
