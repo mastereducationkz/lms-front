@@ -87,6 +87,8 @@ function getNavigationItems(
     // Who was in each lesson's Meet room. Teachers see their lessons, curators their groups' — the
     // backend scopes it; students never (the record is about marks, which are staff business).
     ['/meet-attendance', ['head_curator', 'curator'].includes(_userRole || '') ? 'Посещаемость в Meet' : 'Meet Attendance', MonitorCheck, 0, ['admin', 'head_curator', 'head_teacher', 'teacher', 'curator'], 'meet-attendance-nav', 'primary'],
+    // Lateness, missed lessons and their fines. A teacher sees only their own row.
+    ['/teacher-discipline', _userRole === 'teacher' ? 'My Discipline' : 'Teacher Discipline', ClipboardCheck, 0, ['admin', 'head_teacher', 'teacher'], 'teacher-discipline-nav', 'primary'],
     ['/courses', 'My Courses', BookOpen, 0, ['student'], 'courses-nav', 'primary'],
     ['/homework', _userRole === 'student' ? 'My Homework' : 'Homework', ClipboardList, _userRole === 'student' ? unseenGradedCount : 0, ['student', 'teacher'], 'assignments-nav', 'primary'],
     ['/favorites', 'My Favorites', Heart, 0, ['student'], 'favorites-nav', 'primary'],
