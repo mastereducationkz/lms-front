@@ -582,7 +582,7 @@ export default function StudentReportPage() {
                 {fmtDate(a.date)} — {a.title}
                 {a.excused && (
                   <span
-                    className="ml-1.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 align-middle"
+                    className="ml-1.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-700 align-middle"
                     title={'Уважительная причина' + (a.excuse_note ? `: ${a.excuse_note}` : '')}
                   >
                     Ув.

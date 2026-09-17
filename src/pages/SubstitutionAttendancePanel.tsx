@@ -28,7 +28,7 @@ const STATUS_NEXT: Record<string, string> = {
 // argument disturbs the existing call sites less than branching there instead, since
 // both callers already have `s.excused` sitting right next to `s.attendance_status`.
 function statusColor(status: string, excused = false) {
-  if (status === 'missed' && excused) return 'bg-amber-500 text-white';
+  if (status === 'missed' && excused) return 'bg-rose-200 text-rose-900 dark:bg-rose-300 dark:text-rose-950';
   switch (status) {
     case 'attended': return 'bg-green-200 dark:bg-green-900/40 text-green-700 dark:text-green-400';
     case 'late': return 'bg-yellow-200 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400';
@@ -396,7 +396,7 @@ export default function SubstitutionAttendancePanel() {
                               onClick={(e) => { e.stopPropagation(); setExcusePopoverFor(s.student_id); }}
                               className={cn(
                                 'absolute left-0.5 bottom-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full ring-2 ring-white dark:ring-card pointer-events-auto',
-                                s.excused ? 'bg-amber-600' : 'bg-transparent border border-amber-500'
+                                s.excused ? 'bg-rose-600' : 'bg-transparent border border-white/80'
                               )}
                               title={s.excused
                                 ? `Excused absence${s.excuse_note ? `: ${s.excuse_note}` : ''} — click to edit`

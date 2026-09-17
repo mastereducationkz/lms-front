@@ -238,9 +238,9 @@ export default function HeadTeacherTeacherDetailsPage() {
   const isFutureLesson = isAttendanceLockedLesson;
 
   // `excused` is an overlay on "missed"/"absent" only, matching CuratorLeaderboardPage's
-  // AttendanceToggle and SubstitutionAttendancePanel — same amber, same short label.
+  // AttendanceToggle and SubstitutionAttendancePanel — same lighter red, same short label.
   const getAttendanceStatusColor = (status: string, excused = false) => {
-    if ((status === 'missed' || status === 'absent') && excused) return 'bg-amber-500 text-white';
+    if ((status === 'missed' || status === 'absent') && excused) return 'bg-rose-200 text-rose-900';
     switch (status) {
       case 'attended': return 'bg-green-200 text-green-700';
       case 'late': return 'bg-yellow-200 text-yellow-700';

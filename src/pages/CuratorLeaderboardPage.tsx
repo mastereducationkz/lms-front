@@ -90,7 +90,7 @@ interface StudentLessonStatus {
     // attendance and homework denominators the same way. Undefined → not blocked.
     blocked?: boolean;
     // True = this absence has a reason on file and does not count against the student —
-    // the cell still reads as a marked lesson (it's in the denominator), just amber
+    // the cell still reads as a marked lesson (it's in the denominator), just a lighter red
     // instead of red. Only meaningful when attendance_status is a "missed" variant.
     // Undefined on older payloads → not excused.
     excused?: boolean;
@@ -286,7 +286,7 @@ const AttendanceToggle = ({
     if (s === 'missed' && excused) {
       return {
         label: en ? 'Exc.' : 'Ув.',
-        color: 'bg-amber-500 text-white',
+        color: 'bg-rose-200 text-rose-900 dark:bg-rose-300 dark:text-rose-950',
         title: (en ? 'Excused absence' : 'Уважительная причина') + (excuseNote ? `: ${excuseNote}` : ''),
       };
     }
@@ -333,7 +333,7 @@ const AttendanceToggle = ({
                 // and a hidden icon is a feature nobody finds.
                 className={cn(
                     "shrink-0 h-2.5 w-2.5 rounded-full ring-1 ring-white/80 dark:ring-card/80 pointer-events-auto",
-                    excused ? "bg-amber-200" : "bg-transparent border border-white/70"
+                    excused ? "bg-rose-600" : "bg-transparent border border-white/80"
                 )}
                 title={excused
                     ? (en ? `Excused absence${excuseNote ? `: ${excuseNote}` : ''} — click to edit` : `Уважительная причина${excuseNote ? `: ${excuseNote}` : ''} — нажмите, чтобы изменить`)
