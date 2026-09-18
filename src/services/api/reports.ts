@@ -368,7 +368,7 @@ export async function generateParentReport(
 
 export async function saveParentReport(
   studentId: number,
-  payload: { week: string; body: string },
+  payload: { week: string; body: string; note?: string | null },
 ): Promise<ParentReportRow> {
   const { data } = await api.put(`/reports/parent/students/${studentId}`, payload);
   return data;

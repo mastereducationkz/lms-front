@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { mondayOf, weekLabel } from './parentReportWeek';
+import { mondayOf, shiftWeek, weekLabel } from './parentReportWeek';
 
 describe('mondayOf', () => {
   it('returns the Monday of a midweek day', () => {
@@ -23,5 +23,23 @@ describe('weekLabel', () => {
 
   it('spans a month boundary', () => {
     expect(weekLabel('2026-09-28')).toBe('28.09 — 04.10');
+  });
+});
+
+describe('shiftWeek', () => {
+  it('steps back a week', () => {
+    expect(shiftWeek('2026-09-14', -1)).toBe('2026-09-07');
+  });
+
+  it('steps forward across a month boundary', () => {
+    expect(shiftWeek('2026-09-28', 1)).toBe('2026-10-05');
+  });
+
+  it('steps back across a year boundary', () => {
+    expect(shiftWeek('2027-01-04', -1)).toBe('2026-12-28');
+  });
+
+  it('returns the same Monday for a zero shift', () => {
+    expect(shiftWeek('2026-09-14', 0)).toBe('2026-09-14');
   });
 });

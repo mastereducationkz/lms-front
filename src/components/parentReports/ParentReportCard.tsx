@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import {
   generateParentReport,
@@ -33,13 +33,41 @@ export default function ParentReportCard({ studentId, studentName, week, initial
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Какой отчёт показан. Ученик и неделя — это и есть его личность; всё остальное
+  // (новый объект с теми же данными) личность не меняет.
+  const identity = `${studentId}:${week}`;
+  const shown = useRef(identity);
+  const live = useRef(identity);
+  // Трогал ли куратор текст руками. Если трогал — чужое обновление его не затирает.
+  const dirty = useRef(false);
+
   useEffect(() => {
+    live.current = identity;
+  }, [identity]);
+
+  useEffect(() => {
+    if (shown.current !== identity) {
+      // Другой ученик или другая неделя: это другой отчёт, сбрасываем всё.
+      shown.current = identity;
+      dirty.current = false;
+      setState(initial);
+      setBody(initial?.report?.body ?? '');
+      setNote(initial?.report?.curator_note ?? '');
+      setError(null);
+      return;
+    }
+    // Тот же отчёт, но родитель принёс свежие данные — например, массовая генерация
+    // по группе. Серверное состояние принимаем всегда, а текст куратора перезаписываем,
+    // только если он его не трогал: иначе недописанная заметка исчезает без предупреждения.
     setState(initial);
-    setBody(initial?.report?.body ?? '');
-    setNote(initial?.report?.curator_note ?? '');
-  }, [initial, studentId, week]);
+    if (!dirty.current) {
+      setBody(initial?.report?.body ?? '');
+      setNote(initial?.report?.curator_note ?? '');
+    }
+  }, [initial, identity]);
 
   const generate = async () => {
+    const issuedFor = identity;
     setBusy(true);
     setError(null);
     try {
@@ -48,32 +76,57 @@ export default function ParentReportCard({ studentId, studentName, week, initial
         template: template || undefined,
         note: note.trim() || undefined,
       });
+      // Карточку успели переключить — ответ относится к другому отчёту, он не наш.
+      if (live.current !== issuedFor) return;
+      dirty.current = false;
       setState(next);
       setBody(next.report?.body ?? '');
+      setNote(next.report?.curator_note ?? '');
       onSaved?.(next);
     } catch {
-      setError('Не удалось сгенерировать отчёт');
+      if (live.current === issuedFor) setError('Не удалось сгенерировать отчёт');
     } finally {
-      setBusy(false);
+      if (live.current === issuedFor) setBusy(false);
     }
   };
 
   const save = async () => {
+    const issuedFor = identity;
+    const snapshot = state;
     setBusy(true);
     setError(null);
     try {
-      await saveParentReport(studentId, { week, body });
+      const row = await saveParentReport(studentId, {
+        week,
+        body,
+        note: note.trim() || null,
+      });
+      if (live.current !== issuedFor) return;
+      dirty.current = false;
+      if (snapshot) {
+        const next = { ...snapshot, report: row };
+        setState(next);
+        // Родитель держит свой кэш карточек — без этого он так и будет показывать
+        // в списке доправленный текст, которого на сервере уже нет.
+        onSaved?.(next);
+      }
     } catch {
-      setError('Не удалось сохранить правку');
+      if (live.current === issuedFor) setError('Не удалось сохранить правку');
     } finally {
-      setBusy(false);
+      if (live.current === issuedFor) setBusy(false);
     }
   };
 
   const copy = async () => {
-    await navigator.clipboard.writeText(body);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1500);
+    try {
+      await navigator.clipboard.writeText(body);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Буфера нет по http и он может быть запрещён настройками. Молчать здесь нельзя:
+      // куратор нажал кнопку, ничего не произошло, и он отправит родителю пустое сообщение.
+      setError('Не удалось скопировать — выделите текст и скопируйте вручную');
+    }
   };
 
   const suggested = state?.suggested_template;
@@ -112,7 +165,7 @@ export default function ParentReportCard({ studentId, studentName, week, initial
           className="mt-1 w-full border border-gray-300 rounded-lg p-2 text-sm"
           rows={2}
           value={note}
-          onChange={e => setNote(e.target.value)}
+          onChange={e => { dirty.current = true; setNote(e.target.value); }}
           placeholder="Что вы знаете об ученике, чего нет в данных"
         />
       </label>
@@ -148,7 +201,7 @@ export default function ParentReportCard({ studentId, studentName, week, initial
             className="w-full border border-gray-300 rounded-lg p-3 text-sm font-mono whitespace-pre-wrap"
             rows={14}
             value={body}
-            onChange={e => setBody(e.target.value)}
+            onChange={e => { dirty.current = true; setBody(e.target.value); }}
           />
           <div className="flex items-center gap-2">
             <button
