@@ -668,7 +668,7 @@ export default function Router() {
           } />
 
           <Route path="/curator/parent-reports" element={
-            <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator', 'head_teacher']}>
+            <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator']}>
               <AppLayout>
                 <CuratorParentReportsPage />
               </AppLayout>
