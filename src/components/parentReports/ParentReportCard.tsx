@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import {
   generateParentReport,
@@ -40,8 +40,11 @@ export default function ParentReportCard({ studentId, studentName, week, initial
   const live = useRef(identity);
   // Трогал ли куратор текст руками. Если трогал — чужое обновление его не затирает.
   const dirty = useRef(false);
+  // Всегда содержит то, что последним легло в state. Замыкание, снятое до await,
+  // этого не знает: пока запрос летит, родитель может принести свежие данные.
+  const latest = useRef<ParentStudentResponse | null>(initial);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     live.current = identity;
   }, [identity]);
 
@@ -50,6 +53,7 @@ export default function ParentReportCard({ studentId, studentName, week, initial
       // Другой ученик или другая неделя: это другой отчёт, сбрасываем всё.
       shown.current = identity;
       dirty.current = false;
+      latest.current = initial;
       setState(initial);
       setBody(initial?.report?.body ?? '');
       setNote(initial?.report?.curator_note ?? '');
@@ -59,6 +63,7 @@ export default function ParentReportCard({ studentId, studentName, week, initial
     // Тот же отчёт, но родитель принёс свежие данные — например, массовая генерация
     // по группе. Серверное состояние принимаем всегда, а текст куратора перезаписываем,
     // только если он его не трогал: иначе недописанная заметка исчезает без предупреждения.
+    latest.current = initial;
     setState(initial);
     if (!dirty.current) {
       setBody(initial?.report?.body ?? '');
@@ -79,6 +84,7 @@ export default function ParentReportCard({ studentId, studentName, week, initial
       // Карточку успели переключить — ответ относится к другому отчёту, он не наш.
       if (live.current !== issuedFor) return;
       dirty.current = false;
+      latest.current = next;
       setState(next);
       setBody(next.report?.body ?? '');
       setNote(next.report?.curator_note ?? '');
@@ -86,13 +92,14 @@ export default function ParentReportCard({ studentId, studentName, week, initial
     } catch {
       if (live.current === issuedFor) setError('Не удалось сгенерировать отчёт');
     } finally {
-      if (live.current === issuedFor) setBusy(false);
+      // Безусловно: этот флаг только выключает кнопки, и не сбросить его означает
+      // оставить карточку навсегда заблокированной, если куратор ушёл с неё во время запроса.
+      setBusy(false);
     }
   };
 
   const save = async () => {
     const issuedFor = identity;
-    const snapshot = state;
     setBusy(true);
     setError(null);
     try {
@@ -103,17 +110,19 @@ export default function ParentReportCard({ studentId, studentName, week, initial
       });
       if (live.current !== issuedFor) return;
       dirty.current = false;
-      if (snapshot) {
-        const next = { ...snapshot, report: row };
-        setState(next);
-        // Родитель держит свой кэш карточек — без этого он так и будет показывать
-        // в списке доправленный текст, которого на сервере уже нет.
-        onSaved?.(next);
-      }
+      // Сливаем на самое свежее, что у нас есть, а не на снимок до запроса.
+      const base = latest.current;
+      if (!base) return;
+      const next = { ...base, report: row };
+      latest.current = next;
+      setState(next);
+      // Родитель держит свой кэш карточек — без этого он так и будет показывать
+      // в списке карточек текст, которого на сервере уже нет.
+      onSaved?.(next);
     } catch {
       if (live.current === issuedFor) setError('Не удалось сохранить правку');
     } finally {
-      if (live.current === issuedFor) setBusy(false);
+      setBusy(false);
     }
   };
 
@@ -167,6 +176,7 @@ export default function ParentReportCard({ studentId, studentName, week, initial
           value={note}
           onChange={e => { dirty.current = true; setNote(e.target.value); }}
           placeholder="Что вы знаете об ученике, чего нет в данных"
+          disabled={busy}
         />
       </label>
 
@@ -202,6 +212,7 @@ export default function ParentReportCard({ studentId, studentName, week, initial
             rows={14}
             value={body}
             onChange={e => { dirty.current = true; setBody(e.target.value); }}
+            disabled={busy}
           />
           <div className="flex items-center gap-2">
             <button
