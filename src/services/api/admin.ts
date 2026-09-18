@@ -49,6 +49,21 @@ export async function getTeacherSalaryBreakdown(params: {
   group_band?: string | null
   total_lessons: number
   total_amount_tenge: number
+  /**
+   * The discipline register's deduction for the same days. Kept beside the pay, never inside
+   * it: `total_amount_tenge` is what the lessons were worth and does not move because of a
+   * fine a head teacher may waive tomorrow. `net_amount_tenge` is what is paid.
+   */
+  fines_tenge?: number
+  fines_late_minutes?: number
+  fines_early_minutes?: number
+  fines_made_up_minutes?: number
+  fines_misses?: number
+  /** Findings nobody has priced yet — a missed lesson waits for a head teacher. */
+  fines_unpriced?: number
+  /** False while the half-month is open: the figure can still move. */
+  fines_final?: boolean
+  net_amount_tenge?: number
   groups: Array<{
     group_id: number
     group_name: string
