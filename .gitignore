@@ -1,4 +1,7 @@
 # Dependencies
+# Both spellings: the trailing slash matches a directory only, and a *symlink* named
+# node_modules slipped past it once and was committed (fixed here). This line catches that.
+node_modules
 node_modules/
 npm-debug.log*
 yarn-debug.log*
