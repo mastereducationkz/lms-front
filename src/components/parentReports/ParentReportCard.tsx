@@ -109,10 +109,13 @@ export default function ParentReportCard({ studentId, studentName, week, initial
         note: note.trim() || null,
       });
       if (live.current !== issuedFor) return;
-      dirty.current = false;
       // Сливаем на самое свежее, что у нас есть, а не на снимок до запроса.
       const base = latest.current;
       if (!base) return;
+      // Флаг снимается только здесь, после того как выход по !base уже позади: иначе
+      // карточка считает текст сохранённым, ничего не применив, и следующий приход
+      // initial молча откатит её к старому.
+      dirty.current = false;
       const next = { ...base, report: row };
       latest.current = next;
       setState(next);
@@ -185,6 +188,7 @@ export default function ParentReportCard({ studentId, studentName, week, initial
           className="border border-gray-300 rounded-lg p-2 text-sm"
           value={template}
           onChange={e => setTemplate(e.target.value as ParentTemplateKey | '')}
+          disabled={busy}
         >
           <option value="">
             {suggested ? `Автовыбор (${TEMPLATE_LABELS[suggested]})` : 'Автовыбор'}
