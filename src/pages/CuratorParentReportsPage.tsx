@@ -120,6 +120,10 @@ export default function CuratorParentReportsPage() {
         },
         CONCURRENCY,
       );
+    } catch {
+      // Сами воркеры свои ошибки ловят, так что сюда попасть нечем — но если очередь
+      // всё же упадёт, куратор должен увидеть это, а не молчаливый провал в консоли.
+      setError('Не удалось выполнить массовую генерацию');
     } finally {
       setBulkRunning(false);
     }
@@ -210,9 +214,19 @@ export default function CuratorParentReportsPage() {
                   studentName={student.name}
                   week={week}
                   initial={details[cardKey(student.id, week)] ?? null}
-                  onSaved={next =>
-                    setDetails(prev => ({ ...prev, [cardKey(student.id, week)]: next }))
-                  }
+                  onSaved={next => {
+                    const key = cardKey(student.id, week);
+                    setDetails(prev => ({ ...prev, [key]: next }));
+                    // Куратор перегенерировал карточку руками — ровно то, на что его
+                    // отправляет сообщение о сбое. Отметку надо снять, иначе она висит
+                    // над готовым отчётом, а счётчик «Не получилось» врёт при 100%.
+                    setFailed(prev => {
+                      if (!prev[key]) return prev;
+                      const rest = { ...prev };
+                      delete rest[key];
+                      return rest;
+                    });
+                  }}
                 />
               </div>
             ))}
