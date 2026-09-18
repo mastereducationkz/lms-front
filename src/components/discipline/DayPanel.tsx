@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Loader2, X } from 'lucide-react';
 
 import { Button } from '../ui/button';
+import DecisionDialog, { type DecisionTarget } from './DecisionDialog';
 import { money } from '../../lib/discipline';
 import {
   getDay,
@@ -81,25 +82,28 @@ export default function DayPanel({ teacherId, teacherName, day, canDecide, onClo
     }
   };
 
-  const waive = (lesson: DisciplineLesson, finding: DisciplineFinding) => {
-    const reasons = data?.reasons || [];
-    const chosen = window.prompt(
-      `Why is this waived?\n${reasons.map((r, i) => `${i + 1}. ${r.label}`).join('\n')}\n\nType a number, and a note after a space.`,
-      '2');
-    if (!chosen) return;
-    const [index, ...rest] = chosen.trim().split(' ');
-    const reason = reasons[Number(index) - 1];
-    if (!reason) return;
-    decide(lesson, finding, 0, reason.code, rest.join(' '));
-  };
+  // One dialog serves both entry points. «Waive» and «Change amount» are the same decision —
+  // an amount, a reason when it goes down, and a note — so they open the same form with
+  // different starting numbers rather than two different boxes that can disagree.
+  const [editing, setEditing] = useState<{
+    lesson: DisciplineLesson; finding: DisciplineFinding; target: DecisionTarget;
+  } | null>(null);
 
-  const reprice = (lesson: DisciplineLesson, finding: DisciplineFinding) => {
-    const current = finding.decision?.amount ?? finding.fine ?? 0;
-    const answer = window.prompt('Amount in ₸ (0 waives it):', String(current));
-    if (answer === null) return;
-    const amount = Number(answer.replace(/\s/g, ''));
-    if (Number.isNaN(amount) || amount < 0) return;
-    decide(lesson, finding, amount, finding.decision?.reason_code, finding.decision?.note);
+  const openDecision = (lesson: DisciplineLesson, finding: DisciplineFinding,
+                        startAt: 'waive' | 'current') => {
+    setEditing({
+      lesson,
+      finding,
+      target: {
+        lessonLabel: `${lesson.group} · ${time(lesson.starts_at)}`,
+        kindLabel: KIND_TEXT[finding.kind] || finding.kind,
+        minutes: finding.kind === 'miss' ? null : finding.minutes,
+        proposed: finding.fine,
+        current: startAt === 'waive' ? 0 : (finding.decision?.amount ?? finding.fine ?? null),
+        currentReason: finding.decision?.reason_code ?? null,
+        currentNote: finding.decision?.note ?? null,
+      },
+    });
   };
 
   return (
@@ -168,9 +172,9 @@ export default function DayPanel({ teacherId, teacherName, day, canDecide, onClo
                         </Button>
                       )}
                       <Button size="sm" variant="outline" disabled={saving === key}
-                              onClick={() => waive(lesson, finding)}>Waive…</Button>
+                              onClick={() => openDecision(lesson, finding, 'waive')}>Waive…</Button>
                       <Button size="sm" variant="outline" disabled={saving === key}
-                              onClick={() => reprice(lesson, finding)}>
+                              onClick={() => openDecision(lesson, finding, 'current')}>
                         {finding.kind === 'miss' ? 'Set amount…' : 'Change amount…'}
                       </Button>
                     </div>
@@ -181,6 +185,19 @@ export default function DayPanel({ teacherId, teacherName, day, canDecide, onClo
           </div>
         ))}
       </div>
+
+      <DecisionDialog
+        open={editing !== null}
+        target={editing?.target ?? null}
+        reasons={data?.reasons || []}
+        saving={saving === (editing ? `${editing.lesson.event_id}-${editing.finding.kind}` : '')}
+        onCancel={() => setEditing(null)}
+        onSubmit={async (amount, reasonCode, note) => {
+          if (!editing) return;
+          await decide(editing.lesson, editing.finding, amount, reasonCode, note);
+          setEditing(null);
+        }}
+      />
     </div>
   );
 }

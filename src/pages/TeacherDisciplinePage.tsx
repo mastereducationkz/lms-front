@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button';
 import { cn } from '../lib/utils';
 import { cellText, cellTitle, cellTone, money, showsProgramTabs, type DisciplineCell } from '../lib/discipline';
 import DayPanel from '../components/discipline/DayPanel';
+import ClosePeriodDialog from '../components/discipline/ClosePeriodDialog';
 import {
   closePeriod,
   exportUrl,
@@ -86,17 +87,25 @@ export default function TeacherDisciplinePage() {
   // disappear as soon as a programme was picked, leaving no way back.
   const programs = register?.programs || [];
 
+  // Closing freezes what payroll is paid on, so it asks in a dialog that can show the figures
+  // being frozen. A native confirm could only show them as unformatted text in a box the
+  // browser controls, and gave no way to say what went wrong when the server refused.
+  const [closing, setClosing] = useState(false);
+  const [closeBusy, setCloseBusy] = useState(false);
+
   const close = async () => {
     if (!register) return;
-    const message = `Close ${register.period.label}?\n\n`
-      + `${money(register.totals.fine)} in fines across ${register.teachers.length} teachers.\n`
-      + 'The numbers freeze — payroll is paid on them.';
-    if (!window.confirm(message)) return;
+    setCloseBusy(true);
+    setError('');
     try {
       await closePeriod(register.period.key);
+      setClosing(false);
       await load();
     } catch (err: any) {
       setError(err?.response?.data?.detail || 'Could not close the period');
+      setClosing(false);
+    } finally {
+      setCloseBusy(false);
     }
   };
 
@@ -126,7 +135,7 @@ export default function TeacherDisciplinePage() {
             <Button variant="outline" size="sm"><Download className="mr-1.5 h-4 w-4" />Excel</Button>
           </a>
           {canDecide && register && !register.period.closed && (
-            <Button size="sm" onClick={close}><Lock className="mr-1.5 h-4 w-4" />Close period</Button>
+            <Button size="sm" onClick={() => setClosing(true)}><Lock className="mr-1.5 h-4 w-4" />Close period</Button>
           )}
         </div>
       </header>
@@ -230,6 +239,17 @@ export default function TeacherDisciplinePage() {
           LMS could not judge them. They are marked «·», never as on time.
         </p>
       ) : null}
+
+      <ClosePeriodDialog
+        open={closing}
+        label={register?.period.label || ''}
+        fine={register?.totals.fine ?? 0}
+        teachers={register?.teachers.length ?? 0}
+        unpriced={register?.totals.unpriced ?? 0}
+        busy={closeBusy}
+        onCancel={() => setClosing(false)}
+        onConfirm={close}
+      />
 
       {openDay && (
         <DayPanel
