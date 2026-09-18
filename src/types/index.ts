@@ -1148,6 +1148,8 @@ export interface Event {
   max_participants?: number;
   participant_count: number;
   is_substitution?: boolean;
+  /** Whose group the lesson belongs to, when somebody else taught it. */
+  group_teacher_name?: string | null;
   groups?: string[];
   courses?: string[];
   group_ids?: number[];

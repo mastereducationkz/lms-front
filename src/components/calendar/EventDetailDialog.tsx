@@ -7,6 +7,7 @@ import LessonRecordingSection from './LessonRecordingSection';
 import MeetAttendanceSection from './MeetAttendanceSection';
 import type { Event, LessonRequest } from '../../types';
 import { cx, formatTime, eventStyle, typeLabel, isSubstitutedForTeacher } from './calendarUtils';
+import { substitutionBadge } from '../../lib/substitutionBadge';
 
 export type RequestType = 'substitution' | 'reschedule' | 'cancel';
 
@@ -25,6 +26,8 @@ export default function EventDetailDialog({ event, open, onOpenChange, user, myR
   const platformLink = event.event_type === 'weekly_test' ? parsePlatformUrl(event.meeting_url) : null;
   const s = eventStyle(event);
   const sub = isSubstitutedForTeacher(event, user);
+  // What this lesson's substitution means for whoever is reading it.
+  const badge = substitutionBadge(event, user);
   const dateLabel = new Date(event.start_datetime).toLocaleDateString('en-US', {
     weekday: 'long', day: 'numeric', month: 'long',
   });
@@ -44,7 +47,7 @@ export default function EventDetailDialog({ event, open, onOpenChange, user, myR
           <DialogHeader className="space-y-1">
             <div className={cx('text-[11px] font-bold uppercase tracking-wider', s.time)}>
               {typeLabel(event.event_type)}
-              {sub && ' · Substituted'}
+              {badge && ' · Substituted'}
             </div>
             <DialogTitle className="text-lg font-bold leading-snug">{event.title}</DialogTitle>
           </DialogHeader>
@@ -138,14 +141,14 @@ export default function EventDetailDialog({ event, open, onOpenChange, user, myR
             )}
           </div>
 
-          {sub && (
-            <div className="mt-3 w-fit rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
-              Substituted by: {event.teacher_name || 'Another teacher'}
-            </div>
-          )}
-          {event.is_substitution && !sub && (
-            <div className="mt-3 w-fit rounded-md border border-blue-200 bg-blue-50 px-2 py-1 text-xs font-semibold text-blue-800 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
-              You are substituting
+          {badge && (
+            <div className={cx(
+              'mt-3 w-fit rounded-md border px-2 py-1 text-xs font-semibold',
+              badge.tone === 'covering'
+                ? 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                : 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300',
+            )}>
+              {badge.text}
             </div>
           )}
 
