@@ -19,12 +19,18 @@ import {
  * The head teachers' register, in place of «Attendance and Late lessons 16.09-31.10».
  *
  * Teachers down, days across, one tab per programme — the shape they already read. The numbers
- * come from the Meet record: 300 ₸ for every whole minute late or cut short, a missed lesson
+ * come from the Meet record: 200 ₸ for every whole minute late or cut short, a missed lesson
  * priced by a person. Clicking a day opens what the LMS actually saw.
+ *
+ * Minutes a teacher gave back by staying past the end are marked «↩» and carry their own colour,
+ * so «опоздал и отработал» is distinguishable from «опоздал» without opening the day.
  */
 
 const TONE_CLASS: Record<string, string> = {
   late: 'bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-300',
+  // Teal, not amber: the minutes came back. Still a finding, still fined until a head
+  // teacher decides otherwise — but it must not read as the same day as one that did not.
+  made_up: 'bg-teal-100 text-teal-900 dark:bg-teal-950/50 dark:text-teal-300',
   early: 'bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-300',
   miss: 'bg-red-100 text-red-900 dark:bg-red-950/50 dark:text-red-300',
   unmeasurable: 'text-gray-300 dark:text-gray-600',
@@ -176,6 +182,7 @@ export default function TeacherDisciplinePage() {
                   {register.days.map((day) => {
                     const cell = (row.days[day] || {
                       late_minutes: 0, early_minutes: 0, misses: 0, fine: 0, unpriced: 0,
+                      made_up_minutes: 0,
                       lessons: 0, measured: 0, unmeasurable: 0, decided: 0, state: 'none',
                     }) as DisciplineCell;
                     const text = cellText(cell);
