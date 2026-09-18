@@ -294,6 +294,8 @@ export interface ParentWeekFacts {
   talk: {
     lessons: number;
     lessons_spoke: number;
+    /** Бэкенд отдаёт его в totals; без объявления поле молча теряется у потребителя. */
+    total_seconds: number;
     avg_seconds: number;
     questions: number | null;
     answers: number | null;
