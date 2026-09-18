@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, Download, Loader2, Lock, ShieldCheck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Loader2, Lock } from 'lucide-react';
 
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
@@ -19,7 +19,7 @@ import {
  * The head teachers' register, in place of «Attendance and Late lessons 16.09-31.10».
  *
  * Teachers down, days across, one tab per programme — the shape they already read. The numbers
- * come from the Meet record: 300 ₸ for every whole minute late or cut short, a missed lesson
+ * come from the Meet record: 200 ₸ for every whole minute late or cut short, a missed lesson
  * priced by a person. Clicking a day opens what the LMS actually saw.
  */
 
@@ -100,7 +100,7 @@ export default function TeacherDisciplinePage() {
         <div>
           <h1 className="text-2xl font-semibold">Teacher discipline</h1>
           <p className="text-sm text-gray-500">
-            Lateness and missed lessons from the Meet record · 300 ₸ a minute · since 16.09.2026
+            Lateness and missed lessons from the Meet record · 200 ₸ a minute · since 16.09.2026
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -120,7 +120,7 @@ export default function TeacherDisciplinePage() {
             <Button variant="outline" size="sm"><Download className="mr-1.5 h-4 w-4" />Excel</Button>
           </a>
           {canDecide && register && !register.period.closed && (
-            <Button size="sm" onClick={close}><ShieldCheck className="mr-1.5 h-4 w-4" />Close period</Button>
+            <Button size="sm" onClick={close}><Lock className="mr-1.5 h-4 w-4" />Close period</Button>
           )}
         </div>
       </header>
