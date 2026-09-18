@@ -258,3 +258,116 @@ export async function downloadStudentReportPdf(
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
+
+/* ------------------------------------------------------------------ */
+/* Еженедельные отчёты родителям (backend /reports/parent)             */
+/* ------------------------------------------------------------------ */
+
+export interface ParentTestSide {
+  correct: number | null;
+  total: number | null;
+}
+
+export interface ParentWeekTest {
+  program: 'sat' | 'nuet' | 'ielts';
+  label: string | null;
+  date: string | null;
+  verbal: ParentTestSide;
+  math: ParentTestSide;
+  prev: { label: string | null; verbal: ParentTestSide; math: ParentTestSide } | null;
+  delta: { verbal: number | null; math: number | null } | null;
+}
+
+export interface ParentWeekFacts {
+  student: { id: number; name: string };
+  group: { id: number | null; name: string | null };
+  week: { start: string; end: string };
+  test: ParentWeekTest | null;
+  test_unavailable: boolean;
+  homework: { assigned: number; submitted: number; missing: string[] } | null;
+  attendance: {
+    lessons: number;
+    present: number;
+    late: number;
+    absences: { date: string; excused: boolean }[];
+  };
+  talk: {
+    lessons: number;
+    lessons_spoke: number;
+    avg_seconds: number;
+    questions: number | null;
+    answers: number | null;
+  } | null;
+  strength: { label: string; source: string; pct: number } | null;
+  weakness: { label: string; source: string; pct: number } | null;
+  teacher_feedback: string | null;
+  no_growth_streak: number;
+  curator_note: string | null;
+}
+
+export type ParentTemplateKey = 't1' | 't2' | 't3' | 't4' | 't5';
+
+export interface ParentReportRow {
+  template_key: ParentTemplateKey;
+  template_auto: boolean;
+  body: string;
+  body_generated: string;
+  curator_note: string | null;
+  facts: ParentWeekFacts;
+  updated_at: string | null;
+}
+
+export interface ParentStudentResponse {
+  week_start: string;
+  facts: ParentWeekFacts;
+  suggested_template: ParentTemplateKey;
+  suggested_reason: string;
+  report: ParentReportRow | null;
+  /** Проза не сгенерировалась — отдан детерминированный каркас. */
+  prose_degraded?: boolean;
+}
+
+export interface ParentGroupOverview {
+  week_start: string;
+  students: { id: number; name: string; report: ParentReportRow | null }[];
+}
+
+export async function fetchParentGroupOverview(
+  groupId: number,
+  week: string,
+  config?: AxiosRequestConfig,
+): Promise<ParentGroupOverview> {
+  const { data } = await api.get(`/reports/parent/groups/${groupId}`, {
+    ...config,
+    params: { week },
+  });
+  return data;
+}
+
+export async function fetchParentStudentFacts(
+  studentId: number,
+  week: string,
+  config?: AxiosRequestConfig,
+): Promise<ParentStudentResponse> {
+  const { data } = await api.get(`/reports/parent/students/${studentId}`, {
+    ...config,
+    params: { week },
+  });
+  return data;
+}
+
+export async function generateParentReport(
+  studentId: number,
+  payload: { week: string; template?: ParentTemplateKey; note?: string },
+): Promise<ParentStudentResponse> {
+  const { data } = await api.post(`/reports/parent/students/${studentId}`, payload);
+  return data;
+}
+
+export async function saveParentReport(
+  studentId: number,
+  payload: { week: string; body: string },
+): Promise<ParentReportRow> {
+  const { data } = await api.put(`/reports/parent/students/${studentId}`, payload);
+  return data;
+}
