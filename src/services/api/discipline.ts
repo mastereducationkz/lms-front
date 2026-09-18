@@ -53,6 +53,8 @@ export type DisciplinePeriodInfo = {
 export type DisciplineRegister = {
   period: DisciplinePeriodInfo;
   days: string[];
+  /** Every programme this period holds for this reader — the tabs, unchanged by the chosen one. */
+  programs: string[];
   teachers: DisciplineRow[];
   totals: DisciplineTotals;
   reasons: { code: string; label: string }[];

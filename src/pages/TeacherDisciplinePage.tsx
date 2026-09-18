@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Download, Loader2, Lock, ShieldCheck } from 'lucide-react';
 
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { cn } from '../lib/utils';
-import { cellText, cellTitle, cellTone, money, type DisciplineCell } from '../lib/discipline';
+import { cellText, cellTitle, cellTone, money, showsProgramTabs, type DisciplineCell } from '../lib/discipline';
 import DayPanel from '../components/discipline/DayPanel';
 import {
   closePeriod,
@@ -75,10 +75,10 @@ export default function TeacherDisciplinePage() {
   useEffect(() => { load(); }, [load]);
 
   const index = periods.findIndex((p) => p.key === periodKey);
-  const programs = useMemo(() => {
-    const seen = new Set((register?.teachers || []).map((row) => row.program));
-    return Array.from(seen).sort();
-  }, [register]);
+  // The tabs come from the server's list of the period's programmes, which does not change when
+  // one is chosen. Deriving them from the rows on screen made every tab — «All» included —
+  // disappear as soon as a programme was picked, leaving no way back.
+  const programs = register?.programs || [];
 
   const close = async () => {
     if (!register) return;
@@ -125,7 +125,7 @@ export default function TeacherDisciplinePage() {
         </div>
       </header>
 
-      {programs.length > 1 && (
+      {showsProgramTabs(programs, program) && (
         <div className="flex flex-wrap gap-2">
           <Button variant={program ? 'outline' : 'default'} size="sm" onClick={() => setProgram('')}>All</Button>
           {programs.map((name) => (
@@ -140,7 +140,9 @@ export default function TeacherDisciplinePage() {
 
       {register && !loading && register.teachers.length === 0 && (
         <p className="rounded-md border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500 dark:border-gray-700">
-          Nothing in this period yet. The register starts on 16.09.2026, when the rule took effect.
+          {program
+            ? `No ${program} lessons in this period yet.`
+            : 'Nothing in this period yet. The register starts on 16.09.2026, when the rule took effect.'}
         </p>
       )}
 

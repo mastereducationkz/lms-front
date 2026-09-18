@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { RULE_START, cellText, cellTone, cellTitle, money, periodLabel, type DisciplineCell } from './discipline';
+import {
+  RULE_START,
+  cellText,
+  cellTitle,
+  cellTone,
+  money,
+  periodLabel,
+  showsProgramTabs,
+  type DisciplineCell,
+} from './discipline';
 
 const cell = (over: Partial<DisciplineCell> = {}): DisciplineCell => ({
   late_minutes: 0, early_minutes: 0, misses: 0, fine: 0, unpriced: 0,
@@ -63,5 +72,26 @@ describe('money and labels', () => {
 
   it('knows the day the rule started', () => {
     expect(RULE_START).toBe('2026-09-16');
+  });
+});
+
+describe('the programme filter', () => {
+  it('keeps every tab after one is chosen, so there is a way back to All', () => {
+    expect(showsProgramTabs(['IELTS', 'SAT'], 'SAT')).toBe(true);
+    expect(showsProgramTabs(['IELTS', 'SAT'], '')).toBe(true);
+  });
+
+  it('shows nothing to filter when the period holds one programme', () => {
+    expect(showsProgramTabs(['SAT'], '')).toBe(false);
+  });
+
+  it('still shows the way back if a filter is on and the list came back short', () => {
+    expect(showsProgramTabs(['SAT'], 'SAT')).toBe(true);
+    expect(showsProgramTabs([], 'SAT')).toBe(true);
+  });
+
+  it('hides the row for an empty period', () => {
+    expect(showsProgramTabs([], '')).toBe(false);
+    expect(showsProgramTabs(undefined, '')).toBe(false);
   });
 });
