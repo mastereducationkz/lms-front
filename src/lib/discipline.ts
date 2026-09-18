@@ -68,3 +68,13 @@ export function periodLabel(start: string, end: string): string {
   const to = new Date(`${end}T00:00:00Z`);
   return `${from.getUTCDate()}–${to.getUTCDate()} ${MONTHS[from.getUTCMonth()]} ${from.getUTCFullYear()}`;
 }
+
+/** Whether to show the programme filter row.
+ *
+ * The tabs must never disappear because of the choice made in them: a chosen programme leaves one
+ * name on screen, and hiding the row then took «All» with it, trapping the reader in that filter.
+ */
+export function showsProgramTabs(programs: string[] | undefined, chosen: string): boolean {
+  if (chosen) return true;
+  return (programs?.length || 0) > 1;
+}
