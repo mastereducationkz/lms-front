@@ -41,8 +41,14 @@ describe('the substitution badge', () => {
     expect(badge?.text).toBe('Substitute: Қайратқызы Дина');
   });
 
-  it('falls back when nobody is named', () => {
+  it('still names the owner when the stand-in has no name on record', () => {
     const badge = substitutionBadge(lesson({ teacher_name: null }), { id: 1, role: 'admin' });
+    expect(badge?.text).toBe('Substitute: another teacher instead of Орынбасар Ақжол');
+  });
+
+  it('falls back when nobody is named at all', () => {
+    const badge = substitutionBadge(
+      lesson({ teacher_name: null, group_teacher_name: null }), { id: 1, role: 'admin' });
     expect(badge?.text).toBe('Substitute: another teacher');
   });
 
