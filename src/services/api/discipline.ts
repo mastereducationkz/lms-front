@@ -10,6 +10,9 @@ import { api, API_BASE_URL } from './client';
  * and a lesson's Meet record can land at any time while the period is open.
  */
 
+/** A reason a head teacher may give for lowering or waiving a fine. */
+export type DisciplineReason = { code: string; label: string };
+
 export type DisciplineCellData = {
   late_minutes: number;
   early_minutes: number;
@@ -57,7 +60,7 @@ export type DisciplineRegister = {
   programs: string[];
   teachers: DisciplineRow[];
   totals: DisciplineTotals;
-  reasons: { code: string; label: string }[];
+  reasons: DisciplineReason[];
 };
 
 export type DisciplineFinding = {
@@ -88,7 +91,7 @@ export type DisciplineDay = {
   day: string;
   teacher_id: number;
   lessons: DisciplineLesson[];
-  reasons: { code: string; label: string }[];
+  reasons: DisciplineReason[];
 };
 
 export type DecisionBody = {
