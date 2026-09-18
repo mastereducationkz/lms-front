@@ -72,6 +72,7 @@ const FavoriteFlashcardsPage = lazy(() => import('../pages/FavoriteFlashcardsPag
 const CuratorHomeworksPage = lazy(() => import('../pages/CuratorHomeworksPage.tsx'));
 const CuratorLeaderboardPage = lazy(() => import('../pages/CuratorLeaderboardPage.tsx'));
 const CuratorGroupsPage = lazy(() => import('../pages/CuratorGroupsPage.tsx'));
+const CuratorParentReportsPage = lazy(() => import('../pages/CuratorParentReportsPage.tsx'));
 const ForgotPasswordPage = lazy(() => import('../pages/auth/ForgotPasswordPage.tsx'));
 const ResetPasswordPage = lazy(() => import('../pages/auth/ResetPasswordPage.tsx'));
 const OidcCallbackPage = lazy(() => import('../pages/auth/OidcCallbackPage.tsx'));
@@ -662,6 +663,14 @@ export default function Router() {
             <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator']}>
               <AppLayout>
                 <CuratorGroupsPage />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/curator/parent-reports" element={
+            <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator', 'head_teacher']}>
+              <AppLayout>
+                <CuratorParentReportsPage />
               </AppLayout>
             </ProtectedRoute>
           } />
