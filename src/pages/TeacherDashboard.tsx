@@ -143,6 +143,21 @@ interface SalaryBreakdownResult {
   }
   total_lessons: number
   total_amount_tenge: number
+  /**
+   * The discipline register's deduction for the same days. Kept beside the pay, never inside
+   * it: `total_amount_tenge` is what the lessons were worth and does not move because of a
+   * fine a head teacher may waive tomorrow. `net_amount_tenge` is what is paid.
+   */
+  fines_tenge?: number
+  fines_late_minutes?: number
+  fines_early_minutes?: number
+  fines_made_up_minutes?: number
+  fines_misses?: number
+  /** Findings nobody has priced yet — a missed lesson waits for a head teacher. */
+  fines_unpriced?: number
+  /** False while the half-month is open: the figure can still move. */
+  fines_final?: boolean
+  net_amount_tenge?: number
   groups: SalaryBreakdownGroup[]
   message_text: string
   contacts: {
@@ -2042,9 +2057,53 @@ export default function TeacherDashboard() {
           {salaryResult && (
             <div className="space-y-3">
               <div className="text-sm text-gray-600 dark:text-gray-300">
-                Уроков: <span className="font-semibold">{salaryResult.total_lessons}</span> · Итого:{' '}
+                Уроков: <span className="font-semibold">{salaryResult.total_lessons}</span> ·{' '}
+                {(salaryResult.fines_tenge ?? 0) > 0 ? 'Начислено' : 'Итого'}:{' '}
                 <span className="font-semibold">{salaryResult.total_amount_tenge.toLocaleString()} тг</span>
               </div>
+              {/* The deduction is its own line under the pay, never folded into it. A teacher
+                  who sees only a smaller number has to ask somebody what happened, and this
+                  card exists so that they do not have to. */}
+              {(salaryResult.fines_tenge ?? 0) > 0 && (
+                <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900/50 dark:bg-amber-950/30">
+                  <div className="text-amber-900 dark:text-amber-300">
+                    Удержано по дисциплине:{' '}
+                    <span className="font-semibold">−{(salaryResult.fines_tenge ?? 0).toLocaleString()} тг</span>
+                    {salaryResult.fines_final === false && (
+                      <span className="ml-2 text-xs font-normal text-amber-700 dark:text-amber-400">
+                        полумесяц не закрыт — сумма может измениться
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1 text-xs text-amber-800 dark:text-amber-400">
+                    {[
+                      salaryResult.fines_late_minutes
+                        ? `опоздания ${salaryResult.fines_late_minutes} мин${
+                            salaryResult.fines_made_up_minutes
+                              ? `, из них ${salaryResult.fines_made_up_minutes} отработано`
+                              : ''
+                          }`
+                        : null,
+                      salaryResult.fines_early_minutes
+                        ? `ранний уход ${salaryResult.fines_early_minutes} мин`
+                        : null,
+                      salaryResult.fines_misses ? `не проведено уроков: ${salaryResult.fines_misses}` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ') || 'по решению завуча'}
+                    {' · '}200 ₸ за полную минуту
+                  </div>
+                  <div className="mt-2 font-semibold text-gray-900 dark:text-gray-100">
+                    К выплате: {(salaryResult.net_amount_tenge ?? salaryResult.total_amount_tenge).toLocaleString()} тг
+                  </div>
+                </div>
+              )}
+              {/* A miss nobody has priced is not a zero — say it is still being decided. */}
+              {(salaryResult.fines_unpriced ?? 0) > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Ещё {salaryResult.fines_unpriced} нарушение(я) ждёт решения завуча — сумма по ним пока не назначена.
+                </p>
+              )}
               <div className="rounded-md border border-gray-200 dark:border-border bg-muted/40 p-3 text-sm space-y-1">
                 <div>
                   Индивидуальный урок — {salaryResult.individual_rate} ₸/час
