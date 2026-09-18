@@ -4,7 +4,7 @@ import { api, API_BASE_URL } from './client';
 
 /**
  * The head teachers' register: who was late, who cut a lesson short, who never came, and what it
- * costs at 300 ₸ a minute. Filled from the Meet record and corrected by a head teacher.
+ * costs at 200 ₸ a minute. Filled from the Meet record and corrected by a head teacher.
  *
  * Never cached: a head teacher waives a fine and expects the totals to move on the next breath,
  * and a lesson's Meet record can land at any time while the period is open.
