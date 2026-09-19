@@ -74,6 +74,24 @@ describe('hasCurator', () => {
     expect(hasCurator('SAT July 3|No curator')).toBe(false);
   });
 
+  it('reads the curator suffix used by the current Telegram groups', () => {
+    for (const title of [
+      'i was looking for the job and then i found a job (september 1 ielts CURATOR)',
+      'to be or not to bee (IELTS AUGUST 6 CURATOR)',
+      'mimimi (IELTS August 2 CURATOR)',
+      'auauaua (IELTS August 3 CURATOR)',
+      'ehhhhh (JULY 7 IELTS CURATOR)',
+      'this and that (september 2 IELTS CURATOR)',
+      'nothing beats a jet2holiday (SAT 23 july CURATOR)',
+      'never gonna give u up (SAT july 21 CURATOR)',
+      'ah, here we go again (SAT July 24 CURATOR)',
+    ]) {
+      expect(hasCurator(title), title).toBe(true);
+    }
+    expect(hasCurator('surviving this course (SAT july 22)')).toBe(false);
+    expect(hasCurator('береженого бог бережет (SAT august 4)')).toBe(false);
+  });
+
   it('treats an empty title as without', () => {
     expect(hasCurator('')).toBe(false);
   });

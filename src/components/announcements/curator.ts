@@ -39,6 +39,21 @@ const TAGGED_PATTERN = new RegExp(
   'iu',
 );
 
+// Older groups often put the role at the end of the title, usually inside
+// parentheses: "IELTS August 6 CURATOR" or "... (CURATOR)".
+const TRAILING_ROLE_PATTERN = new RegExp(
+  `(?:^|[^\\p{L}])(?:${TAGGED_ROLES.join('|')})\\s*[)\\]]?$`,
+  'iu',
+);
+const NEGATED_TRAILING_ROLE_PATTERN = new RegExp(
+  `\\b(?:without|no)\\s+(?:${TAGGED_ROLES.join('|')})\\s*[)\\]]?$`,
+  'iu',
+);
+
 export function hasCurator(title: string): boolean {
-  return CURATOR_PATTERN.test(title) || TAGGED_PATTERN.test(title);
+  return (
+    CURATOR_PATTERN.test(title) ||
+    TAGGED_PATTERN.test(title) ||
+    (TRAILING_ROLE_PATTERN.test(title) && !NEGATED_TRAILING_ROLE_PATTERN.test(title))
+  );
 }
