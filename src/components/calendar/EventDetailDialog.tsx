@@ -152,7 +152,7 @@ export default function EventDetailDialog({ event, open, onOpenChange, user, myR
             </div>
           )}
 
-          {event.event_type === 'class' && <LessonRecordingSection event={event} />}
+          {(event.event_type === 'class' || event.event_type === 'webinar') && <LessonRecordingSection event={event} />}
           {event.event_type === 'class' && <MeetAttendanceSection event={event} role={user?.role} />}
 
           {canAct && (

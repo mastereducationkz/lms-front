@@ -1160,7 +1160,7 @@ export interface Event {
   created_at?: string;
   updated_at?: string;
   /**
-   * The lesson's recording, for class lessons the viewer may watch; absent otherwise.
+   * The Meet recording, for classes and webinars the viewer may watch; absent otherwise.
    * Status only — the calendar response is cached, so it never carries a playback link.
    */
   recording?: RecordingSummary | null;

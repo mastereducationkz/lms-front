@@ -101,7 +101,7 @@ describe('the calendar Recordings filter', () => {
   const failed = lesson({ recording: { status: 'failed' } });
   const unrecorded = lesson();
   const ahead = lesson({ start_datetime: '2026-09-11T14:00:00Z', end_datetime: '2026-09-11T15:00:00Z' });
-  const webinar = lesson({ event_type: 'webinar', recording: null });
+  const webinar = lesson({ event_type: 'webinar', recording: { status: 'pending' } });
 
   it('keeps everything on "all"', () => {
     for (const e of [recorded, unrecorded, ahead, webinar]) expect(matchesRecordingFilter(e, 'all', now)).toBe(true);
@@ -124,8 +124,8 @@ describe('the calendar Recordings filter', () => {
     expect(matchesRecordingFilter(ahead, 'without', now)).toBe(false);
   });
 
-  it('is about lessons: other events fall out of both choices', () => {
-    expect(matchesRecordingFilter(webinar, 'with', now)).toBe(false);
+  it('includes webinars in the recording filters', () => {
+    expect(matchesRecordingFilter(webinar, 'with', now)).toBe(true);
     expect(matchesRecordingFilter(webinar, 'without', now)).toBe(false);
   });
 });

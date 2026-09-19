@@ -142,7 +142,7 @@ export function splitLessonTitle(
  */
 export function matchesRecordingFilter(event: Event, filter: RecordingFilter, now: number = Date.now()): boolean {
   if (filter === 'all') return true;
-  if (event.event_type !== 'class') return false;
+  if (event.event_type !== 'class' && event.event_type !== 'webinar') return false;
   const status = event.recording?.status;
   const hasOne = status === 'ready' || status === 'pending';
   if (filter === 'with') return hasOne;
