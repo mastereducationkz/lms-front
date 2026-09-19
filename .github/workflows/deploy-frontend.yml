@@ -30,6 +30,9 @@ jobs:
             echo "🚀 Deploying frontend..."
             cd ~/projects/lms-frontend
             git config core.fileMode false
+            # The production host cannot reach GitHub over SSH (port 22); use the public
+            # repository's HTTPS endpoint for deployment fetches.
+            git remote set-url origin https://github.com/mastereducationkz/lms-front.git
             git fetch origin master
             git checkout master
             git pull --ff-only origin master
