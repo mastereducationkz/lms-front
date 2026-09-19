@@ -13,6 +13,9 @@ import {
   type WeeklySatTest,
   type WeeklyIeltsTest,
 } from '../services/api';
+import ParentReportCard from '../components/parentReports/ParentReportCard';
+import { mondayOf } from '../lib/parentReportWeek';
+import { fetchParentStudentFacts, type ParentStudentResponse } from '../services/api/reports';
 
 /**
  * Полный отчёт об успеваемости студента для куратора / хэд-куратора /
@@ -101,6 +104,31 @@ export default function StudentReportPage() {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
+  const [parentOpen, setParentOpen] = useState(false);
+  const [parentWeek] = useState(() => mondayOf(new Date()));
+  const [parentData, setParentData] = useState<ParentStudentResponse | null>(null);
+  const [parentLoading, setParentLoading] = useState(false);
+  const [parentError, setParentError] = useState<string | null>(null);
+
+  const openParentReport = async () => {
+    if (!report) return;
+    setParentOpen(true);
+    // Сбрасываем перед запросом: иначе при повторном открытии карточка секунду показывает
+    // данные прошлого открытия, как будто это свежие.
+    setParentData(null);
+    setParentError(null);
+    setParentLoading(true);
+    try {
+      setParentData(await fetchParentStudentFacts(report.student.id, parentWeek));
+    } catch {
+      // Не сводим ошибку к пустой карточке: «отчёта ещё нет» и «мы не смогли его получить» —
+      // разные вещи, и во втором случае куратор не должен генерировать поверх существующего.
+      setParentError('Не удалось загрузить данные за неделю');
+    } finally {
+      setParentLoading(false);
+    }
+  };
+
   const [exportSections, setExportSections] = useState<Record<string, boolean>>(
     () => Object.fromEntries(PDF_SECTIONS.map(s => [s.key, !s.optIn])),
   );
@@ -268,6 +296,7 @@ export default function StudentReportPage() {
             ))}
           </div>
         </div>
+        <Button variant="outline" onClick={openParentReport}>Текст для родителей</Button>
         <Button onClick={() => setExportOpen(true)}>Скачать PDF</Button>
       </div>
 
@@ -709,6 +738,41 @@ export default function StudentReportPage() {
               >
                 {downloading ? 'Формируем…' : 'Скачать PDF'}
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Клик по фону здесь намеренно не закрывает окно, в отличие от диалога экспорта:
+          там нечего терять, а тут в текстовых полях лежит то, что куратор набрал руками,
+          и промах мимо панели стирал бы это молча. Закрытие — только кнопкой. */}
+      {parentOpen && report && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h3 className="text-base font-semibold text-gray-900">Текст для родителей</h3>
+              <button
+                type="button"
+                className="text-gray-500 text-sm"
+                onClick={() => setParentOpen(false)}
+              >
+                Закрыть
+              </button>
+            </div>
+            <div className="p-4">
+              {parentLoading && (
+                <p className="text-sm text-gray-500">Загружаем данные за неделю…</p>
+              )}
+              {parentError && <p className="text-sm text-red-600">{parentError}</p>}
+              {!parentLoading && !parentError && (
+                <ParentReportCard
+                  studentId={report.student.id}
+                  studentName={report.student.name}
+                  week={parentWeek}
+                  initial={parentData}
+                  onSaved={setParentData}
+                />
+              )}
             </div>
           </div>
         </div>

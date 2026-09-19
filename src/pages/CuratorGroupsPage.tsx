@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Users, Search, Loader2, Check } from 'lucide-react';
 import api from '../services/api';
 import { toast } from '../components/Toast';
@@ -247,29 +248,36 @@ export default function CuratorGroupsPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {filtered.map((g) => (
-                <button
+                <div
                   key={g.id}
-                  onClick={() => setActive(g)}
-                  className="bg-card rounded-lg border p-4 text-left hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-md transition-all"
+                  className="bg-card rounded-lg border p-4 hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-md transition-all"
                 >
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <h3 className="font-semibold truncate">{g.name}</h3>
-                    {g.is_over && (
-                      <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border text-muted-foreground shrink-0">
-                        Завершена
-                      </span>
-                    )}
-                    {formatGroupCloseLabel(g) && (
-                      <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border border-dashed text-muted-foreground shrink-0">
-                        {formatGroupCloseLabel(g)}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-xs text-blue-600 dark:text-blue-400 mt-2 font-medium">
-                    Управлять составом →
-                  </div>
-                </button>
+                  <button onClick={() => setActive(g)} className="w-full text-left">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <h3 className="font-semibold truncate">{g.name}</h3>
+                      {g.is_over && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border text-muted-foreground shrink-0">
+                          Завершена
+                        </span>
+                      )}
+                      {formatGroupCloseLabel(g) && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border border-dashed text-muted-foreground shrink-0">
+                          {formatGroupCloseLabel(g)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-blue-600 dark:text-blue-400 mt-2 font-medium">
+                      Управлять составом →
+                    </div>
+                  </button>
+                  <Link
+                    to={`/curator/parent-reports?group=${g.id}`}
+                    className="block mt-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    Отчёты родителям →
+                  </Link>
+                </div>
               ))}
             </div>
           )}
