@@ -6,6 +6,13 @@ import {
   type ParentStudentResponse,
   type ParentTemplateKey,
 } from '../../services/api/reports';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
 
 const TEMPLATE_LABELS: Record<ParentTemplateKey, string> = {
   t1: 'Шаблон 1 — подробный',
@@ -184,19 +191,23 @@ export default function ParentReportCard({ studentId, studentName, week, initial
       </label>
 
       <div className="flex items-center gap-2">
-        <select
-          className="border border-gray-300 rounded-lg p-2 text-sm"
-          value={template}
-          onChange={e => setTemplate(e.target.value as ParentTemplateKey | '')}
+        <Select
+          value={template || 'auto'}
+          onValueChange={value => setTemplate(value === 'auto' ? '' : value as ParentTemplateKey)}
           disabled={busy}
         >
-          <option value="">
-            {suggested ? `Автовыбор (${TEMPLATE_LABELS[suggested]})` : 'Автовыбор'}
-          </option>
-          {(Object.keys(TEMPLATE_LABELS) as ParentTemplateKey[]).map(key => (
-            <option key={key} value={key}>{TEMPLATE_LABELS[key]}</option>
-          ))}
-        </select>
+          <SelectTrigger className="h-auto min-h-10 flex-1 rounded-lg border-gray-300 py-2 text-left">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="auto">
+              {suggested ? `Автовыбор (${TEMPLATE_LABELS[suggested]})` : 'Автовыбор'}
+            </SelectItem>
+            {(Object.keys(TEMPLATE_LABELS) as ParentTemplateKey[]).map(key => (
+              <SelectItem key={key} value={key}>{TEMPLATE_LABELS[key]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <button
           type="button"
           onClick={generate}
