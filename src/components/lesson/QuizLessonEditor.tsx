@@ -59,7 +59,6 @@ export default function QuizLessonEditor({
   setQuizType,
   quizMediaUrl,
   setQuizMediaUrl,
-  quizMediaType,
   setQuizMediaType,
   audioPlaybackMode = 'flexible',
   setAudioPlaybackMode,

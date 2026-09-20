@@ -8,7 +8,7 @@ import { Input } from './ui/input';
 import { Checkbox } from './ui/checkbox';
 import { Button } from './ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Clock } from 'lucide-react';
+import { Clock, Loader2 } from 'lucide-react';
 import ThinkingLoader from './ThinkingLoader';
 import apiClient, { generateSchedule } from '../services/api';
 import { toast } from './Toast';
