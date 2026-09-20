@@ -9,7 +9,7 @@ import { Toaster } from '../components/Toast';
 import OnboardingManager from '../components/OnboardingManager.tsx';
 import ProtectedRoute from '../components/ProtectedRoute.tsx';
 import AppLayout from '../layouts/AppLayout.tsx';
-import Loader from '../components/Loader';
+import ThinkingLoader from '../components/ThinkingLoader';
 
 // Pages are code-split with React.lazy so the initial download is a small app shell plus only
 // the chunk for the current route. Previously all ~59 pages were eagerly imported into a single
@@ -96,7 +96,7 @@ const StudentReportPage = lazy(() => import('../pages/StudentReportPage.tsx'));
 // Fallback shown while a route chunk is fetched.
 const RouteFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-    <Loader size="xl" animation="spin" color="#2563eb" />
+    <ThinkingLoader state="breathing" size={64} label="Loading page…" />
   </div>
 );
 

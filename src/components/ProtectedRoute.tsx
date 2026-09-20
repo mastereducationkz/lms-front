@@ -1,7 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import type { UserRole } from '../types';
-import Loader from './Loader';
+import ThinkingLoader from './ThinkingLoader';
 import TrialExpiredPanel from './trial/TrialExpiredPanel';
 import TrialBanner from './trial/TrialBanner';
 import { parseAsUTC } from '../lib/datetime';
@@ -27,9 +27,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // Show loading while checking authentication, but only for protected routes
   if (loading && requireAuth) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
-          <Loader size="xl" animation="spin" color="#2563eb" />
+          <ThinkingLoader state="connecting" size={64} label="Signing you in…" />
         </div>
       </div>
     );

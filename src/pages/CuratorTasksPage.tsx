@@ -18,6 +18,7 @@ import {
 } from '../components/ui/select';
 import { cn } from '../lib/utils';
 import { toast } from '../components/Toast';
+import ThinkingLoader from '../components/ThinkingLoader';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -779,7 +780,12 @@ export default function CuratorTasksPage() {
           )}
           {!isHeadCurator && (
             <Button onClick={handleGenerate} disabled={generating} size="sm" variant="ghost" className="h-7 px-2.5 text-xs text-gray-400 hover:text-gray-600">
-              {generating ? 'Обновление...' : '↻ Перегенерировать'}
+              {generating ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <ThinkingLoader state="weaving" size={20} label="Обновление задач…" />
+                  Обновление...
+                </span>
+              ) : '↻ Перегенерировать'}
             </Button>
           )}
         </div>
@@ -795,7 +801,12 @@ export default function CuratorTasksPage() {
           </p>
           {!isHeadCurator && (
             <Button onClick={handleGenerate} disabled={generating} size="sm" variant="outline">
-              {generating ? 'Генерация...' : 'Сгенерировать задачи'}
+              {generating ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <ThinkingLoader state="weaving" size={20} label="Генерация задач…" />
+                  Генерация...
+                </span>
+              ) : 'Сгенерировать задачи'}
             </Button>
           )}
         </div>

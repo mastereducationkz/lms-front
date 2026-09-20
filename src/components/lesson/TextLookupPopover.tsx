@@ -4,6 +4,7 @@ import { useSettings } from '../../contexts/SettingsContext';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { Loader2, X, Plus, Check, Search } from 'lucide-react';
+import ThinkingLoader from '../ThinkingLoader';
 
 interface LookupResult {
   word: string;
@@ -165,7 +166,7 @@ export const TextLookupPopover: React.FC<TextLookupPopoverProps> = ({ containerR
               <div 
                 className={`col-start-1 row-start-1 flex items-center justify-center transition-opacity duration-200 ${isLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
               >
-                <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
+                <ThinkingLoader state="searching" size={20} label={`Looking up "${selectedText}"…`} />
               </div>
               
               {/* Button Container */}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import type { Question } from '../../types';
 import { Button } from '../ui/button';
@@ -11,6 +11,7 @@ import apiClient from '../../services/api';
 import { renderTextWithLatex } from '../../utils/latex';
 import RichTextEditor from '../RichTextEditor';
 import PDFPreview from '../PDFPreview';
+import ThinkingLoader from '../ThinkingLoader';
 import { Upload, FileText, Image, Plus, Trash2, ChevronUp, ChevronDown, CheckCircle } from 'lucide-react';
 import { FillInBlankRenderer } from './FillInBlankRenderer';
 import { TextCompletionRenderer } from './TextCompletionRenderer';
@@ -94,6 +95,17 @@ export default function QuizLessonEditor({
   const [showSatImageModal, setShowSatImageModal] = useState(false);
   const [analyzeMode, setAnalyzeMode] = useState<'sat' | 'nuet'>('sat');
   const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
+  // AI analysis can run a minute: scan the document first, then switch to
+  // "solving" while the model structures the questions.
+  const [analyzeStage, setAnalyzeStage] = useState<'searching' | 'solving'>('searching');
+  useEffect(() => {
+    if (!isAnalyzingImage) {
+      setAnalyzeStage('searching');
+      return;
+    }
+    const t = window.setTimeout(() => setAnalyzeStage('solving'), 12_000);
+    return () => window.clearTimeout(t);
+  }, [isAnalyzingImage]);
   const [correctAnswersText, setCorrectAnswersText] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [showHelpModal, setShowHelpModal] = useState(false);
@@ -2701,13 +2713,18 @@ Italy = Rome`}</pre>
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                   size="lg"
                 >
-                  {isAnalyzingImage ? 'Analyzing...' : 'Analyze Questions'}
+                  {isAnalyzingImage ? (
+                    <span className="inline-flex items-center gap-2">
+                      <ThinkingLoader state={analyzeStage} size={20} theme="dark" />
+                      Analyzing...
+                    </span>
+                  ) : 'Analyze Questions'}
                 </Button>
 
                 {isAnalyzingImage && (
-                  <div className="text-center py-4">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="text-sm text-gray-600 mt-2">Analyzing file with {analyzeMode === 'nuet' ? 'ChatGPT' : 'Gemini'} AI... This may take a minute.</p>
+                  <div className="flex flex-col items-center py-4 gap-2">
+                    <ThinkingLoader state={analyzeStage} size={64} label={`Analyzing file with ${analyzeMode === 'nuet' ? 'ChatGPT' : 'Gemini'} AI`} />
+                    <p className="text-sm text-gray-600">Analyzing file with {analyzeMode === 'nuet' ? 'ChatGPT' : 'Gemini'} AI... This may take a minute.</p>
                   </div>
                 )}
               </div>
