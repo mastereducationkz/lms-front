@@ -116,3 +116,33 @@ describe('each drift, on its own', () => {
     expect(isAnswerComplete(quiz[2], undefined, ['a', 'c', ''])).toBe(true)
   })
 })
+
+describe('a typed answer is judged as a number when it is one', () => {
+  const shortAnswer = (correct: string) => ({
+    id: 'q1', question_type: 'short_answer', correct_answer: correct,
+  })
+
+  it('accepts a comma decimal on a short answer', () => {
+    // Reports 577 and 1811: key 13.5, student typed 13,5, marked wrong. Kazakh and Russian
+    // write decimals with a comma and nothing on screen asked for a point.
+    expect(gradeQuestion(shortAnswer('13.5'), '13,5', undefined).isCorrect).toBe(true)
+  })
+
+  it('accepts an equivalent fraction on a short answer', () => {
+    expect(gradeQuestion(shortAnswer('2.5'), '5/2', undefined).isCorrect).toBe(true)
+  })
+
+  it('still refuses a wrong number', () => {
+    expect(gradeQuestion(shortAnswer('13.5'), '13', undefined).isCorrect).toBe(false)
+  })
+
+  it('keeps honouring the | list of accepted answers', () => {
+    expect(gradeQuestion(shortAnswer('5|4|6'), '4', undefined).isCorrect).toBe(true)
+    expect(gradeQuestion(shortAnswer('5|4|6'), '7', undefined).isCorrect).toBe(false)
+  })
+
+  it('accepts a comma decimal in a fill-in-the-blank gap', () => {
+    const q = { id: 'q2', question_type: 'fill_blank', question_text: 'x = [[0.8]]' }
+    expect(gradeQuestion(q, undefined, ['0,8']).isCorrect).toBe(true)
+  })
+})

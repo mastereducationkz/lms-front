@@ -41,6 +41,8 @@ const ERROR_CLASS = 'border border-rose-500/30 bg-rose-500/10 text-rose-400'
 const PARTIAL_CLASS = 'border border-amber-500/30 bg-amber-500/10 text-amber-400'
 const REVIEW_CLASS = 'border border-border bg-muted text-muted-foreground'
 
+import { answersMatch } from './answerMatch'
+
 export const getAnswerKey = (q: { id: string | number } | { id: string | number } | null | undefined): string => {
   if (!q || q.id === undefined || q.id === null) return ''
   return String(q.id)
@@ -134,10 +136,15 @@ export const getExpectedAnswers = (question: any): string[] => {
   return []
 }
 
-// Exported so reviewStats.ts's gap-row grouping keys off the exact same normalisation
-// gradeQuestion uses to decide a gap's verdict (see #9: two independently-written copies of
-// this, even if identical today, are one drift away from a row merging two students who
-// actually disagreed with gradeQuestion — one of them would carry a verdict they didn't earn).
+// The grouping key for reviewStats.ts's answer-distribution rows.
+//
+// It is NO LONGER what decides a verdict: since 2026-09-23 gradeQuestion compares typed answers
+// with `answersMatch`, which reads numbers as numbers (13,5 == 13.5 == 27/2). The original
+// worry — a row merging two students who disagreed with gradeQuestion — still cannot happen,
+// because two answers sharing this key are the same string and so grade the same way. What can
+// happen is the reverse: 0,8 and 0.8 are both correct but group as two rows, and a correct row
+// whose spelling differs from the key is not highlighted as the key. That is a display nicety,
+// not a wrong verdict; reviewStats takes `isCorrect` from gradeQuestion either way.
 export const normalizeText = (value: unknown): string =>
   (value ?? '').toString().trim().toLowerCase()
 
@@ -174,14 +181,15 @@ export const gradeQuestion = (
   }
 
   if (type === 'fill_blank' || type === 'text_completion') {
-    const expected = getExpectedAnswers(question).map(normalizeText)
-    const provided = (gapAnswer || []).map(normalizeText)
+    const expected = getExpectedAnswers(question)
+    const provided = gapAnswer || []
     // The gaps on screen, and only those: the review marks exactly these.
     const total = visibleGapCount(question)
     let correct = 0
     const partResults: boolean[] = []
     for (let i = 0; i < total; i += 1) {
-      const partCorrect = !!(expected[i] && provided[i] && expected[i] === provided[i])
+      // answersMatch, not string equality: a gap answered 0,8 against a key of 0.8 is right.
+      const partCorrect = answersMatch(expected[i], provided[i])
       if (partCorrect) correct += 1
       partResults.push(partCorrect)
     }
@@ -206,10 +214,11 @@ export const gradeQuestion = (
     const allowed = (question.correct_answer || '')
       .toString()
       .split('|')
-      .map((a: string) => a.trim().toLowerCase())
+      .map((a: string) => a.trim())
       .filter((a: string) => a.length > 0)
-    const userVal = normalizeText(answer)
-    const isCorrect = allowed.includes(userVal)
+    // Any of the accepted answers, compared as a number when both sides are one — see
+    // answerMatch.ts for why a plain string comparison was marking correct work wrong.
+    const isCorrect = allowed.some((a: string) => answersMatch(a, answer))
     return { isCorrect, correctParts: isCorrect ? 1 : 0, totalParts: 1, isReview: false }
   }
 
