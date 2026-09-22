@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { reportErrorMessage } from '../../lib/questionReport';
 import { Button } from '../ui/button';
 import {
   AlertDialog,
@@ -533,7 +534,9 @@ const QuizRenderer = (props: QuizRendererProps) => {
       toast('Report submitted. Thank you!', 'success');
     } catch (error) {
       console.error('Failed to submit error report:', error);
-      toast('Failed to submit report. Please try again.', 'error');
+      // The server refuses a report for reasons the student can act on (too short to act on,
+      // or the daily ceiling) — telling them "try again" invites exactly the retry that fails.
+      toast(reportErrorMessage(error), 'error');
     } finally {
       setReportSubmitting(false);
     }
