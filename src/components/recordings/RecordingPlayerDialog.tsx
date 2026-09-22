@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { CalendarDays, Clock, Link2, Loader2, Timer, User, Users, VideoOff } from 'lucide-react';
+import { CalendarDays, Clock, Link2, Loader2, RotateCcw, Timer, User, Users, VideoOff } from 'lucide-react';
 import { toast } from 'sonner';
 import HlsVideoPlayer from '../HlsVideoPlayer';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../ui/dialog';
-import { getLessonRecording, retryRecording, type LessonRecording } from '../../services/api/recordings';
+import { getLessonRecording, retryRecording, restoreRecording, type LessonRecording } from '../../services/api/recordings';
+import RemoveRecordingDialog from './RemoveRecordingDialog';
+import { canRemoveRecording, removalNotice } from '../../lib/recordingRemoval';
 import { pollInterval, progressFor } from '../../lib/recordingProgress';
 import { RecordingProgressPanel } from './RecordingProgress';
 import { getMeetRecord } from '../../services/api/meetAttendance';
@@ -51,6 +53,9 @@ const TEXT = {
     copyFailed: 'Could not copy the link',
     nowReady: 'The recording is ready',
     retryFailed: 'Could not try the recording again',
+    remove: 'Remove',
+    restore: 'Restore',
+    restoreFailed: 'Could not restore the recording',
   },
   ru: {
     loading: 'Загружаем запись…',
@@ -65,6 +70,9 @@ const TEXT = {
     copyFailed: 'Не удалось скопировать ссылку',
     nowReady: 'Запись готова',
     retryFailed: 'Не удалось запустить запись снова',
+    remove: 'Удалить',
+    restore: 'Вернуть',
+    restoreFailed: 'Не удалось вернуть запись',
   },
 } as const;
 
@@ -114,6 +122,11 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
   const seesParticipants = RECORD_ROLES.has(user?.role ?? '');
   // Trying a failed recording again is for the people who answer for the pipeline.
   const canRetry = ['admin', 'head_teacher', 'head_curator'].includes(user?.role ?? '');
+  const canRemove = canRemoveRecording(user?.role);
+  const [removeOpen, setRemoveOpen] = useState(false);
+  // Why it is gone, when a human took it — a retention purge has no reason and must not read
+  // as somebody's decision (see lib/recordingRemoval).
+  const notice = removalNotice(recording);
   const playerBox = useRef<HTMLDivElement>(null);
 
   const eventId = meta?.eventId;
@@ -341,14 +354,43 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
               )}
             </ul>
           </DialogDescription>
-          <button
-            type="button"
-            onClick={copyLink}
-            className="inline-flex flex-none items-center gap-1.5 self-start rounded-lg border border-border px-3 py-1.5 text-[13px] font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:self-auto"
-          >
-            <Link2 className="h-3.5 w-3.5" aria-hidden />
-            {t.copy}
-          </button>
+          <div className="flex flex-none items-center gap-2 self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={copyLink}
+              className="inline-flex flex-none items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-[13px] font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Link2 className="h-3.5 w-3.5" aria-hidden />
+              {t.copy}
+            </button>
+            {canRemove && eventId != null && recording?.status !== 'removed' && (
+              <button
+                type="button"
+                onClick={() => setRemoveOpen(true)}
+                className="inline-flex flex-none items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-[13px] font-medium text-red-600 transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-red-400"
+              >
+                <VideoOff className="h-3.5 w-3.5" aria-hidden />
+                {t.remove}
+              </button>
+            )}
+            {canRemove && eventId != null && recording?.status === 'removed' && (
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await restoreRecording(eventId);
+                    setRecording(await getLessonRecording(eventId));
+                  } catch (e) {
+                    toast.error(e instanceof Error ? e.message : t.restoreFailed);
+                  }
+                }}
+                className="inline-flex flex-none items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-[13px] font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+                {t.restore}
+              </button>
+            )}
+          </div>
         </div>
         {(participants || talk) && (
           <div className="flex flex-col gap-3 px-5 pb-5 sm:px-6">
@@ -370,6 +412,24 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
           <aside className="flex min-h-0 min-w-[22rem] basis-[38%] flex-col border-l border-border">
             {talkPanel('side')}
           </aside>
+        )}
+        {canRemove && notice && (
+          <p className="px-5 pb-4 text-xs text-muted-foreground sm:px-6">{notice}</p>
+        )}
+        {canRemove && eventId != null && (
+          <RemoveRecordingDialog
+            eventId={eventId}
+            open={removeOpen}
+            onOpenChange={setRemoveOpen}
+            locale={locale}
+            onRemoved={async () => {
+              try {
+                setRecording(await getLessonRecording(eventId));
+              } catch {
+                /* the dialog already closed; the next open re-reads it */
+              }
+            }}
+          />
         )}
       </DialogContent>
     </Dialog>

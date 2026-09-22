@@ -57,6 +57,8 @@ export interface LessonRecording {
   duration_seconds?: number | null;
   /** While not ready: stage, step, percent, place in line. Absent from an older server. */
   progress?: RecordingProgress | null;
+  /** Why a human pulled this recording. Absent when retention removed it, or nobody did. */
+  hidden_reason?: string | null;
 }
 
 /**
@@ -241,4 +243,39 @@ export async function listRecordingDays(query: RecordingDaysQuery): Promise<Reco
   });
   const response = await api.get('/recordings/days', { params, cache: false } as never);
   return response.data as RecordingDays;
+}
+
+
+/**
+ * Take a lesson's recording out of circulation (admin / head teacher).
+ *
+ * `notRecorded` is the payroll switch: left false the lesson stays paid and only the video
+ * goes; set true it is marked as never recorded, which is what stops accountants paying it.
+ * Nothing is deleted either way — `restoreRecording` puts it back.
+ */
+export async function removeRecording(
+  eventId: number,
+  reason: string,
+  notRecorded: boolean,
+): Promise<{ status: string; hidden_reason?: string | null }> {
+  try {
+    const response = await api.post(`/events/${eventId}/recording/remove`, {
+      reason,
+      not_recorded: notRecorded,
+    });
+    return response.data;
+  } catch (error: unknown) {
+    const detail = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+    throw new Error(typeof detail === 'string' ? detail : 'Could not remove the recording');
+  }
+}
+
+export async function restoreRecording(eventId: number): Promise<{ status: string }> {
+  try {
+    const response = await api.post(`/events/${eventId}/recording/restore`);
+    return response.data;
+  } catch (error: unknown) {
+    const detail = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+    throw new Error(typeof detail === 'string' ? detail : 'Could not restore the recording');
+  }
 }
