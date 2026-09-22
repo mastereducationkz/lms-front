@@ -279,7 +279,7 @@ export interface ParentWeekTest {
 }
 
 export interface ParentWeekFacts {
-  student: { id: number; name: string };
+  student: { id: number; name: string; first_name: string; gender: 'male' | 'female' | null };
   group: { id: number | null; name: string | null };
   week: { start: string; end: string };
   test: ParentWeekTest | null;
@@ -302,7 +302,8 @@ export interface ParentWeekFacts {
   } | null;
   strength: { label: string; source: string; pct: number } | null;
   weakness: { label: string; source: string; pct: number } | null;
-  teacher_feedback: string | null;
+  teacher_feedback: { verbal: string | null; math: string | null } | null;
+  resources: string[];
   no_growth_streak: number;
   curator_note: string | null;
 }
