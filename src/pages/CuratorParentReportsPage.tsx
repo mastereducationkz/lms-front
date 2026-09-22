@@ -66,20 +66,26 @@ export default function CuratorParentReportsPage() {
       const data = await fetchParentGroupOverview(groupId, week);
       if (token !== loadId.current) return;
       setOverview(data);
-      const loaded: Record<string, ParentStudentResponse | null> = {};
+      // Карточка показывается сразу, как пришла: при холодном кеше платформы полный
+      // проход по группе занимает секунды, и ждать последнего ученика ради того, чтобы
+      // показать первого, — это пустой экран на всё это время.
       await runBounded(
         data.students,
         async student => {
+          const key = cardKey(student.id, week);
+          let value: ParentStudentResponse | null = null;
           try {
-            loaded[cardKey(student.id, week)] = await fetchParentStudentFacts(student.id, week);
+            value = await fetchParentStudentFacts(student.id, week);
           } catch {
-            loaded[cardKey(student.id, week)] = null;
+            value = null;
           }
+          // Проверка токена обязана быть здесь, а не только в конце: без неё ответы
+          // прошлой недели досыпались бы в состояние уже после переключения.
+          if (token !== loadId.current) return;
+          setDetails(prev => ({ ...prev, [key]: value }));
         },
         CONCURRENCY,
       );
-      if (token !== loadId.current) return;
-      setDetails(loaded);
     } catch {
       if (token === loadId.current) setError('Не удалось загрузить группу');
     } finally {
@@ -176,9 +182,9 @@ export default function CuratorParentReportsPage() {
       )}
 
       {error && <p className="text-sm text-red-600">{error}</p>}
-      {loading && <p className="text-sm text-gray-500">Загружаем…</p>}
+      {loading && !overview && <p className="text-sm text-gray-500">Загружаем…</p>}
 
-      {overview && !loading && (
+      {overview && (
         <>
           <div className="flex flex-wrap items-center gap-3">
             <button
@@ -199,37 +205,55 @@ export default function CuratorParentReportsPage() {
                 Не получилось: {failedCount} — откройте карточку и попробуйте ещё раз
               </span>
             )}
+            {loading && (
+              <span className="text-sm text-gray-500">Догружаем данные учеников…</span>
+            )}
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            {students.map(student => (
-              <div key={cardKey(student.id, week)} className="space-y-1">
-                {failed[cardKey(student.id, week)] && (
-                  <p className="text-xs text-amber-700">
-                    Не удалось сгенерировать при массовом запуске
-                  </p>
-                )}
-                <ParentReportCard
-                  studentId={student.id}
-                  studentName={student.name}
-                  week={week}
-                  initial={details[cardKey(student.id, week)] ?? null}
-                  onSaved={next => {
-                    const key = cardKey(student.id, week);
-                    setDetails(prev => ({ ...prev, [key]: next }));
-                    // Куратор перегенерировал карточку руками — ровно то, на что его
-                    // отправляет сообщение о сбое. Отметку надо снять, иначе она висит
-                    // над готовым отчётом, а счётчик «Не получилось» врёт при 100%.
-                    setFailed(prev => {
-                      if (!prev[key]) return prev;
-                      const rest = { ...prev };
-                      delete rest[key];
-                      return rest;
-                    });
-                  }}
-                />
-              </div>
-            ))}
+            {students.map(student => {
+              const key = cardKey(student.id, week);
+              // Факты по ученику ещё летят — карточка появится, как только придёт её
+              // очередь в runBounded; до этого честнее показать плейсхолдер, чем пустоту.
+              if (!(key in details)) {
+                return (
+                  <div
+                    key={key}
+                    className="bg-white border border-gray-200 rounded-xl p-4 space-y-2 animate-pulse"
+                  >
+                    <h3 className="text-base font-semibold text-gray-900">{student.name}</h3>
+                    <p className="text-sm text-gray-500">Загружаем данные…</p>
+                  </div>
+                );
+              }
+              return (
+                <div key={key} className="space-y-1">
+                  {failed[key] && (
+                    <p className="text-xs text-amber-700">
+                      Не удалось сгенерировать при массовом запуске
+                    </p>
+                  )}
+                  <ParentReportCard
+                    studentId={student.id}
+                    studentName={student.name}
+                    week={week}
+                    initial={details[key] ?? null}
+                    onSaved={next => {
+                      setDetails(prev => ({ ...prev, [key]: next }));
+                      // Куратор перегенерировал карточку руками — ровно то, на что его
+                      // отправляет сообщение о сбое. Отметку надо снять, иначе она висит
+                      // над готовым отчётом, а счётчик «Не получилось» врёт при 100%.
+                      setFailed(prev => {
+                        if (!prev[key]) return prev;
+                        const rest = { ...prev };
+                        delete rest[key];
+                        return rest;
+                      });
+                    }}
+                  />
+                </div>
+              );
+            })}
           </div>
         </>
       )}
