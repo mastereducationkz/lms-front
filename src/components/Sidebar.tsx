@@ -6,6 +6,7 @@ import { useVisiblePolling } from '../hooks/useVisiblePolling';
 import apiClient from '../services/api';
 import logoIco from '../assets/masteredlogo-ico.ico';
 import { CRM_ONBOARDING_URL, CRM_WORKSPACE_URL } from '../lib/crmLinks';
+import { attendanceBadge, type AttendanceBadgeTone, type AttendanceDue } from '../lib/attendanceBadge';
 import { 
   ExternalLink,
   Home, 
@@ -61,7 +62,8 @@ const getCategoryLabels = (isRu: boolean): Record<NavCategory, string> =>
       };
 
 // Navigation items: optional 7th field = category (defaults to primary),
-// optional 8th = show a "Soon" pill for a feature that is announced but not open yet.
+// optional 8th = show a "Soon" pill for a feature that is announced but not open yet,
+// optional 9th = badge tone (defaults to the red "act now" pill).
 type NavItemTuple = [
   to: string,
   label: string,
@@ -71,15 +73,28 @@ type NavItemTuple = [
   dataTour?: string,
   category?: NavCategory,
   comingSoon?: boolean,
+  badgeTone?: AttendanceBadgeTone,
 ];
+
+/** Red is "you can do this now"; amber is "waiting on Google Meet, nothing to do yet". Every
+ *  other badge in the sidebar is a plain count and stays red. */
+function badgeToneClass(tone?: AttendanceBadgeTone): string {
+  return tone === 'waiting'
+    ? 'bg-amber-500 text-white'
+    : 'bg-red-600 text-white';
+}
 
 function getNavigationItems(
   _userRole: string | undefined,
   unreadCount: number,
   unseenGradedCount: number = 0,
   isSpecialGroupStudent: boolean = false,
-  lessonRequestCount: number = 0
+  lessonRequestCount: number = 0,
+  attendanceDue?: AttendanceDue
 ): NavItemTuple[] {
+  // Muted while Google Meet still owes us the call, red the moment the register can actually
+  // be taken — see lib/attendanceBadge.
+  const attendance = attendanceBadge(attendanceDue);
   const allItems: NavItemTuple[] = [
     ['/dashboard', ['head_curator', 'curator'].includes(_userRole || '') ? 'Дашборд' : 'Dashboard', Home, 0, null, 'dashboard-nav', 'primary'],
     ['/calendar', ['head_curator', 'curator'].includes(_userRole || '') ? 'Календарь' : 'Calendar', Calendar, 0, null, 'calendar-nav', 'primary'],
@@ -94,7 +109,7 @@ function getNavigationItems(
     ['/favorites', 'My Favorites', Heart, 0, ['student'], 'favorites-nav', 'primary'],
     ['/teacher/courses', 'My Courses', BookMarked, 0, ['teacher'], 'courses-nav', 'primary'],
     ['/teacher/class', 'My Class', GraduationCap, 0, ['teacher'], 'students-nav', 'primary'],
-    ['/attendance', 'Attendance', UserCheck, 0, ['teacher', 'head_teacher', 'head_curator'], 'attendance-nav', 'primary'],
+    ['/attendance', 'Attendance', UserCheck, attendance.count, ['teacher', 'head_teacher', 'head_curator'], 'attendance-nav', 'primary', false, attendance.tone],
     ['/analytics', ['head_curator', 'curator'].includes(_userRole || '') ? 'Аналитика' : 'Analytics', BarChart3, 0, ['teacher', 'curator', 'admin', 'head_curator', 'head_teacher'], 'analytics-nav', 'primary'],
     ['/review', 'Quiz Review', Presentation, 0, ['teacher', 'curator', 'admin', 'head_curator', 'head_teacher'], 'quiz-review-nav', 'primary'],
     ['/curator/homeworks', ['head_curator', 'curator'].includes(_userRole || '') ? 'Домашние задания' : 'Homework', FileText, 0, ['curator', 'head_curator'], 'homework-analytics-nav', 'curator'],
@@ -170,6 +185,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
   const [unread, setUnread] = useState(0);
   const [unseenGraded, setUnseenGraded] = useState(0);
   const [lessonRequestCount, setLessonRequestCount] = useState(0);
+  const [attendanceDue, setAttendanceDue] = useState<AttendanceDue | undefined>(undefined);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [isCoursesExpanded, setIsCoursesExpanded] = useState(false);
@@ -214,6 +230,20 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
     },
     60000,
     !!user && ['teacher', 'head_teacher', 'head_curator', 'admin'].includes(user.role),
+  );
+
+  // Registers this person still owes. The dashboard card only nags a teacher who happens to be
+  // on the dashboard; a teacher who goes off to check the Meet room never sees it again. Polled
+  // like the others — which also means the badge turns actionable within a minute of Meet's data
+  // landing, wherever they happen to be.
+  useVisiblePolling(
+    () => {
+      apiClient.getAttendanceDue()
+        .then(setAttendanceDue)
+        .catch((error) => console.warn('Failed to load attendance due count:', error));
+    },
+    60000,
+    !!user && ['teacher', 'head_teacher', 'head_curator'].includes(user.role),
   );
 
   useEffect(() => {
@@ -352,7 +382,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
       
       <nav className="flex flex-col flex-1 overflow-y-auto min-h-0 pt-1">
         {buildNavSections(
-          getNavigationItems(user?.role, unread, unseenGraded, hideRestrictedStudentNav, lessonRequestCount),
+          getNavigationItems(user?.role, unread, unseenGraded, hideRestrictedStudentNav, lessonRequestCount, attendanceDue),
           user?.role
         )
           .map((section) => ({
@@ -376,7 +406,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                 <div className="mx-2 my-2 h-px bg-gray-200 dark:bg-gray-700 shrink-0" aria-hidden />
               )}
               <div className="flex flex-col gap-1">
-                {section.items.map(([to, label, Icon, badge, , dataTour, , comingSoon]) => {
+                {section.items.map(([to, label, Icon, badge, , dataTour, , comingSoon, badgeTone]) => {
                   // Handle expandable My Courses
                   if ((to === '/courses' && user?.role === 'student') || (to === '/teacher/courses' && user?.role === 'teacher')) {
                     return (
@@ -391,7 +421,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                             <>
                               <span className="flex-1 min-w-0 text-gray-800 dark:text-gray-200 text-sm text-left">{label}</span>
                               {badge > 0 && (
-                                <span className="ml-2 text-xs bg-red-600 text-white rounded-full px-2 py-0.5">{badge}</span>
+                                <span className={`ml-2 text-xs rounded-full px-2 py-0.5 ${badgeToneClass(badgeTone)}`}>{badge}</span>
                               )}
                               <ChevronRight className={`w-4 h-4 ml-1 shrink-0 transition-transform ${isCoursesExpanded ? 'rotate-90' : ''}`} />
                             </>
@@ -451,7 +481,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                           <>
                             <span className="flex-1 min-w-0 text-gray-800 dark:text-gray-200 text-sm">{label}</span>
                             {badge > 0 && (
-                              <span className="ml-2 text-xs bg-red-600 text-white rounded-full px-2 py-0.5">{badge}</span>
+                              <span className={`ml-2 text-xs rounded-full px-2 py-0.5 ${badgeToneClass(badgeTone)}`}>{badge}</span>
                             )}
                           </>
                         )}
@@ -480,7 +510,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                             </span>
                           )}
                           {badge > 0 && (
-                            <span className="ml-2 text-xs bg-red-600 text-white rounded-full px-2 py-0.5">{badge}</span>
+                            <span className={`ml-2 text-xs rounded-full px-2 py-0.5 ${badgeToneClass(badgeTone)}`}>{badge}</span>
                           )}
                         </>
                       )}

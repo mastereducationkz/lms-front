@@ -1,3 +1,4 @@
+import type { AttendanceDue } from '../../lib/attendanceBadge';
 import type {
   DashboardStats,
   RecentActivity,
@@ -19,6 +20,11 @@ export async function getDashboardStats(groupId?: number, startDate?: string, en
   } catch (error) {
     throw new Error('Failed to load dashboard stats');
   }
+}
+
+export async function getAttendanceDue(): Promise<AttendanceDue> {
+  const response = await api.get('/dashboard/attendance-due');
+  return response.data;
 }
 
 export async function getRecentActivity(limit: number = 10): Promise<RecentActivity[]> {
