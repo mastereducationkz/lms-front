@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import React from 'react'
 import { BookOpen, FileText, MessageSquare, Link as LinkIcon, CheckCircle, ExternalLink, Upload, X, FileSearch, Mic, Square, RotateCcw, AlertCircle, Star } from 'lucide-react';
 import { Button } from '../ui/button';
@@ -14,7 +14,7 @@ import { cn } from '../../lib/utils';
 import { AudioPlayer } from '../AudioPlayer';
 import { parseBluebookReport } from '../../services/api/exams';
 import { BluebookGraderPanel } from './BluebookGraderPanel';
-import { formatAssignmentTaskLabel } from '../../lib/assignmentTask';
+import { formatAssignmentTaskLabel, gatedLessonIds, type UnitGate } from '../../lib/assignmentTask';
 import { UploadFailedError } from '../../lib/uploadFailure';
 
 interface Task {
@@ -36,7 +36,7 @@ interface MultiTaskSubmissionProps {
   isSubmitting?: boolean;
   studentId?: string;
   onAutosave?: (answers: Record<string, any>) => Promise<any>;
-  unitGate?: { ready: boolean; missing: Array<{ lesson_id: number; title: string }> };
+  unitGate?: UnitGate;
 }
 
 // Course Unit Task Display Component
@@ -45,14 +45,24 @@ interface CourseUnitTaskDisplayProps {
   onCompletion: (completed: boolean) => void;
   readOnly: boolean;
   studentId?: string;
+  unitGate?: UnitGate;
 }
 
-function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId }: CourseUnitTaskDisplayProps) {
+function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId, unitGate }: CourseUnitTaskDisplayProps) {
   const [courseData, setCourseData] = useState<any>(null);
   const [lessonsData, setLessonsData] = useState<any[]>([]);
   const [lessonProgress, setLessonProgress] = useState<Record<number, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [resolvedCourseId, setResolvedCourseId] = useState<number | null>(null);
+
+  // Only the lessons the server gates on: a checkpoint ticked into this task is not a unit and
+  // is invisible to the student, so counting it would show "1 / 2" for ever and keep the task
+  // from ever marking itself done.
+  const countedLessonIds = useMemo(
+    () => gatedLessonIds(task.content?.lesson_ids, unitGate),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(task.content?.lesson_ids), JSON.stringify(unitGate?.lesson_ids)],
+  );
 
   const resolveCourseId = async (): Promise<number | null> => {
     const rawCourseId = task.content?.course_id
@@ -61,7 +71,7 @@ function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId }: Cour
       return Number.isNaN(parsed) ? null : parsed
     }
 
-    const firstLessonId = task.content?.lesson_ids?.[0]
+    const firstLessonId = countedLessonIds[0] ?? task.content?.lesson_ids?.[0]
     if (!firstLessonId) return null
 
     const lesson = await apiClient.getLesson(String(firstLessonId))
@@ -101,14 +111,14 @@ function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId }: Cour
       
       // Filter to only the lessons in this task
       const taskLessons = allLessons.filter((lesson: any) => 
-        task.content.lesson_ids?.includes(lesson.id)
+        countedLessonIds.includes(lesson.id)
       );
       
       setLessonsData(taskLessons);
       
       // Check completion status for each lesson
       const progressMap: Record<number, boolean> = {};
-      for (const lessonId of task.content.lesson_ids || []) {
+      for (const lessonId of countedLessonIds) {
         const lesson = taskLessons.find((l: any) => l.id === lessonId);
         if (lesson) {
           progressMap[lessonId] = lesson.is_completed || false;
@@ -124,15 +134,18 @@ function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId }: Cour
   };
 
   useEffect(() => {
-    if (task.content.lesson_ids?.length > 0) {
+    if (countedLessonIds.length > 0) {
       setLoading(true);
       fetchCourseAndLessons();
     } else {
+      setLessonsData([]);
+      setLessonProgress({});
       setLoading(false);
     }
-    // Only re-fetch when course_id or lesson_ids actually change, not on every studentId/readOnly change
+    // Only re-fetch when course_id or the counted lesson ids actually change, not on every
+    // studentId/readOnly change
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [task.content.course_id, JSON.stringify(task.content.lesson_ids)]);
+  }, [task.content.course_id, JSON.stringify(countedLessonIds)]);
 
   // These (and the effect below) MUST run before the `if (loading) return` below —
   // React requires the same hooks to run on every render, and an early return before
@@ -141,7 +154,7 @@ function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId }: Cour
   // flips. While loading, `lessonProgress` is still `{}`, so `allLessonsCompleted`
   // correctly evaluates to false — no risk of firing onCompletion prematurely.
   const completedCount = Object.values(lessonProgress).filter(c => c).length;
-  const totalCount = task.content.lesson_ids?.length || 0;
+  const totalCount = countedLessonIds.length;
   const allLessonsCompleted = totalCount > 0 && completedCount === totalCount;
 
   // Lesson completion is verified server-side (see unit_gate on the assignment
@@ -212,7 +225,7 @@ function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId }: Cour
               );
             })
           ) : (
-            task.content.lesson_ids?.map((lessonId: number) => (
+            countedLessonIds.map((lessonId: number) => (
               <div key={lessonId} className="text-sm flex items-center justify-between">
                 <span>Lesson #{lessonId}</span>
                 {!readOnly && resolvedCourseId && (
@@ -872,6 +885,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
             onCompletion={(completed) => handleTaskCompletion(task.id, { completed })}
             readOnly={readOnly}
             studentId={studentId}
+            unitGate={unitGate}
           />
         );
 
@@ -1400,8 +1414,10 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
     // be wiped by an `initialAnswers` re-sync (which races the lesson fetch), leaving
     // submit permanently blocked even though every lesson is objectively done.
     if (task.task_type === 'course_unit') {
-      const lessonIds: number[] = task.content?.lesson_ids || [];
-      if (lessonIds.length > 0 && unitGate && Array.isArray(unitGate.missing)) {
+      // Only the lessons the server gates on — a checkpoint ticked into the task is not a unit
+      // and never appears in `missing`, so counting it here would leave the task incomplete.
+      const lessonIds = gatedLessonIds(task.content?.lesson_ids, unitGate);
+      if (unitGate && Array.isArray(unitGate.missing)) {
         const missingIds = new Set(unitGate.missing.map((m) => m.lesson_id));
         if (lessonIds.every((lid) => !missingIds.has(lid))) return true;
       }

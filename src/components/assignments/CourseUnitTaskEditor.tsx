@@ -82,7 +82,10 @@ export default function CourseUnitTaskEditor({ content, onContentChange }: Cours
         apiClient.getAssignedLessonsForCourse(courseId),
       ]);
 
-      setLessons(lessonsData);
+      // Checkpoint quiz lessons are assessments, not units: they exist only for the checkpoints
+      // pilot and a student outside it can never open one, so a homework gated on a checkpoint
+      // can never be submitted. Keep them out of the picker entirely (the server drops them too).
+      setLessons(lessonsData.filter((lesson: any) => lesson?.kind !== 'checkpoint'));
 
       // Group assigned lessons by lesson_id
       const grouped: Record<number, AssignedLessonInfo[]> = {};
