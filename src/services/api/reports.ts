@@ -303,6 +303,7 @@ export interface ParentWeekFacts {
   strength: { label: string; source: string; pct: number } | null;
   weakness: { label: string; source: string; pct: number } | null;
   teacher_feedback: { verbal: string | null; math: string | null } | null;
+  resources: string[];
   no_growth_streak: number;
   curator_note: string | null;
 }
