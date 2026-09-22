@@ -148,6 +148,17 @@ export default function CuratorParentReportsPage() {
   const failedCount = students.filter(s => failed[cardKey(s.id, week)]).length;
   const busy = loading || bulkRunning;
 
+  // Незагруженные ученики (нет ключа в details) и упавшие запросы (details[key] === null)
+  // не попадают ни в одну корзину — иначе сводка на секунду соврёт, пока карточки ещё летят.
+  const loadedFacts = students
+    .map(s => details[cardKey(s.id, week)])
+    .filter((entry): entry is ParentStudentResponse => entry != null)
+    .map(entry => entry.facts);
+  const loadedCount = loadedFacts.length;
+  const withTestCount = loadedFacts.filter(f => f.test !== null).length;
+  const withoutTestCount = loadedFacts.filter(f => f.test === null && !f.test_unavailable).length;
+  const unknownTestCount = loadedFacts.filter(f => f.test_unavailable === true).length;
+
   return (
     <div className="p-6 space-y-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -210,6 +221,21 @@ export default function CuratorParentReportsPage() {
             )}
           </div>
 
+          {loadedCount > 0 && (withoutTestCount > 0 || unknownTestCount > 0) && (
+            // Спокойный тон нарочно: отсутствие теста — не поломка, поэтому не amber и не error.
+            <div className="text-sm text-gray-500 space-y-0.5">
+              {withoutTestCount > 0 && (
+                <p>
+                  Тест за эту неделю есть у {withTestCount} из {loadedCount} — у остальных отчёт
+                  выйдет без результатов, прогресса и разбора навыков.
+                </p>
+              )}
+              {unknownTestCount > 0 && (
+                <p>По {unknownTestCount} — платформа не ответила, есть ли тест, неизвестно.</p>
+              )}
+            </div>
+          )}
+
           <div className="grid gap-4 md:grid-cols-2">
             {students.map(student => {
               const key = cardKey(student.id, week);
@@ -226,11 +252,25 @@ export default function CuratorParentReportsPage() {
                   </div>
                 );
               }
+              const facts = details[key]?.facts;
+              const noTestYet = facts != null && facts.test === null && !facts.test_unavailable;
+              const testStatusUnknown = facts != null && facts.test_unavailable === true;
               return (
                 <div key={key} className="space-y-1">
                   {failed[key] && (
                     <p className="text-xs text-amber-700">
                       Не удалось сгенерировать при массовом запуске
+                    </p>
+                  )}
+                  {/* Тише amber-уведомления выше: отсутствие теста — это факт, а не сбой. */}
+                  {noTestYet && (
+                    <p className="text-xs text-gray-400">
+                      Теста за эту неделю нет — отчёт будет без результатов
+                    </p>
+                  )}
+                  {testStatusUnknown && (
+                    <p className="text-xs text-gray-400">
+                      Платформа не ответила — есть ли тест, неизвестно
                     </p>
                   )}
                   <ParentReportCard
