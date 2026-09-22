@@ -279,7 +279,7 @@ export interface ParentWeekTest {
 }
 
 export interface ParentWeekFacts {
-  student: { id: number; name: string };
+  student: { id: number; name: string; first_name: string; gender: 'male' | 'female' | null };
   group: { id: number | null; name: string | null };
   week: { start: string; end: string };
   test: ParentWeekTest | null;
