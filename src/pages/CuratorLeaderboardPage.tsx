@@ -657,6 +657,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   const [registerMode, setRegisterMode] = useState<RegisterMode>('off');
   const [meetLessonState, setMeetLessonState] = useState<Map<number, string>>(new Map());
   const [reviewOptions, setReviewOptions] = useState<MeetReviewOptions>({});
+  // Bumped after a journal save so the Meet list is read again: ✎ and reasons show without a reload.
+  const [meetRefresh, setMeetRefresh] = useState(0);
   // Reasons for changing marks Meet decided, by "studentId:lessonKey" — asked once, at «Сохранить».
   const [overrideReasons, setOverrideReasons] = useState<Map<string, OverrideReason>>(new Map());
   const [overrideAsk, setOverrideAsk] = useState<OverrideAsk[] | null>(null);
@@ -823,7 +825,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       })
       .catch(() => { if (!cancelled) { setMeetMismatches(new Map()); setMeetTalk(new Map()); setMeetVerdicts(new Map()); setMeetRegister(new Map()); setMeetLessonState(new Map()); } });
     return () => { cancelled = true; };
-  }, [selectedGroupId, data]);
+  }, [selectedGroupId, data, meetRefresh]);
 
   const loadLeaderboard = async () => {
     if (!selectedGroupId) return;
@@ -1280,6 +1282,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
             setTouchedExcuses(new Set());
             setConfigChanged(false);
             setOverrideReasons(new Map());
+            if (attendanceUpdates.length) setMeetRefresh((n) => n + 1);
             
             // Reload config from server to ensure it's persisted
             try {
