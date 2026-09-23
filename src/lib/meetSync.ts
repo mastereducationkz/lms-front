@@ -35,6 +35,7 @@ export const STEP_LABEL: Record<MeetSyncStep, string> = {
   rooms: 'Updating room settings',
   claimed: 'Looking for new recordings',
   attendance: 'Saving who joined',
+  register: 'Taking the register',
   speech: 'Reading who spoke',
   ingested: 'Saving recordings',
   transcribed: 'Transcribing lessons',

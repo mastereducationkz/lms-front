@@ -1,6 +1,7 @@
 import { api } from './client';
 import type { MeetLessonTalk } from './meetTalk';
 import type { LessonRecordingStatus } from './recordings';
+import type { RegisterMode, StudentRegister } from './meetRegister';
 
 /**
  * Who was in a lesson's Meet room, from when to when — read from what Meet reported.
@@ -138,6 +139,8 @@ export interface MeetPerson extends MeetPresence {
   flags: MeetFlag[];
   /** Students only. */
   verdict?: MeetVerdict;
+  /** What the register says about this student in this lesson. Absent from an older server. */
+  register?: StudentRegister | null;
 }
 
 export interface MeetUnknownAccount extends MeetAccount, MeetPresence {
@@ -191,7 +194,7 @@ export interface MeetWaiting {
 }
 
 /** The recordings worker's steps, in the order a check runs them. */
-export type MeetSyncStep = 'links' | 'rooms' | 'claimed' | 'attendance' | 'speech' | 'ingested' | 'transcribed' | 'missing';
+export type MeetSyncStep = 'links' | 'rooms' | 'claimed' | 'attendance' | 'register' | 'speech' | 'ingested' | 'transcribed' | 'missing';
 
 /** What the LMS's check with Google Meet is doing; null before the worker has ever run. */
 export interface MeetSync {
@@ -221,6 +224,8 @@ export interface MeetRecord {
   sync?: MeetSync | null;
   /** Some call Google has not handed over yet; what is shown may grow. */
   partial?: boolean;
+  /** The register switch's setting for this lesson. Absent from an older server. */
+  register_mode?: RegisterMode;
   calls?: { started_at: string | null; ended_at: string | null }[];
   teacher?: MeetPerson | null;
   students?: MeetPerson[];
@@ -310,6 +315,8 @@ export interface MeetLessonSummary {
 
 export interface MeetStudentVerdict extends Omit<MeetVerdict, 'attended'> {
   user_id: number;
+  /** What the register says about this student in this lesson. Absent from an older server. */
+  register?: StudentRegister | null;
 }
 
 export interface MeetLessonRecording {
@@ -335,6 +342,8 @@ export async function listMeetRecords(query: MeetRecordsQuery = {}): Promise<{
   /** What the check with Google Meet is doing; null before it has ever run. */
   sync?: MeetSync | null;
   verdict_rules?: MeetVerdictRules;
+  /** The register switch's setting for this range. Absent from an older server. */
+  register_mode?: RegisterMode;
 }> {
   const params: Record<string, string | number> = {};
   Object.entries(query).forEach(([key, value]) => {

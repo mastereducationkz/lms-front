@@ -181,6 +181,9 @@ export async function updateAttendanceBulk(data: {
     activity_score?: number | null;
     excused?: boolean;
     excuse_note?: string | null;
+    /** Why a mark Meet decided was changed (2026-09-23); only sent when the teacher gave one. */
+    override_reason_code?: string | null;
+    override_reason_text?: string | null;
   }>;
 }): Promise<any> {
   try {
