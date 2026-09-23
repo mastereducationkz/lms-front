@@ -26,9 +26,12 @@ import { formatGroupCloseDate } from '../lib/groupList';
 import { isAttendanceLockedLesson } from '../lib/attendance';
 import { canBeExcused, displaysAsAbsence, excuseAwareStatus, excusePayload, isAbsenceStatus } from '../lib/excusedAbsence';
 import { ExcusePopover } from '../components/attendance/ExcusePopover';
-import { listMeetRecords, type MeetLessonFlag, type MeetStudentVerdict } from '../services/api/meetAttendance';
+import { listMeetRecords, type MeetLessonFlag, type MeetReviewOptions, type MeetStudentVerdict } from '../services/api/meetAttendance';
 import { flagText, flagTextRu, mismatchIndex, reasonText, verdictIndex } from '../lib/meetAttendance';
 import { MeetVerdictBadge, verdictNote } from '../components/meetAttendance/MeetVerdictBadge';
+import type { RegisterMode, StudentRegister } from '../services/api/meetRegister';
+import { lessonStateIndex, overridesToAsk, reasonPayload, registerIndex, registerNote, scoreDue, type OverrideAsk, type OverrideReason } from '../lib/meetRegister';
+import { OverrideReasonsDialog } from '../components/meetAttendance/OverrideReasonsDialog';
 import { spokeNote, talkSecondsIndex } from '../lib/meetTalk';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
@@ -648,7 +651,16 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   const [meetTalk, setMeetTalk] = useState<Map<string, number>>(new Map());
   // Meet's verdict on each student in each lesson ("eventId:studentId"): beside the mark, never instead of it.
   const [meetVerdicts, setMeetVerdicts] = useState<Map<string, MeetStudentVerdict>>(new Map());
-  
+  // Meet takes the register (2026-09-23): what it did per "eventId:studentId", the switch, and each
+  // lesson's Meet state (a covered lesson still waiting reads «Meet отметит» instead of «Не отмечено»).
+  const [meetRegister, setMeetRegister] = useState<Map<string, StudentRegister>>(new Map());
+  const [registerMode, setRegisterMode] = useState<RegisterMode>('off');
+  const [meetLessonState, setMeetLessonState] = useState<Map<number, string>>(new Map());
+  const [reviewOptions, setReviewOptions] = useState<MeetReviewOptions>({});
+  // Reasons for changing marks Meet decided, by "studentId:lessonKey" — asked once, at «Сохранить».
+  const [overrideReasons, setOverrideReasons] = useState<Map<string, OverrideReason>>(new Map());
+  const [overrideAsk, setOverrideAsk] = useState<OverrideAsk[] | null>(null);
+
   // Changes tracking: Set of student IDs that have changes
   const [changedEntries, setChangedEntries] = useState<Set<number>>(new Set());
   // "studentId:lessonNumber" pairs whose excuse the user actually edited this session.
@@ -789,6 +801,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       setMeetMismatches(new Map());
       setMeetTalk(new Map());
       setMeetVerdicts(new Map());
+      setMeetRegister(new Map()); setMeetLessonState(new Map());
       return;
     }
     const DAY = 24 * 60 * 60 * 1000;
@@ -803,8 +816,12 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         setMeetMismatches(mismatchIndex(r.items));
         setMeetTalk(talkSecondsIndex(r.items));
         setMeetVerdicts(verdictIndex(r.items));
+        setMeetRegister(registerIndex(r.items));
+        setRegisterMode(r.register_mode ?? 'off');
+        setMeetLessonState(lessonStateIndex(r.items));
+        setReviewOptions(r.review_options ?? {});
       })
-      .catch(() => { if (!cancelled) { setMeetMismatches(new Map()); setMeetTalk(new Map()); setMeetVerdicts(new Map()); } });
+      .catch(() => { if (!cancelled) { setMeetMismatches(new Map()); setMeetTalk(new Map()); setMeetVerdicts(new Map()); setMeetRegister(new Map()); setMeetLessonState(new Map()); } });
     return () => { cancelled = true; };
   }, [selectedGroupId, data]);
 
@@ -1111,9 +1128,24 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
     }
   };
 
-  const handleSaveChanges = async () => {
+  const handleSaveChanges = async (confirmedReasons?: Map<string, OverrideReason>) => {
     if (!selectedGroupId || (!configChanged && changedEntries.size === 0) || !data) return;
-    
+    const reasons = confirmedReasons ?? overrideReasons;
+    // A mark Meet decided that this save contradicts about attending needs a reason — asked once for
+    // the whole save, never on each click of the cycle toggle (2026-09-23).
+    if (canMarkAttendance) {
+      const lessonLabel = (key: string) => {
+        const meta = data.lessons.find((l) => l.lesson_number.toString() === key);
+        const day = meta ? parseAsUTC(meta.start_datetime).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }) : '';
+        return `${t('Урок', 'Lesson')} ${key}${day ? ` · ${day}` : ''}`;
+      };
+      const ask = overridesToAsk(data.students, changedEntries, meetRegister, reasons, lessonLabel);
+      if (ask.length > 0) {
+        setOverrideAsk(ask);
+        return;
+      }
+    }
+
     setIsSaving(true);
     let successCount = 0;
     let attendanceFailures = 0;
@@ -1206,6 +1238,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                         // while this loop otherwise walks every lesson of every changed
                         // student, touched or not.
                         ...excusePayload(excuseTouched, excuseValue, lessonStatus.excuse_note ?? null),
+                        // Why a mark Meet decided was changed, when the teacher gave a reason.
+                        ...reasonPayload(reasons.get(`${student.student_id}:${lessonKey}`)),
                     });
                 }
             }
@@ -1241,6 +1275,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
             setChangedEntries(new Set());
             setTouchedExcuses(new Set());
             setConfigChanged(false);
+            setOverrideReasons(new Map());
             
             // Reload config from server to ensure it's persisted
             try {
@@ -1384,7 +1419,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         <div className="flex items-center justify-between gap-3">
           {titleSlot ?? <h1 className="text-xl font-semibold text-gray-800 dark:text-foreground">{t('Лидерборд', 'Leaderboard')}</h1>}
           <Button
-              onClick={handleSaveChanges}
+              onClick={() => void handleSaveChanges()}
               disabled={(!configChanged && changedEntries.size === 0) || isSaving}
               size="sm"
               className={cn(
@@ -1895,6 +1930,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                             // lessons are handled by the toggle's isFuture branch.
                             const unmarked =
                                 !preEnroll && !frozenLesson && !blockedLesson && !cellIsFuture && lessonStatus?.marked === false;
+                            const needsScore = scoreDue(meetRegister.get(`${lessonInfo.event_id}:${student.student_id}`), status, lessonStatus?.activity_score);
 
                             return (
                                 <TableCell key={`cell-${lessonKey}`} className="p-0 border-r border-gray-300 dark:border-border">
@@ -1929,10 +1965,12 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                     : '')}
                                         >
                                             <span className="w-full text-center text-[9px] md:text-[10px] leading-tight font-semibold uppercase text-gray-400 dark:text-gray-500 border border-dashed border-gray-300 dark:border-border rounded px-1 py-1">
-                                                {isTeacher ? <>Not<br/>marked</> : <>Не<br/>отмечено</>}
+                                                {registerMode === 'live' && meetLessonState.get(lessonInfo.event_id ?? -1) === 'waiting'
+                                                    ? (isTeacher ? <>Meet<br/>will mark</> : <>Meet<br/>отметит</>)
+                                                    : (isTeacher ? <>Not<br/>marked</> : <>Не<br/>отмечено</>)}
                                             </span>
                                             {meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`) && (
-                                                <MeetVerdictBadge verdict={meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`)!} locale={isTeacher ? 'en' : 'ru'} />
+                                                <MeetVerdictBadge verdict={meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`)!} locale={isTeacher ? 'en' : 'ru'} register={meetRegister.get(`${lessonInfo.event_id}:${student.student_id}`)} />
                                             )}
                                         </div>
                                         ) : (
@@ -1958,6 +1996,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                 en={isTeacher}
                                                 note={[
                                                     verdictNote(meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`), isTeacher ? 'en' : 'ru'),
+                                                    registerNote(meetRegister.get(`${lessonInfo.event_id}:${student.student_id}`), isTeacher ? 'en' : 'ru'),
                                                     spokeNote(meetTalk.get(`${lessonInfo.event_id}:${student.student_id}`), isTeacher ? 'en' : 'ru'),
                                                 ].filter(Boolean).join('\n') || null}
                                                 excused={Boolean(lessonStatus?.excused)}
@@ -1965,7 +2004,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                 onExcuseChange={(excused, excuseNote) => handleExcuseChange(student.student_id, lessonKey, excused, excuseNote)}
                                             />
                                             {!cellIsFuture && meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`) && (
-                                                <MeetVerdictBadge verdict={meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`)!} locale={isTeacher ? 'en' : 'ru'} />
+                                                <MeetVerdictBadge verdict={meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`)!} locale={isTeacher ? 'en' : 'ru'} register={meetRegister.get(`${lessonInfo.event_id}:${student.student_id}`)} />
                                             )}
                                             {meetMismatches.get(`${lessonInfo.event_id}:${student.student_id}`)?.map((f) => {
                                                 // Answered in Meet attendance: grey with a tick and the reason, instead of red.
@@ -1999,8 +2038,13 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                             {canMarkAttendance && lessonStatus && !cellIsFuture && !displaysAsAbsence(status) && (
                                                 <button
                                                     type="button"
-                                                    className="absolute bottom-0.5 right-0.5 p-1.5 rounded-full bg-black/20 text-white hover:bg-black/35 opacity-100 md:opacity-0 md:group-hover/att:opacity-100 transition-opacity"
-                                                    title={t('Балл за активность', 'Activity Score')}
+                                                    className={cn(
+                                                        "absolute bottom-0.5 right-0.5 p-1.5 rounded-full text-white transition-opacity",
+                                                        needsScore
+                                                            ? "bg-amber-500 ring-2 ring-amber-300 opacity-100"
+                                                            : "bg-black/20 hover:bg-black/35 opacity-100 md:opacity-0 md:group-hover/att:opacity-100"
+                                                    )}
+                                                    title={needsScore ? t('Нужен балл за активность', 'Activity score needed') : t('Балл за активность', 'Activity Score')}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         setActivityModal({
@@ -2705,6 +2749,21 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <OverrideReasonsDialog
+      open={overrideAsk !== null}
+      items={overrideAsk ?? []}
+      options={reviewOptions}
+      en={isTeacher}
+      onCancel={() => setOverrideAsk(null)}
+      onConfirm={(given) => {
+        const merged = new Map(overrideReasons);
+        given.forEach((reason, key) => merged.set(key, reason));
+        setOverrideReasons(merged);
+        setOverrideAsk(null);
+        void handleSaveChanges(merged);
+      }}
+    />
     </>
   );
 }
