@@ -125,6 +125,7 @@ export function registerNote(reg: StudentRegister | undefined, locale: 'ru' | 'e
     case 'would_keep': line = `${ru ? 'Meet оставил бы отметку' : 'Meet would keep this mark'}${minutes}`; break;
     case 'override': line = `Meet: ${word(reg.verdict)}${minutes}${late}`; break;
     case 'held': case 'skipped': line = `Meet: ${SKIP[locale][reg.skip_reason ?? ''] ?? reg.skip_reason ?? ''}`; break;
+    case 'reverted': line = `Meet: ${ru ? 'отметка Meet отменена (откат)' : 'its mark was undone'}`; break;
     default: return null;
   }
   const o = reg.override;

@@ -76,6 +76,10 @@ describe('registerNote', () => {
     expect(registerNote(reg({ state: 'override', override: { ...o, reason_code: null, reason_label: null, by: null, via: 'external' } }), 'ru'))
       .toBe('Meet: не был · 0 из 45 мин\nИзменено: был — без причины (вне LMS)');
   });
+  it('says a reverted mark was undone', () => {
+    expect(registerNote(reg({ state: 'reverted' }), 'ru')).toBe('Meet: отметка Meet отменена (откат)');
+    expect(registerNote(reg({ state: 'reverted' }), 'en')).toBe('Meet: its mark was undone');
+  });
 });
 
 describe('registerIndex', () => {
