@@ -1,7 +1,9 @@
 import { X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { barFor, clock, flagTone, position, verdictDiffers, verdictHint, verdictText, MARK_LABEL, type Axis } from '../../lib/meetAttendance';
+import { registerNote } from '../../lib/meetRegister';
 import type { MeetAccount, MeetFlag, MeetMark, MeetPresence, MeetVerdict } from '../../services/api/meetAttendance';
+import type { StudentRegister } from '../../services/api/meetRegister';
 import { FlagChip, type FlagReviewing } from './FlagReview';
 
 export { FlagChip };
@@ -23,6 +25,8 @@ export interface TimelineRow {
   note?: string;
   /** Students only: Meet's verdict under the rules (2026-09-16). */
   verdict?: MeetVerdict;
+  /** Students only: what the register says about this student in this lesson (2026-09-23). */
+  register?: StudentRegister | null;
 }
 
 const BAR: Record<RowKind, string> = {
@@ -186,6 +190,11 @@ export function MeetTimeline({ axis, rows, compact = false, onUnlink, busy = fal
               {row.note && <div className="truncate text-[11px] text-muted-foreground">{row.note}</div>}
               {row.kind === 'student' && !compact && row.verdict && (
                 <div className="mt-1 flex"><VerdictChip verdict={row.verdict} mark={row.mark} /></div>
+              )}
+              {row.kind === 'student' && !compact && row.register && (
+                <div className="mt-0.5 whitespace-pre-line text-[11px] leading-snug text-muted-foreground">
+                  {registerNote(row.register, 'en')}
+                </div>
               )}
               {row.flags.length > 0 && (
                 <div className="mt-1 flex flex-wrap gap-1">

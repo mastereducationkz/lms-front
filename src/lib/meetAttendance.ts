@@ -277,7 +277,8 @@ export type IssueKey =
   | 'left_early'
   | 'not_marked'
   | 'to_confirm'
-  | 'silent_students';
+  | 'silent_students'
+  | 'overrides';
 
 /** The issues a head can filter by, in the order they matter for a report. */
 export const ISSUES: { key: IssueKey; label: string; hint: string }[] = [
@@ -288,12 +289,13 @@ export const ISSUES: { key: IssueKey; label: string; hint: string }[] = [
   { key: 'students_late', label: 'Students late', hint: 'A student joined more than 5 min after the lesson began (the teacher’s start, when later)' },
   { key: 'left_early', label: 'Students left early', hint: 'A student left more than 10 min before the lesson ended (the teacher’s end, when earlier)' },
   { key: 'not_marked', label: 'Not marked', hint: 'Students the teacher hasn’t marked yet; Meet’s verdict can be applied in the lesson' },
+  { key: 'overrides', label: 'Changed after Meet', hint: 'A person changed a mark Meet had decided (with or without a reason)' },
   { key: 'to_confirm', label: 'To confirm', hint: 'Google accounts nobody has named yet' },
   // A filter for reports only: a quiet test lesson is normal, so it never asks for attention.
   { key: 'silent_students', label: 'Silent students', hint: 'A student was in the room and never spoke (talk time)' },
 ];
 
-type Reportable = Pick<MeetLessonSummary, 'flags' | 'unknown' | 'mismatches'> & Partial<Pick<MeetLessonSummary, 'talk' | 'verdict_summary'>>;
+type Reportable = Pick<MeetLessonSummary, 'flags' | 'unknown' | 'mismatches'> & Partial<Pick<MeetLessonSummary, 'talk' | 'verdict_summary' | 'verdicts'>>;
 
 const hasCode = (item: Reportable, ...codes: MeetFlagCode[]) => item.flags.some((f) => codes.includes(f.code));
 
@@ -308,6 +310,7 @@ export function hasIssue(item: Reportable, key: IssueKey): boolean {
     case 'left_early': return hasCode(item, 'left_early');
     case 'to_confirm': return item.unknown > 0;
     case 'silent_students': return (item.talk?.silent.length ?? 0) > 0;
+    case 'overrides': return (item.verdicts ?? []).some((v) => v.register?.state === 'override');
     default: return false;
   }
 }
@@ -437,7 +440,7 @@ export function reportCsv(items: MeetLessonSummary[]): string {
   const header = ['Date', 'Start', 'End', 'Lesson', 'Groups', 'Teacher', 'Teacher joined', 'Teacher left',
     'Teacher issues', 'Students joined', 'Students', 'Marks disagree', 'Students late', 'Students left early',
     'Accounts to confirm', 'Meet: present', 'Meet: late', 'Meet: absent', 'Meet: not known yet', 'Not marked',
-    'Marks agree with Meet', 'Teacher talk share', 'Students who didn’t speak', 'Recording'];
+    'Marks agree with Meet', 'Teacher talk share', 'Students who didn’t speak', 'Meet wrote', 'Changed after Meet', 'Recording'];
   const rows = items.map((item) => {
     const lesson = [almatyDate(item.start), clock(item.start), clock(item.end), item.title,
       item.groups.map((g) => g.name).join(', '), item.teacher?.name ?? ''];
@@ -453,6 +456,8 @@ export function reportCsv(items: MeetLessonSummary[]): string {
       ...verdictCells(item.verdict_summary),
       item.talk?.teacher_share != null ? `${Math.round(item.talk.teacher_share * 100)}%` : '',
       item.talk ? item.talk.silent.length : '',
+      (item.verdicts ?? []).filter((v) => v.register?.state === 'written').length,
+      (item.verdicts ?? []).filter((v) => v.register?.state === 'override').length,
       recordingCell(item),
     ];
   });

@@ -28,6 +28,8 @@ import { TeacherTallyTable } from '../components/meetAttendance/TeacherTallyTabl
 import { GroupTalkView } from '../components/meetAttendance/GroupTalkView';
 import { TeacherTalkView } from '../components/meetAttendance/TeacherTalkView';
 import { TalkSettingsButton } from '../components/meetAttendance/TalkSettingsButton';
+import { RegisterSwitchButton } from '../components/meetAttendance/RegisterSwitchButton';
+import { RegisterReportPanel } from '../components/meetAttendance/RegisterReportPanel';
 import { LessonRecordingCell, recordingMeta } from '../components/meetAttendance/LessonRecordingCell';
 import RecordingPlayerDialog, { type RecordingMeta } from '../components/recordings/RecordingPlayerDialog';
 import { useRecordingStatuses } from '../components/recordings/useRecordingStatuses';
@@ -117,6 +119,7 @@ export default function MeetAttendanceReview() {
   const byTeacher = TALK_BY_TEACHER.has(user?.role ?? '');
   // Reviewed flags are out of the list until asked for (owner, 2026-09-11).
   const [showReviewed, setShowReviewed] = useState(false);
+  const [registerRefresh, setRegisterRefresh] = useState(0);
   const [options, setOptions] = useState<MeetReviewOptions | undefined>(undefined);
   const [rules, setRules] = useState<MeetVerdictRules | undefined>(undefined);
 
@@ -251,6 +254,7 @@ export default function MeetAttendanceReview() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
         <TalkSettingsButton role={user?.role} onChanged={(next) => { setTalkEnabled(next.enabled); load(true); }} />
+        <RegisterSwitchButton role={user?.role} onChanged={() => { setRegisterRefresh((n) => n + 1); load(true); }} />
         <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label="Period">
           {([7, 30] as Period[]).map((p) => (
             <button
@@ -447,6 +451,8 @@ export default function MeetAttendanceReview() {
           onShowAll={show === 'waiting' && !issue ? () => setShow('all') : undefined}
         />
       )}
+
+      {items !== null && <RegisterReportPanel refreshKey={registerRefresh} />}
 
       {audience !== 'teacher' && items !== null && (
         <TeacherTallyTable

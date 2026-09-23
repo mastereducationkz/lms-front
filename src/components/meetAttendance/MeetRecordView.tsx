@@ -116,7 +116,7 @@ export function useMeetRecord(eventId: number | null, enabled = true) {
 function personRow(p: MeetPerson, kind: TimelineRow['kind'], note?: string): TimelineRow {
   return {
     key: `u${p.user_id}`, userId: p.user_id, name: p.name, kind, mark: p.mark, presence: p, flags: p.flags,
-    accounts: p.accounts, note, verdict: p.verdict,
+    accounts: p.accounts, note, verdict: p.verdict, register: p.register,
   };
 }
 

@@ -194,13 +194,13 @@ describe('reporting', () => {
     expect(items.some(stillLoading)).toBe(false);
     expect(needsAttention(loading)).toBe(false);
     const row = reportCsv([loading]).split('\r\n')[1].split(',');
-    expect(row).toHaveLength(24);
+    expect(row).toHaveLength(26);
     expect(row[6]).toBe('"Loading"');
-    expect(row.slice(7)).toEqual(Array(17).fill('""'));
+    expect(row.slice(7)).toEqual(Array(19).fill('""'));
     // The recording is known whether or not the call has come through.
     const recorded = reportCsv([{ ...loading, recording: { status: 'waiting', duration_seconds: null } }]).split('\r\n')[1].split(',');
-    expect(recorded).toHaveLength(24);
-    expect(recorded[23]).toBe('"Waiting for Google Meet"');
+    expect(recorded).toHaveLength(26);
+    expect(recorded[25]).toBe('"Waiting for Google Meet"');
   });
 
   it('says where each lesson’s recording is, with its length once it can be watched', () => {
@@ -400,6 +400,28 @@ describe('talk time in the report (owner, 2026-09-11)', () => {
 
   it('puts the teacher’s share and the silent students in the spreadsheet', () => {
     const row = reportCsv([summary(1, 1, [], { talk: talk(0.72, [7]) })]).split('\r\n')[1];
-    expect(row.endsWith('"72%","1",""')).toBe(true);
+    expect(row.endsWith('"72%","1","0","0",""')).toBe(true);
+  });
+});
+
+describe('Meet took the register (2026-09-23)', () => {
+  const withRegister = (states: string[]) => ({
+    ...summary(3, 3, []),
+    verdicts: states.map((state, i) => ({ user_id: i + 1, verdict: 'absent', held_back: false, provisional: 'absent',
+      minutes: 0, required: 45, late_minutes: 0,
+      register: { state, mode: 'live', status: 'absent', skip_reason: null, verdict: 'absent', minutes: 0, required: 45,
+        late_minutes: 0, override: null } })),
+  }) as never;
+
+  it('filters lessons where a person changed a mark after Meet', () => {
+    expect(hasIssue(withRegister(['written', 'override']), 'overrides')).toBe(true);
+    expect(hasIssue(withRegister(['written', 'kept']), 'overrides')).toBe(false);
+  });
+
+  it('puts what Meet wrote and what was changed in the spreadsheet, before the recording', () => {
+    const header = reportCsv([]).split('\r\n')[0];
+    expect(header).toContain('"Meet wrote","Changed after Meet","Recording"');
+    const row = reportCsv([withRegister(['written', 'written', 'override'])]).split('\r\n')[1].split(',');
+    expect(row.slice(-3, -1)).toEqual(['"2"', '"1"']);
   });
 });
