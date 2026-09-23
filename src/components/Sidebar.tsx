@@ -63,7 +63,8 @@ const getCategoryLabels = (isRu: boolean): Record<NavCategory, string> =>
 
 // Navigation items: optional 7th field = category (defaults to primary),
 // optional 8th = show a "Soon" pill for a feature that is announced but not open yet,
-// optional 9th = badge tone (defaults to the red "act now" pill).
+// optional 9th = badge tone (defaults to the red "act now" pill),
+// optional 10th = the badge's tooltip.
 type NavItemTuple = [
   to: string,
   label: string,
@@ -74,6 +75,7 @@ type NavItemTuple = [
   category?: NavCategory,
   comingSoon?: boolean,
   badgeTone?: AttendanceBadgeTone,
+  badgeTitle?: string | null,
 ];
 
 /** Red is "you can do this now"; amber is "waiting on Google Meet, nothing to do yet". Every
@@ -109,7 +111,7 @@ function getNavigationItems(
     ['/favorites', 'My Favorites', Heart, 0, ['student'], 'favorites-nav', 'primary'],
     ['/teacher/courses', 'My Courses', BookMarked, 0, ['teacher'], 'courses-nav', 'primary'],
     ['/teacher/class', 'My Class', GraduationCap, 0, ['teacher'], 'students-nav', 'primary'],
-    ['/attendance', 'Attendance', UserCheck, attendance.count, ['teacher', 'head_teacher', 'head_curator'], 'attendance-nav', 'primary', false, attendance.tone],
+    ['/attendance', 'Attendance', UserCheck, attendance.count, ['teacher', 'head_teacher', 'head_curator'], 'attendance-nav', 'primary', false, attendance.tone, attendance.title],
     ['/analytics', ['head_curator', 'curator'].includes(_userRole || '') ? 'Аналитика' : 'Analytics', BarChart3, 0, ['teacher', 'curator', 'admin', 'head_curator', 'head_teacher'], 'analytics-nav', 'primary'],
     ['/review', 'Quiz Review', Presentation, 0, ['teacher', 'curator', 'admin', 'head_curator', 'head_teacher'], 'quiz-review-nav', 'primary'],
     ['/curator/homeworks', ['head_curator', 'curator'].includes(_userRole || '') ? 'Домашние задания' : 'Homework', FileText, 0, ['curator', 'head_curator'], 'homework-analytics-nav', 'curator'],
@@ -406,7 +408,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                 <div className="mx-2 my-2 h-px bg-gray-200 dark:bg-gray-700 shrink-0" aria-hidden />
               )}
               <div className="flex flex-col gap-1">
-                {section.items.map(([to, label, Icon, badge, , dataTour, , comingSoon, badgeTone]) => {
+                {section.items.map(([to, label, Icon, badge, , dataTour, , comingSoon, badgeTone, badgeTitle]) => {
                   // Handle expandable My Courses
                   if ((to === '/courses' && user?.role === 'student') || (to === '/teacher/courses' && user?.role === 'teacher')) {
                     return (
@@ -421,7 +423,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                             <>
                               <span className="flex-1 min-w-0 text-gray-800 dark:text-gray-200 text-sm text-left">{label}</span>
                               {badge > 0 && (
-                                <span className={`ml-2 text-xs rounded-full px-2 py-0.5 ${badgeToneClass(badgeTone)}`}>{badge}</span>
+                                <span className={`ml-2 text-xs rounded-full px-2 py-0.5 ${badgeToneClass(badgeTone)}`} title={badgeTitle ?? undefined}>{badge}</span>
                               )}
                               <ChevronRight className={`w-4 h-4 ml-1 shrink-0 transition-transform ${isCoursesExpanded ? 'rotate-90' : ''}`} />
                             </>
@@ -481,7 +483,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                           <>
                             <span className="flex-1 min-w-0 text-gray-800 dark:text-gray-200 text-sm">{label}</span>
                             {badge > 0 && (
-                              <span className={`ml-2 text-xs rounded-full px-2 py-0.5 ${badgeToneClass(badgeTone)}`}>{badge}</span>
+                              <span className={`ml-2 text-xs rounded-full px-2 py-0.5 ${badgeToneClass(badgeTone)}`} title={badgeTitle ?? undefined}>{badge}</span>
                             )}
                           </>
                         )}
@@ -510,7 +512,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                             </span>
                           )}
                           {badge > 0 && (
-                            <span className={`ml-2 text-xs rounded-full px-2 py-0.5 ${badgeToneClass(badgeTone)}`}>{badge}</span>
+                            <span className={`ml-2 text-xs rounded-full px-2 py-0.5 ${badgeToneClass(badgeTone)}`} title={badgeTitle ?? undefined}>{badge}</span>
                           )}
                         </>
                       )}
