@@ -831,6 +831,10 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
     setChangedEntries(new Set());
     setTouchedExcuses(new Set());
     setConfigChanged(false);
+    // Reasons belong to this group/week's pending edits — a stale one must not answer a
+    // colliding "studentId:lessonKey" in the next group/week (lesson numbers restart per group).
+    setOverrideReasons(new Map());
+    setOverrideAsk(null);
     try {
         const result = await getWeeklyLessonsWithHwStatus(selectedGroupId, currentWeek);
         setData(result);
