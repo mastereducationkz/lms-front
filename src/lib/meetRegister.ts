@@ -69,10 +69,18 @@ export function reasonComplete(reason: OverrideReason | undefined): boolean {
   return reason.code !== 'other' || Boolean(reason.text?.trim());
 }
 
-/** A present student of a lesson Meet marked still owes a балл за активность. */
-export function scoreDue(reg: StudentRegister | undefined, uiStatus: string, activityScore: number | null | undefined): boolean {
-  if (!reg || reg.mode !== 'live' || !(MEET_DECIDED.has(reg.state) || reg.state === 'override')) return false;
-  return ATTENDED_UI.has(uiStatus) && activityScore == null;
+/** Lessons where Meet decided the register (any live row written, kept or overridden) — the badge's rule. */
+export function decidedLessons(index: Map<string, StudentRegister>): Set<number> {
+  const out = new Set<number>();
+  for (const [key, reg] of index) {
+    if (reg.mode === 'live' && (MEET_DECIDED.has(reg.state) || reg.state === 'override')) out.add(Number(key.split(':')[0]));
+  }
+  return out;
+}
+
+/** A present student of a lesson Meet decided still owes a балл за активность — whoever marked them. */
+export function scoreDue(lessonDecided: boolean, uiStatus: string, activityScore: number | null | undefined): boolean {
+  return lessonDecided && ATTENDED_UI.has(uiStatus) && activityScore == null;
 }
 
 const SKIP: Record<'ru' | 'en', Record<string, string>> = {

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { RegisterCounts, StudentRegister } from '../services/api/meetRegister';
 import {
-  overrideFlag, overridesToAsk, reasonComplete, reasonPayload, registerIndex, registerNote, registerSummary,
-  scoreDue,
+  decidedLessons, overrideFlag, overridesToAsk, reasonComplete, reasonPayload, registerIndex, registerNote,
+  registerSummary, scoreDue,
 } from './meetRegister';
 
 const reg = (over: Partial<StudentRegister> = {}): StudentRegister => ({
@@ -53,13 +53,26 @@ describe('reasons', () => {
 });
 
 describe('scoreDue', () => {
-  it('asks for a score on present students of lessons Meet marked', () => {
-    expect(scoreDue(reg({ status: 'present', verdict: 'present' }), 'attended', null)).toBe(true);
-    expect(scoreDue(reg({ status: 'present', verdict: 'present' }), 'attended', 7)).toBe(false);
-    expect(scoreDue(reg({ state: 'kept', status: 'late', verdict: 'late' }), 'late', undefined)).toBe(true);
-    expect(scoreDue(reg(), 'missed', null)).toBe(false);
-    expect(scoreDue(reg({ mode: 'shadow', state: 'would_write' }), 'attended', null)).toBe(false);
-    expect(scoreDue(undefined, 'attended', null)).toBe(false);
+  it('asks for a score on present students of lessons Meet decided', () => {
+    expect(scoreDue(true, 'attended', null)).toBe(true);
+    expect(scoreDue(true, 'attended', 7)).toBe(false);
+    expect(scoreDue(true, 'late', undefined)).toBe(true);
+    expect(scoreDue(true, 'missed', null)).toBe(false);
+    expect(scoreDue(false, 'attended', null)).toBe(false);
+  });
+});
+
+describe('decidedLessons', () => {
+  it('is every lesson with a live row Meet decided — the star follows the lesson, like the badge', () => {
+    const index = new Map([
+      ['10:1', reg()], ['10:2', reg({ state: 'skipped', verdict: null, skip_reason: 'person_changed_it' })],
+      ['11:1', reg({ state: 'skipped', verdict: null, skip_reason: 'lesson_not_proven' })],
+      ['12:1', reg({ state: 'override' })],
+      ['13:1', reg({ mode: 'shadow', state: 'would_write' })],
+      ['14:1', reg({ state: 'kept', status: 'present', verdict: 'present' })],
+      ['15:1', reg({ state: 'held', verdict: null, skip_reason: 'held_back' })],
+    ]);
+    expect(decidedLessons(index)).toEqual(new Set([10, 12, 14]));
   });
 });
 

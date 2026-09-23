@@ -30,7 +30,7 @@ import { listMeetRecords, type MeetLessonFlag, type MeetReviewOptions, type Meet
 import { flagText, flagTextRu, mismatchIndex, reasonText, verdictIndex } from '../lib/meetAttendance';
 import { MeetVerdictBadge, verdictNote } from '../components/meetAttendance/MeetVerdictBadge';
 import type { RegisterMode, StudentRegister } from '../services/api/meetRegister';
-import { lessonStateIndex, overridesToAsk, reasonPayload, registerIndex, registerNote, scoreDue, type OverrideAsk, type OverrideReason } from '../lib/meetRegister';
+import { decidedLessons, lessonStateIndex, overridesToAsk, reasonPayload, registerIndex, registerNote, scoreDue, type OverrideAsk, type OverrideReason } from '../lib/meetRegister';
 import { OverrideReasonsDialog } from '../components/meetAttendance/OverrideReasonsDialog';
 import { spokeNote, talkSecondsIndex } from '../lib/meetTalk';
 import { useAuth } from '../contexts/AuthContext';
@@ -657,6 +657,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   const [registerMode, setRegisterMode] = useState<RegisterMode>('off');
   const [meetLessonState, setMeetLessonState] = useState<Map<number, string>>(new Map());
   const [reviewOptions, setReviewOptions] = useState<MeetReviewOptions>({});
+  // Lessons whose register Meet decided: every present student there owes a балл за активность (the star).
+  const meetDecidedLessons = useMemo(() => decidedLessons(meetRegister), [meetRegister]);
   // Bumped after a journal save so the Meet list is read again: ✎ and reasons show without a reload.
   const [meetRefresh, setMeetRefresh] = useState(0);
   // Reasons for changing marks Meet decided, by "studentId:lessonKey" — asked once, at «Сохранить».
@@ -1937,7 +1939,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                             // lessons are handled by the toggle's isFuture branch.
                             const unmarked =
                                 !preEnroll && !frozenLesson && !blockedLesson && !cellIsFuture && lessonStatus?.marked === false;
-                            const needsScore = scoreDue(meetRegister.get(`${lessonInfo.event_id}:${student.student_id}`), status, lessonStatus?.activity_score);
+                            const needsScore = scoreDue(meetDecidedLessons.has(lessonInfo.event_id ?? -1), status, lessonStatus?.activity_score);
 
                             return (
                                 <TableCell key={`cell-${lessonKey}`} className="p-0 border-r border-gray-300 dark:border-border">
