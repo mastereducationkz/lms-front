@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ChevronDown, Loader2 } from 'lucide-react';
+import { registerSummary } from '../../lib/meetRegister';
 import { cn } from '../../lib/utils';
 import { getRegisterReport, type RegisterCounts, type RegisterReport } from '../../services/api/meetRegister';
 
@@ -40,9 +41,7 @@ export function RegisterReportPanel({ refreshKey }: { refreshKey?: unknown }) {
           <div className="text-sm font-semibold text-foreground">{live ? 'Register — last 14 days' : 'Register shadow run — last 14 days'}</div>
           <div className="text-xs text-muted-foreground">
             {!total ? <span className="inline-flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Loading…</span>
-              : live
-                ? `${total.lessons} lessons · Meet wrote ${total.writes} marks · ${total.held} students waited for a teacher · ${total.overrides} changed after Meet`
-                : `${total.lessons} lessons · Meet would write ${total.writes} marks · ${total.changes} would contradict the teacher (present ↔ absent) · ${total.held} would wait for a teacher`}
+              : registerSummary(total, live)}
           </div>
         </div>
         <ChevronDown className={cn('h-4 w-4 flex-none text-muted-foreground transition-transform', open && 'rotate-180')} aria-hidden />

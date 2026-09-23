@@ -1,5 +1,5 @@
 import type { MeetFlagCode, MeetLessonSummary } from '../services/api/meetAttendance';
-import type { StudentRegister } from '../services/api/meetRegister';
+import type { RegisterCounts, StudentRegister } from '../services/api/meetRegister';
 
 /**
  * Meet takes the register (owner, 2026-09-23) — what the journal and the Meet page need to know about
@@ -114,7 +114,7 @@ export function registerNote(reg: StudentRegister | undefined, locale: 'ru' | 'e
   const ru = locale === 'ru';
   const word = (s: string | null) => (s ? MARK[locale][s] ?? s : '—');
   const minutes = reg.minutes != null && reg.required != null
-    ? (ru ? ` · ${reg.minutes} из ${reg.required} мин` : ` · ${reg.minutes} of ${reg.required} min`) : '';
+    ? (ru ? ` · ${reg.minutes} мин (нужно ${reg.required})` : ` · ${reg.minutes} min (${reg.required} needed)`) : '';
   const late = reg.verdict === 'late' && reg.late_minutes
     ? (ru ? ` · опоздание ${reg.late_minutes} мин` : ` · ${reg.late_minutes} min late`) : '';
   let line: string;
@@ -132,5 +132,18 @@ export function registerNote(reg: StudentRegister | undefined, locale: 'ru' | 'e
   if (reg.state !== 'override' || !o) return line;
   const why = o.reason_code === 'other' && o.text ? o.text : o.reason_label ?? o.text ?? (ru ? 'без причины' : 'no reason given');
   const who = o.via === 'external' ? (ru ? 'вне LMS' : 'outside the LMS') : o.by;
-  return `${line}\n${ru ? 'Изменено' : 'Changed'}: ${word(o.status)} — ${why}${who ? ` (${who})` : ''}`;
+  // Meet's verdict is already the line above this one (the verdict chip's own note), so only the change.
+  return `${ru ? 'Изменено' : 'Changed'}: ${word(o.status)} — ${why}${who ? ` (${who})` : ''}`;
+}
+
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/** The register report's one-line total (the Meet page's panel header). */
+export function registerSummary(total: RegisterCounts, live: boolean): string {
+  const lessons = plural(total.lessons, 'lesson', 'lessons');
+  const marks = plural(total.writes, 'mark', 'marks');
+  const students = plural(total.held, 'student', 'students');
+  return live
+    ? `${lessons} · Meet wrote ${marks} · ${students} waited for a teacher · ${total.overrides} changed after Meet`
+    : `${lessons} · Meet would write ${marks} · ${total.changes} would contradict the teacher (present ↔ absent) · ${students} would wait for a teacher`;
 }

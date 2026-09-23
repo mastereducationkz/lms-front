@@ -248,7 +248,7 @@ export default function MeetAttendanceReview() {
           </p>
           {rules && (
             <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
-              {rulesText(rules)} It sits beside the teacher’s mark and is never written by itself.
+              {rulesText(rules)} Evidence from Meet. While the Register switch is Live, Meet writes the register; teachers correct it with a reason.
             </p>
           )}
         </div>

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import type { StudentRegister } from '../services/api/meetRegister';
+import type { RegisterCounts, StudentRegister } from '../services/api/meetRegister';
 import {
-  overrideFlag, overridesToAsk, reasonComplete, reasonPayload, registerIndex, registerNote, scoreDue,
+  overrideFlag, overridesToAsk, reasonComplete, reasonPayload, registerIndex, registerNote, registerSummary,
+  scoreDue,
 } from './meetRegister';
 
 const reg = (over: Partial<StudentRegister> = {}): StudentRegister => ({
@@ -65,16 +66,18 @@ describe('scoreDue', () => {
 describe('registerNote', () => {
   it('says what Meet did, in the viewer’s language', () => {
     expect(registerNote(reg({ status: 'late', verdict: 'late', minutes: 50, late_minutes: 7 }), 'ru'))
-      .toBe('Meet отметил: опоздал · 50 из 45 мин · опоздание 7 мин');
+      .toBe('Meet отметил: опоздал · 50 мин (нужно 45) · опоздание 7 мин');
+    expect(registerNote(reg({ status: 'present', verdict: 'present', minutes: 60 }), 'en'))
+      .toBe('Marked by Meet: present · 60 min (45 needed)');
     expect(registerNote(reg({ state: 'held', verdict: null, skip_reason: 'held_back' }), 'en'))
       .toBe('Meet: waiting — an unconfirmed account was in the room');
   });
-  it('adds a person’s change with the reason and who made it', () => {
+  it('adds a person’s change with the reason and who made it, without repeating Meet’s verdict', () => {
     const o = { status: 'present', reason_code: 'excused', reason_label: 'Отпросился', text: null, by: 'Гульзада', at: '2026-10-05T14:00:00Z', via: 'lms' as const };
     expect(registerNote(reg({ state: 'override', override: o }), 'ru'))
-      .toBe('Meet: не был · 0 из 45 мин\nИзменено: был — Отпросился (Гульзада)');
+      .toBe('Изменено: был — Отпросился (Гульзада)');
     expect(registerNote(reg({ state: 'override', override: { ...o, reason_code: null, reason_label: null, by: null, via: 'external' } }), 'ru'))
-      .toBe('Meet: не был · 0 из 45 мин\nИзменено: был — без причины (вне LMS)');
+      .toBe('Изменено: был — без причины (вне LMS)');
   });
   it('says a reverted mark was undone', () => {
     expect(registerNote(reg({ state: 'reverted' }), 'ru')).toBe('Meet: отметка Meet отменена (откат)');
@@ -86,5 +89,19 @@ describe('registerIndex', () => {
   it('keys by lesson and student', () => {
     const index = registerIndex([{ event_id: 10, verdicts: [{ user_id: 1, register: reg() }] }] as never);
     expect(index.get('10:1')?.state).toBe('written');
+  });
+});
+
+describe('registerSummary', () => {
+  const counts = (over: Partial<RegisterCounts> = {}): RegisterCounts => ({
+    lessons: 1, decided: 1, writes: 1, changes: 1, held: 1, overrides: 1, left_alone: {}, ...over,
+  });
+  it('counts in words that agree with the numbers', () => {
+    expect(registerSummary(counts(), true))
+      .toBe('1 lesson · Meet wrote 1 mark · 1 student waited for a teacher · 1 changed after Meet');
+    expect(registerSummary(counts({ lessons: 2, writes: 3, held: 0, overrides: 2 }), true))
+      .toBe('2 lessons · Meet wrote 3 marks · 0 students waited for a teacher · 2 changed after Meet');
+    expect(registerSummary(counts(), false))
+      .toBe('1 lesson · Meet would write 1 mark · 1 would contradict the teacher (present ↔ absent) · 1 student would wait for a teacher');
   });
 });
