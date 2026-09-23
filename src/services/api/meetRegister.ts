@@ -31,6 +31,8 @@ export interface StudentRegister {
   required: number | null;
   late_minutes: number | null;
   override: RegisterOverride | null;
+  /** Meet wrote this mark (live), even if a person changed it since. Missing from older servers. */
+  written?: boolean;
 }
 
 export interface RegisterSettings {

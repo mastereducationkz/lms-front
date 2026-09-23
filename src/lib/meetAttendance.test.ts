@@ -405,12 +405,12 @@ describe('talk time in the report (owner, 2026-09-11)', () => {
 });
 
 describe('Meet took the register (2026-09-23)', () => {
-  const withRegister = (states: string[]) => ({
+  const withRegister = (states: string[], written: boolean[] = states.map((s) => s === 'written')) => ({
     ...summary(3, 3, []),
     verdicts: states.map((state, i) => ({ user_id: i + 1, verdict: 'absent', held_back: false, provisional: 'absent',
       minutes: 0, required: 45, late_minutes: 0,
       register: { state, mode: 'live', status: 'absent', skip_reason: null, verdict: 'absent', minutes: 0, required: 45,
-        late_minutes: 0, override: null } })),
+        late_minutes: 0, override: null, written: written[i] } })),
   }) as never;
 
   it('filters lessons where a person changed a mark after Meet', () => {
@@ -421,7 +421,10 @@ describe('Meet took the register (2026-09-23)', () => {
   it('puts what Meet wrote and what was changed in the spreadsheet, before the recording', () => {
     const header = reportCsv([]).split('\r\n')[0];
     expect(header).toContain('"Meet wrote","Changed after Meet","Recording"');
-    const row = reportCsv([withRegister(['written', 'written', 'override'])]).split('\r\n')[1].split(',');
-    expect(row.slice(-3, -1)).toEqual(['"2"', '"1"']);
+    // Meet wrote all three; a person changed one after — it still counts as Meet's write (the backend's rule).
+    const row = reportCsv([withRegister(['written', 'written', 'override'], [true, true, true])]).split('\r\n')[1].split(',');
+    expect(row.slice(-3, -1)).toEqual(['"3"', '"1"']);
+    const kept = reportCsv([withRegister(['kept', 'override'], [false, false])]).split('\r\n')[1].split(',');
+    expect(kept.slice(-3, -1)).toEqual(['"0"', '"1"']);
   });
 });

@@ -456,7 +456,8 @@ export function reportCsv(items: MeetLessonSummary[]): string {
       ...verdictCells(item.verdict_summary),
       item.talk?.teacher_share != null ? `${Math.round(item.talk.teacher_share * 100)}%` : '',
       item.talk ? item.talk.silent.length : '',
-      (item.verdicts ?? []).filter((v) => v.register?.state === 'written').length,
+      // Marks Meet wrote, even if a person changed one since — the backend report's rule.
+      (item.verdicts ?? []).filter((v) => v.register?.written === true).length,
       (item.verdicts ?? []).filter((v) => v.register?.state === 'override').length,
       recordingCell(item),
     ];
