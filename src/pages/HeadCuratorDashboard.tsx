@@ -42,7 +42,6 @@ export default function HeadCuratorDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [data, setData] = useState<any>(null);
-  const [curatorTasksSummary, setCuratorTasksSummary] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState<any[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string>("all");
@@ -81,18 +80,10 @@ export default function HeadCuratorDashboard() {
   const loadDashboardData = async (groupId?: number, startDate?: string, endDate?: string) => {
     try {
       setLoading(true);
-      const promises: Promise<any>[] = [apiClient.getDashboardStats(groupId, startDate, endDate)];
-      if (user?.role === 'head_curator') {
-        promises.push(apiClient.getCuratorsSummary());
-      }
-      const settled = await Promise.allSettled(promises);
-      const statsResult = settled[0];
+      const [statsResult] = await Promise.allSettled([
+        apiClient.getDashboardStats(groupId, startDate, endDate),
+      ]);
       setData(statsResult.status === 'fulfilled' ? statsResult.value : null);
-      if (user?.role === 'head_curator' && settled[1]?.status === 'fulfilled') {
-        setCuratorTasksSummary(settled[1].value || []);
-      } else {
-        setCuratorTasksSummary([]);
-      }
       if (statsResult.status === 'rejected') {
         console.error('Failed to load dashboard:', statsResult.reason);
       }
@@ -423,99 +414,6 @@ export default function HeadCuratorDashboard() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Задачи кураторов — feature hidden (paused). Reversal: change `false` back to
-          `user?.role === 'head_curator'`. Replaced in the sidebar by "Онбординг". */}
-      {false && user?.role === 'head_curator' && (
-        <Card className="shadow-sm border-0 overflow-hidden">
-          <CardHeader className="bg-white dark:bg-card flex flex-row items-center justify-between gap-4">
-            <div>
-              <CardTitle className="text-lg font-bold">Задачи кураторов</CardTitle>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-xl">
-                Создание задач: страница «Задачи» — кнопка «+ Добавить задачу»; можно выбрать несколько кураторов и несколько групп сразу.
-              </p>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-              onClick={() => navigate('/curator/tasks')}
-            >
-              Подробнее <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          </CardHeader>
-          <CardContent className="p-0">
-            {curatorTasksSummary.length === 0 ? (
-              <div className="px-6 py-10 text-center text-gray-400 text-sm">
-                Нет задач кураторов
-              </div>
-            ) : (
-              <>
-                <div className="px-6 py-4 bg-gray-50/50 border-b border-gray-100 flex flex-wrap gap-6">
-                  <div>
-                    <span className="text-xs text-gray-500 font-medium">Выполнено</span>
-                    <p className="text-xl font-bold text-emerald-600">
-                      {curatorTasksSummary.reduce((s, c) => s + (c.completed || 0), 0)}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">В ожидании</span>
-                    <p className="text-xl font-bold text-gray-700 dark:text-gray-300">
-                      {curatorTasksSummary.reduce((s, c) => s + (c.pending || 0) + (c.in_progress || 0), 0)}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Просрочено</span>
-                    <p className="text-xl font-bold text-red-600">
-                      {curatorTasksSummary.reduce((s, c) => s + (c.overdue || 0), 0)}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Всего</span>
-                    <p className="text-xl font-bold text-gray-900 dark:text-foreground">
-                      {curatorTasksSummary.reduce((s, c) => s + (c.total || 0), 0)}
-                    </p>
-                  </div>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead className="bg-gray-50/80 dark:bg-secondary/30 text-gray-600 dark:text-gray-400 border-b border-gray-100 dark:border-border uppercase text-[10px] font-bold">
-                      <tr>
-                        <th className="text-left px-6 py-4">Куратор</th>
-                        <th className="text-center px-4 py-4">Выполнено</th>
-                        <th className="text-center px-4 py-4">В процессе</th>
-                        <th className="text-center px-4 py-4">Ожидает</th>
-                        <th className="text-center px-4 py-4">Просрочено</th>
-                        <th className="text-center px-4 py-4">Всего</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-border">
-                      {curatorTasksSummary.map((c: any) => (
-                        <tr key={c.curator_id} className="hover:bg-gray-50/50 dark:hover:bg-secondary/30 transition-colors">
-                          <td className="px-6 py-4 font-semibold text-gray-900 dark:text-foreground">{c.curator_name || 'Unknown'}</td>
-                          <td className="px-4 py-4 text-center">
-                            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
-                              {c.completed || 0}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-4 text-center text-gray-600 dark:text-gray-400">{c.in_progress || 0}</td>
-                          <td className="px-4 py-4 text-center text-gray-600 dark:text-gray-400">{c.pending || 0}</td>
-                          <td className="px-4 py-4 text-center">
-                            <Badge variant={c.overdue > 0 ? "destructive" : "secondary"} className={c.overdue === 0 ? "bg-green-50 text-green-700" : ""}>
-                              {c.overdue || 0}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-4 text-center font-medium text-gray-700 dark:text-gray-300">{c.total || 0}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      )}
 
       {/* Таблица кураторов/групп */}
       <Card className="shadow-sm border-0 overflow-hidden">

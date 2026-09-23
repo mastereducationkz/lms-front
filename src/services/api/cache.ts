@@ -77,7 +77,6 @@ const TTL_RULES: Array<{ test: RegExp; ttlMs: number }> = [
   // Medium - mostly stable read data
   { test: /^\/progress\/student\/overview/, ttlMs: 60 * 1000 },
   { test: /^\/admin\/dashboard/, ttlMs: 60 * 1000 },
-  { test: /^\/curator-tasks\//, ttlMs: 60 * 1000 },
   { test: /^\/analytics\//, ttlMs: 60 * 1000 },
   { test: /^\/events\//, ttlMs: 60 * 1000 },
   { test: /^\/users\//, ttlMs: 2 * 60 * 1000 },
@@ -110,8 +109,7 @@ const INVALIDATION_RULES: Array<{ mutation: RegExp; invalidatePrefixes: string[]
   { mutation: /^\/leaderboard(\/|$)/, invalidatePrefixes: ['/leaderboard', '/student-journal'] },
   // Reviewing a Meet flag can correct the attendance mark itself, which the journal reads.
   { mutation: /^\/meet-attendance(\/|$)/, invalidatePrefixes: ['/leaderboard', '/student-journal'] },
-  { mutation: /^\/curator-tasks(\/|$)/, invalidatePrefixes: ['/curator-tasks', '/student-journal'] },
-  { mutation: /^\/student-journal(\/|$)/, invalidatePrefixes: ['/student-journal', '/curator-tasks'] },
+  { mutation: /^\/student-journal(\/|$)/, invalidatePrefixes: ['/student-journal'] },
   { mutation: /^\/flashcards(\/|$)/, invalidatePrefixes: ['/flashcards'] },
   { mutation: /^\/lesson-requests(\/|$)/, invalidatePrefixes: ['/lesson-requests', '/events'] },
   { mutation: /^\/media(\/|$)/, invalidatePrefixes: ['/courses'] },

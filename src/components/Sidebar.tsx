@@ -5,7 +5,7 @@ import { connectSocket } from '../services/socket';
 import { useVisiblePolling } from '../hooks/useVisiblePolling';
 import apiClient from '../services/api';
 import logoIco from '../assets/masteredlogo-ico.ico';
-import { CRM_ONBOARDING_URL, CRM_WORKSPACE_URL } from '../lib/crmLinks';
+import { CRM_TASKS_URL, CRM_WORKSPACE_URL } from '../lib/crmLinks';
 import { attendanceBadge, type AttendanceBadgeTone, type AttendanceDue } from '../lib/attendanceBadge';
 import { 
   ExternalLink,
@@ -13,7 +13,7 @@ import {
   BookOpen, 
   ClipboardList,
   ClipboardCheck,
-  UserPlus,
+  ListChecks,
   MessageCircle,
   UserCheck,
   Settings,
@@ -116,10 +116,10 @@ function getNavigationItems(
     ['/review', 'Quiz Review', Presentation, 0, ['teacher', 'curator', 'admin', 'head_curator', 'head_teacher'], 'quiz-review-nav', 'primary'],
     ['/curator/homeworks', ['head_curator', 'curator'].includes(_userRole || '') ? 'Домашние задания' : 'Homework', FileText, 0, ['curator', 'head_curator'], 'homework-analytics-nav', 'curator'],
     ['/curator/leaderboard', ['head_curator', 'curator'].includes(_userRole || '') ? 'Лидерборд' : 'Leaderboard', Trophy, 0, ['curator', 'head_curator'], 'leaderboard-nav', 'curator'],
-    // Onboarding moved to the CRM. Linked directly rather than through the in-app redirect
-    // so curators land on the board in one hop; /curator/onboarding still redirects, which
-    // is what catches existing bookmarks.
-    [CRM_ONBOARDING_URL, ['head_curator', 'curator'].includes(_userRole || '') ? 'Онбординг (CRM)' : 'Onboarding (CRM)', UserPlus, 0, ['curator', 'head_curator'], 'curator-onboarding-nav', 'curator'],
+    // Curator tasks («Задачи») live in the CRM. Linked directly rather than through the in-app
+    // redirect so curators land on the list in one hop; /curator/tasks and /curator/onboarding
+    // still redirect, which is what catches existing bookmarks.
+    [CRM_TASKS_URL, ['head_curator', 'curator'].includes(_userRole || '') ? 'Задачи (CRM)' : 'Tasks (CRM)', ListChecks, 0, ['curator', 'head_curator'], 'curator-tasks-nav', 'curator'],
     [CRM_WORKSPACE_URL, ['head_curator', 'curator'].includes(_userRole || '') ? 'Вернуться в CRM' : 'Back to CRM', ExternalLink, 0, ['curator', 'head_curator'], 'crm-workspace-nav', 'curator'],
     ['/curator/students', ['head_curator', 'curator'].includes(_userRole || '') ? 'Журнал' : 'Students', Users, 0, ['curator', 'head_curator', 'admin', 'head_teacher'], 'students-journal-nav', 'curator'],
     ['/curator/groups', ['head_curator', 'curator'].includes(_userRole || '') ? 'Мои группы' : 'My groups', UsersRound, 0, ['curator', 'head_curator'], 'curator-groups-nav', 'curator'],

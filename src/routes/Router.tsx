@@ -84,11 +84,8 @@ const StudentAnalyticsPage = lazy(() =>
 const QuizReviewPage = lazy(() => import('../pages/review/QuizReviewPage.tsx'));
 const HeadTeacherTeacherDetailsPage = lazy(() => import('../pages/HeadTeacherTeacherDetailsPage.tsx'));
 const HeadCuratorCuratorPage = lazy(() => import('../pages/HeadCuratorCuratorPage.tsx'));
-const CuratorTasksPage = lazy(() => import('../pages/CuratorTasksPage.tsx'));
-// Onboarding is now edited in the CRM; this path only redirects. The old page component is
-// deliberately left in the tree, unrouted, so the migration can be reverted by pointing the
-// route back at it if the CRM board has to be switched off.
-const CuratorOnboardingRedirect = lazy(() => import('../pages/CuratorOnboardingRedirect.tsx'));
+// Curator tasks and onboarding live in the CRM as «Задачи» (2026-09-23); these paths only redirect.
+const CuratorTasksRedirect = lazy(() => import('../pages/CuratorTasksRedirect.tsx'));
 const StudentsJournalPage = lazy(() => import('../pages/StudentsJournalPage.tsx'));
 const StudentProfilePage = lazy(() => import('../pages/StudentProfilePage.tsx'));
 const StudentReportPage = lazy(() => import('../pages/StudentReportPage.tsx'));
@@ -714,21 +711,15 @@ export default function Router() {
             </ProtectedRoute>
           } />
 
-          <Route path="/curator/tasks" element={
-            <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator']}>
-              <AppLayout>
-                <CuratorTasksPage />
-              </AppLayout>
-            </ProtectedRoute>
-          } />
-
-          <Route path="/curator/onboarding" element={
-            <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator']}>
-              <AppLayout>
-                <CuratorOnboardingRedirect />
-              </AppLayout>
-            </ProtectedRoute>
-          } />
+          {['/curator/tasks', '/curator/onboarding'].map((path) => (
+            <Route key={path} path={path} element={
+              <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator']}>
+                <AppLayout>
+                  <CuratorTasksRedirect />
+                </AppLayout>
+              </ProtectedRoute>
+            } />
+          ))}
           {/* Consolidated into /exam-results, which now carries the triage list, the
               record/reschedule actions and the filters+export the old pages lacked. */}
           <Route path="/curator/exam-results" element={<Navigate to="/exam-results" replace />} />
