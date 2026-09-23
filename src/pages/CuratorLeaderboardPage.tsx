@@ -23,7 +23,7 @@ import { Checkbox } from '../components/ui/checkbox';
 import { Label } from '../components/ui/label';
 import { parseAsUTC } from '../lib/datetime';
 import { formatGroupCloseDate } from '../lib/groupList';
-import { isAttendanceLockedLesson } from '../lib/attendance';
+import { cellsToSave, isAttendanceLockedLesson } from '../lib/attendance';
 import { canBeExcused, displaysAsAbsence, excuseAwareStatus, excusePayload, isAbsenceStatus } from '../lib/excusedAbsence';
 import { ExcusePopover } from '../components/attendance/ExcusePopover';
 import { listMeetRecords, type MeetLessonFlag, type MeetReviewOptions, type MeetStudentVerdict } from '../services/api/meetAttendance';
@@ -1221,8 +1221,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         const attendanceUpdates: any[] = [];
         if (canMarkAttendance) {
             for (const student of entriesToSave) {
-                for (const [lessonKey, lessonStatus] of Object.entries(student.lessons)) {
-                    if (lockedLessonKeys.has(lessonKey)) continue;
+                for (const [lessonKey, lessonStatus] of cellsToSave(student.lessons, lockedLessonKeys)) {
                     const excuseTouched = touchedExcuses.has(`${student.student_id}:${lessonKey}`);
                     const excuseValue = Boolean(lessonStatus.excused);
                     attendanceUpdates.push({

@@ -14,3 +14,12 @@ export const getAlmatyDateKey = (dateStr: string | Date): string => {
 export const isAttendanceLockedLesson = (dateStr: string): boolean => {
   return getAlmatyDateKey(dateStr) > getAlmatyDateKey(new Date());
 };
+
+/**
+ * The cells of a changed student that a journal save sends: every lesson except locked (future) ones and
+ * cells nobody touched that still read «Не отмечено» (`marked === false`). An untouched one would reach
+ * the server as «Не был» and be stored — and billed — as an absence. Editing a cell sets `marked: true`.
+ */
+export function cellsToSave<T extends { marked?: boolean }>(lessons: Record<string, T>, locked: Set<string>): [string, T][] {
+  return Object.entries(lessons).filter(([key, lesson]) => !locked.has(key) && lesson.marked !== false);
+}
