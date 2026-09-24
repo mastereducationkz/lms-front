@@ -17,6 +17,7 @@ export const CRM_WEB_URL = (
 
 export const CRM_WORKSPACE_URL = `${CRM_WEB_URL}/curator`;
 export const CRM_TASKS_URL = `${CRM_WEB_URL}/curator/tasks`;
+export const CRM_ONBOARDING_URL = `${CRM_WEB_URL}/curator/onboarding`;
 export const CRM_CLIENTS_URL = `${CRM_WEB_URL}/curator/clients`;
 
 /** The CRM card for a student, by their LMS id. Resolves or offers reconciliation there. */
@@ -39,4 +40,20 @@ export function buildCrmTasksUrl(search: string): string {
   }
   const query = outgoing.toString();
   return `${CRM_TASKS_URL}${query ? `?${query}` : ''}`;
+}
+
+/**
+ * Where an old LMS onboarding link lands: the CRM's «Онбординг» board, restored beside
+ * «Задачи» on 2026-09-24. Carries the board's own parameters (a head's curator filter, one
+ * card to open) and nothing else.
+ */
+export function buildCrmOnboardingUrl(search: string): string {
+  const incoming = new URLSearchParams(search);
+  const outgoing = new URLSearchParams();
+  for (const key of ['curator_id', 'card'] as const) {
+    const value = incoming.get(key);
+    if (value) outgoing.set(key, value);
+  }
+  const query = outgoing.toString();
+  return `${CRM_ONBOARDING_URL}${query ? `?${query}` : ''}`;
 }

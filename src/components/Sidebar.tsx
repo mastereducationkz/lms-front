@@ -5,7 +5,7 @@ import { connectSocket } from '../services/socket';
 import { useVisiblePolling } from '../hooks/useVisiblePolling';
 import apiClient from '../services/api';
 import logoIco from '../assets/masteredlogo-ico.ico';
-import { CRM_TASKS_URL, CRM_WORKSPACE_URL } from '../lib/crmLinks';
+import { CRM_ONBOARDING_URL, CRM_TASKS_URL, CRM_WORKSPACE_URL } from '../lib/crmLinks';
 import { attendanceBadge, type AttendanceBadgeTone, type AttendanceDue } from '../lib/attendanceBadge';
 import { 
   ExternalLink,
@@ -14,6 +14,7 @@ import {
   ClipboardList,
   ClipboardCheck,
   ListChecks,
+  UserPlus,
   MessageCircle,
   UserCheck,
   Settings,
@@ -120,6 +121,7 @@ function getNavigationItems(
     // redirect so curators land on the list in one hop; /curator/tasks and /curator/onboarding
     // still redirect, which is what catches existing bookmarks.
     [CRM_TASKS_URL, ['head_curator', 'curator'].includes(_userRole || '') ? 'Задачи (CRM)' : 'Tasks (CRM)', ListChecks, 0, ['curator', 'head_curator'], 'curator-tasks-nav', 'curator'],
+    [CRM_ONBOARDING_URL, ['head_curator', 'curator'].includes(_userRole || '') ? 'Онбординг (CRM)' : 'Onboarding (CRM)', UserPlus, 0, ['curator', 'head_curator'], 'curator-onboarding-nav', 'curator'],
     [CRM_WORKSPACE_URL, ['head_curator', 'curator'].includes(_userRole || '') ? 'Вернуться в CRM' : 'Back to CRM', ExternalLink, 0, ['curator', 'head_curator'], 'crm-workspace-nav', 'curator'],
     ['/curator/students', ['head_curator', 'curator'].includes(_userRole || '') ? 'Журнал' : 'Students', Users, 0, ['curator', 'head_curator', 'admin', 'head_teacher'], 'students-journal-nav', 'curator'],
     ['/curator/groups', ['head_curator', 'curator'].includes(_userRole || '') ? 'Мои группы' : 'My groups', UsersRound, 0, ['curator', 'head_curator'], 'curator-groups-nav', 'curator'],

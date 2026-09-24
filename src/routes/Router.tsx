@@ -711,11 +711,11 @@ export default function Router() {
             </ProtectedRoute>
           } />
 
-          {['/curator/tasks', '/curator/onboarding'].map((path) => (
-            <Route key={path} path={path} element={
+          {(['tasks', 'onboarding'] as const).map((board) => (
+            <Route key={board} path={`/curator/${board}`} element={
               <ProtectedRoute allowedRoles={['curator', 'admin', 'head_curator']}>
                 <AppLayout>
-                  <CuratorTasksRedirect />
+                  <CuratorTasksRedirect board={board} />
                 </AppLayout>
               </ProtectedRoute>
             } />
