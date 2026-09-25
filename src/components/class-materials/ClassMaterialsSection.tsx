@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -9,15 +9,19 @@ import { canSkipFetch, materialsVisibility, type MaterialsVisibility } from '../
 import MaterialRow from './MaterialRow';
 import MaterialViewer from './MaterialViewer';
 import CatchUpList from './CatchUpList';
+import AddMaterialMenu, { type AddMaterialMenuHandle } from './AddMaterialMenu';
+import ItemActionsMenu from './ItemActionsMenu';
+import TopicSuggestionRow from './TopicSuggestionRow';
 
 interface Props {
   eventId: number;
   variant?: 'dialog' | 'page';
-  /** Task 13 calls this after a mutation so the caller can refresh anything derived from
-   * the lesson (e.g. an attachment-count badge elsewhere on the page). Unused here. */
+  /** Called after any write (upload/attach/copy/edit/detach/moderate/topic save) refreshes the
+   * section, so the caller can refresh anything else derived from the lesson (e.g. an
+   * attachment-count badge elsewhere on the page). */
   onChanged?: () => void;
-  /** Skips the initial fetch when the caller already has the payload (e.g. Task 13 re-using
-   * the `LessonMaterials` an attach/copy call just returned). See `canSkipFetch`. */
+  /** Skips the initial fetch when the caller already has the payload (e.g. re-using the
+   * `LessonMaterials` an attach/copy call just returned). See `canSkipFetch`. */
   initialData?: LessonMaterials;
 }
 
@@ -50,11 +54,14 @@ function sameLesson(data: LessonMaterials | null, eventId: number): data is Less
  * costs one extra request in the rare case of revisiting an already-loaded lesson, in exchange
  * for never showing a stale result.
  *
- * Task 13 adds the write flows on top of this: the header's «Добавить» menu and each row's
- * ⋯ menu through `MaterialRow`'s `actions` slot, reusing this component's `data`/`onChanged`
- * plumbing.
+ * The write flows (upload, «Из моих файлов», «Скопировать из урока…», link, per-item rename /
+ * show-after-class / detach / moderate, and the topic row) live in `AddMaterialMenu` /
+ * `ItemActionsMenu` / `TopicSuggestionRow`. They report back through `applyMutation`, which
+ * either takes the full `LessonMaterials` a mutation already returned (attach/copy) or, for the
+ * per-item endpoints that only return the one item, bumps `attempt` to refetch — the same retry
+ * mechanism `retry()` uses below.
  */
-export default function ClassMaterialsSection({ eventId, initialData }: Props) {
+export default function ClassMaterialsSection({ eventId, onChanged, initialData }: Props) {
   const { user } = useAuth();
   const isParent = user?.role === 'parent';
   const locale = materialsLocale(user?.role);
@@ -67,6 +74,7 @@ export default function ClassMaterialsSection({ eventId, initialData }: Props) {
   const [attempt, setAttempt] = useState(0);
   const [viewerItem, setViewerItem] = useState<MaterialItem | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const addMenuRef = useRef<AddMaterialMenuHandle>(null);
 
   useEffect(() => {
     setViewerItem(null);
@@ -111,6 +119,33 @@ export default function ClassMaterialsSection({ eventId, initialData }: Props) {
 
   const retry = useCallback(() => setAttempt((n) => n + 1), []);
 
+  /** Every write flow reports back through this: attach/copy already return the full
+   *  `LessonMaterials`, so those are applied directly with no extra request; everything else
+   *  (rename, the after-class toggle, detach, moderate/restore) only returns the one item, so
+   *  those fall back to a refetch via `attempt`. Either way `onChanged` fires once. */
+  const applyMutation = useCallback(
+    (updated?: LessonMaterials) => {
+      if (updated && updated.lesson.id === eventId) {
+        setData(updated);
+        setFailure(null);
+      } else {
+        setAttempt((n) => n + 1);
+      }
+      onChanged?.();
+    },
+    [eventId, onChanged],
+  );
+
+  /** The topic-save response only carries `{event_id, topic}`, not a full `LessonMaterials`, so
+   *  it is patched into `data` directly rather than triggering a network refetch. */
+  const applyTopic = useCallback(
+    (topic: string) => {
+      setData((prev) => (prev && prev.lesson.id === eventId ? { ...prev, lesson: { ...prev.lesson, topic: topic || null } } : prev));
+      onChanged?.();
+    },
+    [eventId, onChanged],
+  );
+
   if (isParent || failure === 'hidden') return null;
 
   const current = sameLesson(data, eventId) ? data : null;
@@ -137,8 +172,24 @@ export default function ClassMaterialsSection({ eventId, initialData }: Props) {
   const lessonEnded = !!current && hasEnded(current.lesson.end_datetime);
 
   return (
-    <div className="mt-4 border-t border-border pt-4">
-      <h3 className="text-sm font-semibold text-foreground">{t('sectionTitle', locale)}</h3>
+    <div
+      className="mt-4 border-t border-border pt-4"
+      onDragOver={(e) => {
+        if (current?.can_manage) e.preventDefault();
+      }}
+      onDrop={(e) => {
+        if (!current?.can_manage) return;
+        e.preventDefault();
+        const files = Array.from(e.dataTransfer.files);
+        if (files.length) addMenuRef.current?.addFiles(files);
+      }}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-foreground">{t('sectionTitle', locale)}</h3>
+        {current?.can_manage && (
+          <AddMaterialMenu ref={addMenuRef} eventId={eventId} locale={locale} onMutated={applyMutation} />
+        )}
+      </div>
 
       {failure === 'error' && (
         <div className="mt-2 flex items-center gap-2.5 text-sm text-muted-foreground">
@@ -155,10 +206,29 @@ export default function ClassMaterialsSection({ eventId, initialData }: Props) {
 
       {current && (
         <>
+          <TopicSuggestionRow
+            key={current.lesson.id}
+            lesson={current.lesson}
+            visibleItems={current.items.filter((item) => !item.removed)}
+            canManage={current.can_manage}
+            locale={locale}
+            onSaved={applyTopic}
+          />
+
           {current.items.length > 0 && (
             <div className="mt-2 divide-y divide-border">
               {current.items.map((item) => (
-                <MaterialRow key={item.id} item={item} locale={locale} onOpen={openItem} />
+                <MaterialRow
+                  key={item.id}
+                  item={item}
+                  locale={locale}
+                  onOpen={openItem}
+                  actions={
+                    item.can_edit || item.can_detach || item.can_moderate ? (
+                      <ItemActionsMenu item={item} locale={locale} onMutated={() => applyMutation()} />
+                    ) : undefined
+                  }
+                />
               ))}
             </div>
           )}

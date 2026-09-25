@@ -41,6 +41,7 @@ export default function MaterialRow({ item, locale, onOpen, actions }: Props) {
             {removed.reason ? `: ${removed.reason}` : ''}
           </div>
         </div>
+        {actions}
       </div>
     );
   }
