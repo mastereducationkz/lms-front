@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { 
@@ -37,7 +37,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import { toast } from '../components/Toast';
 import { getClassMaterialCounts } from '../services/api/classMaterials';
-import LessonMaterialsBadge from '../components/class-materials/LessonMaterialsBadge';
+import LessonMaterialsBadge, { LessonMaterialsDialog } from '../components/class-materials/LessonMaterialsBadge';
 
 interface HomeworkMeta {
     id: number;
@@ -647,21 +647,31 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<LeaderboardData | null>(null);
   // 📎 counts for the grid's lesson badges (event_id → count), fetched once per group/week
-  // load (never per lesson) and refreshed after a materials dialog reports a write.
+  // load (never per lesson) and refreshed after a materials dialog reports a write. Only the
+  // latest request may write: a slow answer for the previous group/week is dropped.
   const [materialCounts, setMaterialCounts] = useState<Record<number, number>>({});
+  const materialCountsRequest = useRef(0);
   const refetchMaterialCounts = useCallback(async (lessons: LessonMeta[]) => {
+    const request = ++materialCountsRequest.current;
     const eventIds = lessons.map((l) => l.event_id).filter((id): id is number => !!id);
     if (!eventIds.length) {
       setMaterialCounts({});
       return;
     }
     try {
-      setMaterialCounts(await getClassMaterialCounts(eventIds));
+      const counts = await getClassMaterialCounts(eventIds);
+      if (request === materialCountsRequest.current) setMaterialCounts(counts);
     } catch (e) {
       console.error('Failed to load class material counts', e);
-      setMaterialCounts({});
+      if (request === materialCountsRequest.current) setMaterialCounts({});
     }
   }, []);
+  // The one materials dialog for the whole grid, rendered outside the table (see
+  // `LessonMaterialsBadge` for why it can't live inside a lesson header).
+  const [materialsDialog, setMaterialsDialog] = useState<{ open: boolean; eventId: number | null }>({
+    open: false,
+    eventId: null,
+  });
   // Marks that disagree with who was in the lesson's Meet room ("eventId:studentId" → flags).
   // Evidence only: the dot explains, the teacher still decides the mark.
   const [meetMismatches, setMeetMismatches] = useState<Map<string, MeetLessonFlag[]>>(new Map());
@@ -1782,7 +1792,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                         count={materialCounts[lesson.event_id] ?? 0}
                                         role={user?.role}
                                         t={t}
-                                        onChanged={() => refetchMaterialCounts(data.lessons)}
+                                        onOpen={(eventId) => setMaterialsDialog({ open: true, eventId })}
                                     />
                                 </div>
                                 <div className="flex flex-1 items-stretch">
@@ -2783,6 +2793,16 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <LessonMaterialsDialog
+      eventId={materialsDialog.eventId}
+      open={materialsDialog.open}
+      onOpenChange={(open) => setMaterialsDialog((prev) => ({ ...prev, open }))}
+      t={t}
+      onChanged={() => {
+        if (data) void refetchMaterialCounts(data.lessons);
+      }}
+    />
 
     <OverrideReasonsDialog
       open={overrideAsk !== null}
