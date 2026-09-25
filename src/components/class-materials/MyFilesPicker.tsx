@@ -46,9 +46,16 @@ export default function MyFilesPicker({ open, onOpenChange, locale, onConfirm }:
     }
   };
 
+  // Selection resets only when the dialog opens — NOT on every search keystroke, and NOT when
+  // "Load more" replaces `files`. `selected` holds ids, not row objects, so a pick made before
+  // refining the search (or before paging further) survives both: Confirm still attaches it
+  // even if the current result page doesn't show that file anymore.
+  useEffect(() => {
+    if (open) setSelected(new Set());
+  }, [open]);
+
   useEffect(() => {
     if (!open) return undefined;
-    setSelected(new Set());
     const handle = setTimeout(() => {
       void load(query);
     }, SEARCH_DEBOUNCE_MS);

@@ -38,6 +38,7 @@ export const COPY = {
   afterClassChip: { ru: 'после урока', en: 'after class' },
   showAfterClass: { ru: 'Показать после урока', en: 'Show after class' },
   rename: { ru: 'Переименовать', en: 'Rename' },
+  moreActions: { ru: 'Действия', en: 'More actions' },
   detach: { ru: 'Открепить от урока', en: 'Remove from lesson' },
   moderate: { ru: 'Удалить (модерация)', en: 'Remove (moderation)' },
   reason: { ru: 'Причина удаления', en: 'Reason for removal' },

@@ -155,7 +155,7 @@ export default function ItemActionsMenu({ item, locale, onMutated }: Props) {
           <button
             type="button"
             className="flex-none rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-            aria-label={t('rename', locale)}
+            aria-label={t('moreActions', locale)}
           >
             <MoreVertical className="h-4 w-4" aria-hidden />
           </button>
