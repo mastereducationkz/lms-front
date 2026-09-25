@@ -11,7 +11,9 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = location.state?.from?.pathname || '/dashboard';
+  // Keep the query too: a Telegram deep link like /materials?lesson=12 must survive the login.
+  const fromLocation = location.state?.from;
+  const from = fromLocation?.pathname ? `${fromLocation.pathname}${fromLocation.search || ''}` : '/dashboard';
 
   const handleSignIn = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
