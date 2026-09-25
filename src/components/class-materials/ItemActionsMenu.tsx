@@ -27,9 +27,10 @@ interface Props {
 }
 
 /**
- * The ⋯ menu of one `MaterialRow` (§8.1/§8.4): rename (inline input), the after-class toggle
- * and detach for whoever can edit the item, and moderation (remove with a reason / restore)
- * for moderators. A removed item only ever offers restore.
+ * The ⋯ menu of one `MaterialRow` (§8.1/§8.4): rename (inline input) when `can_rename` — a
+ * file's rename changes it on every lesson it's attached to, so only its owner or an admin
+ * gets it — the after-class toggle for whoever can edit the item, detach, and moderation
+ * (remove with a reason / restore) for moderators. A removed item only ever offers restore.
  */
 export default function ItemActionsMenu({ item, locale, onMutated }: Props) {
   const [renaming, setRenaming] = useState(false);
@@ -161,7 +162,7 @@ export default function ItemActionsMenu({ item, locale, onMutated }: Props) {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          {item.can_edit && (
+          {item.can_rename && (
             <DropdownMenuItem onSelect={() => setRenaming(true)}>{t('rename', locale)}</DropdownMenuItem>
           )}
           {item.can_edit && (

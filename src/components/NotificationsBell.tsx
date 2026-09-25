@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Bell, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { materialsLocale, relativeTime, t } from '../lib/classMaterials';
+import { bellPollDelayMs, materialsLocale, relativeTime, t } from '../lib/classMaterials';
 import {
   CLASS_MATERIAL_NOTIFICATION_TYPES,
   getNotifications,
@@ -13,7 +13,6 @@ import {
   type AppNotification,
 } from '../services/api/notifications';
 
-const POLL_MS = 60_000;
 const LIST_LIMIT = 20;
 
 /**
@@ -21,9 +20,9 @@ const LIST_LIMIT = 20;
  * (`class_materials`, `class_material_removed`), and a popover listing them. Hidden for a
  * parent (D7: "parents see nothing") and while logged out.
  *
- * The unread count polls every 60s, but only while the tab is visible — a background tab
- * never fires the request, and coming back to the foreground refreshes immediately rather
- * than waiting out the rest of the interval.
+ * The unread count polls every 120 s ± 15 s (`bellPollDelayMs`, Ruling 21), but only while the
+ * tab is visible — a background tab never fires the request, and coming back to the foreground
+ * refreshes immediately rather than waiting out the rest of the interval.
  */
 export default function NotificationsBell() {
   const { user } = useAuth();
@@ -47,12 +46,21 @@ export default function NotificationsBell() {
           if (!cancelled) setUnreadCount(count);
         })
         .catch(() => {
-          /* a failed poll just tries again in 60s */
+          /* a failed poll just tries again on the next tick */
         });
     };
 
+    // A fresh random delay per tick (not one fixed interval), so tabs opened together drift apart.
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const scheduleNext = () => {
+      timer = setTimeout(() => {
+        loadCount();
+        scheduleNext();
+      }, bellPollDelayMs(Math.random()));
+    };
+
     loadCount();
-    const interval = setInterval(loadCount, POLL_MS);
+    scheduleNext();
     const onVisibilityChange = () => {
       if (document.visibilityState === 'visible') loadCount();
     };
@@ -60,7 +68,7 @@ export default function NotificationsBell() {
 
     return () => {
       cancelled = true;
-      clearInterval(interval);
+      clearTimeout(timer);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
   }, [user, isParent]);
@@ -118,7 +126,7 @@ export default function NotificationsBell() {
           )}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0">
+      <PopoverContent align="end" className="w-[min(20rem,calc(100vw-1rem))] p-0">
         <div className="flex items-center justify-between border-b border-border px-3 py-2">
           <span className="text-sm font-semibold text-foreground">{t('notifications', locale)}</span>
           {items.some((n) => !n.is_read) && (

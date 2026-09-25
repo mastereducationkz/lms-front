@@ -1,6 +1,6 @@
 import type { AxiosProgressEvent } from 'axios';
 
-import { errorMessage, preCheckFile } from '../../lib/classMaterials';
+import { errorMessage, preCheckFile, uploadErrorReason } from '../../lib/classMaterials';
 import { mediaUrl } from '../../lib/mediaUrl';
 import { UploadFailedError } from '../../lib/uploadFailure';
 import { api } from './client';
@@ -65,6 +65,9 @@ export interface MaterialItem {
   url: string | null;
   removed: MaterialItemRemoved | null;
   can_edit: boolean;
+  /** Files: the caller owns the file or is admin (a rename changes it on every lesson it is
+   *  attached to). Links: the same as `can_edit`. */
+  can_rename: boolean;
   can_detach: boolean;
   can_moderate: boolean;
 }
@@ -137,7 +140,7 @@ export async function uploadClassFile(file: File, onProgress?: (pct: number) => 
     } as never);
     return response.data as ClassFile;
   } catch (error) {
-    throw new UploadFailedError(file.name, errorMessage(apiErrorCode(error), 'en'));
+    throw new UploadFailedError(file.name, uploadErrorReason(error, apiErrorCode(error)));
   }
 }
 

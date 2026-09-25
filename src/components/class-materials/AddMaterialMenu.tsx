@@ -42,6 +42,10 @@ interface QueueEntry {
  * `addFiles`), «Из моих файлов», «Скопировать из урока…» and «Ссылка». Every successful attach
  * hands the caller the full `LessonMaterials` response through `onMutated` so the section can
  * update without a second round trip.
+ *
+ * One upload batch at a time: from the first file until the batch is attached, the menu is
+ * disabled and dropped files are ignored, so a second batch can never overwrite the queue of
+ * one still running.
  */
 const AddMaterialMenu = forwardRef<AddMaterialMenuHandle, Props>(function AddMaterialMenu(
   { eventId, locale, onMutated },
@@ -53,6 +57,9 @@ const AddMaterialMenu = forwardRef<AddMaterialMenuHandle, Props>(function AddMat
   const [linkOpen, setLinkOpen] = useState(false);
   const [myFilesOpen, setMyFilesOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
+  const [inFlight, setInFlight] = useState(false);
+  // The guard itself: `addFiles` can run from a drop before the disabled state re-renders.
+  const inFlightRef = useRef(false);
 
   const runUploads = async (uploadable: { entry: QueueEntry; index: number }[]) => {
     const succeeded: { file: File; classFile: ClassFile }[] = [];
@@ -84,7 +91,7 @@ const AddMaterialMenu = forwardRef<AddMaterialMenuHandle, Props>(function AddMat
   };
 
   const startUpload = (files: File[]) => {
-    if (!files.length) return;
+    if (!files.length || inFlightRef.current) return;
     const entries: QueueEntry[] = files.map((file) => {
       const rejection = preCheckFile(file);
       return rejection
@@ -97,7 +104,13 @@ const AddMaterialMenu = forwardRef<AddMaterialMenuHandle, Props>(function AddMat
     const uploadable = entries
       .map((entry, index) => ({ entry, index }))
       .filter(({ entry }) => entry.status === 'pending');
-    if (uploadable.length) void runUploads(uploadable);
+    if (!uploadable.length) return;
+    inFlightRef.current = true;
+    setInFlight(true);
+    void runUploads(uploadable).finally(() => {
+      inFlightRef.current = false;
+      setInFlight(false);
+    });
   };
 
   useImperativeHandle(ref, () => ({ addFiles: startUpload }));
@@ -114,7 +127,7 @@ const AddMaterialMenu = forwardRef<AddMaterialMenuHandle, Props>(function AddMat
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button type="button" variant="ghost" size="sm" className="flex-none gap-1 text-primary">
+          <Button type="button" variant="ghost" size="sm" className="flex-none gap-1 text-primary" disabled={inFlight}>
             {t('add', locale)}
             <ChevronDown className="h-3.5 w-3.5" aria-hidden />
           </Button>

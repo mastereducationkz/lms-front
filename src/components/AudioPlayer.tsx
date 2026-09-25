@@ -28,6 +28,11 @@ function formatTime(seconds: number | null): string {
 interface AudioPlayerProps {
   src: string;
   className?: string;
+  /** Called when the element fails to load or play `src`, with where playback was. A caller
+   *  serving a short-lived signed URL can mint a fresh one and pass it back with `resumeAt`. */
+  onError?: (state: { currentTime: number; playing: boolean }) => void;
+  /** Where to pick up once a new `src` has its metadata: seek to `at`, and play if `play`. */
+  resumeAt?: { at: number; play: boolean } | null;
 }
 
 /**
@@ -43,11 +48,17 @@ interface AudioPlayerProps {
  * value, after which we reset playback to the start and drop the one-shot
  * listener.
  */
-export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className }) => {
+export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className, onError, resumeAt }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState<number | null>(null);
+  // Read inside the `src` effect without re-running it: `resumeAt` belongs to the `src` it
+  // arrived with, and a new `onError` identity each render must not reload the audio.
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
+  const resumeRef = useRef(resumeAt);
+  resumeRef.current = resumeAt;
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -82,6 +93,23 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className }) => {
 
     const handlePlay = () => setIsPlaying(true);
     const handlePause = () => setIsPlaying(false);
+    const handleError = () => {
+      onErrorRef.current?.({ currentTime: audio.currentTime, playing: !audio.paused });
+    };
+
+    const resume = resumeRef.current;
+    const applyResume = () => {
+      if (!resume) return;
+      if (resume.at > 0) {
+        audio.currentTime = resume.at;
+        setCurrentTime(resume.at);
+      }
+      if (resume.play) {
+        void audio.play().catch(() => {
+          // Playback can reject (e.g. user gesture requirements); ignore.
+        });
+      }
+    };
 
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
     audio.addEventListener('durationchange', handleDurationChange);
@@ -89,6 +117,11 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className }) => {
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('play', handlePlay);
     audio.addEventListener('pause', handlePause);
+    audio.addEventListener('error', handleError);
+    if (resume) {
+      if (audio.readyState >= HTMLMediaElement.HAVE_METADATA) applyResume();
+      else audio.addEventListener('loadedmetadata', applyResume, { once: true });
+    }
 
     // Duration probe: a DETACHED <audio> we CAN safely seek to force the browser
     // to compute a webm's missing duration, without disturbing the audible
@@ -139,6 +172,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className }) => {
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('play', handlePlay);
       audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('error', handleError);
+      audio.removeEventListener('loadedmetadata', applyResume);
       cleanupProbe();
     };
   }, [src]);

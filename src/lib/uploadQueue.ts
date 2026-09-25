@@ -33,3 +33,12 @@ export async function runWithConcurrency<T>(
   });
   await Promise.all(workers);
 }
+
+/**
+ * Whether every row of an upload batch has settled (done or failed). Until then the queue offers
+ * no Close button: there is no way to cancel an upload in flight, so a Cancel there would only
+ * hide rows that keep uploading and attaching.
+ */
+export function isQueueSettled(rows: readonly { status: 'pending' | 'uploading' | 'done' | 'error' }[]): boolean {
+  return rows.every((row) => row.status === 'done' || row.status === 'error');
+}

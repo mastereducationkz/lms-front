@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getClassMaterials, type LessonMaterials, type MaterialItem } from '../../services/api/classMaterials';
-import { materialsLocale, openedCount, pendingAfterClass, t } from '../../lib/classMaterials';
+import { homeworkLinkLabel, materialsLocale, openedCount, pendingAfterClass, t } from '../../lib/classMaterials';
 import { parseAsUTC } from '../../lib/datetime';
 import { canSkipFetch, materialsVisibility, type MaterialsVisibility } from '../../lib/classMaterialsView';
 import MaterialRow from './MaterialRow';
@@ -15,6 +15,8 @@ import TopicSuggestionRow from './TopicSuggestionRow';
 
 interface Props {
   eventId: number;
+  /** 'page' (default) is a section stacked under other lesson content, so it draws its own top
+   *  rule; 'dialog' is the whole content of a dialog (the attendance grid's 📎), with no rule. */
   variant?: 'dialog' | 'page';
   /** Called after any write (upload/attach/copy/edit/detach/moderate/topic save) refreshes the
    * section, so the caller can refresh anything else derived from the lesson (e.g. an
@@ -61,8 +63,12 @@ function sameLesson(data: LessonMaterials | null, eventId: number): data is Less
  * per-item endpoints that only return the one item, bumps `attempt` to refetch — the same retry
  * mechanism `retry()` uses below.
  */
-export default function ClassMaterialsSection({ eventId, onChanged, initialData }: Props) {
+export default function ClassMaterialsSection({ eventId, variant = 'page', onChanged, initialData }: Props) {
   const { user } = useAuth();
+  // In a dialog the heading row is the first thing in it, so it keeps clear of the dialog's
+  // own close ✕ in the top-right corner instead of drawing a top rule.
+  const frame = variant === 'dialog' ? '' : 'mt-4 border-t border-border pt-4';
+  const headingRow = `flex flex-wrap items-center justify-between gap-2${variant === 'dialog' ? ' pr-6' : ''}`;
   const isParent = user?.role === 'parent';
   const locale = materialsLocale(user?.role);
 
@@ -154,7 +160,7 @@ export default function ClassMaterialsSection({ eventId, onChanged, initialData 
   // appears once there is either data or a known error to show underneath it.
   if (loading && !current) {
     return (
-      <div className="mt-4 flex items-center gap-2.5 border-t border-border pt-4 text-sm text-muted-foreground">
+      <div className={`${frame} flex items-center gap-2.5 text-sm text-muted-foreground`}>
         <Loader2 className="h-4 w-4 flex-none animate-spin" aria-hidden />
       </div>
     );
@@ -173,7 +179,7 @@ export default function ClassMaterialsSection({ eventId, onChanged, initialData 
 
   return (
     <div
-      className="mt-4 border-t border-border pt-4"
+      className={frame}
       onDragOver={(e) => {
         if (current?.can_manage) e.preventDefault();
       }}
@@ -184,7 +190,7 @@ export default function ClassMaterialsSection({ eventId, onChanged, initialData 
         if (files.length) addMenuRef.current?.addFiles(files);
       }}
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className={headingRow}>
         <h3 className="text-sm font-semibold text-foreground">{t('sectionTitle', locale)}</h3>
         {current?.can_manage && (
           <AddMaterialMenu ref={addMenuRef} eventId={eventId} locale={locale} onMutated={applyMutation} />
@@ -224,7 +230,7 @@ export default function ClassMaterialsSection({ eventId, onChanged, initialData 
                   locale={locale}
                   onOpen={openItem}
                   actions={
-                    item.can_edit || item.can_detach || item.can_moderate ? (
+                    item.can_edit || item.can_rename || item.can_detach || item.can_moderate ? (
                       <ItemActionsMenu item={item} locale={locale} onMutated={() => applyMutation()} />
                     ) : undefined
                   }
@@ -242,7 +248,7 @@ export default function ClassMaterialsSection({ eventId, onChanged, initialData 
               to={`/homework/${hw.id}`}
               className="mt-2 block text-sm font-medium text-primary underline-offset-4 hover:underline"
             >
-              {t('homeworkLink', locale)}
+              {homeworkLinkLabel(hw.title, locale)}
             </Link>
           ))}
 

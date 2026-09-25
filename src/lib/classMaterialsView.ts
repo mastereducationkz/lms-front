@@ -1,4 +1,5 @@
 import type { MaterialItem } from '../services/api/classMaterials';
+import { validateLinkUrl } from './classMaterials';
 
 /**
  * «Материалы урока» — which UI a material shows, derived purely from the item's own kind/ext.
@@ -39,6 +40,33 @@ export function viewerContentKind(item: Pick<MaterialItem, 'kind' | 'file'>): Vi
   if (file.kind === 'audio') return 'audio';
   if (file.ext === 'pdf') return 'pdf';
   return 'download';
+}
+
+/**
+ * The href a link row renders as a real `<a target="_blank">`: the item's own URL, but only an
+ * http(s) one (`validateLinkUrl`, the rule the backend enforces on attach). A file item, or a
+ * link whose URL is missing or not http(s), gets no anchor, so a stored `javascript:` URL can
+ * never become clickable. Opening through a plain anchor (not `window.open` after awaiting the
+ * open log) is what keeps iOS Safari and a slow Chrome from blocking it as a popup.
+ */
+export function safeLinkHref(item: Pick<MaterialItem, 'kind' | 'url'>): string | null {
+  if (item.kind !== 'link' || !item.url) return null;
+  return validateLinkUrl(item.url) === null ? item.url : null;
+}
+
+export type PickerListState = 'ready' | 'loading' | 'failed' | 'empty';
+
+/**
+ * What the list area of a picker dialog («Из моих файлов», «Скопировать из урока…») shows. Rows
+ * on screen always win; with none, a load in flight shows a spinner, and a failed load shows a
+ * Retry line — never the "nothing here yet" text, which would tell a teacher their shelf is empty
+ * when it only failed to load.
+ */
+export function pickerListState(p: { loading: boolean; failed: boolean; count: number }): PickerListState {
+  if (p.count > 0) return 'ready';
+  if (p.loading) return 'loading';
+  if (p.failed) return 'failed';
+  return 'empty';
 }
 
 export type MaterialsVisibility = 'hidden' | 'error';

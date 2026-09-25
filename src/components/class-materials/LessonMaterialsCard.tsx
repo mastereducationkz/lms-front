@@ -28,7 +28,7 @@ export default function LessonMaterialsCard({ entry, locale, onOpenItem, highlig
       }`}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">
+        <h3 className="min-w-0 flex-1 line-clamp-2 break-words text-sm font-semibold text-foreground">
           {lessonHeading(lesson, locale)}
         </h3>
         {!lesson.is_active && (

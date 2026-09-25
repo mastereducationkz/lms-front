@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { runWithConcurrency } from './uploadQueue';
+import { isQueueSettled, runWithConcurrency } from './uploadQueue';
 
 describe('runWithConcurrency', () => {
   it('runs every task exactly once', async () => {
@@ -44,5 +44,17 @@ describe('runWithConcurrency', () => {
     const run = vi.fn();
     await runWithConcurrency([], 3, run);
     expect(run).not.toHaveBeenCalled();
+  });
+});
+
+describe('isQueueSettled', () => {
+  it('is false while any row is pending or uploading', () => {
+    expect(isQueueSettled([{ status: 'done' }, { status: 'uploading' }])).toBe(false);
+    expect(isQueueSettled([{ status: 'error' }, { status: 'pending' }])).toBe(false);
+  });
+
+  it('is true once every row is done or failed', () => {
+    expect(isQueueSettled([{ status: 'done' }, { status: 'error' }])).toBe(true);
+    expect(isQueueSettled([{ status: 'error' }])).toBe(true);
   });
 });

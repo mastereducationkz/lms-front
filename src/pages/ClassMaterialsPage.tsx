@@ -12,7 +12,7 @@ import {
 } from '../services/api/classMaterials';
 import { materialsLocale, t } from '../lib/classMaterials';
 import {
-  buildVisibleLessons, filtersChanged, mergeFeedLessons, shouldFetchDeepLinkDirectly, toFeedEntry,
+  buildVisibleLessons, feedFooter, filtersChanged, mergeFeedLessons, shouldFetchDeepLinkDirectly, toFeedEntry,
   type FeedFilters,
 } from '../lib/classMaterialsFeed';
 
@@ -40,9 +40,10 @@ function toOptions(groups: GroupOption[], allLabel?: string): SearchableOption[]
  * narrow by one when they have more than one; moderators (admin/head_curator/head_teacher) must
  * pick a group before any lesson loads, since the feed only ever hands them lessons for one.
  *
- * A `?lesson=<id>` deep link (from a Telegram notice or the bell) is resolved once: if the
- * lesson is already on the loaded page it's scrolled to and rung; otherwise it's fetched on its
- * own and pinned at the top. See `classMaterialsFeed.ts` for the pure decision logic.
+ * A `?lesson=<id>` deep link (from a Telegram notice or the bell) is resolved once per id: if
+ * the lesson is already on the loaded page it's scrolled to and rung; otherwise it's fetched on
+ * its own and pinned at the top. A new id (the bell clicked while already on this page) starts
+ * over. See `classMaterialsFeed.ts` for the pure decision logic.
  */
 export default function ClassMaterialsPage() {
   const { user } = useAuth();
@@ -69,12 +70,15 @@ export default function ClassMaterialsPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [loadMoreFailed, setLoadMoreFailed] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const latest = useRef(0);
 
   const [pinnedEntry, setPinnedEntry] = useState<FeedLessonEntry | null>(null);
   const [highlightId, setHighlightId] = useState<number | null>(null);
   const deepLinkResolved = useRef(false);
+  const deepLinkIdRef = useRef(deepLinkId);
+  deepLinkIdRef.current = deepLinkId;
   const prevFilters = useRef<FeedFilters | null>(null);
 
   const [viewerItem, setViewerItem] = useState<MaterialItem | null>(null);
@@ -88,6 +92,7 @@ export default function ClassMaterialsPage() {
     const request = ++latest.current;
     setLoading(true);
     setFailed(false);
+    setLoadMoreFailed(false);
     getClassMaterialsFeed({ groupId: groupId ?? undefined, q: q || undefined })
       .then((page) => {
         if (request !== latest.current) return;
@@ -120,6 +125,7 @@ export default function ClassMaterialsPage() {
     if (!nextBefore || loadingMore) return;
     const request = latest.current;
     setLoadingMore(true);
+    setLoadMoreFailed(false);
     getClassMaterialsFeed({ groupId: groupId ?? undefined, q: q || undefined, before: nextBefore })
       .then((page) => {
         if (request !== latest.current) return;
@@ -127,12 +133,20 @@ export default function ClassMaterialsPage() {
         setNextBefore(page.next_before);
       })
       .catch(() => {
-        if (request === latest.current) setFailed(true);
+        if (request === latest.current) setLoadMoreFailed(true);
       })
       .finally(() => {
         if (request === latest.current) setLoadingMore(false);
       });
   }, [nextBefore, loadingMore, groupId, q]);
+
+  // A different `?lesson=` while mounted (e.g. a bell item clicked on this very page) is a new
+  // deep link to resolve, and the previous one's pinned card goes with it. Declared before the
+  // resolving effect below, so both run in this order in the same commit.
+  useEffect(() => {
+    deepLinkResolved.current = false;
+    setPinnedEntry(null);
+  }, [deepLinkId]);
 
   // The deep link resolves exactly once: as soon as the lesson turns up on a loaded page, or —
   // if the feed's first page (for the current group/search) already came back without it — by
@@ -149,6 +163,7 @@ export default function ClassMaterialsPage() {
     deepLinkResolved.current = true;
     getClassMaterials(deepLinkId)
       .then((data) => {
+        if (data.lesson.id !== deepLinkIdRef.current) return; // the link moved on meanwhile
         setPinnedEntry(toFeedEntry(data));
         setHighlightId(deepLinkId);
       })
@@ -177,6 +192,7 @@ export default function ClassMaterialsPage() {
   const groupSelectValue = isModerator ? (groupId === null ? null : String(groupId)) : (groupId === null ? ALL_GROUPS : String(groupId));
 
   const searching = q.trim().length > 0;
+  const footer = feedFooter({ loading, failed, loadMoreFailed, nextBefore });
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4 px-3 py-5 sm:px-4">
@@ -203,6 +219,8 @@ export default function ClassMaterialsPage() {
             value={groupSelectValue}
             onChange={(v) => setGroupId(v === ALL_GROUPS ? null : Number(v))}
             placeholder={isModerator ? t('pickGroup', locale) : t('allGroups', locale)}
+            searchPlaceholder={t('searchGroups', locale)}
+            emptyText={t('searchNothing', locale)}
             ariaLabel={isModerator ? t('pickGroup', locale) : t('allGroups', locale)}
             className="h-11 w-full text-sm"
           />
@@ -262,7 +280,7 @@ export default function ClassMaterialsPage() {
             />
           ))}
 
-          {!loading && !failed && nextBefore && (
+          {footer === 'loadMore' && (
             <div className="flex justify-center pt-1">
               <button
                 type="button"
@@ -272,6 +290,20 @@ export default function ClassMaterialsPage() {
               >
                 {loadingMore && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
                 {t('loadMore', locale)}
+              </button>
+            </div>
+          )}
+
+          {footer === 'loadMoreFailed' && (
+            <div className="flex items-center justify-center gap-3 pt-1 text-sm text-muted-foreground">
+              <span>{t('loadFailed', locale)}</span>
+              <button
+                type="button"
+                onClick={loadMore}
+                className="inline-flex h-11 items-center gap-1.5 rounded-lg border border-border px-3 font-medium text-foreground hover:bg-muted"
+              >
+                <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+                {t('retry', locale)}
               </button>
             </div>
           )}

@@ -73,3 +73,20 @@ export function filtersChanged(prev: FeedFilters | null, next: FeedFilters): boo
   if (prev === null) return false;
   return prev.groupId !== next.groupId || prev.q !== next.q;
 }
+
+export type FeedFooter = 'none' | 'loadMore' | 'loadMoreFailed';
+
+/**
+ * What sits under the page's cards. Nothing while the first page loads, after it failed (the
+ * page shows its own Retry for that), or when there is no next page. A failed "Load more" keeps
+ * its cursor and becomes the failure line with a Retry, instead of silently hiding the button.
+ */
+export function feedFooter(s: {
+  loading: boolean;
+  failed: boolean;
+  loadMoreFailed: boolean;
+  nextBefore: string | null;
+}): FeedFooter {
+  if (s.loading || s.failed || !s.nextBefore) return 'none';
+  return s.loadMoreFailed ? 'loadMoreFailed' : 'loadMore';
+}

@@ -1,6 +1,6 @@
 import { almatyDayKey, recordingsLocale, type Locale } from './recordings';
 import { parseAsUTC } from './datetime';
-import { MAX_UPLOAD_BYTES } from './uploadFailure';
+import { MAX_UPLOAD_BYTES, uploadFailureReason } from './uploadFailure';
 
 export type { Locale };
 
@@ -46,6 +46,7 @@ export const COPY = {
   removedLabel: { ru: 'Удалено модератором', en: 'Removed by a moderator' },
   empty: { ru: 'Учитель пока не добавил материалы к этому уроку', en: "The teacher hasn't added materials to this lesson yet" },
   homeworkLink: { ru: 'Домашнее задание к уроку →', en: 'Homework for this lesson →' },
+  homeworkPrefix: { ru: 'Домашнее задание', en: 'Homework' },
   catchUp: { ru: 'Пропустили урок и не открыли материалы', en: "Missed the lesson and haven't opened the materials" },
   officeNudge: { ru: 'Загрузите PDF — его откроют прямо в браузере', en: 'Upload a PDF — it opens right in the browser' },
   topicLabel: { ru: 'Тема урока', en: 'Lesson topic' },
@@ -53,13 +54,16 @@ export const COPY = {
   topicPrefix: { ru: 'Тема', en: 'Topic' },
   save: { ru: 'Сохранить', en: 'Save' },
   cancel: { ru: 'Отмена', en: 'Cancel' },
+  close: { ru: 'Закрыть', en: 'Close' },
   cancelledLesson: { ru: 'Урок снят с расписания', en: 'Lesson taken off the schedule' },
   pageTitle: { ru: 'Материалы', en: 'Materials' },
   search: { ru: 'Поиск по названию или теме', en: 'Search by name or topic' },
   allGroups: { ru: 'Все группы', en: 'All groups' },
+  searchGroups: { ru: 'Поиск группы', en: 'Search groups' },
   pickGroup: { ru: 'Выберите группу, чтобы увидеть материалы', en: 'Pick a group to see its materials' },
   download: { ru: 'Скачать', en: 'Download' },
   openLink: { ru: 'Открыть ссылку', en: 'Open link' },
+  openInNewTab: { ru: 'Открыть в новой вкладке', en: 'Open in a new tab' },
   loadMore: { ru: 'Показать ещё', en: 'Load more' },
   noMaterialsYet: { ru: 'Материалов пока нет', en: 'No materials yet' },
   searchNothing: { ru: 'Ничего не найдено', en: 'Nothing found' },
@@ -208,10 +212,63 @@ export function suggestTopic(titles: string[]): string {
   return joined.length > SUGGEST_TOPIC_MAX ? `${joined.slice(0, SUGGEST_TOPIC_MAX - 1)}…` : joined;
 }
 
+/**
+ * What the topic input shows: the teacher's own typing once they have started (`draft`), else
+ * the confirmed topic, else a suggestion from the current item titles. Derived on every render
+ * rather than seeded once, so a suggestion appears as soon as the first upload lands in a dialog
+ * that was opened on an empty lesson.
+ */
+export function topicInputValue(draft: string | null, topic: string | null, titles: string[]): string {
+  if (draft !== null) return draft;
+  return topic ?? suggestTopic(titles);
+}
+
 /** A backend error code as a sentence the viewer can act on, falling back to a generic one. */
 export function errorMessage(code: string | undefined, locale: Locale): string {
   if (code && Object.prototype.hasOwnProperty.call(COPY, code)) return t(code as CopyKey, locale);
   return t('somethingWrong', locale);
+}
+
+/**
+ * Why a class-material upload failed, for the queue row. A class-materials route answers with a
+ * `detail.code` we have copy for; anything without one (a dropped connection, the stall watchdog,
+ * nginx's bare 413, a 5xx) gets the shared upload reason instead of a generic "Something went
+ * wrong". Uploaders are teachers/head teachers/admins, who all read English.
+ */
+export function uploadErrorReason(error: unknown, code: string | undefined): string {
+  if (code) return errorMessage(code, 'en');
+  const reason = uploadFailureReason(error);
+  return reason.charAt(0).toUpperCase() + reason.slice(1);
+}
+
+/** «Домашнее задание: Unit 3 →», or the untitled line when the homework has no title. */
+export function homeworkLinkLabel(title: string | null | undefined, locale: Locale): string {
+  const name = title?.trim();
+  return name ? `${t('homeworkPrefix', locale)}: ${name} →` : t('homeworkLink', locale);
+}
+
+export type CopyResultToast = { kind: 'success' | 'info'; text: string } | null;
+
+/**
+ * The toast after «Скопировать из урока…»: "+N" when something was added, the duplicate notice
+ * when everything was already attached, and nothing when the source lesson had nothing to copy.
+ */
+export function copyResultToast(added: number, skipped: number, locale: Locale): CopyResultToast {
+  if (added > 0) return { kind: 'success', text: `+${added}` };
+  if (skipped > 0) return { kind: 'info', text: t('duplicate', locale) };
+  return null;
+}
+
+const BELL_POLL_MS = 120_000;
+const BELL_POLL_JITTER_MS = 15_000;
+
+/**
+ * The bell's next unread-count poll, 120 s ± 15 s (Ruling 21). `random` is `Math.random()`,
+ * passed in so the spread is testable; the jitter keeps every open tab from polling in step.
+ */
+export function bellPollDelayMs(random: number): number {
+  const r = Math.min(Math.max(random, 0), 1);
+  return Math.round(BELL_POLL_MS + (r * 2 - 1) * BELL_POLL_JITTER_MS);
 }
 
 const WEEKDAY_ABBR: Record<Locale, string[]> = {

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { FeedLessonEntry, LessonMaterials } from '../services/api/classMaterials';
-import { buildVisibleLessons, filtersChanged, mergeFeedLessons, shouldFetchDeepLinkDirectly, toFeedEntry } from './classMaterialsFeed';
+import {
+  buildVisibleLessons, feedFooter, filtersChanged, mergeFeedLessons, shouldFetchDeepLinkDirectly, toFeedEntry,
+} from './classMaterialsFeed';
 
 function lesson(id: number, overrides: Partial<FeedLessonEntry['lesson']> = {}): FeedLessonEntry['lesson'] {
   return {
@@ -110,5 +112,24 @@ describe('filtersChanged', () => {
 
   it('is true when the search text changes', () => {
     expect(filtersChanged({ groupId: 3, q: '' }, { groupId: 3, q: 'algebra' })).toBe(true);
+  });
+});
+
+describe('feedFooter', () => {
+  const base = { loading: false, failed: false, loadMoreFailed: false, nextBefore: '2026-09-20T12:00:00' };
+
+  it('offers Load more while there is a next page', () => {
+    expect(feedFooter(base)).toBe('loadMore');
+  });
+
+  it('turns a failed Load more into the failure line, keeping the cursor for Retry', () => {
+    expect(feedFooter({ ...base, loadMoreFailed: true })).toBe('loadMoreFailed');
+  });
+
+  it('shows nothing without a next page, while the first page loads, or after it failed', () => {
+    expect(feedFooter({ ...base, nextBefore: null })).toBe('none');
+    expect(feedFooter({ ...base, nextBefore: null, loadMoreFailed: true })).toBe('none');
+    expect(feedFooter({ ...base, loading: true })).toBe('none');
+    expect(feedFooter({ ...base, failed: true })).toBe('none');
   });
 });

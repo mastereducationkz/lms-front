@@ -3,7 +3,7 @@ import { Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { setLessonTopic } from '../../services/api/curator';
 import type { LessonBrief, MaterialItem } from '../../services/api/classMaterials';
-import { suggestTopic, t, type Locale } from '../../lib/classMaterials';
+import { t, topicInputValue, type Locale } from '../../lib/classMaterials';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 
@@ -21,11 +21,15 @@ interface Props {
  * needs `lesson.group_ids[0]`. Before a topic is confirmed, only a manager with at least one
  * item sees the editable suggestion — there is no auto-display of an unconfirmed topic; once
  * confirmed, everyone sees the plain text and only a manager can reopen the editor.
+ *
+ * The input follows the suggestion (`topicInputValue`) until the teacher types: the usual flow
+ * opens an empty lesson and uploads into it, and the suggestion must appear as those land.
  */
 export default function TopicSuggestionRow({ lesson, visibleItems, canManage, locale, onSaved }: Props) {
   const [editing, setEditing] = useState(!lesson.topic);
-  const [value, setValue] = useState(() => lesson.topic ?? suggestTopic(visibleItems.map((item) => item.title)));
+  const [draft, setDraft] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const value = topicInputValue(draft, lesson.topic, visibleItems.map((item) => item.title));
 
   if (!lesson.group_ids.length) return null;
   if (!lesson.topic && (!canManage || visibleItems.length === 0)) return null;
@@ -40,7 +44,7 @@ export default function TopicSuggestionRow({ lesson, visibleItems, canManage, lo
           <button
             type="button"
             onClick={() => {
-              setValue(lesson.topic ?? '');
+              setDraft(null);
               setEditing(true);
             }}
             className="text-muted-foreground hover:text-foreground"
@@ -62,6 +66,8 @@ export default function TopicSuggestionRow({ lesson, visibleItems, canManage, lo
         topic: value.trim() || null,
       });
       onSaved(res.topic ?? '');
+      // A cleared topic keeps the (empty) input the teacher saved, rather than refilling it.
+      if (res.topic) setDraft(null);
       setEditing(!res.topic);
     } catch {
       toast.error(t('somethingWrong', locale));
@@ -74,7 +80,7 @@ export default function TopicSuggestionRow({ lesson, visibleItems, canManage, lo
     <div className="mt-2 max-w-sm space-y-1">
       <label className="text-xs font-medium text-muted-foreground">{t('topicLabel', locale)}</label>
       <div className="flex items-center gap-2">
-        <Input value={value} onChange={(e) => setValue(e.target.value)} maxLength={120} className="h-8 text-sm" />
+        <Input value={value} onChange={(e) => setDraft(e.target.value)} maxLength={120} className="h-8 text-sm" />
         <Button type="button" size="sm" onClick={() => void save()} disabled={saving}>
           {t('save', locale)}
         </Button>

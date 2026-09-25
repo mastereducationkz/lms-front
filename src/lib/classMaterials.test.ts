@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import { MAX_UPLOAD_BYTES } from './uploadFailure';
 import {
-  COPY, type CopyKey, errorMessage, fileExt, formatSize, isGoogleShareLink, isOfficeExt,
-  lessonHeading, materialsBadgeVariant, openedCount, pendingAfterClass, plural, preCheckFile,
-  relativeTime, suggestTopic, t, validateLinkUrl,
+  bellPollDelayMs, COPY, copyResultToast, type CopyKey, errorMessage, fileExt, formatSize,
+  homeworkLinkLabel, isGoogleShareLink, isOfficeExt, lessonHeading, materialsBadgeVariant,
+  openedCount, pendingAfterClass, plural, preCheckFile, relativeTime, suggestTopic, t,
+  topicInputValue, uploadErrorReason, validateLinkUrl,
 } from './classMaterials';
 
 describe('preCheckFile', () => {
@@ -274,5 +275,78 @@ describe('materialsBadgeVariant', () => {
     expect(materialsBadgeVariant(null, 5, 'teacher')).toBeNull();
     expect(materialsBadgeVariant(undefined, 5, 'admin')).toBeNull();
     expect(materialsBadgeVariant(0, 5, 'admin')).toBeNull();
+  });
+});
+
+describe('topicInputValue', () => {
+  it('suggests from the current titles until the teacher types', () => {
+    expect(topicInputValue(null, null, [])).toBe('');
+    // The same row, re-rendered after the first upload lands: the suggestion appears.
+    expect(topicInputValue(null, null, ['Reading Practice 4.pdf'])).toBe('Reading Practice 4');
+  });
+
+  it('keeps whatever the teacher typed, even an empty string, as items keep changing', () => {
+    expect(topicInputValue('My topic', null, ['Reading Practice 4.pdf'])).toBe('My topic');
+    expect(topicInputValue('', null, ['Reading Practice 4.pdf'])).toBe('');
+  });
+
+  it('prefers a confirmed topic over a suggestion', () => {
+    expect(topicInputValue(null, 'Past Simple', ['Reading Practice 4.pdf'])).toBe('Past Simple');
+  });
+});
+
+describe('uploadErrorReason', () => {
+  it('uses the copy for a class-materials error code', () => {
+    expect(uploadErrorReason({ response: { status: 400 } }, 'corrupt_file')).toBe(t('corrupt_file', 'en'));
+  });
+
+  it('falls back to the shared upload reason, capitalised, when there is no code', () => {
+    expect(uploadErrorReason({ isAxiosError: true, code: 'ERR_NETWORK' }, undefined))
+      .toBe('The connection to the server was lost; check the internet connection and try again');
+    expect(uploadErrorReason({ response: { status: 502 } }, undefined))
+      .toBe('The server could not save it (error 502); try again in a minute');
+    expect(uploadErrorReason({ response: { status: 413 } }, undefined)).toBe('The file is larger than 50 MB');
+    expect(uploadErrorReason({ config: { uploadStalled: true } }, undefined)).toMatch(/^The upload stopped/);
+  });
+});
+
+describe('homeworkLinkLabel', () => {
+  it('names the homework', () => {
+    expect(homeworkLinkLabel('Unit 3', 'ru')).toBe('Домашнее задание: Unit 3 →');
+    expect(homeworkLinkLabel('  Unit 3 ', 'en')).toBe('Homework: Unit 3 →');
+  });
+
+  it('falls back to the untitled line for a blank title', () => {
+    expect(homeworkLinkLabel('', 'ru')).toBe(t('homeworkLink', 'ru'));
+    expect(homeworkLinkLabel(null, 'en')).toBe(t('homeworkLink', 'en'));
+  });
+});
+
+describe('copyResultToast', () => {
+  it('reports what was added', () => {
+    expect(copyResultToast(3, 0, 'en')).toEqual({ kind: 'success', text: '+3' });
+    expect(copyResultToast(2, 1, 'en')).toEqual({ kind: 'success', text: '+2' });
+  });
+
+  it('never says «+0»: all duplicates is the duplicate notice', () => {
+    expect(copyResultToast(0, 2, 'ru')).toEqual({ kind: 'info', text: t('duplicate', 'ru') });
+  });
+
+  it('says nothing when the source had nothing to copy', () => {
+    expect(copyResultToast(0, 0, 'en')).toBeNull();
+  });
+});
+
+describe('bellPollDelayMs', () => {
+  it('spreads polls over 120 s ± 15 s', () => {
+    expect(bellPollDelayMs(0)).toBe(105_000);
+    expect(bellPollDelayMs(0.5)).toBe(120_000);
+    expect(bellPollDelayMs(0.999999)).toBeLessThanOrEqual(135_000);
+    expect(bellPollDelayMs(0.999999)).toBeGreaterThan(134_900);
+  });
+
+  it('clamps an out-of-range random into the window', () => {
+    expect(bellPollDelayMs(-1)).toBe(105_000);
+    expect(bellPollDelayMs(2)).toBe(135_000);
   });
 });

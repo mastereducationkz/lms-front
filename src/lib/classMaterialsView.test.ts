@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { canSkipFetch, materialIconKind, materialsVisibility, viewerContentKind } from './classMaterialsView';
+import {
+  canSkipFetch, materialIconKind, materialsVisibility, pickerListState, safeLinkHref, viewerContentKind,
+} from './classMaterialsView';
 import type { MaterialItem } from '../services/api/classMaterials';
 
 type ItemShape = Pick<MaterialItem, 'kind' | 'file'>;
@@ -111,5 +113,40 @@ describe('canSkipFetch', () => {
 
   it('does not skip when there is no initialData at all', () => {
     expect(canSkipFetch(undefined, 7, 0)).toBe(false);
+  });
+});
+
+describe('safeLinkHref', () => {
+  it('passes an http(s) link through', () => {
+    expect(safeLinkHref({ kind: 'link', url: 'https://docs.google.com/d/1' })).toBe('https://docs.google.com/d/1');
+    expect(safeLinkHref({ kind: 'link', url: 'http://example.com/a?b=1' })).toBe('http://example.com/a?b=1');
+  });
+
+  it('refuses any other scheme, so it never becomes a clickable href', () => {
+    expect(safeLinkHref({ kind: 'link', url: 'javascript:alert(1)' })).toBeNull();
+    expect(safeLinkHref({ kind: 'link', url: 'data:text/html,hi' })).toBeNull();
+    expect(safeLinkHref({ kind: 'link', url: 'not a url' })).toBeNull();
+  });
+
+  it('is null for a missing url or a file item', () => {
+    expect(safeLinkHref({ kind: 'link', url: null })).toBeNull();
+    expect(safeLinkHref({ kind: 'file', url: 'https://example.com' })).toBeNull();
+  });
+});
+
+describe('pickerListState', () => {
+  it('shows rows whenever there are some, even mid-load or after a failed next page', () => {
+    expect(pickerListState({ loading: true, failed: false, count: 2 })).toBe('ready');
+    expect(pickerListState({ loading: false, failed: true, count: 2 })).toBe('ready');
+  });
+
+  it('is a spinner while loading with nothing on screen, including a retry', () => {
+    expect(pickerListState({ loading: true, failed: false, count: 0 })).toBe('loading');
+    expect(pickerListState({ loading: true, failed: true, count: 0 })).toBe('loading');
+  });
+
+  it('tells a failed load apart from an empty result', () => {
+    expect(pickerListState({ loading: false, failed: true, count: 0 })).toBe('failed');
+    expect(pickerListState({ loading: false, failed: false, count: 0 })).toBe('empty');
   });
 });

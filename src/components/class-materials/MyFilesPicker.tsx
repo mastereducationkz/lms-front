@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Button } from '../ui/button';
@@ -6,6 +7,7 @@ import { Input } from '../ui/input';
 import { Checkbox } from '../ui/checkbox';
 import { apiErrorCode, listMyClassFiles, updateClassFile, type ClassFile } from '../../services/api/classMaterials';
 import { errorMessage, formatSize, t, type Locale } from '../../lib/classMaterials';
+import { pickerListState } from '../../lib/classMaterialsView';
 
 interface Props {
   open: boolean;
@@ -26,6 +28,9 @@ export default function MyFilesPicker({ open, onOpenChange, locale, onConfirm }:
   const [files, setFiles] = useState<ClassFile[]>([]);
   const [nextBeforeId, setNextBeforeId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  // Which load failed: the first page (nothing to show, so a Retry instead of "no files yet")
+  // or a "Load more" (the rows stay, and the button becomes a Retry).
+  const [failed, setFailed] = useState<'first' | 'more' | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [submitting, setSubmitting] = useState(false);
   const requestSeq = useRef(0);
@@ -34,13 +39,16 @@ export default function MyFilesPicker({ open, onOpenChange, locale, onConfirm }:
     const seq = requestSeq.current + 1;
     requestSeq.current = seq;
     setLoading(true);
+    setFailed(null);
     try {
       const res = await listMyClassFiles({ q: q || undefined, beforeId });
       if (seq !== requestSeq.current) return;
       setFiles((prev) => (append ? [...prev, ...res.items] : res.items));
       setNextBeforeId(res.next_before_id);
     } catch {
-      if (seq === requestSeq.current && !append) setFiles([]);
+      if (seq !== requestSeq.current) return;
+      if (!append) setFiles([]);
+      setFailed(append ? 'more' : 'first');
     } finally {
       if (seq === requestSeq.current) setLoading(false);
     }
@@ -49,9 +57,13 @@ export default function MyFilesPicker({ open, onOpenChange, locale, onConfirm }:
   // Selection resets only when the dialog opens — NOT on every search keystroke, and NOT when
   // "Load more" replaces `files`. `selected` holds ids, not row objects, so a pick made before
   // refining the search (or before paging further) survives both: Confirm still attaches it
-  // even if the current result page doesn't show that file anymore.
+  // even if the current result page doesn't show that file anymore. Opening also counts as
+  // loading, so the debounce window before the first request shows a spinner, not "no files".
   useEffect(() => {
-    if (open) setSelected(new Set());
+    if (!open) return;
+    setSelected(new Set());
+    setLoading(true);
+    setFailed(null);
   }, [open]);
 
   useEffect(() => {
@@ -100,6 +112,8 @@ export default function MyFilesPicker({ open, onOpenChange, locale, onConfirm }:
     }
   };
 
+  const listState = pickerListState({ loading, failed: failed === 'first', count: files.length });
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[85vh] max-w-lg flex-col">
@@ -108,8 +122,27 @@ export default function MyFilesPicker({ open, onOpenChange, locale, onConfirm }:
         </DialogHeader>
         <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('search', locale)} />
         <div className="flex-1 overflow-y-auto">
-          {!loading && files.length === 0 && (
-            <p className="py-6 text-center text-sm text-muted-foreground">{t('myFilesEmpty', locale)}</p>
+          {listState === 'loading' && (
+            <div className="flex justify-center py-6">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden />
+            </div>
+          )}
+          {listState === 'failed' && (
+            <div className="flex items-center justify-center gap-2.5 py-6 text-sm text-muted-foreground">
+              <span>{t('loadFailed', locale)}</span>
+              <button
+                type="button"
+                onClick={() => void load(query)}
+                className="font-medium text-primary underline-offset-4 hover:underline"
+              >
+                {t('retry', locale)}
+              </button>
+            </div>
+          )}
+          {listState === 'empty' && (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              {query.trim() ? t('searchNothing', locale) : t('myFilesEmpty', locale)}
+            </p>
           )}
           <ul className="divide-y divide-border">
             {files.map((file) => (
@@ -129,7 +162,20 @@ export default function MyFilesPicker({ open, onOpenChange, locale, onConfirm }:
               </li>
             ))}
           </ul>
-          {nextBeforeId !== null && (
+          {nextBeforeId !== null && failed === 'more' && (
+            <div className="mt-2 flex items-center justify-center gap-2.5 text-sm text-muted-foreground">
+              <span>{t('loadFailed', locale)}</span>
+              <button
+                type="button"
+                onClick={() => void load(query, nextBeforeId, true)}
+                disabled={loading}
+                className="font-medium text-primary underline-offset-4 hover:underline"
+              >
+                {t('retry', locale)}
+              </button>
+            </div>
+          )}
+          {nextBeforeId !== null && failed !== 'more' && (
             <button
               type="button"
               onClick={() => void load(query, nextBeforeId, true)}
