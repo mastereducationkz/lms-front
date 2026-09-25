@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import { MAX_UPLOAD_BYTES } from './uploadFailure';
 import {
   COPY, type CopyKey, errorMessage, fileExt, formatSize, isGoogleShareLink, isOfficeExt,
-  lessonHeading, openedCount, pendingAfterClass, plural, preCheckFile, suggestTopic, t,
-  validateLinkUrl,
+  lessonHeading, materialsBadgeVariant, openedCount, pendingAfterClass, plural, preCheckFile,
+  relativeTime, suggestTopic, t, validateLinkUrl,
 } from './classMaterials';
 
 describe('preCheckFile', () => {
@@ -221,5 +221,58 @@ describe('openedCount', () => {
 
   it('reads in English', () => {
     expect(openedCount(3, 10, 'en')).toBe('Opened by 3 of 10');
+  });
+});
+
+describe('relativeTime', () => {
+  const now = new Date('2026-09-20T12:00:00Z').getTime();
+
+  it('says just now / только что under a minute', () => {
+    expect(relativeTime('2026-09-20T11:59:30Z', now, 'en')).toBe('just now');
+    expect(relativeTime('2026-09-20T11:59:30Z', now, 'ru')).toBe('только что');
+  });
+
+  it('picks the Russian plural form for minutes', () => {
+    expect(relativeTime('2026-09-20T11:58:00Z', now, 'ru')).toBe('2 минуты назад');
+    expect(relativeTime('2026-09-20T11:41:00Z', now, 'ru')).toBe('19 минут назад');
+  });
+
+  it('reads in English for minutes and hours', () => {
+    expect(relativeTime('2026-09-20T11:58:00Z', now, 'en')).toBe('2 min ago');
+    expect(relativeTime('2026-09-20T09:00:00Z', now, 'en')).toBe('3 h ago');
+  });
+
+  it('picks the Russian plural form for hours and days', () => {
+    expect(relativeTime('2026-09-20T09:00:00Z', now, 'ru')).toBe('3 часа назад');
+    expect(relativeTime('2026-09-18T12:00:00Z', now, 'ru')).toBe('2 дня назад');
+  });
+
+  it('falls back to a dd.mm date past a week', () => {
+    expect(relativeTime('2026-09-01T12:00:00Z', now, 'en')).toBe('01.09');
+    expect(relativeTime('2026-09-01T12:00:00Z', now, 'ru')).toBe('01.09');
+  });
+});
+
+describe('materialsBadgeVariant', () => {
+  it('shows the count once it is above zero, for any role', () => {
+    expect(materialsBadgeVariant(101, 3, 'student')).toBe('count');
+    expect(materialsBadgeVariant(101, 1, 'curator')).toBe('count');
+  });
+
+  it('offers a faint add invitation at zero for a manager-capable role', () => {
+    expect(materialsBadgeVariant(101, 0, 'teacher')).toBe('add');
+    expect(materialsBadgeVariant(101, 0, 'head_teacher')).toBe('add');
+    expect(materialsBadgeVariant(101, 0, 'admin')).toBe('add');
+  });
+
+  it('hides the badge at zero for a curator or head_curator', () => {
+    expect(materialsBadgeVariant(101, 0, 'curator')).toBeNull();
+    expect(materialsBadgeVariant(101, 0, 'head_curator')).toBeNull();
+  });
+
+  it('hides the badge without an event_id, even with a count', () => {
+    expect(materialsBadgeVariant(null, 5, 'teacher')).toBeNull();
+    expect(materialsBadgeVariant(undefined, 5, 'admin')).toBeNull();
+    expect(materialsBadgeVariant(0, 5, 'admin')).toBeNull();
   });
 });

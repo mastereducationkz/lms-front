@@ -243,3 +243,55 @@ export function formatSize(bytes: number, locale: Locale): string {
   const kb = Math.round(bytes / 1024);
   return `${kb} ${locale === 'ru' ? 'КБ' : 'KB'}`;
 }
+
+const MINUTE_MS = 60_000;
+const HOUR_MS = 60 * MINUTE_MS;
+const DAY_MS = 24 * HOUR_MS;
+const WEEK_MS = 7 * DAY_MS;
+
+/**
+ * "2 мин назад" / "3 h ago" — the notifications bell's per-item relative time. Falls back to
+ * a plain "12.09" date (Almaty, same as `lessonHeading`) past a week: nobody reads "9 d ago"
+ * as more useful than the date itself.
+ */
+export function relativeTime(iso: string, now: number, locale: Locale): string {
+  const then = parseAsUTC(iso);
+  const ms = Math.max(0, now - then.getTime());
+  if (ms < MINUTE_MS) return locale === 'ru' ? 'только что' : 'just now';
+  if (ms < HOUR_MS) {
+    const n = Math.floor(ms / MINUTE_MS);
+    return locale === 'ru' ? `${n} ${ruPluralForm(n, ['минуту', 'минуты', 'минут'])} назад` : `${n} min ago`;
+  }
+  if (ms < DAY_MS) {
+    const n = Math.floor(ms / HOUR_MS);
+    return locale === 'ru' ? `${n} ${ruPluralForm(n, ['час', 'часа', 'часов'])} назад` : `${n} h ago`;
+  }
+  if (ms < WEEK_MS) {
+    const n = Math.floor(ms / DAY_MS);
+    return locale === 'ru' ? `${n} ${ruPluralForm(n, ['день', 'дня', 'дней'])} назад` : `${n} d ago`;
+  }
+  const [, month, day] = almatyDayKey(then).split('-');
+  return `${day}.${month}`;
+}
+
+export type MaterialsBadgeVariant = 'count' | 'add' | null;
+
+const MATERIALS_MANAGER_ROLES = ['teacher', 'head_teacher', 'admin'];
+
+/**
+ * What the attendance-grid 📎 badge shows for one lesson: the count once it's above zero (any
+ * viewer who can see the grid), a faint "add" invitation at zero for a role that can plausibly
+ * manage a lesson (teacher/head_teacher/admin — `ClassMaterialsSection`'s own `can_manage` is
+ * what actually gates adding; this only decides which roles are worth the invitation), or
+ * nothing at all — a curator/head_curator sees a lesson's badge only once it has materials,
+ * and a lesson with no `event_id` has nothing to key the dialog on.
+ */
+export function materialsBadgeVariant(
+  eventId: number | null | undefined,
+  count: number,
+  role: string | null | undefined,
+): MaterialsBadgeVariant {
+  if (!eventId) return null;
+  if (count > 0) return 'count';
+  return role && MATERIALS_MANAGER_ROLES.includes(role) ? 'add' : null;
+}

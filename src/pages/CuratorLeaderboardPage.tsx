@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { 
@@ -36,6 +36,8 @@ import { spokeNote, talkSecondsIndex } from '../lib/meetTalk';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import { toast } from '../components/Toast';
+import { getClassMaterialCounts } from '../services/api/classMaterials';
+import LessonMaterialsBadge from '../components/class-materials/LessonMaterialsBadge';
 
 interface HomeworkMeta {
     id: number;
@@ -644,6 +646,22 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   // UI states
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<LeaderboardData | null>(null);
+  // 📎 counts for the grid's lesson badges (event_id → count), fetched once per group/week
+  // load (never per lesson) and refreshed after a materials dialog reports a write.
+  const [materialCounts, setMaterialCounts] = useState<Record<number, number>>({});
+  const refetchMaterialCounts = useCallback(async (lessons: LessonMeta[]) => {
+    const eventIds = lessons.map((l) => l.event_id).filter((id): id is number => !!id);
+    if (!eventIds.length) {
+      setMaterialCounts({});
+      return;
+    }
+    try {
+      setMaterialCounts(await getClassMaterialCounts(eventIds));
+    } catch (e) {
+      console.error('Failed to load class material counts', e);
+      setMaterialCounts({});
+    }
+  }, []);
   // Marks that disagree with who was in the lesson's Meet room ("eventId:studentId" → flags).
   // Evidence only: the dot explains, the teacher still decides the mark.
   const [meetMismatches, setMeetMismatches] = useState<Map<string, MeetLessonFlag[]>>(new Map());
@@ -842,7 +860,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
     try {
         const result = await getWeeklyLessonsWithHwStatus(selectedGroupId, currentWeek);
         setData(result);
-        
+        refetchMaterialCounts(result.lessons);
+
         // Load persistent config - use exact values from server, fallback to false if null/undefined
         if (result.config) {
             setEnabledCols({
@@ -1758,6 +1777,13 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                             <Pencil className="w-3.5 h-3.5" />
                                         </button>
                                     )}
+                                    <LessonMaterialsBadge
+                                        eventId={lesson.event_id}
+                                        count={materialCounts[lesson.event_id] ?? 0}
+                                        role={user?.role}
+                                        t={t}
+                                        onChanged={() => refetchMaterialCounts(data.lessons)}
+                                    />
                                 </div>
                                 <div className="flex flex-1 items-stretch">
                                     <div className="w-1/2 py-2 text-[10px] font-bold text-gray-600 dark:text-gray-400 border-r border-gray-300 dark:border-border text-center uppercase tracking-tighter flex items-center justify-center">
