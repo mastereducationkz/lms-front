@@ -41,7 +41,7 @@ export default function LessonMaterialsCard({ entry, locale, onOpenItem, highlig
       {items.length > 0 ? (
         <div className="mt-2 divide-y divide-border">
           {items.map((item) => (
-            <MaterialRow key={item.id} item={item} locale={locale} onOpen={onOpenItem} />
+            <MaterialRow key={item.id} item={item} locale={locale} onOpen={onOpenItem} density="comfortable" />
           ))}
         </div>
       ) : pending === 0 ? (

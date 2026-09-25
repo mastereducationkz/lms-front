@@ -41,20 +41,35 @@ export function buildVisibleLessons(entries: FeedLessonEntry[], pinned: FeedLess
 
 export interface DeepLinkState {
   lessonId: number | null;
-  /** Whether the current group/search's first feed page has come back at least once. */
+  /** Whether the current group/search's first feed page has come back at least once. A
+   *  moderator's group-less call answers this too (Controller Ruling 15: 200 with empty
+   *  `lessons` rather than 400), so there is no separate "still waiting for a group" case here. */
   loadedFeedOnce: boolean;
   foundInEntries: boolean;
-  /** A moderator who hasn't picked a group yet never gets a feed page to check at all. */
-  moderatorAwaitingGroup: boolean;
 }
 
 /**
- * Whether `?lesson=<id>` needs its own `getClassMaterials` fetch: either the feed already had
- * its chance to include it and didn't, or — for a moderator with no group chosen yet — it never
- * will get that chance, so there is nothing worth waiting for.
+ * Whether `?lesson=<id>` needs its own `getClassMaterials` fetch: the feed already had its one
+ * chance to include it (its first page, for the current group/search) and didn't.
  */
 export function shouldFetchDeepLinkDirectly(state: DeepLinkState): boolean {
   if (state.lessonId === null || state.foundInEntries) return false;
-  if (state.moderatorAwaitingGroup) return true;
   return state.loadedFeedOnce;
+}
+
+export interface FeedFilters {
+  groupId: number | null;
+  q: string;
+}
+
+/**
+ * Whether switching from `prev` to `next` filters should drop a pinned deep-linked lesson and
+ * its highlight ring, so it doesn't keep floating at the top of a view the viewer just filtered
+ * away from. `prev === null` is the very first filter snapshot (nothing to compare against yet,
+ * so nothing has "changed") — not the same as picking a group for the first time, which is a
+ * real change once a prior snapshot exists.
+ */
+export function filtersChanged(prev: FeedFilters | null, next: FeedFilters): boolean {
+  if (prev === null) return false;
+  return prev.groupId !== next.groupId || prev.q !== next.q;
 }

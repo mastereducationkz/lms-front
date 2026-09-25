@@ -10,6 +10,9 @@ interface Props {
   onOpen: (item: MaterialItem) => void;
   /** Task 13's per-row ⋯ menu (rename / show-after-class / detach / moderate). Empty here. */
   actions?: ReactNode;
+  /** 'compact' (default) keeps the lesson pop-up's tight spacing unchanged; 'comfortable' is a
+   *  ≥44px touch target for a standalone list, e.g. the «Материалы» page. */
+  density?: 'compact' | 'comfortable';
 }
 
 const ICONS = {
@@ -20,19 +23,25 @@ const ICONS = {
   presentation: Presentation,
 } as const;
 
+const ROW_PADDING: Record<'compact' | 'comfortable', string> = {
+  compact: 'py-1.5',
+  comfortable: 'min-h-[44px] py-3',
+};
+
 /**
  * One row of `ClassMaterialsSection`: a kind icon, the title, its size (files only) and the
  * «after class» chip when the teacher gated it. A moderated item renders as a greyed-out
  * audit line — the reason instead of an open action — since only a moderator ever sees one
  * at all (the backend already leaves them out of everyone else's response).
  */
-export default function MaterialRow({ item, locale, onOpen, actions }: Props) {
+export default function MaterialRow({ item, locale, onOpen, actions, density = 'compact' }: Props) {
   const Icon = ICONS[materialIconKind(item)];
   const removed = item.removed;
+  const padding = ROW_PADDING[density];
 
   if (removed) {
     return (
-      <div className="flex items-center gap-2.5 py-1.5">
+      <div className={`flex items-center gap-2.5 ${padding}`}>
         <Icon className="h-4 w-4 flex-none text-muted-foreground/50" aria-hidden />
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm text-muted-foreground line-through">{item.title}</div>
@@ -47,7 +56,7 @@ export default function MaterialRow({ item, locale, onOpen, actions }: Props) {
   }
 
   return (
-    <div className="flex items-center gap-2.5 py-1.5">
+    <div className={`flex items-center gap-2.5 ${padding}`}>
       <button
         type="button"
         onClick={() => onOpen(item)}

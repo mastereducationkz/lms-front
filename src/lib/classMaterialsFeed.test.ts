@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { FeedLessonEntry, LessonMaterials } from '../services/api/classMaterials';
-import { buildVisibleLessons, mergeFeedLessons, shouldFetchDeepLinkDirectly, toFeedEntry } from './classMaterialsFeed';
+import { buildVisibleLessons, filtersChanged, mergeFeedLessons, shouldFetchDeepLinkDirectly, toFeedEntry } from './classMaterialsFeed';
 
 function lesson(id: number, overrides: Partial<FeedLessonEntry['lesson']> = {}): FeedLessonEntry['lesson'] {
   return {
@@ -72,31 +72,43 @@ describe('buildVisibleLessons', () => {
 describe('shouldFetchDeepLinkDirectly', () => {
   it('is false when there is no deep link', () => {
     expect(shouldFetchDeepLinkDirectly({
-      lessonId: null, loadedFeedOnce: true, foundInEntries: false, moderatorAwaitingGroup: false,
+      lessonId: null, loadedFeedOnce: true, foundInEntries: false,
     })).toBe(false);
   });
 
   it('is false once the lesson has been found in the loaded feed', () => {
     expect(shouldFetchDeepLinkDirectly({
-      lessonId: 5, loadedFeedOnce: true, foundInEntries: true, moderatorAwaitingGroup: false,
+      lessonId: 5, loadedFeedOnce: true, foundInEntries: true,
     })).toBe(false);
   });
 
-  it('fetches right away for a moderator with no group chosen, before any feed page exists', () => {
+  it('waits for the first feed page before fetching directly', () => {
     expect(shouldFetchDeepLinkDirectly({
-      lessonId: 5, loadedFeedOnce: false, foundInEntries: false, moderatorAwaitingGroup: true,
-    })).toBe(true);
-  });
-
-  it('waits for the first feed page for everyone else', () => {
-    expect(shouldFetchDeepLinkDirectly({
-      lessonId: 5, loadedFeedOnce: false, foundInEntries: false, moderatorAwaitingGroup: false,
+      lessonId: 5, loadedFeedOnce: false, foundInEntries: false,
     })).toBe(false);
   });
 
-  it('fetches once the first feed page came back without the lesson', () => {
+  it('fetches once the first feed page came back without the lesson — including a moderator\'s group-less call, which now answers 200 instead of 400 (Controller Ruling 15)', () => {
     expect(shouldFetchDeepLinkDirectly({
-      lessonId: 5, loadedFeedOnce: true, foundInEntries: false, moderatorAwaitingGroup: false,
+      lessonId: 5, loadedFeedOnce: true, foundInEntries: false,
     })).toBe(true);
+  });
+});
+
+describe('filtersChanged', () => {
+  it('is false for the very first filter snapshot', () => {
+    expect(filtersChanged(null, { groupId: null, q: '' })).toBe(false);
+  });
+
+  it('is false when neither filter differs', () => {
+    expect(filtersChanged({ groupId: 3, q: 'algebra' }, { groupId: 3, q: 'algebra' })).toBe(false);
+  });
+
+  it('is true when the group changes, including a moderator picking their first group', () => {
+    expect(filtersChanged({ groupId: null, q: '' }, { groupId: 3, q: '' })).toBe(true);
+  });
+
+  it('is true when the search text changes', () => {
+    expect(filtersChanged({ groupId: 3, q: '' }, { groupId: 3, q: 'algebra' })).toBe(true);
   });
 });

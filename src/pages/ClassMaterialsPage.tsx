@@ -10,13 +10,16 @@ import {
   getClassMaterials, getClassMaterialsFeed,
   type FeedLessonEntry, type MaterialItem,
 } from '../services/api/classMaterials';
-import { getGroups } from '../services/api/groups';
 import { materialsLocale, t } from '../lib/classMaterials';
-import { buildVisibleLessons, mergeFeedLessons, shouldFetchDeepLinkDirectly, toFeedEntry } from '../lib/classMaterialsFeed';
+import {
+  buildVisibleLessons, filtersChanged, mergeFeedLessons, shouldFetchDeepLinkDirectly, toFeedEntry,
+  type FeedFilters,
+} from '../lib/classMaterialsFeed';
 
-/** Same set as the backend's `MODERATOR_ROLES` (global constraints): the feed refuses these
- *  roles a page without a `group_id` (400 `group_required`), so the page must ask for one
- *  before it ever calls the feed at all. */
+/** Same set as the backend's `MODERATOR_ROLES` (global constraints). Per Controller Ruling 15,
+ *  a moderator's group-less feed call answers 200 (empty `lessons`, all active `groups`) rather
+ *  than 400 `group_required` — the picker is filled from that call, and lessons only load once
+ *  a group is actually chosen. */
 const MODERATOR_ROLES = new Set(['admin', 'head_curator', 'head_teacher']);
 
 const SEARCH_DEBOUNCE_MS = 400;
@@ -35,7 +38,7 @@ function toOptions(groups: GroupOption[], allLabel?: string): SearchableOption[]
  * «Материалы» — the searchable, group-filterable feed of every lesson the viewer may see
  * materials for (§8.2 of the spec). Students/teachers/curators get their own groups and may
  * narrow by one when they have more than one; moderators (admin/head_curator/head_teacher) must
- * pick a group before anything loads at all, since the feed itself requires one from them.
+ * pick a group before any lesson loads, since the feed only ever hands them lessons for one.
  *
  * A `?lesson=<id>` deep link (from a Telegram notice or the bell) is resolved once: if the
  * lesson is already on the loaded page it's scrolled to and rung; otherwise it's fetched on its
@@ -58,7 +61,6 @@ export default function ClassMaterialsPage() {
   const q = useDebouncedValue(rawQuery, SEARCH_DEBOUNCE_MS);
 
   const [groupId, setGroupId] = useState<number | null>(null);
-  const [moderatorGroups, setModeratorGroups] = useState<GroupOption[]>([]);
   const [feedGroups, setFeedGroups] = useState<GroupOption[]>([]);
 
   const [entries, setEntries] = useState<FeedLessonEntry[]>([]);
@@ -73,35 +75,16 @@ export default function ClassMaterialsPage() {
   const [pinnedEntry, setPinnedEntry] = useState<FeedLessonEntry | null>(null);
   const [highlightId, setHighlightId] = useState<number | null>(null);
   const deepLinkResolved = useRef(false);
+  const prevFilters = useRef<FeedFilters | null>(null);
 
   const [viewerItem, setViewerItem] = useState<MaterialItem | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
 
-  const awaitingGroup = isModerator && groupId === null;
-
-  // Moderators pick from every active group up front — the feed won't tell them which groups
-  // exist until they've already chosen one. `/admin/groups` is the same group listing the
-  // event-management admin screens use, and its own access rule already matches exactly the
-  // three moderator roles here.
-  useEffect(() => {
-    if (!isModerator) return undefined;
-    let cancelled = false;
-    getGroups()
-      .then((groups) => {
-        if (cancelled) return;
-        setModeratorGroups(groups.filter((g) => g.is_active).map((g) => ({ id: g.id, name: g.name })));
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, [isModerator]);
+  // Rendering only — the fetch below always runs, even for a moderator with no group chosen:
+  // that call is what fills the picker in the first place (Controller Ruling 15).
+  const pickingGroup = isModerator && groupId === null;
 
   useEffect(() => {
-    if (awaitingGroup) {
-      setLoading(false);
-      return undefined;
-    }
     const request = ++latest.current;
     setLoading(true);
     setFailed(false);
@@ -119,8 +102,19 @@ export default function ClassMaterialsPage() {
       .finally(() => {
         if (request === latest.current) setLoading(false);
       });
-    return undefined;
-  }, [awaitingGroup, groupId, q, reloadKey]);
+  }, [groupId, q, reloadKey]);
+
+  // A group or search change drops a previously pinned deep-linked lesson — it belongs to a
+  // view the viewer just filtered away from. `prevFilters` starts at `null` so the very first
+  // run (mount, or a deep link resolving before any filter exists) never counts as a "change".
+  useEffect(() => {
+    const next: FeedFilters = { groupId, q };
+    if (filtersChanged(prevFilters.current, next)) {
+      setPinnedEntry(null);
+      setHighlightId(null);
+    }
+    prevFilters.current = next;
+  }, [groupId, q]);
 
   const loadMore = useCallback(() => {
     if (!nextBefore || loadingMore) return;
@@ -132,13 +126,17 @@ export default function ClassMaterialsPage() {
         setEntries((prev) => mergeFeedLessons(prev, page.lessons));
         setNextBefore(page.next_before);
       })
-      .catch(() => setFailed(true))
-      .finally(() => setLoadingMore(false));
+      .catch(() => {
+        if (request === latest.current) setFailed(true);
+      })
+      .finally(() => {
+        if (request === latest.current) setLoadingMore(false);
+      });
   }, [nextBefore, loadingMore, groupId, q]);
 
   // The deep link resolves exactly once: as soon as the lesson turns up on a loaded page, or —
-  // if it never will (the feed hasn't had its chance yet, or a moderator hasn't even picked a
-  // group) — by asking for it directly. See `shouldFetchDeepLinkDirectly`.
+  // if the feed's first page (for the current group/search) already came back without it — by
+  // asking for it directly. See `shouldFetchDeepLinkDirectly`.
   useEffect(() => {
     if (!deepLinkId || deepLinkResolved.current) return;
     const foundInEntries = entries.some((entry) => entry.lesson.id === deepLinkId);
@@ -147,9 +145,7 @@ export default function ClassMaterialsPage() {
       setHighlightId(deepLinkId);
       return;
     }
-    if (!shouldFetchDeepLinkDirectly({
-      lessonId: deepLinkId, loadedFeedOnce: loadedOnce, foundInEntries, moderatorAwaitingGroup: awaitingGroup,
-    })) return;
+    if (!shouldFetchDeepLinkDirectly({ lessonId: deepLinkId, loadedFeedOnce: loadedOnce, foundInEntries })) return;
     deepLinkResolved.current = true;
     getClassMaterials(deepLinkId)
       .then((data) => {
@@ -157,7 +153,7 @@ export default function ClassMaterialsPage() {
         setHighlightId(deepLinkId);
       })
       .catch(() => undefined); // 404 (or anything else) → the link just doesn't resolve
-  }, [deepLinkId, entries, loadedOnce, awaitingGroup]);
+  }, [deepLinkId, entries, loadedOnce]);
 
   useEffect(() => {
     if (highlightId === null) return undefined;
@@ -174,10 +170,8 @@ export default function ClassMaterialsPage() {
   const visibleEntries = useMemo(() => buildVisibleLessons(entries, pinnedEntry), [entries, pinnedEntry]);
 
   const groupOptions = useMemo(
-    () => (isModerator
-      ? toOptions(feedGroups.length ? feedGroups : moderatorGroups)
-      : toOptions(feedGroups, t('allGroups', locale))),
-    [isModerator, feedGroups, moderatorGroups, locale],
+    () => (isModerator ? toOptions(feedGroups) : toOptions(feedGroups, t('allGroups', locale))),
+    [isModerator, feedGroups, locale],
   );
   const showGroupSelect = isModerator || feedGroups.length > 1;
   const groupSelectValue = isModerator ? (groupId === null ? null : String(groupId)) : (groupId === null ? ALL_GROUPS : String(groupId));
@@ -209,13 +203,13 @@ export default function ClassMaterialsPage() {
             value={groupSelectValue}
             onChange={(v) => setGroupId(v === ALL_GROUPS ? null : Number(v))}
             placeholder={isModerator ? t('pickGroup', locale) : t('allGroups', locale)}
-            ariaLabel={t('allGroups', locale)}
+            ariaLabel={isModerator ? t('pickGroup', locale) : t('allGroups', locale)}
             className="h-11 w-full text-sm"
           />
         )}
       </div>
 
-      {awaitingGroup ? (
+      {pickingGroup ? (
         <>
           {visibleEntries.map((entry) => (
             <LessonMaterialsCard
@@ -274,7 +268,7 @@ export default function ClassMaterialsPage() {
                 type="button"
                 onClick={loadMore}
                 disabled={loadingMore}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-60"
+                className="inline-flex h-11 items-center gap-1.5 rounded-lg border border-border px-4 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-60"
               >
                 {loadingMore && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
                 {t('loadMore', locale)}
