@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { materialIconKind, viewerContentKind } from './classMaterialsView';
+import { materialIconKind, materialsVisibility, viewerContentKind } from './classMaterialsView';
 import type { MaterialItem } from '../services/api/classMaterials';
 
 type ItemShape = Pick<MaterialItem, 'kind' | 'file'>;
@@ -66,5 +66,30 @@ describe('viewerContentKind', () => {
 
   it('falls back to download when there is no file payload', () => {
     expect(viewerContentKind({ kind: 'file', file: null })).toBe('download');
+  });
+});
+
+describe('materialsVisibility', () => {
+  it('hides for a parent, without even looking at an error', () => {
+    expect(materialsVisibility({ isParent: true })).toBe('hidden');
+  });
+
+  it('hides on a 404 — this lesson is not the viewer\'s to see', () => {
+    const err = { response: { status: 404 } };
+    expect(materialsVisibility({ isParent: false, error: err })).toBe('hidden');
+  });
+
+  it('shows an error for a 500 — not the same as "you cannot see this"', () => {
+    const err = { response: { status: 500 } };
+    expect(materialsVisibility({ isParent: false, error: err })).toBe('error');
+  });
+
+  it('shows an error for a network failure with no response at all', () => {
+    const err = new Error('Network Error');
+    expect(materialsVisibility({ isParent: false, error: err })).toBe('error');
+  });
+
+  it('shows an error when there is no error object to inspect', () => {
+    expect(materialsVisibility({ isParent: false })).toBe('error');
   });
 });

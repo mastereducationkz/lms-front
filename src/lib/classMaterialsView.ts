@@ -40,3 +40,26 @@ export function viewerContentKind(item: Pick<MaterialItem, 'kind' | 'file'>): Vi
   if (file.ext === 'pdf') return 'pdf';
   return 'download';
 }
+
+export type MaterialsVisibility = 'hidden' | 'error';
+
+/** True only for a response whose HTTP status is exactly 404 — the "this lesson isn't yours
+ *  to see" answer (§4.5). A network error (no `response` at all), a timeout, or a 5xx is a
+ *  different thing entirely and must not be mistaken for "you can't see this". */
+function isNotFoundError(err: unknown): boolean {
+  const status = (err as { response?: { status?: unknown } } | null | undefined)?.response?.status;
+  return status === 404;
+}
+
+/**
+ * What `ClassMaterialsSection` does when it can't show its normal content. A parent never
+ * even gets a request, and a 404 means the lesson isn't this viewer's to see — both hide the
+ * section outright, exactly like a missing recording (nothing here a viewer needs to act on).
+ * Any other failure — a 5xx, a network blip with no `response` at all, a timeout — is NOT the
+ * same as "you can't see this": hiding it would make a teacher's real, already-attached
+ * materials look like they vanished, so it renders a muted retry line instead.
+ */
+export function materialsVisibility(input: { isParent: boolean; error?: unknown }): MaterialsVisibility {
+  if (input.isParent) return 'hidden';
+  return isNotFoundError(input.error) ? 'hidden' : 'error';
+}

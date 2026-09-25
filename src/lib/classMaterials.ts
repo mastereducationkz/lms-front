@@ -78,6 +78,8 @@ export const COPY = {
   reason_required: { ru: 'Укажите причину', en: 'Please give a reason' },
   storage_unavailable: { ru: 'Хранилище недоступно, попробуйте позже', en: 'Storage is unavailable, try again later' },
   somethingWrong: { ru: 'Что-то пошло не так', en: 'Something went wrong' },
+  loadFailed: { ru: 'Не удалось загрузить материалы', en: "Couldn't load materials" },
+  retry: { ru: 'Повторить', en: 'Retry' },
 } as const;
 
 export type CopyKey = keyof typeof COPY;
