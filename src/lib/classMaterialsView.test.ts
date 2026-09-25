@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { materialIconKind, materialsVisibility, viewerContentKind } from './classMaterialsView';
+import { canSkipFetch, materialIconKind, materialsVisibility, viewerContentKind } from './classMaterialsView';
 import type { MaterialItem } from '../services/api/classMaterials';
 
 type ItemShape = Pick<MaterialItem, 'kind' | 'file'>;
@@ -91,5 +91,25 @@ describe('materialsVisibility', () => {
 
   it('shows an error when there is no error object to inspect', () => {
     expect(materialsVisibility({ isParent: false })).toBe('error');
+  });
+});
+
+describe('canSkipFetch', () => {
+  const lesson7 = { lesson: { id: 7 } };
+
+  it('skips on the first attempt when initialData matches the lesson', () => {
+    expect(canSkipFetch(lesson7, 7, 0)).toBe(true);
+  });
+
+  it('does not skip when initialData belongs to a different lesson', () => {
+    expect(canSkipFetch(lesson7, 8, 0)).toBe(false);
+  });
+
+  it('does not skip on a retry, even for the same lesson', () => {
+    expect(canSkipFetch(lesson7, 7, 1)).toBe(false);
+  });
+
+  it('does not skip when there is no initialData at all', () => {
+    expect(canSkipFetch(undefined, 7, 0)).toBe(false);
   });
 });

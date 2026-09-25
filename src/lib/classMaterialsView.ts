@@ -63,3 +63,17 @@ export function materialsVisibility(input: { isParent: boolean; error?: unknown 
   if (input.isParent) return 'hidden';
   return isNotFoundError(input.error) ? 'hidden' : 'error';
 }
+
+/**
+ * Whether `ClassMaterialsSection` can skip its network fetch and use the `initialData` a
+ * caller (Task 13, after a mutation) already has in hand — only true the very first time for
+ * a given lesson. A retry (`attempt > 0`) always goes back to the network even for the same
+ * `eventId`: the point of a retry is to try again, not to hand back the same payload.
+ */
+export function canSkipFetch(
+  initialData: { lesson: { id: number } } | undefined,
+  eventId: number,
+  attempt: number,
+): boolean {
+  return !!initialData && initialData.lesson.id === eventId && attempt === 0;
+}
