@@ -125,14 +125,21 @@ const AddMaterialMenu = forwardRef<AddMaterialMenuHandle, Props>(function AddMat
 
   return (
     <>
-      <DropdownMenu>
+      {/* Non-modal, with `pointer-events-auto` content: this menu always sits inside a modal
+          Dialog, and `@radix-ui/react-menu` 2.1.15 ships its own copy of
+          `react-dismissable-layer` (1.1.10, the Dialog's is 1.1.11), so the two don't share a
+          layer stack. A modal menu then saves the Dialog's `pointer-events: none` on <body> as
+          "original" and puts it back after Escape closes both, freezing the page. Non-modal it
+          never touches <body>, and the class keeps its items clickable under the Dialog's
+          `none`, which the separate copy doesn't know to override. */}
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button type="button" variant="ghost" size="sm" className="flex-none gap-1 text-primary" disabled={inFlight}>
             {t('add', locale)}
             <ChevronDown className="h-3.5 w-3.5" aria-hidden />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="pointer-events-auto">
           <DropdownMenuItem onSelect={() => fileInputRef.current?.click()}>
             {t('uploadFiles', locale)}
           </DropdownMenuItem>
