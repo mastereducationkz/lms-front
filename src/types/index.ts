@@ -583,18 +583,6 @@ export interface FavoriteFlashcardCreate {
   flashcard_data: string; // JSON string with FlashcardItem data
 }
 
-export interface LessonMaterial {
-  id: string;
-  lesson_id: string;
-  title: string;
-  file_path: string;
-  file_type: string;
-  file_size: number;
-  file_url: string;
-  file_size_bytes?: number;
-  uploaded_at: string;
-}
-
 // =============================================================================
 // ASSIGNMENT ZERO TYPES - Self-Assessment Questionnaire
 // =============================================================================

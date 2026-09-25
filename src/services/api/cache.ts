@@ -57,6 +57,7 @@ const sessionStore: Storage | null = (() => {
  * A TTL of 0 disables caching for the endpoint.
  */
 const TTL_RULES: Array<{ test: RegExp; ttlMs: number }> = [
+  { test: /^\/(class-materials|notifications)(\/|$)/, ttlMs: 0 },
   { test: /^\/checkpoints(\/|$)/, ttlMs: 15 * 1000 },
 
   // Never cache

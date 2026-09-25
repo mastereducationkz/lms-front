@@ -3,7 +3,7 @@
 // showed «Failed to upload PDF for task:» with no reason at all.
 
 /** The backend's and nginx's request body limit. */
-export const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
+export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
 const MB = 1024 * 1024;
 

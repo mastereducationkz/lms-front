@@ -29,6 +29,8 @@ export * from './lectures';
 export * from './daily-questions';
 export * from './review';
 export * from './reports';
+export * from './classMaterials';
+export * from './notifications';
 
 // Re-export client utilities for direct access
 export { api, API_BASE_URL, clearCache } from './client';
