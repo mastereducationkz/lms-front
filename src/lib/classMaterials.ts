@@ -57,6 +57,7 @@ export const COPY = {
   pageTitle: { ru: 'Материалы', en: 'Materials' },
   search: { ru: 'Поиск по названию или теме', en: 'Search by name or topic' },
   allGroups: { ru: 'Все группы', en: 'All groups' },
+  pickGroup: { ru: 'Выберите группу, чтобы увидеть материалы', en: 'Pick a group to see its materials' },
   download: { ru: 'Скачать', en: 'Download' },
   openLink: { ru: 'Открыть ссылку', en: 'Open link' },
   loadMore: { ru: 'Показать ещё', en: 'Load more' },

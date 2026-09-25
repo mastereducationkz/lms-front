@@ -40,6 +40,7 @@ import {
   Video,
   Megaphone,
   MonitorCheck,
+  Paperclip,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Course } from '../types';
@@ -102,6 +103,7 @@ function getNavigationItems(
     ['/dashboard', ['head_curator', 'curator'].includes(_userRole || '') ? 'Дашборд' : 'Dashboard', Home, 0, null, 'dashboard-nav', 'primary'],
     ['/calendar', ['head_curator', 'curator'].includes(_userRole || '') ? 'Календарь' : 'Calendar', Calendar, 0, null, 'calendar-nav', 'primary'],
     ['/recordings', ['head_curator', 'curator'].includes(_userRole || '') ? 'Записи уроков' : 'Lesson Recordings', Video, 0, null, 'recordings-nav', 'primary'],
+    ['/materials', ['head_curator', 'curator'].includes(_userRole || '') ? 'Материалы' : 'Materials', Paperclip, 0, ['student', 'teacher', 'curator', 'head_curator', 'head_teacher', 'admin'], 'materials-nav', 'primary'],
     // Who was in each lesson's Meet room. Teachers see their lessons, curators their groups' — the
     // backend scopes it; students never (the record is about marks, which are staff business).
     ['/meet-attendance', ['head_curator', 'curator'].includes(_userRole || '') ? 'Посещаемость в Meet' : 'Meet Attendance', MonitorCheck, 0, ['admin', 'head_curator', 'head_teacher', 'teacher', 'curator'], 'meet-attendance-nav', 'primary'],
@@ -147,10 +149,10 @@ function getNavigationItems(
   ];
 
   if (_userRole === 'student' && isSpecialGroupStudent) {
-    // These students have no calendar, so a lesson-recordings entry would only lead them
-    // to lessons they cannot see.
+    // These students have no calendar, so a lesson-recordings or materials entry would only
+    // lead them to lessons they cannot see.
     return allItems.filter(
-      ([to]) => to !== '/calendar' && to !== '/homework' && to !== '/recordings'
+      ([to]) => to !== '/calendar' && to !== '/homework' && to !== '/recordings' && to !== '/materials'
     );
   }
 
