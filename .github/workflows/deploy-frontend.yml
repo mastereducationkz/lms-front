@@ -18,6 +18,12 @@ jobs:
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'master' }}
     runs-on: ubuntu-latest
+    env:
+      # A step-level `if: env.SENTRY_AUTH_TOKEN != ''` was tried first and was ALWAYS skipped
+      # (the SAT lesson: `secrets` isn't usable that way in a step `if:`). Resolve it once here,
+      # at job level, into a plain string the step below can check; the token itself is never
+      # put in this job-level env, only in the one step that actually uses it.
+      HAS_SENTRY_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN != '' }}
     steps:
       - name: Deploy to server
         uses: appleboy/ssh-action@v1.2.0
@@ -40,6 +46,27 @@ jobs:
             LMS_FRONT_GIT_COMMIT="$(git rev-parse HEAD)" docker compose build
             docker compose up -d lms-frontend
             echo "✅ Frontend container rebuilt & restarted"
+
+      - name: Sentry release + deploy marker
+        # Runs only after the deploy above actually succeeded, and only when the owner has set
+        # the secret. Never allowed to fail or slow the deploy: continue-on-error is the
+        # workflow-level backstop, and scripts/sentry-release.sh (its own per-request 15s
+        # timeout, no `set -e`) is the script-level one.
+        if: ${{ env.HAS_SENTRY_TOKEN == 'true' }}
+        continue-on-error: true
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: SENTRY_AUTH_TOKEN
+          script: |
+            cd ~/projects/lms-frontend
+            # The exact sha the build above used (same checkout, nothing has touched it since —
+            # see the "Deploy to server" step's own LMS_FRONT_GIT_COMMIT line).
+            LMS_FRONT_GIT_COMMIT="$(git rev-parse HEAD)" bash scripts/sentry-release.sh
 
       - name: Health check
         uses: appleboy/ssh-action@v1.2.0
