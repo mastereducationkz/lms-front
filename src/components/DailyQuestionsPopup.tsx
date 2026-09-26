@@ -1,14 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
+import { DailyQuestionsEmptyState } from './DailyQuestionsEmptyState';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../services/api';
-import type { DailyQuestionItem } from '../types';
+import type { DailyQuestionsRecommendations } from '../types';
+import {
+  collectUsableQuestions,
+  dailyQuestionsView,
+  shouldCacheRecommendations,
+  usableQuestions,
+  type QuestionWithSection,
+} from '../lib/dailyQuestions';
 import { Check, X, Loader2 } from 'lucide-react';
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
-
-type QuestionWithSection = DailyQuestionItem & { section: 'math' | 'verbal' };
 
 interface DailyQuestionsPopupProps {
   controlled?: boolean;
@@ -33,7 +39,10 @@ export default function DailyQuestionsPopup({
   const [completed, setCompleted] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [score, setScore] = useState<{ correct: number; total: number } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // HTTP status of the last failed fetch, or null when the last attempt didn't fail.
+  // Feeds dailyQuestionsView() — a 404 gets the same empty state as a 200 with no
+  // usable questions, since both mean "no SAT data yet" for this student.
+  const [errorStatus, setErrorStatus] = useState<number | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
   // Use controlled or internal state
@@ -58,13 +67,14 @@ export default function DailyQuestionsPopup({
 
     try {
       setLoading(true);
+      setErrorStatus(null);
       const status = await apiClient.getDailyQuestionsStatus();
-      
+
       // if (status.completed_today) {
       //   setCompleted(true);
       //   // return; // Don't return early, load questions to show results if available
       // }
-      
+
       if (status.completed_today) {
         setCompleted(true);
       }
@@ -73,40 +83,22 @@ export default function DailyQuestionsPopup({
       const today = new Date().toISOString().split('T')[0];
       const cacheKey = `daily_questions_${user.id}_${today}`;
       const cachedData = localStorage.getItem(cacheKey);
-      
+
       if (cachedData) {
         try {
           const parsed = JSON.parse(cachedData);
-          const questions: QuestionWithSection[] = [];
-          
-          if (parsed.mathRecommendations?.questions) {
-            parsed.mathRecommendations.questions.forEach((q: any) => {
-              const hasValidText = q.text && q.text !== '\\\\' && q.text !== '\\' && q.text !== '//' && q.text.trim() !== '';
-              const hasImage = q.imageUrl && q.imageUrl !== 'None';
-              
-              if (hasValidText || hasImage) {
-                questions.push({ ...q, section: 'math' });
-              }
-            });
-          }
-          
-          if (parsed.verbalRecommendations?.questions) {
-            parsed.verbalRecommendations.questions.forEach((q: any) => {
-              const hasValidText = q.text && q.text !== '\\\\' && q.text !== '\\' && q.text !== '//' && q.text.trim() !== '';
-              const hasImage = q.imageUrl && q.imageUrl !== 'None';
-              
-              if (hasValidText || hasImage) {
-                questions.push({ ...q, section: 'verbal' });
-              }
-            });
-          }
-          
+          const questions = collectUsableQuestions(parsed);
+
           if (questions.length > 0) {
             setAllQuestions(questions);
             setIsDialogOpen(true);
             setLoading(false);
             return;
           }
+          // A cache entry with no usable questions (written before this fix, or between
+          // the backend and frontend deploys) — drop it and fetch fresh below instead of
+          // reading it back for the rest of the day.
+          localStorage.removeItem(cacheKey);
         } catch (e) {
           console.warn('Failed to parse cached questions:', e);
           localStorage.removeItem(cacheKey);
@@ -115,10 +107,13 @@ export default function DailyQuestionsPopup({
 
       // Fetch recommendations from API
       const recs = await apiClient.getDailyQuestionsRecommendations();
-      
-      // Save to localStorage for today
-      localStorage.setItem(cacheKey, JSON.stringify(recs));
-      
+
+      // Never cache an empty result — it would read back all day with no way to self-heal
+      // until the cache key rolls over at midnight.
+      if (shouldCacheRecommendations(recs)) {
+        localStorage.setItem(cacheKey, JSON.stringify(recs));
+      }
+
       // Clean up old cache entries (older than today)
       const allKeys = Object.keys(localStorage);
       allKeys.forEach(key => {
@@ -127,34 +122,7 @@ export default function DailyQuestionsPopup({
         }
       });
 
-      // Combine math + verbal questions
-      const questions: QuestionWithSection[] = [];
-      if (recs.mathRecommendations?.questions) {
-        recs.mathRecommendations.questions.forEach(q => {
-          // Only add questions that have either text or image
-          const hasValidText = q.text && q.text !== '\\\\' && q.text !== '\\' && q.text !== '//' && q.text.trim() !== '';
-          const hasImage = q.imageUrl && q.imageUrl !== 'None';
-          
-          if (hasValidText || hasImage) {
-            questions.push({ ...q, section: 'math' });
-          } else {
-            console.warn('Skipping math question without content:', q);
-          }
-        });
-      }
-      if (recs.verbalRecommendations?.questions) {
-        recs.verbalRecommendations.questions.forEach(q => {
-          // Only add questions that have either text or image
-          const hasValidText = q.text && q.text !== '\\\\' && q.text !== '\\' && q.text !== '//' && q.text.trim() !== '';
-          const hasImage = q.imageUrl && q.imageUrl !== 'None';
-          
-          if (hasValidText || hasImage) {
-            questions.push({ ...q, section: 'verbal' });
-          } else {
-            console.warn('Skipping verbal question without content:', q);
-          }
-        });
-      }
+      const questions = collectUsableQuestions(recs);
 
       if (questions.length > 0) {
         setAllQuestions(questions);
@@ -182,14 +150,14 @@ export default function DailyQuestionsPopup({
         }
 
         setIsDialogOpen(true);
-      } else {
-        setError('No questions available. Please complete some tests first.');
       }
+      // else: no usable questions and not completed today — leave the dialog closed,
+      // same as before this fix. (loadQuestions, used by the controlled dashboard
+      // button, is the path that now shows a dedicated empty state.)
     } catch (err: any) {
       console.error('Failed to load daily questions:', err);
-      const errorMessage = err?.response?.data?.detail || err?.message || 'Failed to load daily questions';
-      setError(errorMessage);
-      
+      setErrorStatus(err?.response?.status ?? -1);
+
       // Still open dialog to show error in controlled mode
       if (controlled) {
         setIsDialogOpen(true);
@@ -219,32 +187,42 @@ export default function DailyQuestionsPopup({
 
     try {
       setLoading(true);
-      setError(null);
-      
+      setErrorStatus(null);
+
       // Start status check immediately
       const statusPromise = apiClient.getDailyQuestionsStatus();
-      
+
       // Try to load from localStorage first
       const today = new Date().toISOString().split('T')[0];
       const cacheKey = `daily_questions_${user.id}_${today}`;
       const cachedData = localStorage.getItem(cacheKey);
-      
-      let recs;
-      
+
+      let recs: DailyQuestionsRecommendations | undefined;
+
       if (cachedData) {
         try {
-          recs = JSON.parse(cachedData); 
-          // console.log('Loaded questions from cache');
+          const parsed = JSON.parse(cachedData);
+          // A cache entry with no usable questions (written before this fix, or between
+          // the backend and frontend deploys) — ignore it and refetch below instead of
+          // reading back a blank dialog for the rest of the day.
+          if (usableQuestions(parsed) > 0) {
+            recs = parsed;
+          } else {
+            localStorage.removeItem(cacheKey);
+          }
         } catch (e) {
           console.warn('Failed to parse cached questions:', e);
           localStorage.removeItem(cacheKey);
-          recs = await apiClient.getDailyQuestionsRecommendations();
+        }
+      }
+
+      if (!recs) {
+        recs = await apiClient.getDailyQuestionsRecommendations();
+        // Never cache an empty result — see the note on shouldCacheRecommendations.
+        if (shouldCacheRecommendations(recs)) {
           localStorage.setItem(cacheKey, JSON.stringify(recs));
         }
-      } else {
-        recs = await apiClient.getDailyQuestionsRecommendations();
-        localStorage.setItem(cacheKey, JSON.stringify(recs));
-        
+
         // Clean up old cache entries
         const allKeys = Object.keys(localStorage);
         allKeys.forEach(key => {
@@ -254,39 +232,16 @@ export default function DailyQuestionsPopup({
         });
       }
 
-      // Combine math + verbal questions
-      const questions: QuestionWithSection[] = [];
-      if (recs.mathRecommendations?.questions) {
-        recs.mathRecommendations.questions.forEach((q: any) => {
-          const hasValidText = q.text && q.text !== '\\\\' && q.text !== '\\' && q.text !== '//' && q.text.trim() !== '';
-          const hasImage = q.imageUrl && q.imageUrl !== 'None';
-          
-          if (hasValidText || hasImage) {
-            questions.push({ ...q, section: 'math' });
-          }
-        });
-      }
-      if (recs.verbalRecommendations?.questions) {
-        recs.verbalRecommendations.questions.forEach((q: any) => {
-          const hasValidText = q.text && q.text !== '\\\\' && q.text !== '\\' && q.text !== '//' && q.text.trim() !== '';
-          const hasImage = q.imageUrl && q.imageUrl !== 'None';
-          
-          if (hasValidText || hasImage) {
-            questions.push({ ...q, section: 'verbal' });
-          }
-        });
-      }
+      setAllQuestions(collectUsableQuestions(recs));
 
-      setAllQuestions(questions);
-      
       // Await status check
       const status = await statusPromise;
       if (status.completed_today && user) {
         setCompleted(true);
-        
+
         const resultsKey = `daily_questions_results_${user.id}_${today}`;
         const savedResults = localStorage.getItem(resultsKey);
-        
+
         if (savedResults) {
           try {
             const parsedResults = JSON.parse(savedResults);
@@ -305,8 +260,9 @@ export default function DailyQuestionsPopup({
       }
     } catch (err: any) {
       console.error('Failed to load daily questions:', err);
-      const errorMessage = err?.response?.data?.detail || err?.message || 'Failed to load daily questions';
-      setError(errorMessage);
+      // Keep the HTTP status so the empty state (404 = "no SAT data yet" on the old
+      // backend) is distinguishable from a real failure — see dailyQuestionsView.
+      setErrorStatus(err?.response?.status ?? -1);
     } finally {
       setLoading(false);
     }
@@ -478,6 +434,13 @@ export default function DailyQuestionsPopup({
   if (!user || user.role !== 'student') return null;
   if (!controlled && ((completed && !showResults) || dismissed)) return null;
 
+  const view = dailyQuestionsView({
+    loading,
+    errorStatus,
+    questionsCount: allQuestions.length,
+    completedToday: completed,
+  });
+
   return (
     <Dialog open={isDialogOpen} onOpenChange={(val) => { if (!val) handleDismiss(); }}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
@@ -507,23 +470,23 @@ export default function DailyQuestionsPopup({
         </DialogHeader>
 
         {/* Content */}
-        {loading ? (
+        {view === 'loading' ? (
           <div className="flex items-center justify-center p-12">
             <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
             <span className="ml-3 text-gray-600">Loading questions...</span>
           </div>
-        ) : error ? (
+        ) : view === 'empty' ? (
+          <DailyQuestionsEmptyState onDismiss={handleDismiss} />
+        ) : view === 'error' ? (
           <div className="p-8 text-center">
             <div className="text-6xl mb-4">😅</div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Oops! Something went wrong</h3>
             <p className="text-gray-600 mb-6">
-              {error.includes('404') || error.includes('No questions available') 
-                ? "You haven't completed any Weekly Tests yet. Complete a test first to get personalized daily questions!" 
-                : "We couldn't load your daily questions right now. Please try again later."}
+              We couldn't load your daily questions right now. Please try again later.
             </p>
             <Button variant="outline" onClick={handleDismiss}>Close</Button>
           </div>
-        ) : currentQuestion && !completed ? (
+        ) : view === 'questions' && currentQuestion ? (
           <div className="pt-4">
             {/* Question metadata */}
             <div className="flex items-center gap-2 mb-4 flex-wrap text-sm">
