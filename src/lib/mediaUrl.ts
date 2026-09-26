@@ -115,9 +115,13 @@ export function safeUploadUrl(value: unknown, base: string = backendBase()): str
  * link-type answer — resolved for display, or null when it isn't safe to render as a
  * link at all.
  *
- * Allows any absolute http(s) URL (any host), plus the same "/uploads/" shape as
+ * Allows any absolute http(s) URL on any host (no path confinement — a teacher resource
+ * can point at any path on any host), plus the same "/uploads/" shape as
  * {@link safeUploadUrl}. Anything else — `javascript:`, `data:`, `blob:`, `vbscript:`,
- * protocol-relative "//…", a backslash, or a malformed value — returns null.
+ * protocol-relative "//…", a backslash, userinfo on ANY host (an "@" before the real
+ * host is a classic spoofing link: "https://lmsapi.mastereducation.kz@evil.tld/x" reads,
+ * to a person, as pointing at lmsapi.mastereducation.kz — the part before the "@" — when
+ * the browser actually opens evil.tld), or a malformed value — returns null.
  */
 export function safeLinkUrl(value: unknown, base: string = backendBase()): string | null {
   const cleaned = cleanedUrlInput(value);
@@ -126,7 +130,8 @@ export function safeLinkUrl(value: unknown, base: string = backendBase()): strin
   const uploadUrl = uploadPathUrl(cleaned, base);
   if (uploadUrl) return uploadUrl;
 
-  return parseHttpUrl(cleaned) ? cleaned : null;
+  const httpUrl = parseHttpUrl(cleaned);
+  return httpUrl && !httpUrl.username && !httpUrl.password ? cleaned : null;
 }
 
 /**

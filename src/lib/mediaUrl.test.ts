@@ -152,9 +152,10 @@ describe('safeUploadUrl', () => {
 });
 
 describe('safeLinkUrl', () => {
-  // safeLinkUrl allows any absolute http(s) URL (any host — even with userinfo, unlike
-  // safeUploadUrl): a teacher resource link is not confined to the backend host.
-  const SAFE_LINK_EXCEPTIONS = ['https://evil.tld/a.png', `https://attacker@${new URL(API).host}/uploads/a.png`];
+  // safeLinkUrl allows any absolute http(s) URL on any host (a teacher resource link is
+  // not confined to the backend host) — but never with userinfo, on any host: see the
+  // dedicated userinfo tests below.
+  const SAFE_LINK_EXCEPTIONS = ['https://evil.tld/a.png'];
 
   it('rejects every other hostile value', () => {
     for (const value of HOSTILE_VALUES.filter((v) => !SAFE_LINK_EXCEPTIONS.includes(v))) {
@@ -178,6 +179,17 @@ describe('safeLinkUrl', () => {
   it('still resolves an upload path the same way as safeUploadUrl', () => {
     expect(safeLinkUrl('/uploads/answer_keys/key.pdf', API)).toBe(`${API}/uploads/answer_keys/key.pdf`);
     expect(safeLinkUrl('uploads/answer_keys/key.pdf', API)).toBe(`${API}/uploads/answer_keys/key.pdf`);
+  });
+
+  it('rejects userinfo on a foreign host', () => {
+    // The classic spoofing link: a person reads "lmsapi.mastereducation.kz" as the
+    // destination (the part before the "@"), but the browser opens evil.tld.
+    expect(safeLinkUrl(`https://${new URL(API).host}@evil.tld/x`, API)).toBeNull();
+  });
+
+  it('rejects userinfo on the backend host itself', () => {
+    expect(safeLinkUrl(`https://attacker@${new URL(API).host}/uploads/a.png`, API)).toBeNull();
+    expect(safeLinkUrl(`https://attacker:pw@${new URL(API).host}/uploads/a.png`, API)).toBeNull();
   });
 });
 
