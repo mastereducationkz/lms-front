@@ -14,7 +14,6 @@ import {
   Eye,
   Filter,
   Trash2,
-  Download,
   FileText,
   Unlock,
   Activity,
@@ -38,7 +37,9 @@ import {
 } from '../components/ui/dialog';
 import { Textarea } from '../components/ui/textarea';
 import MultiTaskSubmission from '../components/assignments/MultiTaskSubmission';
+import { SubmissionFileDownloadLink } from '../components/assignments/SubmissionFileDownloadLink';
 import { AudioPlayer, isAudioUrl } from '../components/AudioPlayer';
+import { safeUploadUrl } from '../lib/mediaUrl';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { WeeklyAwardsHub } from '../components/gamification/WeeklyAwardsHub';
@@ -1823,21 +1824,16 @@ export default function TeacherDashboard() {
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm truncate">{selectedSubmission.submitted_file_name || 'Attached File'}</div>
                       </div>
-                      <a
-                        href={(selectedSubmission.file_url.startsWith('http') ? '' : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000')) + selectedSubmission.file_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <SubmissionFileDownloadLink
+                        fileUrl={selectedSubmission.file_url}
                         className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium flex items-center shrink-0 ml-3"
-                      >
-                        <Download className="w-4 h-4 mr-1" />
-                        Download
-                      </a>
+                      />
                     </div>
                   )}
 
-                  {selectedSubmission?.file_url && isAudioUrl(selectedSubmission.file_url || selectedSubmission.submitted_file_name) && (
+                  {selectedSubmission?.file_url && isAudioUrl(selectedSubmission.file_url || selectedSubmission.submitted_file_name) && safeUploadUrl(selectedSubmission.file_url) && (
                     <AudioPlayer
-                      src={(selectedSubmission.file_url.startsWith('http') ? '' : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000')) + selectedSubmission.file_url}
+                      src={safeUploadUrl(selectedSubmission.file_url)!}
                       className="mt-2"
                     />
                   )}

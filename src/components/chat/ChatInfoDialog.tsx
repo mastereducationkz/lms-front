@@ -4,8 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { Bell, BellOff } from 'lucide-react';
 import { getSharedMedia } from '../../services/api';
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+import { safeUploadUrl } from '../../lib/mediaUrl';
 
 interface SharedMediaItem {
   id: number;
@@ -33,8 +32,10 @@ function isImage(url: string) {
   return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
 }
 
-function resolveUrl(fileUrl: string) {
-  return fileUrl.startsWith('http') ? fileUrl : `${BACKEND_URL}${fileUrl}`;
+/** `fileUrl` is another user's stored file reference, unvalidated server-side today —
+ *  resolve it through the safe helper rather than loading whatever it says. */
+function resolveUrl(fileUrl: string): string | null {
+  return safeUploadUrl(fileUrl);
 }
 
 /** Chat/contact info panel: participant details, shared media/files, mute toggle. */
@@ -94,25 +95,47 @@ export function ChatInfoDialog({
             <div className="max-h-64 overflow-y-auto space-y-3">
               {images.length > 0 && (
                 <div className="grid grid-cols-3 gap-2">
-                  {images.map((m) => (
-                    <a key={m.id} href={resolveUrl(m.file_url)} target="_blank" rel="noreferrer">
-                      <img
-                        src={resolveUrl(m.file_url)}
-                        alt="shared"
-                        className="w-full h-20 object-cover rounded-lg"
-                      />
-                    </a>
-                  ))}
+                  {images.map((m) => {
+                    const href = resolveUrl(m.file_url);
+                    if (!href) return null;
+                    return (
+                      <a key={m.id} href={href} target="_blank" rel="noreferrer">
+                        <img
+                          src={href}
+                          alt="shared"
+                          className="w-full h-20 object-cover rounded-lg"
+                        />
+                      </a>
+                    );
+                  })}
                 </div>
               )}
               {files.length > 0 && (
                 <div className="space-y-1">
                   {files.map((m) => {
-                    const fileName = decodeURIComponent(m.file_url.split('/').pop() || 'file');
+                    // Stored keys keep the raw upload filename, so a literal '%' is not a valid
+                    // escape and decodeURIComponent throws URIError here — same guard as
+                    // ChatAttachment, so one bad shared-media row can't take the dialog down.
+                    const rawName = m.file_url.split('/').pop() || 'file';
+                    const fileName = (() => {
+                      try {
+                        return decodeURIComponent(rawName);
+                      } catch {
+                        return rawName;
+                      }
+                    })();
+                    const href = resolveUrl(m.file_url);
+                    if (!href) {
+                      return (
+                        <p key={m.id} className="text-sm text-gray-400 break-all">
+                          📎 {fileName} (unavailable)
+                        </p>
+                      );
+                    }
                     return (
                       <a
                         key={m.id}
-                        href={resolveUrl(m.file_url)}
+                        href={href}
                         target="_blank"
                         rel="noreferrer"
                         className="block text-sm text-blue-600 dark:text-blue-400 underline break-all"

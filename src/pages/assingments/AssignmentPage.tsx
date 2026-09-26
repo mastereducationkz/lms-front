@@ -27,12 +27,7 @@ import { compressImage } from '../../utils/imageCompression';
 import { AudioPlayer } from '../../components/AudioPlayer';
 import { formatAssignmentStatus } from '../../lib/assignmentStatus';
 import { UploadFailedError } from '../../lib/uploadFailure';
-
-function resolveFileUrl(url: string): string {
-  if (!url) return url;
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  return (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + url;
-}
+import { safeLinkUrl, safeUploadUrl } from '../../lib/mediaUrl';
 
 export default function AssignmentPage() {
   const { id } = useParams<{ id: string }>();
@@ -157,7 +152,18 @@ export default function AssignmentPage() {
       <CardContent className="space-y-4">{answerKeys.flatMap((task: any) => task.answer_keys.map((key: any) => (
         <div key={`${task.task_id}-${key.id}`} className="rounded-md border p-3 space-y-2">
           <div className="font-medium">{key.title}</div>
-          {key.resources?.map((resource: any) => resource.kind === 'file' ? <a key={resource.id} className="block text-blue-600 hover:underline" href={resolveFileUrl(resource.file_url)} target="_blank" rel="noreferrer">{resource.file_name || 'Open answer-key file'}</a> : <p key={resource.id} className="whitespace-pre-wrap text-sm">{resource.body}</p>)}
+          {key.resources?.map((resource: any) => {
+            if (resource.kind !== 'file') {
+              return <p key={resource.id} className="whitespace-pre-wrap text-sm">{resource.body}</p>;
+            }
+            const href = safeLinkUrl(resource.file_url);
+            const label = resource.file_name || 'Open answer-key file';
+            return href ? (
+              <a key={resource.id} className="block text-blue-600 hover:underline" href={href} target="_blank" rel="noreferrer">{label}</a>
+            ) : (
+              <p key={resource.id} className="text-sm text-muted-foreground">{label}</p>
+            );
+          })}
           {!key.acknowledged ? <Button size="sm" variant="outline" onClick={async () => { await apiClient.acknowledgeAnswerKey(id!, task.task_id, key.id); setAnswerKeys(prev => prev.map((item: any) => item.task_id !== task.task_id ? item : { ...item, answer_keys: item.answer_keys.map((candidate: any) => candidate.id === key.id ? { ...candidate, acknowledged: true } : candidate) })); }}>I checked my work</Button> : <span className="text-sm text-green-700">Checked</span>}
         </div>
       )))}</CardContent>
@@ -493,8 +499,8 @@ export default function AssignmentPage() {
                 <CardTitle>Your Submission</CardTitle>
               </CardHeader>
               <CardContent>
-                {submission.file_url ? (
-                  <AudioPlayer src={resolveFileUrl(submission.file_url)} />
+                {safeUploadUrl(submission.file_url) ? (
+                  <AudioPlayer src={safeUploadUrl(submission.file_url)!} />
                 ) : (
                   <div className="text-gray-500 dark:text-gray-400 italic">No recording found.</div>
                 )}
@@ -508,30 +514,35 @@ export default function AssignmentPage() {
               <CardContent>
                 {submittedFiles.length > 0 && (
                   <div className="space-y-3">
-                     {submittedFiles.map((file: any, index: number) => (
+                     {submittedFiles.map((file: any, index: number) => {
+                       const href = safeUploadUrl(file.file_url);
+                       return (
                         <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-secondary rounded border dark:border-border">
                             <div className="flex items-center">
                             <FileText className="w-5 h-5 text-gray-500 dark:text-gray-400 mr-3" />
                             <span>{file.file_name || file.submitted_file_name || 'File'}</span>
                             </div>
-                            <div className="flex gap-2">
-                                <Button variant="ghost" size="sm" onClick={() => window.open(file.file_url.startsWith('http') ? file.file_url : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + file.file_url, '_blank')}>
-                                    <ExternalLink className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                                </Button>
-                                <a
-                                href={file.file_url.startsWith('http') ? file.file_url : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + file.file_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-foreground hover:underline flex items-center"
-                                >
-                                <Download className="w-4 h-4" />
-                                </a>
-                            </div>
+                            {href && (
+                              <div className="flex gap-2">
+                                  <Button variant="ghost" size="sm" onClick={() => window.open(href, '_blank')}>
+                                      <ExternalLink className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                  </Button>
+                                  <a
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-foreground hover:underline flex items-center"
+                                  >
+                                  <Download className="w-4 h-4" />
+                                  </a>
+                              </div>
+                            )}
                         </div>
-                     ))}
+                       );
+                     })}
                   </div>
                 )}
-                
+
                 {/* Fallback for very old legacy or corrupted data if no files found but file_url exists */}
                 {submittedFiles.length === 0 && submission.file_url && (
                    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-secondary rounded border dark:border-border">
@@ -539,14 +550,16 @@ export default function AssignmentPage() {
                       <FileText className="w-5 h-5 text-gray-500 dark:text-gray-400 mr-3" />
                       <span>{submission.submitted_file_name}</span>
                     </div>
+                    {safeUploadUrl(submission.file_url) && (
                     <a
-                      href={submission.file_url}
+                      href={safeUploadUrl(submission.file_url)!}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-foreground hover:underline"
                     >
                       Download
                     </a>
+                    )}
                   </div>
                 )}
 

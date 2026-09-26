@@ -16,6 +16,7 @@ import {
 import ParentReportCard from '../components/parentReports/ParentReportCard';
 import { mondayOf } from '../lib/parentReportWeek';
 import { fetchParentStudentFacts, type ParentStudentResponse } from '../services/api/reports';
+import { safeUploadUrl } from '../lib/mediaUrl';
 
 /**
  * Полный отчёт об успеваемости студента для куратора / хэд-куратора /
@@ -38,8 +39,10 @@ const fmtPct = (v: number | null | undefined): string =>
 const fmtBand = (v: number | null | undefined): string =>
   v === null || v === undefined ? '—' : v.toFixed(1).replace('.', ',');
 
-const fileHref = (fileUrl: string): string =>
-  fileUrl.startsWith('http') ? fileUrl : `${API_BASE_URL}${fileUrl}`;
+// A submission file reference is untrusted (student-supplied); null when it isn't a
+// safe upload URL (hostile scheme, foreign host, corrupted legacy row) — callers fall
+// back to plain text rather than rendering a link.
+const fileHref = (fileUrl: string): string | null => safeUploadUrl(fileUrl, API_BASE_URL);
 
 // `optIn`: left out of a PDF unless ticked — talk time, since the PDF is sometimes sent to
 // parents (owner, 2026-09-11). Shown only when the report has that section at all.
@@ -374,15 +377,19 @@ export default function StudentReportPage() {
                               <p className="whitespace-pre-wrap">Фидбэк: <span className="text-gray-900">{item.submission.feedback}</span></p>
                             )}
                             {item.submission.file_url && (
-                              <a
-                                href={fileHref(item.submission.file_url)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline"
-                                onClick={e => e.stopPropagation()}
-                              >
-                                📎 {item.submission.file_name || 'Файл сабмишена'}
-                              </a>
+                              fileHref(item.submission.file_url) ? (
+                                <a
+                                  href={fileHref(item.submission.file_url)!}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline"
+                                  onClick={e => e.stopPropagation()}
+                                >
+                                  📎 {item.submission.file_name || 'Файл сабмишена'}
+                                </a>
+                              ) : (
+                                <span className="text-gray-500">📎 {item.submission.file_name || 'Файл сабмишена'}</span>
+                              )
                             )}
                             <button
                               type="button"
@@ -794,10 +801,13 @@ function AnswerValue({ value }: { value: unknown }) {
   }
   if (typeof value === 'string') {
     if (/^(https?:\/\/|\/)/.test(value) && /\.(png|jpe?g|gif|webp|pdf|mp3|m4a|ogg|wav|webm|docx?|xlsx?)([?#]|$)/i.test(value)) {
-      return (
-        <a href={fileHref(value)} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">
+      const href = fileHref(value);
+      return href ? (
+        <a href={href} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">
           📎 {value.split('/').pop()}
         </a>
+      ) : (
+        <span className="text-sm text-gray-500 break-all">📎 {value.split('/').pop()}</span>
       );
     }
     return <p className="text-sm text-gray-800 whitespace-pre-wrap break-words">{value}</p>;
@@ -880,14 +890,18 @@ function SubmissionViewer({ viewer, onClose }: {
         {data && (
           <>
             {data.submission.file_url && (
-              <a
-                href={fileHref(data.submission.file_url)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block text-sm text-blue-600 hover:underline"
-              >
-                📎 {data.submission.file_name || 'Файл сабмишена'}
-              </a>
+              fileHref(data.submission.file_url) ? (
+                <a
+                  href={fileHref(data.submission.file_url)!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block text-sm text-blue-600 hover:underline"
+                >
+                  📎 {data.submission.file_name || 'Файл сабмишена'}
+                </a>
+              ) : (
+                <span className="inline-block text-sm text-gray-500">📎 {data.submission.file_name || 'Файл сабмишена'}</span>
+              )
             )}
 
             {tasks.length > 0 ? (

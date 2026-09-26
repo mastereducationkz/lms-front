@@ -26,17 +26,13 @@
   import { Label } from '../../components/ui/label';
   import MultiTaskSubmission from '../../components/assignments/MultiTaskSubmission';
   import { AudioPlayer, isAudioUrl } from '../../components/AudioPlayer';
+  import { safeUploadUrl } from '../../lib/mediaUrl';
   import type { AssignmentExtension } from '../../types/index';
 
-  // Import API_BASE_URL from api service
-  const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-
-  // Helper function to build full file URL
-  const buildFileUrl = (relativeUrl: string): string => {
-    if (!relativeUrl) return '';
-    if (relativeUrl.startsWith('http')) return relativeUrl;
-    return `${API_BASE_URL}${relativeUrl}`;
-  };
+  // A submission file reference is untrusted (student-supplied); this resolves it to a
+  // safe URL on the API host, or null when it isn't one (hostile scheme, foreign host,
+  // corrupted legacy row). Callers must not render a link/src/fetch target on null.
+  const buildFileUrl = (relativeUrl: string | null | undefined): string | null => safeUploadUrl(relativeUrl);
 
   interface StudentProgress {
     id: number;
@@ -238,8 +234,12 @@
 
 
     const downloadFile = async (fileUrl: string, fileName: string) => {
+      const fullUrl = buildFileUrl(fileUrl);
+      if (!fullUrl) {
+        alert('This file cannot be opened.');
+        return;
+      }
       try {
-        const fullUrl = buildFileUrl(fileUrl);
         const response = await fetch(fullUrl);
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -713,43 +713,49 @@
                         {/* Multiple Files List */}
                         {selectedSubmission.answers?.files && selectedSubmission.answers.files.length > 0 ? (
                             <div className="space-y-3">
-                                {selectedSubmission.answers.files.map((file: any, index: number) => (
+                                {selectedSubmission.answers.files.map((file: any, index: number) => {
+                                  const fileHref = buildFileUrl(file.file_url);
+                                  return (
                                     <div key={index} className="bg-gray-50 dark:bg-secondary p-3 rounded border dark:border-border">
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="text-sm font-medium">
                                                 {file.file_name || file.submitted_file_name || `File ${index + 1}`}
                                             </div>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => downloadFile(file.file_url, file.file_name || file.submitted_file_name || 'submission_file')}
-                                            >
-                                                <Download className="w-4 h-4 mr-2" />
-                                                Download
-                                            </Button>
+                                            {fileHref && (
+                                              <Button
+                                                  variant="outline"
+                                                  size="sm"
+                                                  onClick={() => downloadFile(file.file_url, file.file_name || file.submitted_file_name || 'submission_file')}
+                                              >
+                                                  <Download className="w-4 h-4 mr-2" />
+                                                  Download
+                                              </Button>
+                                            )}
                                         </div>
-                                        
-                                        {/* Preview Logic for each file */}
-                                        {file.file_name?.toLowerCase().endsWith('.pdf') ? (
+
+                                        {/* Preview Logic for each file — nothing renders when the stored
+                                            reference isn't a safe upload URL (fileHref is null); the file
+                                            name above is the only thing shown for it. */}
+                                        {!fileHref ? null : file.file_name?.toLowerCase().endsWith('.pdf') ? (
                                              <div className="mt-2 text-xs text-blue-600">
-                                                <a href={buildFileUrl(file.file_url)} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                                                <a href={fileHref} target="_blank" rel="noopener noreferrer" className="hover:underline">
                                                     Open PDF in new tab
                                                 </a>
                                              </div>
                                         ) : /\.(jpg|jpeg|png|gif|webp)$/i.test(file.file_name || '') ? (
                                             <div className="mt-2 border rounded overflow-hidden max-h-[200px]">
                                                 <img
-                                                    src={buildFileUrl(file.file_url)}
+                                                    src={fileHref}
                                                     alt={file.file_name}
                                                     className="w-full h-full object-contain"
                                                 />
                                             </div>
                                         ) : isAudioUrl(file.file_url || file.file_name || file.submitted_file_name) ? (
-                                            <AudioPlayer src={buildFileUrl(file.file_url)} className="mt-2" />
+                                            <AudioPlayer src={fileHref} className="mt-2" />
                                         ) : (
                                             <div className="mt-2">
                                                 <a
-                                                    href={buildFileUrl(file.file_url)}
+                                                    href={fileHref}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm underline"
@@ -759,15 +765,19 @@
                                             </div>
                                         )}
                                     </div>
-                                ))}
+                                  );
+                                })}
                             </div>
-                        ) : selectedSubmission.file_url ? (
+                        ) : selectedSubmission.file_url ? (() => {
                             /* Legacy Single File Fallback */
+                            const legacyHref = buildFileUrl(selectedSubmission.file_url);
+                            return (
             <div className="bg-gray-50 dark:bg-secondary p-3 rounded border dark:border-border">
                 <div className="flex items-center justify-between mb-2">
                     <div className="text-sm">
                     {selectedSubmission.submitted_file_name || 'Download file'}
                                     </div>
+                                    {legacyHref && (
                                     <Button
                                     variant="outline"
                                     size="sm"
@@ -776,15 +786,20 @@
                                     <Download className="w-4 h-4 mr-2" />
                                     Download
                                     </Button>
+                                    )}
                                 </div>
-                                
+
+                                {/* Nothing below renders when legacyHref is null (the stored value isn't
+                                    a safe upload URL) — the file name above is all that's shown. */}
+                                {legacyHref && (
+                                <>
                                 {/* PDF Viewer */}
                                 {selectedSubmission.submitted_file_name?.toLowerCase().endsWith('.pdf') && (
                                     <div className="mt-3">
                                     <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">PDF Preview:</div>
                                     <div className="border rounded overflow-hidden h-[60vh]">
                                         <iframe
-                                        src={`${buildFileUrl(selectedSubmission.file_url)}#toolbar=0&navpanes=0&scrollbar=0`}
+                                        src={`${legacyHref}#toolbar=0&navpanes=0&scrollbar=0`}
                                         width="100%"
                                         height="100%"
                                         style={{ border: 'none' }}
@@ -796,7 +811,7 @@
 
                                 {/* Audio player for audio submissions */}
                                 {isAudioUrl(selectedSubmission.file_url || selectedSubmission.submitted_file_name) && (
-                                    <AudioPlayer src={buildFileUrl(selectedSubmission.file_url)} className="mt-2" />
+                                    <AudioPlayer src={legacyHref} className="mt-2" />
                                 )}
 
                                 {/* For non-PDF, non-audio files, show a link */}
@@ -804,7 +819,7 @@
                                  !isAudioUrl(selectedSubmission.file_url || selectedSubmission.submitted_file_name) && (
                                     <div className="mt-2">
                                     <a
-                                        href={buildFileUrl(selectedSubmission.file_url)}
+                                        href={legacyHref}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm underline"
@@ -813,8 +828,11 @@
                                     </a>
                                     </div>
                                 )}
+                                </>
+                                )}
                             </div>
-                        ) : null}
+                            );
+                        })() : null}
                       </div>
                     )}
                   </div>
