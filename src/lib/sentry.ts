@@ -138,11 +138,11 @@ const NESTED_ENCODING_HINT_RE = /%2f|%3f/i;
 // tried widening this class to include `?` for secret names' sake (below); fix round 4 reverted
 // that — it made the regex engine re-scan all the way to the true end of the remaining string on
 // EVERY match in a long chain like "?a=?a=?a=…", since nothing there stops a `?`-inclusive class
-// either, turning a 60 KB adversarial input into a 20+ SECOND scrubText call (quadratic, not the
-// stack overflow that motivated the recursion-to-loop rewrite in the first place — a different
-// failure mode, on the SAME reverted design). A secret value that itself contains a literal `?`
-// (`/x?token=abc?SECRET`) is instead extended past it separately, in scrubAnyParams, only when
-// the name is actually secret — see SECRET_VALUE_TAIL_RE below.
+// either, turning a 60 KB adversarial input into a 20+ SECOND uncapped scrubAnyParams call
+// (quadratic, not the stack overflow that motivated the recursion-to-loop rewrite in the first
+// place — a different failure mode, on the SAME reverted design). A secret value that itself
+// contains a literal `?` (`/x?token=abc?SECRET`) is instead extended past it separately, in
+// scrubAnyParams, only when the name is actually secret — see SECRET_VALUE_TAIL_RE below.
 const ANY_PARAM_RE = /([?&;#])([^=&;#?\s"'<>]+)=([^&;#?\s"'<>]*)/g;
 // Extends a SECRET value past an embedded literal `?`, allowing one where ANY_PARAM_RE's own
 // value class doesn't. Anchored at the start of whatever suffix it's given (not global — one

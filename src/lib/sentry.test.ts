@@ -338,29 +338,35 @@ describe('scrubAnyParams masks a secret value through a literal ? too (fix round
 });
 
 describe('scrubAnyParams loops instead of recursing, so it cannot overflow the stack (fix round 4)', () => {
-  it('handles 60 KB of "?a=?a=…" — uncapped, well past MAX_SCRUB_LENGTH — without throwing, under budget', () => {
+  it('handles 60 KB of "?a=?a=…" — uncapped, well past MAX_SCRUB_LENGTH — without throwing', () => {
     // Every non-secret "a=" hop used to be one level of recursion; called directly (bypassing
     // scrubUrl/scrubText, which always cap input first) with input this size, that would have
     // been on the order of 20,000 stack frames and thrown RangeError long before finishing.
     const input = '?a='.repeat(Math.ceil((60 * 1024) / 3));
-    const t0 = Date.now();
     let result: string | undefined;
     expect(() => {
       result = scrubAnyParams(input);
     }).not.toThrow();
-    // Budget is 2000ms here, not the other perf tests' 50ms: this one calls the internal,
-    // uncapped function directly (~20,000 loop iterations), where the other three (also 60 KB
-    // adversarial inputs) go through the public scrubUrl/scrubText, which cap to ~2 KB first and
-    // so stay fast in absolute terms even under load. On a quiet machine this runs in 15-30ms;
-    // measured here, on a dev sandbox shared with many concurrent, unrelated CPU-heavy processes
-    // (`uptime` showed a load average over 100 on 10 cores while tuning this test — confirmed
-    // with a plain, unrelated 50M-iteration counting loop taking 5-12s instead of its normal
-    // ~100ms), single runs spiked to 67-273ms with no algorithmic change at all. 2000ms keeps
-    // comfortable headroom above that noise while remaining two orders of magnitude below what
-    // the ORIGINAL recursive version took on this exact input (20+ seconds) — so a real
-    // regression back to quadratic/recursive behavior still fails this test unmistakably.
-    expect(Date.now() - t0).toBeLessThan(2000);
     expect(result).toBeDefined();
+  });
+
+  // A wall-clock budget on one input size is load-sensitive (this machine's shared with many
+  // concurrent, unrelated CPU-heavy processes) and, worse, doesn't actually catch a moderately
+  // quadratic regression: it only fails once the absolute time crosses the budget, whatever the
+  // shape. Comparing CPU time (immune to scheduling noise) at two input sizes catches the *shape*
+  // instead — a linear implementation costs about the same ratio as the size ratio (8x KB -> ~8x
+  // cost), a quadratic one costs roughly the square (~64x). The old 2000ms wall-clock budget let
+  // a 776ms quadratic regression (the round-3 `?`-inclusive value class) pass right through.
+  it('scrubAnyParams scales linearly on uncapped input (CPU-time ratio, load-robust)', () => {
+    type Cpu = { user: number; system: number };
+    const proc = (globalThis as unknown as { process: { cpuUsage(prev?: Cpu): Cpu } }).process;
+    const cpuMs = (s: string) => { const a = proc.cpuUsage(); scrubAnyParams(s); const d = proc.cpuUsage(a); return (d.user + d.system) / 1000; };
+    const at = (kb: number) => '?a='.repeat(Math.ceil((kb * 1024) / 3));
+    const small = at(8), big = at(64);
+    scrubAnyParams(small); scrubAnyParams(big); // JIT warm-up
+    let s = Infinity, b = Infinity;
+    for (let i = 0; i < 5; i++) { s = Math.min(s, cpuMs(small)); b = Math.min(b, cpuMs(big)); } // interleaved best-of-5
+    expect(b / Math.max(s, 0.05)).toBeLessThan(20); // linear ~7-14 measured; round-3 shape 56-71
   });
 });
 
