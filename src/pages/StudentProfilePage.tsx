@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../services/api';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { CollegeBoardPasswordReveal } from '../components/CollegeBoardPasswordReveal';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -280,7 +281,23 @@ export default function StudentProfilePage() {
                     ['Telegram', az.telegram_id],
                     ['Email', az.email],
                     ['College Board account', az.college_board_email],
-                    ['College Board password', az.college_board_password],
+                  ].filter(([, v]) => v).map(([label, value]) => (
+                    <div key={label as string} className="flex gap-2">
+                      <dt className="text-gray-400 w-32 shrink-0">{label}</dt>
+                      <dd className="text-gray-800 font-medium break-all">{value as string}</dd>
+                    </div>
+                  ))}
+                  <div className="flex gap-2">
+                    <dt className="text-gray-400 w-32 shrink-0">College Board password</dt>
+                    <dd className="text-gray-800 font-medium break-all">
+                      <CollegeBoardPasswordReveal
+                        userId={student.id}
+                        hasPassword={!!az.has_college_board_password}
+                        lang="ru"
+                      />
+                    </dd>
+                  </div>
+                  {[
                     ['Дата рождения', az.birthday_date],
                     ['Город', az.city],
                     ['Тип школы', az.school_type],
