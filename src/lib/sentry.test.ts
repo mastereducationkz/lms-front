@@ -4,6 +4,7 @@ import {
   FILTERED,
   beforeBreadcrumb,
   beforeSend,
+  buildSentryUser,
   isIgnoredEvent,
   reportError,
   scrubText,
@@ -20,23 +21,32 @@ describe('sentry is off outside the production image', () => {
     expect(sentryConfigured()).toBe(false);
     startSentry();
     reportError(new Error('x'));
-    setSentryUser({ id: 1, role: 'student' });
+    setSentryUser({ id: 1, email: 'anna@example.com', name: 'Анна', role: 'student' });
     setSentryUser(null);
   });
 });
 
-describe('scrubUrl', () => {
+describe('scrubUrl removes secrets', () => {
   it.each([
     [`https://lmsapi.mastereducation.kz/uploads/v/${TOKEN}/videos/1/index.m3u8`, TOKEN],
+    [`https://lmsapi.mastereducation.kz/uploads/s/${TOKEN}/x.jpg`, TOKEN],
     [`/class-materials/download/${TOKEN}`, TOKEN],
     ['https://lms.mastereducation.kz/watch/abc123short', 'abc123short'],
     ['/watch-links/abc123short', 'abc123short'],
     ['/calendar/feeds/me/abc123short.ics', 'abc123short'],
-    ['https://bucket.s3.amazonaws.com/submissions/a.jpg?X-Amz-Signature=deadbeef', 'deadbeef'],
-    ['/users?search=Иванов', 'Иванов'],
+    ['https://bucket.s3.amazonaws.com/submissions/a.jpg?X-Amz-Signature=deadbeef&X-Amz-Credential=abc', 'deadbeef'],
+    ['https://bucket.s3.amazonaws.com/submissions/a.jpg?X-Amz-Security-Token=deadbeef', 'deadbeef'],
+    ['/download?Signature=deadbeef&Expires=1', 'deadbeef'],
     ['/auth/callback?code=onetime&state=s', 'onetime'],
     ['/auth/callback#access_token=abc', 'access_token'],
-    ['/profile/anna.petrova@example.com', 'anna.petrova@example.com'],
+    ['/reset?token=abc123', 'abc123'],
+    ['/api?access_token=one&refresh_token=two', 'one'],
+    ['/api?api_key=abc', 'abc'],
+    ['/api?apikey=abc', 'abc'],
+    ['/api?secret=abc', 'abc'],
+    ['/api?password=abc', 'abc'],
+    ['/api?AUTH=abc', 'abc'],
+    ['/api?sig=abc', 'abc'],
     [`/x/${'a'.repeat(48)}`, 'a'.repeat(48)],
     ['wss://user:pa55word@proxy.local:1080/x', 'pa55word'],
     [`/anything/else?no=1&jwt=${TOKEN}`, TOKEN],
@@ -50,9 +60,19 @@ describe('scrubUrl', () => {
     expect(scrubUrl(undefined)).toBeUndefined();
   });
 
+  it('stops masking emails: they stay visible in paths and queries', () => {
+    expect(scrubUrl('/profile/anna.petrova@example.com')).toBe('/profile/anna.petrova@example.com');
+    expect(scrubUrl('/users?email=anna@example.com')).toBe('/users?email=anna@example.com');
+  });
+
+  it('keeps non-secret query params, masks secret ones by name', () => {
+    expect(scrubUrl('/users?search=Иванов&sort=name')).toBe('/users?search=Иванов&sort=name');
+    expect(scrubUrl('/reset?token=abc')).toBe(`/reset?token=${FILTERED}`);
+    expect(scrubUrl('/reset?email=a@b.kz&token=abc')).toBe(`/reset?email=a@b.kz&token=${FILTERED}`);
+  });
+
   it('marks what it removed', () => {
     expect(scrubUrl('/watch/abc')).toBe(`/watch/${FILTERED}`);
-    expect(scrubUrl('/users?search=x')).toBe(`/users?${FILTERED}`);
   });
 });
 
@@ -62,11 +82,16 @@ describe('scrubText', () => {
     expect(scrubText('Authorization: Bearer abcdefghijklmnopqrstuvwxyz0123')).not.toContain('abcdefghijklmnop');
   });
 
-  it('cleans URLs and emails inside a message', () => {
+  it('cleans embedded URLs, but keeps emails and non-secret query params in plain text', () => {
     const out = scrubText(`GET https://x.kz/class-materials/download/${TOKEN}?a=1 failed for anna@example.com`);
     expect(out).not.toContain(TOKEN);
-    expect(out).not.toContain('anna@example.com');
-    expect(out).not.toContain('a=1');
+    expect(out).toContain('anna@example.com');
+    expect(out).toContain('a=1');
+  });
+
+  it('still masks a secret query param inside a URL embedded in a message', () => {
+    const out = scrubText(`sync failed for https://x.kz/reset?token=abc123 (retry)`);
+    expect(out).not.toContain('abc123');
   });
 });
 
@@ -117,8 +142,23 @@ describe('noise is never reported', () => {
   });
 });
 
-describe('beforeSend strips personal data', () => {
-  it('scrubs the request, the message, breadcrumbs and the user', () => {
+describe('buildSentryUser (pure, no SDK)', () => {
+  it('builds id/email/username plus the {{auto}} IP marker', () => {
+    expect(buildSentryUser({ id: 7, email: 'anna@example.com', name: 'Анна', role: 'student' })).toEqual({
+      id: '7',
+      email: 'anna@example.com',
+      username: 'Анна',
+      ip_address: '{{auto}}',
+    });
+  });
+
+  it('is what a logout sends to setUser: null in, null out', () => {
+    expect(buildSentryUser(null)).toBeNull();
+  });
+});
+
+describe('beforeSend keeps who was affected, still scrubs secrets', () => {
+  it('keeps the user, ip marker and non-secret query; scrubs tokens and the Cookie header', () => {
     const event = {
       ...errorEvent('TypeError', 'failed for anna@example.com'),
       request: {
@@ -127,19 +167,31 @@ describe('beforeSend strips personal data', () => {
         cookies: { a: 'b' },
         query_string: 'x=1',
       },
-      user: { id: '7', email: 'anna@example.com', ip_address: '1.2.3.4', username: 'Анна' },
+      user: { id: '7', email: 'anna@example.com', ip_address: '{{auto}}', username: 'Анна' },
       breadcrumbs: [
         { category: 'fetch', data: { url: `https://lmsapi.mastereducation.kz/class-materials/download/${TOKEN}` } },
-        { category: 'console', level: 'error', message: 'oops', data: { arguments: [{ name: 'Анна' }] } },
+        {
+          category: 'console',
+          level: 'error',
+          message: 'sent reminder to anna@example.com',
+          data: { arguments: [{ name: 'Анна' }] },
+        },
       ],
     } as unknown as ErrorEvent;
     const out = beforeSend(event, {});
     const blob = JSON.stringify(out);
-    for (const secret of [TOKEN, 'anna@example.com', '1.2.3.4', 'Анна', 'a=b', 'x=1']) {
-      expect(blob).not.toContain(secret);
-    }
-    expect(out?.user).toEqual({ id: '7' });
+
+    // Still scrubbed: the token, and the Cookie header/value (dropped, not just masked).
+    for (const secret of [TOKEN, 'a=b']) expect(blob).not.toContain(secret);
     expect(Object.keys(out?.request ?? {}).sort()).toEqual(['headers', 'url']);
+    expect(Object.keys(out?.request?.headers ?? {}).map((k) => k.toLowerCase())).not.toContain('cookie');
+
+    // Now visible: the user (id/email/username/ip marker), the message email, the non-secret
+    // query param, and the breadcrumb's own log line.
+    expect(out?.user).toEqual({ id: '7', email: 'anna@example.com', ip_address: '{{auto}}', username: 'Анна' });
+    expect(blob).toContain('anna@example.com');
+    expect(blob).toContain('x=1');
+    expect(out?.breadcrumbs?.[1]?.message).toBe('sent reminder to anna@example.com');
   });
 });
 
@@ -154,11 +206,11 @@ describe('beforeBreadcrumb', () => {
     expect(beforeBreadcrumb({ category: 'fetch', data: { url: 'https://api/courses/1' } })).not.toBeNull();
   });
 
-  it('scrubs request URLs and navigation', () => {
+  it('scrubs token paths, keeps non-secret query values in navigation breadcrumbs', () => {
     const xhr = beforeBreadcrumb({ category: 'xhr', data: { url: `/uploads/v/${TOKEN}/videos/a.m3u8` } });
     expect(JSON.stringify(xhr)).not.toContain(TOKEN);
     const nav = beforeBreadcrumb({ category: 'navigation', data: { from: '/users?search=Иванов', to: `/watch/${TOKEN}` } });
-    expect(JSON.stringify(nav)).not.toContain('Иванов');
+    expect(nav?.data?.from).toBe('/users?search=Иванов');
     expect(JSON.stringify(nav)).not.toContain(TOKEN);
   });
 });

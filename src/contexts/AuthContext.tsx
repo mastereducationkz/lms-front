@@ -55,10 +55,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
   }, []);
 
-  // Error reports carry who hit the error: the numeric id and the role, never a name or email.
+  // Error reports carry who hit the error (WS9, 2026-09-26): id, email, name and role, so the
+  // owner can see who was affected. Runs after login and after the /auth/me session restore
+  // (both flow through setUser above); cleared with setSentryUser(null) on logout below.
   useEffect(() => {
-    setSentryUser(user ? { id: user.id, role: user.role } : null);
-  }, [user?.id, user?.role]);
+    setSentryUser(user ? { id: user.id, email: user.email, name: user.full_name || user.name, role: user.role } : null);
+  }, [user?.id, user?.email, user?.full_name, user?.name, user?.role]);
 
   // A failed /auth/me should only end the session when the credentials are genuinely
   // rejected (401/403). Network errors, timeouts and 5xx/429 are transient — the backend

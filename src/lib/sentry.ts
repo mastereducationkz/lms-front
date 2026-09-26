@@ -10,10 +10,13 @@
  * callback after the first render, so the SDK lives in its own chunk and not in the entry
  * bundle. Errors thrown before it arrives are buffered (a few) and sent once it has.
  *
- * Privacy rules (the owner's decision): no names, emails, IPs, cookies or request bodies. The
- * user is the numeric id plus the role. Download/watch tokens live in URL paths, and query
- * strings carry search terms and one-time codes, so every URL is scrubbed before it leaves.
- * Errors only: no tracing.
+ * Privacy rules (WS9, the owner's "unmasking" decision, 2026-09-26): the owner needs to see WHO
+ * an error affected, so the user's id, email, name and role, the client IP, and the request
+ * URL/method/query string are all visible. What stays masked, always: passwords, every kind of
+ * token (JWTs, download/watch/class-material/calendar/telegram tokens in URL paths, presigned S3
+ * query strings, and secret-named query params such as token/code/sig/key/secret/password/auth),
+ * URL userinfo, and Authorization/Cookie-style credentials. See `scrubUrl`/`scrubText` for the
+ * exact rules. Errors only: no tracing.
  */
 import type { Breadcrumb, BreadcrumbHint, ErrorEvent, EventHint } from '@sentry/react';
 
@@ -26,21 +29,27 @@ const RELEASE = (import.meta.env.VITE_SENTRY_RELEASE as string | undefined)?.tri
 export const FILTERED = '[Filtered]';
 
 // A path segment after one of these is a bearer credential (see lms-backend sentry_setup.py,
-// which scrubs the same routes): /uploads/v/<token>/…, /class-materials/download/<token>,
-// /watch-links/<token>, the SPA's /watch/:token page, calendar feeds, Telegram links.
+// which scrubs the same routes): /uploads/v/<token>/…, /uploads/s/<token>/…,
+// /class-materials/download/<token>, /watch-links/<token>, the SPA's /watch/:token page,
+// calendar feeds, Telegram links.
 const TOKEN_PATH_RE =
-  /(\/(?:uploads\/v|class-materials\/download|watch-links|watch|calendar\/feeds\/me|tg\/l|push-tokens)\/)[^/?#\s"']+/g;
+  /(\/(?:uploads\/v|uploads\/s|class-materials\/download|watch-links|watch|calendar\/feeds\/me|tg\/l|push-tokens)\/)[^/?#\s"']+/g;
 // Any other long opaque segment: a JWT, a presigned key. (No lookbehind: this module is in the
 // entry bundle, and Safari before 16.4 fails to parse one, which would blank the whole app.)
 const LONG_SEGMENT_RE = /\/[A-Za-z0-9_\-.~=%]{40,}(?=[/?#\s"']|$)/g;
 const QUERY_RE = /\?[^#\s"']*/g;
 const FRAGMENT_RE = /#[^\s"']*/g;
-const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/g;
 // Secrets that can sit anywhere: user:password@ in a URL, a JWT (media and class-material
 // tokens are JWTs), "Bearer <token>".
 const USERINFO_RE = /(\b[a-z][a-z0-9+.-]*:\/\/)[^/\s:@]+:[^/\s@]+@/gi;
 const JWT_RE = /\beyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]*/g;
 const BEARER_RE = /(\b(?:bearer|token)\s+)[A-Za-z0-9._~+/=-]{16,}/gi;
+// Query params whose VALUE is always a secret; the name stays visible. Case-insensitive.
+const SECRET_PARAM_RE =
+  /^(token|access_token|refresh_token|code|sig|signature|key|api_key|apikey|secret|password|auth)$/i;
+// A presigned S3/SigV4 URL carries the whole credential in the query string, not one param —
+// mask the query in one piece rather than trying to name every AWS param.
+const PRESIGNED_QUERY_RE = /(?:^|[?&])(?:X-Amz-Signature|X-Amz-Credential|X-Amz-Security-Token|Signature)=/i;
 
 function scrubSecrets(text: string): string {
   return text
@@ -50,22 +59,37 @@ function scrubSecrets(text: string): string {
 }
 const URL_IN_TEXT_RE = /https?:\/\/[^\s"'<>]+/g;
 
+/** `match` is a whole `?a=1&b=2` query string (leading `?`, no fragment). */
+function scrubQueryString(match: string): string {
+  if (match.length <= 1) return match;
+  if (PRESIGNED_QUERY_RE.test(match)) return `?${FILTERED}`;
+  const params = match
+    .slice(1)
+    .split('&')
+    .map((part) => {
+      if (!part) return part;
+      const eq = part.indexOf('=');
+      const name = eq === -1 ? part : part.slice(0, eq);
+      if (!SECRET_PARAM_RE.test(name)) return part;
+      return eq === -1 ? name : `${name}=${FILTERED}`;
+    });
+  return `?${params.join('&')}`;
+}
+
 export function scrubUrl<T>(url: T): T {
   if (typeof url !== 'string' || !url) return url;
   return scrubSecrets(url)
     .replace(FRAGMENT_RE, '')
-    .replace(QUERY_RE, `?${FILTERED}`)
+    .replace(QUERY_RE, scrubQueryString)
     .replace(TOKEN_PATH_RE, (_m, prefix: string) => prefix + FILTERED)
-    .replace(LONG_SEGMENT_RE, `/${FILTERED}`)
-    .replace(EMAIL_RE, FILTERED) as T;
+    .replace(LONG_SEGMENT_RE, `/${FILTERED}`) as T;
 }
 
 export function scrubText<T>(text: T): T {
   if (typeof text !== 'string' || !text) return text;
   return scrubSecrets(text)
     .replace(URL_IN_TEXT_RE, (u) => scrubUrl(u))
-    .replace(TOKEN_PATH_RE, (_m, prefix: string) => prefix + FILTERED)
-    .replace(EMAIL_RE, FILTERED) as T;
+    .replace(TOKEN_PATH_RE, (_m, prefix: string) => prefix + FILTERED) as T;
 }
 
 // Browser noise that is never our bug, or is already handled:
@@ -130,7 +154,10 @@ function scrubBreadcrumbInPlace(crumb: Breadcrumb): void {
     }
     delete data['http.query'];
     delete data['http.fragment'];
-    // console.* arguments can be whole API responses with names in them.
+    // console.* arguments can be whole, structured API response objects, which scrubText can't
+    // safely clean (it only handles strings). crumb.message above already carries the log line
+    // itself, unmasked, so dropping the raw arguments here is a scrubbing-coverage gap, not a
+    // names/emails policy.
     delete data.arguments;
   }
 }
@@ -156,7 +183,12 @@ export function beforeSend(event: ErrorEvent, hint: EventHint): ErrorEvent | nul
     if (value.value) value.value = scrubText(value.value);
   }
   for (const crumb of event.breadcrumbs ?? []) scrubBreadcrumbInPlace(crumb);
-  if (event.user) event.user = event.user.id != null ? { id: event.user.id } : undefined;
+  // Allowlist exactly the fields `setSentryUser`/`buildSentryUser` put there — drops anything
+  // an unexpected integration might add later, rather than trusting the event as handed to us.
+  if (event.user) {
+    const { id, email, username, ip_address } = event.user;
+    event.user = id != null ? { id, email, username, ip_address } : undefined;
+  }
   return event;
 }
 
@@ -178,7 +210,26 @@ let sdk: SentrySdk | null = null;
 let started = false;
 const MAX_BUFFERED = 10;
 const buffered: Array<{ error: unknown; extra?: Record<string, unknown> }> = [];
-let currentUser: { id: string; role?: string } | null = null;
+
+export type SentryUserInput = { id: number | string; email?: string | null; name?: string | null; role?: string | null } | null;
+
+/**
+ * Builds the object passed to the SDK's `setUser`. Pure and jsdom-free so it can be unit
+ * tested directly: `setUser(null)` on logout is exercised by asserting `buildSentryUser(null)`
+ * is `null`. `ip_address: "{{auto}}"` asks Sentry's server side to fill in the real client IP;
+ * the browser SDK never resolves it itself.
+ */
+export function buildSentryUser(user: SentryUserInput): { id: string; email?: string; username?: string; ip_address: string } | null {
+  if (!user) return null;
+  return {
+    id: String(user.id),
+    email: user.email ?? undefined,
+    username: user.name ?? undefined,
+    ip_address: '{{auto}}',
+  };
+}
+
+let currentUser: SentryUserInput = null;
 
 export function sentryConfigured(): boolean {
   if (!DSN || import.meta.env.MODE === 'test') return false;
@@ -199,7 +250,7 @@ function onEarlyRejection(e: PromiseRejectionEvent) {
 }
 
 function applyUser(s: SentrySdk) {
-  s.setUser(currentUser ? { id: currentUser.id } : null);
+  s.setUser(buildSentryUser(currentUser));
   s.setTag('role', currentUser?.role ?? undefined);
 }
 
@@ -209,11 +260,15 @@ function init(s: SentrySdk) {
     environment: ENVIRONMENT,
     release: RELEASE && RELEASE !== 'unknown' ? RELEASE : undefined,
     dataCollection: {
-      userInfo: false,
+      // Lets Relay resolve the real client IP for events that carry `ip_address: "{{auto}}"`
+      // (see `buildSentryUser`). Everything else here still opts out of the SDK's own
+      // automatic collection — request/breadcrumb scrubbing in this file is what we rely on.
+      userInfo: true,
       cookies: false,
       httpHeaders: false,
       httpBodies: [],
-      urlQueryParams: false,
+      // The query string stays (minus secret params, which `scrubUrl` masks itself).
+      urlQueryParams: true,
     },
     // No tracesSampleRate at all: errors only. Setting it, even to 0, turns tracing on.
     maxBreadcrumbs: 50,
@@ -256,8 +311,11 @@ export function reportError(error: unknown, extra?: Record<string, unknown>): vo
   else bufferError(error, extra);
 }
 
-/** Who is signed in: the numeric id and the role, nothing else. */
-export function setSentryUser(user: { id: number | string; role?: string | null } | null): void {
-  currentUser = user ? { id: String(user.id), role: user.role ?? undefined } : null;
+/**
+ * Who is signed in. Call after login and after the session-restore `/auth/me`, and with `null`
+ * on logout — `applyUser` then calls the SDK's `setUser(null)` to clear it.
+ */
+export function setSentryUser(user: SentryUserInput): void {
+  currentUser = user;
   if (sdk) applyUser(sdk);
 }
