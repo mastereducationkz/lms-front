@@ -49,13 +49,28 @@ fi
 # "<sha>\n===\n✅ Successfully executed commands to all hosts.\n===", not a bare sha, and the old
 # whole-string regex match against that never matched anything at all (this made EVERY prod run
 # skip silently — the bash test only ever fed it a bare sha, so it never caught this). Look for a
-# line that's exactly a 40-char lowercase-hex sha, on its own, optionally prefixed with
-# "SENTRY_SHA=" (the marker the workflow's "Get deployed commit" step now prints — a bare sha on
-# its own line still works too, for a manual run). Require EXACTLY ONE distinct value among every
-# such line: none is the same as before (skip), and more than one distinct sha is a signal
-# something is wrong with the capture, not a "pick one and hope" situation.
+# line that's exactly a 40-char lowercase-hex sha, on its own, prefixed with "SENTRY_SHA=" (the
+# marker the workflow's "Get deployed commit" step now prints).
+#
+# Fix round 4: a bare sha with no marker is trusted ONLY when the whole captured value is a single
+# line — the documented manual-run shape, where there's nothing else in the capture it could be
+# confused with. In CI, the capture is always multiple lines (the banner rides along even on
+# success), so a bare 40-hex line there is NOT accepted, even if one shows up — it could be
+# unrelated noise from the SSH session itself (a `.bashrc` line, a MOTD, some other tool's output)
+# that happens to look like a sha, and if the real marker came back empty (say `git rev-parse`
+# failed with "dubious ownership" and printed nothing after "SENTRY_SHA="), trusting a stray bare
+# sha would register the WRONG release with no indication anything went wrong. Either way, require
+# EXACTLY ONE distinct matching value: none is the existing skip, and more than one distinct sha
+# is a signal something is wrong with the capture, not a "pick one and hope" situation.
 RAW_OUTPUT="${LMS_FRONT_GIT_COMMIT:-}"
-CANDIDATES="$(printf '%s\n' "$RAW_OUTPUT" | tr -d '\r' | grep -oE '^(SENTRY_SHA=)?[0-9a-f]{40}$' | sed -E 's/^SENTRY_SHA=//' | sort -u)"
+NORMALIZED="$(printf '%s' "$RAW_OUTPUT" | tr -d '\r')"
+NONBLANK_LINES="$(printf '%s\n' "$NORMALIZED" | grep -c '[^[:space:]]' || true)"
+if [ "$NONBLANK_LINES" -le 1 ]; then
+  SHA_PATTERN='^(SENTRY_SHA=)?[0-9a-f]{40}$'
+else
+  SHA_PATTERN='^SENTRY_SHA=[0-9a-f]{40}$'
+fi
+CANDIDATES="$(printf '%s\n' "$NORMALIZED" | grep -oE "$SHA_PATTERN" | sed -E 's/^SENTRY_SHA=//' | sort -u)"
 CANDIDATE_COUNT=0
 if [ -n "$CANDIDATES" ]; then
   CANDIDATE_COUNT="$(printf '%s\n' "$CANDIDATES" | wc -l | tr -d ' ')"

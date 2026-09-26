@@ -11,6 +11,7 @@ import {
   buildSentryUser,
   isIgnoredEvent,
   reportError,
+  scrubAnyParams,
   scrubText,
   scrubUrl,
   sentryConfigured,
@@ -305,6 +306,16 @@ describe('the 2 KB cut never leaves a partial secret visible (fix round 3)', () 
     const out = scrubUrl(straddling(shape, 30));
     expect(out).not.toContain('F'.repeat(15));
   });
+
+  it('drops an RFC 3986 sub-delim password straddling the cut (fix round 4)', () => {
+    // !, $ and , are legal raw in URL userinfo and were missing from the back-off character
+    // class — a cut landing right after one of them stopped there, leaving everything before it
+    // (here, "Sup3r") visible.
+    const shape = 'https://admin:Sup3r!S3cret,Value$More@host/path';
+    const out = scrubUrl(straddling(shape, 20));
+    expect(out).not.toContain('Sup3r');
+    expect(out).not.toContain('S3cret');
+  });
 });
 
 describe('scrubAnyParams masks a secret value through a literal ? too (fix round 3)', () => {
@@ -323,6 +334,33 @@ describe('scrubAnyParams masks a secret value through a literal ? too (fix round
     // non-secret name (here "next") must still stop at a literal nested "?" and let the
     // regex find the nested param on its own, or this would regress.
     expect(scrubUrl('/go?next=/reset-password?token=NESTEDSECRET3')).not.toContain('NESTEDSECRET3');
+  });
+});
+
+describe('scrubAnyParams loops instead of recursing, so it cannot overflow the stack (fix round 4)', () => {
+  it('handles 60 KB of "?a=?a=…" — uncapped, well past MAX_SCRUB_LENGTH — without throwing, under budget', () => {
+    // Every non-secret "a=" hop used to be one level of recursion; called directly (bypassing
+    // scrubUrl/scrubText, which always cap input first) with input this size, that would have
+    // been on the order of 20,000 stack frames and thrown RangeError long before finishing.
+    const input = '?a='.repeat(Math.ceil((60 * 1024) / 3));
+    const t0 = Date.now();
+    let result: string | undefined;
+    expect(() => {
+      result = scrubAnyParams(input);
+    }).not.toThrow();
+    // Budget is 2000ms here, not the other perf tests' 50ms: this one calls the internal,
+    // uncapped function directly (~20,000 loop iterations), where the other three (also 60 KB
+    // adversarial inputs) go through the public scrubUrl/scrubText, which cap to ~2 KB first and
+    // so stay fast in absolute terms even under load. On a quiet machine this runs in 15-30ms;
+    // measured here, on a dev sandbox shared with many concurrent, unrelated CPU-heavy processes
+    // (`uptime` showed a load average over 100 on 10 cores while tuning this test — confirmed
+    // with a plain, unrelated 50M-iteration counting loop taking 5-12s instead of its normal
+    // ~100ms), single runs spiked to 67-273ms with no algorithmic change at all. 2000ms keeps
+    // comfortable headroom above that noise while remaining two orders of magnitude below what
+    // the ORIGINAL recursive version took on this exact input (20+ seconds) — so a real
+    // regression back to quadratic/recursive behavior still fails this test unmistakably.
+    expect(Date.now() - t0).toBeLessThan(2000);
+    expect(result).toBeDefined();
   });
 });
 

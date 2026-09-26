@@ -271,14 +271,37 @@ else
   fail "banner-shaped output: deploy-marker URL missing/wrong sha: ${CALLS[1]:-<none>}"
 fi
 
-# A bare sha (no "SENTRY_SHA=" marker) on its own line, with the same banner noise, also works —
-# the documented manual-run convenience path.
-run_script $'201\n201' SENTRY_AUTH_TOKEN="$TOKEN" LMS_FRONT_GIT_COMMIT="${SHA}${BANNER_TAIL}"
-if [ "${#CALLS[@]}" -eq 2 ]; then pass "bare sha + banner noise: makes exactly 2 curl calls"; else fail "bare sha + banner: expected 2 curl calls, got ${#CALLS[@]}"; fi
+# A bare sha (no "SENTRY_SHA=" marker) on its OWN, with nothing else in the capture — the
+# documented single-line manual-run shape — still works.
+run_script $'201\n201' SENTRY_AUTH_TOKEN="$TOKEN" LMS_FRONT_GIT_COMMIT="$SHA"
+if [ "${#CALLS[@]}" -eq 2 ]; then pass "bare sha alone (manual-run shape): makes exactly 2 curl calls"; else fail "bare sha alone: expected 2 curl calls, got ${#CALLS[@]}"; fi
+
+# Fix round 4: that same bare sha is NOT trusted once banner noise makes the capture multi-line —
+# in CI the capture is always multi-line, so a bare 40-hex line there could be unrelated noise
+# from the SSH session (a `.bashrc` line, a MOTD) rather than the real sha; only the explicit
+# "SENTRY_SHA=" marker is trusted in that shape.
+run_script "" SENTRY_AUTH_TOKEN="$TOKEN" LMS_FRONT_GIT_COMMIT="${SHA}${BANNER_TAIL}"
+if [ "${#CALLS[@]}" -eq 0 ]; then
+  pass "bare sha + banner noise (multi-line, no marker): no curl call made"
+else
+  fail "bare sha + banner noise made ${#CALLS[@]} curl call(s) — a stray bare sha in CI output must not be trusted"
+fi
 
 # Garbage — banner noise with no sha line at all — skips.
 run_script "" SENTRY_AUTH_TOKEN="$TOKEN" LMS_FRONT_GIT_COMMIT="$BANNER_TAIL"
 if [ "${#CALLS[@]}" -eq 0 ]; then pass "banner with no sha line at all: no curl call made"; else fail "banner-only garbage: expected 0 curl calls, got ${#CALLS[@]}"; fi
+
+# Fix round 4: the marker itself came back empty (e.g. `git rev-parse` failed with "dubious
+# ownership" on the server and printed nothing after "SENTRY_SHA=") AND a stray bare 40-hex line
+# is also present in the capture (simulating unrelated noise that happens to look like a sha) —
+# must still skip, not register the stray line's value.
+STRAY_SHA="2222222222222222222222222222222222222222"
+run_script "" SENTRY_AUTH_TOKEN="$TOKEN" LMS_FRONT_GIT_COMMIT="$(printf 'SENTRY_SHA=\nfatal: detected dubious ownership in repository\n%s\n' "$STRAY_SHA")${BANNER_TAIL}"
+if [ "${#CALLS[@]}" -eq 0 ]; then
+  pass "empty marker + a stray bare sha line: no curl call made"
+else
+  fail "empty marker + stray bare sha made ${#CALLS[@]} curl call(s) — must not register the stray line's sha"
+fi
 
 # Two DIFFERENT shas present is ambiguous — a sign something's wrong with the capture — not
 # "pick the first one and hope." Skip, don't guess.

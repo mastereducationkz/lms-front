@@ -47,9 +47,11 @@ export const FILTERED = '[Filtered]';
 const MAX_SCRUB_LENGTH = 2048;
 const TRUNCATION_MARKER = '…[truncated]';
 // Characters a secret is typically built from (base64url, hex, a URL scheme/userinfo/path
-// segment): letters, digits, and this punctuation. Used only to back a hard cut off a dangling
-// partial secret — see capLength.
-const TOKEN_CHAR_RE = /[A-Za-z0-9._~+/=%:@-]/;
+// segment): letters, digits, and this punctuation — including, fix round 4, the RFC 3986
+// sub-delims that are legal raw in userinfo (! $ ' ( ) * , ; &): a password of `Sup3r!S3cret`
+// straddling the cut only backed off to the `!` before this, leaving `Sup3r` itself visible. Used
+// only to back a hard cut off a dangling partial secret — see capLength.
+const TOKEN_CHAR_RE = /[A-Za-z0-9._~+/=%:@!$'()*,;&-]/;
 /**
  * Slices to MAX_SCRUB_LENGTH, then backs off any trailing run of token-ish characters, so a
  * secret can never be left half-cut for a downstream regex to fail to recognize. Two concrete
@@ -96,9 +98,26 @@ const TELEGRAM_BOT_RE = /(\/bot)\d+:[A-Za-z0-9_-]+/g;
 // `switch` (Addendum B): the sibling-platform switch link's own one-time param, alongside the
 // handoff/SSO `token`/`code` already here — `#switch=…` isn't stripped by FRAGMENT_RE the way an
 // absolute URL's fragment is, since a relative one (a span description, a log line) never reaches
-// scrubUrl's own fragment handling at all, only this name-based pass.
-const SECRET_PARAM_RE =
-  /^(token|access_token|refresh_token|id_token|code|sig|signature|key|api_key|apikey|secret|password|auth|switch)$/i;
+// scrubUrl's own fragment handling at all, only this name-based pass. A Set + `.toLowerCase()`,
+// not a case-insensitive regex `.test()` (fix round 4): isSecretParamName runs once per param
+// scrubAnyParams finds, and on adversarial input with thousands of params this measurably beat
+// the regex — see isSecretParamName's own comment on decodeURIComponent for the same pattern.
+const SECRET_PARAM_NAMES = new Set([
+  'token',
+  'access_token',
+  'refresh_token',
+  'id_token',
+  'code',
+  'sig',
+  'signature',
+  'key',
+  'api_key',
+  'apikey',
+  'secret',
+  'password',
+  'auth',
+  'switch',
+]);
 // A presigned S3/SigV4 URL carries the whole credential in the query string, not one param —
 // mask the query in one piece rather than trying to name every AWS param.
 const PRESIGNED_QUERY_RE = /(?:^|[?&])(?:X-Amz-Signature|X-Amz-Credential|X-Amz-Security-Token|Signature)=/i;
@@ -113,16 +132,23 @@ const NESTED_ENCODING_HINT_RE = /%2f|%3f/i;
 // nothing for either quantifier to backtrack over: each one either finds what it needs immediately
 // or fails immediately, never combinatorially.
 //
-// The value class does NOT exclude `?` (fix round 3): a secret name's value must be masked
-// through to the next real separator, INCLUDING a `?` — `/x?token=abc?SECRET` used to become
-// `?token=[Filtered]?SECRET` because the old value class stopped at that `?`, leaking SECRET.
-// scrubAnyParams itself still has to tell a literal nested query (`?next=/x?token=Y`, no
-// percent-encoding, round 1's own test) apart from a secret value that merely contains a `?`: it
-// only widens past a `?` when the NAME it just matched is secret; for a non-secret name it splits
-// the captured value at the first `?` and re-runs itself on everything from there on, so the
-// nested `?token=Y` still gets found and masked as its own param instead of being swallowed
-// silently into `next`'s (non-secret) value.
-const ANY_PARAM_RE = /([?&;#])([^=&;#?\s"'<>]+)=([^&;#\s"'<>]*)/g;
+// The value class excludes `?`, same as the name's: a non-secret param's value must stop at a
+// literal nested query (`?next=/x?token=Y`, round 1's own test) rather than swallow it, so the
+// nested `?token=Y` is left for the next match to find and mask on its own. Fix round 3 first
+// tried widening this class to include `?` for secret names' sake (below); fix round 4 reverted
+// that — it made the regex engine re-scan all the way to the true end of the remaining string on
+// EVERY match in a long chain like "?a=?a=?a=…", since nothing there stops a `?`-inclusive class
+// either, turning a 60 KB adversarial input into a 20+ SECOND scrubText call (quadratic, not the
+// stack overflow that motivated the recursion-to-loop rewrite in the first place — a different
+// failure mode, on the SAME reverted design). A secret value that itself contains a literal `?`
+// (`/x?token=abc?SECRET`) is instead extended past it separately, in scrubAnyParams, only when
+// the name is actually secret — see SECRET_VALUE_TAIL_RE below.
+const ANY_PARAM_RE = /([?&;#])([^=&;#?\s"'<>]+)=([^&;#?\s"'<>]*)/g;
+// Extends a SECRET value past an embedded literal `?`, allowing one where ANY_PARAM_RE's own
+// value class doesn't. Anchored at the start of whatever suffix it's given (not global — one
+// match, not a scan), so it costs a single O(remaining) pass only when a value actually needs
+// extending, never on every non-secret hop the way widening ANY_PARAM_RE itself did.
+const SECRET_VALUE_TAIL_RE = /^[^&;#\s"'<>]*/;
 
 function scrubSecrets(text: string): string {
   return text
@@ -138,22 +164,30 @@ const URL_IN_TEXT_RE = /https?:\/\/[^\s"'<>]+/g;
  * Plain string ops (lastIndexOf/indexOf/slice), not a `/\[([^\]]*)\]\s*$/`-style regex: that
  * shape is exactly the other catastrophic-backtrack pattern fix round 1 review found (60 KB of
  * `[` with no `]` ever closing it), and a name can be attacker-controlled query-string input.
+ *
+ * Only calls `decodeURIComponent` when the name actually contains a `%` (fix round 4): this runs
+ * once per param scrubAnyParams finds, so on adversarial input with thousands of params
+ * (`?a=?a=?a=…`), an unconditional decode call — even though it's a fast no-op on a plain name —
+ * was measurably the dominant cost (confirmed by isolating it: removing just this call dropped a
+ * 60 KB/~20,000-param run from ~200ms to ~30ms). A real param name is virtually always plain.
  */
 function isSecretParamName(rawName: string): boolean {
   let name = rawName;
-  try {
-    name = decodeURIComponent(name);
-  } catch {
-    // Malformed percent-encoding: fall back to testing the raw name as-is.
+  if (name.indexOf('%') !== -1) {
+    try {
+      name = decodeURIComponent(name);
+    } catch {
+      // Malformed percent-encoding: fall back to testing the raw name as-is.
+    }
   }
   const trimmed = name.trimEnd();
-  if (SECRET_PARAM_RE.test(trimmed)) return true;
+  if (SECRET_PARAM_NAMES.has(trimmed.toLowerCase())) return true;
   if (trimmed.endsWith(']')) {
     const open = trimmed.lastIndexOf('[', trimmed.length - 2);
-    if (open !== -1 && SECRET_PARAM_RE.test(trimmed.slice(open + 1, trimmed.length - 1))) return true;
+    if (open !== -1 && SECRET_PARAM_NAMES.has(trimmed.slice(open + 1, trimmed.length - 1).toLowerCase())) return true;
   }
   const bracketIdx = trimmed.indexOf('[');
-  return bracketIdx !== -1 && SECRET_PARAM_RE.test(trimmed.slice(0, bracketIdx));
+  return bracketIdx !== -1 && SECRET_PARAM_NAMES.has(trimmed.slice(0, bracketIdx).toLowerCase());
 }
 
 /**
@@ -192,27 +226,63 @@ function scrubQueryString(match: string): string {
   return `?${params.join('&')}`;
 }
 
-/** The blunt backstop pass: masks any secret-named param, decodes+re-scrubs a nested one. */
-function scrubAnyParams(text: string): string {
-  // A fresh RegExp per call, not the shared module-level ANY_PARAM_RE: this function recurses
-  // (see the non-secret + literal-nested-`?` branch below), and a `g`-flag regex carries its scan
-  // position in mutable `lastIndex` state — reusing the same object across an outer call and an
-  // inner recursive call corrupts the outer call's iteration. A freshly constructed instance has
-  // its own `lastIndex`, so nested calls can never interfere with each other.
-  return text.replace(new RegExp(ANY_PARAM_RE.source, ANY_PARAM_RE.flags), (whole: string, sep: string, rawName: string, rawValue: string) => {
-    if (isSecretParamName(rawName)) return `${sep}${rawName}=${FILTERED}`;
-    const qIdx = rawValue.indexOf('?');
-    if (qIdx === -1) {
-      const scrubbedValue = scrubNestedValue(rawValue);
-      return scrubbedValue === rawValue ? whole : `${sep}${rawName}=${scrubbedValue}`;
+/**
+ * The blunt backstop pass: masks any secret-named param (extending through an embedded literal
+ * `?` when the name is secret — see SECRET_VALUE_TAIL_RE), decodes+re-scrubs a nested one.
+ *
+ * Loops instead of recursing (fix round 4): a literal nested query in a NON-secret param's value
+ * (`?next=/x?token=Y`, round 1's own test) is handled for free by ANY_PARAM_RE's own value class
+ * stopping at `?` — the next loop iteration just finds it as an ordinary match, no special-casing
+ * needed. Recursing here (an earlier version of this fix) was bounded only by MAX_SCRUB_LENGTH
+ * (about 682 levels worst case at the 2 KB cap — already over half a typical stack budget) and
+ * would throw `RangeError` if this function were ever called directly with uncapped input, e.g.
+ * a future internal caller that skips capLength, or 60 KB of `?a=?a=?a=…` fed to it in a test.
+ *
+ * A fresh RegExp per call, not the shared module-level ANY_PARAM_RE — this is a no-op safety
+ * margin, not a fix for a real bug: `String.prototype.replace` (used elsewhere in this file)
+ * collects every match, advancing `lastIndex` to completion, BEFORE calling any replacer (see the
+ * `RegExp.prototype[Symbol.replace]` spec), so a shared object's `lastIndex` was never actually at
+ * risk from re-entrancy. This function doesn't call `replace` at all any more, and isn't
+ * re-entrant either way, but a fresh instance costs nothing and reads more obviously correct than
+ * relying on that spec detail.
+ *
+ * Exported (only) so a test can call it directly with uncapped input and prove both of the above
+ * — the public scrubUrl/scrubText always cap first, so they can never exercise this on their own.
+ */
+export function scrubAnyParams(text: string): string {
+  const re = new RegExp(ANY_PARAM_RE.source, ANY_PARAM_RE.flags);
+  // Collect pieces and join once at the end, rather than `result += …` on every match (fix round
+  // 4): empirically, repeated `+=` was itself a measurable cost on adversarial input with
+  // thousands of matches (tens of ms), on top of the decodeURIComponent cost fixed in
+  // isSecretParamName above — join scales far better for this many small pieces.
+  const parts: string[] = [];
+  let pos = 0;
+  for (;;) {
+    re.lastIndex = pos;
+    const m = re.exec(text);
+    if (!m) {
+      if (pos < text.length) parts.push(text.slice(pos));
+      return parts.join('');
     }
-    // A literal nested query starts here (round 1's own test: `?next=/x?token=Y`). Keep this
-    // (non-secret) param's own value to just before it, and let the rest be re-scanned on its
-    // own so the nested param is found and masked independently, not swallowed into this value.
-    const before = rawValue.slice(0, qIdx);
-    const after = rawValue.slice(qIdx);
-    return `${sep}${rawName}=${scrubNestedValue(before)}${scrubAnyParams(after)}`;
-  });
+    const [whole, sep, rawName, rawValue] = m;
+    if (m.index > pos) parts.push(text.slice(pos, m.index));
+    let matchEnd = m.index + whole.length;
+    if (isSecretParamName(rawName)) {
+      // ANY_PARAM_RE's own value stops at the first literal `?` (so a non-secret value never
+      // swallows a nested query — see the doc comment above). For a SECRET name, if that's
+      // exactly where it stopped, the real value continues past it: extend once, here, rather
+      // than widen ANY_PARAM_RE's class for every match — see ANY_PARAM_RE's own comment for why
+      // that alternative was a 20+ second quadratic blowup on adversarial input.
+      if (text[matchEnd] === '?') {
+        matchEnd += SECRET_VALUE_TAIL_RE.exec(text.slice(matchEnd))![0].length;
+      }
+      parts.push(sep, rawName, '=', FILTERED);
+      pos = matchEnd;
+      continue;
+    }
+    parts.push(sep, rawName, '=', scrubNestedValue(rawValue));
+    pos = matchEnd;
+  }
 }
 
 function scrubUrlImpl(url: string, allowNestedDecode: boolean): string {
