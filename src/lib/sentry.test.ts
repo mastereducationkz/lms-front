@@ -356,7 +356,9 @@ describe('scrubAnyParams loops instead of recursing, so it cannot overflow the s
   // shape. Comparing CPU time (immune to scheduling noise) at two input sizes catches the *shape*
   // instead — a linear implementation costs about the same ratio as the size ratio (8x KB -> ~8x
   // cost), a quadratic one costs roughly the square (~64x). The old 2000ms wall-clock budget let
-  // a 776ms quadratic regression (the round-3 `?`-inclusive value class) pass right through.
+  // a 776ms quadratic regression pass right through (round 3's design: a `?`-inclusive value
+  // class, with non-secret values split at the `?` and the rest re-scanned; the ratio test
+  // measured 56-71 on it). Widening the class alone on today's loop is not quadratic.
   it('scrubAnyParams scales linearly on uncapped input (CPU-time ratio, load-robust)', () => {
     type Cpu = { user: number; system: number };
     const proc = (globalThis as unknown as { process: { cpuUsage(prev?: Cpu): Cpu } }).process;
