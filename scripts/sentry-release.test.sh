@@ -253,6 +253,39 @@ else
   fail "empty sha in a git repo made ${#CALLS[@]} curl call(s) — the removed git-fallback regressed"
 fi
 
+# --- 4b. drone-ssh's success banner rides along in the same capture (fix round 3) ----------------
+# appleboy/ssh-action's entrypoint runs drone-ssh, which always appends this banner to the SAME
+# stdout stream `capture_stdout` reads — so in real prod runs, LMS_FRONT_GIT_COMMIT was never a
+# bare sha, and the old whole-string match never matched anything at all. That made the release
+# step silently skip on EVERY real deploy — the earlier tests above never caught it because they
+# only ever fed a bare sha, which is not what production actually looks like.
+
+BANNER_TAIL=$'\n===\n\xE2\x9C\x85 Successfully executed commands to all hosts.\n==='
+
+run_script $'201\n201' SENTRY_AUTH_TOKEN="$TOKEN" LMS_FRONT_GIT_COMMIT="SENTRY_SHA=${SHA}${BANNER_TAIL}"
+if [ "$RUN_EXIT" -eq 0 ]; then pass "banner-shaped output: exits 0"; else fail "banner: exit code was $RUN_EXIT ($RUN_OUT)"; fi
+if [ "${#CALLS[@]}" -eq 2 ]; then pass "banner-shaped output: makes exactly 2 curl calls"; else fail "banner: expected 2 curl calls, got ${#CALLS[@]}"; fi
+if call_has 1 "https://de.sentry.io/api/0/organizations/master-education/releases/$SHA/deploys/"; then
+  pass "banner-shaped output: extracts the real sha, not banner text"
+else
+  fail "banner-shaped output: deploy-marker URL missing/wrong sha: ${CALLS[1]:-<none>}"
+fi
+
+# A bare sha (no "SENTRY_SHA=" marker) on its own line, with the same banner noise, also works —
+# the documented manual-run convenience path.
+run_script $'201\n201' SENTRY_AUTH_TOKEN="$TOKEN" LMS_FRONT_GIT_COMMIT="${SHA}${BANNER_TAIL}"
+if [ "${#CALLS[@]}" -eq 2 ]; then pass "bare sha + banner noise: makes exactly 2 curl calls"; else fail "bare sha + banner: expected 2 curl calls, got ${#CALLS[@]}"; fi
+
+# Garbage — banner noise with no sha line at all — skips.
+run_script "" SENTRY_AUTH_TOKEN="$TOKEN" LMS_FRONT_GIT_COMMIT="$BANNER_TAIL"
+if [ "${#CALLS[@]}" -eq 0 ]; then pass "banner with no sha line at all: no curl call made"; else fail "banner-only garbage: expected 0 curl calls, got ${#CALLS[@]}"; fi
+
+# Two DIFFERENT shas present is ambiguous — a sign something's wrong with the capture — not
+# "pick the first one and hope." Skip, don't guess.
+OTHER_SHA="1111111111111111111111111111111111111111"
+run_script "" SENTRY_AUTH_TOKEN="$TOKEN" LMS_FRONT_GIT_COMMIT="$(printf 'SENTRY_SHA=%s\nSENTRY_SHA=%s\n' "$SHA" "$OTHER_SHA")"
+if [ "${#CALLS[@]}" -eq 0 ]; then pass "two different shas in the output: no curl call made"; else fail "two different shas: expected 0 curl calls, got ${#CALLS[@]}"; fi
+
 # --- 5. a 5xx doesn't fail it --------------------------------------------------------------------
 
 run_script $'500\n502' SENTRY_AUTH_TOKEN="$TOKEN" LMS_FRONT_GIT_COMMIT="$SHA"

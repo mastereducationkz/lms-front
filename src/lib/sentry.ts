@@ -46,8 +46,28 @@ export const FILTERED = '[Filtered]';
 // "adversarial input" perf tests below.
 const MAX_SCRUB_LENGTH = 2048;
 const TRUNCATION_MARKER = '…[truncated]';
-function capLength(text: string): string {
-  return text.length > MAX_SCRUB_LENGTH ? text.slice(0, MAX_SCRUB_LENGTH) + TRUNCATION_MARKER : text;
+// Characters a secret is typically built from (base64url, hex, a URL scheme/userinfo/path
+// segment): letters, digits, and this punctuation. Used only to back a hard cut off a dangling
+// partial secret — see capLength.
+const TOKEN_CHAR_RE = /[A-Za-z0-9._~+/=%:@-]/;
+/**
+ * Slices to MAX_SCRUB_LENGTH, then backs off any trailing run of token-ish characters, so a
+ * secret can never be left half-cut for a downstream regex to fail to recognize. Two concrete
+ * failures a bare slice caused (fix round 3): a long opaque segment landing 1-39 chars short of
+ * LONG_SEGMENT_RE's 40-char minimum printed in full; a userinfo URL cut between the `:` and the
+ * `@` left the password visible, since USERINFO_RE can't match without that `@`.
+ *
+ * Returns `[text, wasTruncated]` rather than appending the marker itself — the caller must scrub
+ * FIRST and append the marker AFTER (see scrubUrlImpl/scrubText). Appending it before scrubbing
+ * (the fix round 2 shape) planted "…[truncated]" — none of `/?#\s"'`, none of them `$` either,
+ * since more text used to follow — exactly where LONG_SEGMENT_RE's own `(?=[/?#\s"']|$)`
+ * lookahead needed to find one of those, so a straddling secret's masking silently failed too.
+ */
+function capLength(text: string): [text: string, wasTruncated: boolean] {
+  if (text.length <= MAX_SCRUB_LENGTH) return [text, false];
+  let end = MAX_SCRUB_LENGTH;
+  while (end > 0 && TOKEN_CHAR_RE.test(text[end - 1])) end--;
+  return [text.slice(0, end), true];
 }
 
 // A path segment after one of these is a bearer credential (see lms-backend sentry_setup.py,
@@ -91,12 +111,18 @@ const NESTED_ENCODING_HINT_RE = /%2f|%3f/i;
 // or care what "the query" is — it just finds every param-shaped thing in the whole string. The
 // name/value character classes exclude the separators and the `=` they need next, so there's
 // nothing for either quantifier to backtrack over: each one either finds what it needs immediately
-// or fails immediately, never combinatorially. `?` is excluded from the value too — not because a
-// value can't contain one, but so a LITERAL nested query (`?next=/x?token=Y`, no percent-encoding)
-// stops the outer value there instead of swallowing it, leaving the nested `?token=Y` for the next
-// global-match attempt to find on its own; a percent-encoded nested query has no literal `?` to
-// stop on and is handled separately by scrubNestedValue below.
-const ANY_PARAM_RE = /([?&;#])([^=&;#?\s"'<>]+)=([^&;#?\s"'<>]*)/g;
+// or fails immediately, never combinatorially.
+//
+// The value class does NOT exclude `?` (fix round 3): a secret name's value must be masked
+// through to the next real separator, INCLUDING a `?` — `/x?token=abc?SECRET` used to become
+// `?token=[Filtered]?SECRET` because the old value class stopped at that `?`, leaking SECRET.
+// scrubAnyParams itself still has to tell a literal nested query (`?next=/x?token=Y`, no
+// percent-encoding, round 1's own test) apart from a secret value that merely contains a `?`: it
+// only widens past a `?` when the NAME it just matched is secret; for a non-secret name it splits
+// the captured value at the first `?` and re-runs itself on everything from there on, so the
+// nested `?token=Y` still gets found and masked as its own param instead of being swallowed
+// silently into `next`'s (non-secret) value.
+const ANY_PARAM_RE = /([?&;#])([^=&;#?\s"'<>]+)=([^&;#\s"'<>]*)/g;
 
 function scrubSecrets(text: string): string {
   return text
@@ -168,21 +194,36 @@ function scrubQueryString(match: string): string {
 
 /** The blunt backstop pass: masks any secret-named param, decodes+re-scrubs a nested one. */
 function scrubAnyParams(text: string): string {
-  return text.replace(ANY_PARAM_RE, (whole: string, sep: string, rawName: string, rawValue: string) => {
+  // A fresh RegExp per call, not the shared module-level ANY_PARAM_RE: this function recurses
+  // (see the non-secret + literal-nested-`?` branch below), and a `g`-flag regex carries its scan
+  // position in mutable `lastIndex` state — reusing the same object across an outer call and an
+  // inner recursive call corrupts the outer call's iteration. A freshly constructed instance has
+  // its own `lastIndex`, so nested calls can never interfere with each other.
+  return text.replace(new RegExp(ANY_PARAM_RE.source, ANY_PARAM_RE.flags), (whole: string, sep: string, rawName: string, rawValue: string) => {
     if (isSecretParamName(rawName)) return `${sep}${rawName}=${FILTERED}`;
-    const scrubbedValue = scrubNestedValue(rawValue);
-    return scrubbedValue === rawValue ? whole : `${sep}${rawName}=${scrubbedValue}`;
+    const qIdx = rawValue.indexOf('?');
+    if (qIdx === -1) {
+      const scrubbedValue = scrubNestedValue(rawValue);
+      return scrubbedValue === rawValue ? whole : `${sep}${rawName}=${scrubbedValue}`;
+    }
+    // A literal nested query starts here (round 1's own test: `?next=/x?token=Y`). Keep this
+    // (non-secret) param's own value to just before it, and let the rest be re-scanned on its
+    // own so the nested param is found and masked independently, not swallowed into this value.
+    const before = rawValue.slice(0, qIdx);
+    const after = rawValue.slice(qIdx);
+    return `${sep}${rawName}=${scrubNestedValue(before)}${scrubAnyParams(after)}`;
   });
 }
 
 function scrubUrlImpl(url: string, allowNestedDecode: boolean): string {
-  const capped = capLength(url);
+  const [capped, wasTruncated] = capLength(url);
   const scrubbed = scrubSecrets(capped)
     .replace(FRAGMENT_RE, '')
     .replace(QUERY_RE, scrubQueryString)
     .replace(TOKEN_PATH_RE, (_m, prefix: string) => prefix + FILTERED)
     .replace(LONG_SEGMENT_RE, `/${FILTERED}`);
-  return allowNestedDecode ? scrubAnyParams(scrubbed) : scrubbed;
+  const withBackstop = allowNestedDecode ? scrubAnyParams(scrubbed) : scrubbed;
+  return wasTruncated ? withBackstop + TRUNCATION_MARKER : withBackstop;
 }
 
 export function scrubUrl<T>(url: T): T {
@@ -192,13 +233,14 @@ export function scrubUrl<T>(url: T): T {
 
 export function scrubText<T>(text: T): T {
   if (typeof text !== 'string' || !text) return text;
-  const capped = capLength(text);
-  return scrubAnyParams(
+  const [capped, wasTruncated] = capLength(text);
+  const scrubbed = scrubAnyParams(
     scrubSecrets(capped)
       .replace(URL_IN_TEXT_RE, (u) => scrubUrl(u))
       .replace(TOKEN_PATH_RE, (_m, prefix: string) => prefix + FILTERED)
       .replace(LONG_SEGMENT_RE, `/${FILTERED}`),
-  ) as T;
+  );
+  return (wasTruncated ? scrubbed + TRUNCATION_MARKER : scrubbed) as T;
 }
 
 // Browser noise that is never our bug, or is already handled:

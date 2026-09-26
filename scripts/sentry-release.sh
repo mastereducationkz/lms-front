@@ -10,7 +10,7 @@
 # ignored, and a missing token or a sha that isn't a real commit hash is a silent, deliberate skip.
 #
 # Run manually for a spot check: SENTRY_AUTH_TOKEN=... LMS_FRONT_GIT_COMMIT=<40-char sha> bash
-# scripts/sentry-release.sh
+# scripts/sentry-release.sh (a bare sha or a "SENTRY_SHA=<sha>" line both work — see below).
 #
 # No `set -e`: a failed `curl` must not abort the script (see run_curl below). No `set -x` and no
 # `-v`/`--trace*` on curl, ever. The token is fed to curl via `--config -` on stdin (see run_curl)
@@ -40,13 +40,35 @@ fi
 # `capture_stdout` — see the workflow's comment on that step), this fallback didn't fail loudly;
 # it quietly substituted the RUNNER's sha, which is not necessarily what the SERVER actually
 # deployed (the server builds master's tip at deploy time, and deploys queue — those two shas can
-# differ). A wrong-but-plausible release is worse than no release: whitespace-strip (a captured
-# step output can carry a trailing newline) and then require exactly a 40-char lowercase-hex sha
-# before using it for anything — anything else is a skip, never a guess.
-RAW_VERSION="${LMS_FRONT_GIT_COMMIT:-}"
-VERSION="$(printf '%s' "$RAW_VERSION" | tr -d '[:space:]')"
+# differ). A wrong-but-plausible release is worse than no release.
+#
+# Fix round 3: LMS_FRONT_GIT_COMMIT is not just a sha either. appleboy/ssh-action's entrypoint
+# runs drone-ssh, which always appends its own success banner to the SAME stdout stream
+# capture_stdout reads (confirmed against drone-ssh 1.8.2's own source: it `tee`s that banner to
+# the captured output unconditionally) — so the real captured value looks like
+# "<sha>\n===\n✅ Successfully executed commands to all hosts.\n===", not a bare sha, and the old
+# whole-string regex match against that never matched anything at all (this made EVERY prod run
+# skip silently — the bash test only ever fed it a bare sha, so it never caught this). Look for a
+# line that's exactly a 40-char lowercase-hex sha, on its own, optionally prefixed with
+# "SENTRY_SHA=" (the marker the workflow's "Get deployed commit" step now prints — a bare sha on
+# its own line still works too, for a manual run). Require EXACTLY ONE distinct value among every
+# such line: none is the same as before (skip), and more than one distinct sha is a signal
+# something is wrong with the capture, not a "pick one and hope" situation.
+RAW_OUTPUT="${LMS_FRONT_GIT_COMMIT:-}"
+CANDIDATES="$(printf '%s\n' "$RAW_OUTPUT" | tr -d '\r' | grep -oE '^(SENTRY_SHA=)?[0-9a-f]{40}$' | sed -E 's/^SENTRY_SHA=//' | sort -u)"
+CANDIDATE_COUNT=0
+if [ -n "$CANDIDATES" ]; then
+  CANDIDATE_COUNT="$(printf '%s\n' "$CANDIDATES" | wc -l | tr -d ' ')"
+fi
+if [ "$CANDIDATE_COUNT" -ne 1 ]; then
+  echo "sentry-release: expected exactly one 40-char lowercase-hex sha in the captured output, found ${CANDIDATE_COUNT}; skipping."
+  exit 0
+fi
+VERSION="$CANDIDATES"
+# Belt and suspenders: the extraction above already guarantees this shape by construction, but
+# validate again rather than trust it silently held.
 if ! printf '%s' "$VERSION" | grep -qE '^[0-9a-f]{40}$'; then
-  echo "sentry-release: '${RAW_VERSION}' is not a 40-char lowercase-hex sha, skipping."
+  echo "sentry-release: extracted value '${VERSION}' is not a 40-char lowercase-hex sha, skipping."
   exit 0
 fi
 

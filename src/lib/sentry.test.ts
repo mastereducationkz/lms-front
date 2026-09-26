@@ -256,6 +256,76 @@ describe('perf: capped input length (fix round 2)', () => {
   });
 });
 
+describe('the 2 KB cut never leaves a partial secret visible (fix round 3)', () => {
+  // sentry.ts's MAX_SCRUB_LENGTH. Kept in sync here rather than exported: if it ever changes,
+  // these tests should be re-tuned deliberately, not silently stop straddling the cut.
+  const CUT = 2048;
+
+  /** Pads with spaces (never "token-ish", so capLength's trim-back always stops exactly at the
+   *  padding, predictably) so `secretShape` starts `CUT - offsetIntoSecret` characters in — the
+   *  cut then lands `offsetIntoSecret` characters into the shape, i.e. genuinely mid-secret. */
+  function straddling(secretShape: string, offsetIntoSecret: number): string {
+    return ' '.repeat(CUT - offsetIntoSecret) + secretShape;
+  }
+
+  it('drops a long opaque segment straddling the cut, not a partial fragment of it', () => {
+    const shape = `/${'B'.repeat(60)}`;
+    const out = scrubUrl(straddling(shape, 30) + ' tail');
+    expect(out).not.toContain('B'.repeat(15));
+  });
+
+  it('drops a userinfo password straddling the cut, not a partial fragment of it', () => {
+    const shape = 'wss://user:SUPERSECRETPASSWORDVALUE@proxy.local:1080/x';
+    const out = scrubUrl(straddling(shape, 25));
+    expect(out).not.toContain('SUPERSECRETPASSWORDVALUE');
+    expect(out).not.toContain('SUPERSECRETPASS');
+  });
+
+  it('drops a JWT straddling the cut, not a partial fragment of it', () => {
+    const shape = `eyJ${'A'.repeat(80)}.${'B'.repeat(80)}.${'C'.repeat(20)}`;
+    const out = scrubText(straddling(shape, 100));
+    expect(out).not.toContain('A'.repeat(15));
+    expect(out).not.toContain('B'.repeat(15));
+  });
+
+  it('drops a Bearer token straddling the cut, not a partial fragment of it', () => {
+    const shape = `Bearer ${'D'.repeat(60)}`;
+    const out = scrubText(straddling(shape, 30));
+    expect(out).not.toContain('D'.repeat(15));
+  });
+
+  it('drops a token-path route straddling the cut, not a partial fragment of it', () => {
+    const shape = `/watch/${'E'.repeat(60)}`;
+    const out = scrubUrl(straddling(shape, 30));
+    expect(out).not.toContain('E'.repeat(15));
+  });
+
+  it('drops a ?token= value straddling the cut, not a partial fragment of it', () => {
+    const shape = `/reset?token=${'F'.repeat(60)}`;
+    const out = scrubUrl(straddling(shape, 30));
+    expect(out).not.toContain('F'.repeat(15));
+  });
+});
+
+describe('scrubAnyParams masks a secret value through a literal ? too (fix round 3)', () => {
+  it('masks the rest of a secret value after a literal ? in plain text', () => {
+    const out = scrubText('failed /x?token=abc?SECRET1');
+    expect(out).not.toContain('SECRET1');
+  });
+
+  it('masks the rest of a secret value after a literal ? in a fragment', () => {
+    const out = scrubText('navigate to /cb#access_token=abc?SECRET2');
+    expect(out).not.toContain('SECRET2');
+  });
+
+  it('keeps round 1s nested-query test green: a non-secret name does not swallow the nested secret', () => {
+    // The fix for the two cases above widened the value match for SECRET names only; a
+    // non-secret name (here "next") must still stop at a literal nested "?" and let the
+    // regex find the nested param on its own, or this would regress.
+    expect(scrubUrl('/go?next=/reset-password?token=NESTEDSECRET3')).not.toContain('NESTEDSECRET3');
+  });
+});
+
 const errorEvent = (type: string, value: string, filename = 'https://lms.mastereducation.kz/assets/index.js'): ErrorEvent =>
   ({
     type: undefined,

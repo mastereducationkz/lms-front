@@ -101,8 +101,14 @@ jobs:
           script: |
             cd ~/projects/lms-frontend
             # The exact sha the build above used (same checkout, nothing has touched it since —
-            # see the "Deploy to server" step's own LMS_FRONT_GIT_COMMIT line).
-            git rev-parse HEAD
+            # see the "Deploy to server" step's own LMS_FRONT_GIT_COMMIT line). Printed behind an
+            # explicit "SENTRY_SHA=" marker, not bare (fix round 3): appleboy/ssh-action's
+            # entrypoint runs drone-ssh, which always appends its own success banner to the SAME
+            # stdout stream capture_stdout reads — a bare `git rev-parse HEAD` arrives as
+            # "<sha>\n===\n✅ Successfully executed commands to all hosts.\n===", not just a sha.
+            # scripts/sentry-release.sh greps for this marker line instead of trusting the whole
+            # capture to already be exactly one.
+            echo "SENTRY_SHA=$(git rev-parse HEAD)"
 
       - name: Checkout for release script
         if: ${{ success() && env.HAS_SENTRY_TOKEN == 'true' && steps.deployed_sha.outputs.stdout != '' }}
