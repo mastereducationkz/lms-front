@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { backendBase, mediaUrl, safeLinkUrl, safeUploadUrl } from './mediaUrl';
+import { backendBase, fileNameFromUrl, mediaUrl, safeLinkUrl, safeUploadUrl } from './mediaUrl';
 
 const API = 'https://lmsapi.mastereducation.kz';
 
@@ -65,8 +65,12 @@ const HOSTILE_VALUES = [
   '//evil.tld/x',
   '@evil.tld/x',
   '\\\\evil.tld',
+  '/\\evil.tld',
   'https://evil.tld/a.png',
   '  \x00\x01javascript:alert(1)',
+  '/uploads/../../etc/passwd',
+  '/uploads/%2e%2e/%2e%2e/etc/passwd',
+  `https://attacker@${new URL(API).host}/uploads/a.png`,
 ];
 
 describe('safeUploadUrl', () => {
@@ -90,9 +94,16 @@ describe('safeUploadUrl', () => {
     expect(safeUploadUrl('uploads/submissions/a.pdf', API)).toBe(`${API}/uploads/submissions/a.pdf`);
   });
 
-  it('never produces a double slash, whatever the input has', () => {
-    expect(safeUploadUrl('/uploads/a.pdf', API)).toBe(`${API}/uploads/a.pdf`);
-    expect(safeUploadUrl('uploads/a.pdf', API)).toBe(`${API}/uploads/a.pdf`);
+  it('never produces a double slash, even when the base already ends with one', () => {
+    // A base with a trailing slash used to make `new URL` see an empty path segment and
+    // resolve to "//uploads/…" — confined-to-"/uploads/" check would then reject a value
+    // it should accept. uploadPathUrl strips the base's own trailing slash(es) first.
+    expect(safeUploadUrl('/uploads/a.pdf', `${API}/`)).toBe(`${API}/uploads/a.pdf`);
+    expect(safeUploadUrl('uploads/a.pdf', `${API}/`)).toBe(`${API}/uploads/a.pdf`);
+  });
+
+  it('keeps a double slash inside the key itself — still confined to /uploads/, so harmless', () => {
+    expect(safeUploadUrl('uploads//x', API)).toBe(`${API}/uploads//x`);
   });
 
   it('accepts a legacy absolute URL already on the backend host', () => {
@@ -115,14 +126,38 @@ describe('safeUploadUrl', () => {
     expect(safeUploadUrl(`${API}@evil.tld/x`, API)).toBeNull();
   });
 
+  it('rejects userinfo on the backend host itself', () => {
+    // new URL().host ignores userinfo, so comparing hosts alone would let this through —
+    // the browser still connects to evil.tld's login, "attacker", on the real host.
+    expect(safeUploadUrl(`https://attacker@${new URL(API).host}/uploads/a.png`, API)).toBeNull();
+    expect(safeUploadUrl(`https://attacker:pw@${new URL(API).host}/uploads/a.png`, API)).toBeNull();
+  });
+
+  it('rejects path traversal out of /uploads/, plain or percent-encoded', () => {
+    expect(safeUploadUrl('/uploads/../../etc/passwd', API)).toBeNull();
+    expect(safeUploadUrl('uploads/../../etc/passwd', API)).toBeNull();
+    expect(safeUploadUrl('/uploads/%2e%2e/%2e%2e/etc/passwd', API)).toBeNull();
+    expect(safeUploadUrl(`${API}/uploads/../../etc/passwd`, API)).toBeNull();
+    expect(safeUploadUrl(`${API}/uploads/%2e%2e/%2e%2e/etc/passwd`, API)).toBeNull();
+  });
+
+  it('still accepts a path with .. that never climbs out of /uploads/', () => {
+    // "/uploads/a/../b.pdf" collapses to "/uploads/b.pdf" — still confined, so this is fine.
+    expect(safeUploadUrl('/uploads/a/../b.pdf', API)).toBe(`${API}/uploads/b.pdf`);
+  });
+
   it('trims stray whitespace around an otherwise valid path', () => {
     expect(safeUploadUrl('  /uploads/a.pdf\n', API)).toBe(`${API}/uploads/a.pdf`);
   });
 });
 
 describe('safeLinkUrl', () => {
-  it('rejects every hostile value', () => {
-    for (const value of HOSTILE_VALUES.filter((v) => v !== 'https://evil.tld/a.png')) {
+  // safeLinkUrl allows any absolute http(s) URL (any host — even with userinfo, unlike
+  // safeUploadUrl): a teacher resource link is not confined to the backend host.
+  const SAFE_LINK_EXCEPTIONS = ['https://evil.tld/a.png', `https://attacker@${new URL(API).host}/uploads/a.png`];
+
+  it('rejects every other hostile value', () => {
+    for (const value of HOSTILE_VALUES.filter((v) => !SAFE_LINK_EXCEPTIONS.includes(v))) {
       expect(safeLinkUrl(value, API)).toBeNull();
     }
   });
@@ -143,5 +178,25 @@ describe('safeLinkUrl', () => {
   it('still resolves an upload path the same way as safeUploadUrl', () => {
     expect(safeLinkUrl('/uploads/answer_keys/key.pdf', API)).toBe(`${API}/uploads/answer_keys/key.pdf`);
     expect(safeLinkUrl('uploads/answer_keys/key.pdf', API)).toBe(`${API}/uploads/answer_keys/key.pdf`);
+  });
+});
+
+describe('fileNameFromUrl', () => {
+  it('takes the last path segment', () => {
+    expect(fileNameFromUrl('/uploads/message/photo.png')).toBe('photo.png');
+  });
+
+  it('percent-decodes a normal escape', () => {
+    expect(fileNameFromUrl('/uploads/message/Report%20v2.pdf')).toBe('Report v2.pdf');
+  });
+
+  it('falls back to the raw segment when a literal "%" makes it an invalid escape', () => {
+    // "Screenshot 50%.png" is a real stored key — decodeURIComponent would throw URIError.
+    expect(fileNameFromUrl('/uploads/message/Screenshot 50%.png')).toBe('Screenshot 50%.png');
+  });
+
+  it('falls back to the given default when there is nothing to take a segment from', () => {
+    expect(fileNameFromUrl('', 'file')).toBe('file');
+    expect(fileNameFromUrl('/', 'file')).toBe('file');
   });
 });

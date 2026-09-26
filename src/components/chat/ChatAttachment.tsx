@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Download, Image as ImageIcon } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
-import { safeUploadUrl } from '../../lib/mediaUrl';
+import { fileNameFromUrl, safeUploadUrl } from '../../lib/mediaUrl';
 
 // Every image type the app accepts, matching the mobile client. The test allows a
 // query string / fragment after the extension (signed URLs).
@@ -23,17 +23,7 @@ export function ChatAttachment({ fileUrl }: { fileUrl: string }) {
   // write-side validation); resolve it through the safe helper before it ever reaches a
   // src/href, and never load or link a value it rejects.
   const url = safeUploadUrl(fileUrl);
-  // Stored keys keep the raw upload filename, so a literal '%' ("Screenshot 50%.png") is not a
-  // valid escape and decodeURIComponent throws URIError here — mid-render, taking the whole
-  // message list down rather than just this attachment.
-  const rawName = fileUrl.split('/').pop() || 'file';
-  const fileName = (() => {
-    try {
-      return decodeURIComponent(rawName);
-    } catch {
-      return rawName;
-    }
-  })();
+  const fileName = fileNameFromUrl(fileUrl);
 
   if (!url) {
     return (

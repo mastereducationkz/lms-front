@@ -227,6 +227,12 @@ export default function AssignmentGradingPage() {
     return <div className="text-center py-8 text-muted-foreground">Loading...</div>;
   }
 
+  // Computed once so the audio-submission branch below can both test it and render it
+  // without calling safeUploadUrl twice.
+  const gradingAudioUrl = isAudioSubmission(assignment, selectedSubmission)
+    ? safeUploadUrl(selectedSubmission?.file_url)
+    : null;
+
   return (
     <div className="max-w-6xl mx-auto space-y-6 p-6">
       <div className="flex items-center space-x-4">
@@ -327,21 +333,25 @@ export default function AssignmentGradingPage() {
                     onSubmit={() => {}}
                     studentId={String(selectedSubmission.user_id)}
                   />
-                  {unplayedTaskRecordings(assignment, selectedSubmission)
-                    .map((url) => safeUploadUrl(url))
-                    .filter((url): url is string => url !== null)
-                    .map((url, index) => (
+                  {unplayedTaskRecordings(assignment, selectedSubmission).map((url, index) => {
+                    const safeUrl = safeUploadUrl(url);
+                    return (
                       <div key={index} className="space-y-2">
                         <div className="text-xs font-medium text-gray-500 dark:text-gray-400">
                           Recording from a removed task:
                         </div>
-                        <AudioPlayer src={url} />
+                        {safeUrl ? (
+                          <AudioPlayer src={safeUrl} />
+                        ) : (
+                          <div className="text-sm italic text-muted-foreground">Recording unavailable.</div>
+                        )}
                       </div>
-                    ))}
+                    );
+                  })}
                 </div>
-              ) : isAudioSubmission(assignment, selectedSubmission) && safeUploadUrl(selectedSubmission?.file_url) ? (
+              ) : gradingAudioUrl ? (
                 <div className="space-y-4">
-                  <AudioPlayer src={safeUploadUrl(selectedSubmission?.file_url)!} />
+                  <AudioPlayer src={gradingAudioUrl} />
                 </div>
               ) : (
                 <div className="space-y-4">

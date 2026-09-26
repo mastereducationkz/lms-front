@@ -271,23 +271,26 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                         <p className="text-sm whitespace-pre-wrap">{taskAnswer.text_response}</p>
                       </div>
                     )}
-                    {taskAnswer.file_url && (
-                      <div className="flex items-center">
-                        <FileText className="w-4 h-4 text-blue-600 mr-2" />
-                        {safeUploadUrl(taskAnswer.file_url) ? (
-                          <a
-                            href={safeUploadUrl(taskAnswer.file_url)!}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline text-sm"
-                          >
-                            {taskAnswer.file_name || 'Скачать файл'}
-                          </a>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">{taskAnswer.file_name || 'Файл'}</span>
-                        )}
-                      </div>
-                    )}
+                    {taskAnswer.file_url && (() => {
+                      const href = safeUploadUrl(taskAnswer.file_url);
+                      return (
+                        <div className="flex items-center">
+                          <FileText className="w-4 h-4 text-blue-600 mr-2" />
+                          {href ? (
+                            <a
+                              href={href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline text-sm"
+                            >
+                              {taskAnswer.file_name || 'Скачать файл'}
+                            </a>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">{taskAnswer.file_name || 'Файл'}</span>
+                          )}
+                        </div>
+                      );
+                    })()}
                     {taskAnswer.completed && !taskAnswer.text_response && !taskAnswer.file_url && (
                       <div className="flex items-center text-green-600">
                         <CheckCircle className="w-4 h-4 mr-2" />

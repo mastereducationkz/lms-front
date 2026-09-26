@@ -876,23 +876,26 @@ const AssignmentZeroSubmissions = () => {
                             <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Bluebook Practice Test 5</span>
                             <p className="font-medium">{selectedSubmission.bluebook_practice_test_5_score || 'N/A'}</p>
                           </div>
-                          {selectedSubmission.screenshot_url && (
-                            <div className="space-y-1">
-                              <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Screenshot</span>
-                              {safeUploadUrl(selectedSubmission.screenshot_url) ? (
-                                <a
-                                  href={safeUploadUrl(selectedSubmission.screenshot_url)!}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-blue-600 hover:underline font-medium"
-                                >
-                                  View Screenshot
-                                </a>
-                              ) : (
-                                <p className="text-gray-500 font-medium">Screenshot unavailable</p>
-                              )}
-                            </div>
-                          )}
+                          {selectedSubmission.screenshot_url && (() => {
+                            const href = safeUploadUrl(selectedSubmission.screenshot_url);
+                            return (
+                              <div className="space-y-1">
+                                <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">Screenshot</span>
+                                {href ? (
+                                  <a
+                                    href={href}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:underline font-medium"
+                                  >
+                                    View Screenshot
+                                  </a>
+                                ) : (
+                                  <p className="text-gray-500 font-medium">Screenshot unavailable</p>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
 

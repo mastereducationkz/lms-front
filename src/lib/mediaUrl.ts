@@ -40,12 +40,21 @@ function cleanedUrlInput(value: unknown): string | null {
 }
 
 /** The one relative shape both safe helpers accept: "/uploads/<key>" or bare "uploads/<key>",
- *  resolved onto `base` with a guaranteed single slash. Built by hand from `base` rather than
- *  by resolving the untrusted value against it with `new URL()` — that's what keeps a value
- *  like "@evil.tld/x" from ever landing inside the host. */
+ *  resolved onto `base` with `new URL()` — never by hand-concatenating the string — so a
+ *  dot-segment (plain or percent-encoded: "/uploads/../../etc/x", "/uploads/%2e%2e/…")
+ *  collapses before we check the *result* is still confined to "/uploads/". A value that
+ *  climbs out of it, or that `new URL` can't parse at all, is rejected. */
 function uploadPathUrl(cleaned: string, base: string): string | null {
   if (!/^\/?uploads\/.+/i.test(cleaned)) return null;
-  return `${base}/${cleaned.replace(/^\/+/, '')}`;
+  try {
+    // Strip any trailing slash(es) from `base` before adding our own: `new URL` treats a
+    // base ending in "//" as having an empty path segment, which pushes the resolved
+    // pathname to "//uploads/…" and fails the check below for no real reason.
+    const resolved = new URL(cleaned.replace(/^\/+/, ''), `${base.replace(/\/+$/, '')}/`);
+    return /^\/uploads\//i.test(resolved.pathname) ? resolved.href : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Parses `value` as an absolute http(s) URL, or null if it isn't one (wrong scheme,
@@ -65,15 +74,19 @@ function parseHttpUrl(value: string): URL | null {
  * submission, draft or chat attachment — resolved to a URL the browser can load, or null
  * when the value cannot be trusted enough to load at all.
  *
- * Accepts only: a relative "/uploads/<key>" (or bare "uploads/<key>") path, prefixed onto
- * `base`; or an absolute http(s) URL whose host equals `base`'s host (legacy absolute rows
- * from before the API stored relative paths). Everything else is rejected — another host,
- * `javascript:`/`data:`/`blob:`/`vbscript:`, protocol-relative "//…" (which inherits the
- * page's own protocol and lets a value pick any host), a backslash (browsers normalize `\`
- * to `/` for http(s), so "\\evil.tld" parses exactly like the protocol-relative case),
- * userinfo (an "@" before the first "/" — string-concatenating host + "@evil.tld/x" turns
- * the intended host into userinfo and evil.tld into the real one), and control characters
- * or whitespace hidden inside a scheme name.
+ * Accepts only: a relative "/uploads/<key>" (or bare "uploads/<key>") path resolved onto
+ * `base` and confined to staying under "/uploads/" there; or an absolute http(s) URL with
+ * no userinfo whose host equals `base`'s host and whose path is likewise confined to
+ * "/uploads/" (legacy absolute rows from before the API stored relative paths). Everything
+ * else is rejected — another host, `javascript:`/`data:`/`blob:`/`vbscript:`,
+ * protocol-relative "//…" (which inherits the page's own protocol and lets a value pick any
+ * host), a backslash (browsers normalize `\` to `/` for http(s), so "\\evil.tld" parses
+ * exactly like the protocol-relative case), userinfo (an "@" before the first "/" —
+ * string-concatenating host + "@evil.tld/x" turns the intended host into userinfo and
+ * evil.tld into the real one, and "https://attacker@base-host/…" hides a foreign login
+ * behind a real host the browser still connects to as attacker@base-host), path traversal
+ * out of "/uploads/" (plain or percent-encoded dot-segments), and control characters or
+ * whitespace hidden inside a scheme name.
  */
 export function safeUploadUrl(value: unknown, base: string = backendBase()): string | null {
   const cleaned = cleanedUrlInput(value);
@@ -84,7 +97,14 @@ export function safeUploadUrl(value: unknown, base: string = backendBase()): str
 
   const httpUrl = parseHttpUrl(cleaned);
   const baseUrl = parseHttpUrl(base);
-  if (httpUrl && baseUrl && httpUrl.host.toLowerCase() === baseUrl.host.toLowerCase()) {
+  if (
+    httpUrl &&
+    baseUrl &&
+    !httpUrl.username &&
+    !httpUrl.password &&
+    httpUrl.host.toLowerCase() === baseUrl.host.toLowerCase() &&
+    /^\/uploads\//i.test(httpUrl.pathname)
+  ) {
     return cleaned;
   }
   return null;
@@ -107,4 +127,20 @@ export function safeLinkUrl(value: unknown, base: string = backendBase()): strin
   if (uploadUrl) return uploadUrl;
 
   return parseHttpUrl(cleaned) ? cleaned : null;
+}
+
+/**
+ * The display file name for a stored URL/key: its last "/"-separated segment,
+ * percent-decoded when that's a valid escape. Stored keys keep the raw upload filename,
+ * so a literal "%" (e.g. "Screenshot 50%.png") is not a valid escape and
+ * `decodeURIComponent` throws a `URIError` — this falls back to the raw segment instead
+ * of letting one bad file name take a whole render down.
+ */
+export function fileNameFromUrl(url: string, fallback = 'file'): string {
+  const rawName = url.split('/').pop() || fallback;
+  try {
+    return decodeURIComponent(rawName);
+  } catch {
+    return rawName;
+  }
 }

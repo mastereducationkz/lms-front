@@ -16,7 +16,7 @@ import {
 import ParentReportCard from '../components/parentReports/ParentReportCard';
 import { mondayOf } from '../lib/parentReportWeek';
 import { fetchParentStudentFacts, type ParentStudentResponse } from '../services/api/reports';
-import { safeUploadUrl } from '../lib/mediaUrl';
+import { backendBase, safeUploadUrl } from '../lib/mediaUrl';
 
 /**
  * Полный отчёт об успеваемости студента для куратора / хэд-куратора /
@@ -41,8 +41,9 @@ const fmtBand = (v: number | null | undefined): string =>
 
 // A submission file reference is untrusted (student-supplied); null when it isn't a
 // safe upload URL (hostile scheme, foreign host, corrupted legacy row) — callers fall
-// back to plain text rather than rendering a link.
-const fileHref = (fileUrl: string): string | null => safeUploadUrl(fileUrl, API_BASE_URL);
+// back to plain text rather than rendering a link. backendBase() strips a trailing
+// slash, so the single-"/" guarantee doesn't depend on how VITE_BACKEND_URL is set.
+const fileHref = (fileUrl: string): string | null => safeUploadUrl(fileUrl, backendBase(API_BASE_URL));
 
 // `optIn`: left out of a PDF unless ticked — talk time, since the PDF is sometimes sent to
 // parents (owner, 2026-09-11). Shown only when the report has that section at all.
@@ -376,10 +377,11 @@ export default function StudentReportPage() {
                             {item.submission.feedback && (
                               <p className="whitespace-pre-wrap">Фидбэк: <span className="text-gray-900">{item.submission.feedback}</span></p>
                             )}
-                            {item.submission.file_url && (
-                              fileHref(item.submission.file_url) ? (
+                            {item.submission.file_url && (() => {
+                              const href = fileHref(item.submission.file_url);
+                              return href ? (
                                 <a
-                                  href={fileHref(item.submission.file_url)!}
+                                  href={href}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="text-blue-600 hover:underline"
@@ -389,8 +391,8 @@ export default function StudentReportPage() {
                                 </a>
                               ) : (
                                 <span className="text-gray-500">📎 {item.submission.file_name || 'Файл сабмишена'}</span>
-                              )
-                            )}
+                              );
+                            })()}
                             <button
                               type="button"
                               className="block text-blue-600 hover:underline"
@@ -889,10 +891,11 @@ function SubmissionViewer({ viewer, onClose }: {
 
         {data && (
           <>
-            {data.submission.file_url && (
-              fileHref(data.submission.file_url) ? (
+            {data.submission.file_url && (() => {
+              const href = fileHref(data.submission.file_url);
+              return href ? (
                 <a
-                  href={fileHref(data.submission.file_url)!}
+                  href={href}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block text-sm text-blue-600 hover:underline"
@@ -901,8 +904,8 @@ function SubmissionViewer({ viewer, onClose }: {
                 </a>
               ) : (
                 <span className="inline-block text-sm text-gray-500">📎 {data.submission.file_name || 'Файл сабмишена'}</span>
-              )
-            )}
+              );
+            })()}
 
             {tasks.length > 0 ? (
               <div className="space-y-3">

@@ -4,14 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { Bell, BellOff } from 'lucide-react';
 import { getSharedMedia } from '../../services/api';
-import { safeUploadUrl } from '../../lib/mediaUrl';
-
-interface SharedMediaItem {
-  id: number;
-  file_url: string;
-  from_user_id: number;
-  created_at: string | null;
-}
+import { SharedMediaList, type SharedMediaItem } from './SharedMediaList';
 
 interface ChatInfoDialogProps {
   open: boolean;
@@ -26,16 +19,6 @@ interface ChatInfoDialogProps {
 
 function getInitials(name: string) {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
-}
-
-function isImage(url: string) {
-  return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
-}
-
-/** `fileUrl` is another user's stored file reference, unvalidated server-side today —
- *  resolve it through the safe helper rather than loading whatever it says. */
-function resolveUrl(fileUrl: string): string | null {
-  return safeUploadUrl(fileUrl);
 }
 
 /** Chat/contact info panel: participant details, shared media/files, mute toggle. */
@@ -54,9 +37,6 @@ export function ChatInfoDialog({
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [open, partnerId]);
-
-  const images = media.filter((m) => isImage(m.file_url));
-  const files = media.filter((m) => !isImage(m.file_url));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -92,61 +72,7 @@ export function ChatInfoDialog({
           ) : media.length === 0 ? (
             <p className="text-sm text-gray-400 py-4 text-center">No shared media yet</p>
           ) : (
-            <div className="max-h-64 overflow-y-auto space-y-3">
-              {images.length > 0 && (
-                <div className="grid grid-cols-3 gap-2">
-                  {images.map((m) => {
-                    const href = resolveUrl(m.file_url);
-                    if (!href) return null;
-                    return (
-                      <a key={m.id} href={href} target="_blank" rel="noreferrer">
-                        <img
-                          src={href}
-                          alt="shared"
-                          className="w-full h-20 object-cover rounded-lg"
-                        />
-                      </a>
-                    );
-                  })}
-                </div>
-              )}
-              {files.length > 0 && (
-                <div className="space-y-1">
-                  {files.map((m) => {
-                    // Stored keys keep the raw upload filename, so a literal '%' is not a valid
-                    // escape and decodeURIComponent throws URIError here — same guard as
-                    // ChatAttachment, so one bad shared-media row can't take the dialog down.
-                    const rawName = m.file_url.split('/').pop() || 'file';
-                    const fileName = (() => {
-                      try {
-                        return decodeURIComponent(rawName);
-                      } catch {
-                        return rawName;
-                      }
-                    })();
-                    const href = resolveUrl(m.file_url);
-                    if (!href) {
-                      return (
-                        <p key={m.id} className="text-sm text-gray-400 break-all">
-                          📎 {fileName} (unavailable)
-                        </p>
-                      );
-                    }
-                    return (
-                      <a
-                        key={m.id}
-                        href={href}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="block text-sm text-blue-600 dark:text-blue-400 underline break-all"
-                      >
-                        📎 {fileName}
-                      </a>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            <SharedMediaList media={media} />
           )}
         </div>
       </DialogContent>

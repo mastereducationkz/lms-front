@@ -1831,12 +1831,15 @@ export default function TeacherDashboard() {
                     </div>
                   )}
 
-                  {selectedSubmission?.file_url && isAudioUrl(selectedSubmission.file_url || selectedSubmission.submitted_file_name) && safeUploadUrl(selectedSubmission.file_url) && (
-                    <AudioPlayer
-                      src={safeUploadUrl(selectedSubmission.file_url)!}
-                      className="mt-2"
-                    />
-                  )}
+                  {selectedSubmission?.file_url && isAudioUrl(selectedSubmission.file_url || selectedSubmission.submitted_file_name) && (() => {
+                    const audioHref = safeUploadUrl(selectedSubmission.file_url);
+                    return audioHref && (
+                      <AudioPlayer
+                        src={audioHref}
+                        className="mt-2"
+                      />
+                    );
+                  })()}
 
                   {selectedSubmission?.answers?.text && (
                     <div className="bg-muted/40 p-4 rounded-lg border border-border whitespace-pre-wrap text-sm leading-relaxed">

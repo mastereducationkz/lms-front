@@ -499,11 +499,14 @@ export default function AssignmentPage() {
                 <CardTitle>Your Submission</CardTitle>
               </CardHeader>
               <CardContent>
-                {safeUploadUrl(submission.file_url) ? (
-                  <AudioPlayer src={safeUploadUrl(submission.file_url)!} />
-                ) : (
-                  <div className="text-gray-500 dark:text-gray-400 italic">No recording found.</div>
-                )}
+                {(() => {
+                  const audioHref = safeUploadUrl(submission.file_url);
+                  return audioHref ? (
+                    <AudioPlayer src={audioHref} />
+                  ) : (
+                    <div className="text-gray-500 dark:text-gray-400 italic">No recording found.</div>
+                  );
+                })()}
               </CardContent>
             </Card>
           ) : (
@@ -544,15 +547,17 @@ export default function AssignmentPage() {
                 )}
 
                 {/* Fallback for very old legacy or corrupted data if no files found but file_url exists */}
-                {submittedFiles.length === 0 && submission.file_url && (
+                {submittedFiles.length === 0 && submission.file_url && (() => {
+                  const legacyHref = safeUploadUrl(submission.file_url);
+                  return (
                    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-secondary rounded border dark:border-border">
                     <div className="flex items-center">
                       <FileText className="w-5 h-5 text-gray-500 dark:text-gray-400 mr-3" />
                       <span>{submission.submitted_file_name}</span>
                     </div>
-                    {safeUploadUrl(submission.file_url) && (
+                    {legacyHref && (
                     <a
-                      href={safeUploadUrl(submission.file_url)!}
+                      href={legacyHref}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-foreground hover:underline"
@@ -561,7 +566,8 @@ export default function AssignmentPage() {
                     </a>
                     )}
                   </div>
-                )}
+                  );
+                })()}
 
                 {submission.answers?.text && (
                   <div className="p-4 bg-gray-50 dark:bg-secondary rounded border dark:border-border whitespace-pre-wrap mt-4">
