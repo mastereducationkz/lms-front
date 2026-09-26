@@ -352,3 +352,15 @@ export async function getAssignmentZeroSubmissionByUser(userId: number): Promise
     throw new Error(error.response?.data?.detail || 'Failed to get submission');
   }
 }
+
+/**
+ * Reveals a student's College Board password on demand (G9 a′). It is a POST so
+ * the client's GET cache never stores the response, and the server sends
+ * `Cache-Control: no-store`. Let the raw axios error propagate — callers read
+ * `error.response.status` to distinguish 403 (not allowed) from 404 (no password
+ * saved) from a network failure.
+ */
+export async function revealCollegeBoardPassword(userId: number): Promise<string> {
+  const response = await api.post(`/assignment-zero/${userId}/college-board-password`);
+  return response.data.college_board_password;
+}

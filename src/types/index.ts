@@ -603,7 +603,10 @@ export interface AssignmentZeroSubmission {
   telegram_id: string;
   email: string;
   college_board_email: string;
-  college_board_password: string;
+  // No plaintext here (G9 a′): only whether one is stored, and whether this
+  // viewer may reveal it. Reveal it via apiClient.revealCollegeBoardPassword(user_id).
+  has_college_board_password?: boolean;
+  can_reveal_college_board_password?: boolean;
   birthday_date: string;
   city: string;
   school_type: string;
@@ -625,6 +628,8 @@ export interface AssignmentZeroSubmitData {
   telegram_id: string;
   email: string;
   college_board_email: string;
+  // Request type — the student's own typed input, not a response field. An
+  // empty value on submit leaves any already-stored password unchanged.
   college_board_password: string;
   birthday_date: string;
   city: string;

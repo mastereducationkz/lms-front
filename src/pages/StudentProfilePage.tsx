@@ -3,6 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../services/api';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { CollegeBoardPasswordReveal } from '../components/CollegeBoardPasswordReveal';
+import { collegeBoardPasswordDisplay } from '../lib/assignmentZeroCollegeBoard';
+
+// Older backends may not send `can_reveal_college_board_password` yet; on this
+// page (reachable by curators generally, not just admins) treat that as "no".
+const CAN_REVEAL_DEFAULT = false;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -280,7 +286,34 @@ export default function StudentProfilePage() {
                     ['Telegram', az.telegram_id],
                     ['Email', az.email],
                     ['College Board account', az.college_board_email],
-                    ['College Board password', az.college_board_password],
+                  ].filter(([, v]) => v).map(([label, value]) => (
+                    <div key={label as string} className="flex gap-2">
+                      <dt className="text-gray-400 w-32 shrink-0">{label}</dt>
+                      <dd className="text-gray-800 font-medium break-all">{value as string}</dd>
+                    </div>
+                  ))}
+                  {/* This dl otherwise omits rows for falsy fields, so a stored-but-
+                      unrevealable password gets the same treatment: no row at all,
+                      rather than a label sitting over an empty value. */}
+                  {collegeBoardPasswordDisplay(
+                    !!az.has_college_board_password,
+                    az.can_reveal_college_board_password,
+                    CAN_REVEAL_DEFAULT,
+                  ) !== 'hidden_no_access' && (
+                    <div className="flex gap-2">
+                      <dt className="text-gray-400 w-32 shrink-0">College Board password</dt>
+                      <dd className="text-gray-800 font-medium break-all">
+                        <CollegeBoardPasswordReveal
+                          userId={student.id}
+                          hasPassword={!!az.has_college_board_password}
+                          canReveal={az.can_reveal_college_board_password}
+                          defaultCanReveal={CAN_REVEAL_DEFAULT}
+                          lang="ru"
+                        />
+                      </dd>
+                    </div>
+                  )}
+                  {[
                     ['Дата рождения', az.birthday_date],
                     ['Город', az.city],
                     ['Тип школы', az.school_type],

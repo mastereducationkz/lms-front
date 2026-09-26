@@ -6,6 +6,7 @@ import { Badge } from '../../components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../components/ui/table';
 import apiClient from '../../services/api';
 import { safeUploadUrl } from '../../lib/mediaUrl';
+import { CollegeBoardPasswordReveal } from '../../components/CollegeBoardPasswordReveal';
 import { Search, Download, Eye, Filter, BookOpen, Headphones, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 interface AssignmentZeroSubmission {
@@ -17,7 +18,10 @@ interface AssignmentZeroSubmission {
   parent_phone_number: string;
   telegram_id: string;
   college_board_email: string;
-  college_board_password: string;
+  // No plaintext here (G9 a′): only whether one is stored, and whether this
+  // viewer may reveal it. Reveal it via apiClient.revealCollegeBoardPassword(user_id).
+  has_college_board_password?: boolean;
+  can_reveal_college_board_password?: boolean;
   birthday_date: string;
   city: string;
   school_type: string;
@@ -770,7 +774,21 @@ const AssignmentZeroSubmissions = () => {
                     </div>
                     <div className="space-y-1">
                       <span className="text-gray-500 dark:text-gray-400 text-xs uppercase">College Board Password</span>
-                      <p className="font-medium font-mono bg-gray-100 dark:bg-card dark:border dark:border-border px-2 py-1 rounded">{selectedSubmission.college_board_password || 'N/A'}</p>
+                      <p className="font-medium">
+                        {/* This grid pairs Email/Password as fixed sibling cells, so the
+                            label stays even when the value is empty (stored but
+                            unrevealable for this viewer) — unlike StudentProfilePage's
+                            dynamic row list, dropping just this cell would look broken. */}
+                        <CollegeBoardPasswordReveal
+                          userId={selectedSubmission.user_id}
+                          hasPassword={!!selectedSubmission.has_college_board_password}
+                          canReveal={selectedSubmission.can_reveal_college_board_password}
+                          // Only admins reach this page; treat a missing flag
+                          // (older backend) as "yes, may reveal".
+                          defaultCanReveal
+                          lang="en"
+                        />
+                      </p>
                     </div>
                   </div>
                 </div>

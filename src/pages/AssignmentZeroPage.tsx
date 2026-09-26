@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext.tsx';
 import apiClient from '../services/api';
 import { getSatOfficialDates } from '../services/api/exams';
 import { toast } from '../components/Toast.tsx';
+import { isCollegeBoardPasswordRequired } from '../lib/assignmentZeroCollegeBoard';
 import {
   Upload,
   CheckCircle,
@@ -423,6 +424,11 @@ export default function AssignmentZeroPage() {
   const [submitting, setSubmitting] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [alreadyCompleted, setAlreadyCompleted] = useState(false);
+  // G9 a′: the server only tells us whether a College Board password is already
+  // stored, never the plaintext. When true, the "account" step's password field
+  // is optional and starts blank — leaving it blank on save/submit keeps the
+  // stored value (server-side rule, not enforced here).
+  const [hasCollegeBoardPassword, setHasCollegeBoardPassword] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -834,7 +840,9 @@ export default function AssignmentZeroPage() {
             telegram_id: submission.telegram_id || '',
             email: submission.email || '',
             college_board_email: submission.college_board_email || '',
-            college_board_password: submission.college_board_password || '',
+            // Never prefilled: the server no longer sends the plaintext (G9 a′).
+            // Leaving it blank on save/submit keeps whatever is already stored.
+            college_board_password: '',
             birthday_date: submission.birthday_date || '',
             city: submission.city || '',
             school_type: submission.school_type || '',
@@ -906,6 +914,7 @@ export default function AssignmentZeroPage() {
                 ? submission.additional_comments
                 : '',
           });
+          setHasCollegeBoardPassword(!!submission.has_college_board_password);
           lastSavedDataRef.current = JSON.stringify(submission);
           if (status.last_saved_step != null && status.last_saved_step !== '') {
             setCurrentStep(toAssignmentZeroStep(status.last_saved_step));
@@ -1057,7 +1066,9 @@ export default function AssignmentZeroPage() {
       if (!formData.email.trim()) newErrors.email = 'Required';
     } else if (stepId === 'account') {
       if (showSAT && !formData.college_board_email.trim()) newErrors.college_board_email = 'Required';
-      if (showSAT && !formData.college_board_password.trim()) newErrors.college_board_password = 'Required';
+      if (isCollegeBoardPasswordRequired(showSAT, hasCollegeBoardPassword) && !formData.college_board_password.trim()) {
+        newErrors.college_board_password = 'Required';
+      }
       if (!formData.birthday_date) newErrors.birthday_date = 'Required';
       if (!formData.city.trim()) newErrors.city = 'Required';
     } else if (stepId === 'education') {
@@ -1395,15 +1406,22 @@ export default function AssignmentZeroPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="college_board_password">College Board Account Password *</Label>
+                      <Label htmlFor="college_board_password">
+                        College Board Account Password{hasCollegeBoardPassword ? '' : ' *'}
+                      </Label>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         Your email and password will be used by your teacher to check if you have correctly
                         registered for SAT.
                       </p>
+                      {hasCollegeBoardPassword && (
+                        <p className="text-xs text-blue-600 dark:text-blue-400">
+                          Password saved — leave this field blank to keep it unchanged.
+                        </p>
+                      )}
                       <Input
                         id="college_board_password"
                         type="password"
-                        placeholder="Enter your password"
+                        placeholder={hasCollegeBoardPassword ? 'Leave blank to keep the saved password' : 'Enter your password'}
                         value={formData.college_board_password}
                         onChange={(e) => handleInputChange('college_board_password', e.target.value)}
                         className={errors.college_board_password ? 'border-red-500' : ''}
