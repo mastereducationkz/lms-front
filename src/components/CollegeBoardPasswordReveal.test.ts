@@ -17,7 +17,12 @@ import { CollegeBoardPasswordReveal } from './CollegeBoardPasswordReveal';
 describe('CollegeBoardPasswordReveal', () => {
   it('renders the masked placeholder and never the plaintext before it is opened', () => {
     const html = renderToStaticMarkup(
-      createElement(CollegeBoardPasswordReveal, { userId: 1, hasPassword: true, lang: 'en' }),
+      createElement(CollegeBoardPasswordReveal, {
+        userId: 1,
+        hasPassword: true,
+        defaultCanReveal: true,
+        lang: 'en',
+      }),
     );
 
     expect(html).toContain('••••••');
@@ -27,16 +32,57 @@ describe('CollegeBoardPasswordReveal', () => {
 
   it('renders a dash placeholder and no reveal control when no password is stored', () => {
     const html = renderToStaticMarkup(
-      createElement(CollegeBoardPasswordReveal, { userId: 1, hasPassword: false, lang: 'en' }),
+      createElement(CollegeBoardPasswordReveal, {
+        userId: 1,
+        hasPassword: false,
+        defaultCanReveal: true,
+        lang: 'en',
+      }),
     );
 
     expect(html).toContain('—');
     expect(html).not.toContain('••••••');
   });
 
+  it('renders nothing — no dots, no dash — when a password exists but this viewer cannot reveal it', () => {
+    const html = renderToStaticMarkup(
+      createElement(CollegeBoardPasswordReveal, {
+        userId: 1,
+        hasPassword: true,
+        canReveal: false,
+        defaultCanReveal: true,
+        lang: 'en',
+      }),
+    );
+
+    expect(html).toBe('');
+  });
+
+  it('falls back to defaultCanReveal when the server omits can_reveal_college_board_password', () => {
+    const revealable = renderToStaticMarkup(
+      createElement(CollegeBoardPasswordReveal, {
+        userId: 1,
+        hasPassword: true,
+        defaultCanReveal: true,
+        lang: 'en',
+      }),
+    );
+    expect(revealable).toContain('••••••');
+
+    const hidden = renderToStaticMarkup(
+      createElement(CollegeBoardPasswordReveal, {
+        userId: 1,
+        hasPassword: true,
+        defaultCanReveal: false,
+        lang: 'en',
+      }),
+    );
+    expect(hidden).toBe('');
+  });
+
   it('renders the Russian label by default', () => {
     const html = renderToStaticMarkup(
-      createElement(CollegeBoardPasswordReveal, { userId: 1, hasPassword: true }),
+      createElement(CollegeBoardPasswordReveal, { userId: 1, hasPassword: true, defaultCanReveal: true }),
     );
 
     expect(html).toContain('Показать');

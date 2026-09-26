@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { Copy, Eye, EyeOff, RotateCw } from 'lucide-react';
 import apiClient from '../services/api';
 import { cn } from '../lib/utils';
+import { collegeBoardPasswordDisplay } from '../lib/assignmentZeroCollegeBoard';
 
 const HIDE_AFTER_MS = 60_000;
 
@@ -56,15 +57,26 @@ const COPY = {
  * needs no outside-click/collision handling (the hide button and the timeout
  * already close it), and staying free of a portal-based primitive keeps it
  * trivially render-testable without a DOM (see the .test.ts file).
+ *
+ * A stored password this viewer isn't allowed to reveal (`canReveal: false`,
+ * per `can_reveal_college_board_password`) renders nothing at all — no button,
+ * no dots — rather than a control that would just 403. See
+ * `collegeBoardPasswordDisplay` in `lib/assignmentZeroCollegeBoard` for the
+ * three-way decision and `defaultCanReveal`'s role when the server omits the
+ * flag.
  */
 export function CollegeBoardPasswordReveal({
   userId,
   hasPassword,
+  canReveal,
+  defaultCanReveal,
   lang = 'ru',
   className,
 }: {
   userId: number;
   hasPassword: boolean;
+  canReveal?: boolean;
+  defaultCanReveal: boolean;
   lang?: 'ru' | 'en';
   className?: string;
 }) {
@@ -123,8 +135,14 @@ export function CollegeBoardPasswordReveal({
     }
   };
 
-  if (!hasPassword) {
+  const display = collegeBoardPasswordDisplay(hasPassword, canReveal, defaultCanReveal);
+
+  if (display === 'none') {
     return <span className={className}>{t.dash}</span>;
+  }
+
+  if (display === 'hidden_no_access') {
+    return null;
   }
 
   if (state.status === 'hidden') {

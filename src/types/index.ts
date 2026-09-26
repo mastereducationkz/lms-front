@@ -603,9 +603,10 @@ export interface AssignmentZeroSubmission {
   telegram_id: string;
   email: string;
   college_board_email: string;
-  // No plaintext here (G9 a′): only whether one is stored. Reveal it via
-  // apiClient.revealCollegeBoardPassword(user_id).
+  // No plaintext here (G9 a′): only whether one is stored, and whether this
+  // viewer may reveal it. Reveal it via apiClient.revealCollegeBoardPassword(user_id).
   has_college_board_password?: boolean;
+  can_reveal_college_board_password?: boolean;
   birthday_date: string;
   city: string;
   school_type: string;
