@@ -70,6 +70,10 @@ export function CollegeBoardPasswordReveal({
 }) {
   const [state, setState] = useState<RevealState>({ status: 'hidden' });
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Guards the reveal request's continuation: a response landing after unmount
+  // (navigated away while the POST was in flight) must not call setState and
+  // must not resurrect the plaintext into a state React will never render.
+  const mountedRef = useRef(true);
   const t = COPY[lang];
 
   const clearHideTimer = () => {
@@ -79,8 +83,12 @@ export function CollegeBoardPasswordReveal({
     }
   };
 
-  // Belt-and-suspenders: also clear on unmount, in case a timer is still pending.
-  useEffect(() => clearHideTimer, []);
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      clearHideTimer();
+    };
+  }, []);
 
   const hide = () => {
     clearHideTimer();
@@ -91,10 +99,12 @@ export function CollegeBoardPasswordReveal({
     setState({ status: 'loading' });
     try {
       const value = await apiClient.revealCollegeBoardPassword(userId);
+      if (!mountedRef.current) return;
       setState({ status: 'revealed', value });
       clearHideTimer();
       hideTimer.current = setTimeout(hide, HIDE_AFTER_MS);
     } catch (error: any) {
+      if (!mountedRef.current) return;
       const httpStatus = error?.response?.status;
       setState({
         status: 'error',

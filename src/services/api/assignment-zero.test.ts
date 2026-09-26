@@ -33,19 +33,20 @@ describe('revealCollegeBoardPassword', () => {
   });
 });
 
-describe('response types no longer carry the plaintext (compile-time check)', () => {
+describe('response type has no plaintext; request type keeps its input field (compile-time check)', () => {
   // These assignments only need to type-check: `tsc --noEmit` fails the whole
-  // suite if `college_board_password` is ever reintroduced as a valid key of
-  // either response shape.
-  it('AssignmentZeroSubmission has no college_board_password key', () => {
+  // suite if either constraint is ever violated again.
+  it('AssignmentZeroSubmission (a response) has no college_board_password key', () => {
     type NoPasswordKey = 'college_board_password' extends keyof AssignmentZeroSubmission ? never : true;
     const check: NoPasswordKey = true;
     expect(check).toBe(true);
   });
 
-  it('AssignmentZeroSubmitData has no college_board_password key', () => {
-    type NoPasswordKey = 'college_board_password' extends keyof AssignmentZeroSubmitData ? never : true;
-    const check: NoPasswordKey = true;
+  it('AssignmentZeroSubmitData (a request) still requires college_board_password as a string', () => {
+    // Property access (not `keyof`) so this fails to compile if the field is ever
+    // removed again, not just if its type changes.
+    type PasswordIsString = AssignmentZeroSubmitData['college_board_password'] extends string ? true : never;
+    const check: PasswordIsString = true;
     expect(check).toBe(true);
   });
 });

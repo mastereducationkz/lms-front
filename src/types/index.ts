@@ -627,7 +627,9 @@ export interface AssignmentZeroSubmitData {
   telegram_id: string;
   email: string;
   college_board_email: string;
-  has_college_board_password?: boolean;
+  // Request type — the student's own typed input, not a response field. An
+  // empty value on submit leaves any already-stored password unchanged.
+  college_board_password: string;
   birthday_date: string;
   city: string;
   school_type: string;
