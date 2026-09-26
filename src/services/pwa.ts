@@ -1,4 +1,3 @@
-import { registerSW } from 'virtual:pwa-register'
 import { toast } from 'sonner'
 
 // Poll the server for a newer service worker while a tab stays open, so a
@@ -21,6 +20,9 @@ const FOCUS_CHECK_THROTTLE_MS = 5 * 60 * 1000 // 5 min
 let updatePending = false
 let applying = false
 
+const OIDC_CALLBACK_PATH = '/auth/callback'
+const CHUNK_RELOAD_GUARD_KEY = 'pwa-chunk-reload'
+
 /**
  * The one route a reload must never touch. /auth/callback carries a single-use
  * authorization code + PKCE state: reloading it replays a URL whose credentials are
@@ -29,7 +31,28 @@ let applying = false
  * for the next safe moment — landing on the dashboard is one.
  */
 function onOidcCallback(): boolean {
-  return window.location.pathname === '/auth/callback'
+  return window.location.pathname === OIDC_CALLBACK_PATH
+}
+
+/**
+ * Pure decision for the `vite:preloadError` handler below, split out so it's testable without
+ * `window`/`sessionStorage` (this repo's vitest runs with no jsdom). Mirrors the same two
+ * reload guards as `applyUpdate()`: never the OIDC callback, and never more than once per
+ * cooldown window (a real deploy can drop several chunks at once).
+ */
+export function shouldReloadOnPreloadError(pathname: string, guardAlreadyFired: boolean): boolean {
+  if (pathname === OIDC_CALLBACK_PATH) return false
+  return !guardAlreadyFired
+}
+
+// Set while a `vite:preloadError` reload is in flight (see below). `src/lib/lazyRoute.ts`
+// checks this to decide whether a broken lazy import should just wait for the reload to land
+// (never-settling promise) instead of throwing a ChunkLoadError at the ErrorBoundary.
+let chunkReloadUnderway = false
+
+/** Whether a chunk-load reload is currently in flight. Exported for `lazyRoute`. */
+export function isChunkReloadUnderway(): boolean {
+  return chunkReloadUnderway
 }
 
 function applyUpdate(): void {
@@ -61,14 +84,17 @@ export function registerPwa(): void {
   // A deploy removes the previous build's hashed chunks, so a tab that was open
   // across a deploy can fail a lazy import. Reload once to land on the fresh
   // bundle instead of showing a broken page; the guard prevents a reload loop.
+  // Vite's `__vitePreload` swallows the failed import and resolves `undefined` whenever
+  // `preventDefault()` is called — so it's only safe to call when we're actually about to
+  // reload. When a guard skips the reload, we leave the event alone and let the rejection
+  // propagate to the failed dynamic import(), which `lazyRoute` turns into a ChunkLoadError.
   window.addEventListener('vite:preloadError', (event) => {
+    const guardAlreadyFired = Boolean(sessionStorage.getItem(CHUNK_RELOAD_GUARD_KEY))
+    if (!shouldReloadOnPreloadError(window.location.pathname, guardAlreadyFired)) return
     event.preventDefault()
-    // Same single-use-credential hazard as applyUpdate(): never reload the SSO callback.
-    if (onOidcCallback()) return
-    const key = 'pwa-chunk-reload'
-    if (sessionStorage.getItem(key)) return
-    sessionStorage.setItem(key, '1')
-    window.setTimeout(() => sessionStorage.removeItem(key), 30_000)
+    chunkReloadUnderway = true
+    sessionStorage.setItem(CHUNK_RELOAD_GUARD_KEY, '1')
+    window.setTimeout(() => sessionStorage.removeItem(CHUNK_RELOAD_GUARD_KEY), 30_000)
     window.location.reload()
   })
 
@@ -79,52 +105,58 @@ export function registerPwa(): void {
     updatePending = true
   })
 
-  registerSW({
-    immediate: true,
-    onNeedRefresh() {
-      updatePending = true
-      toast('Доступна новая версия', {
-        description: 'Обновление применится автоматически. Нажмите, чтобы применить сейчас.',
-        duration: Infinity,
-        action: {
-          label: 'Обновить',
-          onClick: () => {
-            applyUpdate()
+  // Dynamically imported (rather than a static top-level import) so this module — and the
+  // pure helpers/flag above that lazyRoute.ts depends on — stay importable outside a Vite
+  // build: `virtual:pwa-register` only exists as a module the VitePWA plugin injects, and
+  // this repo's vitest config deliberately doesn't load that plugin (see vitest.config.ts).
+  import('virtual:pwa-register').then(({ registerSW }) => {
+    registerSW({
+      immediate: true,
+      onNeedRefresh() {
+        updatePending = true
+        toast('Доступна новая версия', {
+          description: 'Обновление применится автоматически. Нажмите, чтобы применить сейчас.',
+          duration: Infinity,
+          action: {
+            label: 'Обновить',
+            onClick: () => {
+              applyUpdate()
+            },
           },
-        },
-      })
-    },
-    onRegisteredSW(_swScriptUrl, registration) {
-      if (!registration) return
+        })
+      },
+      onRegisteredSW(_swScriptUrl, registration) {
+        if (!registration) return
 
-      // registration.update() re-fetches the SW script; if the deployed bundle
-      // changed, the browser installs the new worker and vite-plugin-pwa fires
-      // onNeedRefresh (setting updatePending). Never throws to the caller.
-      const checkForUpdate = () => {
-        registration.update().catch(() => {})
-      }
-
-      window.setInterval(checkForUpdate, UPDATE_CHECK_INTERVAL_MS)
-
-      let lastFocusCheck = 0
-      const onVisibility = () => {
-        if (document.visibilityState === 'hidden') {
-          // Tab going to the background is the smoothest moment to swap bundles:
-          // the reload happens off-screen and the user returns on the fresh build.
-          applyUpdate()
-          return
+        // registration.update() re-fetches the SW script; if the deployed bundle
+        // changed, the browser installs the new worker and vite-plugin-pwa fires
+        // onNeedRefresh (setting updatePending). Never throws to the caller.
+        const checkForUpdate = () => {
+          registration.update().catch(() => {})
         }
-        // Became visible again: re-check for a newer build (throttled).
-        const now = Date.now()
-        if (now - lastFocusCheck < FOCUS_CHECK_THROTTLE_MS) return
-        lastFocusCheck = now
-        checkForUpdate()
-      }
-      document.addEventListener('visibilitychange', onVisibility)
-      window.addEventListener('focus', onVisibility)
-    },
-    onRegisterError(error) {
-      console.error('Service worker registration failed:', error)
-    },
+
+        window.setInterval(checkForUpdate, UPDATE_CHECK_INTERVAL_MS)
+
+        let lastFocusCheck = 0
+        const onVisibility = () => {
+          if (document.visibilityState === 'hidden') {
+            // Tab going to the background is the smoothest moment to swap bundles:
+            // the reload happens off-screen and the user returns on the fresh build.
+            applyUpdate()
+            return
+          }
+          // Became visible again: re-check for a newer build (throttled).
+          const now = Date.now()
+          if (now - lastFocusCheck < FOCUS_CHECK_THROTTLE_MS) return
+          lastFocusCheck = now
+          checkForUpdate()
+        }
+        document.addEventListener('visibilitychange', onVisibility)
+        window.addEventListener('focus', onVisibility)
+      },
+      onRegisterError(error) {
+        console.error('Service worker registration failed:', error)
+      },
+    })
   })
 }

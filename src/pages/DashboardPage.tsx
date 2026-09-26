@@ -1,19 +1,20 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import apiClient from "../services/api";
 import Skeleton from '../components/Skeleton.tsx';
 import type { DashboardStats, Course, User } from '../types';
+import { lazyRoute } from '../lib/lazyRoute';
 
 // Each role dashboard is lazy so a user only downloads the chunk for their own
 // role (TeacherDashboard/AdminDashboard/HeadCuratorDashboard pull in recharts —
 // eagerly importing all five made every role pay for all of them on first load).
-const StudentDashboard = lazy(() => import('./StudentDashboard'));
-const TeacherDashboard = lazy(() => import('./TeacherDashboard.tsx'));
-const AdminDashboard = lazy(() => import('./admin/AdminDashboard.tsx'));
-const HeadCuratorDashboard = lazy(() => import('./HeadCuratorDashboard.tsx'));
-const HeadTeacherDashboardPage = lazy(() => import('./HeadTeacherDashboardPage.tsx'));
-const ParentDashboard = lazy(() => import('./ParentDashboard.tsx'));
+const StudentDashboard = lazyRoute(() => import('./StudentDashboard'));
+const TeacherDashboard = lazyRoute(() => import('./TeacherDashboard.tsx'));
+const AdminDashboard = lazyRoute(() => import('./admin/AdminDashboard.tsx'));
+const HeadCuratorDashboard = lazyRoute(() => import('./HeadCuratorDashboard.tsx'));
+const HeadTeacherDashboardPage = lazyRoute(() => import('./HeadTeacherDashboardPage.tsx'));
+const ParentDashboard = lazyRoute(() => import('./ParentDashboard.tsx'));
 
 function DashboardChunkFallback() {
   return (

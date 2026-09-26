@@ -71,7 +71,8 @@ export function scrubText<T>(text: T): T {
 // Browser noise that is never our bug, or is already handled:
 // - ResizeObserver: a benign spec warning some browsers surface as an error.
 // - Chunk loads after a deploy: src/services/pwa.ts reloads the tab onto the new build. When
-//   its once-per-30-s guard skips the reload, React.lazy receives undefined and says so.
+//   its once-per-30-s guard (or the OIDC callback route) skips the reload, src/lib/lazyRoute.ts
+//   throws this ChunkLoadError instead of letting React.lazy crash on an undefined module.
 // - "Missing refresh token": the session ended; the client sends the user to log in.
 // - Network failures and aborted requests: the user's connection, not the app. Server faults
 //   are reported by the backend's own Sentry project.
