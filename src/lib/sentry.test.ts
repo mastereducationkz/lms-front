@@ -38,6 +38,8 @@ describe('scrubUrl', () => {
     ['/auth/callback#access_token=abc', 'access_token'],
     ['/profile/anna.petrova@example.com', 'anna.petrova@example.com'],
     [`/x/${'a'.repeat(48)}`, 'a'.repeat(48)],
+    ['wss://user:pa55word@proxy.local:1080/x', 'pa55word'],
+    [`/anything/else?no=1&jwt=${TOKEN}`, TOKEN],
   ])('removes the credential from %s', (url, leaked) => {
     const out = scrubUrl(url);
     expect(out).not.toContain(leaked);
@@ -55,6 +57,11 @@ describe('scrubUrl', () => {
 });
 
 describe('scrubText', () => {
+  it('cleans JWTs and bearer tokens anywhere', () => {
+    expect(scrubText(`bad token ${TOKEN} here`)).not.toContain(TOKEN);
+    expect(scrubText('Authorization: Bearer abcdefghijklmnopqrstuvwxyz0123')).not.toContain('abcdefghijklmnop');
+  });
+
   it('cleans URLs and emails inside a message', () => {
     const out = scrubText(`GET https://x.kz/class-materials/download/${TOKEN}?a=1 failed for anna@example.com`);
     expect(out).not.toContain(TOKEN);
@@ -79,12 +86,24 @@ describe('noise is never reported', () => {
     ['AbortError', 'The user aborted a request.'],
     ['AxiosError', 'Request failed with status code 403'],
     ['Error', 'Network Error'],
+    ['TypeError', 'lazy: Expected the result of a dynamic import() call. Instead received: undefined'],
+    ['Error', 'Missing refresh token'],
   ])('%s: %s', (type, value) => {
     expect(isIgnoredEvent(errorEvent(type, value))).toBe(true);
   });
 
   it('drops errors thrown only from extension frames', () => {
     expect(isIgnoredEvent(errorEvent('TypeError', 'x is undefined', 'chrome-extension://abc/content.js'))).toBe(true);
+  });
+
+  it('drops errors whose stack never touches our /assets/ bundle (in-app browser injections)', () => {
+    expect(isIgnoredEvent(errorEvent('TypeError', 'x is null', 'https://lms.mastereducation.kz/lessons/5'))).toBe(true);
+    expect(isIgnoredEvent(errorEvent('ReferenceError', 'WeixinJSBridge is not defined', '<anonymous>'))).toBe(true);
+  });
+
+  it('drops frameless bare-identifier errors', () => {
+    const ev = { exception: { values: [{ type: 'Error', value: 'Ea' }] } } as ErrorEvent;
+    expect(isIgnoredEvent(ev)).toBe(true);
   });
 
   it('drops any axios error by the original exception', () => {
@@ -128,6 +147,11 @@ describe('beforeBreadcrumb', () => {
   it('drops chatty console lines, keeps warnings and errors', () => {
     expect(beforeBreadcrumb({ category: 'console', level: 'log', message: 'data' })).toBeNull();
     expect(beforeBreadcrumb({ category: 'console', level: 'warning', message: 'w' })).not.toBeNull();
+  });
+
+  it('drops video segment requests, which would flood the buffer', () => {
+    expect(beforeBreadcrumb({ category: 'xhr', data: { url: `https://api/uploads/v/${TOKEN}/videos/1/seg12.ts` } })).toBeNull();
+    expect(beforeBreadcrumb({ category: 'fetch', data: { url: 'https://api/courses/1' } })).not.toBeNull();
   });
 
   it('scrubs request URLs and navigation', () => {

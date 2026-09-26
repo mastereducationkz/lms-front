@@ -35,12 +35,24 @@ const TOKEN_PATH_RE =
 const LONG_SEGMENT_RE = /\/[A-Za-z0-9_\-.~=%]{40,}(?=[/?#\s"']|$)/g;
 const QUERY_RE = /\?[^#\s"']*/g;
 const FRAGMENT_RE = /#[^\s"']*/g;
-const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}/g;
+// Secrets that can sit anywhere: user:password@ in a URL, a JWT (media and class-material
+// tokens are JWTs), "Bearer <token>".
+const USERINFO_RE = /(\b[a-z][a-z0-9+.-]*:\/\/)[^/\s:@]+:[^/\s@]+@/gi;
+const JWT_RE = /\beyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]*/g;
+const BEARER_RE = /(\b(?:bearer|token)\s+)[A-Za-z0-9._~+/=-]{16,}/gi;
+
+function scrubSecrets(text: string): string {
+  return text
+    .replace(USERINFO_RE, (_m, scheme: string) => `${scheme}${FILTERED}@`)
+    .replace(JWT_RE, FILTERED)
+    .replace(BEARER_RE, (_m, prefix: string) => prefix + FILTERED);
+}
 const URL_IN_TEXT_RE = /https?:\/\/[^\s"'<>]+/g;
 
 export function scrubUrl<T>(url: T): T {
   if (typeof url !== 'string' || !url) return url;
-  return url
+  return scrubSecrets(url)
     .replace(FRAGMENT_RE, '')
     .replace(QUERY_RE, `?${FILTERED}`)
     .replace(TOKEN_PATH_RE, (_m, prefix: string) => prefix + FILTERED)
@@ -50,7 +62,7 @@ export function scrubUrl<T>(url: T): T {
 
 export function scrubText<T>(text: T): T {
   if (typeof text !== 'string' || !text) return text;
-  return text
+  return scrubSecrets(text)
     .replace(URL_IN_TEXT_RE, (u) => scrubUrl(u))
     .replace(TOKEN_PATH_RE, (_m, prefix: string) => prefix + FILTERED)
     .replace(EMAIL_RE, FILTERED) as T;
@@ -58,7 +70,9 @@ export function scrubText<T>(text: T): T {
 
 // Browser noise that is never our bug, or is already handled:
 // - ResizeObserver: a benign spec warning some browsers surface as an error.
-// - Chunk loads after a deploy: src/services/pwa.ts reloads the tab onto the new build.
+// - Chunk loads after a deploy: src/services/pwa.ts reloads the tab onto the new build. When
+//   its once-per-30-s guard skips the reload, React.lazy receives undefined and says so.
+// - "Missing refresh token": the session ended; the client sends the user to log in.
 // - Network failures and aborted requests: the user's connection, not the app. Server faults
 //   are reported by the backend's own Sentry project.
 const IGNORED_MESSAGES: RegExp[] = [
@@ -68,6 +82,8 @@ const IGNORED_MESSAGES: RegExp[] = [
   /Importing a module script failed/i,
   /Unable to preload CSS/i,
   /Loading (CSS )?chunk [\w-]+ failed/i,
+  /Expected the result of a dynamic import/i,
+  /^Missing refresh token$/,
   /^Network Error$/i,
   /^(Request aborted|canceled)$/i,
   /^Load failed$/i,
@@ -91,9 +107,14 @@ export function isIgnoredEvent(event: ErrorEvent, hint?: EventHint): boolean {
   const texts = [event.message ?? '', ...values.map((v) => v.value ?? '')];
   if (values.some((v) => v.type && IGNORED_TYPES.has(v.type))) return true;
   if (texts.some((t) => IGNORED_MESSAGES.some((re) => re.test(t)))) return true;
-  // Thrown from an extension's injected script: every frame is theirs, or the one frame we have is.
+  // Every script of ours is served from /assets/. A stack with no frame there was thrown by
+  // something injected into the page: an extension, or the Telegram/Instagram in-app browser
+  // many students open links in (the SAT front learned this one: sentryEventFilter.js).
   const frames = values.flatMap((v) => v.stacktrace?.frames ?? []);
+  if (frames.length > 0 && !frames.some((f) => /\/assets\//.test(f.filename ?? ''))) return true;
   if (frames.length > 0 && frames.every((f) => EXTENSION_URL_RE.test(f.filename ?? ''))) return true;
+  // No stack and a bare 1-4 letter "message" (`Error: Ea`): minified injected code, not ours.
+  if (frames.length === 0 && values.some((v) => /^[A-Za-z]{1,4}$/.test(v.value ?? ''))) return true;
   // A cross-origin script error carries no information at all.
   if (!values.length && /^Script error\.?$/i.test(event.message ?? '')) return true;
   return false;
@@ -141,6 +162,11 @@ export function beforeSend(event: ErrorEvent, hint: EventHint): ErrorEvent | nul
 export function beforeBreadcrumb(crumb: Breadcrumb, _hint?: BreadcrumbHint): Breadcrumb | null {
   // Only warnings and errors from the console; log/info/debug lines are chatty and may print data.
   if (crumb.category === 'console' && crumb.level !== 'error' && crumb.level !== 'warning') return null;
+  // hls.js fetches every video segment through /uploads/v/…: one crumb per segment would push
+  // everything useful out of the 50-crumb buffer during playback.
+  if ((crumb.category === 'xhr' || crumb.category === 'fetch') && /\/uploads\/v\//.test(String(crumb.data?.url ?? ''))) {
+    return null;
+  }
   scrubBreadcrumbInPlace(crumb);
   return crumb;
 }
@@ -188,7 +214,7 @@ function init(s: SentrySdk) {
       httpBodies: [],
       urlQueryParams: false,
     },
-    tracesSampleRate: 0,
+    // No tracesSampleRate at all: errors only. Setting it, even to 0, turns tracing on.
     maxBreadcrumbs: 50,
     ignoreErrors: IGNORED_MESSAGES,
     denyUrls: [EXTENSION_URL_RE],
