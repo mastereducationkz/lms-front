@@ -2,17 +2,21 @@
 # Registers this deploy's Sentry release and a "production" deploy marker, so an issue Sentry
 # already resolved in this release doesn't get reopened as a "regression" by a stray event from
 # an old bundle (see WS9 Addendum A / the LMS-FRONT-1 incident). Called from
-# .github/workflows/deploy-frontend.yml, on the server, AFTER the frontend container has actually
-# been rebuilt and restarted — never before, and never in a way that can fail or slow the deploy:
-# every request is capped at $CURL_MAX_TIME seconds, a non-2xx response is logged and ignored,
-# and a missing token is a silent, deliberate skip.
+# .github/workflows/deploy-frontend.yml, on the GitHub Actions RUNNER (not the production server —
+# fix round 1: the token must never reach the deploy host, where any process on the box could read
+# it out of `ps`), AFTER the frontend container has actually been rebuilt and restarted, using the
+# exact sha the workflow read back from the server. Never in a way that can fail or slow the
+# deploy: every request is capped at $CURL_MAX_TIME seconds, a non-2xx response is logged and
+# ignored, and a missing token or a sha that isn't a real commit hash is a silent, deliberate skip.
 #
-# Run manually for a spot check: SENTRY_AUTH_TOKEN=... LMS_FRONT_GIT_COMMIT=<sha> bash
+# Run manually for a spot check: SENTRY_AUTH_TOKEN=... LMS_FRONT_GIT_COMMIT=<40-char sha> bash
 # scripts/sentry-release.sh
 #
 # No `set -e`: a failed `curl` must not abort the script (see run_curl below). No `set -x` and no
-# `-v`/`--trace*` on curl, ever — the token must never be echoed, only sent in the Authorization
-# header.
+# `-v`/`--trace*` on curl, ever. The token is fed to curl via `--config -` on stdin (see run_curl)
+# so it is NEVER a curl argv element — not even on the runner, where argv is far less exposed than
+# it would be on the shared production host, but still visible to anything reading /proc or `ps`
+# on the same machine while the request is in flight.
 set -uo pipefail
 
 SENTRY_API_BASE="${SENTRY_API_BASE:-https://de.sentry.io}"
@@ -26,28 +30,36 @@ if [ -z "${SENTRY_AUTH_TOKEN:-}" ]; then
   exit 0
 fi
 
-# The exact sha the build used. The caller passes LMS_FRONT_GIT_COMMIT (re-derived right before
-# calling this script, in the same already-deployed checkout — see the workflow); falling back to
-# `git rev-parse HEAD` here covers a manual/local run from that same checkout.
-VERSION="${LMS_FRONT_GIT_COMMIT:-}"
-if [ -z "$VERSION" ]; then
-  VERSION="$(git rev-parse HEAD 2>/dev/null || true)"
+# The exact sha the build used. The caller passes LMS_FRONT_GIT_COMMIT — the workflow reads this
+# back from the server's checkout right after the deploy (see the "Get deployed commit" step) — so
+# it's the value the build actually used, not a value trusted to have stayed in sync with it.
+# `git rev-parse HEAD` here only covers a manual run from a real checkout; it's never what the
+# workflow itself relies on. Either way, whitespace-strip (a captured step output can carry a
+# trailing newline) and then require exactly a 40-char lowercase-hex sha before using it for
+# anything — a truncated or garbled capture must skip, not silently POST a bad release.
+RAW_VERSION="${LMS_FRONT_GIT_COMMIT:-}"
+if [ -z "$RAW_VERSION" ]; then
+  RAW_VERSION="$(git rev-parse HEAD 2>/dev/null || true)"
 fi
-if [ -z "$VERSION" ]; then
-  echo "sentry-release: could not determine the release sha, skipping."
+VERSION="$(printf '%s' "$RAW_VERSION" | tr -d '[:space:]')"
+if ! printf '%s' "$VERSION" | grep -qE '^[0-9a-f]{40}$'; then
+  echo "sentry-release: '${RAW_VERSION}' is not a 40-char lowercase-hex sha, skipping."
   exit 0
 fi
 
-# POSTs $2 as JSON to $1 with the auth header, capped at $CURL_MAX_TIME seconds, and prints only
-# the HTTP status code (the response body is discarded — we don't need it and don't want it in
-# the deploy log). The token appears in exactly one place: the Authorization header value.
+# POSTs $2 as JSON to $1, capped at $CURL_MAX_TIME seconds, and prints only the HTTP status code
+# (the response body is discarded — we don't need it and don't want it in the deploy log). The
+# Authorization header comes from a curl config block piped in on stdin (`--config -`), which
+# keeps the token out of argv entirely; verified locally against a real local HTTP server that a
+# `ps` snapshot taken mid-request shows no trace of it (see the PR description / task report).
 run_curl() {
   local url="$1" data="$2"
-  curl -sS --max-time "$CURL_MAX_TIME" -o /dev/null -w '%{http_code}' \
-    -X POST "$url" \
-    -H "Authorization: Bearer ${SENTRY_AUTH_TOKEN}" \
-    -H "Content-Type: application/json" \
-    -d "$data"
+  printf 'header = "Authorization: Bearer %s"\n' "$SENTRY_AUTH_TOKEN" |
+    curl -sS --max-time "$CURL_MAX_TIME" -o /dev/null -w '%{http_code}' \
+      --config - \
+      -X POST "$url" \
+      -H "Content-Type: application/json" \
+      -d "$data"
 }
 
 release_url="${SENTRY_API_BASE}/api/0/organizations/${SENTRY_ORG}/releases/"

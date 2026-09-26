@@ -4,10 +4,17 @@
 # the workflow, the script, and its test — widening that glob is a separate change). Run with:
 #   bash scripts/sentry-release.test.sh
 #
-# Stubs `curl` (prepended onto PATH) so no network call ever happens. The stub logs every arg it
-# was called with, one per line, terminated by a "---END-ARGS---" marker, then "responds" with
-# the next status code queued in $STUB_CODES_FILE (default 200 if the queue is empty) — exactly
-# what `-w '%{http_code}'` would print, since the script discards the body with `-o /dev/null`.
+# Stubs `curl` (prepended onto PATH) so no network call ever happens. The stub logs every argv
+# element it was called with, one per line, terminated by a "---END-ARGS---" marker, and
+# separately logs whatever was piped to its stdin (the `--config -` block, fix round 1), one block
+# per call terminated by "---END-STDIN---" — this is how the tests prove the token is fed only
+# via stdin and never appears in argv. It then "responds" with the next status code queued in
+# $STUB_CODES_FILE (default 200 if the queue is empty) — exactly what `-w '%{http_code}'` would
+# print, since the script discards the body with `-o /dev/null`.
+#
+# Each run happens in a fresh, non-git temp directory, so scripts/sentry-release.sh's own
+# `git rev-parse HEAD` fallback (for a manual local run) never fires here — every test controls
+# the sha entirely through LMS_FRONT_GIT_COMMIT, deterministically.
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -32,6 +39,7 @@ make_stub_bin() {
 #!/usr/bin/env bash
 for a in "$@"; do printf '%s\n' "$a"; done >> "$CURL_LOG"
 printf '%s\n' "---END-ARGS---" >> "$CURL_LOG"
+{ cat; printf '%s\n' "---END-STDIN---"; } >> "$STDIN_LOG"
 code=200
 if [ -s "$STUB_CODES_FILE" ]; then
   code="$(head -n1 "$STUB_CODES_FILE")"
@@ -45,26 +53,30 @@ STUB
 }
 
 # Runs sentry-release.sh with a fresh stub curl and the given queued HTTP status codes (one per
-# line). Sets globals: RUN_EXIT, RUN_OUT, CURL_LOG (path), and CALLS (array of call blocks, each
-# a newline-joined string of that invocation's args).
+# line), from a fresh non-git cwd. Sets globals: RUN_EXIT, RUN_OUT, CALLS (array of each curl
+# call's argv, newline-joined), STDINS (array of each call's captured stdin).
 run_script() {
   local codes="$1"; shift
   local work; work="$(mktemp -d)"
   local bin_dir="$work/bin"
   make_stub_bin "$bin_dir"
-  CURL_LOG="$work/curl.log"
-  : > "$CURL_LOG"
+  local curl_log="$work/curl.log" stdin_log="$work/stdin.log"
+  : > "$curl_log"
+  : > "$stdin_log"
   local codes_file="$work/codes"
   printf '%s' "$codes" > "$codes_file"
+  local run_dir="$work/run"
+  mkdir -p "$run_dir"
 
   # `env` (not shell prefix-assignment) because "$@" holds VAR=value strings that came from a
   # parameter expansion — bash only recognizes prefix-assignment syntax in literal source words,
   # not in the result of expanding "$@", so it would otherwise try to run them as commands.
-  RUN_OUT="$(env PATH="$bin_dir:$PATH" CURL_LOG="$CURL_LOG" STUB_CODES_FILE="$codes_file" "$@" bash "$SCRIPT" 2>&1)"
+  RUN_OUT="$(cd "$run_dir" && env PATH="$bin_dir:$PATH" CURL_LOG="$curl_log" STDIN_LOG="$stdin_log" \
+    STUB_CODES_FILE="$codes_file" "$@" bash "$SCRIPT" 2>&1)"
   RUN_EXIT=$?
 
   CALLS=()
-  if [ -s "$CURL_LOG" ]; then
+  if [ -s "$curl_log" ]; then
     local block=""
     while IFS= read -r line; do
       if [ "$line" = "---END-ARGS---" ]; then
@@ -73,8 +85,22 @@ run_script() {
       else
         block="${block}${line}"$'\n'
       fi
-    done < "$CURL_LOG"
+    done < "$curl_log"
   fi
+
+  STDINS=()
+  if [ -s "$stdin_log" ]; then
+    local sblock=""
+    while IFS= read -r line; do
+      if [ "$line" = "---END-STDIN---" ]; then
+        STDINS+=("$sblock")
+        sblock=""
+      else
+        sblock="${sblock}${line}"$'\n'
+      fi
+    done < "$stdin_log"
+  fi
+
   rm -rf "$work"
 }
 
@@ -90,6 +116,13 @@ call_arg_count_containing() {
   local idx="$1" needle="$2"
   [ "${#CALLS[@]}" -gt "$idx" ] || { echo 0; return; }
   printf '%s' "${CALLS[$idx]}" | grep -cF -- "$needle"
+}
+
+stdin_has() {
+  # stdin_has <call-index (0-based)> <exact-line-text>
+  local idx="$1" needle="$2"
+  [ "${#STDINS[@]}" -gt "$idx" ] || return 1
+  printf '%s' "${STDINS[$idx]}" | grep -qxF -- "$needle"
 }
 
 TOKEN="test-sentry-token-abc123"
@@ -126,16 +159,21 @@ run_script $'409\n201' \
   SENTRY_AUTH_TOKEN="$TOKEN" LMS_FRONT_GIT_COMMIT="$SHA"
 if [ "$RUN_EXIT" -eq 0 ]; then pass "exits 0 on 409 (release already exists) + 201 (deploy)"; else fail "exit code was $RUN_EXIT on 409, not 0 ($RUN_OUT)"; fi
 
-# --- 2. the token appears only in the Authorization header ------------------------------------
+# --- 2. the token is NEVER in argv; it appears only in the stdin-fed curl config ----------------
 
 run_script $'201\n201' \
   SENTRY_AUTH_TOKEN="$TOKEN" LMS_FRONT_GIT_COMMIT="$SHA"
 for i in 0 1; do
   n="$(call_arg_count_containing "$i" "$TOKEN")"
-  if [ "$n" -eq 1 ] && call_has "$i" "Authorization: Bearer $TOKEN"; then
-    pass "call $i: token appears exactly once, in the Authorization header"
+  if [ "$n" -eq 0 ]; then
+    pass "call $i: token never appears in curl argv"
   else
-    fail "call $i: token appeared in $n arg(s), expected exactly 1 in Authorization (${CALLS[$i]:-<none>})"
+    fail "call $i: token appeared in $n argv element(s) — it must only be on stdin (${CALLS[$i]:-<none>})"
+  fi
+  if stdin_has "$i" "header = \"Authorization: Bearer $TOKEN\""; then
+    pass "call $i: token is fed via the --config block on stdin"
+  else
+    fail "call $i: expected stdin config header missing (${STDINS[$i]:-<none>})"
   fi
 done
 if ! printf '%s' "$RUN_OUT" | grep -qF -- "$TOKEN"; then
@@ -151,7 +189,20 @@ if [ "$RUN_EXIT" -eq 0 ]; then pass "empty token: exits 0"; else fail "empty tok
 if [ "${#CALLS[@]}" -eq 0 ]; then pass "empty token: no curl call made"; else fail "empty token: expected 0 curl calls, got ${#CALLS[@]}"; fi
 if printf '%s' "$RUN_OUT" | grep -qi "skip"; then pass "empty token: prints a skip notice"; else fail "empty token: no skip notice in: $RUN_OUT"; fi
 
-# --- 4. a 5xx doesn't fail it --------------------------------------------------------------------
+# --- 4. a bad or empty sha skips (fix round 1) --------------------------------------------------
+
+run_script "" SENTRY_AUTH_TOKEN="$TOKEN" LMS_FRONT_GIT_COMMIT="not-a-real-sha"
+if [ "$RUN_EXIT" -eq 0 ]; then pass "malformed sha: exits 0"; else fail "malformed sha: exit code was $RUN_EXIT"; fi
+if [ "${#CALLS[@]}" -eq 0 ]; then pass "malformed sha: no curl call made"; else fail "malformed sha: expected 0 curl calls, got ${#CALLS[@]}"; fi
+
+run_script "" SENTRY_AUTH_TOKEN="$TOKEN" LMS_FRONT_GIT_COMMIT="deadbeef"
+if [ "${#CALLS[@]}" -eq 0 ]; then pass "too-short sha: no curl call made"; else fail "too-short sha: expected 0 curl calls, got ${#CALLS[@]}"; fi
+
+run_script "" SENTRY_AUTH_TOKEN="$TOKEN" LMS_FRONT_GIT_COMMIT=""
+if [ "$RUN_EXIT" -eq 0 ]; then pass "empty sha (no git fallback in a non-git cwd): exits 0"; else fail "empty sha: exit code was $RUN_EXIT"; fi
+if [ "${#CALLS[@]}" -eq 0 ]; then pass "empty sha: no curl call made"; else fail "empty sha: expected 0 curl calls, got ${#CALLS[@]}"; fi
+
+# --- 5. a 5xx doesn't fail it --------------------------------------------------------------------
 
 run_script $'500\n502' SENTRY_AUTH_TOKEN="$TOKEN" LMS_FRONT_GIT_COMMIT="$SHA"
 if [ "$RUN_EXIT" -eq 0 ]; then pass "5xx on both calls: still exits 0"; else fail "5xx: exit code was $RUN_EXIT, not 0 ($RUN_OUT)"; fi

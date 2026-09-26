@@ -40,24 +40,51 @@ const LONG_SEGMENT_RE = /\/[A-Za-z0-9_\-.~=%]{40,}(?=[/?#\s"']|$)/g;
 const QUERY_RE = /\?[^#\s"']*/g;
 const FRAGMENT_RE = /#[^\s"']*/g;
 // Secrets that can sit anywhere: user:password@ in a URL, a JWT (media and class-material
-// tokens are JWTs), "Bearer <token>".
+// tokens are JWTs), "Bearer <token>", a Telegram bot token (api.telegram.org/bot<id>:<secret>/…).
 const USERINFO_RE = /(\b[a-z][a-z0-9+.-]*:\/\/)[^/\s:@]+:[^/\s@]+@/gi;
-const JWT_RE = /\beyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]*/g;
+// No leading `\b`: it fails between two word characters (`_` counts as one), so a token glued
+// onto a preceding word — "prefix_eyJ…" — would otherwise not match at all.
+const JWT_RE = /eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]*/g;
 const BEARER_RE = /(\b(?:bearer|token)\s+)[A-Za-z0-9._~+/=-]{16,}/gi;
+const TELEGRAM_BOT_RE = /(\/bot)\d+:[A-Za-z0-9_-]+/g;
 // Query params whose VALUE is always a secret; the name stays visible. Case-insensitive.
 const SECRET_PARAM_RE =
-  /^(token|access_token|refresh_token|code|sig|signature|key|api_key|apikey|secret|password|auth)$/i;
+  /^(token|access_token|refresh_token|id_token|code|sig|signature|key|api_key|apikey|secret|password|auth)$/i;
 // A presigned S3/SigV4 URL carries the whole credential in the query string, not one param —
 // mask the query in one piece rather than trying to name every AWS param.
 const PRESIGNED_QUERY_RE = /(?:^|[?&])(?:X-Amz-Signature|X-Amz-Credential|X-Amz-Security-Token|Signature)=/i;
+// A blunt, structure-agnostic backstop for the same secret param names: it finds `?token=…`,
+// `&code=…`, `;sig=…` or `#access_token=…` anywhere in a string, absolute URL or not, well-formed
+// or not (a relative path in a log message, a query nested inside another query's value, a `;`
+// separator). scrubQueryString below is the precise version for a URL's own top-level query and
+// understands encoded/bracketed names; this is what catches everything scrubQueryString can't
+// reach because it never sees it as "the query" in the first place.
+const SECRET_PARAM_ANYWHERE_RE =
+  /([?&;#](?:token|access_token|refresh_token|id_token|code|sig|signature|key|api_key|apikey|secret|password|auth)=)[^&;#\s"'<>]*/gi;
 
 function scrubSecrets(text: string): string {
   return text
     .replace(USERINFO_RE, (_m, scheme: string) => `${scheme}${FILTERED}@`)
     .replace(JWT_RE, FILTERED)
-    .replace(BEARER_RE, (_m, prefix: string) => prefix + FILTERED);
+    .replace(BEARER_RE, (_m, prefix: string) => prefix + FILTERED)
+    .replace(TELEGRAM_BOT_RE, (_m, prefix: string) => prefix + FILTERED);
 }
 const URL_IN_TEXT_RE = /https?:\/\/[^\s"'<>]+/g;
+
+/** Percent-decodes (defensively) and strips a `parent[child]` wrapper before testing the name. */
+function isSecretParamName(rawName: string): boolean {
+  let name = rawName;
+  try {
+    name = decodeURIComponent(name);
+  } catch {
+    // Malformed percent-encoding: fall back to testing the raw name as-is.
+  }
+  if (SECRET_PARAM_RE.test(name)) return true;
+  const bracketed = name.match(/\[([^\]]*)\]\s*$/);
+  if (bracketed && SECRET_PARAM_RE.test(bracketed[1])) return true;
+  const base = name.split('[')[0];
+  return base !== name && SECRET_PARAM_RE.test(base);
+}
 
 /** `match` is a whole `?a=1&b=2` query string (leading `?`, no fragment). */
 function scrubQueryString(match: string): string {
@@ -70,7 +97,7 @@ function scrubQueryString(match: string): string {
       if (!part) return part;
       const eq = part.indexOf('=');
       const name = eq === -1 ? part : part.slice(0, eq);
-      if (!SECRET_PARAM_RE.test(name)) return part;
+      if (!isSecretParamName(name)) return part;
       return eq === -1 ? name : `${name}=${FILTERED}`;
     });
   return `?${params.join('&')}`;
@@ -82,14 +109,16 @@ export function scrubUrl<T>(url: T): T {
     .replace(FRAGMENT_RE, '')
     .replace(QUERY_RE, scrubQueryString)
     .replace(TOKEN_PATH_RE, (_m, prefix: string) => prefix + FILTERED)
-    .replace(LONG_SEGMENT_RE, `/${FILTERED}`) as T;
+    .replace(LONG_SEGMENT_RE, `/${FILTERED}`)
+    .replace(SECRET_PARAM_ANYWHERE_RE, '$1' + FILTERED) as T;
 }
 
 export function scrubText<T>(text: T): T {
   if (typeof text !== 'string' || !text) return text;
   return scrubSecrets(text)
     .replace(URL_IN_TEXT_RE, (u) => scrubUrl(u))
-    .replace(TOKEN_PATH_RE, (_m, prefix: string) => prefix + FILTERED) as T;
+    .replace(TOKEN_PATH_RE, (_m, prefix: string) => prefix + FILTERED)
+    .replace(SECRET_PARAM_ANYWHERE_RE, '$1' + FILTERED) as T;
 }
 
 // Browser noise that is never our bug, or is already handled:
@@ -224,7 +253,9 @@ export function buildSentryUser(user: SentryUserInput): { id: string; email?: st
   return {
     id: String(user.id),
     email: user.email ?? undefined,
-    username: user.name ?? undefined,
+    // `||`, not `??`: an empty-string name (falsy but not null/undefined) must also omit the
+    // field rather than send `username: ""`.
+    username: user.name || undefined,
     ip_address: '{{auto}}',
   };
 }

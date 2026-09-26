@@ -37,12 +37,15 @@ describe('scrubUrl removes secrets', () => {
     ['https://bucket.s3.amazonaws.com/submissions/a.jpg?X-Amz-Signature=deadbeef&X-Amz-Credential=abc', 'deadbeef'],
     ['https://bucket.s3.amazonaws.com/submissions/a.jpg?X-Amz-Security-Token=deadbeef', 'deadbeef'],
     ['/download?Signature=deadbeef&Expires=1', 'deadbeef'],
+    ['/tg/l/abc123short', 'abc123short'],
     ['/auth/callback?code=onetime&state=s', 'onetime'],
     ['/auth/callback#access_token=abc', 'access_token'],
     ['/reset?token=abc123', 'abc123'],
     ['/api?access_token=one&refresh_token=two', 'one'],
+    ['/api?refresh_token=two', 'two'],
     ['/api?api_key=abc', 'abc'],
     ['/api?apikey=abc', 'abc'],
+    ['/api?key=abc', 'abc'],
     ['/api?secret=abc', 'abc'],
     ['/api?password=abc', 'abc'],
     ['/api?AUTH=abc', 'abc'],
@@ -50,6 +53,10 @@ describe('scrubUrl removes secrets', () => {
     [`/x/${'a'.repeat(48)}`, 'a'.repeat(48)],
     ['wss://user:pa55word@proxy.local:1080/x', 'pa55word'],
     [`/anything/else?no=1&jwt=${TOKEN}`, TOKEN],
+    [
+      'https://api.telegram.org/bot123456789:AAFakeSecretValue1234567890abcXYZ/sendMessage',
+      'AAFakeSecretValue1234567890abcXYZ',
+    ],
   ])('removes the credential from %s', (url, leaked) => {
     const out = scrubUrl(url);
     expect(out).not.toContain(leaked);
@@ -74,6 +81,40 @@ describe('scrubUrl removes secrets', () => {
   it('marks what it removed', () => {
     expect(scrubUrl('/watch/abc')).toBe(`/watch/${FILTERED}`);
   });
+
+  it('masks a Telegram bot token in a URL', () => {
+    const out = scrubUrl('https://api.telegram.org/bot123456789:AAFakeSecretValue1234567890abcXYZ/sendMessage');
+    expect(out).not.toContain('AAFakeSecretValue1234567890abcXYZ');
+    expect(out).toContain('/bot');
+  });
+
+  describe('edge-case query structures (fix round 1)', () => {
+    it('masks a secret param nested inside another param\'s value', () => {
+      expect(scrubUrl('/go?next=/reset-password?token=NESTEDSECRET')).not.toContain('NESTEDSECRET');
+    });
+
+    it('decodes a percent-encoded secret param name before testing it', () => {
+      expect(scrubUrl('/api?%74oken=ENCODEDSECRET1')).not.toContain('ENCODEDSECRET1');
+      expect(scrubUrl('/api?access%5Ftoken=ENCODEDSECRET2')).not.toContain('ENCODEDSECRET2');
+    });
+
+    it('treats ; as a param separator', () => {
+      const out = scrubUrl('/api?a=1;token=SEMISECRET');
+      expect(out).not.toContain('SEMISECRET');
+      expect(out).toContain('a=1');
+    });
+
+    it('strips a bracketed name before testing it', () => {
+      expect(scrubUrl('/api?user[password]=BRACKETSECRET')).not.toContain('BRACKETSECRET');
+    });
+
+    it('still masks a secret param that comes after a stray quote earlier in the query', () => {
+      // The value containing the `"` (`token`'s own) only gets masked up to that quote — real
+      // tokens never contain one, so this is an accepted, deliberate limit, not a fix target —
+      // but a later, separate secret param must not be orphaned by that truncation.
+      expect(scrubUrl('/reset?token=abc"&secret=QUOTEDSECRET')).not.toContain('QUOTEDSECRET');
+    });
+  });
 });
 
 describe('scrubText', () => {
@@ -92,6 +133,27 @@ describe('scrubText', () => {
   it('still masks a secret query param inside a URL embedded in a message', () => {
     const out = scrubText(`sync failed for https://x.kz/reset?token=abc123 (retry)`);
     expect(out).not.toContain('abc123');
+  });
+
+  it('masks a Telegram bot token embedded in a message', () => {
+    const out = scrubText(
+      'webhook to https://api.telegram.org/bot123456789:AAFakeSecretValue1234567890abcXYZ/sendMessage failed',
+    );
+    expect(out).not.toContain('AAFakeSecretValue1234567890abcXYZ');
+  });
+
+  describe('secret params in a relative URL, no scheme (fix round 1)', () => {
+    it('masks a query param in an exception-value-style message', () => {
+      expect(scrubText('Request to /auth/callback?code=RELATIVESECRET1 failed')).not.toContain('RELATIVESECRET1');
+    });
+
+    it('masks a query param in a console-log-style message', () => {
+      expect(scrubText('failed /reset-password?token=RELATIVESECRET2')).not.toContain('RELATIVESECRET2');
+    });
+
+    it('masks a fragment param in a navigation-style message', () => {
+      expect(scrubText('navigate to /cb#access_token=RELATIVESECRET3')).not.toContain('RELATIVESECRET3');
+    });
   });
 });
 
@@ -154,6 +216,14 @@ describe('buildSentryUser (pure, no SDK)', () => {
 
   it('is what a logout sends to setUser: null in, null out', () => {
     expect(buildSentryUser(null)).toBeNull();
+  });
+
+  it('omits username for an empty name rather than sending ""', () => {
+    const user = buildSentryUser({ id: 7, email: 'anna@example.com', name: '', role: 'student' });
+    expect(user?.username).toBeUndefined();
+    // toEqual (not toStrictEqual): an explicit `username: undefined` and a missing key are the
+    // same thing to JSON.stringify, which is what actually goes over the wire to Sentry.
+    expect(user).toEqual({ id: '7', email: 'anna@example.com', ip_address: '{{auto}}' });
   });
 });
 
