@@ -9,7 +9,6 @@ export default function LecturePage() {
   const { lessonId } = useParams<{ lessonId: string }>();
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [steps, setSteps] = useState<Step[]>([]);
-  const [materials, setMaterials] = useState<any[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [tab, setTab] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -21,16 +20,14 @@ export default function LecturePage() {
     const loadLessonData = async () => {
       try {
         setLoading(true);
-        const [lessonData, stepsData, materialsData, assignmentsData] = await Promise.all([
+        const [lessonData, stepsData, assignmentsData] = await Promise.all([
           apiClient.getLesson(lessonId),
           apiClient.getLessonSteps(lessonId),
-          apiClient.getLessonMaterials(lessonId),
           apiClient.getAssignments({ lesson_id: lessonId })
         ]);
 
         setLesson(lessonData);
         setSteps(stepsData);
-        setMaterials(materialsData);
         setAssignments(assignmentsData);
       } catch (error) {
         console.error('Failed to load lesson data:', error);
@@ -77,7 +74,7 @@ export default function LecturePage() {
       </div>
 
       <div className="flex items-center justify-between">
-        <Tabs tabs={["Content", "Materials", "Assignments"]} value={tab} onChange={setTab} />
+        <Tabs tabs={["Content", "Assignments"]} value={tab} onChange={setTab} />
       </div>
 
       {tab === 0 && (
@@ -110,39 +107,6 @@ export default function LecturePage() {
       )}
 
       {tab === 1 && (
-        <div className="card p-5">
-          <div className="font-semibold mb-3">Materials</div>
-          {materials.length === 0 ? (
-            <div className="text-gray-500 text-sm">No materials available</div>
-          ) : (
-            <ul className="space-y-2">
-              {materials.map(material => (
-                <li key={material.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded">
-                  <div className="flex-1">
-                    <div className="font-medium">{material.title}</div>
-                    <div className="text-sm text-gray-500">
-                      {material.file_type} • {material.file_size_bytes ? 
-                        `${Math.round(material.file_size_bytes / 1024)} KB` : 
-                        'Unknown size'
-                      }
-                    </div>
-                  </div>
-                  <a 
-                    href={material.file_url} 
-                    target="_blank" 
-                    rel="noreferrer" 
-                    className="btn-secondary text-sm"
-                  >
-                    Download
-                  </a>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-
-      {tab === 2 && (
         <div className="card p-5">
           <div className="font-semibold mb-3">Assignments</div>
           {assignments.length === 0 ? (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { 
@@ -36,6 +36,8 @@ import { spokeNote, talkSecondsIndex } from '../lib/meetTalk';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '../lib/utils';
 import { toast } from '../components/Toast';
+import { getClassMaterialCounts } from '../services/api/classMaterials';
+import LessonMaterialsBadge, { LessonMaterialsDialog } from '../components/class-materials/LessonMaterialsBadge';
 
 interface HomeworkMeta {
     id: number;
@@ -644,6 +646,32 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   // UI states
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<LeaderboardData | null>(null);
+  // 📎 counts for the grid's lesson badges (event_id → count), fetched once per group/week
+  // load (never per lesson) and refreshed after a materials dialog reports a write. Only the
+  // latest request may write: a slow answer for the previous group/week is dropped.
+  const [materialCounts, setMaterialCounts] = useState<Record<number, number>>({});
+  const materialCountsRequest = useRef(0);
+  const refetchMaterialCounts = useCallback(async (lessons: LessonMeta[]) => {
+    const request = ++materialCountsRequest.current;
+    const eventIds = lessons.map((l) => l.event_id).filter((id): id is number => !!id);
+    if (!eventIds.length) {
+      setMaterialCounts({});
+      return;
+    }
+    try {
+      const counts = await getClassMaterialCounts(eventIds);
+      if (request === materialCountsRequest.current) setMaterialCounts(counts);
+    } catch (e) {
+      console.error('Failed to load class material counts', e);
+      if (request === materialCountsRequest.current) setMaterialCounts({});
+    }
+  }, []);
+  // The one materials dialog for the whole grid, rendered outside the table (see
+  // `LessonMaterialsBadge` for why it can't live inside a lesson header).
+  const [materialsDialog, setMaterialsDialog] = useState<{ open: boolean; eventId: number | null }>({
+    open: false,
+    eventId: null,
+  });
   // Marks that disagree with who was in the lesson's Meet room ("eventId:studentId" → flags).
   // Evidence only: the dot explains, the teacher still decides the mark.
   const [meetMismatches, setMeetMismatches] = useState<Map<string, MeetLessonFlag[]>>(new Map());
@@ -842,7 +870,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
     try {
         const result = await getWeeklyLessonsWithHwStatus(selectedGroupId, currentWeek);
         setData(result);
-        
+        refetchMaterialCounts(result.lessons);
+
         // Load persistent config - use exact values from server, fallback to false if null/undefined
         if (result.config) {
             setEnabledCols({
@@ -1758,6 +1787,13 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                             <Pencil className="w-3.5 h-3.5" />
                                         </button>
                                     )}
+                                    <LessonMaterialsBadge
+                                        eventId={lesson.event_id}
+                                        count={materialCounts[lesson.event_id] ?? 0}
+                                        role={user?.role}
+                                        t={t}
+                                        onOpen={(eventId) => setMaterialsDialog({ open: true, eventId })}
+                                    />
                                 </div>
                                 <div className="flex flex-1 items-stretch">
                                     <div className="w-1/2 py-2 text-[10px] font-bold text-gray-600 dark:text-gray-400 border-r border-gray-300 dark:border-border text-center uppercase tracking-tighter flex items-center justify-center">
@@ -2757,6 +2793,16 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <LessonMaterialsDialog
+      eventId={materialsDialog.eventId}
+      open={materialsDialog.open}
+      onOpenChange={(open) => setMaterialsDialog((prev) => ({ ...prev, open }))}
+      t={t}
+      onChanged={() => {
+        if (data) void refetchMaterialCounts(data.lessons);
+      }}
+    />
 
     <OverrideReasonsDialog
       open={overrideAsk !== null}

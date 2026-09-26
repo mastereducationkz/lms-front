@@ -37,7 +37,7 @@ describe('uploadFailureReason', () => {
   });
 
   it('explains the size limit', () => {
-    expect(uploadFailureReason(httpError(413))).toMatch(/larger than 100 MB/);
+    expect(uploadFailureReason(httpError(413))).toMatch(/larger than 50 MB/);
   });
 
   it('explains an expired session', () => {
@@ -60,7 +60,7 @@ describe('tooLargeReason', () => {
   });
 
   it('states the size and the limit before any bytes are sent', () => {
-    expect(tooLargeReason({ size: 123.4 * 1024 * 1024 } as File)).toBe('the file is 123 MB; the limit is 100 MB');
+    expect(tooLargeReason({ size: 123.4 * 1024 * 1024 } as File)).toBe('the file is 123 MB; the limit is 50 MB');
   });
 });
 

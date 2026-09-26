@@ -8,6 +8,7 @@ import { useTheme } from 'next-themes';
 import StreakIcon from './StreakIcon';
 import { WhatsNewButton } from './PlatformUpdatesModal';
 import PointsDisplay from './gamification/PointsDisplay';
+import NotificationsBell from './NotificationsBell';
 
 interface TopbarProps {
   onOpenSidebar: () => void;
@@ -67,6 +68,7 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
         {/* <WhatsNewButton userRole={user?.role} /> */}
         {user?.role === 'student' && <PointsDisplay />}
 
+        {user?.role !== 'parent' && <NotificationsBell />}
         <StreakIcon />
         <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}

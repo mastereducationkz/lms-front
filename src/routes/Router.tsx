@@ -61,6 +61,7 @@ const CreateEvent = lazy(() => import('../pages/CreateEvent.tsx'));
 const EditEvent = lazy(() => import('../pages/EditEvent.tsx'));
 const Calendar = lazy(() => import('../pages/Calendar.tsx'));
 const LessonRecordings = lazy(() => import('../pages/LessonRecordings.tsx'));
+const ClassMaterialsPage = lazy(() => import('../pages/ClassMaterialsPage.tsx'));
 const MeetAttendanceReview = lazy(() => import('../pages/MeetAttendanceReview.tsx'));
 const TeacherDisciplinePage = lazy(() => import('../pages/TeacherDisciplinePage.tsx'));
 const WatchRecordingPage = lazy(() => import('../pages/WatchRecordingPage.tsx'));
@@ -589,6 +590,14 @@ export default function Router() {
             <ProtectedRoute>
               <AppLayout>
                 <LessonRecordings />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/materials" element={
+            <ProtectedRoute allowedRoles={['student', 'teacher', 'curator', 'head_curator', 'head_teacher', 'admin']}>
+              <AppLayout>
+                <ClassMaterialsPage />
               </AppLayout>
             </ProtectedRoute>
           } />

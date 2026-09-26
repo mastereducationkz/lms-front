@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { openPlatformPage, parsePlatformUrl } from '../../lib/platformLinks';
 import { meetInvitationText, meetJoinUrl } from '../../lib/meetLinks';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import ClassMaterialsSection from '../class-materials/ClassMaterialsSection';
 import LessonRecordingSection from './LessonRecordingSection';
 import MeetAttendanceSection from './MeetAttendanceSection';
 import type { Event, LessonRequest } from '../../types';
@@ -153,6 +154,7 @@ export default function EventDetailDialog({ event, open, onOpenChange, user, myR
           )}
 
           {(event.event_type === 'class' || event.event_type === 'webinar') && <LessonRecordingSection event={event} />}
+          {event.event_type === 'class' && <ClassMaterialsSection eventId={event.id} />}
           {event.event_type === 'class' && <MeetAttendanceSection event={event} role={user?.role} />}
 
           {canAct && (
