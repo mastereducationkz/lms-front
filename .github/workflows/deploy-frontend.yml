@@ -47,52 +47,6 @@ jobs:
             docker compose up -d lms-frontend
             echo "✅ Frontend container rebuilt & restarted"
 
-      # Fix round 1 (security): the Sentry API call used to run over SSH on the production
-      # server, so curl's `-H "Authorization: Bearer …"` sat in that box's own `ps` output for
-      # the life of the request — visible to anything else on the shared host. It now runs on
-      # this GitHub-hosted runner instead; the server is only asked for the sha it just deployed,
-      # nothing more. The token still never touches a job-level `env:`, and inside
-      # scripts/sentry-release.sh it's fed to curl via `--config -` on stdin, never as an argv
-      # element, so it stays out of even THIS runner's own `ps`.
-      - name: Get deployed commit
-        id: deployed_sha
-        if: ${{ env.HAS_SENTRY_TOKEN == 'true' }}
-        continue-on-error: true
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          capture_stdout: true
-          script: |
-            cd ~/projects/lms-frontend
-            # The exact sha the build above used (same checkout, nothing has touched it since —
-            # see the "Deploy to server" step's own LMS_FRONT_GIT_COMMIT line).
-            git rev-parse HEAD
-
-      - name: Checkout for release script
-        if: ${{ env.HAS_SENTRY_TOKEN == 'true' }}
-        continue-on-error: true
-        uses: actions/checkout@v4
-        with:
-          # The commit Frontend CI actually validated, not whatever `github.sha` resolves to on
-          # a workflow_run trigger (that's the default branch tip at trigger time, not the run
-          # being deployed).
-          ref: ${{ github.event.workflow_run.head_sha }}
-
-      - name: Sentry release + deploy marker
-        # Runs only after the deploy above actually succeeded, and only when the owner has set
-        # the secret. Never allowed to fail or slow the deploy: continue-on-error is the
-        # workflow-level backstop, and scripts/sentry-release.sh (its own per-request 15s
-        # timeout, no `set -e`, and its own sha-format check) is the script-level one — so this
-        # step is safe to run even if "Get deployed commit" above failed or returned garbage.
-        if: ${{ env.HAS_SENTRY_TOKEN == 'true' }}
-        continue-on-error: true
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          LMS_FRONT_GIT_COMMIT: ${{ steps.deployed_sha.outputs.stdout }}
-        run: bash scripts/sentry-release.sh
-
       - name: Health check
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -109,3 +63,66 @@ jobs:
               echo "⏳ waiting ($i/20)"; sleep 3
             done
             echo "❌ Health check failed"; docker logs --tail=100 lms-frontend || true; exit 1
+
+      # Fix round 1 (security): the Sentry API call used to run over SSH on the production
+      # server, so curl's `-H "Authorization: Bearer …"` sat in that box's own `ps` output for
+      # the life of the request — visible to anything else on the shared host. It now runs on
+      # this GitHub-hosted runner instead; the server is only asked for the sha it just deployed,
+      # nothing more. The token still never touches a job-level `env:`, and inside
+      # scripts/sentry-release.sh it's fed to curl via `--config -` on stdin, never as an argv
+      # element, so it stays out of even THIS runner's own `ps`.
+      #
+      # Fix round 2: moved after Health check (was between "Deploy to server" and it) — a deploy
+      # is now marked in Sentry only once it's confirmed healthy, and a hung SSH here no longer
+      # delays the health signal. `success()` is explicit in each `if:` below because a custom
+      # `if:` replaces the step's implicit "only run if every previous step succeeded" default
+      # rather than adding to it; continue-on-error on the earlier steps in this chain still
+      # counts as success for that check, so one of them failing doesn't skip the next.
+      # `appleboy/ssh-action` pinned to v1.2.5 here specifically: v1.2.0 (used by the other two
+      # steps, which don't need this) has no `capture_stdout` input and no `outputs:` at all —
+      # confirmed by diffing both versions' action.yml — so `steps.deployed_sha.outputs.stdout`
+      # was silently always empty, and scripts/sentry-release.sh's old `git rev-parse HEAD`
+      # fallback papered over it with whatever the RUNNER's checkout resolved to instead of the
+      # sha the SERVER actually deployed (those two can differ: the server builds master's tip at
+      # deploy time, and deploys queue). That fallback is gone from the script now; an empty or
+      # malformed capture is a skip, not a guess, and the `steps.deployed_sha.outputs.stdout !=
+      # ''` check below skips the whole chain immediately when the capture is empty.
+      - name: Get deployed commit
+        id: deployed_sha
+        if: ${{ success() && env.HAS_SENTRY_TOKEN == 'true' }}
+        continue-on-error: true
+        timeout-minutes: 2
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          capture_stdout: true
+          script: |
+            cd ~/projects/lms-frontend
+            # The exact sha the build above used (same checkout, nothing has touched it since —
+            # see the "Deploy to server" step's own LMS_FRONT_GIT_COMMIT line).
+            git rev-parse HEAD
+
+      - name: Checkout for release script
+        if: ${{ success() && env.HAS_SENTRY_TOKEN == 'true' && steps.deployed_sha.outputs.stdout != '' }}
+        continue-on-error: true
+        timeout-minutes: 2
+        uses: actions/checkout@v4
+        with:
+          # The commit Frontend CI actually validated, not whatever `github.sha` resolves to on
+          # a workflow_run trigger (that's the default branch tip at trigger time, not the run
+          # being deployed).
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Sentry release + deploy marker
+        # scripts/sentry-release.sh also validates the sha against ^[0-9a-f]{40}$ itself (no
+        # fallback), so this step staying safe doesn't depend on the `outputs.stdout != ''` check
+        # above being exhaustive — it's the same belt-and-suspenders layering as elsewhere here.
+        if: ${{ success() && env.HAS_SENTRY_TOKEN == 'true' && steps.deployed_sha.outputs.stdout != '' }}
+        continue-on-error: true
+        timeout-minutes: 2
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          LMS_FRONT_GIT_COMMIT: ${{ steps.deployed_sha.outputs.stdout }}
+        run: bash scripts/sentry-release.sh

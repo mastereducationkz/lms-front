@@ -115,6 +115,24 @@ describe('scrubUrl removes secrets', () => {
       expect(scrubUrl('/reset?token=abc"&secret=QUOTEDSECRET')).not.toContain('QUOTEDSECRET');
     });
   });
+
+  describe('percent-encoded nested values (fix round 2)', () => {
+    it('decodes and re-scrubs a nested query hidden behind one round of encoding', () => {
+      const out = scrubUrl('/auth?next=%2Freset-password%3Ftoken%3DNESTEDENC1');
+      expect(out).not.toContain('NESTEDENC1');
+      expect(out).toContain('/reset-password'); // the non-secret part stays visible, decoded
+    });
+
+    it('decodes and re-scrubs a nested token path hidden behind encoding', () => {
+      const out = scrubUrl('/go?redirect=%2Fwatch%2FNESTEDENC2');
+      expect(out).not.toContain('NESTEDENC2');
+      expect(out).toContain('/watch/');
+    });
+
+    it('leaves an ordinary percent-encoded value alone', () => {
+      expect(scrubUrl('/search?q=%20hello%20world')).toBe('/search?q=%20hello%20world');
+    });
+  });
 });
 
 describe('scrubText', () => {
@@ -154,6 +172,83 @@ describe('scrubText', () => {
     it('masks a fragment param in a navigation-style message', () => {
       expect(scrubText('navigate to /cb#access_token=RELATIVESECRET3')).not.toContain('RELATIVESECRET3');
     });
+  });
+
+  it('masks a JWT glued onto a preceding word (fix round 2)', () => {
+    // JWT_RE has no leading \b (fix round 1) precisely so this matches: `\b` fails between two
+    // word characters, and `_` counts as one, so "prefix_eyJ…" needs the anchor gone.
+    const out = scrubText(`prefix_${TOKEN} in the log line`);
+    expect(out).not.toContain(TOKEN);
+  });
+
+  it('decodes and strips brackets from param names in a relative URL too (fix round 2)', () => {
+    // The old SECRET_PARAM_ANYWHERE_RE only matched an exact, literal secret name; the unified
+    // scrubAnyParams now reuses isSecretParamName, so it decodes/strips brackets here exactly
+    // like scrubQueryString already did for scrubUrl's own top-level query.
+    expect(scrubText('GET /api?%74oken=RELSECRET5')).not.toContain('RELSECRET5');
+    expect(scrubText('GET /api?user[password]=RELSECRET6')).not.toContain('RELSECRET6');
+  });
+
+  describe('percent-encoded nested values (fix round 2)', () => {
+    it('decodes and re-scrubs a nested query hidden behind one round of encoding', () => {
+      const out = scrubText('Redirecting to /auth?next=%2Freset-password%3Ftoken%3DNESTEDENC3 now');
+      expect(out).not.toContain('NESTEDENC3');
+    });
+
+    it('decodes and re-scrubs a nested token path hidden behind encoding', () => {
+      const out = scrubText('open /go?redirect=%2Fwatch%2FNESTEDENC4 please');
+      expect(out).not.toContain('NESTEDENC4');
+    });
+  });
+
+  describe('LONG_SEGMENT_RE on relative paths (fix round 2)', () => {
+    it('masks a long opaque segment in a relative path with no scheme', () => {
+      const out = scrubText(`failed /reset-password/${'a'.repeat(44)}`);
+      expect(out).not.toContain('a'.repeat(44));
+    });
+
+    it('leaves ordinary prose alone', () => {
+      const prose = 'The student reported that the lesson recording failed to load twice this week.';
+      expect(scrubText(prose)).toBe(prose);
+    });
+  });
+});
+
+describe('perf: capped input length (fix round 2)', () => {
+  const PERF_BUDGET_MS = 50;
+
+  it('scrubUrl stays under budget on 60 KB of repeated "eyJ" (JWT_RE)', () => {
+    const input = 'eyJ'.repeat(Math.ceil((60 * 1024) / 3));
+    const t0 = Date.now();
+    scrubUrl(input);
+    expect(Date.now() - t0).toBeLessThan(PERF_BUDGET_MS);
+  });
+
+  it('scrubUrl stays under budget on 60 KB of repeated "a." (USERINFO_RE)', () => {
+    const input = 'a.'.repeat(Math.ceil((60 * 1024) / 2));
+    const t0 = Date.now();
+    scrubUrl(input);
+    expect(Date.now() - t0).toBeLessThan(PERF_BUDGET_MS);
+  });
+
+  it('scrubUrl stays under budget on a 60 KB bracketed param name with no closing bracket', () => {
+    const input = `/api?${'['.repeat(60 * 1024)}=x`;
+    const t0 = Date.now();
+    scrubUrl(input);
+    expect(Date.now() - t0).toBeLessThan(PERF_BUDGET_MS);
+  });
+
+  it('scrubText stays under budget on the same three adversarial inputs', () => {
+    const inputs = [
+      'eyJ'.repeat(Math.ceil((60 * 1024) / 3)),
+      'a.'.repeat(Math.ceil((60 * 1024) / 2)),
+      `/api?${'['.repeat(60 * 1024)}=x`,
+    ];
+    for (const input of inputs) {
+      const t0 = Date.now();
+      scrubText(input);
+      expect(Date.now() - t0).toBeLessThan(PERF_BUDGET_MS);
+    }
   });
 });
 

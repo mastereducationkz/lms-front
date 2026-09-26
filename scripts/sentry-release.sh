@@ -30,17 +30,20 @@ if [ -z "${SENTRY_AUTH_TOKEN:-}" ]; then
   exit 0
 fi
 
-# The exact sha the build used. The caller passes LMS_FRONT_GIT_COMMIT — the workflow reads this
-# back from the server's checkout right after the deploy (see the "Get deployed commit" step) — so
-# it's the value the build actually used, not a value trusted to have stayed in sync with it.
-# `git rev-parse HEAD` here only covers a manual run from a real checkout; it's never what the
-# workflow itself relies on. Either way, whitespace-strip (a captured step output can carry a
-# trailing newline) and then require exactly a 40-char lowercase-hex sha before using it for
-# anything — a truncated or garbled capture must skip, not silently POST a bad release.
+# The exact sha the build used. The caller MUST pass LMS_FRONT_GIT_COMMIT — the workflow reads
+# this back from the server's checkout right after the deploy (see the "Get deployed commit"
+# step) — so it's the value the build actually used, not a value trusted to have stayed in sync
+# with it. Fix round 2: there is deliberately no `git rev-parse HEAD` fallback here anymore. There
+# used to be one, "for a manual run from a real checkout" — but in CI, the runner's OWN checkout
+# (added later, for scripts/sentry-release.sh itself to exist) is ALSO a real git repo, so when
+# the SSH capture silently came back empty (an `appleboy/ssh-action` version without
+# `capture_stdout` — see the workflow's comment on that step), this fallback didn't fail loudly;
+# it quietly substituted the RUNNER's sha, which is not necessarily what the SERVER actually
+# deployed (the server builds master's tip at deploy time, and deploys queue — those two shas can
+# differ). A wrong-but-plausible release is worse than no release: whitespace-strip (a captured
+# step output can carry a trailing newline) and then require exactly a 40-char lowercase-hex sha
+# before using it for anything — anything else is a skip, never a guess.
 RAW_VERSION="${LMS_FRONT_GIT_COMMIT:-}"
-if [ -z "$RAW_VERSION" ]; then
-  RAW_VERSION="$(git rev-parse HEAD 2>/dev/null || true)"
-fi
 VERSION="$(printf '%s' "$RAW_VERSION" | tr -d '[:space:]')"
 if ! printf '%s' "$VERSION" | grep -qE '^[0-9a-f]{40}$'; then
   echo "sentry-release: '${RAW_VERSION}' is not a 40-char lowercase-hex sha, skipping."

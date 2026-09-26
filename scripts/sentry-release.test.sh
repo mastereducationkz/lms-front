@@ -12,9 +12,12 @@
 # $STUB_CODES_FILE (default 200 if the queue is empty) — exactly what `-w '%{http_code}'` would
 # print, since the script discards the body with `-o /dev/null`.
 #
-# Each run happens in a fresh, non-git temp directory, so scripts/sentry-release.sh's own
-# `git rev-parse HEAD` fallback (for a manual local run) never fires here — every test controls
-# the sha entirely through LMS_FRONT_GIT_COMMIT, deterministically.
+# Each run happens in a fresh, non-git temp directory by default, so every test controls the sha
+# entirely through LMS_FRONT_GIT_COMMIT, deterministically. Fix round 2 removed the script's old
+# `git rev-parse HEAD` fallback entirely (it used to paper over a broken sha capture with whatever
+# the CALLING checkout's HEAD happened to be, which in CI is a real git repo and NOT necessarily
+# the sha the server actually deployed) — `run_script_in_git_repo` below proves that fallback is
+# really gone, not just untriggered by an accidentally-non-git cwd.
 set -uo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -99,6 +102,43 @@ run_script() {
         sblock="${sblock}${line}"$'\n'
       fi
     done < "$stdin_log"
+  fi
+
+  rm -rf "$work"
+}
+
+# Same as run_script, but the run cwd is a REAL git repo with one commit — proves the removed
+# `git rev-parse HEAD` fallback is gone for good, not just untriggered by a non-git cwd.
+run_script_in_git_repo() {
+  local codes="$1"; shift
+  local work; work="$(mktemp -d)"
+  local bin_dir="$work/bin"
+  make_stub_bin "$bin_dir"
+  local curl_log="$work/curl.log" stdin_log="$work/stdin.log"
+  : > "$curl_log"
+  : > "$stdin_log"
+  local codes_file="$work/codes"
+  printf '%s' "$codes" > "$codes_file"
+  local run_dir="$work/run"
+  mkdir -p "$run_dir"
+  git -C "$run_dir" init -q
+  git -C "$run_dir" -c user.email=test@example.com -c user.name=test commit -q --allow-empty -m x
+
+  RUN_OUT="$(cd "$run_dir" && env PATH="$bin_dir:$PATH" CURL_LOG="$curl_log" STDIN_LOG="$stdin_log" \
+    STUB_CODES_FILE="$codes_file" "$@" bash "$SCRIPT" 2>&1)"
+  RUN_EXIT=$?
+
+  CALLS=()
+  if [ -s "$curl_log" ]; then
+    local block=""
+    while IFS= read -r line; do
+      if [ "$line" = "---END-ARGS---" ]; then
+        CALLS+=("$block")
+        block=""
+      else
+        block="${block}${line}"$'\n'
+      fi
+    done < "$curl_log"
   fi
 
   rm -rf "$work"
@@ -199,8 +239,19 @@ run_script "" SENTRY_AUTH_TOKEN="$TOKEN" LMS_FRONT_GIT_COMMIT="deadbeef"
 if [ "${#CALLS[@]}" -eq 0 ]; then pass "too-short sha: no curl call made"; else fail "too-short sha: expected 0 curl calls, got ${#CALLS[@]}"; fi
 
 run_script "" SENTRY_AUTH_TOKEN="$TOKEN" LMS_FRONT_GIT_COMMIT=""
-if [ "$RUN_EXIT" -eq 0 ]; then pass "empty sha (no git fallback in a non-git cwd): exits 0"; else fail "empty sha: exit code was $RUN_EXIT"; fi
-if [ "${#CALLS[@]}" -eq 0 ]; then pass "empty sha: no curl call made"; else fail "empty sha: expected 0 curl calls, got ${#CALLS[@]}"; fi
+if [ "$RUN_EXIT" -eq 0 ]; then pass "empty sha (non-git cwd): exits 0"; else fail "empty sha: exit code was $RUN_EXIT"; fi
+if [ "${#CALLS[@]}" -eq 0 ]; then pass "empty sha (non-git cwd): no curl call made"; else fail "empty sha: expected 0 curl calls, got ${#CALLS[@]}"; fi
+
+# The fallback is gone entirely (fix round 2) — prove it from INSIDE a real git repo with a real
+# HEAD commit, where the old `git rev-parse HEAD` fallback would have quietly "succeeded" with a
+# plausible-looking but wrong sha (the runner's checkout, not what the server deployed).
+run_script_in_git_repo "" SENTRY_AUTH_TOKEN="$TOKEN" LMS_FRONT_GIT_COMMIT=""
+if [ "$RUN_EXIT" -eq 0 ]; then pass "empty sha inside a real git checkout: exits 0"; else fail "empty sha in git repo: exit code was $RUN_EXIT"; fi
+if [ "${#CALLS[@]}" -eq 0 ]; then
+  pass "empty sha inside a real git checkout: no curl call made (never falls back to git rev-parse HEAD)"
+else
+  fail "empty sha in a git repo made ${#CALLS[@]} curl call(s) — the removed git-fallback regressed"
+fi
 
 # --- 5. a 5xx doesn't fail it --------------------------------------------------------------------
 

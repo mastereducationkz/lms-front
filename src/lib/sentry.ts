@@ -28,6 +28,20 @@ const RELEASE = (import.meta.env.VITE_SENTRY_RELEASE as string | undefined)?.tri
 
 export const FILTERED = '[Filtered]';
 
+// Perf backstop (fix round 2): an error/breadcrumb string is attacker- or bug-influenced input
+// (a URL, a log line), and several of the regexes below are, in the worst case, quadratic on
+// pathological input — 60 KB of repeated "eyJ" (no real dot ever appears, so JWT_RE backtracks
+// to the end and back at every position) measured over 10s. Truncating BEFORE any regex runs
+// bounds every pattern's worst case at once, current and future, rather than hardening each one
+// individually. 2 KB is generous for anything this app actually produces (URLs and log lines are
+// a few hundred characters at most) and keeps the worst case comfortably under budget — see the
+// "adversarial input" perf tests below.
+const MAX_SCRUB_LENGTH = 2048;
+const TRUNCATION_MARKER = '…[truncated]';
+function capLength(text: string): string {
+  return text.length > MAX_SCRUB_LENGTH ? text.slice(0, MAX_SCRUB_LENGTH) + TRUNCATION_MARKER : text;
+}
+
 // A path segment after one of these is a bearer credential (see lms-backend sentry_setup.py,
 // which scrubs the same routes): /uploads/v/<token>/…, /uploads/s/<token>/…,
 // /class-materials/download/<token>, /watch-links/<token>, the SPA's /watch/:token page,
@@ -41,10 +55,13 @@ const QUERY_RE = /\?[^#\s"']*/g;
 const FRAGMENT_RE = /#[^\s"']*/g;
 // Secrets that can sit anywhere: user:password@ in a URL, a JWT (media and class-material
 // tokens are JWTs), "Bearer <token>", a Telegram bot token (api.telegram.org/bot<id>:<secret>/…).
-const USERINFO_RE = /(\b[a-z][a-z0-9+.-]*:\/\/)[^/\s:@]+:[^/\s@]+@/gi;
+// The scheme and each JWT segment are bounded ({0,20}/{5,200}), not unbounded (`*`/`{5,}`): a
+// real URL scheme or JWT segment never gets remotely that long, and bounding the backtrack range
+// is a second, independent layer under the MAX_SCRUB_LENGTH cap above.
+const USERINFO_RE = /(\b[a-z][a-z0-9+.-]{0,20}:\/\/)[^/\s:@]+:[^/\s@]+@/gi;
 // No leading `\b`: it fails between two word characters (`_` counts as one), so a token glued
 // onto a preceding word — "prefix_eyJ…" — would otherwise not match at all.
-const JWT_RE = /eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]*/g;
+const JWT_RE = /eyJ[A-Za-z0-9_-]{5,200}\.[A-Za-z0-9_-]{5,200}\.[A-Za-z0-9_-]{0,200}/g;
 const BEARER_RE = /(\b(?:bearer|token)\s+)[A-Za-z0-9._~+/=-]{16,}/gi;
 const TELEGRAM_BOT_RE = /(\/bot)\d+:[A-Za-z0-9_-]+/g;
 // Query params whose VALUE is always a secret; the name stays visible. Case-insensitive.
@@ -53,14 +70,21 @@ const SECRET_PARAM_RE =
 // A presigned S3/SigV4 URL carries the whole credential in the query string, not one param —
 // mask the query in one piece rather than trying to name every AWS param.
 const PRESIGNED_QUERY_RE = /(?:^|[?&])(?:X-Amz-Signature|X-Amz-Credential|X-Amz-Security-Token|Signature)=/i;
-// A blunt, structure-agnostic backstop for the same secret param names: it finds `?token=…`,
-// `&code=…`, `;sig=…` or `#access_token=…` anywhere in a string, absolute URL or not, well-formed
+// A value containing this has a decodable nested path/URL worth inspecting on its own — e.g.
+// `?next=%2Freset-password%3Ftoken%3DX` decodes to `/reset-password?token=X`.
+const NESTED_ENCODING_HINT_RE = /%2f|%3f/i;
+// A blunt, structure-agnostic pass over `[?&;#]<name>=<value>`, absolute URL or not, well-formed
 // or not (a relative path in a log message, a query nested inside another query's value, a `;`
-// separator). scrubQueryString below is the precise version for a URL's own top-level query and
-// understands encoded/bracketed names; this is what catches everything scrubQueryString can't
-// reach because it never sees it as "the query" in the first place.
-const SECRET_PARAM_ANYWHERE_RE =
-  /([?&;#](?:token|access_token|refresh_token|id_token|code|sig|signature|key|api_key|apikey|secret|password|auth)=)[^&;#\s"'<>]*/gi;
+// separator). Unlike scrubQueryString's precise top-level-query handling, this one doesn't know
+// or care what "the query" is — it just finds every param-shaped thing in the whole string. The
+// name/value character classes exclude the separators and the `=` they need next, so there's
+// nothing for either quantifier to backtrack over: each one either finds what it needs immediately
+// or fails immediately, never combinatorially. `?` is excluded from the value too — not because a
+// value can't contain one, but so a LITERAL nested query (`?next=/x?token=Y`, no percent-encoding)
+// stops the outer value there instead of swallowing it, leaving the nested `?token=Y` for the next
+// global-match attempt to find on its own; a percent-encoded nested query has no literal `?` to
+// stop on and is handled separately by scrubNestedValue below.
+const ANY_PARAM_RE = /([?&;#])([^=&;#?\s"'<>]+)=([^&;#?\s"'<>]*)/g;
 
 function scrubSecrets(text: string): string {
   return text
@@ -71,7 +95,12 @@ function scrubSecrets(text: string): string {
 }
 const URL_IN_TEXT_RE = /https?:\/\/[^\s"'<>]+/g;
 
-/** Percent-decodes (defensively) and strips a `parent[child]` wrapper before testing the name. */
+/**
+ * Percent-decodes (defensively) and strips a `parent[child]` wrapper before testing the name.
+ * Plain string ops (lastIndexOf/indexOf/slice), not a `/\[([^\]]*)\]\s*$/`-style regex: that
+ * shape is exactly the other catastrophic-backtrack pattern fix round 1 review found (60 KB of
+ * `[` with no `]` ever closing it), and a name can be attacker-controlled query-string input.
+ */
 function isSecretParamName(rawName: string): boolean {
   let name = rawName;
   try {
@@ -79,11 +108,33 @@ function isSecretParamName(rawName: string): boolean {
   } catch {
     // Malformed percent-encoding: fall back to testing the raw name as-is.
   }
-  if (SECRET_PARAM_RE.test(name)) return true;
-  const bracketed = name.match(/\[([^\]]*)\]\s*$/);
-  if (bracketed && SECRET_PARAM_RE.test(bracketed[1])) return true;
-  const base = name.split('[')[0];
-  return base !== name && SECRET_PARAM_RE.test(base);
+  const trimmed = name.trimEnd();
+  if (SECRET_PARAM_RE.test(trimmed)) return true;
+  if (trimmed.endsWith(']')) {
+    const open = trimmed.lastIndexOf('[', trimmed.length - 2);
+    if (open !== -1 && SECRET_PARAM_RE.test(trimmed.slice(open + 1, trimmed.length - 1))) return true;
+  }
+  const bracketIdx = trimmed.indexOf('[');
+  return bracketIdx !== -1 && SECRET_PARAM_RE.test(trimmed.slice(0, bracketIdx));
+}
+
+/**
+ * A value like `next=%2Freset-password%3Ftoken%3DX` hides a whole secret-bearing relative URL
+ * behind one round of percent-encoding. Decode once (never recursively — `scrubUrlImpl`'s own
+ * `allowNestedDecode: false` call below stops it there) and re-run the real scrubber over the
+ * decoded form; only replace the original if something actually got masked, so ordinary encoded
+ * values (a space as `%20`, a real URL param) are left exactly as they were.
+ */
+function scrubNestedValue(rawValue: string): string {
+  if (!NESTED_ENCODING_HINT_RE.test(rawValue)) return rawValue;
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(rawValue);
+  } catch {
+    return rawValue;
+  }
+  const scrubbed = scrubUrlImpl(decoded, false);
+  return scrubbed === decoded ? rawValue : scrubbed;
 }
 
 /** `match` is a whole `?a=1&b=2` query string (leading `?`, no fragment). */
@@ -103,22 +154,39 @@ function scrubQueryString(match: string): string {
   return `?${params.join('&')}`;
 }
 
-export function scrubUrl<T>(url: T): T {
-  if (typeof url !== 'string' || !url) return url;
-  return scrubSecrets(url)
+/** The blunt backstop pass: masks any secret-named param, decodes+re-scrubs a nested one. */
+function scrubAnyParams(text: string): string {
+  return text.replace(ANY_PARAM_RE, (whole: string, sep: string, rawName: string, rawValue: string) => {
+    if (isSecretParamName(rawName)) return `${sep}${rawName}=${FILTERED}`;
+    const scrubbedValue = scrubNestedValue(rawValue);
+    return scrubbedValue === rawValue ? whole : `${sep}${rawName}=${scrubbedValue}`;
+  });
+}
+
+function scrubUrlImpl(url: string, allowNestedDecode: boolean): string {
+  const capped = capLength(url);
+  const scrubbed = scrubSecrets(capped)
     .replace(FRAGMENT_RE, '')
     .replace(QUERY_RE, scrubQueryString)
     .replace(TOKEN_PATH_RE, (_m, prefix: string) => prefix + FILTERED)
-    .replace(LONG_SEGMENT_RE, `/${FILTERED}`)
-    .replace(SECRET_PARAM_ANYWHERE_RE, '$1' + FILTERED) as T;
+    .replace(LONG_SEGMENT_RE, `/${FILTERED}`);
+  return allowNestedDecode ? scrubAnyParams(scrubbed) : scrubbed;
+}
+
+export function scrubUrl<T>(url: T): T {
+  if (typeof url !== 'string' || !url) return url;
+  return scrubUrlImpl(url, true) as T;
 }
 
 export function scrubText<T>(text: T): T {
   if (typeof text !== 'string' || !text) return text;
-  return scrubSecrets(text)
-    .replace(URL_IN_TEXT_RE, (u) => scrubUrl(u))
-    .replace(TOKEN_PATH_RE, (_m, prefix: string) => prefix + FILTERED)
-    .replace(SECRET_PARAM_ANYWHERE_RE, '$1' + FILTERED) as T;
+  const capped = capLength(text);
+  return scrubAnyParams(
+    scrubSecrets(capped)
+      .replace(URL_IN_TEXT_RE, (u) => scrubUrl(u))
+      .replace(TOKEN_PATH_RE, (_m, prefix: string) => prefix + FILTERED)
+      .replace(LONG_SEGMENT_RE, `/${FILTERED}`),
+  ) as T;
 }
 
 // Browser noise that is never our bug, or is already handled:
