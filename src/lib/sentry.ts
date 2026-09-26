@@ -16,9 +16,17 @@
  * token (JWTs, download/watch/class-material/calendar/telegram tokens in URL paths, presigned S3
  * query strings, and secret-named query params such as token/code/sig/key/secret/password/auth),
  * URL userinfo, and Authorization/Cookie-style credentials. See `scrubUrl`/`scrubText` for the
- * exact rules. Errors only: no tracing.
+ * exact rules. Errors only: no tracing today (`buildSentryInitOptions` sets no
+ * `tracesSampleRate`/`tracesSampler`) — `beforeSendTransaction`/`beforeSendSpan` are registered
+ * anyway (WS9 Addendum B) so tracing can be turned on later without silently shipping an
+ * unscrubbed transaction/span path; see the SAT incident referenced on `beforeSendTransaction`.
  */
-import type { Breadcrumb, BreadcrumbHint, ErrorEvent, EventHint } from '@sentry/react';
+import type { Breadcrumb, BreadcrumbHint, ErrorEvent, EventHint, RequestEventData } from '@sentry/react';
+// `TransactionEvent`/`SpanJSON`/`QueryParams` aren't re-exported by `@sentry/react` (or
+// `@sentry/browser`) itself, only by the `@sentry/core` they're both built on — type-only, so
+// this is erased entirely at build time and adds nothing to the lazy chunk (see sentryClient.ts's
+// own comment on why VALUE imports here matter and type imports don't).
+import type { QueryParams, SpanJSON, TransactionEvent } from '@sentry/core';
 
 type SentrySdk = typeof import('./sentryClient');
 
@@ -65,8 +73,12 @@ const JWT_RE = /eyJ[A-Za-z0-9_-]{5,200}\.[A-Za-z0-9_-]{5,200}\.[A-Za-z0-9_-]{0,2
 const BEARER_RE = /(\b(?:bearer|token)\s+)[A-Za-z0-9._~+/=-]{16,}/gi;
 const TELEGRAM_BOT_RE = /(\/bot)\d+:[A-Za-z0-9_-]+/g;
 // Query params whose VALUE is always a secret; the name stays visible. Case-insensitive.
+// `switch` (Addendum B): the sibling-platform switch link's own one-time param, alongside the
+// handoff/SSO `token`/`code` already here — `#switch=…` isn't stripped by FRAGMENT_RE the way an
+// absolute URL's fragment is, since a relative one (a span description, a log line) never reaches
+// scrubUrl's own fragment handling at all, only this name-based pass.
 const SECRET_PARAM_RE =
-  /^(token|access_token|refresh_token|id_token|code|sig|signature|key|api_key|apikey|secret|password|auth)$/i;
+  /^(token|access_token|refresh_token|id_token|code|sig|signature|key|api_key|apikey|secret|password|auth|switch)$/i;
 // A presigned S3/SigV4 URL carries the whole credential in the query string, not one param —
 // mask the query in one piece rather than trying to name every AWS param.
 const PRESIGNED_QUERY_RE = /(?:^|[?&])(?:X-Amz-Signature|X-Amz-Credential|X-Amz-Security-Token|Signature)=/i;
@@ -259,21 +271,68 @@ function scrubBreadcrumbInPlace(crumb: Breadcrumb): void {
   }
 }
 
+/**
+ * `request.query_string` can be a raw string, a `{name: value}` object, or `[name, value][]`
+ * pairs — scrub whichever shape shows up. The string form has no leading `?`; reusing `scrubUrl`
+ * on a synthetic `?`-prefixed copy gets the exact same secret-param/presigned-URL handling
+ * `scrubQueryString` already gives a URL's own query, without duplicating that logic.
+ */
+function scrubQueryParams(qp: QueryParams): QueryParams {
+  if (typeof qp === 'string') return scrubUrl(`?${qp}`).slice(1);
+  if (Array.isArray(qp)) {
+    return qp.map(([name, value]): [string, string] => [name, isSecretParamName(name) ? FILTERED : scrubText(value)]);
+  }
+  return Object.fromEntries(Object.entries(qp).map(([name, value]) => [name, isSecretParamName(name) ? FILTERED : scrubText(value)]));
+}
+
+/**
+ * Scrubs `request.url`/`headers` (and, when asked, `query_string`) the same way for every event
+ * type that carries a `request`: errors keep dropping `query_string`/`cookies`/`data`/`env`
+ * outright (unchanged from before this function existed — `keepQueryString: false` reproduces
+ * that exactly); transactions keep `query_string`, scrubbed, per WS9 Addendum B.
+ */
+function scrubRequestInPlace(request: RequestEventData | undefined, keepQueryString: boolean): RequestEventData | undefined {
+  if (!request) return request;
+  const { url, headers, query_string } = request;
+  const scrubbed: RequestEventData = {
+    url: url ? scrubUrl(url) : url,
+    headers: headers
+      ? Object.fromEntries(
+          Object.entries(headers)
+            .filter(([k]) => ['user-agent', 'referer'].includes(k.toLowerCase()))
+            .map(([k, v]) => [k, k.toLowerCase() === 'referer' ? scrubUrl(v) : v]),
+        )
+      : undefined,
+  };
+  if (keepQueryString && query_string !== undefined) scrubbed.query_string = scrubQueryParams(query_string);
+  return scrubbed;
+}
+
+/**
+ * Scrubs every string value in a span's `data`/attributes bag (or `contexts.trace.data`, same
+ * shape) in place — `url`, `http.url`, `http.query`, `http.fragment`, or any other string
+ * attribute a future integration adds. `db.statement` is the one deliberate exception: SQL
+ * breadcrumbs keep their query text everywhere else in this policy, and a span carrying one
+ * should too.
+ */
+function scrubDataValuesInPlace(data: Record<string, unknown> | undefined): void {
+  if (!data) return;
+  for (const key of Object.keys(data)) {
+    if (key === 'db.statement') continue;
+    const value = data[key];
+    if (typeof value === 'string') data[key] = scrubText(value);
+  }
+}
+
+/** Shared by `beforeSendTransaction`'s `spans[]` loop and the standalone `beforeSendSpan`. */
+function scrubSpanInPlace(span: { description?: string; data?: Record<string, unknown> }): void {
+  if (span.description) span.description = scrubText(span.description);
+  scrubDataValuesInPlace(span.data);
+}
+
 export function beforeSend(event: ErrorEvent, hint: EventHint): ErrorEvent | null {
   if (isIgnoredEvent(event, hint)) return null;
-  if (event.request) {
-    const { url, headers } = event.request;
-    event.request = {
-      url: scrubUrl(url),
-      headers: headers
-        ? Object.fromEntries(
-            Object.entries(headers)
-              .filter(([k]) => ['user-agent', 'referer'].includes(k.toLowerCase()))
-              .map(([k, v]) => [k, k.toLowerCase() === 'referer' ? scrubUrl(v) : v]),
-          )
-        : undefined,
-    };
-  }
+  event.request = scrubRequestInPlace(event.request, false);
   if (event.transaction) event.transaction = scrubUrl(event.transaction);
   if (event.message) event.message = scrubText(event.message);
   for (const value of exceptionValues(event)) {
@@ -287,6 +346,33 @@ export function beforeSend(event: ErrorEvent, hint: EventHint): ErrorEvent | nul
     event.user = id != null ? { id, email, username, ip_address } : undefined;
   }
   return event;
+}
+
+/**
+ * WS9 Addendum B: tracing is off (no `tracesSampleRate`/`tracesSampler` — see
+ * `buildSentryInitOptions`), so nothing calls this today. Registering it now, scrubbing exactly
+ * like `beforeSend` does, means turning tracing on later doesn't also silently turn on a new,
+ * unscrubbed data path — SAT's incident (46k pageload/navigation spans holding SSO codes and
+ * handoff tokens verbatim) was exactly that gap, discovered only after tracing had already
+ * shipped.
+ */
+export function beforeSendTransaction(event: TransactionEvent, _hint: EventHint): TransactionEvent | null {
+  if (event.transaction) event.transaction = scrubUrl(event.transaction);
+  event.request = scrubRequestInPlace(event.request, true);
+  scrubDataValuesInPlace(event.contexts?.trace?.data);
+  for (const span of event.spans ?? []) scrubSpanInPlace(span);
+  if (event.tags) {
+    for (const [key, value] of Object.entries(event.tags)) {
+      if (typeof value === 'string') event.tags[key] = scrubText(value);
+    }
+  }
+  return event;
+}
+
+/** Same reasoning as `beforeSendTransaction`: inert today, ready for span streaming later. */
+export function beforeSendSpan(span: SpanJSON): SpanJSON {
+  scrubSpanInPlace(span);
+  return span;
 }
 
 export function beforeBreadcrumb(crumb: Breadcrumb, _hint?: BreadcrumbHint): Breadcrumb | null {
@@ -353,8 +439,14 @@ function applyUser(s: SentrySdk) {
   s.setTag('role', currentUser?.role ?? undefined);
 }
 
-function init(s: SentrySdk) {
-  s.init({
+/**
+ * Exported so a test can assert directly on the object handed to `Sentry.init` — not just grep
+ * the source — that `tracesSampleRate`/`tracesSampler` are absent (WS9 Addendum B guard: either
+ * one turns tracing on; `beforeSendTransaction`/`beforeSendSpan` alone do not, confirmed against
+ * `hasSpansEnabled`'s own source in `@sentry/core`, which checks only those two options).
+ */
+export function buildSentryInitOptions(): Parameters<SentrySdk['init']>[0] {
+  return {
     dsn: DSN,
     environment: ENVIRONMENT,
     release: RELEASE && RELEASE !== 'unknown' ? RELEASE : undefined,
@@ -369,13 +461,21 @@ function init(s: SentrySdk) {
       // The query string stays (minus secret params, which `scrubUrl` masks itself).
       urlQueryParams: true,
     },
-    // No tracesSampleRate at all: errors only. Setting it, even to 0, turns tracing on.
+    // No tracesSampleRate/tracesSampler: errors only. beforeSendTransaction/beforeSendSpan below
+    // are registered anyway, scrubbing the same way, so turning tracing on later is safe by
+    // default rather than something that has to remember to add scrubbing at the same time.
     maxBreadcrumbs: 50,
     ignoreErrors: IGNORED_MESSAGES,
     denyUrls: [EXTENSION_URL_RE],
     beforeSend,
     beforeBreadcrumb,
-  });
+    beforeSendTransaction,
+    beforeSendSpan,
+  };
+}
+
+function init(s: SentrySdk) {
+  s.init(buildSentryInitOptions());
   sdk = s;
   window.removeEventListener('error', onEarlyError);
   window.removeEventListener('unhandledrejection', onEarlyRejection);

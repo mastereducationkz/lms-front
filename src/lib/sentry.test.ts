@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import type { ErrorEvent } from '@sentry/react';
+import type { ErrorEvent, EventHint } from '@sentry/react';
+import type { QueryParams, SpanJSON, TransactionEvent } from '@sentry/core';
 import {
   FILTERED,
   beforeBreadcrumb,
   beforeSend,
+  beforeSendSpan,
+  beforeSendTransaction,
+  buildSentryInitOptions,
   buildSentryUser,
   isIgnoredEvent,
   reportError,
@@ -377,5 +381,119 @@ describe('beforeBreadcrumb', () => {
     const nav = beforeBreadcrumb({ category: 'navigation', data: { from: '/users?search=Иванов', to: `/watch/${TOKEN}` } });
     expect(nav?.data?.from).toBe('/users?search=Иванов');
     expect(JSON.stringify(nav)).not.toContain(TOKEN);
+  });
+});
+
+// ----------------------------------------------------------------------------------------------
+// Addendum B: transactions and spans aren't sent today (tracing is off — see the guard test at
+// the bottom of this file), but a future flip to tracesSampleRate/tracesSampler must not silently
+// ship an unscrubbed path. SAT's incident (46k pageload/navigation spans holding SSO codes and
+// handoff tokens verbatim) is exactly that failure mode, so this is tested now, before it exists.
+// ----------------------------------------------------------------------------------------------
+
+describe('beforeSendTransaction scrubs transactions the same way beforeSend does (Addendum B)', () => {
+  it('masks every secret-bearing field, keeps state= and db.statement visible', () => {
+    const event = {
+      type: 'transaction',
+      transaction: `GET /watch/${TOKEN}`,
+      request: {
+        url: 'https://lms.mastereducation.kz/auth/callback?code=SSOCODE1&state=STATEVALUE',
+        query_string: 'code=SSOCODE2&state=STATEVALUE',
+        headers: { 'User-Agent': 'UA', Cookie: 'a=b' },
+      },
+      contexts: {
+        trace: {
+          span_id: 'aaaaaaaaaaaaaaaa',
+          trace_id: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+          data: { 'http.url': '/auth/handoff?token=HANDOFFSECRET', 'db.statement': 'select 1' },
+        },
+      },
+      spans: [
+        {
+          span_id: 'cccccccccccccccc',
+          trace_id: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+          start_timestamp: 0,
+          description: 'switch to SAT #switch=SWITCHSECRET',
+          data: { url: `/watch/${TOKEN}`, 'http.query': 'x=1', 'db.statement': 'select 2' },
+        },
+      ],
+      tags: { route: '/reset?token=TAGSECRET' },
+    } as unknown as TransactionEvent;
+
+    const out = beforeSendTransaction(event, {} as EventHint);
+    const blob = JSON.stringify(out);
+
+    for (const secret of [TOKEN, 'SSOCODE1', 'SSOCODE2', 'HANDOFFSECRET', 'SWITCHSECRET', 'TAGSECRET', 'a=b']) {
+      expect(blob).not.toContain(secret);
+    }
+    expect(blob).toContain('STATEVALUE'); // code= masked, state= stays (SSO callback policy)
+    expect(blob).toContain('select 1'); // db.statement stays: trace context data
+    expect(blob).toContain('select 2'); // db.statement stays: span data
+  });
+
+  it.each([
+    ['SSO code, state stays', 'https://lms.mastereducation.kz/auth/callback?code=X&state=Y', 'X', 'Y'],
+    ['handoff token', '/auth/handoff?token=X', 'X', null],
+    ['token-path route', `/watch/${TOKEN}`, TOKEN, null],
+  ])('%s: request.url is masked', (_label, url, leaked, kept) => {
+    const out = beforeSendTransaction({ type: 'transaction', request: { url } } as unknown as TransactionEvent, {} as EventHint);
+    expect(JSON.stringify(out)).not.toContain(leaked);
+    if (kept) expect(JSON.stringify(out)).toContain(kept);
+  });
+
+  it('scrubs a query_string given as {name: value} or [name, value][], not just a string', () => {
+    const objForm = beforeSendTransaction(
+      { type: 'transaction', request: { query_string: { code: 'OBJSECRET', state: 'OBJSTATE' } } } as unknown as TransactionEvent,
+      {} as EventHint,
+    );
+    expect(JSON.stringify(objForm)).not.toContain('OBJSECRET');
+    expect(JSON.stringify(objForm)).toContain('OBJSTATE');
+
+    const arrForm = beforeSendTransaction(
+      {
+        type: 'transaction',
+        request: { query_string: [['code', 'ARRSECRET'], ['state', 'ARRSTATE']] as QueryParams },
+      } as unknown as TransactionEvent,
+      {} as EventHint,
+    );
+    expect(JSON.stringify(arrForm)).not.toContain('ARRSECRET');
+    expect(JSON.stringify(arrForm)).toContain('ARRSTATE');
+  });
+});
+
+describe('beforeSendSpan scrubs a standalone span the same way (Addendum B)', () => {
+  it('masks a secret in description and in data values, keeps db.statement', () => {
+    const span = {
+      span_id: 'dddddddddddddddd',
+      trace_id: 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+      start_timestamp: 0,
+      description: `GET /watch/${TOKEN}`,
+      data: {
+        url: 'https://lms.mastereducation.kz/auth/callback?code=SPANSSOSECRET&state=SPANSTATE',
+        'http.url': '/auth/handoff?token=SPANHANDOFFSECRET',
+        'db.statement': 'select 3',
+      },
+    } as unknown as SpanJSON;
+
+    const out = beforeSendSpan(span);
+    const blob = JSON.stringify(out);
+
+    for (const secret of [TOKEN, 'SPANSSOSECRET', 'SPANHANDOFFSECRET']) {
+      expect(blob).not.toContain(secret);
+    }
+    expect(blob).toContain('SPANSTATE');
+    expect(blob).toContain('select 3');
+  });
+});
+
+describe('tracing stays off until someone deliberately turns it on (Addendum B guard)', () => {
+  it('the init options carry no tracesSampleRate or tracesSampler', () => {
+    const options = buildSentryInitOptions() as Record<string, unknown>;
+    expect(options).not.toHaveProperty('tracesSampleRate');
+    expect(options).not.toHaveProperty('tracesSampler');
+    // And they ARE registered, so turning tracing on later doesn't also silently turn on an
+    // unscrubbed transaction/span path.
+    expect(options.beforeSendTransaction).toBe(beforeSendTransaction);
+    expect(options.beforeSendSpan).toBe(beforeSendSpan);
   });
 });
