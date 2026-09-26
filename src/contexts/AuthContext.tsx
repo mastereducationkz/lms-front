@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import apiClient from "../services/api";
 import type { User, UserRole } from '../types';
 import { clearOidcSession, isOidcSession } from '../services/oidc';
+import { setSentryUser } from '../lib/sentry';
 
 interface AuthContextType {
   // State
@@ -53,6 +54,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     initializeAuth();
   }, []);
+
+  // Error reports carry who hit the error: the numeric id and the role, never a name or email.
+  useEffect(() => {
+    setSentryUser(user ? { id: user.id, role: user.role } : null);
+  }, [user?.id, user?.role]);
 
   // A failed /auth/me should only end the session when the credentials are genuinely
   // rejected (401/403). Network errors, timeouts and 5xx/429 are transient — the backend
