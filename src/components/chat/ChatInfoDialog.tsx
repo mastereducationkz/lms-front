@@ -4,15 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Button } from '../ui/button';
 import { Bell, BellOff } from 'lucide-react';
 import { getSharedMedia } from '../../services/api';
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-
-interface SharedMediaItem {
-  id: number;
-  file_url: string;
-  from_user_id: number;
-  created_at: string | null;
-}
+import { SharedMediaList, type SharedMediaItem } from './SharedMediaList';
 
 interface ChatInfoDialogProps {
   open: boolean;
@@ -27,14 +19,6 @@ interface ChatInfoDialogProps {
 
 function getInitials(name: string) {
   return name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
-}
-
-function isImage(url: string) {
-  return /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
-}
-
-function resolveUrl(fileUrl: string) {
-  return fileUrl.startsWith('http') ? fileUrl : `${BACKEND_URL}${fileUrl}`;
 }
 
 /** Chat/contact info panel: participant details, shared media/files, mute toggle. */
@@ -53,9 +37,6 @@ export function ChatInfoDialog({
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [open, partnerId]);
-
-  const images = media.filter((m) => isImage(m.file_url));
-  const files = media.filter((m) => !isImage(m.file_url));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -91,39 +72,7 @@ export function ChatInfoDialog({
           ) : media.length === 0 ? (
             <p className="text-sm text-gray-400 py-4 text-center">No shared media yet</p>
           ) : (
-            <div className="max-h-64 overflow-y-auto space-y-3">
-              {images.length > 0 && (
-                <div className="grid grid-cols-3 gap-2">
-                  {images.map((m) => (
-                    <a key={m.id} href={resolveUrl(m.file_url)} target="_blank" rel="noreferrer">
-                      <img
-                        src={resolveUrl(m.file_url)}
-                        alt="shared"
-                        className="w-full h-20 object-cover rounded-lg"
-                      />
-                    </a>
-                  ))}
-                </div>
-              )}
-              {files.length > 0 && (
-                <div className="space-y-1">
-                  {files.map((m) => {
-                    const fileName = decodeURIComponent(m.file_url.split('/').pop() || 'file');
-                    return (
-                      <a
-                        key={m.id}
-                        href={resolveUrl(m.file_url)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="block text-sm text-blue-600 dark:text-blue-400 underline break-all"
-                      >
-                        📎 {fileName}
-                      </a>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+            <SharedMediaList media={media} />
           )}
         </div>
       </DialogContent>

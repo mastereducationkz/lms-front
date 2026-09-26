@@ -16,6 +16,7 @@ import { parseBluebookReport } from '../../services/api/exams';
 import { BluebookGraderPanel } from './BluebookGraderPanel';
 import { formatAssignmentTaskLabel, gatedLessonIds, type UnitGate } from '../../lib/assignmentTask';
 import { UploadFailedError } from '../../lib/uploadFailure';
+import { safeUploadUrl } from '../../lib/mediaUrl';
 
 interface Task {
   id: string;
@@ -299,12 +300,6 @@ function formatElapsed(totalSeconds: number): string {
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
-function resolveMediaUrl(url: string): string {
-  if (!url) return url;
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  return (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + url;
-}
-
 type AudioRecorderState = 'idle' | 'requesting' | 'recording' | 'stopped';
 
 interface AudioTaskSubmissionProps {
@@ -483,6 +478,7 @@ function AudioTaskSubmission({ task, audioUrl, readOnly, onRecorded }: AudioTask
   };
 
   const showSavedRecording = !!audioUrl && recorderState === 'idle' && !recordedUrl;
+  const safeAudioUrl = showSavedRecording ? safeUploadUrl(audioUrl) : null;
 
   return (
     <div className="space-y-3">
@@ -493,7 +489,11 @@ function AudioTaskSubmission({ task, audioUrl, readOnly, onRecorded }: AudioTask
           {readOnly && (
             <div className="text-xs font-medium text-gray-500 dark:text-gray-400">Student's Recording:</div>
           )}
-          <AudioPlayer src={resolveMediaUrl(audioUrl!)} />
+          {safeAudioUrl ? (
+            <AudioPlayer src={safeAudioUrl} />
+          ) : (
+            <div className="text-sm italic text-muted-foreground">Recording unavailable.</div>
+          )}
           {!readOnly && (
             <Button
               type="button"
@@ -931,15 +931,15 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
             {/* Uploaded Files List */}
             {displayFiles.length > 0 && (
                 <div className="space-y-3">
-                    {displayFiles.map((file: any, index: number) => (
+                    {displayFiles.map((file: any, index: number) => {
+                      const fileHref = safeUploadUrl(file.file_url);
+                      return (
                         <div key={index} className="space-y-3">
                             {/* Image Preview */}
-                            {file.file_name && /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(file.file_name) && (
+                            {fileHref && file.file_name && /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(file.file_name) && (
                                 <div className="border dark:border-border rounded-lg overflow-hidden bg-gray-50 dark:bg-secondary">
-                                <img 
-                                    src={file.file_url.startsWith('http') 
-                                    ? file.file_url 
-                                    : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + file.file_url}
+                                <img
+                                    src={fileHref}
                                     alt={file.file_name || 'Uploaded image'}
                                     className="w-full h-auto max-h-[600px] object-contain"
                                     onError={(e) => {
@@ -959,20 +959,17 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                                 )}
                                 </div>
                                 <div className="flex items-center space-x-2">
+                                {fileHref && (
                                 <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => {
-                                    const url = file.file_url.startsWith('http') 
-                                        ? file.file_url 
-                                        : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + file.file_url;
-                                    window.open(url, '_blank');
-                                    }}
+                                    onClick={() => window.open(fileHref, '_blank')}
                                     className="text-foreground hover:underline h-8 px-2"
                                 >
                                     <ExternalLink className="w-4 h-4 mr-1" />
                                     Open
                                 </Button>
+                                )}
                                 {!readOnly && (
                                     <Button
                                     variant="ghost"
@@ -986,7 +983,8 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                                 </div>
                             </div>
                         </div>
-                    ))}
+                      );
+                    })}
                 </div>
             )}
             

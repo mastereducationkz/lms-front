@@ -13,6 +13,7 @@ import { Label } from '../ui/label';
 import { FileText, Download, Loader2 } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import { AudioPlayer, isAudioUrl } from '../AudioPlayer';
+import { safeUploadUrl } from '../../lib/mediaUrl';
 import type { StudentProgress, AssignmentData, SubmissionDetails } from './types';
 
 interface GradeDialogProps {
@@ -55,8 +56,6 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
   onSubmit,
   isLoading,
 }) => {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-
   const renderSubmissionContent = () => {
     if (isLoadingSubmission) {
       return (
@@ -75,11 +74,7 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
       );
     }
 
-    const resolvedFileUrl = submissionDetails.file_url
-      ? submissionDetails.file_url.startsWith('http')
-        ? submissionDetails.file_url
-        : `${backendUrl}${submissionDetails.file_url}`
-      : null;
+    const resolvedFileUrl = safeUploadUrl(submissionDetails.file_url);
     const isAudio = isAudioUrl(submissionDetails.file_url || submissionDetails.submitted_file_name);
 
     return (
@@ -98,15 +93,17 @@ export const GradeDialog: React.FC<GradeDialogProps> = ({
                 {submissionDetails.submitted_file_name || 'Attached File'}
               </div>
             </div>
-            <a
-              href={resolvedFileUrl!}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline text-sm font-medium flex items-center"
-            >
-              <Download className="w-4 h-4 mr-1" />
-              Download
-            </a>
+            {resolvedFileUrl && (
+              <a
+                href={resolvedFileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline text-sm font-medium flex items-center"
+              >
+                <Download className="w-4 h-4 mr-1" />
+                Download
+              </a>
+            )}
           </div>
         )}
 

@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Download, Image as ImageIcon } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+import { fileNameFromUrl, safeUploadUrl } from '../../lib/mediaUrl';
 
 // Every image type the app accepts, matching the mobile client. The test allows a
 // query string / fragment after the extension (signed URLs).
@@ -20,18 +19,21 @@ export function ChatAttachment({ fileUrl }: { fileUrl: string }) {
   // Flips to true when the browser refuses to decode an image we expected it to handle.
   const [decodeFailed, setDecodeFailed] = useState(false);
 
-  const url = fileUrl.startsWith('http') ? fileUrl : `${BACKEND_URL}${fileUrl}`;
-  // Stored keys keep the raw upload filename, so a literal '%' ("Screenshot 50%.png") is not a
-  // valid escape and decodeURIComponent throws URIError here — mid-render, taking the whole
-  // message list down rather than just this attachment.
-  const rawName = fileUrl.split('/').pop() || 'file';
-  const fileName = (() => {
-    try {
-      return decodeURIComponent(rawName);
-    } catch {
-      return rawName;
-    }
-  })();
+  // fileUrl is student/staff-supplied and unvalidated server-side today (a separate PR adds
+  // write-side validation); resolve it through the safe helper before it ever reaches a
+  // src/href, and never load or link a value it rejects.
+  const url = safeUploadUrl(fileUrl);
+  const fileName = fileNameFromUrl(fileUrl);
+
+  if (!url) {
+    return (
+      <div className="flex items-center gap-2 mb-1 px-2 py-1.5 rounded-lg bg-black/10 dark:bg-white/10 max-w-[220px] text-muted-foreground">
+        <ImageIcon className="w-4 h-4 shrink-0" />
+        <span className="text-xs truncate">Attachment unavailable</span>
+      </div>
+    );
+  }
+
   const isImage = IMAGE_EXT_RE.test(fileUrl);
   const canPreview = isImage && BROWSER_DECODABLE_RE.test(fileUrl) && !decodeFailed;
 

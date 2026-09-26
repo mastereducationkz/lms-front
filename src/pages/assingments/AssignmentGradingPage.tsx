@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../../services/api';
 import { toast } from '../../components/Toast';
-import { ArrowLeft, Download, FileText, Clock, Calendar, AlertCircle, RotateCcw } from 'lucide-react';
+import { ArrowLeft, FileText, Clock, Calendar, AlertCircle, RotateCcw } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Badge } from '../../components/ui/badge';
@@ -12,15 +12,11 @@ import { Input } from '../../components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import type { Assignment, Submission, AssignmentExtension } from '../../types/index';
 import MultiTaskSubmission from '../../components/assignments/MultiTaskSubmission';
+import { SubmissionFileDownloadLink } from '../../components/assignments/SubmissionFileDownloadLink';
 import { AudioPlayer } from '../../components/AudioPlayer';
+import { safeUploadUrl } from '../../lib/mediaUrl';
 
 const AUDIO_FILE_EXTENSIONS = ['webm', 'ogg', 'mp4', 'm4a', 'mp3', 'mpeg', 'wav', 'x-m4a', 'aac'];
-
-function resolveFileUrl(url: string): string {
-  if (!url) return url;
-  if (url.startsWith('http://') || url.startsWith('https://')) return url;
-  return (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + url;
-}
 
 function isAudioSubmission(assignment: Assignment | null, submission: Submission | null | undefined): boolean {
   if (!submission?.file_url) return false;
@@ -231,6 +227,12 @@ export default function AssignmentGradingPage() {
     return <div className="text-center py-8 text-muted-foreground">Loading...</div>;
   }
 
+  // Computed once so the audio-submission branch below can both test it and render it
+  // without calling safeUploadUrl twice.
+  const gradingAudioUrl = isAudioSubmission(assignment, selectedSubmission)
+    ? safeUploadUrl(selectedSubmission?.file_url)
+    : null;
+
   return (
     <div className="max-w-6xl mx-auto space-y-6 p-6">
       <div className="flex items-center space-x-4">
@@ -331,18 +333,25 @@ export default function AssignmentGradingPage() {
                     onSubmit={() => {}}
                     studentId={String(selectedSubmission.user_id)}
                   />
-                  {unplayedTaskRecordings(assignment, selectedSubmission).map((url, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                        Recording from a removed task:
+                  {unplayedTaskRecordings(assignment, selectedSubmission).map((url, index) => {
+                    const safeUrl = safeUploadUrl(url);
+                    return (
+                      <div key={index} className="space-y-2">
+                        <div className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                          Recording from a removed task:
+                        </div>
+                        {safeUrl ? (
+                          <AudioPlayer src={safeUrl} />
+                        ) : (
+                          <div className="text-sm italic text-muted-foreground">Recording unavailable.</div>
+                        )}
                       </div>
-                      <AudioPlayer src={resolveFileUrl(url)} />
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
-              ) : isAudioSubmission(assignment, selectedSubmission) && selectedSubmission?.file_url ? (
+              ) : gradingAudioUrl ? (
                 <div className="space-y-4">
-                  <AudioPlayer src={resolveFileUrl(selectedSubmission.file_url)} />
+                  <AudioPlayer src={gradingAudioUrl} />
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -352,15 +361,10 @@ export default function AssignmentGradingPage() {
                       <div className="flex-1">
                         <div className="font-medium text-slate-900 dark:text-slate-100">{selectedSubmission.submitted_file_name || 'Attached File'}</div>
                       </div>
-                      <a 
-                        href={selectedSubmission.file_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
+                      <SubmissionFileDownloadLink
+                        fileUrl={selectedSubmission.file_url}
                         className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium flex items-center"
-                      >
-                        <Download className="w-4 h-4 mr-1" />
-                        Download
-                      </a>
+                      />
                     </div>
                   )}
                   
