@@ -151,9 +151,7 @@ export default function ItemActionsMenu({ item, locale, onMutated }: Props) {
 
   return (
     <>
-      {/* Non-modal with `pointer-events-auto` content, like «Добавить ▾» — see `AddMaterialMenu`
-          for why a modal menu inside the lesson Dialog freezes the page on Escape. */}
-      <DropdownMenu modal={false}>
+      <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
             type="button"
@@ -163,7 +161,7 @@ export default function ItemActionsMenu({ item, locale, onMutated }: Props) {
             <MoreVertical className="h-4 w-4" aria-hidden />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="pointer-events-auto">
+        <DropdownMenuContent align="end">
           {item.can_rename && (
             <DropdownMenuItem onSelect={() => setRenaming(true)}>{t('rename', locale)}</DropdownMenuItem>
           )}
