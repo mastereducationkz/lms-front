@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isChunkReloadUnderway, registerPwa, shouldReloadOnPreloadError } from './pwa';
+import { chunkReloadGuardFired, isChunkReloadUnderway, registerPwa, shouldReloadOnPreloadError } from './pwa';
 
 // This repo's vitest runs in a plain Node environment (no jsdom, no `window`/`sessionStorage`
 // — see vitest.config.ts), so the `vite:preloadError` listener itself can't be dispatched
@@ -18,6 +18,34 @@ describe('shouldReloadOnPreloadError', () => {
 
   it('skips the reload once the once-per-30s guard has already fired', () => {
     expect(shouldReloadOnPreloadError('/dashboard', true)).toBe(false);
+  });
+});
+
+describe('chunkReloadGuardFired', () => {
+  const NOW = 1_700_000_000_000;
+
+  it('is not fired when the key was never set', () => {
+    expect(chunkReloadGuardFired(null, NOW)).toBe(false);
+  });
+
+  it('is not fired for the old sticky "1" value (reads as an ancient, expired timestamp)', () => {
+    expect(chunkReloadGuardFired('1', NOW)).toBe(false);
+  });
+
+  it('is not fired for unparseable garbage', () => {
+    expect(chunkReloadGuardFired('not-a-number', NOW)).toBe(false);
+  });
+
+  it('is fired for a timestamp written just now', () => {
+    expect(chunkReloadGuardFired(String(NOW - 100), NOW)).toBe(true);
+  });
+
+  it('is not fired once the 30s window has elapsed', () => {
+    expect(chunkReloadGuardFired(String(NOW - 31_000), NOW)).toBe(false);
+  });
+
+  it('is not fired for a timestamp far in the future (foreign/corrupt data, not clock skew)', () => {
+    expect(chunkReloadGuardFired(String(NOW + 60_000), NOW)).toBe(false);
   });
 });
 

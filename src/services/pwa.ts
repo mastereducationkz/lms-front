@@ -45,6 +45,35 @@ export function shouldReloadOnPreloadError(pathname: string, guardAlreadyFired: 
   return !guardAlreadyFired
 }
 
+// How long the guard below blocks a repeat reload for.
+const CHUNK_RELOAD_GUARD_WINDOW_MS = 30_000
+// Tolerance for a stored timestamp slightly ahead of `now` (clock adjustments, timer jitter)
+// before it's treated as corrupt/foreign data rather than "just fired".
+const CHUNK_RELOAD_GUARD_CLOCK_SKEW_MS = 5_000
+
+/**
+ * Whether the once-per-30s reload guard has already fired recently. `stored` is whatever is in
+ * sessionStorage under `CHUNK_RELOAD_GUARD_KEY`.
+ *
+ * This has to be a timestamp, not a sticky flag: the `window.setTimeout` that used to clear it
+ * lived in the page that was about to be replaced by the reload it guarded, so it was killed
+ * before it ever fired — the guard silently lasted for the rest of the tab's session, and a
+ * second deploy in the same tab never auto-reloaded again. Storing `Date.now()` and checking
+ * elapsed time on the next read needs no timer to survive the reload.
+ *
+ * A missing key, unparseable garbage, the old sticky `"1"` value (reads as an ancient
+ * timestamp — always long expired), or a timestamp too far in the future (clock skew beyond
+ * `CHUNK_RELOAD_GUARD_CLOCK_SKEW_MS`, i.e. not something this tab wrote) all count as "not
+ * fired": a stale or malformed value must never block a reload forever.
+ */
+export function chunkReloadGuardFired(stored: string | null, now: number): boolean {
+  if (stored === null) return false
+  const firedAt = Number(stored)
+  if (!Number.isFinite(firedAt)) return false
+  if (firedAt - now > CHUNK_RELOAD_GUARD_CLOCK_SKEW_MS) return false
+  return now - firedAt < CHUNK_RELOAD_GUARD_WINDOW_MS
+}
+
 // Set while a `vite:preloadError` reload is in flight (see below). `src/lib/lazyRoute.ts`
 // checks this to decide whether a broken lazy import should just wait for the reload to land
 // (bounded — see lazyRoute.ts) instead of throwing a ChunkLoadError at the ErrorBoundary right
@@ -100,12 +129,11 @@ export function registerPwa(): void {
   // reload. When a guard skips the reload, we leave the event alone and let the rejection
   // propagate to the failed dynamic import(), which `lazyRoute` turns into a ChunkLoadError.
   window.addEventListener('vite:preloadError', (event) => {
-    const guardAlreadyFired = Boolean(sessionStorage.getItem(CHUNK_RELOAD_GUARD_KEY))
+    const guardAlreadyFired = chunkReloadGuardFired(sessionStorage.getItem(CHUNK_RELOAD_GUARD_KEY), Date.now())
     if (!shouldReloadOnPreloadError(window.location.pathname, guardAlreadyFired)) return
     event.preventDefault()
     chunkReloadUnderway = true
-    sessionStorage.setItem(CHUNK_RELOAD_GUARD_KEY, '1')
-    window.setTimeout(() => sessionStorage.removeItem(CHUNK_RELOAD_GUARD_KEY), 30_000)
+    sessionStorage.setItem(CHUNK_RELOAD_GUARD_KEY, String(Date.now()))
     window.location.reload()
   })
 
