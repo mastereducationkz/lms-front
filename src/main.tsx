@@ -7,8 +7,12 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { registerPwa } from "./services/pwa";
 import { installDomErrorGuard } from "./utils/domErrorGuard";
 import { installAppTimeZone } from "./lib/datetime";
+import { startSentry } from "./lib/sentry";
 
 installDomErrorGuard();
+// Production builds only (a DSN is baked in by docker-compose). Buffers early errors now and
+// loads the SDK in its own chunk once the browser is idle, so the entry bundle stays as it was.
+startSentry();
 // Every date on screen in Kazakhstan time, whatever zone the viewer's laptop is in.
 installAppTimeZone();
 

@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
+import { reportError } from '../lib/sentry';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -38,6 +39,8 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
 
     // Always log to console for developers.
     console.error('[ErrorBoundary] Caught render error:', error, componentStack);
+    // A render crash caught here never reaches window.onerror, so Sentry hears of it only this way.
+    reportError(error, { componentStack });
 
     // Persist the last error so it can be retrieved later even after a reload.
     try {

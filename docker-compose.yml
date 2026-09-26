@@ -1,6 +1,14 @@
 services:
   lms-frontend:
-    build: .
+    build:
+      context: .
+      args:
+        # Browser DSNs are public by design: they only let a client submit events to this one
+        # project. Only this (server-side) build carries it, so dev, vitest and CI stay silent.
+        VITE_SENTRY_DSN: https://78089cbc888c3b0218c3707354f71c1f@o4510940554067968.ingest.de.sentry.io/4512151495049296
+        VITE_SENTRY_ENVIRONMENT: production
+        # Set by deploy-frontend.yml from `git rev-parse HEAD`; "unknown" leaves release unset.
+        VITE_SENTRY_RELEASE: ${LMS_FRONT_GIT_COMMIT:-unknown}
     container_name: lms-frontend
     restart: unless-stopped
     expose:

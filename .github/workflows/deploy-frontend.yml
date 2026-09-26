@@ -36,7 +36,8 @@ jobs:
             git fetch origin master
             git checkout master
             git pull --ff-only origin master
-            docker compose build
+            # The commit being built, as the Sentry release (the image has no .git to ask).
+            LMS_FRONT_GIT_COMMIT="$(git rev-parse HEAD)" docker compose build
             docker compose up -d lms-frontend
             echo "✅ Frontend container rebuilt & restarted"
 
