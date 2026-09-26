@@ -47,12 +47,23 @@ export function shouldReloadOnPreloadError(pathname: string, guardAlreadyFired: 
 
 // Set while a `vite:preloadError` reload is in flight (see below). `src/lib/lazyRoute.ts`
 // checks this to decide whether a broken lazy import should just wait for the reload to land
-// (never-settling promise) instead of throwing a ChunkLoadError at the ErrorBoundary.
+// (bounded — see lazyRoute.ts) instead of throwing a ChunkLoadError at the ErrorBoundary right
+// away.
 let chunkReloadUnderway = false
 
 /** Whether a chunk-load reload is currently in flight. Exported for `lazyRoute`. */
 export function isChunkReloadUnderway(): boolean {
   return chunkReloadUnderway
+}
+
+/**
+ * Called by `lazyRoute` when its bounded wait times out without the reload having landed
+ * (e.g. a `beforeunload` confirm the user cancelled on unsaved changes). Without this, every
+ * later lazy-chunk failure in the same tab would also wait, forever, instead of surfacing the
+ * ErrorBoundary's reload screen.
+ */
+export function clearChunkReloadUnderway(): void {
+  chunkReloadUnderway = false
 }
 
 function applyUpdate(): void {
