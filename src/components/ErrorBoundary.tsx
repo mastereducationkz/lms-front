@@ -101,6 +101,50 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
 
     const { error, componentStack } = this.state;
 
+    // A stale tab hit a chunk that no longer exists after a deploy (see src/lib/lazyRoute.ts).
+    // The fix is just a reload, so say that instead of the generic "something went wrong"
+    // screen — Sentry already ignores this error name/message (src/lib/sentry.ts).
+    if (error?.name === 'ChunkLoadError') {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+          <div className="max-w-md w-full rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 text-center shadow-sm">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-50">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#2563eb"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <polyline points="23 4 23 10 17 10" />
+                <polyline points="1 20 1 14 7 14" />
+                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+              </svg>
+            </div>
+
+            <h1 className="text-center text-xl font-bold text-gray-900">
+              Вышла новая версия — обновите страницу
+            </h1>
+            <p className="mt-2 text-center text-sm text-gray-600">
+              Мы обновили приложение, пока эта страница была открыта.
+            </p>
+
+            <button
+              onClick={this.handleReload}
+              className="mt-6 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            >
+              Обновить страницу
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
         <div className="max-w-lg w-full rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
