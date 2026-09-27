@@ -25,7 +25,7 @@ function makeTab({ throwOnLocationSet = false, closed = false } = {}) {
       href = v;
     },
   });
-  const tab = { location, closed, opener: 'not-null-yet' as unknown };
+  const tab = { location, closed, opener: 'not-null-yet' as unknown, close: vi.fn() };
   return { tab, getHref: () => href };
 }
 
@@ -48,6 +48,7 @@ describe('openPlatformPage', () => {
     expect(getHref()).toBe(MINTED_URL);
     expect(open).toHaveBeenCalledTimes(1); // only the synchronous about:blank open, no fallback
     expect(assign).not.toHaveBeenCalled();
+    expect(tab.close).not.toHaveBeenCalled();
   });
 
   it('iOS Safari: a pre-opened tab whose location setter throws falls back to the current tab', async () => {
@@ -62,6 +63,7 @@ describe('openPlatformPage', () => {
     await expect(openPlatformPage('sat', '/dashboard')).resolves.toBeUndefined();
 
     expect(assign).toHaveBeenCalledWith(MINTED_URL);
+    expect(tab.close).toHaveBeenCalledTimes(1); // no stray about:blank tab left behind
   });
 
   it('window.open throwing SecurityError falls back to the current tab', async () => {

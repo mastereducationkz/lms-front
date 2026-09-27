@@ -131,6 +131,12 @@ export async function openPlatformPage(track: PlatformTrack, path = '/'): Promis
     } catch {
       // SecurityError or similar: fall through and try a fresh tab, then the current one.
     }
+    // Don't leave the student a stray blank tab next to wherever the fallback lands.
+    try {
+      tab.close();
+    } catch {
+      // Nothing more to do: the fallbacks below still get the student there.
+    }
   }
   try {
     if (window.open(url, '_blank', 'noopener,noreferrer')) return;
