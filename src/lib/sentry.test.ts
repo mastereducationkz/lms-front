@@ -408,6 +408,30 @@ describe('noise is never reported', () => {
     expect(isIgnoredEvent(ev)).toBe(true);
   });
 
+  describe('Telegram in-app browser postEvent bridge (LMS-FRONT-3)', () => {
+    it('drops the exact observed message with no stack at all', () => {
+      const ev = { exception: { values: [{ type: 'Error', value: 'Error invoking postEvent: Method not found' }] } } as ErrorEvent;
+      expect(isIgnoredEvent(ev)).toBe(true);
+    });
+
+    it('drops it when the (only) frame is anonymous/injected', () => {
+      expect(isIgnoredEvent(errorEvent('Error', 'Error invoking postEvent: Method not found', '<anonymous>'))).toBe(true);
+    });
+
+    it('drops any postEvent bridge message, not just "Method not found"', () => {
+      expect(isIgnoredEvent(errorEvent('Error', 'Error invoking postEvent: some other reason', '<anonymous>'))).toBe(true);
+    });
+
+    it('keeps the same message when it is actually thrown from our own bundle', () => {
+      // Default `errorEvent` filename is under /assets/ — i.e. one of our own frames.
+      expect(isIgnoredEvent(errorEvent('Error', 'Error invoking postEvent: Method not found'))).toBe(false);
+    });
+
+    it('keeps an unrelated error untouched by this filter', () => {
+      expect(isIgnoredEvent(errorEvent('TypeError', "Cannot read properties of undefined (reading 'map')"))).toBe(false);
+    });
+  });
+
   it('drops any axios error by the original exception', () => {
     const ev = errorEvent('Error', 'Request failed with status code 500');
     expect(isIgnoredEvent(ev, { originalException: { isAxiosError: true } })).toBe(true);

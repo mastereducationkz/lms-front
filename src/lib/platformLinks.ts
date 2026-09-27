@@ -95,17 +95,56 @@ export async function resolvePlatformPageUrl(track: PlatformTrack, path = '/'): 
  *
  * The tab is opened synchronously (still inside the click) so popup blockers allow it,
  * then pointed at the handoff link once minted; if the browser refused the blank tab we
- * open the resolved URL directly as a last resort.
+ * open the resolved URL directly as a last resort, and if even that is blocked/throws we
+ * fall back to navigating the current tab so the student is never left stuck.
+ *
+ * iOS Safari (LMS-FRONT-2): nulling `opener` on the pre-opened tab can leave WebKit treating
+ * it as an unnavigable/foreign window, so later setting its `location` throws
+ * `SecurityError: The operation is insecure` instead of navigating. Every window/location
+ * operation below is therefore wrapped so that error (or a refused/blocked popup) degrades to
+ * same-tab navigation rather than leaving the student on a dead blank tab with no way through.
  */
 export async function openPlatformPage(track: PlatformTrack, path = '/'): Promise<void> {
-  const tab = typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null;
-  if (tab) tab.opener = null;
-  const url = await resolvePlatformPageUrl(track, path);
-  if (tab && !tab.closed) {
-    tab.location.href = url;
-    return;
+  let tab: Window | null = null;
+  if (typeof window !== 'undefined') {
+    try {
+      tab = window.open('about:blank', '_blank');
+    } catch {
+      tab = null;
+    }
   }
-  window.open(url, '_blank', 'noopener,noreferrer');
+  if (tab) {
+    try {
+      tab.opener = null;
+    } catch {
+      // Falls through to the location-assignment attempt below, which handles `tab` being left
+      // unusable by this the same way it handles the SecurityError case.
+    }
+  }
+  const url = await resolvePlatformPageUrl(track, path);
+  if (tab) {
+    try {
+      if (!tab.closed) {
+        tab.location.href = url;
+        return;
+      }
+    } catch {
+      // SecurityError or similar: fall through and try a fresh tab, then the current one.
+    }
+    // Don't leave the student a stray blank tab next to wherever the fallback lands.
+    try {
+      tab.close();
+    } catch {
+      // Nothing more to do: the fallbacks below still get the student there.
+    }
+  }
+  try {
+    if (window.open(url, '_blank', 'noopener,noreferrer')) return;
+  } catch {
+    // Popup blocked/refused — common once we're past the `await` above, outside the click's
+    // original gesture on mobile. Fall through to same-tab navigation.
+  }
+  window.location.assign(url);
 }
 
 /**
