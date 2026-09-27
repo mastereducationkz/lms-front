@@ -337,6 +337,11 @@ const IGNORED_MESSAGES: RegExp[] = [
 ];
 const IGNORED_TYPES = new Set(['AbortError', 'CanceledError', 'ChunkLoadError', 'AxiosError']);
 const EXTENSION_URL_RE = /^(chrome|moz|safari(-web)?|ms-browser)-extension:\/\/|^webkit-masked-url:/i;
+// Telegram's in-app browser injects a WebView JS bridge; calling a bridge method the host app
+// doesn't support throws this exact message. It's never our code, but unlike the minified
+// noise above it reads like a real sentence, so the bare-1-4-letter check below doesn't catch
+// it — it needs its own rule, still gated on the frames not being ours (see isIgnoredEvent).
+const POSTEVENT_BRIDGE_RE = /^Error invoking postEvent:/;
 
 function exceptionValues(event: ErrorEvent) {
   return event.exception?.values ?? [];
@@ -357,10 +362,16 @@ export function isIgnoredEvent(event: ErrorEvent, hint?: EventHint): boolean {
   // something injected into the page: an extension, or the Telegram/Instagram in-app browser
   // many students open links in (the SAT front learned this one: sentryEventFilter.js).
   const frames = values.flatMap((v) => v.stacktrace?.frames ?? []);
-  if (frames.length > 0 && !frames.some((f) => /\/assets\//.test(f.filename ?? ''))) return true;
+  const hasOurFrame = frames.some((f) => /\/assets\//.test(f.filename ?? ''));
+  if (frames.length > 0 && !hasOurFrame) return true;
   if (frames.length > 0 && frames.every((f) => EXTENSION_URL_RE.test(f.filename ?? ''))) return true;
   // No stack and a bare 1-4 letter "message" (`Error: Ea`): minified injected code, not ours.
   if (frames.length === 0 && values.some((v) => /^[A-Za-z]{1,4}$/.test(v.value ?? ''))) return true;
+  // Telegram's postEvent bridge (see POSTEVENT_BRIDGE_RE above): only when it's not already
+  // caught above by having a stack with no frame in our bundle (frames.length === 0 is the
+  // uncaught case — the observed report had no stack at all). A real error with this exact
+  // text thrown from OUR code (a frame under /assets/) must still report.
+  if (!hasOurFrame && texts.some((t) => POSTEVENT_BRIDGE_RE.test(t))) return true;
   // A cross-origin script error carries no information at all.
   if (!values.length && /^Script error\.?$/i.test(event.message ?? '')) return true;
   return false;
