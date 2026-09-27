@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { chunkReloadGuardFired, isChunkReloadUnderway, registerPwa, shouldReloadOnPreloadError } from './pwa';
+import { describe, expect, it, vi } from 'vitest';
+import { chunkReloadGuardFired, isChunkReloadUnderway, pickRegisterSW, registerPwa, shouldReloadOnPreloadError } from './pwa';
 
 // This repo's vitest runs in a plain Node environment (no jsdom, no `window`/`sessionStorage`
 // — see vitest.config.ts), so the `vite:preloadError` listener itself can't be dispatched
@@ -60,5 +60,22 @@ describe('isChunkReloadUnderway', () => {
 describe('registerPwa', () => {
   it('is a no-op outside a browser (no window/serviceWorker), so it is safe to import and call here', () => {
     expect(() => registerPwa()).not.toThrow();
+  });
+});
+
+describe('pickRegisterSW (LMS-FRONT-4)', () => {
+  it('is null when the import resolved to undefined (a deleted chunk right after a deploy)', () => {
+    expect(pickRegisterSW(undefined)).toBeNull();
+    expect(pickRegisterSW(null)).toBeNull();
+  });
+
+  it('is null when the module has no callable registerSW', () => {
+    expect(pickRegisterSW({})).toBeNull();
+    expect(pickRegisterSW({ registerSW: 'nope' as unknown as () => void })).toBeNull();
+  });
+
+  it('returns the real registerSW untouched', () => {
+    const registerSW = vi.fn();
+    expect(pickRegisterSW({ registerSW })).toBe(registerSW);
   });
 });

@@ -114,6 +114,19 @@ export function applyPendingPwaUpdate(): void {
 }
 
 /**
+ * The `registerSW` export of the `virtual:pwa-register` module, or null when the import came
+ * back without one (LMS-FRONT-4). Right after a deploy the old build's chunk for that module can
+ * be gone: the `vite:preloadError` handler below then prevents the default and reloads the tab,
+ * and Vite's preload helper resolves the import with `undefined` instead of rejecting.
+ * Destructuring that threw `Cannot destructure property 'registerSW' of 'undefined'`; skipping
+ * registration for this page load is right, since the reload onto the fresh build registers.
+ */
+export function pickRegisterSW<F>(mod: { registerSW?: F } | null | undefined): F | null {
+  const registerSW = mod?.registerSW
+  return typeof registerSW === 'function' ? registerSW : null
+}
+
+/**
  * Registers the service worker. New builds are detected proactively
  * (registration.update() on an interval + on tab focus) and then applied at the
  * next safe moment (tab hidden / navigation), with a toast for immediate opt-in.
@@ -148,7 +161,9 @@ export function registerPwa(): void {
   // pure helpers/flag above that lazyRoute.ts depends on — stay importable outside a Vite
   // build: `virtual:pwa-register` only exists as a module the VitePWA plugin injects, and
   // this repo's vitest config deliberately doesn't load that plugin (see vitest.config.ts).
-  import('virtual:pwa-register').then(({ registerSW }) => {
+  import('virtual:pwa-register').then((mod) => {
+    const registerSW = pickRegisterSW(mod)
+    if (!registerSW) return
     registerSW({
       immediate: true,
       onNeedRefresh() {
@@ -197,5 +212,8 @@ export function registerPwa(): void {
         console.error('Service worker registration failed:', error)
       },
     })
+  }).catch(() => {
+    // The import itself failed (a stale chunk, offline): skip registration for this page load;
+    // the next load, on the current build, registers.
   })
 }
