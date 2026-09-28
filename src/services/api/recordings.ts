@@ -84,6 +84,9 @@ export async function getLessonRecording(eventId: number): Promise<LessonRecordi
 }
 
 
+/** Lessons and webinars are recorded alike but listed on separate pages; the server defaults to lessons. */
+export type RecordingsKind = 'lesson' | 'webinar';
+
 /** One card in the Recordings library. Times are UTC ISO strings with a Z. */
 export interface RecordingLibraryItem {
   event_id: number;
@@ -92,6 +95,10 @@ export interface RecordingLibraryItem {
   start_datetime: string;
   end_datetime: string;
   groups: { id: number; name: string }[];
+  /** 'class' or 'webinar'. Absent from an older server. */
+  event_type?: string;
+  /** The courses a webinar is for. Absent from an older server. */
+  courses?: { id: number; title: string }[];
   teacher: { id: number; name: string | null } | null;
   status: RecordingStatus;
   duration_seconds: number | null;
@@ -141,6 +148,8 @@ export interface RecordingFacets {
   /** Includes completed and archived groups: recording history must remain findable. */
   groups: { id: number; name: string; is_active: boolean | null; is_over: boolean | null }[];
   teachers: { id: number; name: string | null }[];
+  /** Courses of the viewer's webinars. Absent from an older server. */
+  courses?: { id: number; title: string }[];
 }
 
 export interface RecordingLibraryPage {
@@ -160,6 +169,8 @@ export interface RecordingLibraryQuery {
   q?: string;
   group_id?: number | null;
   teacher_id?: number | null;
+  course_id?: number | null;
+  kind?: RecordingsKind;
   period?: RecordingPeriod;
   status?: 'ready' | 'pending' | 'failed' | null;
   /** One Almaty day, "YYYY-MM-DD"; the server lets it win over `period`. */
@@ -231,9 +242,10 @@ export interface RecordingDays {
   total: number;
 }
 
-export type RecordingDaysQuery = Pick<RecordingLibraryQuery, 'q' | 'group_id' | 'teacher_id' | 'status'> & {
-  month: string;
-};
+export type RecordingDaysQuery =
+  Pick<RecordingLibraryQuery, 'q' | 'group_id' | 'teacher_id' | 'course_id' | 'kind' | 'status'> & {
+    month: string;
+  };
 
 /** The date picker's marks, under the list's own filters (not its period or date). */
 export async function listRecordingDays(query: RecordingDaysQuery): Promise<RecordingDays> {

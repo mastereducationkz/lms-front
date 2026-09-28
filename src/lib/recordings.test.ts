@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Event } from '../types';
 import {
   almatyDayKey, dayHeading, formatClock, formatDurationWords, groupByDay, matchesRecordingFilter,
-  parseWatchParam, splitLessonTitle, timeRange,
+  parseWatchParam, recordingHeading, splitLessonTitle, timeRange,
 } from './recordings';
 
 const lesson = (over: Partial<Event> = {}): Event =>
@@ -127,6 +127,18 @@ describe('the calendar Recordings filter', () => {
   it('includes webinars in the recording filters', () => {
     expect(matchesRecordingFilter(webinar, 'with', now)).toBe(true);
     expect(matchesRecordingFilter(webinar, 'without', now)).toBe(false);
+  });
+});
+
+describe('recordingHeading', () => {
+  it('keeps a webinar title whole, even with a dash in it', () => {
+    expect(recordingHeading({ title: 'SAT Masterclass - Разбор пробника', event_type: 'webinar', groups: [{ name: 'July 8 SAT - Gulzada' }] }))
+      .toEqual({ name: 'SAT Masterclass - Разбор пробника', lesson: null });
+  });
+
+  it('reads a lesson the way splitLessonTitle does', () => {
+    expect(recordingHeading({ title: 'July 8 SAT - Gulzada: Lesson 29', event_type: 'class' }, 'ru'))
+      .toEqual({ name: 'July 8 SAT', lesson: 'Урок 29' });
   });
 });
 

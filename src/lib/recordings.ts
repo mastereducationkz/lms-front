@@ -135,6 +135,18 @@ export function splitLessonTitle(
 }
 
 /**
+ * A recording's heading. A webinar is named by its own title — it is for a course, not a group,
+ * and its title is not "<group>: Lesson N" — so it is never split or cut at a dash.
+ */
+export function recordingHeading(
+  item: { title: string; event_type?: string | null; groups?: { name: string }[] | null },
+  locale: Locale = 'en',
+): { name: string; lesson: string | null } {
+  if (item.event_type === 'webinar') return { name: item.title, lesson: null };
+  return splitLessonTitle(item.title, item.groups, locale);
+}
+
+/**
  * The calendar's "Recordings" filter. It is about lessons, so any other event falls out of
  * both choices. "With" includes a recording still being processed — it has one, it is on its
  * way. "Without" means a lesson that has ended and left nothing to watch; a lesson still ahead
