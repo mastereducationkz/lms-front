@@ -57,6 +57,12 @@ export function RegisterReportPanel({ refreshKey }: { refreshKey?: unknown }) {
                 <th className="px-3 py-2 text-right font-medium" title="Meet disagrees with the teacher's mark about attending">Contradicts</th>
                 <th className="px-3 py-2 text-right font-medium">Waited</th>
                 <th className="px-3 py-2 text-right font-medium">Changed after Meet</th>
+                {live && (
+                  <th className="px-3 py-2 text-right font-medium"
+                    title="Lessons Meet marked where a present student had no activity score by 23:59 (Almaty) of the lesson's day. In brackets: lessons still in time today.">
+                    No scores
+                  </th>
+                )}
                 <th className="px-4 py-2 font-medium">Left alone</th>
               </tr>
             </thead>
@@ -69,6 +75,12 @@ export function RegisterReportPanel({ refreshKey }: { refreshKey?: unknown }) {
                   <td className={cn('px-3 py-2 text-right tabular-nums', row.changes > 0 && 'font-semibold text-rose-700 dark:text-rose-300')}>{row.changes}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{row.held}</td>
                   <td className="px-3 py-2 text-right tabular-nums">{row.overrides}</td>
+                  {live && (
+                    <td className="px-3 py-2 text-right tabular-nums">
+                      <span className={cn((row.scores_missed ?? 0) > 0 && 'font-semibold text-rose-700 dark:text-rose-300')}>{row.scores_missed ?? 0}</span>
+                      {(row.scores_open ?? 0) > 0 && <span className="ml-1 text-xs text-muted-foreground">(+{row.scores_open})</span>}
+                    </td>
+                  )}
                   <td className="px-4 py-2 text-xs text-muted-foreground">{leftAlone(row)}</td>
                 </tr>
               ))}

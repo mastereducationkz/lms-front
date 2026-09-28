@@ -1,4 +1,5 @@
-import { Clock, Copy, ExternalLink, MapPin, Video, Users } from 'lucide-react';
+import { useState } from 'react';
+import { Clock, Copy, ExternalLink, MapPin, Star, Video, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { openPlatformPage, parsePlatformUrl } from '../../lib/platformLinks';
 import { meetInvitationText, meetJoinUrl } from '../../lib/meetLinks';
@@ -6,6 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import ClassMaterialsSection from '../class-materials/ClassMaterialsSection';
 import LessonRecordingSection from './LessonRecordingSection';
 import MeetAttendanceSection from './MeetAttendanceSection';
+import LessonScoresDialog from '../attendance/LessonScoresDialog';
+import { lessonStarted } from '../../lib/lessonScores';
 import type { Event, LessonRequest } from '../../types';
 import { cx, formatTime, eventStyle, typeLabel, isSubstitutedForTeacher } from './calendarUtils';
 import { substitutionBadge } from '../../lib/substitutionBadge';
@@ -21,7 +24,11 @@ interface Props {
   onRequest: (type: RequestType, event: Event) => void;
 }
 
+// Who scores a lesson from its card: whoever may take its register (the server checks the lesson).
+const SCORERS = new Set(['teacher', 'head_teacher', 'admin']);
+
 export default function EventDetailDialog({ event, open, onOpenChange, user, myRequests, onRequest }: Props) {
+  const [scoring, setScoring] = useState(false);
   if (!event) return null;
   // Auto-managed weekly-test events link to the set page on the platform: open it signed in.
   const platformLink = event.event_type === 'weekly_test' ? parsePlatformUrl(event.meeting_url) : null;
@@ -39,6 +46,9 @@ export default function EventDetailDialog({ event, open, onOpenChange, user, myR
     !event.is_substitution &&
     !!event.group_ids?.length;
   const existing = myRequests.get(event.id);
+  // «Баллы за урок» (2026-09-28): from the lesson's start — Meet marks attendance 20–30 min after the end.
+  const canScore = event.event_type === 'class' && SCORERS.has(user?.role ?? '') && !sub
+    && !!event.group_ids?.length && lessonStarted(event.start_datetime);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -156,6 +166,28 @@ export default function EventDetailDialog({ event, open, onOpenChange, user, myR
           {(event.event_type === 'class' || event.event_type === 'webinar') && <LessonRecordingSection event={event} />}
           {event.event_type === 'class' && <ClassMaterialsSection eventId={event.id} />}
           {event.event_type === 'class' && <MeetAttendanceSection event={event} role={user?.role} />}
+
+          {canScore && (
+            <button
+              type="button"
+              onClick={() => setScoring(true)}
+              className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-1.5 text-xs font-semibold text-yellow-800 transition hover:bg-yellow-100 dark:border-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300 dark:hover:bg-yellow-900/40"
+            >
+              <Star className="h-3.5 w-3.5" aria-hidden />
+              Activity scores
+            </button>
+          )}
+          {scoring && (
+            <LessonScoresDialog
+              open
+              onOpenChange={(next) => { if (!next) setScoring(false); }}
+              eventId={event.id}
+              start={event.start_datetime}
+              title={event.title}
+              en={user?.role === 'teacher'}
+              onSaved={() => toast.success(user?.role === 'teacher' ? 'Scores saved' : 'Баллы сохранены')}
+            />
+          )}
 
           {canAct && (
             <div className="mt-5 border-t border-border pt-4">

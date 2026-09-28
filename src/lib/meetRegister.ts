@@ -151,7 +151,9 @@ export function registerSummary(total: RegisterCounts, live: boolean): string {
   const lessons = plural(total.lessons, 'lesson', 'lessons');
   const marks = plural(total.writes, 'mark', 'marks');
   const students = plural(total.held, 'student', 'students');
+  const missed = total.scores_missed ?? 0;
   return live
     ? `${lessons} · Meet wrote ${marks} · ${students} waited for a teacher · ${total.overrides} changed after Meet`
+      + (missed ? ` · ${plural(missed, 'lesson', 'lessons')} without activity scores` : '')
     : `${lessons} · Meet would write ${marks} · ${total.changes} would contradict the teacher (present ↔ absent) · ${students} would wait for a teacher`;
 }

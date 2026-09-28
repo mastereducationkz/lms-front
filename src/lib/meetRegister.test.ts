@@ -117,4 +117,9 @@ describe('registerSummary', () => {
     expect(registerSummary(counts(), false))
       .toBe('1 lesson · Meet would write 1 mark · 1 would contradict the teacher (present ↔ absent) · 1 student would wait for a teacher');
   });
+  it('adds lessons left without activity scores, live only', () => {
+    expect(registerSummary(counts({ scores_missed: 2, scores_open: 1 }), true))
+      .toBe('1 lesson · Meet wrote 1 mark · 1 student waited for a teacher · 1 changed after Meet · 2 lessons without activity scores');
+    expect(registerSummary(counts({ scores_missed: 0 }), true)).not.toContain('scores');
+  });
 });
