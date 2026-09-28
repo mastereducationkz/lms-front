@@ -44,6 +44,7 @@ import { safeUploadUrl } from '../lib/mediaUrl';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { WeeklyAwardsHub } from '../components/gamification/WeeklyAwardsHub';
+import TodayLessons from '../components/dashboard/TodayLessons';
 
 interface TeacherStats {
   total_courses: number;
@@ -985,6 +986,8 @@ export default function TeacherDashboard() {
         </div>
       </div>
 
+      {/* The teacher's day first: each of today's lessons, what it still needs, and «Join» (2026-09-28). */}
+      <TodayLessons role={user?.role} workspaceEmail={(user as { workspace_email?: string | null } | null)?.workspace_email} />
 
       {/* Key Stats - Student Dynamics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
