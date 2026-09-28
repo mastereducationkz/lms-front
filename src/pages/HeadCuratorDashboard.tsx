@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../services/api';
+import { lessonPath } from '../lib/lessonLinks';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Calendar } from '../components/ui/calendar';
@@ -242,7 +243,10 @@ export default function HeadCuratorDashboard() {
             {stats.missing_attendance_reminders.slice(0, 3).map((reminder: any) => (
               <div key={reminder.event_id} className="flex items-center justify-between text-xs py-1.5 border-b border-yellow-100 dark:border-yellow-800 last:border-0">
                 <div className="flex-1 min-w-0 mr-3">
-                  <p className="text-yellow-900 dark:text-yellow-300 truncate font-medium">{reminder.title}</p>
+                  {/* The lesson's own page, at its register (2026-09-28). */}
+                  <Link to={lessonPath(reminder.event_id, 'register')} className="block text-yellow-900 dark:text-yellow-300 truncate font-medium hover:underline">
+                    {reminder.title}
+                  </Link>
                   <p className="text-[11px] text-yellow-700 dark:text-yellow-400">
                     {reminder.group_name} • {new Date(reminder.event_date).toLocaleDateString('ru-RU')}
                   </p>

@@ -1,54 +1,39 @@
-import { useState } from 'react';
-import { Clock, Copy, ExternalLink, MapPin, Star, Video, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowRight, Clock, Copy, ExternalLink, MapPin, Video, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { openPlatformPage, parsePlatformUrl } from '../../lib/platformLinks';
 import { meetInvitationText, meetJoinUrl } from '../../lib/meetLinks';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
-import ClassMaterialsSection from '../class-materials/ClassMaterialsSection';
 import LessonRecordingSection from './LessonRecordingSection';
-import MeetAttendanceSection from './MeetAttendanceSection';
-import LessonScoresDialog from '../attendance/LessonScoresDialog';
-import { lessonStarted } from '../../lib/lessonScores';
-import type { Event, LessonRequest } from '../../types';
-import { cx, formatTime, eventStyle, typeLabel, isSubstitutedForTeacher } from './calendarUtils';
+import { lessonPath } from '../../lib/lessonLinks';
+import type { Event } from '../../types';
+import { cx, formatTime, eventStyle, typeLabel } from './calendarUtils';
 import { substitutionBadge } from '../../lib/substitutionBadge';
-
-export type RequestType = 'substitution' | 'reschedule' | 'cancel';
 
 interface Props {
   event: Event | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   user: { id?: number | string; role?: string; workspace_email?: string | null } | null | undefined;
-  myRequests: Map<number, LessonRequest>;
-  onRequest: (type: RequestType, event: Event) => void;
 }
 
-// Who scores a lesson from its card: whoever may take its register (the server checks the lesson).
-const SCORERS = new Set(['teacher', 'head_teacher', 'admin']);
-
-export default function EventDetailDialog({ event, open, onOpenChange, user, myRequests, onRequest }: Props) {
-  const [scoring, setScoring] = useState(false);
+/**
+ * The calendar's lesson card. A class lesson's card is short since 2026-09-28 — when, which group,
+ * «Join» and «Open lesson →»: materials, the recording, the register and scores, Meet details, notes
+ * and the teacher's requests all live on the lesson's own page (/lessons/:id). Webinars and other
+ * events keep their card as it was.
+ */
+export default function EventDetailDialog({ event, open, onOpenChange, user }: Props) {
   if (!event) return null;
   // Auto-managed weekly-test events link to the set page on the platform: open it signed in.
   const platformLink = event.event_type === 'weekly_test' ? parsePlatformUrl(event.meeting_url) : null;
   const s = eventStyle(event);
-  const sub = isSubstitutedForTeacher(event, user);
+  const isClass = event.event_type === 'class';
   // What this lesson's substitution means for whoever is reading it.
   const badge = substitutionBadge(event, user);
   const dateLabel = new Date(event.start_datetime).toLocaleDateString('en-US', {
     weekday: 'long', day: 'numeric', month: 'long',
   });
-  const canAct =
-    (user?.role === 'teacher' || user?.role === 'admin') &&
-    event.event_type === 'class' &&
-    !sub &&
-    !event.is_substitution &&
-    !!event.group_ids?.length;
-  const existing = myRequests.get(event.id);
-  // «Баллы за урок» (2026-09-28): from the lesson's start — Meet marks attendance 20–30 min after the end.
-  const canScore = event.event_type === 'class' && SCORERS.has(user?.role ?? '') && !sub
-    && !!event.group_ids?.length && lessonStarted(event.start_datetime);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -163,64 +148,18 @@ export default function EventDetailDialog({ event, open, onOpenChange, user, myR
             </div>
           )}
 
-          {(event.event_type === 'class' || event.event_type === 'webinar') && <LessonRecordingSection event={event} />}
-          {event.event_type === 'class' && <ClassMaterialsSection eventId={event.id} />}
-          {event.event_type === 'class' && <MeetAttendanceSection event={event} role={user?.role} />}
+          {/* A webinar keeps its recording on the card; a class lesson's lives on its page. */}
+          {event.event_type === 'webinar' && <LessonRecordingSection event={event} />}
 
-          {canScore && (
-            <button
-              type="button"
-              onClick={() => setScoring(true)}
-              className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-1.5 text-xs font-semibold text-yellow-800 transition hover:bg-yellow-100 dark:border-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300 dark:hover:bg-yellow-900/40"
+          {isClass && (
+            <Link
+              to={lessonPath(event.id)}
+              onClick={() => onOpenChange(false)}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              <Star className="h-3.5 w-3.5" aria-hidden />
-              Activity scores
-            </button>
-          )}
-          {scoring && (
-            <LessonScoresDialog
-              open
-              onOpenChange={(next) => { if (!next) setScoring(false); }}
-              eventId={event.id}
-              start={event.start_datetime}
-              title={event.title}
-              en={user?.role === 'teacher'}
-              onSaved={() => toast.success(user?.role === 'teacher' ? 'Scores saved' : 'Баллы сохранены')}
-            />
-          )}
-
-          {canAct && (
-            <div className="mt-5 border-t border-border pt-4">
-              {existing ? (
-                <div className="w-fit rounded-md bg-yellow-50 px-2.5 py-1.5 text-xs font-semibold text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">
-                  Request {existing.status.replace('_', ' ')}
-                </div>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() => onRequest('substitution', event)}
-                    className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-muted"
-                  >
-                    Find substitute
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onRequest('reschedule', event)}
-                    className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-muted"
-                  >
-                    Reschedule
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onRequest('cancel', event)}
-                    className="rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-rose-600 transition hover:bg-muted dark:text-rose-400"
-                  >
-                    Cancel lesson
-                  </button>
-                </div>
-              )}
-            </div>
+              Open lesson / Открыть урок
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
           )}
         </div>
       </DialogContent>

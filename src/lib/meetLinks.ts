@@ -1,3 +1,4 @@
+import { lessonUrl } from './lessonLinks';
 import { ALMATY_TZ, splitLessonTitle, timeRange } from './recordings';
 
 /**
@@ -41,8 +42,13 @@ export function meetJoinUrl(url: string | null | undefined, workspaceEmail?: str
  * whenever someone opens the chat. The link is the lesson's own clean Meet link — never the
  * viewer's Join link, which may carry their account (?authuser=…) and would ask every
  * student to sign in as the teacher.
+ *
+ * With the lesson's id it also links the lesson's own page (2026-09-28) — materials and the
+ * recording live there. The line is the backend's ``invitation_text`` word for word: the bot's
+ * 5-minutes-before post and this copy button must send the same text.
  */
 export function meetInvitationText(lesson: {
+  id?: number | null;
   title: string;
   groups?: string[] | null;
   start_datetime: string;
@@ -62,6 +68,7 @@ export function meetInvitationText(lesson: {
     number ? `${name}, ${number.toLowerCase()}` : name,
     `${day[0].toLocaleUpperCase()}${day.slice(1)}, ${timeRange(lesson.start_datetime, lesson.end_datetime)} (время Алматы)`,
     `Google Meet: ${lesson.meeting_url}`,
+    ...(lesson.id ? [`Материалы и запись: ${lessonUrl(lesson.id)}`] : []),
     'Подключайтесь за пару минут до начала.',
   ].join('\n');
 }

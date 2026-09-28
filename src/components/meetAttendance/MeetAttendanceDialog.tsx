@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { ArrowUpRight, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { clock } from '../../lib/meetAttendance';
 import { APP_TIMEZONE } from '../../lib/datetime';
+import { lessonPath } from '../../lib/lessonLinks';
 import { recordingsLocale } from '../../lib/recordings';
 import { useAuth } from '../../contexts/AuthContext';
 import RecordingPlayerDialog from '../recordings/RecordingPlayerDialog';
@@ -38,6 +40,9 @@ export default function MeetAttendanceDialog({ eventId, open, onOpenChange, init
   useEffect(() => { if (open) setTab(initialTab); }, [open, eventId, initialTab]);
 
   const { record, loading, failed, busyId, confirm, confirmMany, reviewing, applyVerdicts, applying } = useMeetRecord(eventId, open);
+  // The lesson's own page — unless this dialog was opened from it.
+  const { pathname } = useLocation();
+  const lessonHref = eventId != null ? lessonPath(eventId) : null;
   const { talk, loading: talkLoading, failed: talkFailed } = useLessonTalk(eventId, open);
   const stateText = recordStateText(record);
   // A switched-off feature is only news to the admin who can switch it on.
@@ -60,6 +65,11 @@ export default function MeetAttendanceDialog({ eventId, open, onOpenChange, init
           <DialogDescription>
             {start && end ? `${dateLabel(start)} · ${clock(start)}–${clock(end)} (Almaty)` : ' '}
           </DialogDescription>
+          {lessonHref && pathname !== lessonHref && (
+            <Link to={lessonHref} className="inline-flex w-fit items-center gap-1 text-xs font-semibold text-primary hover:underline">
+              Open lesson <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+            </Link>
+          )}
           {recording?.status === 'ready' && (
             <WatchRecordingButton label="Watch recording" durationSeconds={recording.duration_seconds}
               onWatch={() => setWatching(true)} className="w-fit" />

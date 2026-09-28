@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext.tsx';
 import apiClient from '../../services/api';
 import { toast } from '../../components/Toast.tsx';
@@ -13,7 +13,8 @@ import {
   Award,
   ExternalLink,
   X,
-  Mic
+  Mic,
+  ArrowUpRight
 } from 'lucide-react';
 import type { Assignment, AssignmentStatus, Submission } from '../../types/index.ts';
 import { Button } from '../../components/ui/button.tsx';
@@ -28,6 +29,7 @@ import { AudioPlayer } from '../../components/AudioPlayer';
 import { formatAssignmentStatus } from '../../lib/assignmentStatus';
 import { UploadFailedError } from '../../lib/uploadFailure';
 import { safeLinkUrl, safeUploadUrl } from '../../lib/mediaUrl';
+import { lessonPath } from '../../lib/lessonLinks';
 
 export default function AssignmentPage() {
   const { id } = useParams<{ id: string }>();
@@ -902,6 +904,13 @@ export default function AssignmentPage() {
                 {isOverdue && <AlertCircle className="w-4 h-4" />}
               </div>
             )}
+            {/* The lesson this homework was set on (2026-09-28): its materials, recording and recap. */}
+            {assignment.event_id ? (
+              <Link to={lessonPath(assignment.event_id, 'homework')} className="flex items-center space-x-1 font-medium text-primary hover:underline">
+                <ArrowUpRight className="w-4 h-4" aria-hidden />
+                <span>Open lesson</span>
+              </Link>
+            ) : null}
             {extension && (
               <div className="flex items-center space-x-2 text-green-600 dark:text-green-400">
                 <Calendar className="w-4 h-4" />

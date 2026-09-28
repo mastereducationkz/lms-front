@@ -38,6 +38,7 @@ import DailyQuestionsPopup from '../components/DailyQuestionsPopup';
 import ExamCountdown from "../components/ExamCountdown";
 import SampleBadge from "../components/trial/SampleBadge";
 import { TRIAL_SAMPLE_SESSIONS, TRIAL_SAMPLE_TASKS } from "../data/trialSampleData";
+import { lessonPath } from '../lib/lessonLinks';
 
 interface StudentDashboardProps {
   firstName: string;
@@ -987,7 +988,8 @@ export default function StudentDashboard({
                               if (deadline.type === 'assignment' && 'assignmentId' in deadline) {
                                 navigate(`/homework/${deadline.assignmentId}`)
                               } else if (deadline.type === 'event' && 'eventId' in deadline) {
-                                navigate(`/calendar`)
+                                // A class lesson opens its own page (2026-09-28); other events the calendar.
+                                navigate(deadline.eventType === 'class' ? lessonPath(deadline.eventId) : `/calendar`)
                               }
                             }}
                           >

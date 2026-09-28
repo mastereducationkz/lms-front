@@ -1,4 +1,7 @@
+import { Link } from 'react-router-dom';
+import { ArrowUpRight } from 'lucide-react';
 import { lessonHeading, pendingAfterClass, t, type Locale } from '../../lib/classMaterials';
+import { lessonPath } from '../../lib/lessonLinks';
 import type { FeedLessonEntry, MaterialItem } from '../../services/api/classMaterials';
 import MaterialRow from './MaterialRow';
 
@@ -29,7 +32,15 @@ export default function LessonMaterialsCard({ entry, locale, onOpenItem, highlig
     >
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="min-w-0 flex-1 line-clamp-2 break-words text-sm font-semibold text-foreground">
-          {lessonHeading(lesson, locale)}
+          {/* The heading opens the lesson's own page, at its materials (2026-09-28). */}
+          <Link
+            to={lessonPath(lesson.id, 'materials')}
+            className="group/lesson inline-flex items-start gap-1 hover:text-primary hover:underline"
+            title={locale === 'ru' ? 'Открыть урок' : 'Open lesson'}
+          >
+            {lessonHeading(lesson, locale)}
+            <ArrowUpRight className="mt-0.5 h-3.5 w-3.5 flex-none text-muted-foreground group-hover/lesson:text-primary" aria-hidden />
+          </Link>
         </h3>
         {!lesson.is_active && (
           <span className="flex-none rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">

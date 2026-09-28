@@ -14,14 +14,14 @@ import {
 import Loader from '../components/Loader';
 import { SearchableSelect } from '../components/ui/searchable-select';
 import {
-  getCalendarEvents, getTeacherGroups, getCuratorGroups, getGroups, getMyLessonRequests,
+  getCalendarEvents, getTeacherGroups, getCuratorGroups, getGroups,
 } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import type { Event, EventType, LessonRequest } from '../types';
+import type { Event, EventType } from '../types';
 import MonthView from '../components/calendar/MonthView';
 import WeekView from '../components/calendar/WeekView';
 import AgendaView from '../components/calendar/AgendaView';
-import EventDetailDialog, { type RequestType } from '../components/calendar/EventDetailDialog';
+import EventDetailDialog from '../components/calendar/EventDetailDialog';
 import RecordingPlayerDialog, { type RecordingMeta } from '../components/recordings/RecordingPlayerDialog';
 import {
   cx, formatTime, styleFor, eventStyle, eventTitle, typeLabel,
@@ -67,7 +67,6 @@ export default function Calendar() {
   // Finished groups (and their lessons, past included) are hidden by default since
   // recordings moved to their own calendar (/recordings) — this is the opt-in to see them.
   const [showArchived, setShowArchived] = useState(false);
-  const [myRequests, setMyRequests] = useState<Map<number, LessonRequest>>(new Map());
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [dayPeek, setDayPeek] = useState<Date | null>(null);
   // Set when the week view's hour tile opened the day list: show just that hour.
@@ -130,18 +129,11 @@ export default function Calendar() {
         .filter((m) => m.year >= 2020 && m.year <= 2030);
 
       // allSettled, not all: a single month failing (e.g. a 500) must not blank
-      // the whole calendar — keep the months that loaded.
-      // The requests fetch failing must not blank the calendar — it only powers
-      // the substitution badges, so degrade to an empty list.
-      const [monthResults, requests] = await Promise.all([
-        Promise.allSettled(months.map((m) => getCalendarEvents(m.year, m.month, showArchived))),
-        user?.role === 'teacher'
-          ? getMyLessonRequests().catch((e) => {
-              console.error('Failed to load lesson requests for calendar:', e);
-              return [] as LessonRequest[];
-            })
-          : Promise.resolve([]),
-      ]);
+      // the whole calendar — keep the months that loaded. Lesson requests used to load
+      // here for the card's request buttons; they live on the lesson page now.
+      const monthResults = await Promise.allSettled(
+        months.map((m) => getCalendarEvents(m.year, m.month, showArchived)),
+      );
 
       const byId = new Map<number, Event>();
       monthResults.forEach((r) => {
@@ -149,12 +141,6 @@ export default function Calendar() {
         else console.error('Failed to load a calendar month:', r.reason);
       });
       setEvents([...byId.values()]);
-
-      const reqMap = new Map<number, LessonRequest>();
-      requests.forEach((r) => {
-        if (r.event_id) reqMap.set(r.event_id, r);
-      });
-      setMyRequests(reqMap);
     } catch (e) {
       console.error('Failed to load calendar events:', e);
     } finally {
@@ -238,18 +224,6 @@ export default function Calendar() {
       teacher: event.teacher_name ?? null,
       durationSeconds: event.recording?.duration_seconds ?? null,
     });
-  };
-
-  const onRequest = (type: RequestType, event: Event) => {
-    const params = new URLSearchParams({
-      type,
-      event_id: String(event.id),
-      group_id: String(event.group_ids?.[0] || 0),
-      title: event.title,
-      datetime: event.start_datetime,
-    });
-    setSelectedEvent(null);
-    navigate(`/lesson-requests/new?${params.toString()}`);
   };
 
   const canCreate = user?.role === 'admin' || user?.role === 'curator';
@@ -583,8 +557,6 @@ export default function Calendar() {
         open={!!selectedEvent}
         onOpenChange={(o) => !o && setSelectedEvent(null)}
         user={user}
-        myRequests={myRequests}
-        onRequest={onRequest}
       />
 
       <RecordingPlayerDialog
