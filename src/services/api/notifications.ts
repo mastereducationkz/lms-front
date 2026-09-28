@@ -24,7 +24,10 @@ function typesParams(types: string[]): Record<string, string> {
 
 export async function getNotifications(types: string[]): Promise<AppNotification[]> {
   const response = await api.get('/notifications', { params: typesParams(types), cache: false } as never);
-  return response.data as AppNotification[];
+  // Anything but a list (an empty body after a dropped request, an error envelope, a proxy's
+  // HTML page) is "no notifications", never a value that crashes `.some`/`.map` in the bell
+  // and takes the page down with it (LMS-FRONT-5).
+  return Array.isArray(response?.data) ? (response.data as AppNotification[]) : [];
 }
 
 export async function getUnreadNotificationCount(types: string[]): Promise<number> {
@@ -32,7 +35,8 @@ export async function getUnreadNotificationCount(types: string[]): Promise<numbe
     params: typesParams(types),
     cache: false,
   } as never);
-  return (response.data?.count ?? 0) as number;
+  const count = response?.data?.count;
+  return typeof count === 'number' && Number.isFinite(count) && count > 0 ? count : 0;
 }
 
 export async function markNotificationRead(id: number): Promise<void> {
