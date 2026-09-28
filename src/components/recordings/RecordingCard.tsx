@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Check, Play, User, Video } from 'lucide-react';
+import { Check, Eye, Play, User, Video } from 'lucide-react';
 import type { RecordingLibraryItem } from '../../services/api/recordings';
 import { formatClock, recordingHeading, timeRange, type Locale } from '../../lib/recordings';
 import { badgeText, overallPercent, progressFor, stageTitle } from '../../lib/recordingProgress';
+import { viewsHint, viewsLine } from '../../lib/recordingViews';
 import { cx } from '../calendar/calendarUtils';
 import { ProgressBar, RecordingCardStage, RecordingStageBadge } from './RecordingProgress';
 
@@ -45,6 +46,8 @@ export default function RecordingCard({ item, locale, onOpen, substitutionFor }:
   const ready = item.status === 'ready';
   const poster = ready && item.poster_url && !posterBroken ? mediaUrl(item.poster_url) : null;
   const progress = ready ? null : progressFor(item.status, item.progress);
+  // Who watched it — the server sends this to staff only (2026-09-28).
+  const views = ready ? viewsLine(item.views, locale) : null;
 
   // A card that turns watchable while in view says so for a moment.
   const previous = useRef(item.status);
@@ -64,7 +67,7 @@ export default function RecordingCard({ item, locale, onOpen, substitutionFor }:
     <button
       type="button"
       onClick={() => onOpen(item)}
-      aria-label={[name, lesson, timeRange(item.start_datetime, item.end_datetime), clock, progress && badgeText(progress, locale)]
+      aria-label={[name, lesson, timeRange(item.start_datetime, item.end_datetime), clock, progress && badgeText(progress, locale), views]
         .filter(Boolean).join(', ')}
       className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
@@ -149,6 +152,12 @@ export default function RecordingCard({ item, locale, onOpen, substitutionFor }:
         )}
         {substitutionFor && (
           <span className="mt-0.5 line-clamp-1 text-[12px] text-muted-foreground">{t.substitution(substitutionFor)}</span>
+        )}
+        {views && (
+          <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[12.5px] tabular-nums text-muted-foreground" title={viewsHint(locale)}>
+            <Eye className="h-3.5 w-3.5 flex-none" aria-hidden />
+            <span className="truncate">{views}</span>
+          </span>
         )}
       </div>
     </button>

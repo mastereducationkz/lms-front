@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { CalendarDays, Folder, LayoutGrid, Loader2, RotateCcw, Search, Video, X } from 'lucide-react';
+import { CalendarDays, Eye, Folder, LayoutGrid, Loader2, RotateCcw, Search, Video, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -18,6 +18,8 @@ import {
   listRecordings, type RecordingFacets, type RecordingLibraryItem, type RecordingPeriod, type RecordingsKind,
 } from '../services/api/recordings';
 import { dayHeading, groupByDay, parseWatchParam, recordingsLocale, type Locale } from '../lib/recordings';
+import { summaryHint, summaryLine, type RecordingViewSummary } from '../lib/recordingViews';
+import { getRecordingViewSummary } from '../services/api/recordingViews';
 
 const PAGE_SIZE = 24;
 type StatusFilter = 'all' | 'ready' | 'pending' | 'failed';
@@ -195,6 +197,18 @@ export default function LessonRecordings({ kind = 'lesson' }: { kind?: Recording
   // Cards still on their way update in place — one batched request, visible tab only.
   useLiveRecordings(items, setItems, shownView === 'gallery');
 
+  // Staff: do students who missed a lesson watch its recording? One figure, lessons only (2026-09-28).
+  const [viewSummary, setViewSummary] = useState<RecordingViewSummary | null>(null);
+  useEffect(() => {
+    if (!staff || webinars) return undefined;
+    let cancelled = false;
+    getRecordingViewSummary()
+      .then((summary) => { if (!cancelled) setViewSummary(summary); })
+      .catch(() => { /* a figure beside the library, never a reason for it to fail */ });
+    return () => { cancelled = true; };
+  }, [staff, webinars]);
+  const viewFigure = staff && !webinars ? summaryLine(viewSummary, locale) : null;
+
   // Search as you type, without a request per keystroke.
   useEffect(() => {
     const handle = window.setTimeout(() => setQ(query.trim()), 300);
@@ -344,6 +358,12 @@ export default function LessonRecordings({ kind = 'lesson' }: { kind?: Recording
               </span>
             )}
           </p>
+          {viewFigure && (
+            <p className="mt-1 flex items-start gap-1.5 text-[13px] text-muted-foreground" title={summaryHint(locale)}>
+              <Eye className="mt-0.5 h-3.5 w-3.5 flex-none" aria-hidden />
+              <span>{viewFigure}</span>
+            </p>
+          )}
         </div>
         <div className="relative w-full sm:w-80">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
