@@ -385,7 +385,7 @@ export default function HeadTeacherDashboardPage() {
         const metricLabel = isHw ? 'Groups missing HW' : 'Lessons missing';
         const totalMetric = teachers.reduce((s, t) => s + t.total_lessons, 0);
         const summary = teachers.length === 0
-          ? (isHw ? 'All groups with a lesson today got homework 🎉' : 'No unmarked attendance 🎉')
+          ? (isHw ? 'All groups with a lesson today got homework' : 'No unmarked attendance')
           : `${teachers.length} teacher${teachers.length === 1 ? '' : 's'} · ${totalMetric} ${isHw ? 'group' : 'lesson'}${totalMetric === 1 ? '' : 's'} ${isHw ? 'without homework today' : 'unmarked'} · click a teacher to see groups`;
         const TabBtn = ({ id, label, count }: { id: 'attendance' | 'homework'; label: string; count: number }) => (
           <button

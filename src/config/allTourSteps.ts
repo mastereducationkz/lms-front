@@ -2,6 +2,19 @@
 import { Tour } from 'nextstepjs';
 import { getTourStepsForRole } from './tourSteps';
 import type { UserRole } from '../types';
+import { createElement, type ReactNode } from 'react';
+import { BarChart3, BookOpen, GraduationCap, Hand, Lightbulb, Users, type LucideIcon } from 'lucide-react';
+
+/** The tour card's icon: drawn from lucide (one stroke, one size), never an emoji. */
+export function tourStepIcon(title: string, index: number): ReactNode {
+  const Icon: LucideIcon =
+    index === 0 ? Hand :
+    title.includes('User') ? Users :
+    title.includes('Group') ? GraduationCap :
+    title.includes('Course') ? BookOpen :
+    title.includes('Analytics') ? BarChart3 : Lightbulb;
+  return createElement(Icon, { className: 'h-5 w-5 text-primary', 'aria-hidden': true });
+}
 
 export function getAllTourSteps(): Tour[] {
   const roles: UserRole[] = ['student', 'teacher', 'admin', 'curator'];
@@ -16,11 +29,7 @@ export function getAllTourSteps(): Tour[] {
         const isCenterPlacement = step.placement === 'center';
         
         const stepConfig: any = {
-          icon: index === 0 ? '👋' : 
-                step.title.includes('User') ? '👥' : 
-                step.title.includes('Group') ? '🎓' : 
-                step.title.includes('Course') ? '📚' : 
-                step.title.includes('Analytics') ? '📊' : '💡',
+          icon: tourStepIcon(step.title, index),
           title: step.title,
           content: step.content,
           showControls: true,

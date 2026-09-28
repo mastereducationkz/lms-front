@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, ClipboardCheck } from 'lucide-react';
+import { CheckCircle2, ChevronRight, ClipboardCheck } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import {
   coversLabel, deadlineCountdown, formatDeadline, getMyCheckpoints, STATUS_CLASS, STATUS_LABEL, type StudentCheckpointItem,
@@ -57,12 +57,12 @@ export function CheckpointsCard() {
                     <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">Course paused: the next units unlock when you submit this checkpoint.</p>
                     <p className="text-xs text-muted-foreground truncate">Covers: {coversLabel(item.covers)} · {item.total_questions} questions</p>
                     {item.deadline && (
-                      <p className={`text-xs ${item.status === 'overdue' ? 'text-red-600' : 'text-muted-foreground'}`}>
+                      <p className={`text-xs ${item.status === 'overdue' ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
                         Deadline: {formatDeadline(item.deadline)} (Almaty) · {deadlineCountdown(item.deadline)}
                       </p>
                     )}
                     {item.status === 'overdue' && (
-                      <p className="text-xs text-red-600">The deadline has passed. You can still submit, and it will be marked late.</p>
+                      <p className="text-xs text-red-600 dark:text-red-400">The deadline has passed. You can still submit, and it will be marked late.</p>
                     )}
                   </div>
                   {clickable && <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />}
@@ -103,7 +103,7 @@ export function CheckpointsCard() {
             )}
           </div>
         ) : (
-          <p className="mt-2 text-sm text-muted-foreground">All checkpoints completed 🎉</p>
+          <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground"><CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />All checkpoints completed</p>
         )}
       </CardContent>
     </Card>

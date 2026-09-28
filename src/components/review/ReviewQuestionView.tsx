@@ -4,6 +4,7 @@
 import React from 'react'
 import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { renderTextWithLatex } from '../../utils/latex'
 import { getExpectedAnswers, getGapSourceText } from '../lesson/quiz/scoring'
 import { EN, format, questionTypeLabel } from './strings'
@@ -269,6 +270,7 @@ export const ReviewQuestionView: React.FC<Props> = ({
               onClick={onPrevGap}
               disabled={gapIndex <= 0}
             >
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" />
               {EN.gapPrev}
             </Button>
             <Button
@@ -278,6 +280,7 @@ export const ReviewQuestionView: React.FC<Props> = ({
               disabled={gapIndex >= gapSlotTotal - 1}
             >
               {EN.gapNext}
+              <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </Button>
           </div>
         )}

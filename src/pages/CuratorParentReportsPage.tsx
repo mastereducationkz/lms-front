@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ParentReportCard from '../components/parentReports/ParentReportCard';
 import { mondayOf, shiftWeek, weekLabel } from '../lib/parentReportWeek';
 import {
@@ -172,22 +173,24 @@ export default function CuratorParentReportsPage() {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="px-2 py-1 border border-gray-300 rounded disabled:opacity-50"
+            className="flex h-9 w-9 items-center justify-center border border-gray-300 dark:border-border rounded disabled:opacity-50"
             disabled={busy}
             onClick={() => goToWeek(shiftWeek(week, -1))}
+            aria-label="Предыдущая неделя"
           >
-            ←
+            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           </button>
-          <span className="text-sm text-gray-700 min-w-[7.5rem] text-center">
+          <span className="text-sm text-gray-700 dark:text-gray-300 min-w-[7.5rem] text-center">
             {weekLabel(week)}
           </span>
           <button
             type="button"
-            className="px-2 py-1 border border-gray-300 rounded disabled:opacity-50"
+            className="flex h-9 w-9 items-center justify-center border border-gray-300 dark:border-border rounded disabled:opacity-50"
             disabled={busy}
             onClick={() => goToWeek(shiftWeek(week, 1))}
+            aria-label="Следующая неделя"
           >
-            →
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
       </header>

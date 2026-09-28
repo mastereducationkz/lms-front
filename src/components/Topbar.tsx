@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { connectSocket } from '../services/socket';
 import { Badge } from './ui/badge';
 import { Link } from 'react-router-dom';
-import { Bell, Sun, Moon } from 'lucide-react';
+import { Bell, Sun, Moon, Menu } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import StreakIcon from './StreakIcon';
 import { WhatsNewButton } from './PlatformUpdatesModal';
@@ -77,7 +77,7 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
         >
           {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
-        <button className="lg:hidden w-10 h-10 rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 text-lg" onClick={onOpenSidebar} aria-label="Open menu">☰</button>
+        <button className="lg:hidden w-10 h-10 rounded-lg bg-white dark:bg-gray-800 border dark:border-gray-700 flex items-center justify-center text-gray-700 dark:text-gray-200" onClick={onOpenSidebar} aria-label="Open menu"><Menu className="w-5 h-5" aria-hidden="true" /></button>
       </div>
     </div>
   );

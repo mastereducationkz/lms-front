@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Reply, SmilePlus } from 'lucide-react';
+import { Check, Paperclip, Reply, SmilePlus } from 'lucide-react';
 import type { Message } from '../../types';
 import { ChatAttachment } from './ChatAttachment';
 import { MessageReactions } from './MessageReactions';
@@ -110,7 +110,7 @@ export function ChatMessageBubble({
             {message.reply_preview.sender_name || 'Message'}
           </span>
           <span className={`block text-xs truncate ${isMine ? 'text-blue-50/90' : 'text-gray-600 dark:text-gray-300'}`}>
-            {message.reply_preview.content || (message.reply_preview.file_url ? '📎 Attachment' : '')}
+            {message.reply_preview.content || (message.reply_preview.file_url ? <><Paperclip className="inline h-3 w-3 mr-1 align-[-2px]" aria-hidden="true" />Attachment</> : '')}
           </span>
         </button>
       )}

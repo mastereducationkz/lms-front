@@ -1,4 +1,4 @@
-import { ImageOff } from 'lucide-react';
+import { ImageOff, Paperclip } from 'lucide-react';
 import { fileNameFromUrl, safeUploadUrl } from '../../lib/mediaUrl';
 
 export interface SharedMediaItem {
@@ -61,8 +61,8 @@ export function SharedMediaList({ media }: { media: SharedMediaItem[] }) {
             const href = safeUploadUrl(m.file_url);
             if (!href) {
               return (
-                <p key={m.id} className="text-sm text-gray-400 break-all">
-                  📎 {fileName} (unavailable)
+                <p key={m.id} className="text-sm text-gray-500 dark:text-gray-400 break-all">
+                  <Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{fileName} (unavailable)
                 </p>
               );
             }
@@ -74,7 +74,7 @@ export function SharedMediaList({ media }: { media: SharedMediaItem[] }) {
                 rel="noreferrer"
                 className="block text-sm text-blue-600 dark:text-blue-400 underline break-all"
               >
-                📎 {fileName}
+                <Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{fileName}
               </a>
             );
           })}

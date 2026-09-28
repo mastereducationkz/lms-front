@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { BellOff, Info, Reply as ReplyIcon, X } from 'lucide-react';
+import { BellOff, Info, Paperclip, Reply as ReplyIcon, X } from 'lucide-react';
 import { connectSocket } from '../services/socket';
 import { useVisiblePolling } from '../hooks/useVisiblePolling';
 import { ChatAttachment } from '../components/chat/ChatAttachment';
@@ -1025,7 +1025,7 @@ export default function ChatPage() {
                   {replyingTo.from_user_id === Number(currentUser?.id) ? 'You' : (replyingTo.sender_name || 'Message')}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                  {replyingTo.content || (replyingTo.file_url ? '📎 Attachment' : '')}
+                  {replyingTo.content || (replyingTo.file_url ? <><Paperclip className="inline h-3 w-3 mr-1 align-[-2px]" aria-hidden="true" />Attachment</> : '')}
                 </p>
               </div>
               <button

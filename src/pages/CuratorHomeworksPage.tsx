@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Search, Users, AlertCircle, ArrowLeft, Calendar, ArrowUp, ArrowDown } from 'lucide-react';
+import { FileText, Search, Users, AlertCircle, ArrowLeft, Calendar, ArrowUp, ArrowDown, Check } from 'lucide-react';
 import { toast } from '../components/Toast';
 import api from '../services/api';
 import { Input } from '../components/ui/input';
@@ -278,7 +278,7 @@ const CuratorHomeworksPage: React.FC = () => {
                               {s.overdue > 0 && <span className="font-medium text-red-600 dark:text-red-400">{s.overdue} просрочено</span>}
                               {s.overdue > 0 && s.not_submitted > 0 && <span className="text-muted-foreground"> · </span>}
                               {s.not_submitted > 0 && <span className="text-amber-600 dark:text-amber-400">{s.not_submitted} не сдано</span>}
-                              {s.overdue === 0 && s.not_submitted === 0 && <span className="text-green-600 dark:text-green-400">✓ всё сдано</span>}
+                              {s.overdue === 0 && s.not_submitted === 0 && <span className="inline-flex items-center gap-1 text-green-700 dark:text-green-400"><Check className="h-3.5 w-3.5" aria-hidden="true" />всё сдано</span>}
                             </div>
                           </div>
                         </TableCell>
@@ -434,7 +434,7 @@ const CuratorHomeworksPage: React.FC = () => {
                             <span className="font-medium text-amber-600 dark:text-amber-400">{g.notSubmitted} не сдано</span>
                           )}
                           {g.overdue === 0 && g.notSubmitted === 0 && (
-                            <span className="font-medium text-green-600 dark:text-green-400">✓ всё сдано</span>
+                            <span className="inline-flex items-center gap-1 font-medium text-green-700 dark:text-green-400"><Check className="h-3.5 w-3.5" aria-hidden="true" />всё сдано</span>
                           )}
                         </div>
                       </>

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import apiClient from "../services/api";
 import type { ExamCountdown as ExamCountdownData, ExamKind } from "../services/api/assignment-zero";
 import { Button } from "./ui/button";
+import { GraduationCap } from "lucide-react";
 import { Input } from "./ui/input";
 import "./ExamCountdown.css";
 import {
@@ -390,7 +391,7 @@ function ExamPanel({
         </>
       ) : targetMs != null ? (
         <>
-          <div className="text-2xl font-extrabold text-white">Exam day! 🎓</div>
+          <div className="flex items-center gap-2 text-2xl font-extrabold text-white">Exam day! <GraduationCap className="h-6 w-6" aria-hidden="true" /></div>
           <div className="mt-1 text-xs text-white/70">{formatDate(info!.target_date!)}</div>
           <button
             type="button"
@@ -459,7 +460,7 @@ function SecondaryExam({
       ) : days != null && days <= 0 ? (
         <>
           <span aria-hidden="true">·</span>
-          <span className="font-semibold text-white">Exam day 🎓</span>
+          <span className="inline-flex items-center gap-1 font-semibold text-white">Exam day <GraduationCap className="h-4 w-4" aria-hidden="true" /></span>
         </>
       ) : (
         <>

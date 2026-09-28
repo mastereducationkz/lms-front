@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { ClipboardList, Plus, Star, UserX } from 'lucide-react';
+import { CheckCircle2, ClipboardList, Plus, Star, UserX } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { clockKz, stampKz } from '../../lib/classLessonPage';
 import type { LessonHomework, LessonView } from '../../services/api/classLessons';
@@ -38,7 +38,7 @@ export function LiveRoom({ view }: { view: LessonView }) {
           </ul>
         </div>
       ) : full ? (
-        <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-300">{t('Все в комнате 🙌', 'Everyone is in 🙌')}</p>
+        <p className="mt-2 flex items-center gap-1.5 text-sm text-emerald-700 dark:text-emerald-300"><CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />{t('Все в комнате', 'Everyone is in')}</p>
       ) : null}
       <p className="mt-3 text-[11px] text-muted-foreground">
         {live.unknown > 0 && `${t('Неопознанных аккаунтов', 'Unconfirmed accounts')}: ${live.unknown} · `}

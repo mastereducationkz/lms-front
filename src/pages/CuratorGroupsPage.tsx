@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Search, Loader2, Check } from 'lucide-react';
+import { Users, Search, Loader2, Check, ArrowRight } from 'lucide-react';
 import api from '../services/api';
 import { toast } from '../components/Toast';
 import { Input } from '../components/ui/input';
@@ -267,15 +267,17 @@ export default function CuratorGroupsPage() {
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-blue-600 dark:text-blue-400 mt-2 font-medium">
-                      Управлять составом →
+                    <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 mt-2 font-medium">
+                      Управлять составом
+                      <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                     </div>
                   </button>
                   <Link
                     to={`/curator/parent-reports?group=${g.id}`}
-                    className="block mt-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                    className="mt-2 flex w-fit items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
                   >
-                    Отчёты родителям →
+                    Отчёты родителям
+                    <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                   </Link>
                 </div>
               ))}

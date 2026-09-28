@@ -3,6 +3,7 @@ import { DailyStreakInfo } from '../types';
 import { getDailyStreak } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { ShineBorder } from './magicui/shine-border';
+import { Flame, HeartCrack, Target, TriangleAlert, type LucideIcon } from 'lucide-react';
 
 const StreakIcon: React.FC = () => {
   const { user } = useAuth();
@@ -49,15 +50,15 @@ const StreakIcon: React.FC = () => {
   const getStreakColor = () => {
     switch (streakData?.streak_status) {
       case 'active':
-        return 'bg-white dark:bg-card text-orange-500';
+        return 'bg-white dark:bg-card text-orange-600 dark:text-orange-400';
       case 'at_risk':
-        return 'bg-white dark:bg-card text-yellow-500';
+        return 'bg-white dark:bg-card text-amber-600 dark:text-amber-400';
       case 'broken':
-        return 'bg-white dark:bg-card text-gray-400';
+        return 'bg-white dark:bg-card text-gray-500 dark:text-gray-400';
       case 'not_started':
-        return 'bg-white dark:bg-card text-gray-400';
+        return 'bg-white dark:bg-card text-gray-500 dark:text-gray-400';
       default:
-        return 'bg-white dark:bg-card text-gray-400';
+        return 'bg-white dark:bg-card text-gray-500 dark:text-gray-400';
     }
   };
 
@@ -76,18 +77,16 @@ const StreakIcon: React.FC = () => {
     }
   };
 
-  const getStreakIcon = () => {
+  const getStreakIcon = (): LucideIcon => {
     switch (streakData?.streak_status) {
       case 'active':
-        return '🔥';
+        return Flame;
       case 'at_risk':
-        return '⚠️';
+        return TriangleAlert;
       case 'broken':
-        return '🫥';
-      case 'not_started':
-        return '🎯';
+        return HeartCrack;
       default:
-        return '🎯';
+        return Target;
     }
   };
 
@@ -177,18 +176,24 @@ const StreakIcon: React.FC = () => {
   }
 
   const { days, monthName } = generateCalendarDays();
+  const StatusIcon = getStreakIcon();
 
   return (
     <div className="relative" ref={popoverRef} data-tour="streak-display">
-      <div 
+      <button
+        type="button"
         className={`relative overflow-hidden w-10 h-10 rounded-lg flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105 ${getStreakColor()}`}
         onClick={() => setShowCalendar(!showCalendar)}
+        aria-label={getTooltipText()}
+        aria-expanded={showCalendar}
       >
         <ShineBorder shineColor={getShineColor()} />
-        <span className="relative z-10 text-2xl font-bold">
-          {streakData.daily_streak > 0 ? streakData.daily_streak : getStreakIcon()}
-        </span>
-      </div>
+        {streakData.daily_streak > 0 ? (
+          <span className="relative z-10 text-2xl font-bold">{streakData.daily_streak}</span>
+        ) : (
+          <StatusIcon className="relative z-10 h-5 w-5" aria-hidden="true" />
+        )}
+      </button>
       
       {/* Calendar Popover */}
       {showCalendar && (

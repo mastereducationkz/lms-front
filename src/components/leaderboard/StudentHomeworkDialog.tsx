@@ -190,7 +190,7 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
                 <Loader2 className="w-5 h-5 animate-spin mr-2" /> Загрузка…
               </div>
             ) : error ? (
-              <div className="text-center py-12 text-sm text-red-500">{error}</div>
+              <div className="text-center py-12 text-sm text-red-500 dark:text-red-400">{error}</div>
             ) : items.length === 0 ? (
               <div className="text-center py-12 text-sm text-muted-foreground">
                 У этого ученика пока нет домашних заданий.
@@ -198,7 +198,7 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
             ) : (
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs text-gray-400 dark:text-gray-500 border-b border-gray-100 dark:border-border">
+                  <tr className="text-left text-xs text-muted-foreground border-b border-gray-100 dark:border-border">
                     <th className="font-medium pb-2 pr-2">Задание</th>
                     {showGroupColumn && <th className="font-medium pb-2 pr-2">Группа</th>}
                     <th className="font-medium pb-2 pr-2 whitespace-nowrap">Дедлайн</th>

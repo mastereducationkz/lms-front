@@ -21,6 +21,9 @@ import {
   Target,
   Wallet,
   Copy,
+  Trophy,
+  ArrowDown,
+  ArrowUp,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -971,7 +974,8 @@ export default function TeacherDashboard() {
                 variant="outline"
                 className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-secondary"
               >
-                🏆 Weekly Awards
+                <Trophy className="h-4 w-4" aria-hidden="true" />
+                Weekly Awards
               </Button>
               <Button
                 onClick={() => navigate('/manual-unlocks')}
@@ -1000,7 +1004,7 @@ export default function TeacherDashboard() {
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold text-gray-900 dark:text-foreground">{stats?.pending_submissions || 0}</span>
               {(stats?.total_submissions ?? 0) > 0 && (
-                <span className="text-sm text-gray-400 dark:text-gray-500">
+                <span className="text-sm text-muted-foreground">
                   / {stats?.total_submissions}
                 </span>
               )}
@@ -1019,7 +1023,7 @@ export default function TeacherDashboard() {
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold text-gray-900 dark:text-foreground">{stats?.active_students || 0}</span>
-              <span className="text-sm text-gray-400 dark:text-gray-500">
+              <span className="text-sm text-muted-foreground">
                 / {stats?.total_students || 0}
               </span>
             </div>
@@ -1039,7 +1043,7 @@ export default function TeacherDashboard() {
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-3xl font-bold text-gray-900 dark:text-foreground">{stats?.avg_student_score || 0}</span>
-              <span className="text-sm text-gray-400 dark:text-gray-500">pts</span>
+              <span className="text-sm text-muted-foreground">pts</span>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
               From {stats?.graded_submissions || 0} graded
@@ -1096,8 +1100,12 @@ export default function TeacherDashboard() {
                       className="text-left px-6 py-3 font-semibold cursor-pointer select-none hover:text-gray-900 dark:hover:text-foreground"
                       onClick={() => setHwSortDir((d) => (d === 'desc' ? 'asc' : 'desc'))}
                       title="Sort by last assigned date"
+                      aria-sort={hwSortDir === 'desc' ? 'descending' : 'ascending'}
                     >
-                      Last assigned {hwSortDir === 'desc' ? '↓' : '↑'}
+                      <span className="inline-flex items-center gap-1">
+                        Last assigned
+                        {hwSortDir === 'desc' ? <ArrowDown className="h-3.5 w-3.5" aria-hidden="true" /> : <ArrowUp className="h-3.5 w-3.5" aria-hidden="true" />}
+                      </span>
                     </th>
                   </tr>
                 </thead>
@@ -1295,7 +1303,7 @@ export default function TeacherDashboard() {
                       </td>
                       <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
                         <div className="flex items-center">
-                          <Clock className="w-3 h-3 mr-1.5 text-gray-400 dark:text-gray-500" />
+                          <Clock className="w-3 h-3 mr-1.5 text-muted-foreground" />
                           {new Date(submission.submitted_at).toLocaleDateString(undefined, {
                             month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                           })}
@@ -1325,7 +1333,7 @@ export default function TeacherDashboard() {
                             </span>
                           )
                         ) : (
-                          <span className="text-gray-400 dark:text-gray-500">-</span>
+                          <span className="text-muted-foreground">-</span>
                         )}
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -1424,7 +1432,7 @@ export default function TeacherDashboard() {
                   type="checkbox"
                   checked={showArchivedGroups}
                   onChange={(e) => setShowArchivedGroups(e.target.checked)}
-                  className="rounded border-gray-300"
+                  className="rounded border-gray-300 dark:border-border"
                 />
                 Archived groups
               </label>
@@ -1433,7 +1441,7 @@ export default function TeacherDashboard() {
                   type="checkbox"
                   checked={showInactiveStudents}
                   onChange={(e) => setShowInactiveStudents(e.target.checked)}
-                  className="rounded border-gray-300"
+                  className="rounded border-gray-300 dark:border-border"
                 />
                 Deactivated students
               </label>
@@ -1491,7 +1499,7 @@ export default function TeacherDashboard() {
                             <div className="font-medium text-gray-900 dark:text-foreground">
                               {student.student_name}
                               {student.is_inactive && (
-                                <span className="ml-1.5 text-[10px] font-normal text-red-500 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded px-1 py-px align-middle">
+                                <span className="ml-1.5 text-[10px] font-normal text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded px-1 py-px align-middle">
                                   Deactivated
                                 </span>
                               )}
@@ -1507,13 +1515,13 @@ export default function TeacherDashboard() {
                               {student.group_name.split("-")[0]}
                             </Badge>
                             {student.group_is_archived && (
-                              <Badge variant="outline" className="text-[10px] text-gray-500 border-gray-300 whitespace-nowrap">
+                              <Badge variant="outline" className="text-[10px] text-muted-foreground border-gray-300 dark:border-border whitespace-nowrap">
                                 Archived
                               </Badge>
                             )}
                           </div>
                         ) : (
-                          <span className="text-gray-400 dark:text-gray-500 text-xs">-</span>
+                          <span className="text-muted-foreground text-xs">-</span>
                         )}
                       </td>
                       <td className="px-6 py-4">
@@ -1555,7 +1563,7 @@ export default function TeacherDashboard() {
                           ? new Date(student.last_activity).toLocaleDateString(undefined, {
                             month: 'short', day: 'numeric'
                           })
-                          : <span className="text-gray-400 dark:text-gray-500">Never</span>
+                          : <span className="text-muted-foreground">Never</span>
                         }
                       </td>
                     </tr>
@@ -1567,7 +1575,7 @@ export default function TeacherDashboard() {
           
           {/* Pagination Controls */}
           {filteredStudents.length > studentsPerPage && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-border bg-gray-50 dark:bg-secondary rounded-b-xl">
+            <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 border-t border-gray-200 dark:border-border bg-gray-50 dark:bg-secondary rounded-b-xl">
               <div className="text-sm text-gray-500 dark:text-gray-400">
                 Showing {((studentPage - 1) * studentsPerPage) + 1} to {Math.min(studentPage * studentsPerPage, filteredStudents.length)} of {filteredStudents.length} students
               </div>
@@ -1722,7 +1730,7 @@ export default function TeacherDashboard() {
                                    ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800' 
                                    : (item.is_correct ? 'bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800')
                                }`}>
-                                 {item.student_answer || <span className="text-gray-400 dark:text-gray-500 italic">No answer provided</span>}
+                                 {item.student_answer || <span className="text-muted-foreground italic">No answer provided</span>}
                                </div>
                             </div>
                             
@@ -1836,7 +1844,7 @@ export default function TeacherDashboard() {
                 <div className="space-y-3">
                   {selectedSubmission?.file_url && (
                     <div className="flex items-center p-3 bg-muted/40 rounded-lg border border-border">
-                      <FileText className="w-5 h-5 text-blue-500 mr-3 shrink-0" />
+                      <FileText className="w-5 h-5 text-blue-500 dark:text-blue-400 mr-3 shrink-0" />
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm truncate">{selectedSubmission.submitted_file_name || 'Attached File'}</div>
                       </div>

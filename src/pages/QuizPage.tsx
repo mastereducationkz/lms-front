@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { fetchQuizById, getQuizAttemptsLeft, submitQuiz } from "../services/api";
 import { toast } from '../components/Toast.tsx';
 import type { Quiz } from '../types';
+import { ArrowRight, FileText, Music } from 'lucide-react';
 
 export default function QuizPage() {
   const { id } = useParams<{ id: string }>();
@@ -62,8 +63,12 @@ export default function QuizPage() {
       {/* Quiz-level media for audio/PDF quizzes */}
       {(quiz as any).quiz_media_url && (
         <div className="bg-white rounded-2xl shadow-card p-6 mb-6">
-          <h3 className="text-lg font-semibold mb-4">
-            {(quiz as any).quiz_media_type === 'audio' ? '🎵 Audio Material' : '📄 Reference Document'}
+          <h3 className="flex items-center gap-2 text-lg font-semibold mb-4">
+            {(quiz as any).quiz_media_type === 'audio' ? (
+              <><Music className="h-5 w-5" aria-hidden="true" />Audio Material</>
+            ) : (
+              <><FileText className="h-5 w-5" aria-hidden="true" />Reference Document</>
+            )}
           </h3>
           {(quiz as any).quiz_media_type === 'audio' ? (
             <audio 
@@ -84,9 +89,10 @@ export default function QuizPage() {
                   href={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + (quiz as any).quiz_media_url} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
                 >
-                  Open PDF →
+                  Open PDF
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </a>
               </div>
               <p className="text-sm text-gray-600 mt-2">
@@ -124,9 +130,10 @@ export default function QuizPage() {
                       href={(q as any).media_url} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 text-sm mt-1 inline-block"
+                      className="text-blue-600 hover:text-blue-800 text-sm mt-1 inline-flex items-center gap-1"
                     >
-                      View PDF →
+                      View PDF
+                      <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                     </a>
                   </div>
                 ) : null}

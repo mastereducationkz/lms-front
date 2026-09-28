@@ -950,10 +950,10 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                             )}
 
                              {/* File Info Card */}
-                            <div className="flex items-center justify-between p-3 border rounded-lg bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
-                                <div className="flex items-center space-x-2">
-                                <CheckCircle className="w-4 h-4 text-green-600" />
-                                <span className="text-sm font-medium text-green-800 dark:text-green-400">{file.file_name || `File ${index + 1}`}</span>
+                            <div className="flex items-center justify-between gap-3 p-3 border rounded-lg bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
+                                <div className="flex min-w-0 items-center space-x-2">
+                                <CheckCircle className="w-4 h-4 shrink-0 text-green-600 dark:text-green-400" />
+                                <span className="min-w-0 break-all text-sm font-medium text-green-800 dark:text-green-400">{file.file_name || `File ${index + 1}`}</span>
                                 {file.file_size && (
                                     <span className="text-xs text-green-600 dark:text-green-500">({(file.file_size / 1024 / 1024).toFixed(2)} MB)</span>
                                 )}
@@ -975,7 +975,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => handleRemoveFile(task.id, index)}
-                                    className="text-red-600 hover:text-red-800 h-8 w-8 p-0"
+                                    className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 h-8 w-8 p-0"
                                     >
                                     <X className="w-4 h-4" />
                                     </Button>
@@ -1062,7 +1062,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                         'rounded-full p-3 transition-colors',
                         isOver ? 'bg-blue-100 dark:bg-blue-900/50' : 'bg-muted'
                       )}>
-                        <Upload className={cn('w-6 h-6', isOver ? 'text-blue-500' : 'text-muted-foreground')} />
+                        <Upload className={cn('w-6 h-6', isOver ? 'text-blue-500 dark:text-blue-400' : 'text-muted-foreground')} />
                       </div>
                       <div className="text-center">
                         <p className="text-sm font-medium text-foreground">
@@ -1506,14 +1506,14 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
               )}
             >
               <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-full ${isCompleted ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' : task.is_optional ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300' : 'bg-gray-100 dark:bg-secondary text-gray-600 dark:text-gray-400'}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center space-x-3">
+                    <div className={`shrink-0 p-2 rounded-full ${isCompleted ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' : task.is_optional ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300' : 'bg-gray-100 dark:bg-secondary text-gray-600 dark:text-gray-400'}`}>
                       <Icon className="w-5 h-5" />
                     </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-slate-900 dark:text-slate-100">{formatAssignmentTaskLabel(task.title, index)}</h4>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="min-w-0 break-words font-medium text-slate-900 dark:text-slate-100">{formatAssignmentTaskLabel(task.title, index)}</h4>
                         {task.is_optional && (
                           <span className="text-xs px-2 py-0.5 bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 rounded-full flex items-center gap-1">
                             <Star className="w-3 h-3" />
@@ -1529,7 +1529,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                     </div>
                   </div>
                   {isCompleted && (
-                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <CheckCircle className="w-5 h-5 shrink-0 text-green-600 dark:text-green-400" />
                   )}
                 </div>
               </CardHeader>

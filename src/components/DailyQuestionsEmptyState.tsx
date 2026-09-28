@@ -1,3 +1,4 @@
+import { ClipboardList } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface DailyQuestionsEmptyStateProps {
@@ -15,9 +16,11 @@ interface DailyQuestionsEmptyStateProps {
 export function DailyQuestionsEmptyState({ onDismiss }: DailyQuestionsEmptyStateProps) {
   return (
     <div className="p-8 text-center">
-      <div className="text-6xl mb-4">📝</div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">No daily questions yet</h3>
-      <p className="text-gray-600 mb-6">
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+        <ClipboardList className="h-7 w-7 text-muted-foreground" aria-hidden="true" />
+      </div>
+      <h3 className="text-lg font-semibold text-foreground mb-2">No daily questions yet</h3>
+      <p className="text-muted-foreground mb-6">
         You haven't completed any Weekly Tests yet. Complete a test first to get personalized daily questions!
       </p>
       <Button variant="outline" onClick={onDismiss}>Close</Button>

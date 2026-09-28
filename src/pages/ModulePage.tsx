@@ -6,6 +6,7 @@ import ProgressBar from '../components/ProgressBar';
 import Breadcrumbs from '../components/Breadcrumbs.tsx';
 import Skeleton from '../components/Skeleton.tsx';
 import type { CourseModule, Lesson, Course } from '../types';
+import { Clock, Play } from 'lucide-react';
 
 export default function ModulePage() {
   const { courseId, moduleId } = useParams<{ courseId: string; moduleId: string }>();
@@ -194,11 +195,11 @@ export default function ModulePage() {
                     <div className="font-medium text-lg">{lesson.title}</div>
                     <div className="text-sm text-gray-600 flex items-center gap-3">
                       <span className="inline-flex items-center gap-1">
-                        <span className="opacity-60">▶</span> 
+                        <Play className="h-3.5 w-3.5 opacity-60" aria-hidden="true" />
                         {getLessonType(lesson)}
                       </span>
                       <span className="inline-flex items-center gap-1">
-                        <span className="opacity-60">⏱</span> 
+                        <Clock className="h-3.5 w-3.5 opacity-60" aria-hidden="true" />
                         {lesson.duration_minutes || 0} minutes
                       </span>
                     </div>

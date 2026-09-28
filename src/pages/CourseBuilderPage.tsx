@@ -11,7 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../services/api';
 import CourseSidebar from '../components/CourseSidebar.tsx';
 import type { Course, CourseModule, Lesson, LessonContentType, Group } from '../types';
-import { ChevronDown, ChevronUp, MoreVertical, GripVertical, FileText, Video, HelpCircle, Users, Check, X, Eye, Trophy } from 'lucide-react';
+import { ChevronDown, ChevronUp, MoreVertical, GripVertical, FileText, Video, HelpCircle, Users, Check, X, Eye, Trophy, Lock, LockOpen } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
@@ -282,7 +282,7 @@ const DraggableLesson = ({
           <div className="text-xs text-gray-500 capitalize">
             {getLessonType(lesson)} • {index + 1}
             {lesson?.is_initially_unlocked && (
-              <span className="ml-2 text-green-600 font-medium">🔓 Unlocked</span>
+              <span className="ml-2 inline-flex items-center gap-0.5 normal-case text-green-700 font-medium"><LockOpen className="h-3 w-3" aria-hidden="true" />Unlocked</span>
             )}
           </div>
         </div>
@@ -297,8 +297,10 @@ const DraggableLesson = ({
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
             title={lesson?.is_initially_unlocked ? 'Lesson is initially unlocked for students' : 'Click to make lesson initially unlocked'}
+            aria-label={lesson?.is_initially_unlocked ? 'Lesson is initially unlocked for students' : 'Make lesson initially unlocked'}
+            aria-pressed={!!lesson?.is_initially_unlocked}
           >
-            {lesson?.is_initially_unlocked ? '🔓' : '🔒'}
+            {lesson?.is_initially_unlocked ? <LockOpen className="h-3.5 w-3.5" aria-hidden="true" /> : <Lock className="h-3.5 w-3.5" aria-hidden="true" />}
           </button>
         )}
         <button 
@@ -310,8 +312,10 @@ const DraggableLesson = ({
         <button 
           onClick={() => onRemove(lesson?.id)} 
           className="px-3 py-1 text-sm text-red-600 hover:bg-red-100 rounded"
+          aria-label="Remove lesson"
+          title="Remove lesson"
         >
-          ✕
+          <X className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
     </div>
@@ -2295,7 +2299,7 @@ export default function CourseBuilderPage() {
         open={isBlocked}
         onConfirm={confirmLeave}
         onCancel={cancelLeave}
-        title="⚠️ Save Course Changes!"
+        title="Save Course Changes!"
         description="You have unsaved changes in this course (modules, lessons, or reordering). Please save your changes before leaving to avoid losing your work."
       />
     </> 

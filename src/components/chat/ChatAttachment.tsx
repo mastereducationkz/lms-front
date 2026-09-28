@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download, Image as ImageIcon } from 'lucide-react';
+import { Download, Image as ImageIcon, Paperclip } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '../ui/dialog';
 import { fileNameFromUrl, safeUploadUrl } from '../../lib/mediaUrl';
 
@@ -100,7 +100,7 @@ export function ChatAttachment({ fileUrl }: { fileUrl: string }) {
 
   return (
     <a href={url} target="_blank" rel="noreferrer" className="underline mb-1 break-all block">
-      📎 {fileName}
+      <Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{fileName}
     </a>
   );
 }

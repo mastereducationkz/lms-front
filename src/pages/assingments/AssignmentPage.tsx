@@ -14,7 +14,8 @@ import {
   ExternalLink,
   X,
   Mic,
-  ArrowUpRight
+  ArrowUpRight,
+  ArrowLeft
 } from 'lucide-react';
 import type { Assignment, AssignmentStatus, Submission } from '../../types/index.ts';
 import { Button } from '../../components/ui/button.tsx';
@@ -161,12 +162,12 @@ export default function AssignmentPage() {
             const href = safeLinkUrl(resource.file_url);
             const label = resource.file_name || 'Open answer-key file';
             return href ? (
-              <a key={resource.id} className="block text-blue-600 hover:underline" href={href} target="_blank" rel="noreferrer">{label}</a>
+              <a key={resource.id} className="block text-blue-600 dark:text-blue-400 hover:underline" href={href} target="_blank" rel="noreferrer">{label}</a>
             ) : (
               <p key={resource.id} className="text-sm text-muted-foreground">{label}</p>
             );
           })}
-          {!key.acknowledged ? <Button size="sm" variant="outline" onClick={async () => { await apiClient.acknowledgeAnswerKey(id!, task.task_id, key.id); setAnswerKeys(prev => prev.map((item: any) => item.task_id !== task.task_id ? item : { ...item, answer_keys: item.answer_keys.map((candidate: any) => candidate.id === key.id ? { ...candidate, acknowledged: true } : candidate) })); }}>I checked my work</Button> : <span className="text-sm text-green-700">Checked</span>}
+          {!key.acknowledged ? <Button size="sm" variant="outline" onClick={async () => { await apiClient.acknowledgeAnswerKey(id!, task.task_id, key.id); setAnswerKeys(prev => prev.map((item: any) => item.task_id !== task.task_id ? item : { ...item, answer_keys: item.answer_keys.map((candidate: any) => candidate.id === key.id ? { ...candidate, acknowledged: true } : candidate) })); }}>I checked my work</Button> : <span className="text-sm text-green-700 dark:text-green-400">Checked</span>}
         </div>
       )))}</CardContent>
     </Card>
@@ -380,7 +381,7 @@ export default function AssignmentPage() {
                           {submission.score || 0}
                         </span>
                       ) : (
-                        <span className="text-gray-400 dark:text-gray-500">—</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
                       <span className="text-lg text-gray-500 dark:text-gray-400 font-normal"> / {effectiveMaxScore}</span>
                     </div>
@@ -484,7 +485,8 @@ export default function AssignmentPage() {
             size="sm"
             className="mb-2"
           >
-            ← Back to Results
+            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            Back to Results
           </Button>
           
           {assignment.assignment_type === 'multi_task' ? (
@@ -522,10 +524,10 @@ export default function AssignmentPage() {
                      {submittedFiles.map((file: any, index: number) => {
                        const href = safeUploadUrl(file.file_url);
                        return (
-                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-secondary rounded border dark:border-border">
-                            <div className="flex items-center">
-                            <FileText className="w-5 h-5 text-gray-500 dark:text-gray-400 mr-3" />
-                            <span>{file.file_name || file.submitted_file_name || 'File'}</span>
+                        <div key={index} className="flex items-center justify-between gap-3 p-3 bg-gray-50 dark:bg-secondary rounded border dark:border-border">
+                            <div className="flex min-w-0 items-center">
+                            <FileText className="w-5 h-5 shrink-0 text-gray-500 dark:text-gray-400 mr-3" />
+                            <span className="min-w-0 break-all">{file.file_name || file.submitted_file_name || 'File'}</span>
                             </div>
                             {href && (
                               <div className="flex gap-2">
@@ -552,10 +554,10 @@ export default function AssignmentPage() {
                 {submittedFiles.length === 0 && submission.file_url && (() => {
                   const legacyHref = safeUploadUrl(submission.file_url);
                   return (
-                   <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-secondary rounded border dark:border-border">
-                    <div className="flex items-center">
-                      <FileText className="w-5 h-5 text-gray-500 dark:text-gray-400 mr-3" />
-                      <span>{submission.submitted_file_name}</span>
+                   <div className="flex items-center justify-between gap-3 p-3 bg-gray-50 dark:bg-secondary rounded border dark:border-border">
+                    <div className="flex min-w-0 items-center">
+                      <FileText className="w-5 h-5 shrink-0 text-gray-500 dark:text-gray-400 mr-3" />
+                      <span className="min-w-0 break-all">{submission.submitted_file_name}</span>
                     </div>
                     {legacyHref && (
                     <a
@@ -587,7 +589,7 @@ export default function AssignmentPage() {
     // Not submitted yet - show submission form
     if ((status as any)?.can_resubmit === false) {
       return (
-        <Card className="border-amber-200 bg-amber-50/50 dark:bg-amber-950/20">
+        <Card className="border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/20">
           <CardContent className="p-6 text-sm text-amber-900 dark:text-amber-200">
             {(status as any)?.late
               ? 'The deadline has passed. Ask your teacher to reopen this homework before submitting.'
@@ -599,11 +601,11 @@ export default function AssignmentPage() {
 
     const readinessBanner = !submission && (status as any)?.unit_gate && (status as any).unit_gate.total > 0 && (
       (status as any).unit_gate.ready ? (
-        <div className="mb-3 rounded-md border border-green-300 bg-green-50 dark:bg-green-950/30 px-3 py-2 text-sm text-green-800 dark:text-green-200">
+        <div className="mb-3 rounded-md border border-green-300 dark:border-green-800/60 bg-green-50 dark:bg-green-950/30 px-3 py-2 text-sm text-green-800 dark:text-green-200">
           All units completed — ready to submit
         </div>
       ) : (
-        <div className="mb-3 rounded-md border border-slate-300 bg-slate-50 dark:bg-secondary px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+        <div className="mb-3 rounded-md border border-slate-300 dark:border-border bg-slate-50 dark:bg-secondary px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
           To submit, complete these units: {(status as any).unit_gate.missing.map((m: any) => m.title).join(', ')}
         </div>
       )
@@ -614,7 +616,7 @@ export default function AssignmentPage() {
         <>
           {readinessBanner}
           {!submission && (status as any)?.draft?.answers && (
-            <div className="mb-3 rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
+            <div className="mb-3 rounded-md border border-amber-300 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
               Draft restored. Work is <b>not submitted</b> yet.
             </div>
           )}
@@ -712,7 +714,7 @@ export default function AssignmentPage() {
                     htmlFor="file-upload"
                     className="cursor-pointer flex flex-col items-center justify-center"
                   >
-                    <Upload className="w-12 h-12 text-gray-400 dark:text-gray-500 mb-3" />
+                    <Upload className="w-12 h-12 text-muted-foreground mb-3" />
                     <span className="text-lg font-medium text-gray-900 dark:text-foreground mb-1">
                       {files.length > 0 ? 'Add more files' : 'Drop your files here or click to upload'}
                     </span>
@@ -728,11 +730,11 @@ export default function AssignmentPage() {
                 {files.length > 0 && (
                  <div className="space-y-2">
                     {files.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-secondary/50 dark:bg-secondary rounded border border-border">
-                            <div className="flex items-center">
-                            <FileText className="w-5 h-5 text-muted-foreground mr-3" />
-                            <div>
-                                <span className="font-medium text-foreground block">{file.name}</span>
+                        <div key={index} className="flex items-center justify-between gap-3 p-3 bg-secondary/50 dark:bg-secondary rounded border border-border">
+                            <div className="flex min-w-0 items-center">
+                            <FileText className="w-5 h-5 shrink-0 text-muted-foreground mr-3" />
+                            <div className="min-w-0">
+                                <span className="font-medium text-foreground block break-all">{file.name}</span>
                                 <span className="text-xs text-muted-foreground">
                                 Size: {(file.size / 1024 / 1024).toFixed(2)} MB
                                 </span>
@@ -862,11 +864,11 @@ export default function AssignmentPage() {
       )}
       <Card>
         <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="space-y-3">
-              <CardTitle className="text-3xl font-bold text-gray-900 dark:text-foreground">
-                <div className="flex items-center justify-between w-full">
-                  <span className="pr-3 truncate">{assignment.title}</span>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 flex-1 space-y-3">
+              <CardTitle className="text-2xl font-bold text-gray-900 dark:text-foreground sm:text-3xl">
+                <div className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                  <span className="min-w-0 break-words">{assignment.title}</span>
                   {submission && submission.status === 'graded' && (
                     <div className="flex items-center space-x-2 ">
                       <Award className="w-4 h-4 text-yellow-600 dark:text-yellow-500" />
@@ -881,7 +883,7 @@ export default function AssignmentPage() {
                 {assignment.description}
               </CardDescription>
             </div>
-            <div className="flex flex-col items-end space-y-2">
+            <div className="flex flex-wrap items-center gap-2 sm:flex-col sm:items-end sm:text-right">
               {status && (
                 <Badge variant={getStatusBadgeVariant()} className="text-sm">
                   {formatAssignmentStatus(status.status)}
@@ -896,7 +898,7 @@ export default function AssignmentPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-600 dark:text-gray-400">
             {assignment.due_date && (
               <div className={`flex items-center space-x-2 ${isOverdue ? 'text-red-600 dark:text-red-400' : ''}`}>
                 <Calendar className="w-4 h-4" />
@@ -942,9 +944,9 @@ export default function AssignmentPage() {
       {assignment.file_url && assignment.assignment_type !== 'file_upload' && assignment.assignment_type !== 'multi_task' && (
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-secondary rounded-lg">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center space-x-3">
+                <div className="p-2 bg-secondary rounded-lg shrink-0">
                   <Download className="w-5 h-5 text-muted-foreground" />
                 </div>
                 <div>

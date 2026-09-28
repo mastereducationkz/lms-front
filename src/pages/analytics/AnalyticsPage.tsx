@@ -13,7 +13,7 @@ import { Button } from '../../components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/tabs';
 import { Badge } from '../../components/ui/badge';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
-import { Clock, Search, Filter, ArrowRight } from 'lucide-react';
+import { Clock, Search, Filter, ArrowRight, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface Course {
   id: number;
@@ -103,6 +103,12 @@ interface VideoMetric {
   average_watch_time_minutes: number;
 }
 
+
+/** The active column's sort direction, drawn rather than a ↑/↓ glyph. */
+function SortMark({ dir }: { dir: string }) {
+  const Icon = dir === 'asc' ? ArrowUp : ArrowDown;
+  return <Icon className="ml-1 inline h-3.5 w-3.5 align-[-2px]" aria-label={dir === 'asc' ? 'ascending' : 'descending'} />;
+}
 
 export default function AnalyticsPage() {
   const { user } = useAuth();
@@ -761,11 +767,11 @@ export default function AnalyticsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[200px] cursor-pointer hover:bg-gray-100 dark:hover:bg-secondary" onClick={() => handleSortChange('name')}>
-                      Student {studentSort === 'name' && (studentSortDir === 'asc' ? '↑' : '↓')}
+                      Student {studentSort === 'name' && <SortMark dir={studentSortDir} />}
                     </TableHead>
                     <TableHead className="text-center">Group</TableHead>
                     <TableHead className="cursor-pointer hover:bg-gray-100 dark:hover:bg-secondary" onClick={() => handleSortChange('progress')}>
-                      Progress {studentSort === 'progress' && (studentSortDir === 'asc' ? '↑' : '↓')}
+                      Progress {studentSort === 'progress' && <SortMark dir={studentSortDir} />}
                     </TableHead>
                     <TableHead>Current Lesson</TableHead>
                     {courses.find(c => c.id.toString() === selectedCourseId)?.title.toLowerCase().includes('sat') ? (
@@ -776,7 +782,7 @@ export default function AnalyticsPage() {
                     <TableHead className="text-center">Assignments</TableHead>
                     <TableHead className="text-center">Time Spent</TableHead>
                     <TableHead className="cursor-pointer hover:bg-gray-100 dark:hover:bg-secondary" onClick={() => handleSortChange('activity')}>
-                      Last Active {studentSort === 'activity' && (studentSortDir === 'asc' ? '↑' : '↓')}
+                      Last Active {studentSort === 'activity' && <SortMark dir={studentSortDir} />}
                     </TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>

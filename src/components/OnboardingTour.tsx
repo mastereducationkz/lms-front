@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useNextStep } from 'nextstepjs';
 import { UserRole } from '../types';
 import { getTourStepsForRole } from '../config/tourSteps';
+import { tourStepIcon } from '../config/allTourSteps';
 
 interface OnboardingTourProps {
   userRole: UserRole;
@@ -117,7 +118,7 @@ export function createTourSteps(userRole: UserRole) {
     {
       tour: 'onboarding',
       steps: tourSteps.map((step, index) => ({
-        icon: index === 0 ? '👋' : step.title.includes('User') ? '👥' : step.title.includes('Group') ? '🎓' : step.title.includes('Course') ? '📚' : step.title.includes('Analytics') ? '📊' : '💡',
+        icon: tourStepIcon(step.title, index),
         title: step.title,
         content: step.content,
         selector: step.target,

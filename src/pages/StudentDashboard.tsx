@@ -7,7 +7,7 @@ import { Badge } from "../components/ui/badge";
 import { Checkbox } from "../components/ui/checkbox";
 import { Input } from "../components/ui/input";
 import type { DashboardStats, StudentProgressOverview, Assignment, Event, AssignmentSubmission } from "../types";
-import { Clock, BookOpen, LineChart, CheckCircle, Target, Calendar, FileText, AlertCircle, Video, GraduationCap, MessageCircle } from "lucide-react";
+import { Clock, BookOpen, LineChart, CheckCircle, Target, Calendar, FileText, AlertCircle, Video, GraduationCap, MessageCircle, ArrowRight, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
 import { TrackPlatformLinks } from "../components/dashboard/TrackPlatformLinks";
 import { WeeklyTestCountdown } from "../components/dashboard/WeeklyTestCountdown";
@@ -391,7 +391,7 @@ export default function StudentDashboard({
   const getProgressColor = (percentage: number) => {
     if (percentage >= 80) return 'text-green-600';
     if (percentage >= 50) return 'text-yellow-600';
-    return 'text-red-600';
+    return 'text-red-600 dark:text-red-400';
   };
 
   // Helper functions for todo list
@@ -401,7 +401,7 @@ export default function StudentDashboard({
       if (submission.is_graded) {
         return { status: 'graded', color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle };
       } else {
-        return { status: 'submitted', color: 'bg-blue-100 text-blue-800', icon: FileText };
+        return { status: 'submitted', color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300', icon: FileText };
       }
     }
     
@@ -411,9 +411,9 @@ export default function StudentDashboard({
     if (dueDate && dueDate < now) {
       return { status: 'overdue', color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400', icon: AlertCircle };
     } else if (dueDate && (dueDate.getTime() - now.getTime()) < 24 * 60 * 60 * 1000) {
-      return { status: 'due_soon', color: 'bg-yellow-100 text-yellow-800', icon: Clock };
+      return { status: 'due_soon', color: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300', icon: Clock };
     } else {
-      return { status: 'pending', color: 'bg-gray-100 text-gray-800', icon: FileText };
+      return { status: 'pending', color: 'bg-muted text-foreground', icon: FileText };
     }
   };
 
@@ -622,10 +622,10 @@ export default function StudentDashboard({
                     className="flex items-center gap-3 p-2 border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-secondary cursor-pointer transition-colors"
                     onClick={() => navigate(`/homework/${a.id}`)}
                   >
-                    <due.icon className="h-4 w-4 text-gray-500" />
+                    <due.icon className="h-4 w-4 text-muted-foreground" />
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm truncate">{a.title}</div>
-                      <div className="text-xs text-gray-500">{due.label}</div>
+                      <div className="text-xs text-muted-foreground">{due.label}</div>
                     </div>
                     <Badge className={`text-xs ${due.color}`}>Ready</Badge>
                   </div>
@@ -685,7 +685,8 @@ export default function StudentDashboard({
                 className="h-auto p-0 text-xs"
                 onClick={() => navigate('/calendar')}
               >
-                View full calendar →
+                View full calendar
+                <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden="true" />
               </Button>
             </div>
           </CardContent>
@@ -740,7 +741,7 @@ export default function StudentDashboard({
       )}
 
       {!isLoadingIeltsPrompt && showIeltsPrompt && (
-        <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30">
+        <Card className="border-amber-300 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/30">
           <CardHeader>
             <CardTitle className="text-base">IELTS date check-in</CardTitle>
             <CardDescription>
@@ -796,7 +797,8 @@ export default function StudentDashboard({
         {/* basis + min-width keep the greeting readable: with flex-1 alone a wide
             countdown starved this column and wrapped the heading one word per line. */}
         <div className="min-w-0 flex-1 lg:basis-[22rem] lg:min-w-[18rem]">
-        <CardHeader className="p-5 sm:p-6">
+        {/* pr-12 keeps the greeting clear of the banner-colour dot in the top-right corner */}
+        <CardHeader className="p-5 pr-12 sm:p-6 sm:pr-14">
           <CardTitle className="text-2xl sm:text-3xl">Welcome back, {firstName}!</CardTitle>
           <CardDescription className="text-white/80 text-sm sm:text-base">
             Continue your learning journey with Master Education
@@ -814,9 +816,10 @@ export default function StudentDashboard({
               className={`flex items-center gap-2 text-black dark:text-white`}            >
               {dailyQuestionsCompleted 
                 ? dailyQuestionsScore 
-                  ? `Result: ${dailyQuestionsScore.score}/${dailyQuestionsScore.total} ✓` 
-                  : 'Tasks completed ✓' 
+                  ? `Result: ${dailyQuestionsScore.score}/${dailyQuestionsScore.total}` 
+                  : 'Tasks completed' 
                 : 'Daily questions'}
+              {dailyQuestionsCompleted && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-label="done" />}
             </Button>
           </div>
         </CardFooter>
@@ -865,7 +868,7 @@ export default function StudentDashboard({
               <div className="text-3xl font-bold">{totalStudyHours}h</div>
               <div className="text-muted-foreground text-sm">Study time</div>
               {progressData && (
-                <div className="text-xs text-blue-600 mt-1">
+                <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
                   {progressData.total_time_spent_minutes} minutes total
                 </div>
               )}
@@ -903,9 +906,10 @@ export default function StudentDashboard({
                     startAngle={90}
                     endAngle={-270}
                     dataKey="value"
+                    stroke="hsl(var(--card))"
                   >
                     <Cell fill="#10b981" />
-                    <Cell fill="#e5e7eb" />
+                    <Cell fill="hsl(var(--border))" />
                   </Pie>
                 </PieChart>
               </ResponsiveContainer>
@@ -947,7 +951,7 @@ export default function StudentDashboard({
               </CardHeader>
               <CardContent>
                 {isLoadingTodo ? (
-                  <div className="text-center py-4 text-gray-500">Loading deadlines...</div>
+                  <div className="text-center py-4 text-muted-foreground">Loading deadlines...</div>
                 ) : (
                   <div className="max-h-[19.5rem] overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
                     {/* Combined assignments and events */}
@@ -995,10 +999,10 @@ export default function StudentDashboard({
                           >
                             {deadline.type === 'assignment' ? (
                               <>
-                                <deadline.status.icon className="h-4 w-4 text-gray-500" />
+                                <deadline.status.icon className="h-4 w-4 text-muted-foreground" />
                                 <div className="flex-1 min-w-0">
                                   <div className="font-medium text-sm truncate">{deadline.title}</div>
-                                  <div className="text-xs text-gray-500">
+                                  <div className="text-xs text-muted-foreground">
                                     Due {formatDate(deadline.date!)}
                                   </div>
                                 </div>
@@ -1010,11 +1014,11 @@ export default function StudentDashboard({
                               <>
                                 {(() => {
                                   const EventIcon = getEventIcon(deadline.eventType)
-                                  return <EventIcon className="h-4 w-4 text-gray-500" />
+                                  return <EventIcon className="h-4 w-4 text-muted-foreground" />
                                 })()}
                                 <div className="flex-1 min-w-0">
                                   <div className="font-medium text-sm truncate">{deadline.title}</div>
-                                  <div className="text-xs text-gray-500">
+                                  <div className="text-xs text-muted-foreground">
                                     {formatDateTime(deadline.date!)}
                                   </div>
                                 </div>
@@ -1034,10 +1038,10 @@ export default function StudentDashboard({
                             key={task.id}
                             className="flex items-center gap-3 p-2 border border-border rounded-lg"
                           >
-                            <FileText className="h-4 w-4 text-gray-500" />
+                            <FileText className="h-4 w-4 text-muted-foreground" />
                             <div className="flex-1 min-w-0">
                               <div className="font-medium text-sm truncate">{task.title}</div>
-                              <div className="text-xs text-gray-500">{task.subtitle}</div>
+                              <div className="text-xs text-muted-foreground">{task.subtitle}</div>
                             </div>
                             <Badge className={`text-xs ${task.badgeClassName}`}>
                               {task.badgeLabel}
@@ -1045,7 +1049,7 @@ export default function StudentDashboard({
                           </div>
                         ))
                       ) : (
-                        <div className="text-center py-4 text-gray-500 text-sm">
+                        <div className="text-center py-4 text-muted-foreground text-sm">
                           No current tasks
                         </div>
                       )
@@ -1071,12 +1075,12 @@ export default function StudentDashboard({
                           {progressData.group_teachers.map(teacher => (
                             <div key={teacher.id} className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-secondary">
                               <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-medium">
+                                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 flex items-center justify-center font-medium">
                                   {teacher.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
                                 </div>
                                 <div>
                                   <div className="font-medium text-sm">{teacher.name}</div>
-                                  <div className="text-xs text-gray-500">Group Teacher</div>
+                                  <div className="text-xs text-muted-foreground">Group Teacher</div>
                                 </div>
                               </div>
                               <Button
@@ -1110,12 +1114,12 @@ export default function StudentDashboard({
                         {uniqueTeachers.map(teacher => (
                           <div key={teacher.id} className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-secondary">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-medium">
+                              <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 flex items-center justify-center font-medium">
                                 {teacher.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                               </div>
                               <div>
                                 <div className="font-medium text-sm">{teacher.name}</div>
-                                <div className="text-xs text-gray-500">
+                                <div className="text-xs text-muted-foreground">
                                   {progressData.courses.filter(c => c.teacher_id === teacher.id).length} course(s)
                                 </div>
                               </div>
@@ -1135,7 +1139,7 @@ export default function StudentDashboard({
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-4 text-gray-500 text-sm">
+                      <div className="text-center py-4 text-muted-foreground text-sm">
                         No teacher information available
                       </div>
                     )
@@ -1189,7 +1193,7 @@ export default function StudentDashboard({
                   >
                     {/* Course Image */}
                     {course.cover_image_url ? (
-                      <div className="relative h-48 bg-gray-200">
+                      <div className="relative h-48 bg-gray-200 dark:bg-secondary">
                         <img
                           src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + course.cover_image_url}
                           alt={course.course_title}
@@ -1345,7 +1349,7 @@ export default function StudentDashboard({
                             </span>
                           </TableCell>
                           <TableCell>
-                            <span className="text-sm text-gray-600">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
                               {course.time_spent_minutes} min
                             </span>
                           </TableCell>

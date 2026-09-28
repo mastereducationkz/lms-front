@@ -17,6 +17,7 @@ import ParentReportCard from '../components/parentReports/ParentReportCard';
 import { mondayOf } from '../lib/parentReportWeek';
 import { fetchParentStudentFacts, type ParentStudentResponse } from '../services/api/reports';
 import { backendBase, safeUploadUrl } from '../lib/mediaUrl';
+import { ArrowLeft, ArrowRight, Check, Paperclip, X } from 'lucide-react';
 
 /**
  * Полный отчёт об успеваемости студента для куратора / хэд-куратора /
@@ -283,8 +284,9 @@ export default function StudentReportPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-[1000px] mx-auto space-y-5">
-      <button onClick={() => navigate(-1)} className="text-sm text-gray-400 hover:text-gray-700 transition-colors flex items-center gap-1">
-        ← Назад
+      <button onClick={() => navigate(-1)} className="text-sm text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-colors flex items-center gap-1">
+        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+        Назад
       </button>
 
       {/* Header */}
@@ -387,18 +389,19 @@ export default function StudentReportPage() {
                                   className="text-blue-600 hover:underline"
                                   onClick={e => e.stopPropagation()}
                                 >
-                                  📎 {item.submission.file_name || 'Файл сабмишена'}
+                                  <Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{item.submission.file_name || 'Файл сабмишена'}
                                 </a>
                               ) : (
-                                <span className="text-gray-500">📎 {item.submission.file_name || 'Файл сабмишена'}</span>
+                                <span className="text-gray-500"><Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{item.submission.file_name || 'Файл сабмишена'}</span>
                               );
                             })()}
                             <button
                               type="button"
-                              className="block text-blue-600 hover:underline"
+                              className="flex items-center gap-1 text-blue-600 hover:underline"
                               onClick={e => { e.stopPropagation(); openSubmission(item.submission!.id); }}
                             >
-                              Открыть содержимое сабмишена →
+                              Открыть содержимое сабмишена
+                              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                             </button>
                           </div>
                         </td>
@@ -799,17 +802,21 @@ export default function StudentReportPage() {
 function AnswerValue({ value }: { value: unknown }) {
   if (value === null || value === undefined || value === '') return null;
   if (typeof value === 'boolean') {
-    return <p className="text-sm text-gray-700">{value ? '✓ Выполнено' : '— Не выполнено'}</p>;
+    return value ? (
+      <p className="flex items-center gap-1 text-sm text-gray-700 dark:text-gray-300"><Check className="h-4 w-4 text-green-600 dark:text-green-400" aria-hidden="true" />Выполнено</p>
+    ) : (
+      <p className="text-sm text-gray-700 dark:text-gray-300">— Не выполнено</p>
+    );
   }
   if (typeof value === 'string') {
     if (/^(https?:\/\/|\/)/.test(value) && /\.(png|jpe?g|gif|webp|pdf|mp3|m4a|ogg|wav|webm|docx?|xlsx?)([?#]|$)/i.test(value)) {
       const href = fileHref(value);
       return href ? (
         <a href={href} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">
-          📎 {value.split('/').pop()}
+          <Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{value.split('/').pop()}
         </a>
       ) : (
-        <span className="text-sm text-gray-500 break-all">📎 {value.split('/').pop()}</span>
+        <span className="text-sm text-gray-500 break-all"><Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{value.split('/').pop()}</span>
       );
     }
     return <p className="text-sm text-gray-800 whitespace-pre-wrap break-words">{value}</p>;
@@ -884,7 +891,7 @@ function SubmissionViewer({ viewer, onClose }: {
               </p>
             )}
           </div>
-          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-700 text-lg leading-none">✕</button>
+          <button type="button" onClick={onClose} aria-label="Закрыть" className="rounded p-1 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"><X className="h-5 w-5" aria-hidden="true" /></button>
         </div>
 
         {viewer.loading && <p className="text-sm text-gray-400">Загружаем…</p>}
@@ -900,10 +907,10 @@ function SubmissionViewer({ viewer, onClose }: {
                   rel="noopener noreferrer"
                   className="inline-block text-sm text-blue-600 hover:underline"
                 >
-                  📎 {data.submission.file_name || 'Файл сабмишена'}
+                  <Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{data.submission.file_name || 'Файл сабмишена'}
                 </a>
               ) : (
-                <span className="inline-block text-sm text-gray-500">📎 {data.submission.file_name || 'Файл сабмишена'}</span>
+                <span className="inline-block text-sm text-gray-500"><Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{data.submission.file_name || 'Файл сабмишена'}</span>
               );
             })()}
 

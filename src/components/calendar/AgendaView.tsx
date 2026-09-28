@@ -3,7 +3,7 @@ import {
   cx, formatTime, eventStyle, eventTitle, typeLabel, isSubstitutedForTeacher, startOfDay, isSameDay,
 } from './calendarUtils';
 import { almatyCivilDate, todayInAlmaty } from '../../lib/datetime';
-import { CalendarDays } from 'lucide-react';
+import { ArrowRight, CalendarDays } from 'lucide-react';
 import MeetMark from './MeetMark';
 import RecordingMark from './RecordingMark';
 
@@ -135,8 +135,9 @@ export default function AgendaView({ events, user, onEventClick }: Props) {
                     </span>
                   </span>
                   {(online || isAssignment) && (
-                    <span className="flex-none text-[12px] font-semibold text-primary">
-                      {isAssignment ? 'Open →' : 'Join →'}
+                    <span className="flex flex-none items-center gap-1 text-[12px] font-semibold text-primary">
+                      {isAssignment ? 'Open' : 'Join'}
+                      <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                     </span>
                   )}
                 </button>

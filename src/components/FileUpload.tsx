@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Upload, X, File, Download } from 'lucide-react';
+import { Upload, X, File, Download, FileImage, FileText, Paperclip, type LucideIcon } from 'lucide-react';
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
@@ -84,25 +84,24 @@ export default function FileUpload({
     setError(null);
   };
 
-  const getFileIcon = (fileName: string) => {
+  const getFileIcon = (fileName: string): LucideIcon => {
     const extension = fileName.split('.').pop()?.toLowerCase();
     switch (extension) {
       case 'pdf':
-        return '📄';
       case 'docx':
       case 'doc':
-        return '📝';
+      case 'txt':
+        return FileText;
       case 'jpg':
       case 'jpeg':
       case 'png':
       case 'gif':
-        return '🖼️';
-      case 'txt':
-        return '📄';
+        return FileImage;
       default:
-        return '📎';
+        return Paperclip;
     }
   };
+  const UploadedFileIcon = getFileIcon(uploadedFileName || '');
 
   return (
     <div className={`space-y-4 ${className}`}>
@@ -166,14 +165,14 @@ export default function FileUpload({
 
       {/* Uploaded File Display */}
       {uploadedFileUrl && (
-        <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-          <div className="flex items-center space-x-3">
-            <span className="text-lg">{getFileIcon(uploadedFileName || '')}</span>
-            <div>
-              <p className="text-sm font-medium text-gray-900">
+        <div className="flex items-center justify-between gap-3 p-3 bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900 rounded-lg">
+          <div className="flex min-w-0 items-center space-x-3">
+            <UploadedFileIcon className="h-5 w-5 shrink-0 text-green-700 dark:text-green-400" aria-hidden="true" />
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 break-words">
                 {uploadedFileName || 'Uploaded file'}
               </p>
-              <p className="text-xs text-gray-500">File uploaded successfully</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">File uploaded successfully</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">

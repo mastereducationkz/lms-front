@@ -1,4 +1,4 @@
-import { CheckCircle } from "lucide-react";
+import { BookOpen, CheckCircle } from "lucide-react";
 
 export function BenefitsSection() {
   const benefits = [
@@ -36,7 +36,7 @@ export function BenefitsSection() {
           <div className="relative">
             <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-2xl p-8 h-96 flex items-center justify-center">
               <div className="text-center">
-                <div className="text-6xl mb-4">📚</div>
+                <BookOpen className="mx-auto mb-4 h-14 w-14 text-primary" strokeWidth={1.5} aria-hidden="true" />
                 <h3 className="text-xl font-semibold mb-2">Education of the Future</h3>
                 <p className="text-muted-foreground">Available today at mastereducation.kz</p>
               </div>

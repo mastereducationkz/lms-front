@@ -13,8 +13,10 @@ import {
   User as UserIcon,
   Clock,
   Target,
-  Loader2
+  Loader2,
+  Trophy
 } from 'lucide-react';
+import { RankMedal } from '../components/gamification/RankMedal';
 import Loader from '../components/Loader';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -306,7 +308,8 @@ export default function TeacherClassPage() {
             variant="outline"
             className="border-gray-300 dark:border-border text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-secondary"
           >
-            🏆 Weekly Awards
+            <Trophy className="h-4 w-4" aria-hidden="true" />
+            Weekly Awards
           </Button>
           <Button
             onClick={() => navigate('/teacher/courses')}
@@ -633,7 +636,7 @@ export default function TeacherClassPage() {
                                   <tr key={student.user_id} className="hover:bg-gray-50 dark:hover:bg-secondary transition-colors">
                                     <td className="px-4 py-3 px-6">
                                       <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-50 dark:bg-secondary border border-gray-100 dark:border-border font-medium text-sm text-gray-600 dark:text-gray-400">
-                                        {index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : index + 1}
+                                        {index < 3 ? <RankMedal rank={index + 1} /> : index + 1}
                                       </div>
                                     </td>
                                     <td className="px-4 py-3">

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../services/api';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { ArrowLeft } from 'lucide-react';
 import { CollegeBoardPasswordReveal } from '../components/CollegeBoardPasswordReveal';
 import { collegeBoardPasswordDisplay } from '../lib/assignmentZeroCollegeBoard';
 
@@ -181,8 +182,9 @@ export default function StudentProfilePage() {
   return (
     <div className="p-4 md:p-6 max-w-[1000px] mx-auto space-y-5">
       {/* Back */}
-      <button onClick={() => navigate(-1)} className="text-sm text-gray-400 hover:text-gray-700 transition-colors flex items-center gap-1">
-        ← Назад к журналу
+      <button onClick={() => navigate(-1)} className="text-sm text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-colors flex items-center gap-1">
+        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+        Назад к журналу
       </button>
 
       {/* Student card */}

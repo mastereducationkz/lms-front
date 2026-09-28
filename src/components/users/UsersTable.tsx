@@ -1,4 +1,4 @@
-import { Edit, Trash2, Eye, EyeOff, UploadCloud } from 'lucide-react';
+import { Edit, Trash2, Eye, EyeOff, UploadCloud, GraduationCap, UserCog } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
 import {
@@ -54,8 +54,8 @@ function GroupsCell({ user, groupNameById }: { user: User; groupNameById: Map<nu
   if (user.teacher_name || user.curator_name) {
     return (
       <div className="text-sm">
-        {user.teacher_name && <div className="text-xs text-gray-500 dark:text-gray-400">👨‍🏫 {user.teacher_name}</div>}
-        {user.curator_name && <div className="text-xs text-gray-500 dark:text-gray-400">👨‍💼 {user.curator_name}</div>}
+        {user.teacher_name && <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400"><GraduationCap className="h-3.5 w-3.5 shrink-0" aria-label="Teacher" />{user.teacher_name}</div>}
+        {user.curator_name && <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400"><UserCog className="h-3.5 w-3.5 shrink-0" aria-label="Curator" />{user.curator_name}</div>}
       </div>
     );
   }

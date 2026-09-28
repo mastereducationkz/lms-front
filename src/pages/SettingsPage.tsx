@@ -194,7 +194,7 @@ export default function SettingsPage() {
       const result = await apiClient.completeStepsForUser(data);
       setActionResult({
         type: 'success',
-        message: `✅ ${result.statistics.newly_completed} шагов завершено, ${result.statistics.updated} обновлено, ${result.statistics.already_completed} уже были завершены`
+        message: `${result.statistics.newly_completed} шагов завершено, ${result.statistics.updated} обновлено, ${result.statistics.already_completed} уже были завершены`
       });
       
       // Reload progress
@@ -229,7 +229,7 @@ export default function SettingsPage() {
       const result = await apiClient.resetStepsForUser(data);
       setActionResult({
         type: 'success',
-        message: `✅ Удалено ${result.deleted_records} записей прогресса`
+        message: `Удалено ${result.deleted_records} записей прогресса`
       });
       
       // Reload progress

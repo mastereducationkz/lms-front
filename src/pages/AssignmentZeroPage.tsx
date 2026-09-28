@@ -15,6 +15,7 @@ import {
   Cloud,
   CloudOff,
   Loader2,
+  Check,
 } from 'lucide-react';
 import { Button } from '../components/ui/button.tsx';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card.tsx';
@@ -1277,7 +1278,7 @@ export default function AssignmentZeroPage() {
                   title={step.title}
                 >
                   <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-black/10 dark:bg-white/10 text-[11px] font-semibold">
-                    {stepNumber < displayStep ? '✓' : stepNumber}
+                    {stepNumber < displayStep ? <Check className="h-3 w-3" strokeWidth={3} aria-label="Done" /> : stepNumber}
                   </span>
                   <span className="whitespace-nowrap">{step.title}</span>
                 </button>

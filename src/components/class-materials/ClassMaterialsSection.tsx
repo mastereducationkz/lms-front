@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getClassMaterials, type LessonMaterials, type MaterialItem } from '../../services/api/classMaterials';
 import { homeworkLinkLabel, materialsLocale, openedCount, pendingAfterClass, t } from '../../lib/classMaterials';
@@ -246,9 +246,10 @@ export default function ClassMaterialsSection({ eventId, variant = 'page', onCha
             <Link
               key={hw.id}
               to={`/homework/${hw.id}`}
-              className="mt-2 block text-sm font-medium text-primary underline-offset-4 hover:underline"
+              className="mt-2 flex w-fit max-w-full items-center gap-1 text-sm font-medium text-primary underline-offset-4 hover:underline"
             >
-              {homeworkLinkLabel(hw.title, locale)}
+              <span className="min-w-0 break-words">{homeworkLinkLabel(hw.title, locale)}</span>
+              <ArrowRight className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             </Link>
           ))}
 
