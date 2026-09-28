@@ -4,6 +4,7 @@ import { Bell, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { bellPollDelayMs, materialsLocale, relativeTime, t } from '../lib/classMaterials';
+import { lessonPath } from '../lib/lessonLinks';
 import {
   CLASS_MATERIAL_NOTIFICATION_TYPES,
   getNotifications,
@@ -99,7 +100,8 @@ export default function NotificationsBell() {
     if (!n.is_read) setUnreadCount((c) => Math.max(0, c - 1));
     setItems((prev) => prev.map((it) => (it.id === n.id ? { ...it, is_read: true } : it)));
     markNotificationRead(n.id).catch(() => {});
-    if (n.related_id != null) navigate(`/materials?lesson=${n.related_id}`);
+    // A lesson's materials live on its page now (2026-09-28).
+    if (n.related_id != null) navigate(lessonPath(n.related_id, 'materials'));
   };
 
   const handleMarkAllRead = () => {

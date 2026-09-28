@@ -175,3 +175,40 @@ export async function saveLessonNote(id: number, kind: NoteKind, text: string): 
     throw new Error(detailOf(error, 'Failed to save the note'));
   }
 }
+
+// ── «Today» on the teacher dashboard (GET /lessons/today, 2026-09-28) ──────────────────────
+
+export type TodayTodo = 'marks' | 'scores' | 'homework' | 'recap';
+
+export interface TodayLesson {
+  id: number;
+  title: string;
+  topic: string | null;
+  start: string;
+  end: string;
+  status: LessonStatus;
+  groups: { id: number; name: string; lesson_number: number | null }[];
+  join: { url: string | null; opens_at: string };
+  /** Once the lesson has started: students counted, unmarked, scores missing, and whether Meet takes it. */
+  register: { students: number; meet_marks: boolean; unmarked: number; scores_missing: number } | null;
+  homework: boolean;
+  plan: boolean;
+  recap: boolean;
+  recording: { status: 'ready' | 'pending' | 'failed' | 'removed' } | null;
+  live: LessonLiveRoom | null;
+  todo: TodayTodo[];
+  done: boolean;
+}
+
+export interface TodayLessons {
+  /** The Almaty date the list is for, YYYY-MM-DD. */
+  date: string;
+  lessons: TodayLesson[];
+  /** Only when there are no lessons today: the next lesson this person teaches. */
+  next: { id: number; start: string; groups: string[] } | null;
+}
+
+export async function getTodayLessons(): Promise<TodayLessons> {
+  const response = await api.get('/lessons/today');
+  return response.data as TodayLessons;
+}
