@@ -1,0 +1,86 @@
+import { useEffect, useState } from 'react';
+import { ExternalLink, FileText, Image as ImageIcon, Link2, Loader2, Music } from 'lucide-react';
+import type { LessonLocale } from '../../services/api/classLessons';
+import type { MaterialItem } from '../../services/api/classMaterials';
+import { ApiError, SessionLost } from '../api';
+import { lessons } from '../lessons';
+
+/** What the panel lists: live items only (a moderated-away one is the lesson page's business). */
+export function visibleMaterials(items: MaterialItem[]): MaterialItem[] {
+  return [...items].filter((item) => !item.removed).sort((a, b) => a.position - b.position);
+}
+
+/**
+ * «Материалы урока», open-only. Adding and editing stay on the lesson page. Opening goes through
+ * the materials' own `open` endpoint (it logs the open and signs a file's URL); the window is
+ * opened first, inside the click, so the browser lets it through.
+ */
+export default function MaterialsCard({ eventId, locale }: { eventId: number; locale: LessonLocale }) {
+  const ru = locale === 'ru';
+  const t = (r: string, e: string) => (ru ? r : e);
+  const [items, setItems] = useState<MaterialItem[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [opening, setOpening] = useState<number | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    setItems(null);
+    setFailed(false);
+    lessons.materials(eventId)
+      .then((data) => { if (live) setItems(visibleMaterials(data.items)); })
+      .catch((e) => {
+        if (!live) return;
+        if (e instanceof ApiError && e.status === 404) setItems([]);
+        else setFailed(true);
+      });
+    return () => { live = false; };
+  }, [eventId]);
+
+  const open = async (item: MaterialItem) => {
+    const win = window.open('about:blank', '_blank');
+    setOpening(item.id);
+    try {
+      const opened = await lessons.openMaterial(item.id);
+      if (win) {
+        win.opener = null; // a teacher's link must not reach back into the panel
+        win.location.href = opened.url;
+      }
+      else window.open(opened.url, '_blank', 'noopener');
+    } catch (e) {
+      win?.close();
+      if (!(e instanceof SessionLost)) setFailed(true);
+    } finally {
+      setOpening(null);
+    }
+  };
+
+  if (failed) return <p className="text-xs text-slate-500">{t('Материалы не загрузились.', 'Materials did not load.')}</p>;
+  if (items === null) return <Loader2 className="h-4 w-4 animate-spin text-slate-400" />;
+  if (items.length === 0) return <p className="text-xs text-slate-500">{t('Материалов пока нет.', 'No materials yet.')}</p>;
+  return (
+    <ul className="space-y-1">
+      {items.map((item) => (
+        <li key={item.id}>
+          <button
+            type="button"
+            onClick={() => void open(item)}
+            className="flex w-full items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-[13px] text-slate-900 transition hover:bg-slate-50"
+          >
+            {opening === item.id ? <Loader2 className="h-4 w-4 flex-none animate-spin text-slate-400" /> : <KindIcon item={item} />}
+            <span className="min-w-0 flex-1 truncate">{item.title}</span>
+            {item.hidden_until_end && <span className="flex-none text-[10px] text-slate-400">{t('после урока', 'after class')}</span>}
+            <ExternalLink className="h-3 w-3 flex-none text-slate-400" aria-hidden />
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function KindIcon({ item }: { item: MaterialItem }) {
+  const cls = 'h-4 w-4 flex-none text-slate-500';
+  if (item.kind === 'link') return <Link2 className={cls} aria-hidden />;
+  if (item.file?.kind === 'image') return <ImageIcon className={cls} aria-hidden />;
+  if (item.file?.kind === 'audio') return <Music className={cls} aria-hidden />;
+  return <FileText className={cls} aria-hidden />;
+}

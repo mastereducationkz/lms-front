@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="referrer" content="strict-origin-when-cross-origin"/>
+    <title>Master LMS · Meet</title>
+    <link rel="icon" type="image/png" href="/meet-addon/icon-32.png"/>
+  </head>
+  <body class="bg-white">
+    <!-- The Google Meet add-on side panel. Meet shows a loading screen until the panel's SDK
+         session starts (src/meet-addon/App.tsx), and gives up after 10 seconds. -->
+    <div id="root"></div>
+    <script type="module" src="/src/meet-addon/main.tsx"></script>
+  </body>
+</html>

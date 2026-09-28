@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { takeLinkAfterLogin } from '../../lib/meetAddonLink'
 import apiClient from '../../services/api'
 import {
   completeOidcLogin,
@@ -126,7 +127,8 @@ export default function OidcCallbackPage() {
           if (cancelled) return true
           updateUser(user)
           releaseRetry()
-          navigate('/dashboard', { replace: true })
+          // A Meet add-on sign-in popup that sent a signed-out teacher here goes back to its link.
+          navigate(takeLinkAfterLogin() ?? '/dashboard', { replace: true })
           return true
         } catch (err) {
           const status = (err as { status?: number } | null)?.status

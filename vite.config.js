@@ -44,6 +44,16 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      // The Google Meet add-on side panel is its own small entry (src/meet-addon): Meet waits at
+      // most 10 s for it, so it never loads the main app's router, providers or service worker.
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        'meet-addon': path.resolve(__dirname, 'meet-addon.html'),
+      },
+    },
+  },
   // NOTE: no manual `manualChunks`. Route-level React.lazy (see src/routes/Router.tsx) already
   // keeps the initial download small, and Rollup's automatic chunking splits shared vendors while
   // guaranteeing correct chunk evaluation order. A hand-rolled split that put React in its own
