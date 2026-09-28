@@ -595,6 +595,14 @@ export default function Router() {
             </ProtectedRoute>
           } />
 
+          <Route path="/webinar-recordings" element={
+            <ProtectedRoute>
+              <AppLayout>
+                <LessonRecordings kind="webinar" />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
           <Route path="/materials" element={
             <ProtectedRoute allowedRoles={['student', 'teacher', 'curator', 'head_curator', 'head_teacher', 'admin']}>
               <AppLayout>
