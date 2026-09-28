@@ -268,8 +268,20 @@ export interface ParentTestSide {
   total: number | null;
 }
 
-export interface ParentWeekTest {
-  program: 'sat' | 'nuet' | 'ielts';
+export type ParentProgram = 'sat' | 'nuet' | 'ielts';
+
+/** Полосы IELTS 0–9 по четырём навыкам и общий балл. */
+export interface ParentTestBands {
+  listening: number | null;
+  reading: number | null;
+  writing: number | null;
+  speaking: number | null;
+  overall: number | null;
+}
+
+/** SAT и NUET: correct/total по двум секциям. */
+export interface ParentSectionedTest {
+  program: 'sat' | 'nuet';
   label: string | null;
   date: string | null;
   verbal: ParentTestSide;
@@ -278,11 +290,34 @@ export interface ParentWeekTest {
   delta: { verbal: number | null; math: number | null } | null;
 }
 
+/**
+ * IELTS: полос, а не секций. Отдельный тип, а не общий с необязательными полями, —
+ * чтобы `test.verbal.correct` не прошёл проверку типов: у записи IELTS этих ключей
+ * нет вовсе, и обращение к ним уронило бы карточку.
+ */
+export interface ParentBandedTest {
+  program: 'ielts';
+  label: string | null;
+  date: string | null;
+  bands: ParentTestBands;
+  prev: { label: string | null; bands: ParentTestBands } | null;
+  delta: Partial<Record<keyof ParentTestBands, number | null>> | null;
+}
+
+export type ParentWeekTest = ParentSectionedTest | ParentBandedTest;
+
 export interface ParentWeekFacts {
   student: { id: number; name: string; first_name: string; gender: 'male' | 'female' | null };
   group: { id: number | null; name: string | null };
   week: { start: string; end: string };
+  /** Первый из `tests`. Сохранён отдельным полем: на него опирается каскад шаблонов. */
   test: ParentWeekTest | null;
+  /** По записи на каждую программу ученика, у которой есть результат за неделю. */
+  tests: ParentWeekTest[];
+  /** Куда ученик записан, независимо от результатов. */
+  programs: ParentProgram[];
+  /** Программы без результата за неделю. Упавшая платформа сюда не попадает. */
+  missing_tests: ParentProgram[];
   test_unavailable: boolean;
   homework: { assigned: number; submitted: number; missing: string[] } | null;
   attendance: {
