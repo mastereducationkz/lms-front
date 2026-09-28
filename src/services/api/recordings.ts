@@ -1,6 +1,7 @@
 import { api } from './client';
 import type { MeetSync } from './meetAttendance';
 import type { RecordingStatus } from '../../types';
+import type { RecordingViewStats } from '../../lib/recordingViews';
 
 /**
  * What the backend says about a lesson's recording.
@@ -107,6 +108,8 @@ export interface RecordingLibraryItem {
   ingested_at: string | null;
   /** While not ready: stage, step, percent, place in line. Absent from an older server. */
   progress?: RecordingProgress | null;
+  /** Staff only, ready lesson recordings only: how many of its students watched it. */
+  views?: RecordingViewStats | null;
 }
 
 /** One lesson's news for a card or the player: what `GET /recordings/status` returns per lesson. */

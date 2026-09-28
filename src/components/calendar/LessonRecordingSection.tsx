@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Loader2, Play, Video } from 'lucide-react';
 import HlsVideoPlayer from '../HlsVideoPlayer';
 import { RecordingStatusCard } from '../recordings/RecordingProgress';
+import { useRecordingViewTracker } from '../recordings/useRecordingViewTracker';
 import { getLessonRecording, type LessonRecording } from '../../services/api/recordings';
 import type { Event } from '../../types';
 import { formatClock, recordingsLocale } from '../../lib/recordings';
@@ -45,6 +46,9 @@ export default function LessonRecordingSection({ event }: Props) {
   const [recording, setRecording] = useState<LessonRecording | null>(null);
   const [loading, setLoading] = useState(false);
   const [watching, setWatching] = useState(false);
+  const playerBox = useRef<HTMLDivElement>(null);
+  // How much of it this viewer plays, once they press play (2026-09-28).
+  useRecordingViewTracker(event.id, playerBox, watching);
 
   useEffect(() => {
     setRecording(null);
@@ -131,7 +135,7 @@ export default function LessonRecordingSection({ event }: Props) {
     : null;
 
   return (
-    <div className="mt-4 border-t border-border pt-4">
+    <div ref={playerBox} className="mt-4 border-t border-border pt-4">
       {watching ? (
         <HlsVideoPlayer url={recording.url} poster={recording.poster_url} title={event.title} autoPlay className="w-full" />
       ) : (

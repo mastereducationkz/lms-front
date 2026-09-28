@@ -15,6 +15,7 @@ import { ParticipantsPanel } from '../meetAttendance/ParticipantsPanel';
 import { TalkCard, useLessonTalk } from '../meetAttendance/TalkPanel';
 import { TalkSidePanel } from '../meetAttendance/TalkSidePanel';
 import { useVideoClock } from './useVideoClock';
+import { useRecordingViewTracker } from './useRecordingViewTracker';
 import { useAuth } from '../../contexts/AuthContext';
 import { lessonPath } from '../../lib/lessonLinks';
 import { cn } from '../../lib/utils';
@@ -216,6 +217,8 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
   const sideBySide = talkReady && wide;
   const { time, seek } = useVideoClock(playerBox, open && talkReady);
   const playable = recording?.status === 'ready';
+  // How much of it this viewer plays — a heartbeat while it plays, never per second (2026-09-28).
+  useRecordingViewTracker(eventId, playerBox, open && playable);
 
   if (!meta) return null;
 
