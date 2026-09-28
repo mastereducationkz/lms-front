@@ -3,6 +3,7 @@ export default {
     darkMode: ["class"],
     content: [
     "./index.html",
+    "./meet-addon.html",
     "./src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {

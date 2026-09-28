@@ -64,6 +64,7 @@ const Calendar = lazyRoute(() => import('../pages/Calendar.tsx'));
 const LessonRecordings = lazyRoute(() => import('../pages/LessonRecordings.tsx'));
 const ClassMaterialsPage = lazyRoute(() => import('../pages/ClassMaterialsPage.tsx'));
 const ClassLessonPage = lazyRoute(() => import('../pages/ClassLessonPage.tsx'));
+const MeetAddonLinkPage = lazyRoute(() => import('../pages/MeetAddonLinkPage.tsx'));
 const MeetAttendanceReview = lazyRoute(() => import('../pages/MeetAttendanceReview.tsx'));
 const TeacherDisciplinePage = lazyRoute(() => import('../pages/TeacherDisciplinePage.tsx'));
 const WatchRecordingPage = lazyRoute(() => import('../pages/WatchRecordingPage.tsx'));
@@ -157,6 +158,10 @@ export default function Router() {
                 } />
                 {/* SSO Phase 2 — OIDC (Zitadel) PKCE callback */}
                 <Route path="/auth/callback" element={<OidcCallbackPage />} />
+                {/* The Google Meet add-on's sign-in popup: the teacher allows the Meet side panel from
+                    their normal session. It signs in on its own (not ProtectedRoute) so a signed-out
+                    teacher's link survives the SSO round trip. */}
+                <Route path="/meet-addon/link" element={<MeetAddonLinkPage />} />
 
           {/* Assignment Zero - Self-Assessment for new students */}
           <Route path="/assignment-zero" element={
