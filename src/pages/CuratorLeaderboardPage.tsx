@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 import { 
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
@@ -10,7 +10,7 @@ import {
 } from '../components/ui/select';
 import { Input } from '../components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
-import { ChevronLeft, ChevronRight, Loader2, Save, Eye, EyeOff, Check, ChevronsUpDown, ClipboardList, Sparkles, User, Pencil, Star, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Save, Eye, EyeOff, Check, ChevronsUpDown, ClipboardList, Sparkles, User, Pencil, Star, Plus, ArrowUpRight } from 'lucide-react';
 import { StudentHomeworkDialog } from '../components/leaderboard/StudentHomeworkDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { getCuratorGroups, getWeeklyLessonsWithHwStatus, updateAttendanceBulk, updateLeaderboardEntriesBulk, updateLeaderboardConfig, setGroupWeekOffset, setLessonTopic, setGroupPlatformTestsOptOut } from '../services/api';
@@ -39,6 +39,7 @@ import { toast } from '../components/Toast';
 import { getClassMaterialCounts } from '../services/api/classMaterials';
 import LessonMaterialsBadge, { LessonMaterialsDialog } from '../components/class-materials/LessonMaterialsBadge';
 import LessonScoresDialog from '../components/attendance/LessonScoresDialog';
+import { lessonPath } from '../lib/lessonLinks';
 
 interface HomeworkMeta {
     id: number;
@@ -1807,10 +1808,22 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                             )}
                                         </span>
                                     )}
+                                    {/* The lesson's own page (2026-09-28): register, scores, notes, recording, materials. */}
+                                    {lesson.event_id ? (
+                                        <Link
+                                            to={lessonPath(lesson.event_id)}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="absolute top-1 right-1 p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+                                            title={t('Открыть урок', 'Open lesson')}
+                                            aria-label={t('Открыть урок', 'Open lesson')}
+                                        >
+                                            <ArrowUpRight className="w-3.5 h-3.5" />
+                                        </Link>
+                                    ) : null}
                                     {canMarkAttendance && (
                                         <button
                                             type="button"
-                                            className="absolute top-1 right-1 p-1 text-gray-400 hover:text-blue-500 opacity-100 md:opacity-0 md:group-hover/lesson:opacity-100 transition-opacity"
+                                            className="absolute top-1 right-6 p-1 text-gray-400 hover:text-blue-500 opacity-100 md:opacity-0 md:group-hover/lesson:opacity-100 transition-opacity"
                                             title={t('Тема урока', 'Lesson topic')}
                                             onClick={(e) => { e.stopPropagation(); setTopicModal({ open: true, lesson, value: lesson.topic ?? '' }); }}
                                         >

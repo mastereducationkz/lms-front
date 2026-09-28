@@ -63,6 +63,7 @@ const EditEvent = lazyRoute(() => import('../pages/EditEvent.tsx'));
 const Calendar = lazyRoute(() => import('../pages/Calendar.tsx'));
 const LessonRecordings = lazyRoute(() => import('../pages/LessonRecordings.tsx'));
 const ClassMaterialsPage = lazyRoute(() => import('../pages/ClassMaterialsPage.tsx'));
+const ClassLessonPage = lazyRoute(() => import('../pages/ClassLessonPage.tsx'));
 const MeetAttendanceReview = lazyRoute(() => import('../pages/MeetAttendanceReview.tsx'));
 const TeacherDisciplinePage = lazyRoute(() => import('../pages/TeacherDisciplinePage.tsx'));
 const WatchRecordingPage = lazyRoute(() => import('../pages/WatchRecordingPage.tsx'));
@@ -599,6 +600,16 @@ export default function Router() {
             <ProtectedRoute>
               <AppLayout>
                 <LessonRecordings key="webinar" kind="webinar" />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          {/* One class lesson on one page (owner, 2026-09-28): materials, register, recording, homework,
+              notes, Meet and requests, shaped by role. Not the course-content lesson at /course/…/lesson/…. */}
+          <Route path="/lessons/:eventId" element={
+            <ProtectedRoute allowedRoles={['student', 'teacher', 'curator', 'head_curator', 'head_teacher', 'admin']}>
+              <AppLayout>
+                <ClassLessonPage />
               </AppLayout>
             </ProtectedRoute>
           } />

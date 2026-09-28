@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { lessonPath } from '../lib/lessonLinks';
 import apiClient from '../services/api';
 import type { TeacherTodayHomework } from '../services/api';
 import { toast } from '../components/Toast';
@@ -921,15 +922,18 @@ export default function TeacherDashboard() {
 
   // Attendance-required rolled up per group (one row per group, not per lesson).
   const attendanceGroups = (() => {
-    const map = new Map<number, { group_id: number; group_name: string; count: number; oldest: string }>();
+    const map = new Map<number, { group_id: number; group_name: string; count: number; oldest: string; oldestEventId: number | null }>();
     for (const r of stats?.missing_attendance_reminders ?? []) {
       const key = r.group_id ?? -1;
       const existing = map.get(key);
       if (existing) {
         existing.count += 1;
-        if (r.event_date && new Date(r.event_date) < new Date(existing.oldest)) existing.oldest = r.event_date;
+        if (r.event_date && new Date(r.event_date) < new Date(existing.oldest)) {
+          existing.oldest = r.event_date;
+          existing.oldestEventId = r.event_id ?? null;
+        }
       } else {
-        map.set(key, { group_id: r.group_id ?? -1, group_name: r.group_name || '—', count: 1, oldest: r.event_date });
+        map.set(key, { group_id: r.group_id ?? -1, group_name: r.group_name || '—', count: 1, oldest: r.event_date, oldestEventId: r.event_id ?? null });
       }
     }
     return Array.from(map.values()).sort((a, b) => b.count - a.count);
@@ -1168,12 +1172,21 @@ export default function TeacherDashboard() {
                   {attendanceGroups.map((g) => (
                     <tr
                       key={g.group_id}
-                      onClick={() => navigate(g.group_id > 0 ? `/attendance?group=${g.group_id}${g.oldest ? `&date=${g.oldest.slice(0, 10)}` : ''}` : '/attendance')}
+                      // One lesson missing: its own page, at the register (2026-09-28); several: the journal.
+                      onClick={() => navigate(g.count === 1 && g.oldestEventId
+                        ? lessonPath(g.oldestEventId, 'register')
+                        : g.group_id > 0 ? `/attendance?group=${g.group_id}${g.oldest ? `&date=${g.oldest.slice(0, 10)}` : ''}` : '/attendance')}
                       className="border-b border-gray-100 dark:border-border last:border-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-secondary/40 transition-colors"
                     >
                       <td className="px-6 py-3 font-medium text-gray-900 dark:text-foreground">{g.group_name}</td>
                       <td className="px-6 py-3 text-rose-600 dark:text-rose-400 font-semibold">{g.count}</td>
-                      <td className="px-6 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">{g.oldest ? new Date(g.oldest).toLocaleDateString() : '—'}</td>
+                      <td className="px-6 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                        {g.oldest && g.oldestEventId ? (
+                          <Link to={lessonPath(g.oldestEventId, 'register')} onClick={(e) => e.stopPropagation()} className="hover:text-primary hover:underline" title="Open lesson">
+                            {new Date(g.oldest).toLocaleDateString()}
+                          </Link>
+                        ) : g.oldest ? new Date(g.oldest).toLocaleDateString() : '—'}
+                      </td>
                       <td className="px-6 py-3 text-right text-rose-600 dark:text-rose-400 font-medium">Mark</td>
                     </tr>
                   ))}

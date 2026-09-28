@@ -654,6 +654,8 @@ export interface Assignment {
   id: string;
   lesson_id?: string;
   group_id?: number;
+  /** The class lesson (events.id) this homework was set on — its page is /lessons/:event_id. */
+  event_id?: number | null;
   title: string;
   description: string;
   assignment_type: AssignmentType;

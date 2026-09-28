@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { CalendarDays, Clock, Link2, Loader2, RotateCcw, Timer, User, Users, VideoOff } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { ArrowUpRight, CalendarDays, Clock, Link2, Loader2, RotateCcw, Timer, User, Users, VideoOff } from 'lucide-react';
 import { toast } from 'sonner';
 import HlsVideoPlayer from '../HlsVideoPlayer';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../ui/dialog';
@@ -15,6 +16,7 @@ import { TalkCard, useLessonTalk } from '../meetAttendance/TalkPanel';
 import { TalkSidePanel } from '../meetAttendance/TalkSidePanel';
 import { useVideoClock } from './useVideoClock';
 import { useAuth } from '../../contexts/AuthContext';
+import { lessonPath } from '../../lib/lessonLinks';
 import { cn } from '../../lib/utils';
 import {
   almatyDayKey, dayHeading, formatDurationWords, recordingHeading, timeRange, watchLinkPath, type Locale,
@@ -58,6 +60,7 @@ const TEXT = {
     remove: 'Remove',
     restore: 'Restore',
     restoreFailed: 'Could not restore the recording',
+    openLesson: 'Open lesson',
   },
   ru: {
     loading: 'Загружаем запись…',
@@ -75,6 +78,7 @@ const TEXT = {
     remove: 'Удалить',
     restore: 'Вернуть',
     restoreFailed: 'Не удалось вернуть запись',
+    openLesson: 'Открыть урок',
   },
 } as const;
 
@@ -132,6 +136,9 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
   const playerBox = useRef<HTMLDivElement>(null);
 
   const eventId = meta?.eventId;
+  // A class lesson's own page (2026-09-28) — not for webinars, and not when this player sits on it.
+  const { pathname } = useLocation();
+  const lessonHref = eventId != null && meta?.eventType !== 'webinar' ? lessonPath(eventId) : null;
   useEffect(() => {
     setRecording(null);
     setFailedToLoad(false);
@@ -357,6 +364,16 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
             </ul>
           </DialogDescription>
           <div className="flex flex-none items-center gap-2 self-start sm:self-auto">
+            {lessonHref && pathname !== lessonHref && (
+              <Link
+                to={lessonHref}
+                onClick={() => onOpenChange(false)}
+                className="inline-flex flex-none items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-[13px] font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                {t.openLesson}
+              </Link>
+            )}
             <button
               type="button"
               onClick={copyLink}

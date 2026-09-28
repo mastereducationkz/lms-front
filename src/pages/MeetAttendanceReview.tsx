@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CheckCheck, ChevronRight, Download, Loader2, MonitorCheck, RotateCcw, Search } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ArrowUpRight, CheckCheck, ChevronRight, Download, Loader2, MonitorCheck, RotateCcw, Search } from 'lucide-react';
+import { lessonPath } from '../lib/lessonLinks';
 import { cn } from '../lib/utils';
 import { APP_TIMEZONE } from '../lib/datetime';
 import {
@@ -524,6 +526,15 @@ export default function MeetAttendanceReview() {
                         <div className="text-xs text-muted-foreground">
                           {dayLabel(item.start)} · {clock(item.start)}–{clock(item.end)}
                         </div>
+                        {/* The row opens the Meet dialog; the lesson's own page is one click away. */}
+                        <Link
+                          to={lessonPath(item.event_id)}
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => e.stopPropagation()}
+                          className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                        >
+                          Open lesson <ArrowUpRight className="h-3 w-3" aria-hidden />
+                        </Link>
                       </td>
                       {stillLoading(item) ? (
                         <td colSpan={3} className="px-4 py-3">

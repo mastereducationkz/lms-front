@@ -70,6 +70,19 @@ describe('meetInvitationText', () => {
     );
   });
 
+  it('links the lesson\'s own page when it knows the lesson — the bot\'s invitation says the same', () => {
+    expect(meetInvitationText({ ...lesson, id: 123 })).toBe(
+      [
+        'Приглашение на урок',
+        'July 8 SAT, урок 29',
+        'Четверг, 10 сентября, 19:00–20:00 (время Алматы)',
+        `Google Meet: ${MEET}`,
+        'Материалы и запись: https://lms.mastereducation.kz/lessons/123',
+        'Подключайтесь за пару минут до начала.',
+      ].join('\n'),
+    );
+  });
+
   it('uses the lesson\'s clean link, never an account-bound one', () => {
     expect(meetInvitationText(lesson)).not.toContain('authuser');
   });
