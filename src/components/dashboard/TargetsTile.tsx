@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Pencil, Target, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Pencil, Target, X } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import {
@@ -7,7 +7,6 @@ import {
   getMyTargets,
   score,
   setMyTarget,
-  trendArrow,
   type IeltsModule,
   type TargetsPayload,
   type TargetTrack,
@@ -124,7 +123,7 @@ function IeltsBlock({ data, onSaved }: { data: TargetsPayload; onSaved: (next: T
                 <p className="text-base font-semibold tabular-nums">
                   {band(mod.now)}
                   {mod.trend != null && mod.trend !== 0 && (
-                    <span className={'ml-0.5 text-xs ' + (mod.trend > 0 ? 'text-emerald-600' : 'text-red-500')}>{trendArrow(mod.trend)}</span>
+                    <TrendIcon trend={mod.trend} className={'ml-0.5 inline h-3 w-3 align-[-1px] ' + (mod.trend > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400')} />
                   )}
                 </p>
                 <p className="text-[11px] text-muted-foreground">best {band(mod.best)}</p>
@@ -149,7 +148,7 @@ function IeltsBlock({ data, onSaved }: { data: TargetsPayload; onSaved: (next: T
               ))}
             </div>
           </details>
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
           <div className="flex justify-end gap-2">
             <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)} disabled={saving}>
               <X className="h-4 w-4" aria-hidden="true" /> Cancel
@@ -224,7 +223,13 @@ function ScoreBlock({ track, data, onSaved }: { track: 'sat' | 'nuet'; data: Tar
                 {' · '}Verbal {score(current.verbal)}{targets.verbal != null ? ` → ${targets.verbal}` : ''}
                 {current.verbal_correct != null && current.verbal_total != null ? ` (${current.verbal_correct}/${current.verbal_total} correct)` : ''}
                 {current.set_name ? ` · ${current.set_name}` : ''}
-                {current.trend != null && current.trend !== 0 ? ` · ${current.trend > 0 ? '↑' : '↓'} ${Math.abs(current.trend)} vs previous set` : ''}
+                {current.trend != null && current.trend !== 0 ? (
+                  <>
+                    {' · '}
+                    <TrendIcon trend={current.trend} className="inline h-3 w-3 align-[-2px]" />
+                    {` ${Math.abs(current.trend)} vs previous set`}
+                  </>
+                ) : null}
               </p>
               <p className="text-[11px] text-muted-foreground italic">
                 {data.progress.sat?.note ?? 'Scaled scores are estimates predicted from the number of correct answers. They are not official scores.'}
@@ -245,7 +250,7 @@ function ScoreBlock({ track, data, onSaved }: { track: 'sat' | 'nuet'; data: Tar
           {fields.map((f) => (
             <NumberField key={f.key} label={f.label} value={form[f.key] ?? ''} onChange={(v) => setForm((s) => ({ ...s, [f.key]: v }))} step={track === 'sat' ? 10 : 1} min={f.min} max={f.max} />
           ))}
-          {error && <p className="text-xs text-red-600">{error}</p>}
+          {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
           <div className="flex justify-end gap-2">
             <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)} disabled={saving}>
               <X className="h-4 w-4" aria-hidden="true" /> Cancel
@@ -293,3 +298,9 @@ export function TargetsTile() {
 }
 
 export default TargetsTile;
+
+/** Up or down since the previous result, drawn rather than a ↑/↓ glyph. */
+function TrendIcon({ trend, className }: { trend: number; className?: string }) {
+  const Icon = trend > 0 ? ArrowUp : ArrowDown;
+  return <Icon className={className} role="img" aria-label={trend > 0 ? 'up' : 'down'} />;
+}

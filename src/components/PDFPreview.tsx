@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Download, Maximize2 } from 'lucide-react';
+import { X, Download, Maximize2, FileText } from 'lucide-react';
 import { Button } from './ui/button';
 
 interface PDFPreviewProps {
@@ -54,7 +54,7 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({
           {hasError ? (
             <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-500">
               <div className="text-center">
-                <div className="text-2xl mb-2">📄</div>
+                <FileText className="mx-auto mb-2 h-6 w-6" aria-hidden="true" />
                 <div className="text-xs">PDF Preview</div>
               </div>
             </div>

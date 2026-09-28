@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { Input } from './ui/input';
 import { isOidcConfigured, startOidcLogin, getLastAccount, oidcStorageAvailable, OidcCallbackError } from '../services/oidc';
 
@@ -238,9 +238,10 @@ export const SignInPage: React.FC<SignInPageProps> = ({
               <div className="animate-element animate-delay-950 mt-4 text-center">
                 <button 
                   onClick={onBackToHome}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors underline"
+                  className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4"
                 >
-                  ← Back to Home
+                  <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                  Back to Home
                 </button>
               </div>
             )}

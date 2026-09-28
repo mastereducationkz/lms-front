@@ -1,4 +1,5 @@
 import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
+import { Flag } from 'lucide-react';
 import MeetMark from './MeetMark';
 import RecordingMark from './RecordingMark';
 import type { Event } from '../../types';
@@ -50,7 +51,8 @@ function EventCard({ event, user, now, style, onClick }: {
       )}
     >
       <div className={cx('flex items-center gap-1 text-[10.5px] font-bold tabular-nums', s.time)}>
-        {isAssignment ? '⚑ ' : ''}{formatTime(event.start_datetime)}
+        {isAssignment && <Flag className="h-2.5 w-2.5 shrink-0" aria-label="Homework deadline" />}
+        {formatTime(event.start_datetime)}
         <RecordingMark event={event} role={user?.role} className="h-2.5 w-2.5" />
         <MeetMark event={event} role={user?.role} className="h-2.5 w-2.5" />
       </div>
@@ -247,7 +249,7 @@ export default function WeekView({ weekDays, events, user, onEventClick, onSlotC
               right: 0,
             }}
           >
-            <span className="absolute -left-[50px] -top-2.5 text-[10px] font-bold tabular-nums text-red-500">
+            <span className="absolute -left-[50px] -top-2.5 text-[10px] font-bold tabular-nums text-red-500 dark:text-red-400">
               {formatTime(now.toISOString())}
             </span>
             <span className="absolute -left-1 -top-[5px] h-2 w-2 rounded-full bg-red-500" />

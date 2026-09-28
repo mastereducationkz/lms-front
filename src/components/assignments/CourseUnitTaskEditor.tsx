@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BookOpen, CheckCircle, ClipboardCheck } from 'lucide-react';
+import { ArrowRight, BookOpen, CheckCircle, ClipboardCheck } from 'lucide-react';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import apiClient from '../../services/api';
@@ -230,7 +230,7 @@ export default function CourseUnitTaskEditor({ content, onContentChange }: Cours
                       <div className="mt-1.5 ml-8 space-y-0.5">
                         {assignments.map((a, idx) => (
                           <div key={idx} className="text-xs text-amber-600/80 dark:text-amber-400/80 flex items-center gap-1">
-                            <span>→</span>
+                            <ArrowRight className="h-3 w-3 shrink-0" aria-hidden="true" />
                             <span className="font-medium">{a.assignment_title}</span>
                             {a.group_name && (
                               <span className="text-amber-500/70 dark:text-amber-500/60">({a.group_name})</span>

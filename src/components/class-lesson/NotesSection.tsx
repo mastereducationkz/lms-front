@@ -98,7 +98,7 @@ function NoteBlock({ view, kind, note, onSaved }: {
             aria-label={ru ? meta.ru : meta.en}
           />
           <div className="mt-1.5 flex items-center justify-between gap-2">
-            <span className={cn('text-[11px] tabular-nums', over ? 'font-semibold text-rose-600' : 'text-muted-foreground')}>
+            <span className={cn('text-[11px] tabular-nums', over ? 'font-semibold text-rose-600 dark:text-rose-400' : 'text-muted-foreground')}>
               {draft.length}/{NOTE_LIMIT}
             </span>
             <button

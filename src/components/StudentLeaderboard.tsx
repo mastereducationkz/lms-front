@@ -2,11 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Skeleton } from './ui/skeleton';
-import { 
-  Trophy, 
-  Zap, 
-  TrendingUp
-} from 'lucide-react';
+import { Crown, Dumbbell, Flame, Star } from 'lucide-react';
 import apiClient from '../services/api';
 
 interface LeaderboardEntry {
@@ -216,9 +212,9 @@ export default function StudentLeaderboard() {
       
       <CardContent>
         {error ? (
-          <div className="text-center py-4 text-red-500 text-sm">
+          <div className="text-center py-4 text-red-500 dark:text-red-400 text-sm">
             {error}
-            <Button variant="link" size="sm" onClick={() => (currentUser ? loadLeaderboard() : loadUserAndGroups())} className="text-blue-500">Retry</Button>
+            <Button variant="link" size="sm" onClick={() => (currentUser ? loadLeaderboard() : loadUserAndGroups())} className="text-blue-500 dark:text-blue-400">Retry</Button>
           </div>
         ) : (
           <>
@@ -227,24 +223,24 @@ export default function StudentLeaderboard() {
           <div className="mb-4">
             <div className="flex items-end justify-between px-2 mb-2">
               <div className="flex flex-col">
-                <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Your Rank</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-1">Your Rank</span>
                 <div className="flex items-center gap-2 ">
                   <span className="text-2xl font-bold text-gray-900 dark:text-foreground tracking-tight">#{myRankInfo.rank}</span>
                   {myRankInfo.rank === 1 ? (
-                    <span className="text-[16px] font-bold text-yellow-600 dark:text-yellow-400 px-2 py-auto rounded-full">THE GOAT 🐐</span>
+                    <span className="inline-flex items-center gap-1 text-[16px] font-bold text-yellow-700 dark:text-yellow-400 px-2 rounded-full"><Crown className="h-4 w-4" aria-hidden="true" />THE GOAT</span>
                   ) : myRankInfo.rank <= 3 ? (
-                    <span className="text-[16px] font-bold text-orange-600 dark:text-orange-400 px-2 py-auto rounded-full">LEGEND 🔥</span>
+                    <span className="inline-flex items-center gap-1 text-[16px] font-bold text-orange-700 dark:text-orange-400 px-2 rounded-full"><Flame className="h-4 w-4" aria-hidden="true" />LEGEND</span>
                   ) : myRankInfo.rank <= 10 ? (
-                    <span className="text-[16px] font-bold text-purple-600 dark:text-purple-400 px-2 py-auto rounded-full">RISING STAR 🌟</span>
+                    <span className="inline-flex items-center gap-1 text-[16px] font-bold text-purple-600 dark:text-purple-400 px-2 rounded-full"><Star className="h-4 w-4" aria-hidden="true" />RISING STAR</span>
                   ) : (
-                    <span className="text-sm font-bold text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-secondary px-2 py-0.5 rounded-full">GRINDING 💪</span>
+                    <span className="inline-flex items-center gap-1 text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-secondary px-2 py-0.5 rounded-full"><Dumbbell className="h-3.5 w-3.5" aria-hidden="true" />GRINDING</span>
                   )}
                 </div>
               </div>
               <div className="flex flex-col items-end">
-                <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1">Rank</span>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-1">Rank</span>
                 <span className="text-xl font-semibold text-gray-900 dark:text-foreground">
-                  {myRankInfo.rank} <span className="text-gray-400 dark:text-gray-500 font-normal">/ {totalParticipants}</span>
+                  {myRankInfo.rank} <span className="text-muted-foreground font-normal">/ {totalParticipants}</span>
                 </span>
               </div>
             </div>
@@ -261,7 +257,7 @@ export default function StudentLeaderboard() {
               </div>
             ) : myRankInfo.rank === 1 && (
                <div className="mt-2 text-center">
-                 <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400 bg-yellow-50/50 dark:bg-yellow-900/20 py-2 rounded-lg">👑 Unstoppable!</p>
+                 <p className="flex items-center justify-center gap-1.5 text-sm font-medium text-yellow-700 dark:text-yellow-400 bg-yellow-50/50 dark:bg-yellow-900/20 py-2 rounded-lg"><Crown className="h-4 w-4" aria-hidden="true" />Unstoppable!</p>
                </div>
             )}
           </div>

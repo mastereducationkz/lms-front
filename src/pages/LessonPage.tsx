@@ -5,7 +5,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { Skeleton } from '../components/ui/skeleton';
-import { ChevronLeft, ChevronRight, Play, FileText, HelpCircle, ChevronDown, ChevronUp, Lock, Trophy, PanelLeftOpen, PanelLeftClose, SkipForward, Languages, Star, Layers, Check, Cloud, CloudOff, Loader2, Pencil, Printer, ClipboardCheck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, FileText, HelpCircle, ChevronDown, ChevronUp, Lock, Trophy, PanelLeftOpen, PanelLeftClose, SkipForward, Languages, Star, Layers, Check, Cloud, CloudOff, Loader2, Pencil, Printer, ClipboardCheck, Wrench } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import apiClient from '../services/api';
 import { api } from '../services/api/client';
@@ -2373,7 +2373,8 @@ export default function LessonPage() {
                 title="DEV: Auto-complete all steps"
                 className="ml-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 font-mono text-xs"
               >
-                🚀 Auto-Complete
+                <Wrench className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
+                Auto-Complete
               </Button>
             )}
           </div>

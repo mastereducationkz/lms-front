@@ -3,6 +3,7 @@
 // (isCorrect on each row) comes from reviewStats.ts's buildQuestionStats, which in turn
 // reads it straight off gradeQuestion's partResults — nothing here re-derives it.
 import React from 'react'
+import { Check, X } from 'lucide-react'
 import type { GapStat } from './reviewStats'
 import { EN } from './strings'
 
@@ -24,9 +25,10 @@ function markClass(isCorrect: boolean, revealed: boolean): string {
     : 'border-rose-500 bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-300'
 }
 
-function markGlyph(isCorrect: boolean, revealed: boolean): string {
+function markGlyph(isCorrect: boolean, revealed: boolean): React.ReactNode {
   if (!revealed) return '•'
-  return isCorrect ? '✓' : '✗'
+  const Mark = isCorrect ? Check : X
+  return <Mark className="h-3 w-3" strokeWidth={3} aria-hidden="true" />
 }
 
 export const ReviewGapBars: React.FC<Props> = ({ gap, revealed, showNames }) => {

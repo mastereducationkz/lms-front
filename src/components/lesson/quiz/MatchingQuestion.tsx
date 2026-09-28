@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { renderTextWithLatex } from '../../../utils/latex';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 interface MatchingPair {
   left: string;
@@ -192,7 +193,7 @@ export const MatchingQuestion = ({
                   </div>
                   {isMatched && displayLetter && (
                     <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${color?.badge} ${color?.text}`} aria-hidden="true">
-                      <span>→</span>
+                      <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                       <span className="font-bold">{displayLetter}</span>
                     </div>
                   )}
@@ -259,7 +260,7 @@ export const MatchingQuestion = ({
                   {isMatched && matchedLeft !== undefined && (
                     <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${color?.badge} ${color?.text}`} aria-hidden="true">
                       <span className="font-bold">{matchedLeft + 1}</span>
-                      <span>←</span>
+                      <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
                     </div>
                   )}
                 </div>

@@ -110,7 +110,7 @@ export default function LessonScoresDialog({ open, onOpenChange, eventId, start,
               {t('Баллы можно ставить с начала урока.', 'Scores open when the lesson starts.')}
             </p>
           ) : !students ? (
-            error ? <p className="py-6 text-center text-sm text-rose-600">{error}</p>
+            error ? <p className="py-6 text-center text-sm text-rose-600 dark:text-rose-400">{error}</p>
               : <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
           ) : students.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">{t('На уроке нет учеников.', 'No students on this lesson.')}</p>
@@ -170,7 +170,7 @@ export default function LessonScoresDialog({ open, onOpenChange, eventId, start,
         <DialogFooter className="flex-row items-center gap-2 border-t border-border px-5 py-3 sm:justify-between">
           <span className="mr-auto text-xs text-muted-foreground">
             {count && count.of > 0 && t(`Оценено ${count.scored} из ${count.of}`, `Scored ${count.scored} of ${count.of}`)}
-            {error && students && <span className="ml-2 text-rose-600">{error}</span>}
+            {error && students && <span className="ml-2 text-rose-600 dark:text-rose-400">{error}</span>}
           </span>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>{t('Отмена', 'Cancel')}</Button>
           <Button onClick={save} disabled={!changes.length || saving} className="bg-yellow-500 text-gray-900 hover:bg-yellow-600">

@@ -33,7 +33,7 @@ function statusColor(status: string, excused = false) {
     case 'attended': return 'bg-green-200 dark:bg-green-900/40 text-green-700 dark:text-green-400';
     case 'late': return 'bg-yellow-200 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400';
     case 'missed': return 'bg-rose-500 dark:bg-rose-900/50 text-white dark:text-rose-400';
-    default: return 'bg-gray-100 dark:bg-secondary text-gray-400';
+    default: return 'bg-gray-100 dark:bg-secondary text-muted-foreground';
   }
 }
 
@@ -263,7 +263,7 @@ export default function SubstitutionAttendancePanel() {
           </div>
         </div>
         {locked ? (
-          <span className="flex items-center gap-1 text-xs font-medium text-gray-400 shrink-0">
+          <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground shrink-0">
             <Lock className="w-3.5 h-3.5" /> Upcoming
           </span>
         ) : lesson.marked ? (
@@ -285,7 +285,7 @@ export default function SubstitutionAttendancePanel() {
       <div className="space-y-2">
         <div className="flex items-center gap-2 px-1">
           <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</h3>
-          <span className="text-xs text-gray-400">{items.length}</span>
+          <span className="text-xs text-muted-foreground">{items.length}</span>
         </div>
         <div className="space-y-2">{items.map(renderCard)}</div>
       </div>
@@ -335,7 +335,7 @@ export default function SubstitutionAttendancePanel() {
                 <Skeleton className="h-10 w-full" />
               </div>
             ) : roster.length === 0 ? (
-              <p className="py-8 text-center text-sm text-gray-400">No students in this group.</p>
+              <p className="py-8 text-center text-sm text-muted-foreground">No students in this group.</p>
             ) : (
               <>
                 <div className="flex justify-end mb-2">
@@ -370,9 +370,9 @@ export default function SubstitutionAttendancePanel() {
                           >
                             <Star className={cn(
                               'w-3.5 h-3.5',
-                              s.activity_score ? 'fill-yellow-400 text-yellow-400' : 'text-gray-400'
+                              s.activity_score ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
                             )} />
-                            <span className={cn('text-[10px]', s.activity_score ? 'text-yellow-600' : 'text-gray-400')}>
+                            <span className={cn('text-[10px]', s.activity_score ? 'text-yellow-600' : 'text-muted-foreground')}>
                               {s.activity_score || '+'}
                             </span>
                           </button>

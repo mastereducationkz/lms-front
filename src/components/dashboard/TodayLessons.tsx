@@ -230,7 +230,7 @@ function EmptyDay({ data, locale }: { data: TodayData; locale: 'ru' | 'en' }) {
   return (
     <div className="flex flex-col gap-3 px-4 sm:px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-start gap-3">
-        <CalendarDays className="mt-0.5 h-5 w-5 shrink-0 text-gray-400" aria-hidden />
+        <CalendarDays className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
         <div>
           <p className="font-medium text-gray-900 dark:text-foreground">{t('Сегодня уроков нет', 'No lessons today')}</p>
           {next && (

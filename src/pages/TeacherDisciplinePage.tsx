@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, Download, Loader2, Lock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, Loader2, Lock, Undo2, X } from 'lucide-react';
 
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui/button';
 import { cn } from '../lib/utils';
-import { cellText, cellTitle, cellTone, money, showsProgramTabs, type DisciplineCell } from '../lib/discipline';
+import { cellMark, cellText, cellTitle, cellTone, money, showsProgramTabs, type DisciplineCell } from '../lib/discipline';
 import DayPanel from '../components/discipline/DayPanel';
 import ClosePeriodDialog from '../components/discipline/ClosePeriodDialog';
 import {
@@ -23,7 +23,7 @@ import {
  * come from the Meet record: 200 ₸ for every whole minute late or cut short, a missed lesson
  * priced by a person. Clicking a day opens what the LMS actually saw.
  *
- * Minutes a teacher gave back by staying past the end are marked «↩» and carry their own colour,
+ * Minutes a teacher gave back by staying past the end carry a «gave back» icon and their own colour,
  * so «опоздал и отработал» is distinguishable from «опоздал» without opening the day.
  */
 
@@ -195,6 +195,7 @@ export default function TeacherDisciplinePage() {
                       lessons: 0, measured: 0, unmeasurable: 0, decided: 0, state: 'none',
                     }) as DisciplineCell;
                     const text = cellText(cell);
+                    const mark = cellMark(cell);
                     return (
                       <td key={day} className="px-1 py-1.5 text-center">
                         <button
@@ -206,7 +207,14 @@ export default function TeacherDisciplinePage() {
                             TONE_CLASS[cellTone(cell)],
                             cell.lessons ? 'hover:ring-1 hover:ring-gray-300' : 'cursor-default')}
                         >
-                          {text || (cell.lessons ? '·' : '')}
+                          {mark === 'miss' ? (
+                            <X className="mx-auto h-3.5 w-3.5" strokeWidth={2.5} aria-label="Missed" />
+                          ) : (
+                            <span className="inline-flex items-center gap-0.5">
+                              {text || (cell.lessons ? '·' : '')}
+                              {mark === 'made_up' && <Undo2 className="h-3 w-3" aria-label="made up" />}
+                            </span>
+                          )}
                         </button>
                       </td>
                     );

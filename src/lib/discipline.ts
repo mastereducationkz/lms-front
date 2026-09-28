@@ -27,12 +27,14 @@ export type CellTone = 'late' | 'made_up' | 'miss' | 'early' | 'clear' | 'unmeas
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
   'August', 'September', 'October', 'November', 'December'];
 
+/**
+ * The cell's figures. A lesson never taught and minutes given back are drawn by the page as
+ * icons (see cellMark), so this returns '' for a miss and no «↩» after the late figure.
+ */
 export function cellText(cell: DisciplineCell): string {
-  if (cell.misses > 0) return '✗';
+  if (cell.misses > 0) return '';
   const parts: string[] = [];
-  // «↩» marks minutes the teacher gave back by staying past the end. It rides on the late
-  // figure rather than replacing it, because the minutes were still missed at the start.
-  if (cell.late_minutes > 0) parts.push(`${cell.late_minutes}′${madeUp(cell) ? '↩' : ''}`);
+  if (cell.late_minutes > 0) parts.push(`${cell.late_minutes}′`);
   if (cell.early_minutes > 0) parts.push(`−${cell.early_minutes}′`);
   if (parts.length) return parts.join(' / ');
   if (cell.unmeasurable > 0) return '·';
@@ -40,6 +42,16 @@ export function cellText(cell: DisciplineCell): string {
 }
 
 /** How many of the day's late minutes came back. */
+/**
+ * The icon a cell carries: a cross for a lesson never taught, or the «gave it back» mark for
+ * minutes the teacher made up by staying past the end. The mark rides beside the late figure
+ * rather than replacing it, because the minutes were still missed at the start.
+ */
+export function cellMark(cell: DisciplineCell): 'miss' | 'made_up' | null {
+  if (cell.misses > 0) return 'miss';
+  return cell.late_minutes > 0 && madeUp(cell) > 0 ? 'made_up' : null;
+}
+
 export function madeUp(cell: DisciplineCell): number {
   return Math.min(cell.made_up_minutes || 0, cell.late_minutes);
 }

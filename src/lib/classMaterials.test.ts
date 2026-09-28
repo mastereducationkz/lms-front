@@ -312,8 +312,8 @@ describe('uploadErrorReason', () => {
 
 describe('homeworkLinkLabel', () => {
   it('names the homework', () => {
-    expect(homeworkLinkLabel('Unit 3', 'ru')).toBe('Домашнее задание: Unit 3 →');
-    expect(homeworkLinkLabel('  Unit 3 ', 'en')).toBe('Homework: Unit 3 →');
+    expect(homeworkLinkLabel('Unit 3', 'ru')).toBe('Домашнее задание: Unit 3');
+    expect(homeworkLinkLabel('  Unit 3 ', 'en')).toBe('Homework: Unit 3');
   });
 
   it('falls back to the untitled line for a blank title', () => {

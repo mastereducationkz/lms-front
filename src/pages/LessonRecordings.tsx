@@ -398,24 +398,24 @@ export default function LessonRecordings({ kind = 'lesson' }: { kind?: Recording
         {showGroups && (
           <SearchableSelect options={groupOptions} value={groupId} onChange={setGroupId}
             placeholder={t.allGroups} searchPlaceholder={t.searchGroups} emptyText={t.noGroup}
-            ariaLabel={t.allGroups} className="h-9 w-[190px] text-sm" />
+            ariaLabel={t.allGroups} className="h-9 w-full text-sm sm:w-[190px]" />
         )}
 
         {showCourses && (
           <SearchableSelect options={courseOptions} value={courseId} onChange={setCourseId}
             placeholder={t.allCourses} searchPlaceholder={t.searchCourses} emptyText={t.noCourse}
-            ariaLabel={t.allCourses} className="h-9 w-[190px] text-sm" />
+            ariaLabel={t.allCourses} className="h-9 w-full text-sm sm:w-[190px]" />
         )}
 
         {showTeachers && (
           <SearchableSelect options={teacherOptions} value={teacherId} onChange={setTeacherId}
             placeholder={t.allTeachers} searchPlaceholder={t.searchTeachers} emptyText={t.noTeacher}
-            ariaLabel={t.allTeachers} className="h-9 w-[190px] text-sm" />
+            ariaLabel={t.allTeachers} className="h-9 w-full text-sm sm:w-[190px]" />
         )}
 
         {staff && (
           <Select value={status} onValueChange={(v) => setStatus(v as StatusFilter)}>
-            <SelectTrigger className="h-9 w-[170px]" aria-label={t.statuses.all}>
+            <SelectTrigger className="h-9 w-full sm:w-[170px]" aria-label={t.statuses.all}>
               <SelectValue placeholder={t.statuses.all} />
             </SelectTrigger>
             <SelectContent>

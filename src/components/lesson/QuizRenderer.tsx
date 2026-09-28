@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle
 } from '../ui/dialog';
-import { ChevronRight, ChevronDown, ChevronUp, AlertTriangle, HelpCircle, Lock as LockIcon, AlertCircle } from 'lucide-react';
+import { ChevronRight, ChevronDown, ChevronUp, AlertTriangle, HelpCircle, Lock as LockIcon, AlertCircle, Wrench, ClipboardList } from 'lucide-react';
 import { renderTextWithLatex } from '../../utils/latex';
 import { applyHighlightsToHtml as applyHighlightsToHtmlShared } from '../../utils/highlightUtils';
 import type { Step } from '../../types';
@@ -1236,7 +1236,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 className="text-white hover:bg-white/10 mt-2 flex items-center gap-2"
                 title={isTeacher ? "Show Correct Answers" : "Development only: Auto-fill correct answers"}
               >
-                {isTeacher ? <HelpCircle className="w-4 h-4" aria-hidden="true" /> : <span aria-hidden="true">🔧</span>} 
+                {isTeacher ? <HelpCircle className="w-4 h-4" aria-hidden="true" /> : <Wrench className="w-4 h-4" aria-hidden="true" />} 
                 {isTeacher ? "Show Correct Answers" : "Dev: Fill Answers"}
               </Button>
             )}
@@ -1389,7 +1389,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 className="text-primary border-primary/30 hover:bg-primary/10 flex items-center gap-2"
                 title={isTeacher ? "Show Correct Answers" : "Development only: Auto-fill correct answers"}
               >
-                {isTeacher ? <HelpCircle className="w-3 h-3" aria-hidden="true" /> : <span aria-hidden="true">🔧</span>}
+                {isTeacher ? <HelpCircle className="w-3 h-3" aria-hidden="true" /> : <Wrench className="w-3 h-3" aria-hidden="true" />}
                 {isTeacher ? "Show Correct Answers" : "Dev: Fill Answers"}
               </Button>
               {clearAllAnswers && (
@@ -1799,7 +1799,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
             Submission Received
           </h1>
           <div className="p-4 md:p-8 rounded-2xl border dark:border-gray-700 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
-             <div className="text-6xl mb-4" aria-hidden="true">📝</div>
+             <ClipboardList className="mx-auto mb-4 h-12 w-12 text-yellow-700 dark:text-yellow-400" strokeWidth={1.5} aria-hidden="true" />
              <h2 className="text-xl font-bold text-yellow-800 dark:text-yellow-400 mb-2">Pending Teacher Review</h2>
              <p className="text-yellow-700 dark:text-yellow-400">
                Your quiz includes long text questions that require manual grading. 

@@ -3,6 +3,7 @@ import apiClient from '../../services/api';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
 import { Button } from '../ui/button';
 import { Trophy, Loader2, TrendingUp, Award } from 'lucide-react';
+import { RankMedal } from './RankMedal';
 import { toast } from '../Toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Input } from '../ui/input';
@@ -186,12 +187,12 @@ export function WeeklyAwardsHub({ isOpen, onClose }: WeeklyAwardsHubProps) {
       <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-gray-100 rounded-lg">
-              <Trophy className="w-5 h-5 text-gray-700" />
+            <div className="p-2 bg-muted rounded-lg">
+              <Trophy className="w-5 h-5 text-gray-700 dark:text-gray-300" />
             </div>
             <div>
-              <DialogTitle className="text-xl font-semibold text-gray-900">Weekly Awards Distribution</DialogTitle>
-              <DialogDescription className="text-sm text-gray-500 mt-1">
+              <DialogTitle className="text-xl font-semibold text-foreground">Weekly Awards Distribution</DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground mt-1">
                 You can distribute up to {allowance.limit} points per week for this group. (Used: {allowance.given})
               </DialogDescription>
             </div>
@@ -200,7 +201,7 @@ export function WeeklyAwardsHub({ isOpen, onClose }: WeeklyAwardsHubProps) {
 
         <div className="mt-6 space-y-6">
           <div>
-            <label className="text-sm font-medium text-gray-700 mb-2 block">Select Group</label>
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">Select Group</label>
             <Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
               <SelectTrigger>
                 <SelectValue placeholder="Choose a group" />
@@ -215,73 +216,69 @@ export function WeeklyAwardsHub({ isOpen, onClose }: WeeklyAwardsHubProps) {
             </Select>
           </div>
 
-          <div className={`rounded-lg p-4 border ${allowance.remaining === 0 ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}`}>
+          <div className={`rounded-lg p-4 border ${allowance.remaining === 0 ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/50' : 'bg-muted/60 border-border'}`}>
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-sm text-gray-600">Available to distribute</p>
-                <p className={`text-2xl font-bold ${allowance.remaining === 0 ? 'text-red-700' : 'text-gray-900'}`}>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Available to distribute</p>
+                <p className={`text-2xl font-bold ${allowance.remaining === 0 ? 'text-red-700 dark:text-red-400' : 'text-foreground'}`}>
                   {allowance.remaining} points
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-gray-600">Selected / Remaining</p>
-                <p className={`text-2xl font-bold ${remainingInBatch < 0 ? 'text-red-600' : 'text-gray-900'}`}>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Selected / Remaining</p>
+                <p className={`text-2xl font-bold ${remainingInBatch < 0 ? 'text-red-600 dark:text-red-400' : 'text-foreground'}`}>
                   {totalBatch} / {remainingInBatch}
                 </p>
               </div>
             </div>
             {allowance.remaining === 0 ? (
-               <p className="text-sm text-red-700 mt-2 font-medium">Group limit reached. You cannot give more points this week.</p>
+               <p className="text-sm text-red-700 dark:text-red-400 mt-2 font-medium">Group limit reached. You cannot give more points this week.</p>
             ) : remainingInBatch < 0 && (
-              <p className="text-sm text-red-600 mt-2">You've exceeded your available allowance!</p>
+              <p className="text-sm text-red-600 dark:text-red-400 mt-2">You've exceeded your available allowance!</p>
             )}
           </div>
 
           {isLoading ? (
             <div className="flex justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
             </div>
           ) : groupStudents.length === 0 ? (
-            <div className="text-center py-12 bg-gray-50 rounded-lg">
+            <div className="text-center py-12 bg-muted/60 rounded-lg">
               <TrendingUp className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-600">No students in this group</p>
+              <p className="text-gray-600 dark:text-gray-400">No students in this group</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-muted/60 border-b border-border">
                   <tr>
-                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Rank</th>
-                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Student</th>
-                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase">Weekly Points</th>
-                    <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 uppercase">Award Points</th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Rank</th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Student</th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Weekly Points</th>
+                    <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">Award Points</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-border">
                   {groupStudents.map((student, index) => {
                     const studentPoints = pointsDistribution[student.user_id] || 0;
                     const hasError = studentPoints > 0 && studentPoints < MIN_POINTS_PER_STUDENT;
                     
                     return (
-                      <tr key={student.user_id} className={`hover:bg-gray-50 ${hasError ? 'bg-red-50' : ''}`}>
+                      <tr key={student.user_id} className={`hover:bg-muted/60 ${hasError ? 'bg-red-50 dark:bg-red-950/30' : ''}`}>
                         <td className="px-3 py-2">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 border border-gray-200">
-                            {index === 0 && student.points > 0 ? (
-                              <span className="text-base">🥇</span>
-                            ) : index === 1 && student.points > 0 ? (
-                              <span className="text-base">🥈</span>
-                            ) : index === 2 && student.points > 0 ? (
-                              <span className="text-base">🥉</span>
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 dark:bg-secondary border border-gray-200 dark:border-border">
+                            {index < 3 && student.points > 0 ? (
+                              <RankMedal rank={index + 1} />
                             ) : (
-                              <span className="text-xs font-medium text-gray-600">{index + 1}</span>
+                              <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{index + 1}</span>
                             )}
                           </div>
                         </td>
                         <td className="px-3 py-2">
-                          <p className="text-sm font-medium text-gray-900">{student.user_name}</p>
+                          <p className="text-sm font-medium text-foreground">{student.user_name}</p>
                         </td>
                         <td className="px-3 py-2">
-                          <p className="text-sm text-gray-600">{student.points}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{student.points}</p>
                         </td>
                         <td className="px-3 py-2">
                           <div className="flex items-center justify-center gap-2">
@@ -298,7 +295,7 @@ export function WeeklyAwardsHub({ isOpen, onClose }: WeeklyAwardsHubProps) {
                             />
                           </div>
                           {hasError && (
-                            <p className="text-xs text-red-600 mt-1 text-center">Min {MIN_POINTS_PER_STUDENT}</p>
+                            <p className="text-xs text-red-600 dark:text-red-400 mt-1 text-center">Min {MIN_POINTS_PER_STUDENT}</p>
                           )}
                         </td>
                       </tr>

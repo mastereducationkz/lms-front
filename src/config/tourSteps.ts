@@ -12,7 +12,7 @@ export interface TourStep {
 const studentTourSteps: TourStep[] = [
   {
     target: 'body',
-    title: 'Welcome to Your Learning Journey! 🎓',
+    title: 'Welcome to Your Learning Journey!',
     content: 'Let\'s take a quick tour to help you navigate the platform and make the most of your learning experience.',
     placement: 'center',
     disableBeacon: true,
@@ -31,7 +31,7 @@ const studentTourSteps: TourStep[] = [
   },
   {
     target: '[data-tour="streak-display"]',
-    title: 'Daily Streak 🔥',
+    title: 'Daily Streak',
     content: 'Keep your learning streak alive! Study every day to maintain and increase your streak count.',
     placement: 'left',
   },
@@ -65,7 +65,7 @@ const studentTourSteps: TourStep[] = [
 const teacherTourSteps: TourStep[] = [
   {
     target: 'body',
-    title: 'Welcome, Teacher! 👨‍🏫',
+    title: 'Welcome, Teacher!',
     content: 'Let\'s explore the teaching tools and features available to you.',
     placement: 'center',
     disableBeacon: true,
@@ -159,7 +159,7 @@ const adminTourSteps: TourStep[] = [
 const curatorTourSteps: TourStep[] = [
   {
     target: 'body',
-    title: 'Welcome, Curator! 📋',
+    title: 'Welcome, Curator!',
     content: 'Let\'s explore the tools you\'ll use to support and guide your student groups.',
     placement: 'center',
     disableBeacon: true,

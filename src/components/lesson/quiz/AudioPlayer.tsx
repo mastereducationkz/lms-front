@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Play, Pause, Volume2, VolumeX, RotateCcw } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, RotateCcw, TriangleAlert } from 'lucide-react';
 
 interface AudioPlayerProps {
   src: string;
@@ -175,7 +175,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   if (error) {
     return (
       <div className={`flex items-center gap-3 p-3 bg-destructive/10 rounded-md text-destructive text-sm ${className}`}>
-        <span>⚠️ {error}</span>
+        <TriangleAlert className="h-4 w-4 shrink-0" aria-hidden="true" />
+        <span>{error}</span>
       </div>
     );
   }

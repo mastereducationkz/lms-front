@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   RULE_START,
   cellText,
+  cellMark,
   cellTitle,
   cellTone,
   money,
@@ -23,7 +24,8 @@ describe('the grid cell', () => {
   });
 
   it('shows a cross for a lesson never taught', () => {
-    expect(cellText(cell({ misses: 1, lessons: 1, state: 'miss' }))).toBe('✗');
+    expect(cellText(cell({ misses: 1, lessons: 1, state: 'miss' }))).toBe('');
+    expect(cellMark(cell({ misses: 1, lessons: 1, state: 'miss' }))).toBe('miss');
     expect(cellTone(cell({ misses: 1, state: 'miss' }))).toBe('miss');
   });
 
@@ -100,14 +102,16 @@ describe('minutes that were worked off', () => {
   it('colours a fully made-up day apart from a plain late one', () => {
     const worked = cell({ late_minutes: 3, made_up_minutes: 3, fine: 600, lessons: 1, state: 'late' });
     expect(cellTone(worked)).toBe('made_up');
-    expect(cellText(worked)).toBe('3\u2032\u21a9');
+    expect(cellText(worked)).toBe('3\u2032');
+    expect(cellMark(worked)).toBe('made_up');
     expect(cellTitle(worked)).toContain('made up in full');
   });
 
   it('still reads as late when only some of the minutes came back', () => {
     const partial = cell({ late_minutes: 5, made_up_minutes: 2, fine: 1000, lessons: 1, state: 'late' });
     expect(cellTone(partial)).toBe('late');
-    expect(cellText(partial)).toBe('5\u2032\u21a9');
+    expect(cellText(partial)).toBe('5\u2032');
+    expect(cellMark(partial)).toBe('made_up');
     expect(cellTitle(partial)).toContain('(2 made up)');
   });
 

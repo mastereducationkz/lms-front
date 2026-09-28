@@ -547,8 +547,8 @@ export default function HeadCuratorDashboard() {
                 ))}
                 {atRiskGroups.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="px-6 py-10 text-center text-gray-400 italic bg-white dark:bg-card">
-                      Проблемных групп не обнаружено. Все задания под контролем! ✨
+                    <td colSpan={3} className="px-6 py-10 text-center text-gray-500 dark:text-gray-400 italic bg-white dark:bg-card">
+                      Проблемных групп не обнаружено. Все задания под контролем!
                     </td>
                   </tr>
                 )}

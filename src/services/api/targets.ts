@@ -110,5 +110,3 @@ export async function setStudentTarget(
 
 export const band = (value: number | null | undefined): string => (value == null ? '—' : value.toFixed(1));
 export const score = (value: number | null | undefined): string => (value == null ? '—' : String(value));
-export const trendArrow = (trend: number | null | undefined): string =>
-  trend == null || trend === 0 ? '' : trend > 0 ? '↑' : '↓';

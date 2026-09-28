@@ -2873,8 +2873,9 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
           {results.created.length > 0 && (
             <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-3">
               <div className="flex justify-between items-center mb-2">
-                <h5 className="text-green-800 dark:text-green-400 font-medium text-sm">
-                  ✓ Successfully created ({results.created.length})
+                <h5 className="flex items-center gap-1.5 text-green-800 dark:text-green-400 font-medium text-sm">
+                  <Check className="h-4 w-4" aria-hidden="true" />
+                  Successfully created ({results.created.length})
                 </h5>
                 <Button
                   variant="outline"
@@ -2889,7 +2890,8 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
                     alert('Скопировано! Формат: Имя, Email, Пароль (через Tab)');
                   }}
                 >
-                  📋 Копировать все
+                  <Copy className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
+                  Копировать все
                 </Button>
               </div>
               <div className="max-h-40 overflow-y-auto space-y-1">
@@ -2914,8 +2916,9 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
 
           {results.failed.length > 0 && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
-              <h5 className="text-red-800 dark:text-red-400 font-medium text-sm mb-2">
-                ✗ Failed ({results.failed.length})
+              <h5 className="flex items-center gap-1.5 text-red-800 dark:text-red-400 font-medium text-sm mb-2">
+                <X className="h-4 w-4" aria-hidden="true" />
+                Failed ({results.failed.length})
               </h5>
               <div className="max-h-40 overflow-y-auto space-y-1">
                 {results.failed.map((item, idx) => (

@@ -351,7 +351,7 @@ export default function Calendar() {
                 id="show-archived"
                 checked={showArchived}
                 onChange={(e) => setShowArchived(e.target.checked)}
-                className="h-4 w-4 cursor-pointer rounded border-border text-blue-600 focus:ring-blue-500"
+                className="h-4 w-4 cursor-pointer rounded border-border text-blue-600 dark:text-blue-400 focus:ring-blue-500"
               />
               <label htmlFor="show-archived" className="cursor-pointer whitespace-nowrap text-[13px] font-medium text-muted-foreground">
                 Show finished

@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import apiClient from '../../services/api';
-import { ClipboardList, Calendar, AlertCircle, Eye, Edit, Archive, ArchiveRestore, Copy, ArrowLeft, Search, Users } from 'lucide-react';
+import { ClipboardList, Calendar, AlertCircle, Eye, Edit, Archive, ArchiveRestore, Copy, ArrowLeft, Search, Users, Check } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Input } from '../../components/ui/input';
@@ -732,7 +732,7 @@ export default function AssignmentsPage() {
                           <span className="font-medium text-amber-600 dark:text-amber-400">{g.notSubmitted} not submitted</span>
                         )}
                         {g.overdue === 0 && g.notSubmitted === 0 && (
-                          <span className="font-medium text-green-600 dark:text-green-400">✓ All in</span>
+                          <span className="inline-flex items-center gap-1 font-medium text-green-700 dark:text-green-400"><Check className="h-3.5 w-3.5" aria-hidden="true" />All in</span>
                         )}
                       </div>
                     </button>

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { Check, Circle, Loader2, RefreshCw, Square, SquareCheck } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { SearchableSelect } from '../../components/ui/searchable-select';
@@ -234,7 +234,11 @@ export default function CheckpointsAdminPage() {
                       >
                         <StatusChip status={cell.status} skipped={cell.skipped} />
                         <div className="mt-1 text-[11px] text-muted-foreground">
-                          {cell.units.map((u) => (u.completed ? '✓' : '·')).join(' ')}
+                          <span className="inline-flex items-center gap-0.5 align-[-1px]" aria-label={`${cell.units.filter((u) => u.completed).length} of ${cell.units.length} units completed`}>
+                            {cell.units.map((u) => (u.completed
+                              ? <Check key={u.lesson_id} className="h-3 w-3 text-emerald-600 dark:text-emerald-400" strokeWidth={3} aria-hidden="true" />
+                              : <Circle key={u.lesson_id} className="h-2 w-2" aria-hidden="true" />))}
+                          </span>
                           {cell.deadline && cell.status !== 'completed' && <> · due {formatDeadline(cell.deadline)} ({deadlineCountdown(cell.deadline)})</>}
                           {cell.status === 'completed' && <> · {cell.correct_answers}/{cell.total_questions} ({cell.percentage}%)</>}
                           {cell.late && <span className="text-red-600"> · {lateLabel(cell)}</span>}
@@ -247,7 +251,7 @@ export default function CheckpointsAdminPage() {
             </tbody>
           </table>
           <p className="px-3 py-2 text-[11px] text-muted-foreground border-t">
-            Under each chip, one mark per required unit in order: ✓ completed, · not yet. A checkpoint opens for a student when every mark is ✓ (definition active, group enabled, number not below the group's start). Deadline is 24 hours from opening; a later submission is accepted and shown as late.
+            Under each chip, one mark per required unit in order: <Check className="inline h-3 w-3 align-[-2px] text-emerald-600 dark:text-emerald-400" strokeWidth={3} aria-label="check" /> completed, <Circle className="inline h-2 w-2" aria-label="circle" /> not yet. A checkpoint opens for a student when every mark is a check (definition active, group enabled, number not below the group's start). Deadline is 24 hours from opening; a later submission is accepted and shown as late.
           </p>
         </div>
       )}
@@ -263,7 +267,12 @@ export default function CheckpointsAdminPage() {
           </div>
           <ul className="text-sm space-y-1">
             {selected.cell.units.map((u) => (
-              <li key={u.lesson_id}>{u.completed ? '✅' : '⬜'} {u.kind === 'verbal' ? 'Verbal' : 'Math'} — {u.title}</li>
+              <li key={u.lesson_id} className="flex items-start gap-1.5">
+                {u.completed
+                  ? <SquareCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" aria-label="Completed" />
+                  : <Square className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-label="Not completed" />}
+                <span>{u.kind === 'verbal' ? 'Verbal' : 'Math'} — {u.title}</span>
+              </li>
             ))}
           </ul>
           {selected.cell.locked_reason && <p className="text-sm text-muted-foreground">{selected.cell.locked_reason}</p>}

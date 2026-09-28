@@ -710,8 +710,8 @@ const AssignmentZeroSubmissions = () => {
                     </Badge>
                   )}
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedSubmission(null)}>
-                  ✕
+                <Button variant="ghost" size="sm" onClick={() => setSelectedSubmission(null)} aria-label="Close">
+                  <X className="h-4 w-4" aria-hidden="true" />
                 </Button>
               </div>
             </CardHeader>

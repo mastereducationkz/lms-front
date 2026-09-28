@@ -151,7 +151,16 @@ function StudentView({ progress }: { progress: PlatformTestProgress }) {
 function StaffView({ matrix }: { matrix: PlatformTestMatrix }) {
   const modules = matrix.students[0]?.modules.map((m) => m.module) ?? [];
   const mark = (m: PlatformModuleProgress) =>
-    m.state === 'done' ? `✓${m.band != null ? ` ${m.band}` : ''}` : m.state === 'in_progress' ? '◐' : '—';
+    m.state === 'done' ? (
+      <span className="inline-flex items-center gap-1">
+        <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" aria-label="Done" />
+        {m.band != null ? m.band : null}
+      </span>
+    ) : m.state === 'in_progress' ? (
+      <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" aria-label="In progress" />
+    ) : (
+      <span aria-label="Not started">—</span>
+    );
   const done = matrix.students.filter((s) => s.status === 'submitted').length;
   return (
     <Card>

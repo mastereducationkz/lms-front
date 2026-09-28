@@ -12,7 +12,7 @@ import { renderTextWithLatex } from '../../utils/latex';
 import RichTextEditor from '../RichTextEditor';
 import PDFPreview from '../PDFPreview';
 import ThinkingLoader from '../ThinkingLoader';
-import { Upload, FileText, Image, Plus, Trash2, ChevronUp, ChevronDown, CheckCircle } from 'lucide-react';
+import { Upload, FileText, Image, Plus, Trash2, ChevronUp, ChevronDown, CheckCircle, Music, Headphones, Lock, Check, ArrowLeftRight, ArrowRight } from 'lucide-react';
 import { FillInBlankRenderer } from './FillInBlankRenderer';
 import { TextCompletionRenderer } from './TextCompletionRenderer';
 import { parseGap } from '../../utils/gapParser';
@@ -1005,7 +1005,7 @@ export default function QuizLessonEditor({
                 <div className="flex items-center gap-2">
                   {quizType === 'audio' ? (
                     <>
-                      <span aria-hidden="true">🎵</span>
+                      <Music className="h-4 w-4" aria-hidden="true" />
                       <span className="font-medium">Audio uploaded</span>
                     </>
                   ) : isImageMediaUrl(quizMediaUrl) ? (
@@ -1143,7 +1143,7 @@ export default function QuizLessonEditor({
               onClick={() => setAudioPlaybackMode('flexible')}
             >
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg">🎧</span>
+                <Headphones className="h-5 w-5 text-gray-700" aria-hidden="true" />
                 <span className="font-medium">Свободный режим</span>
               </div>
               <p className="text-xs text-gray-500">
@@ -1160,7 +1160,7 @@ export default function QuizLessonEditor({
               onClick={() => setAudioPlaybackMode('strict')}
             >
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg">🔒</span>
+                <Lock className="h-5 w-5 text-gray-700" aria-hidden="true" />
                 <span className="font-medium">Экзаменационный режим</span>
               </div>
               <p className="text-xs text-gray-500">
@@ -2375,7 +2375,8 @@ export default function QuizLessonEditor({
                                     <span className="text-gray-600 font-medium min-w-[3rem]">#{i + 1}:</span>
                                     <div className="flex-1">
                                       <div className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded font-semibold text-sm">
-                                        ✓ {correct || '(empty)'}
+                                        <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                                        {correct || '(empty)'}
                                       </div>
                                       {others.length > 0 && (
                                         <div className="mt-1.5 flex flex-wrap gap-1">
@@ -2434,7 +2435,7 @@ export default function QuizLessonEditor({
                               placeholder="Left side (e.g., Term)"
                               className="flex-1"
                             />
-                            <span className="text-gray-400">↔</span>
+                            <ArrowLeftRight className="h-4 w-4 shrink-0 text-gray-500" aria-label="matches" />
                             <Input
                               value={pair.right}
                               onChange={(e) => {
@@ -2657,7 +2658,7 @@ Italy = Rome`}</pre>
                   />
                   <label htmlFor="sat-image-upload" className="cursor-pointer">
                     <div className="space-y-2">
-                      <div className="text-4xl">📄</div>
+                      <FileText className="mx-auto h-10 w-10 text-gray-500" strokeWidth={1.5} aria-hidden="true" />
                       <div className="text-sm font-medium">
                         {isAnalyzingImage ? 'Analyzing...' : 'Click to upload or drag & drop'}
                       </div>
@@ -2674,7 +2675,7 @@ Italy = Rome`}</pre>
                 {uploadedFile && (
                   <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
                     <div className="flex items-center gap-2">
-                      <div className="text-2xl">📄</div>
+                      <FileText className="h-6 w-6 shrink-0 text-green-700" aria-hidden="true" />
                       <div>
                         <div className="text-sm font-medium text-green-900">{uploadedFile.name}</div>
                         <div className="text-xs text-green-700">{(uploadedFile.size / 1024).toFixed(1)} KB</div>
@@ -2772,9 +2773,10 @@ Italy = Rome`}</pre>
                           href={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + draftQuestion.media_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 text-sm"
+                          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
                         >
-                          View PDF →
+                          View PDF
+                          <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                         </a>
                       </div>
                     ) : null}
@@ -2815,7 +2817,7 @@ Italy = Rome`}</pre>
                           <div className="flex-1">
                             <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex(opt.text) }} />
                             {isCorrect && (
-                              <span className="ml-2 text-xs font-medium text-green-600">✓ Correct</span>
+                              <span className="ml-2 inline-flex items-center gap-0.5 text-xs font-medium text-green-700"><Check className="h-3.5 w-3.5" aria-hidden="true" />Correct</span>
                             )}
                           </div>
                         </label>
@@ -2953,31 +2955,31 @@ Italy = Rome`}</pre>
                   <div className="space-y-2">
                     <div className="flex items-center gap-3 p-2 bg-gray-50 rounded">
                       <code className="text-sm font-mono bg-white px-2 py-1 rounded border">_text_</code>
-                      <span className="text-sm">→</span>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-gray-500" aria-label="renders as" />
                       <em className="text-sm">italic text</em>
                     </div>
 
                     <div className="flex items-center gap-3 p-2 bg-gray-50 rounded">
                       <code className="text-sm font-mono bg-white px-2 py-1 rounded border">**text**</code>
-                      <span className="text-sm">→</span>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-gray-500" aria-label="renders as" />
                       <strong className="text-sm">bold text</strong>
                     </div>
 
                     <div className="flex items-center gap-3 p-2 bg-gray-50 rounded">
                       <code className="text-sm font-mono bg-white px-2 py-1 rounded border">__text__</code>
-                      <span className="text-sm">→</span>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-gray-500" aria-label="renders as" />
                       <u className="text-sm">underlined text</u>
                     </div>
 
                     <div className="flex items-center gap-3 p-2 bg-gray-50 rounded">
                       <code className="text-sm font-mono bg-white px-2 py-1 rounded border">~~text~~</code>
-                      <span className="text-sm">→</span>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-gray-500" aria-label="renders as" />
                       <del className="text-sm">strikethrough text</del>
                     </div>
 
                     <div className="flex items-center gap-3 p-2 bg-gray-50 rounded">
                       <code className="text-sm font-mono bg-white px-2 py-1 rounded border">`text`</code>
-                      <span className="text-sm">→</span>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-gray-500" aria-label="renders as" />
                       <code className="text-sm bg-gray-200 px-1 rounded">code text</code>
                     </div>
                   </div>
@@ -2992,13 +2994,13 @@ Italy = Rome`}</pre>
                   <div className="space-y-2">
                     <div className="flex items-center gap-3 p-2 bg-gray-50 rounded">
                       <code className="text-sm font-mono bg-white px-2 py-1 rounded border">$x^2$</code>
-                      <span className="text-sm">→</span>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-gray-500" aria-label="renders as" />
                       <span className="text-sm">x² (inline formula)</span>
                     </div>
 
                     <div className="flex items-center gap-3 p-2 bg-gray-50 rounded">
                       <code className="text-sm font-mono bg-white px-2 py-1 rounded border">$$\frac{"{a}"}{"{b}"}$$</code>
-                      <span className="text-sm">→</span>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-gray-500" aria-label="renders as" />
                       <span className="text-sm">a/b (block formula)</span>
                     </div>
                   </div>

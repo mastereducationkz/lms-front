@@ -45,7 +45,7 @@ export const COPY = {
   restore: { ru: 'Восстановить', en: 'Restore' },
   removedLabel: { ru: 'Удалено модератором', en: 'Removed by a moderator' },
   empty: { ru: 'Учитель пока не добавил материалы к этому уроку', en: "The teacher hasn't added materials to this lesson yet" },
-  homeworkLink: { ru: 'Домашнее задание к уроку →', en: 'Homework for this lesson →' },
+  homeworkLink: { ru: 'Домашнее задание к уроку', en: 'Homework for this lesson' },
   homeworkPrefix: { ru: 'Домашнее задание', en: 'Homework' },
   catchUp: { ru: 'Пропустили урок и не открыли материалы', en: "Missed the lesson and haven't opened the materials" },
   officeNudge: { ru: 'Загрузите PDF — его откроют прямо в браузере', en: 'Upload a PDF — it opens right in the browser' },
@@ -241,10 +241,10 @@ export function uploadErrorReason(error: unknown, code: string | undefined): str
   return reason.charAt(0).toUpperCase() + reason.slice(1);
 }
 
-/** «Домашнее задание: Unit 3 →», or the untitled line when the homework has no title. */
+/** «Домашнее задание: Unit 3», or the untitled line when the homework has no title (the link draws its own arrow). */
 export function homeworkLinkLabel(title: string | null | undefined, locale: Locale): string {
   const name = title?.trim();
-  return name ? `${t('homeworkPrefix', locale)}: ${name} →` : t('homeworkLink', locale);
+  return name ? `${t('homeworkPrefix', locale)}: ${name}` : t('homeworkLink', locale);
 }
 
 export type CopyResultToast = { kind: 'success' | 'info'; text: string } | null;

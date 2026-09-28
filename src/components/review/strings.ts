@@ -52,8 +52,8 @@ export const EN = {
 
   gapOf: 'Gap {n} of {total}',
   gapChoices: 'Choices',
-  gapPrev: '← Previous gap',
-  gapNext: 'Next gap →',
+  gapPrev: 'Previous gap',
+  gapNext: 'Next gap',
   gapAnsweredOf: '{answered}/{participants} answered',
   gapBreakdown: 'This gap',
   gapNoAnswer: 'No answer',

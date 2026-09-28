@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import apiClient from '../../services/api';
 import type { LessonRequest, CancelResolution } from '../../types';
 import { formatInKZ } from '../../lib/datetime';
+import { ArrowRight } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
 import { Input } from '../../components/ui/input';
@@ -504,8 +505,9 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                       <TableCell className="whitespace-nowrap">
                         {formatExact(req.original_datetime)}
                         {req.request_type === 'reschedule' && req.new_datetime && (
-                          <span className="block text-xs text-muted-foreground">
-                            → {formatExact(req.new_datetime)}
+                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <ArrowRight className="h-3 w-3 shrink-0" aria-label="moved to" />
+                            {formatExact(req.new_datetime)}
                           </span>
                         )}
                         {req.replacement_datetime && (

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { X } from 'lucide-react';
 import { SidebarDesktop, SidebarMobile } from '../components/Sidebar.tsx';
 import Topbar from '../components/Topbar.tsx';
 import { Toaster } from '../components/Toast.tsx';
@@ -66,7 +67,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               className="absolute right-2 top-2 z-10 rounded-md p-1 text-emerald-700/80 transition-colors hover:bg-emerald-100 hover:text-emerald-900 dark:text-emerald-200 dark:hover:bg-emerald-900/60"
               aria-label="Скрыть реферальный баннер"
             >
-              ✕
+              <X className="h-4 w-4" aria-hidden="true" />
             </button>
             <button
               onClick={() => setIsReferralModalOpen(true)}
@@ -99,7 +100,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 className="absolute right-2 top-2 rounded-md p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
                 aria-label="Закрыть окно с подробной информацией"
               >
-                ✕
+                <X className="h-4 w-4" aria-hidden="true" />
               </button>
               <h2 className="pr-7 text-base font-semibold sm:text-lg">
                 Узнай о нашей реферальной системе!

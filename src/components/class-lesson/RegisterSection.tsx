@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Loader2, Save, Star } from 'lucide-react';
+import { Loader2, Pencil, Save, Star } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { toast } from '../Toast';
 import { verdictHint, verdictText } from '../../lib/meetAttendance';
@@ -171,7 +171,13 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
                       {s.meet && (
                         <span title={meetTitle || undefined}>
                           Meet: {verdictText({ verdict: s.meet.verdict as never, minutes: s.meet.minutes ?? 0, required: s.meet.required ?? 0, late_minutes: s.meet.late_minutes ?? 0 }, view.viewer.locale)}
-                          {s.meet.register?.state === 'override' && s.meet.register.override?.reason_label ? ` · ✎ ${s.meet.register.override.reason_label}` : ''}
+                          {s.meet.register?.state === 'override' && s.meet.register.override?.reason_label ? (
+                            <>
+                              {' · '}
+                              <Pencil className="inline h-3 w-3 align-[-1px]" aria-label={t('Изменено вручную', 'Changed by hand')} />{' '}
+                              {s.meet.register.override.reason_label}
+                            </>
+                          ) : null}
                         </span>
                       )}
                     </div>

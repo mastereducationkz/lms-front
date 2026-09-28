@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { Progress } from '../ui/progress';
 import { t, type Locale } from '../../lib/classMaterials';
 import { isQueueSettled } from '../../lib/uploadQueue';
@@ -32,7 +32,7 @@ export default function UploadQueue({ items, locale, onDismiss }: Props) {
         <div key={item.id} className="space-y-1">
           <div className="flex items-center justify-between gap-2 text-xs">
             <span className="min-w-0 flex-1 truncate text-foreground">{item.name}</span>
-            {item.status === 'done' && <span className="flex-none text-muted-foreground">✓</span>}
+            {item.status === 'done' && <Check className="h-3.5 w-3.5 flex-none text-emerald-600 dark:text-emerald-400" aria-label="Uploaded" />}
           </div>
           {item.status === 'error' && item.error && (
             <p className="break-words text-xs text-destructive">{item.error}</p>

@@ -16,6 +16,8 @@ import {
   Save,
   Image as ImageIcon,
   Layers,
+  Lightbulb,
+  BookOpen,
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
@@ -559,8 +561,9 @@ export default function QuestionReportsPage() {
                     <p className="text-sm text-gray-900 dark:text-foreground line-clamp-2 mb-2">{report.message}</p>
                     
                     {report.suggested_answer && (
-                      <p className="text-xs text-orange-600 mb-2">
-                        💡 Suggested: {report.suggested_answer.substring(0, 50)}...
+                      <p className="flex items-start gap-1 text-xs text-orange-700 dark:text-orange-400 mb-2">
+                        <Lightbulb className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                        Suggested: {report.suggested_answer.substring(0, 50)}...
                       </p>
                     )}
                     
@@ -571,7 +574,8 @@ export default function QuestionReportsPage() {
                     
                     {report.course_info && (
                       <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                        📚 {report.course_info.title} → {report.course_info.lesson_title}
+                        <BookOpen className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />
+                        {report.course_info.title} → {report.course_info.lesson_title}
                         {report.step_info?.step_number && ` (Step ${report.step_info.step_number})`}
                       </div>
                     )}

@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Alert, AlertDescription } from './ui/alert';
-import { Loader2, Download, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Loader2, Download, CheckCircle2, AlertCircle, BarChart3, Lightbulb } from 'lucide-react';
 import { exportAnalyticsExcel } from '../services/api';
 
 interface ExportToExcelModalProps {
@@ -119,8 +119,9 @@ export default function ExportToExcelModal({
                   {selectedGroup === 'all' && <li><strong>Groups Summary</strong> - group performance comparison</li>}
                   <li><strong>Charts & Analytics</strong> - visual progress distribution and comparisons</li>
                 </ul>
-                <p className="mt-3 text-xs">
-                  📊 File includes interactive charts and conditional formatting
+                <p className="mt-3 flex items-center gap-1.5 text-xs">
+                  <BarChart3 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  File includes interactive charts and conditional formatting
                 </p>
               </AlertDescription>
             </Alert>
@@ -134,8 +135,9 @@ export default function ExportToExcelModal({
                 <p className="mt-2">
                   Your Excel file has been downloaded. Check your downloads folder.
                 </p>
-                <p className="mt-2 text-xs">
-                  💡 Tip: You can upload the Excel file to Google Sheets for online collaboration
+                <p className="mt-2 flex items-start gap-1.5 text-xs">
+                  <Lightbulb className="h-3.5 w-3.5 shrink-0 mt-px" aria-hidden="true" />
+                  Tip: You can upload the Excel file to Google Sheets for online collaboration
                 </p>
               </AlertDescription>
             </Alert>
