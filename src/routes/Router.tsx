@@ -590,7 +590,15 @@ export default function Router() {
           <Route path="/recordings" element={
             <ProtectedRoute>
               <AppLayout>
-                <LessonRecordings />
+                <LessonRecordings key="lesson" />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          <Route path="/webinar-recordings" element={
+            <ProtectedRoute>
+              <AppLayout>
+                <LessonRecordings key="webinar" kind="webinar" />
               </AppLayout>
             </ProtectedRoute>
           } />

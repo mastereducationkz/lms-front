@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, Play, User, Video } from 'lucide-react';
 import type { RecordingLibraryItem } from '../../services/api/recordings';
-import { formatClock, splitLessonTitle, timeRange, type Locale } from '../../lib/recordings';
+import { formatClock, recordingHeading, timeRange, type Locale } from '../../lib/recordings';
 import { badgeText, overallPercent, progressFor, stageTitle } from '../../lib/recordingProgress';
 import { cx } from '../calendar/calendarUtils';
 import { ProgressBar, RecordingCardStage, RecordingStageBadge } from './RecordingProgress';
@@ -39,7 +39,8 @@ export default function RecordingCard({ item, locale, onOpen, substitutionFor }:
   const t = TEXT[locale];
   const [posterBroken, setPosterBroken] = useState(false);
   const [posterLoaded, setPosterLoaded] = useState(false);
-  const { name, lesson } = splitLessonTitle(item.title, item.groups, locale);
+  const { name, lesson } = recordingHeading(item, locale);
+  const courses = item.event_type === 'webinar' ? (item.courses ?? []).map((c) => c.title).join(', ') : '';
   const clock = formatClock(item.duration_seconds);
   const ready = item.status === 'ready';
   const poster = ready && item.poster_url && !posterBroken ? mediaUrl(item.poster_url) : null;
@@ -134,6 +135,7 @@ export default function RecordingCard({ item, locale, onOpen, substitutionFor }:
 
       <div className="flex flex-1 flex-col gap-1 px-3.5 pb-3.5 pt-3">
         <span className="line-clamp-1 text-[15px] font-semibold leading-snug text-foreground">{name}</span>
+        {courses && <span className="line-clamp-1 text-[12.5px] text-muted-foreground">{courses}</span>}
         <span className="flex items-center gap-1.5 text-[13px] tabular-nums text-muted-foreground">
           {lesson && <span className="font-medium text-foreground/80">{lesson}</span>}
           {lesson && <span aria-hidden>·</span>}

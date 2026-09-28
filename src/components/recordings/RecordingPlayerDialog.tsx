@@ -17,7 +17,7 @@ import { useVideoClock } from './useVideoClock';
 import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '../../lib/utils';
 import {
-  almatyDayKey, dayHeading, formatDurationWords, splitLessonTitle, timeRange, type Locale,
+  almatyDayKey, dayHeading, formatDurationWords, recordingHeading, timeRange, watchLinkPath, type Locale,
 } from '../../lib/recordings';
 
 /** What the dialog shows about the lesson before (and while) the video loads. */
@@ -28,6 +28,8 @@ export interface RecordingMeta {
   start?: string | null;
   end?: string | null;
   groups?: { name: string }[] | null;
+  /** 'webinar' names the recording by its own title rather than its groups. */
+  eventType?: string | null;
   teacher?: string | null;
   durationSeconds?: number | null;
 }
@@ -210,13 +212,13 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
 
   if (!meta) return null;
 
-  const { name, lesson } = splitLessonTitle(meta.title, meta.groups, locale);
+  const { name, lesson } = recordingHeading({ title: meta.title, event_type: meta.eventType, groups: meta.groups }, locale);
   const duration = formatDurationWords(recording?.duration_seconds ?? meta.durationSeconds, locale);
   const date = meta.start ? dayHeading(almatyDayKey(meta.start), new Date(), locale) : null;
   const groupNames = (meta.groups ?? []).map((g) => g.name).join(', ');
 
   const copyLink = async () => {
-    const link = `${window.location.origin}/recordings?watch=${meta.eventId}`;
+    const link = `${window.location.origin}${watchLinkPath(meta.eventType, meta.eventId)}`;
     try {
       await navigator.clipboard.writeText(link);
       toast.success(t.copied);

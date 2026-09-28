@@ -15,7 +15,7 @@ import { useLiveRecordings } from '../components/recordings/useLiveRecordings';
 import { cx } from '../components/calendar/calendarUtils';
 import { getEventDetails } from '../services/api/events';
 import {
-  listRecordings, type RecordingFacets, type RecordingLibraryItem, type RecordingPeriod,
+  listRecordings, type RecordingFacets, type RecordingLibraryItem, type RecordingPeriod, type RecordingsKind,
 } from '../services/api/recordings';
 import { dayHeading, groupByDay, parseWatchParam, recordingsLocale, type Locale } from '../lib/recordings';
 
@@ -52,6 +52,9 @@ const TEXT = {
     noGroup: 'No group matches',
     searchTeachers: 'Search teachers…',
     noTeacher: 'No teacher matches',
+    allCourses: 'All courses',
+    searchCourses: 'Search courses…',
+    noCourse: 'No course matches',
     groupState: { finished: 'Finished', archived: 'Archived' },
     views: { gallery: 'Gallery', folders: 'Folders' },
     statuses: { all: 'Any status', ready: 'Ready to watch', pending: 'Processing', failed: 'Failed' } as Record<StatusFilter, string>,
@@ -84,6 +87,9 @@ const TEXT = {
     noGroup: 'Группы не найдены',
     searchTeachers: 'Поиск учителей…',
     noTeacher: 'Учителя не найдены',
+    allCourses: 'Все курсы',
+    searchCourses: 'Поиск курсов…',
+    noCourse: 'Курсы не найдены',
     groupState: { finished: 'Завершена', archived: 'Архивная' },
     views: { gallery: 'Галерея', folders: 'Папки' },
     statuses: { all: 'Любой статус', ready: 'Готовы к просмотру', pending: 'Обрабатываются', failed: 'С ошибкой' } as Record<StatusFilter, string>,
@@ -100,6 +106,36 @@ const TEXT = {
   },
 };
 
+/** What the webinar page says differently; everything else it shares with the lessons page. */
+const WEBINAR_TEXT = {
+  en: {
+    title: 'Webinar recordings',
+    scope: {
+      student: 'Recordings of webinars for your groups and courses.',
+      teacher: 'Recordings of the webinars you ran.',
+      curator: 'Recordings of webinars for your groups and their courses.',
+      all: 'Every webinar recording in the school.',
+    },
+    search: 'Search by webinar or course',
+    emptyBody: 'Recordings appear here shortly after a webinar ends. You can also open any past webinar from the calendar.',
+    noMatchBody: 'Try another date, period, course or search.',
+    recording: 'Webinar recording',
+  },
+  ru: {
+    title: 'Записи вебинаров',
+    scope: {
+      student: 'Записи вебинаров ваших групп и курсов.',
+      teacher: 'Записи ваших вебинаров.',
+      curator: 'Записи вебинаров ваших групп и их курсов.',
+      all: 'Все записи вебинаров школы.',
+    },
+    search: 'Поиск по вебинару или курсу',
+    emptyBody: 'Записи появляются здесь вскоре после окончания вебинара. Любой прошедший вебинар можно открыть и из календаря.',
+    noMatchBody: 'Попробуйте другую дату, период, курс или запрос.',
+    recording: 'Запись вебинара',
+  },
+};
+
 function toMeta(item: RecordingLibraryItem): RecordingMeta {
   return {
     eventId: item.event_id,
@@ -107,6 +143,7 @@ function toMeta(item: RecordingLibraryItem): RecordingMeta {
     start: item.start_datetime,
     end: item.end_datetime,
     groups: item.groups,
+    eventType: item.event_type ?? null,
     teacher: item.teacher?.name ?? null,
     durationSeconds: item.duration_seconds,
   };
@@ -120,10 +157,11 @@ function toMeta(item: RecordingLibraryItem): RecordingMeta {
  * their groups, oversight roles everything. A recording opens in a player dialog whose URL
  * (`?watch=<lesson id>`) can be shared: whoever opens it sees it only if they may.
  */
-export default function LessonRecordings() {
+export default function LessonRecordings({ kind = 'lesson' }: { kind?: RecordingsKind }) {
   const { user } = useAuth();
   const locale = recordingsLocale(user?.role);
-  const t = TEXT[locale];
+  const t = kind === 'webinar' ? { ...TEXT[locale], ...WEBINAR_TEXT[locale] } : TEXT[locale];
+  const webinars = kind === 'webinar';
   const role = user?.role ?? '';
   const oversight = ['admin', 'head_curator', 'head_teacher'].includes(role);
   const staff = role !== '' && role !== 'student';
@@ -138,9 +176,12 @@ export default function LessonRecordings() {
   const [day, setDay] = useState<string | null>(null);
   const [groupId, setGroupId] = useState('all');
   const [teacherId, setTeacherId] = useState('all');
+  const [courseId, setCourseId] = useState('all');
   const [status, setStatus] = useState<StatusFilter>('all');
   // Gallery is deliberately the default; folders is an extra way to browse the same library.
   const [view, setView] = useState<RecordingView>('gallery');
+  // Webinars are for courses, not groups: no Teacher → Group folders for them.
+  const shownView: RecordingView = webinars ? 'gallery' : view;
 
   const [items, setItems] = useState<RecordingLibraryItem[]>([]);
   const [total, setTotal] = useState<number | null>(null);
@@ -152,7 +193,7 @@ export default function LessonRecordings() {
   const [reloadKey, setReloadKey] = useState(0);
   const latest = useRef(0);
   // Cards still on their way update in place — one batched request, visible tab only.
-  useLiveRecordings(items, setItems, view === 'gallery');
+  useLiveRecordings(items, setItems, shownView === 'gallery');
 
   // Search as you type, without a request per keystroke.
   useEffect(() => {
@@ -162,13 +203,19 @@ export default function LessonRecordings() {
 
   // Everything but the time range: the date picker counts its days under exactly these.
   const narrowing = useMemo(() => ({
+    kind,
     q: q || undefined,
-    group_id: groupId === 'all' ? null : Number(groupId),
+    // Belt-and-braces against filter-state leaking between the lesson and webinar pages
+    // (see Router.tsx): a lesson-page group filter must never reach the webinar page as
+    // a course filter, and vice versa, even if component state were somehow shared.
+    group_id: webinars || groupId === 'all' ? null : Number(groupId),
+    course_id: !webinars || courseId === 'all' ? null : Number(courseId),
     teacher_id: teacherId === 'all' ? null : Number(teacherId),
     status: status === 'all' ? null : status,
-  }), [q, groupId, teacherId, status]);
+  }), [kind, webinars, q, groupId, courseId, teacherId, status]);
   const filters = useMemo(() => ({ ...narrowing, period, date: day }), [narrowing, period, day]);
-  const filtering = !!q || !!day || period !== 'all' || groupId !== 'all' || teacherId !== 'all' || status !== 'all';
+  const filtering = !!q || !!day || period !== 'all' || groupId !== 'all' || courseId !== 'all'
+    || teacherId !== 'all' || status !== 'all';
 
   useEffect(() => {
     const request = ++latest.current;
@@ -208,6 +255,7 @@ export default function LessonRecordings() {
     setPeriod('all');
     setDay(null);
     setGroupId('all');
+    setCourseId('all');
     setTeacherId('all');
     setStatus('all');
   };
@@ -228,6 +276,7 @@ export default function LessonRecordings() {
         start: event.start_datetime,
         end: event.end_datetime,
         groups: (event.groups ?? []).map((name) => ({ name })),
+        eventType: event.event_type ?? null,
         teacher: event.teacher_name ?? null,
       }))
       .catch(() => !cancelled && setLinkedMeta({ eventId: watchId, title: t.recording }));
@@ -259,7 +308,8 @@ export default function LessonRecordings() {
     : role === 'teacher' ? t.scope.teacher
       : role === 'curator' ? t.scope.curator
         : t.scope.student;
-  const showGroups = (facets?.groups.length ?? 0) > 1;
+  const showGroups = !webinars && (facets?.groups.length ?? 0) > 1;
+  const showCourses = webinars && (facets?.courses?.length ?? 0) > 1;
   const showTeachers = staff && (facets?.teachers.length ?? 0) > 1;
   const groupOptions = useMemo<SearchableOption[]>(() => [
     { value: 'all', label: t.allGroups },
@@ -275,6 +325,10 @@ export default function LessonRecordings() {
       value: String(teacher.id), label: teacher.name ?? `#${teacher.id}`,
     })) ?? []),
   ], [facets?.teachers, t]);
+  const courseOptions = useMemo<SearchableOption[]>(() => [
+    { value: 'all', label: t.allCourses },
+    ...(facets?.courses?.map((course) => ({ value: String(course.id), label: course.title })) ?? []),
+  ], [facets?.courses, t]);
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-5 px-3 py-5 sm:px-6 sm:py-8">
@@ -347,6 +401,12 @@ export default function LessonRecordings() {
             ariaLabel={t.allGroups} className="h-9 w-[190px] text-sm" />
         )}
 
+        {showCourses && (
+          <SearchableSelect options={courseOptions} value={courseId} onChange={setCourseId}
+            placeholder={t.allCourses} searchPlaceholder={t.searchCourses} emptyText={t.noCourse}
+            ariaLabel={t.allCourses} className="h-9 w-[190px] text-sm" />
+        )}
+
         {showTeachers && (
           <SearchableSelect options={teacherOptions} value={teacherId} onChange={setTeacherId}
             placeholder={t.allTeachers} searchPlaceholder={t.searchTeachers} emptyText={t.noTeacher}
@@ -366,19 +426,21 @@ export default function LessonRecordings() {
           </Select>
         )}
 
-        <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label={t.views.gallery}>
-          {([
-            ['gallery', LayoutGrid, t.views.gallery],
-            ['folders', Folder, t.views.folders],
-          ] as const).map(([option, Icon, label]) => (
-            <button key={option} type="button" onClick={() => setView(option)} aria-pressed={view === option}
-              className={cx('inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition',
-                view === option ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}>
-              <Icon className="h-3.5 w-3.5" aria-hidden />
-              <span className="hidden sm:inline">{label}</span>
-            </button>
-          ))}
-        </div>
+        {!webinars && (
+          <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label={t.views.gallery}>
+            {([
+              ['gallery', LayoutGrid, t.views.gallery],
+              ['folders', Folder, t.views.folders],
+            ] as const).map(([option, Icon, label]) => (
+              <button key={option} type="button" onClick={() => setView(option)} aria-pressed={view === option}
+                className={cx('inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition',
+                  view === option ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}>
+                <Icon className="h-3.5 w-3.5" aria-hidden />
+                <span className="hidden sm:inline">{label}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {filtering && (
           <button
@@ -393,7 +455,7 @@ export default function LessonRecordings() {
       </div>
 
       {/* Content */}
-      {view === 'folders' ? (
+      {shownView === 'folders' ? (
         <RecordingFoldersView filters={filters} locale={locale} onOpen={openItem} />
       ) : failed && items.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card px-6 py-14 text-center shadow-sm">

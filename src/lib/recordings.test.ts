@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Event } from '../types';
 import {
   almatyDayKey, dayHeading, formatClock, formatDurationWords, groupByDay, matchesRecordingFilter,
-  parseWatchParam, splitLessonTitle, timeRange,
+  parseWatchParam, recordingHeading, splitLessonTitle, timeRange, watchLinkPath,
 } from './recordings';
 
 const lesson = (over: Partial<Event> = {}): Event =>
@@ -130,6 +130,18 @@ describe('the calendar Recordings filter', () => {
   });
 });
 
+describe('recordingHeading', () => {
+  it('keeps a webinar title whole, even with a dash in it', () => {
+    expect(recordingHeading({ title: 'SAT Masterclass - Разбор пробника', event_type: 'webinar', groups: [{ name: 'July 8 SAT - Gulzada' }] }))
+      .toEqual({ name: 'SAT Masterclass - Разбор пробника', lesson: null });
+  });
+
+  it('reads a lesson the way splitLessonTitle does', () => {
+    expect(recordingHeading({ title: 'July 8 SAT - Gulzada: Lesson 29', event_type: 'class' }, 'ru'))
+      .toEqual({ name: 'July 8 SAT', lesson: 'Урок 29' });
+  });
+});
+
 describe('the ?watch= deep link', () => {
   it('reads a lesson id', () => {
     expect(parseWatchParam(new URLSearchParams('watch=14156'))).toBe(14156);
@@ -139,5 +151,20 @@ describe('the ?watch= deep link', () => {
     for (const q of ['', 'watch=', 'watch=0', 'watch=-3', 'watch=12a', 'watch=1e5', 'watch=%3Cscript%3E']) {
       expect(parseWatchParam(new URLSearchParams(q))).toBeNull();
     }
+  });
+});
+
+describe('the "Copy link" share path', () => {
+  it('points a class recording at /recordings', () => {
+    expect(watchLinkPath('class', 14156)).toBe('/recordings?watch=14156');
+  });
+
+  it('points a webinar recording at /webinar-recordings', () => {
+    expect(watchLinkPath('webinar', 14156)).toBe('/webinar-recordings?watch=14156');
+  });
+
+  it('defaults anything else to /recordings', () => {
+    expect(watchLinkPath(null, 14156)).toBe('/recordings?watch=14156');
+    expect(watchLinkPath(undefined, 14156)).toBe('/recordings?watch=14156');
   });
 });
