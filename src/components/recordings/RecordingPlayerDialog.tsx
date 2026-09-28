@@ -17,7 +17,7 @@ import { useVideoClock } from './useVideoClock';
 import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '../../lib/utils';
 import {
-  almatyDayKey, dayHeading, formatDurationWords, recordingHeading, timeRange, type Locale,
+  almatyDayKey, dayHeading, formatDurationWords, recordingHeading, timeRange, watchLinkPath, type Locale,
 } from '../../lib/recordings';
 
 /** What the dialog shows about the lesson before (and while) the video loads. */
@@ -218,7 +218,7 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
   const groupNames = (meta.groups ?? []).map((g) => g.name).join(', ');
 
   const copyLink = async () => {
-    const link = `${window.location.origin}/recordings?watch=${meta.eventId}`;
+    const link = `${window.location.origin}${watchLinkPath(meta.eventType, meta.eventId)}`;
     try {
       await navigator.clipboard.writeText(link);
       toast.success(t.copied);

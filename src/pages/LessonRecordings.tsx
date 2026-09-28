@@ -205,11 +205,14 @@ export default function LessonRecordings({ kind = 'lesson' }: { kind?: Recording
   const narrowing = useMemo(() => ({
     kind,
     q: q || undefined,
-    group_id: groupId === 'all' ? null : Number(groupId),
-    course_id: courseId === 'all' ? null : Number(courseId),
+    // Belt-and-braces against filter-state leaking between the lesson and webinar pages
+    // (see Router.tsx): a lesson-page group filter must never reach the webinar page as
+    // a course filter, and vice versa, even if component state were somehow shared.
+    group_id: webinars || groupId === 'all' ? null : Number(groupId),
+    course_id: !webinars || courseId === 'all' ? null : Number(courseId),
     teacher_id: teacherId === 'all' ? null : Number(teacherId),
     status: status === 'all' ? null : status,
-  }), [kind, q, groupId, courseId, teacherId, status]);
+  }), [kind, webinars, q, groupId, courseId, teacherId, status]);
   const filters = useMemo(() => ({ ...narrowing, period, date: day }), [narrowing, period, day]);
   const filtering = !!q || !!day || period !== 'all' || groupId !== 'all' || courseId !== 'all'
     || teacherId !== 'all' || status !== 'all';

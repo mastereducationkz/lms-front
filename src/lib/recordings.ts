@@ -161,6 +161,15 @@ export function matchesRecordingFilter(event: Event, filter: RecordingFilter, no
   return new Date(event.end_datetime).getTime() < now && !hasOne;
 }
 
+/**
+ * The page a "Copy link" share points at: lesson recordings live under `/recordings`, webinar
+ * recordings under their own `/webinar-recordings` page, each carrying the event id to open.
+ */
+export function watchLinkPath(eventType: string | null | undefined, eventId: number | string): string {
+  const base = eventType === 'webinar' ? '/webinar-recordings' : '/recordings';
+  return `${base}?watch=${eventId}`;
+}
+
 /** `?watch=14156` → 14156; anything else → null. */
 export function parseWatchParam(params: URLSearchParams): number | null {
   const raw = params.get('watch');
