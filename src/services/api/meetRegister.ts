@@ -52,6 +52,10 @@ export interface RegisterCounts {
   held: number;
   overrides: number;
   left_alone: Record<string, number>;
+  /** Meet-marked lessons with a present student still unscored after 23:59 Almaty of the lesson's day
+   *  (2026-09-28) — and those still in time. Absent from an older backend. */
+  scores_missed?: number;
+  scores_open?: number;
 }
 
 export interface RegisterTeacherRow extends RegisterCounts {

@@ -164,6 +164,20 @@ export async function updateEventAttendance(eventId: number, data: AttendanceBul
   }
 }
 
+/** «Баллы за урок»: scores only, never a mark — allowed from the lesson's start (2026-09-28). */
+export async function saveActivityScores(
+  eventId: number,
+  scores: { student_id: number; activity_score: number }[],
+): Promise<{ written: number }> {
+  try {
+    const response = await api.put(`/events/${eventId}/activity-scores`, { scores });
+    return response.data;
+  } catch (error: any) {
+    const detail = error.response?.data?.detail;
+    throw new Error(typeof detail === 'string' ? detail : 'Failed to save scores');
+  }
+}
+
 export async function getMySubstitutions(): Promise<SubstitutionLesson[]> {
   try {
     const response = await api.get('/events/my-substitutions');

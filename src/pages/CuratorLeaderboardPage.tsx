@@ -38,6 +38,7 @@ import { cn } from '../lib/utils';
 import { toast } from '../components/Toast';
 import { getClassMaterialCounts } from '../services/api/classMaterials';
 import LessonMaterialsBadge, { LessonMaterialsDialog } from '../components/class-materials/LessonMaterialsBadge';
+import LessonScoresDialog from '../components/attendance/LessonScoresDialog';
 
 interface HomeworkMeta {
     id: number;
@@ -755,6 +756,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
     open: boolean; studentId: number | null; lessonKey: string | null;
     studentName: string; currentScore: number;
   }>({ open: false, studentId: null, lessonKey: null, studentName: '', currentScore: 0 });
+  // «Баллы за урок»: one lesson's scores on one screen, from its start (2026-09-28).
+  const [scoresLesson, setScoresLesson] = useState<LessonMeta | null>(null);
   const [topicModal, setTopicModal] = useState<{
     open: boolean; lesson: LessonMeta | null; value: string;
   }>({ open: false, lesson: null, value: '' });
@@ -1132,6 +1135,19 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       };
     });
     setChangedEntries(prev => new Set(prev).add(studentId));
+  };
+
+  // The dialog saved these already; keep the grid in step so a later «Сохранить» of the row re-sends
+  // the new score, not the one loaded with the page. Not a change to save — no changedEntries.
+  const applySavedScores = (lessonKey: string, saved: Map<number, number>) => {
+    setData(prev => prev && {
+      ...prev,
+      students: prev.students.map(s => {
+        const lesson = s.lessons[lessonKey];
+        if (!lesson || !saved.has(s.student_id)) return s;
+        return { ...s, lessons: { ...s.lessons, [lessonKey]: { ...lesson, activity_score: saved.get(s.student_id)! } } };
+      }),
+    });
   };
 
   const saveTopic = async () => {
@@ -1773,8 +1789,22 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                         {lesson.substitute_teacher_name ? `${t('Замена', 'Substitute')}: ${lesson.substitute_teacher_name}` : '·'}
                                     </span>
                                     {canMarkAttendance && (
-                                        <span className={cn("mt-0.5 text-[9px] font-bold uppercase tracking-tight text-blue-600 dark:text-blue-400 leading-tight", lessonIsFuture && "invisible")}>
-                                            {t('Отметить всех', 'Mark all')}
+                                        <span className={cn("mt-0.5 flex items-center gap-1.5 leading-tight", lessonIsFuture && "invisible")}>
+                                            <span className="text-[9px] font-bold uppercase tracking-tight text-blue-600 dark:text-blue-400">
+                                                {t('Отметить всех', 'Mark all')}
+                                            </span>
+                                            {/* «Баллы за урок» (2026-09-28): the whole lesson's scores on one screen, from its start. */}
+                                            {lesson.event_id && !(isTeacher && lesson.is_substitution) && (
+                                                <button
+                                                    type="button"
+                                                    className="inline-flex items-center gap-0.5 rounded px-1 text-[9px] font-bold uppercase tracking-tight text-yellow-600 hover:bg-yellow-100 dark:text-yellow-400 dark:hover:bg-yellow-900/30"
+                                                    title={t('Баллы за активность для всего урока', 'Activity scores for the whole lesson')}
+                                                    onClick={(e) => { e.stopPropagation(); setScoresLesson(lesson); }}
+                                                >
+                                                    <Star className="w-3 h-3" aria-hidden />
+                                                    {t('Баллы', 'Scores')}
+                                                </button>
+                                            )}
                                         </span>
                                     )}
                                     {canMarkAttendance && (
@@ -2015,6 +2045,12 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                             </span>
                                             {meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`) && (
                                                 <MeetVerdictBadge verdict={meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`)!} locale={isTeacher ? 'en' : 'ru'} register={meetRegister.get(`${lessonInfo.event_id}:${student.student_id}`)} />
+                                            )}
+                                            {/* A score given before Meet marked the student waits here and stays. */}
+                                            {lessonStatus?.activity_score != null && (
+                                                <span className="absolute top-0 right-0 text-[10px] px-1.5 bg-yellow-400 text-gray-900 rounded-bl font-bold pointer-events-none" title={t(`Активность: ${lessonStatus.activity_score}/10`, `Activity: ${lessonStatus.activity_score}/10`)}>
+                                                    {lessonStatus.activity_score}
+                                                </span>
                                             )}
                                         </div>
                                         ) : (
@@ -2756,6 +2792,21 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {scoresLesson && (
+      <LessonScoresDialog
+        open
+        onOpenChange={(open) => { if (!open) setScoresLesson(null); }}
+        eventId={scoresLesson.event_id}
+        start={scoresLesson.start_datetime}
+        title={`${formatDateParts(scoresLesson.start_datetime).date} · ${formatDateParts(scoresLesson.start_datetime).dayTime}${scoresLesson.topic ? ` · ${scoresLesson.topic}` : ''}`}
+        en={isTeacher}
+        onSaved={(saved) => {
+          applySavedScores(scoresLesson.lesson_number.toString(), saved);
+          toast(t('Баллы сохранены', 'Scores saved'), 'success');
+        }}
+      />
+    )}
 
     {/* Lesson topic edit modal */}
     <Dialog open={topicModal.open} onOpenChange={(open) => !open && setTopicModal({ open: false, lesson: null, value: '' })}>
