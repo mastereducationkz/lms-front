@@ -158,6 +158,12 @@ export default function CuratorParentReportsPage() {
   const withTestCount = loadedFacts.filter(f => f.test !== null).length;
   const withoutTestCount = loadedFacts.filter(f => f.test === null && !f.test_unavailable).length;
   const unknownTestCount = loadedFacts.filter(f => f.test_unavailable === true).length;
+  // Ученик сдал тест по одному курсу и не сдал по другому: результаты в отчёте будут,
+  // но родителю уйдёт ещё и просьба проконтролировать второй тест. Куратору стоит
+  // знать об этом до генерации. `?? []` — ответы, закэшированные до появления поля.
+  const partlyMissingCount = loadedFacts.filter(
+    f => f.test !== null && (f.missing_tests ?? []).length > 0,
+  ).length;
 
   return (
     <div className="p-6 space-y-4">
@@ -221,7 +227,8 @@ export default function CuratorParentReportsPage() {
             )}
           </div>
 
-          {loadedCount > 0 && (withoutTestCount > 0 || unknownTestCount > 0) && (
+          {loadedCount > 0
+            && (withoutTestCount > 0 || unknownTestCount > 0 || partlyMissingCount > 0) && (
             // Спокойный тон нарочно: отсутствие теста — не поломка, поэтому не amber и не error.
             <div className="text-sm text-gray-500 space-y-0.5">
               {withoutTestCount > 0 && (
@@ -232,6 +239,12 @@ export default function CuratorParentReportsPage() {
               )}
               {unknownTestCount > 0 && (
                 <p>По {unknownTestCount} — платформа не ответила, есть ли тест, неизвестно.</p>
+              )}
+              {partlyMissingCount > 0 && (
+                <p>
+                  У {partlyMissingCount} тест есть по одному курсу и нет по другому — в их
+                  отчёт добавится просьба проконтролировать пропущенный.
+                </p>
               )}
             </div>
           )}
@@ -254,6 +267,8 @@ export default function CuratorParentReportsPage() {
               }
               const facts = details[key]?.facts;
               const noTestYet = facts != null && facts.test === null && !facts.test_unavailable;
+              const partlyMissing =
+                facts != null && facts.test !== null ? facts.missing_tests ?? [] : [];
               const testStatusUnknown = facts != null && facts.test_unavailable === true;
               return (
                 <div key={key} className="space-y-1">
@@ -271,6 +286,12 @@ export default function CuratorParentReportsPage() {
                   {testStatusUnknown && (
                     <p className="text-xs text-gray-400">
                       Платформа не ответила — есть ли тест, неизвестно
+                    </p>
+                  )}
+                  {partlyMissing.length > 0 && (
+                    <p className="text-xs text-gray-400">
+                      Нет теста по {partlyMissing.map(p => p.toUpperCase()).join(' и ')} — отчёт
+                      попросит родителя проконтролировать
                     </p>
                   )}
                   <ParentReportCard
