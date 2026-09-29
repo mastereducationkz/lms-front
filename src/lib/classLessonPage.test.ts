@@ -29,6 +29,17 @@ describe('sectionOrder', () => {
   });
 });
 
+describe('sectionOrder: live-lesson activities', () => {
+  it('shows «Activities» to whoever may run them, and to anyone with something listed', () => {
+    expect(sectionOrder('live', { viewer: staff, ...all, canDriveLive: true }).slice(0, 2)).toEqual(['live', 'activities']);
+    expect(sectionOrder('upcoming', { viewer: staff, ...all, canDriveLive: true })[0]).toBe('activities');
+    expect(sectionOrder('finished', { viewer: student, ...all, hasActivities: true }))
+      .toEqual(['me', 'recording', 'activities', 'notes', 'homework', 'materials']);
+    expect(sectionOrder('finished', { viewer: student, ...all })).not.toContain('activities');
+    expect(sectionFromHash('#activities')).toBe('activities');
+  });
+});
+
 describe('joinState', () => {
   const base = { status: 'upcoming' as const, join: { url: 'https://meet.google.com/abc-defg-hij', opens_at: '2026-09-28T12:50:00' }, end: '2026-09-28T14:00:00' };
   it('opens ten minutes before and closes at the end', () => {

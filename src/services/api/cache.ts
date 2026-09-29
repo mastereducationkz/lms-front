@@ -57,6 +57,8 @@ const sessionStore: Storage | null = (() => {
  * A TTL of 0 disables caching for the endpoint.
  */
 const TTL_RULES: Array<{ test: RegExp; ttlMs: number }> = [
+  // The live lesson changes by the second; its reads are never cached.
+  { test: /^\/live(\/|$)/, ttlMs: 0 },
   { test: /^\/(class-materials|notifications)(\/|$)/, ttlMs: 0 },
   { test: /^\/checkpoints(\/|$)/, ttlMs: 15 * 1000 },
 
@@ -115,6 +117,8 @@ const INVALIDATION_RULES: Array<{ mutation: RegExp; invalidatePrefixes: string[]
   { mutation: /^\/lesson-requests(\/|$)/, invalidatePrefixes: ['/lesson-requests', '/events'] },
   { mutation: /^\/media(\/|$)/, invalidatePrefixes: ['/courses'] },
   { mutation: /^\/checkpoints(\/|$)/, invalidatePrefixes: ['/checkpoints'] },
+  // Confirming suggested activity scores writes the register's scores.
+  { mutation: /^\/live\/lessons\/\d+\/suggestions\/confirm/, invalidatePrefixes: ['/lessons', '/events', '/leaderboard', '/student-journal'] },
   { mutation: /^\/progress\/(quiz-attempt|lesson\/\d+\/complete|step\/\d+\/visit)/, invalidatePrefixes: ['/checkpoints'] },
 ]
 

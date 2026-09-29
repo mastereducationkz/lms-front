@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { ArrowLeft, ExternalLink, Loader2, NotebookPen, Paperclip, Radio, Star } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Loader2, MessageSquareText, NotebookPen, Paperclip, Radio, Star } from 'lucide-react';
 import { LiveRoom } from '../../components/class-lesson/LessonBlocks';
 import { lessonWhen } from '../../lib/classLessonPage';
 import type { LessonNote, LessonStatus, LessonView, NoteKind } from '../../services/api/classLessons';
@@ -7,6 +7,7 @@ import { ApiError, SessionLost } from '../api';
 import { lessonUrl } from '../config';
 import { lessons } from '../lessons';
 import ScoresCard from './ScoresCard';
+import LiveCard from './LiveCard';
 import NotesCard from './NotesCard';
 import MaterialsCard from './MaterialsCard';
 
@@ -98,6 +99,12 @@ export default function LessonPanel({ lessonId, onBack, onSessionLost }: {
         {view.topic && <p className="mt-1 text-xs text-slate-700">{view.topic}</p>}
         <OpenInLms id={view.id} label={t('Открыть урок в LMS', 'Open lesson in LMS')} />
       </header>
+
+      {view.live_lesson?.can_drive && (
+        <Card title={t('Живой урок', 'Live lesson')} icon={<MessageSquareText className="h-4 w-4 text-blue-600" />}>
+          <LiveCard lessonId={view.id} onSessionLost={() => lost.current()} />
+        </Card>
+      )}
 
       {view.live && (
         <Card title={t('Сейчас в уроке', 'In the room')} icon={<Radio className="h-4 w-4 text-emerald-600" />}>

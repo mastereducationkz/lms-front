@@ -42,7 +42,7 @@ export default function LessonHeader({ view, group, onGroup, sections, onJump, n
   const journal = group ? journalUrl(view.viewer.role, group.id, view.start) : null;
 
   return (
-    <header className="sticky top-0 z-20 -mx-4 border-b border-border bg-background/95 px-4 pb-3 pt-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:-mx-6 sm:px-6">
+    <header style={{ top: 'var(--topbar-h, 0px)' }} className="sticky z-[9] rounded-b-2xl border border-t-0 border-border bg-card/95 px-4 pb-3 pt-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/85 sm:px-5">
       <div className="flex items-start gap-3">
         <Link
           to="/calendar"

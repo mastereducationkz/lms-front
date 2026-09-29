@@ -31,6 +31,7 @@ import { GroupTalkView } from '../components/meetAttendance/GroupTalkView';
 import { TeacherTalkView } from '../components/meetAttendance/TeacherTalkView';
 import { TalkSettingsButton } from '../components/meetAttendance/TalkSettingsButton';
 import { RegisterSwitchButton } from '../components/meetAttendance/RegisterSwitchButton';
+import { LiveSwitchButton } from '../components/meetAttendance/LiveSwitchButton';
 import { RegisterReportPanel } from '../components/meetAttendance/RegisterReportPanel';
 import { LessonRecordingCell, recordingMeta } from '../components/meetAttendance/LessonRecordingCell';
 import RecordingPlayerDialog, { type RecordingMeta } from '../components/recordings/RecordingPlayerDialog';
@@ -257,6 +258,7 @@ export default function MeetAttendanceReview() {
         <div className="flex flex-wrap items-center gap-2">
         <TalkSettingsButton role={user?.role} onChanged={(next) => { setTalkEnabled(next.enabled); load(true); }} />
         <RegisterSwitchButton role={user?.role} onChanged={() => { setRegisterRefresh((n) => n + 1); load(true); }} />
+        <LiveSwitchButton role={user?.role} />
         <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label="Period">
           {([7, 30] as Period[]).map((p) => (
             <button

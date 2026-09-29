@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { AlertTriangle, BookOpenCheck, ClipboardList, NotebookPen, Radio, Send, Star, UsersRound } from 'lucide-react';
+import { AlertTriangle, BookOpenCheck, ClipboardList, MessageSquareText, NotebookPen, Radio, Send, Star, UsersRound } from 'lucide-react';
 import { Skeleton } from '../components/ui/skeleton';
 import SectionCard from '../components/class-lesson/SectionCard';
 import LessonHeader from '../components/class-lesson/LessonHeader';
@@ -10,6 +10,7 @@ import { HomeworkList, LiveRoom, MyMark, RequestsBlock } from '../components/cla
 import ClassMaterialsSection from '../components/class-materials/ClassMaterialsSection';
 import LessonRecordingSection from '../components/calendar/LessonRecordingSection';
 import MeetAttendanceSection from '../components/calendar/MeetAttendanceSection';
+import LiveLessonSection from '../components/live-lesson/LiveLessonSection';
 import {
   asCalendarEvent, lessonWhen, sectionFromHash, sectionOrder, stampKz, type PageSection,
 } from '../lib/classLessonPage';
@@ -91,6 +92,8 @@ export default function ClassLessonPage() {
     hasRequests: view.requests.length > 0 || Boolean(view.request_new_url),
     hasRecording: Boolean(view.recording),
     hasMeet: Boolean(view.meet_state && !['no_room', 'not_started'].includes(view.meet_state)),
+    hasActivities: Boolean(view.live_lesson?.activities),
+    canDriveLive: Boolean(view.live_lesson?.can_drive),
   }) : []), [view]);
 
   const jump = useCallback((section: PageSection) => {
@@ -127,6 +130,12 @@ export default function ClassLessonPage() {
         return (
           <SectionCard key={key} id="live" title={t('Сейчас в уроке', 'In the room now')} icon={<Radio className="h-4 w-4 text-emerald-600" aria-hidden />}>
             <LiveRoom view={view} />
+          </SectionCard>
+        );
+      case 'activities':
+        return (
+          <SectionCard key={key} id="activities" title={t('Активности', 'Activities')} icon={<MessageSquareText className="h-4 w-4 text-primary" aria-hidden />}>
+            <LiveLessonSection view={view} />
           </SectionCard>
         );
       case 'me':
@@ -201,6 +210,13 @@ export default function ClassLessonPage() {
               )}
             </div>
           </div>
+        )}
+        {view.viewer.is_student && view.live_lesson?.open && (
+          <Link to="/live" className="flex items-center gap-3 rounded-2xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-900 transition hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-100">
+            <span className="relative flex h-3 w-3 flex-none"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" /><span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500" /></span>
+            <span className="flex-1"><b>Live now:</b> your teacher opened a question.</span>
+            <span className="font-semibold underline underline-offset-2">Answer</span>
+          </Link>
         )}
         {view.me?.missed && (
           <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">

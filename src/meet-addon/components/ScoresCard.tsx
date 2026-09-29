@@ -5,6 +5,9 @@ import { registerChanges, scoreEditable } from '../../lib/classLessonPage';
 import type { LessonView, RegisterStudent } from '../../services/api/classLessons';
 import { SessionLost } from '../api';
 import { lessons } from '../lessons';
+import { panelLive } from '../live';
+import { useScoreSuggestions } from '../../lib/liveLesson/useSuggestions';
+import SuggestionBar from '../../components/live-lesson/SuggestionBar';
 
 const SCORES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const MARK: Record<string, [string, string, string]> = {
@@ -30,6 +33,8 @@ export default function ScoresCard({ view, onSaved }: { view: LessonView; onSave
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => { setScore(new Map()); }, [view.register]);
+  const suggestions = useScoreSuggestions(panelLive, view.id,
+    Boolean(view.viewer.can_score && (view.live_lesson?.activities ?? 0) >= 2), view.register);
 
   const students = useMemo(
     () => [...(view.register?.students ?? [])].sort((a, b) => a.name.localeCompare(b.name, 'ru')),
@@ -74,9 +79,14 @@ export default function ScoresCard({ view, onSaved }: { view: LessonView; onSave
             : t('Баллы ставит педагог, который ведёт урок.', 'Scores are given by the teacher of the lesson.')}
         </p>
       )}
+      {canScore && (
+        <SuggestionBar waiting={suggestions.waiting} busy={suggestions.busy} error={suggestions.error}
+          onConfirm={() => void suggestions.confirm().then((ok) => { if (ok) onSaved(); })} />
+      )}
       <ul className="divide-y divide-slate-100">
         {students.map((s) => {
           const value = score.get(s.user_id) ?? s.activity_score;
+          const suggested = value == null ? suggestions.byUser.get(s.user_id) : undefined;
           const editable = scoreEditable(s, s.status, canScore);
           const mark = MARK[s.status] ?? MARK.registered;
           return (
@@ -92,6 +102,7 @@ export default function ScoresCard({ view, onSaved }: { view: LessonView; onSave
                     {s.state === 'frozen' && ` · ${t('Заморозка', 'Frozen')}`}
                     {s.state === 'no_access' && ` · ${t('Нет доступа', 'No access')}`}
                   </p>
+                  {suggested?.reason && <p className="truncate text-[11px] text-slate-500" title={suggested.reason}>{t('Предложено', 'Suggested')}: {suggested.reason}</p>}
                 </div>
                 <button
                   type="button"
@@ -99,12 +110,13 @@ export default function ScoresCard({ view, onSaved }: { view: LessonView; onSave
                   onClick={() => setPicking(picking === s.user_id ? null : s.user_id)}
                   className={cn(
                     'inline-flex h-7 min-w-[2.75rem] flex-none items-center justify-center gap-1 rounded-lg border px-1.5 text-xs font-bold tabular-nums',
-                    value != null ? 'border-yellow-400 bg-yellow-400 text-slate-900' : 'border-slate-200 text-slate-400',
+                    value != null ? 'border-yellow-400 bg-yellow-400 text-slate-900'
+                      : suggested ? 'border-dashed border-yellow-400 bg-yellow-50 text-slate-500' : 'border-slate-200 text-slate-400',
                     editable ? 'hover:bg-yellow-100' : 'cursor-default',
                   )}
                   aria-label={`${t('Балл за активность', 'Activity score')}: ${s.name}`}
                 >
-                  <Star className="h-3 w-3" aria-hidden />{value ?? '—'}
+                  <Star className="h-3 w-3" aria-hidden />{value ?? suggested?.suggested ?? '—'}
                 </button>
               </div>
               {picking === s.user_id && editable && (

@@ -13,7 +13,7 @@ import type { Event } from '../types';
 
 /** Sections the page can show. `live` (the room right now) and `me` (a student's own mark) have no
  *  deep link of their own; the others are the anchors `lessonLinks` writes. */
-export type PageSection = LessonSection | 'live' | 'me';
+export type PageSection = LessonSection | 'live' | 'me' | 'activities';
 
 interface SectionFlags {
   viewer: Pick<LessonViewer, 'is_staff' | 'is_student' | 'can_view_meet'>;
@@ -25,6 +25,10 @@ interface SectionFlags {
   hasRecording: boolean;
   /** Meet has something to say about the lesson (held in an LMS room and started). */
   hasMeet: boolean;
+  /** Live-lesson activities this viewer would find listed (all of them for staff, own answers for a student). */
+  hasActivities?: boolean;
+  /** This viewer may run live activities now (the switch, the lesson's teacher, its time window). */
+  canDriveLive?: boolean;
 }
 
 /**
@@ -36,9 +40,9 @@ export function sectionOrder(status: LessonStatus, flags: SectionFlags): PageSec
   const { viewer } = flags;
   const staff = viewer.is_staff;
   const order: Record<LessonStatus, PageSection[]> = {
-    upcoming: ['materials', 'homework', 'notes', 'requests'],
-    live: ['live', 'materials', 'notes', 'register', 'homework', 'requests'],
-    finished: ['me', 'recording', 'register', 'notes', 'homework', 'meet', 'materials', 'requests'],
+    upcoming: ['activities', 'materials', 'homework', 'notes', 'requests'],
+    live: ['live', 'activities', 'materials', 'notes', 'register', 'homework', 'requests'],
+    finished: ['me', 'recording', 'activities', 'register', 'notes', 'homework', 'meet', 'materials', 'requests'],
     cancelled: ['materials', 'notes', 'requests'],
   };
   return order[status].filter((key) => {
@@ -49,6 +53,7 @@ export function sectionOrder(status: LessonStatus, flags: SectionFlags): PageSec
       case 'recording': return flags.hasRecording;
       case 'requests': return staff && flags.hasRequests;
       case 'me': return viewer.is_student && flags.hasMe;
+      case 'activities': return Boolean(flags.canDriveLive || flags.hasActivities);
       default: return true;
     }
   });
@@ -58,6 +63,7 @@ export function sectionOrder(status: LessonStatus, flags: SectionFlags): PageSec
 export const SECTION_LABELS: Record<PageSection, [string, string]> = {
   live: ['Сейчас в уроке', 'In the room'],
   me: ['Моя отметка', 'My mark'],
+  activities: ['Активности', 'Activities'],
   materials: ['Материалы', 'Materials'],
   recording: ['Запись', 'Recording'],
   register: ['Посещаемость', 'Attendance'],

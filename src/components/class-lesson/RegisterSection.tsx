@@ -13,6 +13,9 @@ import { saveActivityScores, updateEventAttendance } from '../../services/api/ev
 import type { StudentRegister } from '../../services/api/meetRegister';
 import type { LessonView, RegisterStudent, UiMark } from '../../services/api/classLessons';
 import type { AttendanceRecord } from '../../types';
+import { useScoreSuggestions } from '../../lib/liveLesson/useSuggestions';
+import { live } from '../../services/api/liveLesson';
+import SuggestionBar from '../live-lesson/SuggestionBar';
 
 const MARKS: { key: UiMark; ru: string; en: string; tone: string }[] = [
   { key: 'attended', ru: 'Был', en: 'Present', tone: 'bg-emerald-600 text-white border-emerald-600' },
@@ -54,6 +57,10 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
 
   // A fresh payload (after a save, or the minute poll) is the new baseline.
   useEffect(() => { setStatus(new Map()); setScore(new Map()); setReasons(new Map()); }, [register]);
+
+  // The live page's suggestions (two or more questions ran); shown faded until confirmed.
+  const suggestions = useScoreSuggestions(live, view.id,
+    Boolean(view.viewer.can_score && (view.live_lesson?.activities ?? 0) >= 2), register);
 
   const students = useMemo(() => {
     const all = register?.students ?? [];
@@ -137,6 +144,10 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
           </button>
         )}
       </div>
+      {canScore && (
+        <SuggestionBar waiting={suggestions.waiting} busy={suggestions.busy} error={suggestions.error}
+          onConfirm={() => void suggestions.confirm().then((ok) => { if (ok) onSaved(); })} />
+      )}
       {register.mode === 'live' && register.meet_decided && (
         <p className="mb-3 rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
           {t('Посещаемость отметил Meet. Если он ошибся — поменяйте отметку, при сохранении спросим причину.',
@@ -152,6 +163,7 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
             const editable = markEditable(s, canMark);
             const scoring = scoreEditable(s, mark, canScore);
             const value = currentScore(s);
+            const suggested = value == null ? suggestions.byUser.get(s.user_id) : undefined;
             const meetTitle = s.meet
               ? [verdictHint({ held_back: Boolean(s.meet.held_back) }, view.viewer.locale), registerNote(s.meet.register ?? undefined, view.viewer.locale)].filter(Boolean).join('\n')
               : '';
@@ -165,6 +177,7 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
                       <span className="truncate">{s.name}</span>
                     </div>
                     <div className="flex flex-wrap items-center gap-x-2 text-[11px] text-muted-foreground">
+                      {suggested?.reason && <span title={suggested.reason}>{t('Предложено', 'Suggested')} {suggested.suggested}: {suggested.reason}</span>}
                       {s.state === 'frozen' && <span>{t('Заморозка', 'Frozen')}</span>}
                       {s.state === 'no_access' && <span>{t('Нет доступа', 'No access')}</span>}
                       {s.excused && <span className="rounded bg-sky-100 px-1 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200" title={s.excuse_note ?? undefined}>{t('Уважительная', 'Excused')}{s.excuse_note ? `: ${s.excuse_note}` : ''}</span>}
@@ -208,7 +221,8 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
                     onClick={() => setPicking(picking === s.user_id ? null : s.user_id)}
                     className={cn(
                       'inline-flex h-8 min-w-[3rem] flex-none items-center justify-center gap-1 rounded-lg border px-2 text-xs font-bold tabular-nums transition',
-                      value != null ? 'border-yellow-400 bg-yellow-400 text-gray-900' : 'border-border text-muted-foreground',
+                      value != null ? 'border-yellow-400 bg-yellow-400 text-gray-900'
+                        : suggested ? 'border-dashed border-yellow-400 bg-yellow-400/20 text-muted-foreground' : 'border-border text-muted-foreground',
                       scoring ? 'hover:bg-yellow-100 dark:hover:bg-yellow-900/30' : 'cursor-default',
                       scoring && value == null && (mark === 'attended' || mark === 'late') && 'border-amber-400 text-amber-700 dark:text-amber-300',
                     )}
@@ -216,7 +230,7 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
                     aria-label={t('Балл за активность', 'Activity score')}
                   >
                     <Star className="h-3.5 w-3.5" aria-hidden />
-                    {value ?? '—'}
+                    {value ?? suggested?.suggested ?? '—'}
                   </button>
                 </div>
                 {picking === s.user_id && scoring && (
