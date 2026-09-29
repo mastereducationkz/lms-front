@@ -6,6 +6,7 @@ import { ComposeTab } from '../../components/announcements/ComposeTab';
 import { GroupsTab } from '../../components/announcements/GroupsTab';
 import { HistoryTab } from '../../components/announcements/HistoryTab';
 import { LessonInvitationsTab } from '../../components/announcements/LessonInvitationsTab';
+import { BotQuestionsTab } from '../../components/announcements/BotQuestionsTab';
 import { errorMessage } from '../../components/announcements/shared';
 import { recipientSelectionFromAnnouncement } from '../../components/announcements/resend';
 import { getGroups, getRecipientSummary } from '../../services/api/announcements';
@@ -22,13 +23,14 @@ import type { RecipientSelection } from '../../components/announcements/resend';
  * Support platform, which owns the bot.
  */
 
-type Tab = 'compose' | 'history' | 'groups' | 'invitations';
+type Tab = 'compose' | 'history' | 'groups' | 'invitations' | 'bot';
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'compose', label: 'Compose' },
   { key: 'history', label: 'History' },
   { key: 'groups', label: 'Groups' },
   { key: 'invitations', label: 'Lesson invitations' },
+  { key: 'bot', label: 'Bot questions' },
 ];
 
 export default function TelegramAnnouncementsPage() {
@@ -148,6 +150,7 @@ export default function TelegramAnnouncementsPage() {
       {tab === 'history' && <HistoryTab onSendAgain={startAgain} />}
       {tab === 'groups' && <GroupsTab groups={groups} loading={loadingGroups} onChanged={loadGroups} />}
       {tab === 'invitations' && <LessonInvitationsTab />}
+      {tab === 'bot' && <BotQuestionsTab />}
     </div>
   );
 }
