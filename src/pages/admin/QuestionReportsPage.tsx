@@ -23,6 +23,8 @@ import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import api from '../../services/api';
 import { renderTextWithLatex } from '../../utils/latex';
+import { TriageBar, TriageChip, TriagePanel } from '../../components/admin/questionReports/Triage';
+import { labelCounts, sortReports, type ReportTriage, type SortMode } from '../../lib/reportTriage';
 
 interface QuestionReport {
   id: number;
@@ -52,6 +54,8 @@ interface QuestionReport {
   resolved_by: number | null;
   resolver_name: string | null;
   question_data: any | null;
+  /** Jev's suggested kind of report (owner, 2026-09-30). */
+  triage?: ReportTriage | null;
 }
 
 interface ReportDetail {
@@ -92,6 +96,7 @@ interface ReportDetail {
   question_data: any | null;
   question_index: number;
   total_questions: number;
+  triage?: ReportTriage | null;
   sibling_reports?: Array<{
     id: number;
     message: string;
@@ -164,6 +169,8 @@ export default function QuestionReportsPage() {
   const [reports, setReports] = useState<QuestionReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [triageFilter, setTriageFilter] = useState<string>('');
+  const [sortMode, setSortMode] = useState<SortMode>('newest');
   const [selectedReport, setSelectedReport] = useState<ReportDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -227,6 +234,15 @@ export default function QuestionReportsPage() {
     }
     return m
   }, [reports])
+
+  const triageCounts = useMemo(() => labelCounts(reports), [reports])
+  const visibleReports = useMemo(() => sortReports(
+    reports.filter((r) => !triageFilter || (r.triage?.effective_label ?? 'none') === triageFilter), sortMode,
+  ), [reports, triageFilter, sortMode])
+  const onTriageChanged = (reportId: number, next: ReportTriage) => {
+    setReports((prev) => prev.map((r) => (r.id === reportId ? { ...r, triage: next } : r)))
+    setSelectedReport((prev) => (prev && prev.report.id === reportId ? { ...prev, triage: next } : prev))
+  }
 
   const selectedSameQuestionTotal = selectedReport
     ? 1 + (selectedReport.sibling_reports?.length ?? 0)
@@ -509,6 +525,9 @@ export default function QuestionReportsPage() {
         )}
       </div>
 
+      <TriageBar counts={triageCounts} filter={triageFilter} onFilter={setTriageFilter} sort={sortMode}
+        onSort={setSortMode} onLabelled={() => void fetchReports({ silent: true })} />
+
       {/* Reports List */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Left: Reports List */}
@@ -517,7 +536,7 @@ export default function QuestionReportsPage() {
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
-          ) : reports.length === 0 ? (
+          ) : visibleReports.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
                 <AlertTriangle className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
@@ -525,7 +544,7 @@ export default function QuestionReportsPage() {
               </CardContent>
             </Card>
           ) : (
-            reports.map((report) => {
+            visibleReports.map((report) => {
               const statusInfo = statusConfig[report.status as keyof typeof statusConfig] || statusConfig.pending;
               const StatusIcon = statusInfo.icon;
               
@@ -554,6 +573,7 @@ export default function QuestionReportsPage() {
                             {sameQuestionCounts.get(reportGroupKey(report))} same Q
                           </span>
                         )}
+                        <TriageChip triage={report.triage} />
                       </div>
                       <ChevronRight className="w-5 h-5 text-gray-400 dark:text-gray-500" />
                     </div>
@@ -648,6 +668,9 @@ export default function QuestionReportsPage() {
                     </Button>
                   ))}
                 </div>
+
+                <TriagePanel reportId={selectedReport.report.id} triage={selectedReport.triage}
+                  onChanged={(next) => onTriageChanged(selectedReport.report.id, next)} />
 
                 {selectedSameQuestionTotal > 1 && (
                   <div className="flex items-start gap-2 p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-800 text-sm text-indigo-900 dark:text-indigo-100">
