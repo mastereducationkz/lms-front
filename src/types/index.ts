@@ -1319,6 +1319,19 @@ export interface DailyQuestionItem {
   optionB?: string;
   optionC?: string;
   optionD?: string;
+  optionE?: string | null;
+  // Option images (SAT #65): absolute URLs on the SAT API host, or null. An option may be
+  // image-only (empty text + an image); alt text is optional.
+  optionAImageUrl?: string | null;
+  optionBImageUrl?: string | null;
+  optionCImageUrl?: string | null;
+  optionDImageUrl?: string | null;
+  optionEImageUrl?: string | null;
+  optionAImageAlt?: string | null;
+  optionBImageAlt?: string | null;
+  optionCImageAlt?: string | null;
+  optionDImageAlt?: string | null;
+  optionEImageAlt?: string | null;
   passageText?: string;
   questionType?: string; // 'Multiple Choice' | 'Student Response'
   correctAnswer?: string; // The correct answer (e.g. 'A', 'B', 'C', 'D' or text)

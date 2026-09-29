@@ -8,6 +8,8 @@ import type { DailyQuestionsRecommendations } from '../types';
 import {
   collectUsableQuestions,
   dailyQuestionsView,
+  isMultipleChoice,
+  questionOptions,
   shouldCacheRecommendations,
   usableQuestions,
   type QuestionWithSection,
@@ -290,7 +292,7 @@ export default function DailyQuestionsPopup({
         const userAnswer = answers[q.questionId];
         if (userAnswer && q.correctAnswer) {
           // For multiple choice, compare letter; for free text, compare trimmed lowercase
-          const isMultiple = q.isMultipleChoice || q.questionType === 'Multiple Choice' || (q.optionA && q.optionB);
+          const isMultiple = isMultipleChoice(q);
           if (isMultiple) {
             if (userAnswer.toUpperCase() === q.correctAnswer.toUpperCase()) {
               correctCount++;
@@ -540,16 +542,12 @@ export default function DailyQuestionsPopup({
 
             {/* Answer section */}
             <div className="mb-6">
-              {(currentQuestion.isMultipleChoice || currentQuestion.questionType === 'Multiple Choice' || (currentQuestion.optionA && currentQuestion.optionB)) ? (
+              {isMultipleChoice(currentQuestion) ? (
                 // Multiple choice options
                 <div>
                   <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Choose an answer:</p>
                   <div className="space-y-2">
-                    {(['A', 'B', 'C', 'D'] as const).map(letter => {
-                      const optionKey = `option${letter}` as 'optionA' | 'optionB' | 'optionC' | 'optionD';
-                      const optionText = currentQuestion[optionKey];
-                      if (!optionText) return null;
-                      
+                    {questionOptions(currentQuestion).map(({ letter, text: optionText, imageUrl, imageAlt }) => {
                       const isSelected = answers[currentQuestion.questionId] === letter;
                       
                       return (
@@ -574,7 +572,15 @@ export default function DailyQuestionsPopup({
                           />
                           <span className="text-sm text-foreground flex-1">
                             <span className="font-medium text-gray-600 dark:text-gray-400 mr-2">{letter}.</span>
-                            {formatQuestionText(optionText)}
+                            {optionText.trim() ? formatQuestionText(optionText) : null}
+                            {imageUrl ? (
+                              <img
+                                src={imageUrl}
+                                alt={imageAlt ?? `Option ${letter}`}
+                                loading="lazy"
+                                className="mt-2 block max-h-56 max-w-full rounded-md border border-border bg-white object-contain p-1"
+                              />
+                            ) : null}
                           </span>
                         </label>
                       );
@@ -663,7 +669,7 @@ export default function DailyQuestionsPopup({
             <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
               {allQuestions.map((q, idx) => {
                 const userAnswer = answers[q.questionId];
-                const isMultiple = q.isMultipleChoice || q.questionType === 'Multiple Choice' || (q.optionA && q.optionB);
+                const isMultiple = isMultipleChoice(q);
                 const isCorrect = userAnswer && q.correctAnswer
                   ? isMultiple
                     ? userAnswer.toUpperCase() === q.correctAnswer.toUpperCase()
