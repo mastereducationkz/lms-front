@@ -64,6 +64,8 @@ const Calendar = lazyRoute(() => import('../pages/Calendar.tsx'));
 const LessonRecordings = lazyRoute(() => import('../pages/LessonRecordings.tsx'));
 const ClassMaterialsPage = lazyRoute(() => import('../pages/ClassMaterialsPage.tsx'));
 const ClassLessonPage = lazyRoute(() => import('../pages/ClassLessonPage.tsx'));
+const LiveLessonPage = lazyRoute(() => import('../pages/LiveLessonPage.tsx'));
+const LivePresenterPage = lazyRoute(() => import('../pages/LivePresenterPage.tsx'));
 const MeetAddonLinkPage = lazyRoute(() => import('../pages/MeetAddonLinkPage.tsx'));
 const MeetAttendanceReview = lazyRoute(() => import('../pages/MeetAttendanceReview.tsx'));
 const TeacherDisciplinePage = lazyRoute(() => import('../pages/TeacherDisciplinePage.tsx'));
@@ -616,6 +618,21 @@ export default function Router() {
               <AppLayout>
                 <ClassLessonPage />
               </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          {/* Live lesson (owner, 2026-09-29): the one link students open from the Meet chat, and the
+              full-screen view a teacher shares in Meet. */}
+          <Route path="/live" element={
+            <ProtectedRoute allowedRoles={['student', 'teacher', 'curator', 'head_curator', 'head_teacher', 'admin']}>
+              <AppLayout>
+                <LiveLessonPage />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/live/present/:eventId" element={
+            <ProtectedRoute allowedRoles={['teacher', 'curator', 'head_curator', 'head_teacher', 'admin']}>
+              <LivePresenterPage />
             </ProtectedRoute>
           } />
 

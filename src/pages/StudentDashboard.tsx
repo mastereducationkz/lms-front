@@ -39,6 +39,7 @@ import ExamCountdown from "../components/ExamCountdown";
 import SampleBadge from "../components/trial/SampleBadge";
 import { TRIAL_SAMPLE_SESSIONS, TRIAL_SAMPLE_TASKS } from "../data/trialSampleData";
 import { lessonPath } from '../lib/lessonLinks';
+import LiveNowTile from '../components/dashboard/LiveNowTile';
 
 interface StudentDashboardProps {
   firstName: string;
@@ -832,6 +833,8 @@ export default function StudentDashboard({
 
       {/* Links to the dedicated SAT / NUET / IELTS platforms, driven by the student's
           live group memberships. Renders nothing when no track applies. */}
+      {/* A question open in the student's lesson right now (hides itself otherwise). */}
+      <LiveNowTile />
       {/* Current IELTS weekly test: countdown + one checkmark per part (hides itself when off). */}
       <WeeklyTestCountdown />
       <CheckpointsCard />

@@ -1,5 +1,6 @@
 import { api } from './client';
 import type { StudentRegister, RegisterMode } from './meetRegister';
+import type { LiveSummary } from '../../lib/liveLesson/types';
 
 /**
  * One class lesson on one page — `/lessons/:id` (owner, 2026-09-28). The backend shapes the answer
@@ -136,6 +137,8 @@ export interface LessonView {
   meet_state: string | null;
   /** After the lesson: the recording's state, or null when it has none. */
   recording: { status: 'ready' | 'pending' | 'failed' | 'removed' } | null;
+  /** The live lesson's footprint (null on a cancelled lesson or an older backend). */
+  live_lesson?: LiveSummary | null;
 }
 
 /** A failed load, with the HTTP status the page turns into «нет доступа» / «урок не найден». */
