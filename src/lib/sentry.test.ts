@@ -422,6 +422,48 @@ describe('noise is never reported', () => {
       expect(isIgnoredEvent(errorEvent('Error', 'Error invoking postEvent: some other reason', '<anonymous>'))).toBe(true);
     });
 
+    it('drops it when the only /assets/ frame is Sentry\'s own wrapper chunk (the real event)', () => {
+      // Sentry's browserapierrors setTimeout wrapper is what the observed event's stack held,
+      // next to the injected `<anonymous>` frame: it is served from /assets/ but is not ours.
+      const ev = {
+        exception: {
+          values: [
+            {
+              type: 'Error',
+              value: 'Error invoking postEvent: Method not found',
+              stacktrace: {
+                frames: [
+                  { filename: 'https://lms.mastereducation.kz/assets/sentryClient-CvR-mHnV.js', function: 'r' },
+                  { filename: '<anonymous>', lineno: 233 },
+                ],
+              },
+            },
+          ],
+        },
+      } as ErrorEvent;
+      expect(isIgnoredEvent(ev)).toBe(true);
+    });
+
+    it('still keeps a real bug whose stack passes through the Sentry wrapper and our code', () => {
+      const ev = {
+        exception: {
+          values: [
+            {
+              type: 'TypeError',
+              value: "Cannot read properties of undefined (reading 'map')",
+              stacktrace: {
+                frames: [
+                  { filename: 'https://lms.mastereducation.kz/assets/sentryClient-CvR-mHnV.js', function: 'r' },
+                  { filename: 'https://lms.mastereducation.kz/assets/LessonPage-abc123.js', function: 'render' },
+                ],
+              },
+            },
+          ],
+        },
+      } as ErrorEvent;
+      expect(isIgnoredEvent(ev)).toBe(false);
+    });
+
     it('keeps the same message when it is actually thrown from our own bundle', () => {
       // Default `errorEvent` filename is under /assets/ — i.e. one of our own frames.
       expect(isIgnoredEvent(errorEvent('Error', 'Error invoking postEvent: Method not found'))).toBe(false);

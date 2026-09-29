@@ -341,6 +341,7 @@ const EXTENSION_URL_RE = /^(chrome|moz|safari(-web)?|ms-browser)-extension:\/\/|
 // doesn't support throws this exact message. It's never our code, but unlike the minified
 // noise above it reads like a real sentence, so the bare-1-4-letter check below doesn't catch
 // it — it needs its own rule, still gated on the frames not being ours (see isIgnoredEvent).
+const SENTRY_CHUNK_RE = /\/assets\/sentryClient-/;
 const POSTEVENT_BRIDGE_RE = /^Error invoking postEvent:/;
 
 function exceptionValues(event: ErrorEvent) {
@@ -362,7 +363,11 @@ export function isIgnoredEvent(event: ErrorEvent, hint?: EventHint): boolean {
   // something injected into the page: an extension, or the Telegram/Instagram in-app browser
   // many students open links in (the SAT front learned this one: sentryEventFilter.js).
   const frames = values.flatMap((v) => v.stacktrace?.frames ?? []);
-  const hasOurFrame = frames.some((f) => /\/assets\//.test(f.filename ?? ''));
+  // The Sentry chunk (sentryClient-<hash>.js) is served from /assets/ too, and its
+  // browserapierrors wrapper sits on the stack of every error thrown from a setTimeout/
+  // addEventListener callback — including the injected Telegram bridge's (LMS-FRONT-3, whose
+  // whole stack was that wrapper plus `<anonymous>`). It's Sentry's frame, not ours.
+  const hasOurFrame = frames.some((f) => /\/assets\//.test(f.filename ?? '') && !SENTRY_CHUNK_RE.test(f.filename ?? ''));
   if (frames.length > 0 && !hasOurFrame) return true;
   if (frames.length > 0 && frames.every((f) => EXTENSION_URL_RE.test(f.filename ?? ''))) return true;
   // No stack and a bare 1-4 letter "message" (`Error: Ea`): minified injected code, not ours.
