@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   collectUsableQuestions,
   dailyQuestionsView,
+  isMultipleChoice,
+  optionImageUrl,
+  questionOptions,
   shouldCacheRecommendations,
   usableQuestions,
 } from './dailyQuestions';
@@ -145,5 +148,44 @@ describe('dailyQuestionsView', () => {
 
   it('shows questions when there are some and nothing else is wrong', () => {
     expect(dailyQuestionsView({ ...base, questionsCount: 3 })).toBe('questions');
+  });
+});
+
+describe('questionOptions (SAT #65 option images)', () => {
+  const base = { questionId: 1, text: 'Q', primaryTag: 't', difficulty: 'm' } as DailyQuestionItem;
+
+  it('keeps A–E in order, text-only, image-only and both', () => {
+    const opts = questionOptions({
+      ...base,
+      optionA: 'x = 2',
+      optionB: '',
+      optionBImageUrl: 'https://api.mastereducation.kz/assets/b.png',
+      optionBImageAlt: 'A graph rising',
+      optionC: 'with a picture',
+      optionCImageUrl: 'https://api.mastereducation.kz/assets/c.webp',
+      optionD: '   ',
+      optionE: 'none of these',
+    });
+    expect(opts.map((o) => o.letter)).toEqual(['A', 'B', 'C', 'E']);
+    expect(opts[1]).toEqual({ letter: 'B', text: '', imageUrl: 'https://api.mastereducation.kz/assets/b.png', imageAlt: 'A graph rising' });
+    expect(opts[2].imageAlt).toBeNull();
+  });
+
+  it('upgrades http image URLs and drops anything that is not a URL', () => {
+    expect(optionImageUrl('http://api.mastereducation.kz/a.png')).toBe('https://api.mastereducation.kz/a.png');
+    expect(optionImageUrl('/relative.png')).toBeNull();
+    expect(optionImageUrl('javascript:alert(1)')).toBeNull();
+    expect(optionImageUrl(null)).toBeNull();
+  });
+
+  it('treats two image-only options as multiple choice', () => {
+    expect(isMultipleChoice({
+      ...base,
+      optionA: '',
+      optionAImageUrl: 'https://x/a.png',
+      optionB: '',
+      optionBImageUrl: 'https://x/b.png',
+    })).toBe(true);
+    expect(isMultipleChoice({ ...base, questionType: 'Student Response' })).toBe(false);
   });
 });

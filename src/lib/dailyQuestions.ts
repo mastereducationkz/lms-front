@@ -69,3 +69,42 @@ export function dailyQuestionsView({
   if (questionsCount === 0) return 'empty';
   return 'questions';
 }
+
+export const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E'] as const;
+export type OptionLetter = (typeof OPTION_LETTERS)[number];
+
+export interface QuestionOption {
+  letter: OptionLetter;
+  text: string;
+  imageUrl: string | null;
+  imageAlt: string | null;
+}
+
+/** An option image as the page may load it: https only (an http URL from behind the SAT
+ *  proxy would be blocked as mixed content, so it is upgraded), anything else dropped. */
+export function optionImageUrl(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const url = value.trim();
+  if (url.startsWith('https://')) return url;
+  if (url.startsWith('http://')) return 'https://' + url.slice('http://'.length);
+  return null;
+}
+
+/** The options a question actually has, A–E. An option exists when it has text OR an image
+ *  (SAT #65 allows image-only options), so a blank-text option with an image is kept. */
+export function questionOptions(q: DailyQuestionItem): QuestionOption[] {
+  const out: QuestionOption[] = [];
+  for (const letter of OPTION_LETTERS) {
+    const text = (q[`option${letter}` as keyof DailyQuestionItem] as string | null | undefined) ?? '';
+    const imageUrl = optionImageUrl(q[`option${letter}ImageUrl` as keyof DailyQuestionItem]);
+    if (!text.trim() && !imageUrl) continue;
+    const alt = q[`option${letter}ImageAlt` as keyof DailyQuestionItem] as string | null | undefined;
+    out.push({ letter, text, imageUrl, imageAlt: alt?.trim() || null });
+  }
+  return out;
+}
+
+/** Multiple choice when the SAT says so, or when the question has at least two options. */
+export function isMultipleChoice(q: DailyQuestionItem): boolean {
+  return !!q.isMultipleChoice || q.questionType === 'Multiple Choice' || questionOptions(q).length >= 2;
+}
