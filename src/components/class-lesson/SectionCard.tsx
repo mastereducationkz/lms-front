@@ -24,7 +24,7 @@ export default function SectionCard({ id, title, icon, aside, embedded, children
       id={id}
       aria-label={title}
       className={cn(
-        'scroll-mt-40 rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5',
+        'scroll-mt-[calc(var(--topbar-h,0px)+14rem)] rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5',
         embedded && '[&:not(:has(*))]:hidden [&>*:first-child]:mt-0 [&>*:first-child]:border-t-0 [&>*:first-child]:pt-0',
       )}
     >

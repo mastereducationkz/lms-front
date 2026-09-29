@@ -1,5 +1,5 @@
 import { useAuth } from '../contexts/AuthContext.tsx';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { connectSocket } from '../services/socket';
 import { Badge } from './ui/badge';
 import { Link } from 'react-router-dom';
@@ -18,6 +18,17 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
   const [unreadCount, setUnreadCount] = useState(0);
+  // Sticky page headers (the lesson page's) sit just below this bar: publish its height.
+  const bar = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const node = bar.current;
+    if (!node || typeof ResizeObserver === 'undefined') return;
+    const publish = () => document.documentElement.style.setProperty('--topbar-h', `${node.offsetHeight}px`);
+    publish();
+    const observer = new ResizeObserver(publish);
+    observer.observe(node);
+    return () => { observer.disconnect(); document.documentElement.style.removeProperty('--topbar-h'); };
+  }, []);
   
   const firstName = user?.name?.split(' ')[0] || 'User';
   
@@ -59,7 +70,7 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
   };
 
   return (
-    <div className="sticky top-0 z-10 bg-gray-50/80 dark:bg-card/80 backdrop-blur border-b border-border px-4 sm:px-5 md:px-6 py-3 sm:py-3.5 flex items-center justify-between">
+    <div ref={bar} className="sticky top-0 z-10 bg-gray-50/80 dark:bg-card/80 backdrop-blur border-b border-border px-4 sm:px-5 md:px-6 py-3 sm:py-3.5 flex items-center justify-between">
       <div>
         <div className="text-sm sm:text-[14px] text-gray-500 dark:text-gray-400">{['curator', 'head_curator'].includes(user?.role || '') ? 'С возвращением' : 'Welcome back'}</div>
         <div className="text-[16px] sm:text-xl font-semibold text-gray-900 dark:text-white">{user?.name}!</div>
