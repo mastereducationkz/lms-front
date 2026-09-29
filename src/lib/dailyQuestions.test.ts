@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   collectUsableQuestions,
   dailyQuestionsView,
+  difficultyLabel,
+  formatTag,
   isMultipleChoice,
   optionImageUrl,
   questionOptions,
@@ -187,5 +189,18 @@ describe('questionOptions (SAT #65 option images)', () => {
       optionBImageUrl: 'https://x/b.png',
     })).toBe(true);
     expect(isMultipleChoice({ ...base, questionType: 'Student Response' })).toBe(false);
+  });
+});
+
+describe('formatTag / difficultyLabel (LMS-FRONT-7/8/9)', () => {
+  it('formats a tag and survives a missing one', () => {
+    expect(formatTag('reading_comprehension')).toBe('Reading Comprehension');
+    expect(formatTag(undefined)).toBe('');
+    expect(formatTag(null)).toBe('');
+  });
+  it('labels difficulty and survives a missing one', () => {
+    expect(difficultyLabel('hard')).toBe('Hard');
+    expect(difficultyLabel('very_hard')).toBe('very_hard');
+    expect(difficultyLabel(undefined)).toBe('');
   });
 });

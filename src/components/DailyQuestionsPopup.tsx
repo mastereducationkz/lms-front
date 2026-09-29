@@ -8,12 +8,15 @@ import type { DailyQuestionsRecommendations } from '../types';
 import {
   collectUsableQuestions,
   dailyQuestionsView,
+  difficultyLabel,
+  formatTag,
   isMultipleChoice,
   questionOptions,
   shouldCacheRecommendations,
   usableQuestions,
   type QuestionWithSection,
 } from '../lib/dailyQuestions';
+import QuietBoundary from './QuietBoundary';
 import { AlertCircle, Check, X, Loader2 } from 'lucide-react';
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
@@ -25,7 +28,7 @@ interface DailyQuestionsPopupProps {
   onComplete?: () => void;
 }
 
-export default function DailyQuestionsPopup({ 
+function DailyQuestionsPopupInner({ 
   controlled = false, 
   isOpen = false, 
   onOpenChange,
@@ -344,22 +347,11 @@ export default function DailyQuestionsPopup({
   const isLastQuestion = currentIndex === allQuestions.length - 1;
   const answeredCount = Object.keys(answers).length;
 
-  const getDifficultyLabel = (difficulty: string) => {
-    switch (difficulty) {
-      case 'easy': return 'Easy';
-      case 'medium': return 'Medium';
-      case 'hard': return 'Hard';
-      default: return difficulty;
-    }
-  };
 
   const getSectionLabel = (section: 'math' | 'verbal') => {
     return section === 'math' ? 'Math' : 'Verbal';
   };
 
-  const formatTag = (tag: string) => {
-    return tag.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
 
   const isTextEmpty = (text?: string) => {
     if (!text) return true;
@@ -496,7 +488,7 @@ export default function DailyQuestionsPopup({
             <div className="flex items-center gap-2 mb-4 flex-wrap text-sm">
               <span className="text-gray-600 dark:text-gray-400">{getSectionLabel(currentQuestion.section)}</span>
               <span className="text-muted-foreground/50" aria-hidden="true">•</span>
-              <span className="text-gray-600 dark:text-gray-400">{getDifficultyLabel(currentQuestion.difficulty)}</span>
+              <span className="text-gray-600 dark:text-gray-400">{difficultyLabel(currentQuestion.difficulty)}</span>
               <span className="text-muted-foreground/50" aria-hidden="true">•</span>
               <span className="text-muted-foreground">{formatTag(currentQuestion.primaryTag)}</span>
               {currentQuestion.questionType && (
@@ -735,5 +727,14 @@ export default function DailyQuestionsPopup({
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** The popup is optional: a crash inside it must never take the dashboard down. */
+export default function DailyQuestionsPopup(props: DailyQuestionsPopupProps = {}) {
+  return (
+    <QuietBoundary name="daily-questions">
+      <DailyQuestionsPopupInner {...props} />
+    </QuietBoundary>
   );
 }

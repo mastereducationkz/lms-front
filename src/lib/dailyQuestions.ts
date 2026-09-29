@@ -108,3 +108,20 @@ export function questionOptions(q: DailyQuestionItem): QuestionOption[] {
 export function isMultipleChoice(q: DailyQuestionItem): boolean {
   return !!q.isMultipleChoice || q.questionType === 'Multiple Choice' || questionOptions(q).length >= 2;
 }
+
+/** «reading_comprehension» → «Reading Comprehension». The SAT omits null fields from its JSON,
+ *  so an untagged question arrives with no primaryTag at all (LMS-FRONT-7/8/9: `.replace` on
+ *  undefined took the whole student dashboard down on iOS). */
+export function formatTag(tag: unknown): string {
+  if (typeof tag !== 'string' || !tag.trim()) return '';
+  return tag.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+}
+
+export function difficultyLabel(difficulty: unknown): string {
+  switch (difficulty) {
+    case 'easy': return 'Easy';
+    case 'medium': return 'Medium';
+    case 'hard': return 'Hard';
+    default: return typeof difficulty === 'string' ? difficulty : '';
+  }
+}
