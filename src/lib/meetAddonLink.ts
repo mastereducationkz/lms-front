@@ -35,10 +35,12 @@ export function handoffIdFrom(search: string): string | null {
   return id && HANDOFF_ID.test(id) ? id : null;
 }
 
-/** What the page shows for the handoff it was opened for. */
-export function stateFromInfo(info: HandoffInfo): LinkState {
+/** What the page shows for the handoff it was opened for. `paired` = the Meet panel that asked
+ *  handed this window its pair secret (`lib/addonPairing`), which proves it is the panel's own
+ *  window whatever network each of them reached the LMS from. */
+export function stateFromInfo(info: HandoffInfo, paired = false): LinkState {
   if (info.status !== 'pending') return { kind: 'answered' };
-  if (!info.same_network) return { kind: 'other_network', info };
+  if (!info.same_network && !paired) return { kind: 'other_network', info };
   return { kind: 'ask', info };
 }
 

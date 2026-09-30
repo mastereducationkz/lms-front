@@ -127,3 +127,22 @@ describe('openSignInPopup', () => {
     expect(openSignInPopup((() => { throw new Error('blocked'); }) as unknown as typeof window.open)).toBeNull();
   });
 });
+
+describe('pairing the sign-in window', () => {
+  it('answers the popup with the pair secret while waiting, and stops when done', async () => {
+    const t = setup([{ status: 200, data: { status: 'approved', access_token: 'A', refresh_token: 'R' } }],
+      { status: 201, data: { ...CREATED, pair_secret: 'p41r' } });
+    const events: string[] = [];
+    const pairing = (h: string, s: string) => { events.push(`start ${h.length} ${s}`); return () => events.push('stop'); };
+    expect(await runHandoff(null, { ...t.deps, pairing }, t.onState)).toBe('approved');
+    expect(events).toEqual(['start 24 p41r', 'stop']);
+  });
+
+  it('does not pair when the backend gave no pair secret', async () => {
+    const t = setup([{ status: 200, data: { status: 'denied' } }]);
+    const events: string[] = [];
+    const pairing = () => { events.push('start'); return () => events.push('stop'); };
+    await runHandoff(null, { ...t.deps, pairing }, t.onState);
+    expect(events).toEqual([]);
+  });
+});

@@ -6,6 +6,7 @@ import {
   handoffIdFrom, mayUsePanel, rememberLinkForLogin, stateFromError, stateFromInfo, type LinkState,
 } from '../lib/meetAddonLink';
 import { answerHandoff, describeHandoff, HandoffRequestError } from '../services/api/meetAddonHandoff';
+import { requestPairSecret } from '../lib/addonPairing';
 
 /**
  * `/meet-addon/link?h=<id>` — the popup the Meet side panel opens (owner, 2026-09-28). The teacher
@@ -20,6 +21,7 @@ export default function MeetAddonLinkPage() {
   const id = handoffIdFrom(location.search);
   const [state, setState] = useState<LinkState>({ kind: 'loading' });
   const [busy, setBusy] = useState(false);
+  const [pairSecret, setPairSecret] = useState<string | null>(null);
 
   useEffect(() => {
     if (loading || isAuthenticated) return;
@@ -31,8 +33,17 @@ export default function MeetAddonLinkPage() {
     if (loading || !isAuthenticated || !id) return;
     if (!mayUsePanel(user?.role)) { setState({ kind: 'staff_only' }); return; }
     let live = true;
-    describeHandoff(id)
-      .then((info) => { if (live) setState(stateFromInfo(info)); })
+    // Ask the Meet panel that opened this window for the pair secret while reading the handoff:
+    // with it, «Allow» works whatever network the panel and this window each came from.
+    Promise.all([
+      describeHandoff(id),
+      requestPairSecret(window.opener, window, window.location.origin, id),
+    ])
+      .then(([info, secret]) => {
+        if (!live) return;
+        setPairSecret(secret);
+        setState(stateFromInfo(info, Boolean(secret)));
+      })
       .catch((e) => {
         if (!live) return;
         const err = e instanceof HandoffRequestError ? e : new HandoffRequestError(null, null);
@@ -45,7 +56,7 @@ export default function MeetAddonLinkPage() {
     if (!id) return;
     setBusy(true);
     try {
-      await answerHandoff(id, approve);
+      await answerHandoff(id, approve, pairSecret);
       setState({ kind: 'done', approved: approve });
       window.setTimeout(() => { try { window.close(); } catch { /* not ours to close */ } }, approve ? 1500 : 800);
     } catch (e) {
@@ -78,8 +89,9 @@ export default function MeetAddonLinkPage() {
             <div className="mt-4 flex gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-left text-sm text-amber-900">
               <ShieldAlert className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
               <span>
-                This request came from a different network than this window. Approve it on the computer where Meet is open.
-                If you did not just open the LMS panel in Meet, deny it.
+                This request came from a different network than this window, and this window was not opened by the LMS panel
+                in Meet. To connect, press «Open the LMS sign-in page» in the panel itself. If you did not just open the LMS
+                panel in Meet, deny it.
               </span>
             </div>
           ) : (
