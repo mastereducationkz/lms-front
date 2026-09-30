@@ -29,9 +29,10 @@ export async function describeHandoff(id: string): Promise<HandoffInfo> {
   }
 }
 
-export async function answerHandoff(id: string, approve: boolean): Promise<void> {
+export async function answerHandoff(id: string, approve: boolean, pairSecret: string | null = null): Promise<void> {
   try {
-    await api.post(`/auth/addon-handoff/${encodeURIComponent(id)}/${approve ? 'approve' : 'deny'}`);
+    const path = `/auth/addon-handoff/${encodeURIComponent(id)}/${approve ? 'approve' : 'deny'}`;
+    await api.post(path, approve && pairSecret ? { pair_secret: pairSecret } : undefined);
   } catch (error) {
     throw asError(error);
   }

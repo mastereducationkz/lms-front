@@ -21,6 +21,8 @@ describe('the sign-in popup', () => {
 
   it('warns, and offers only «Deny», for a request from another network', () => {
     expect(stateFromInfo(info({ same_network: false }))).toEqual({ kind: 'other_network', info: info({ same_network: false }) });
+    // The panel's own window (it holds the pair secret) may allow from any network (2026-09-30).
+    expect(stateFromInfo(info({ same_network: false }), true)).toEqual({ kind: 'ask', info: info({ same_network: false }) });
   });
 
   it('says a request was already answered', () => {

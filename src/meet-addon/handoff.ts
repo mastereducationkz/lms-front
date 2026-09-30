@@ -1,4 +1,5 @@
 import type { ApiClient } from './api';
+import { answerPairRequests } from '../lib/addonPairing';
 
 /**
  * Signing the panel in (lms-backend `/auth/addon-handoff`, device-code style):
@@ -24,7 +25,7 @@ export type HandoffState =
 
 export type HandoffOutcome = 'approved' | 'denied' | 'expired' | 'error' | 'cancelled';
 
-interface Created { handoff_id: string; poll_secret: string; link_url: string; expires_in: number }
+interface Created { handoff_id: string; poll_secret: string; pair_secret?: string; link_url: string; expires_in: number }
 interface Redeemed { status: 'pending' | 'denied' | 'approved'; access_token?: string; refresh_token?: string }
 
 export interface PopupLike { location: { href: string }; close(): void; closed?: boolean }
@@ -37,6 +38,13 @@ export interface HandoffDeps {
   sleep?: (ms: number) => Promise<void>;
   pollMs?: number;
   signal?: AbortSignal;
+  /** Hands the pair secret to the sign-in window when it asks (`lib/addonPairing`); returns the stop. */
+  pairing?: (handoffId: string, pairSecret: string) => () => void;
+}
+
+function defaultPairing(handoffId: string, pairSecret: string): () => void {
+  if (typeof window === 'undefined') return () => {};
+  return answerPairRequests(window, window.location.origin, handoffId, pairSecret);
 }
 
 export const POPUP_NAME = 'lms-meet-addon-link';
@@ -66,11 +74,6 @@ export async function runHandoff(
   deps: HandoffDeps,
   onState: (state: HandoffState) => void,
 ): Promise<HandoffOutcome> {
-  const now = deps.now ?? Date.now;
-  const sleep = deps.sleep ?? defaultSleep;
-  const pollMs = deps.pollMs ?? 2000;
-  const aborted = () => Boolean(deps.signal?.aborted);
-
   onState({ kind: 'starting' });
   let created: Created | null = null;
   try {
@@ -91,6 +94,27 @@ export async function runHandoff(
     onState({ kind: 'error', message: 'Could not reach the LMS. Check the connection and try again.' });
     return 'error';
   }
+
+  // Listening before the popup is pointed at the link, so its first question is heard.
+  const stopPairing = created.pair_secret
+    ? (deps.pairing ?? defaultPairing)(created.handoff_id, created.pair_secret)
+    : () => {};
+  try {
+    return await waitForAnswer(created, deps, onState);
+  } finally {
+    stopPairing();
+  }
+}
+
+async function waitForAnswer(
+  created: Created,
+  deps: HandoffDeps,
+  onState: (state: HandoffState) => void,
+): Promise<HandoffOutcome> {
+  const now = deps.now ?? Date.now;
+  const sleep = deps.sleep ?? defaultSleep;
+  const pollMs = deps.pollMs ?? 2000;
+  const aborted = () => Boolean(deps.signal?.aborted);
 
   let popupBlocked = deps.popup === null;
   if (deps.popup) {
