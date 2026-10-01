@@ -21,7 +21,8 @@ export function WeeklyTestNoticeCard() {
     getGroupBotSettings().then(setSettings).catch(() => setSettings(null));
   }, []);
 
-  if (!settings) return null;
+  // An older backend has no weekly-test fields: say nothing rather than a misleading «off».
+  if (!settings || typeof settings.weekly_test_flag !== 'boolean') return null;
   const on = settings.weekly_test_enabled && settings.weekly_test_flag;
 
   async function flip() {
