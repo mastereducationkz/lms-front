@@ -7,6 +7,7 @@ import { GroupsTab } from '../../components/announcements/GroupsTab';
 import { HistoryTab } from '../../components/announcements/HistoryTab';
 import { LessonInvitationsTab } from '../../components/announcements/LessonInvitationsTab';
 import { BotQuestionsTab } from '../../components/announcements/BotQuestionsTab';
+import { WeeklyTestNoticeCard } from '../../components/announcements/WeeklyTestNoticeCard';
 import { errorMessage } from '../../components/announcements/shared';
 import { recipientSelectionFromAnnouncement } from '../../components/announcements/resend';
 import { getGroups, getRecipientSummary } from '../../services/api/announcements';
@@ -149,7 +150,12 @@ export default function TelegramAnnouncementsPage() {
       )}
       {tab === 'history' && <HistoryTab onSendAgain={startAgain} />}
       {tab === 'groups' && <GroupsTab groups={groups} loading={loadingGroups} onChanged={loadGroups} />}
-      {tab === 'invitations' && <LessonInvitationsTab />}
+      {tab === 'invitations' && (
+        <div className="space-y-4">
+          <WeeklyTestNoticeCard />
+          <LessonInvitationsTab />
+        </div>
+      )}
       {tab === 'bot' && <BotQuestionsTab />}
     </div>
   );

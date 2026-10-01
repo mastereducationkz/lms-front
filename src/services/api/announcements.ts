@@ -309,3 +309,31 @@ export async function confirmInvitationLinks(
     rethrow(error, 'Failed to confirm the suggestions');
   }
 }
+
+/** The group bot's switches (GET/PUT /telegram-links/group-bot/settings). */
+export interface GroupBotSettings {
+  enabled: boolean;
+  scope: 'pilot' | 'all';
+  /** Saturday's weekly-test notice in SAT/IELTS/NUET chats — the admin's switch. */
+  weekly_test_enabled: boolean;
+  /** Whether the server runs that job at all (ENABLE_TELEGRAM_WEEKLY_TEST_NOTICE). */
+  weekly_test_flag: boolean;
+}
+
+export async function getGroupBotSettings(): Promise<GroupBotSettings> {
+  try {
+    const response = await api.get('/telegram-links/group-bot/settings', NO_CACHE);
+    return response.data;
+  } catch (error) {
+    rethrow(error, 'Failed to load the bot settings');
+  }
+}
+
+export async function setWeeklyTestNotice(on: boolean): Promise<GroupBotSettings> {
+  try {
+    const response = await api.put('/telegram-links/group-bot/settings', { weekly_test_enabled: on });
+    return response.data;
+  } catch (error) {
+    rethrow(error, 'Failed to save the switch');
+  }
+}
