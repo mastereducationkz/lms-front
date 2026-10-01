@@ -13,10 +13,14 @@ interface Props {
   itemId: number;
   locale: Locale;
   onRemoved: () => void;
+  /** The removal call — the lesson item's by default; the library passes its own. */
+  remove?: (id: number, reason: string) => Promise<unknown>;
 }
 
 /** D17/§8.4: a moderator's removal always carries a reason — it is what the uploader's bell shows. */
-export default function RemoveReasonDialog({ open, onOpenChange, itemId, locale, onRemoved }: Props) {
+export default function RemoveReasonDialog({
+  open, onOpenChange, itemId, locale, onRemoved, remove = moderateRemoveClassMaterialItem,
+}: Props) {
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -37,7 +41,7 @@ export default function RemoveReasonDialog({ open, onOpenChange, itemId, locale,
     }
     setSubmitting(true);
     try {
-      await moderateRemoveClassMaterialItem(itemId, trimmed);
+      await remove(itemId, trimmed);
       setReason('');
       setError(null);
       onRemoved();

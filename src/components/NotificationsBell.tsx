@@ -5,8 +5,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { bellPollDelayMs, materialsLocale, relativeTime, t } from '../lib/classMaterials';
 import { lessonPath } from '../lib/lessonLinks';
+import { libraryNotificationPath } from '../lib/library';
 import {
-  CLASS_MATERIAL_NOTIFICATION_TYPES,
+  BELL_NOTIFICATION_TYPES,
   getNotifications,
   getUnreadNotificationCount,
   markAllNotificationsRead,
@@ -18,7 +19,8 @@ const LIST_LIMIT = 20;
 
 /**
  * The Topbar's notifications bell (Task 15): unread count for class-materials notices
- * (`class_materials`, `class_material_removed`), and a popover listing them. Hidden for a
+ * (`class_materials`, `class_material_removed`) and the library's (`library`,
+ * `library_item_removed`), and a popover listing them. Hidden for a
  * parent (D7: "parents see nothing") and while logged out.
  *
  * The unread count polls every 120 s ± 15 s (`bellPollDelayMs`, Ruling 21), but only while the
@@ -42,7 +44,7 @@ export default function NotificationsBell() {
 
     const loadCount = () => {
       if (document.visibilityState !== 'visible') return;
-      getUnreadNotificationCount(CLASS_MATERIAL_NOTIFICATION_TYPES)
+      getUnreadNotificationCount(BELL_NOTIFICATION_TYPES)
         .then((count) => {
           if (!cancelled) setUnreadCount(count);
         })
@@ -78,7 +80,7 @@ export default function NotificationsBell() {
     if (!open) return undefined;
     let cancelled = false;
     setLoadingList(true);
-    getNotifications(CLASS_MATERIAL_NOTIFICATION_TYPES)
+    getNotifications(BELL_NOTIFICATION_TYPES)
       .then((res) => {
         if (!cancelled) setItems(res.slice(0, LIST_LIMIT));
       })
@@ -100,14 +102,16 @@ export default function NotificationsBell() {
     if (!n.is_read) setUnreadCount((c) => Math.max(0, c - 1));
     setItems((prev) => prev.map((it) => (it.id === n.id ? { ...it, is_read: true } : it)));
     markNotificationRead(n.id).catch(() => {});
-    // A lesson's materials live on its page now (2026-09-28).
-    if (n.related_id != null) navigate(lessonPath(n.related_id, 'materials'));
+    // The library's notices open its tab; a lesson's materials live on its page (2026-09-28).
+    const libraryPath = libraryNotificationPath(n.notification_type);
+    if (libraryPath) navigate(libraryPath);
+    else if (n.related_id != null) navigate(lessonPath(n.related_id, 'materials'));
   };
 
   const handleMarkAllRead = () => {
     setUnreadCount(0);
     setItems((prev) => prev.map((it) => ({ ...it, is_read: true })));
-    markAllNotificationsRead(CLASS_MATERIAL_NOTIFICATION_TYPES).catch(() => {});
+    markAllNotificationsRead(BELL_NOTIFICATION_TYPES).catch(() => {});
   };
 
   const now = Date.now();

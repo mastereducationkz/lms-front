@@ -5,12 +5,14 @@ import { useAuth } from '../contexts/AuthContext';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { SearchableSelect, type SearchableOption } from '../components/ui/searchable-select';
 import LessonMaterialsCard from '../components/class-materials/LessonMaterialsCard';
+import LibraryTab from '../components/library/LibraryTab';
 import MaterialViewer from '../components/class-materials/MaterialViewer';
 import {
   getClassMaterials, getClassMaterialsFeed,
   type FeedLessonEntry, type MaterialItem,
 } from '../services/api/classMaterials';
 import { materialsLocale, t } from '../lib/classMaterials';
+import { initialMaterialsTab, type MaterialsTab } from '../lib/library';
 import {
   buildVisibleLessons, feedFooter, filtersChanged, mergeFeedLessons, shouldFetchDeepLinkDirectly, toFeedEntry,
   type FeedFilters,
@@ -35,7 +37,60 @@ function toOptions(groups: GroupOption[], allLabel?: string): SearchableOption[]
 }
 
 /**
- * «Материалы» — the searchable, group-filterable feed of every lesson the viewer may see
+ * «Материалы»: two tabs — «Материалы урока» (the lesson feed below) and «Библиотека»
+ * (docs/materials-library/SPEC.md). The tab lives in the URL (`?tab=library`), so the bell and a
+ * shared link open the library directly; a `?lesson=` deep link always lands on the lesson feed.
+ */
+export default function ClassMaterialsPage() {
+  const { user } = useAuth();
+  const locale = materialsLocale(user?.role);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = initialMaterialsTab(searchParams);
+
+  const selectTab = (next: MaterialsTab) => {
+    if (next === tab) return;
+    const params = new URLSearchParams(searchParams);
+    params.delete('lesson');
+    if (next === 'library') params.set('tab', 'library');
+    else params.delete('tab');
+    setSearchParams(params, { replace: true });
+  };
+
+  const tabs: { key: MaterialsTab; label: string }[] = [
+    { key: 'lessons', label: t('tabLessons', locale) },
+    { key: 'library', label: t('tabLibrary', locale) },
+  ];
+
+  return (
+    <div className="mx-auto w-full max-w-3xl space-y-4 px-3 py-5 sm:px-4">
+      <header>
+        <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">{t('pageTitle', locale)}</h1>
+      </header>
+
+      <div className="grid grid-cols-2 gap-1 rounded-xl border border-border bg-muted/40 p-1" role="tablist" aria-label={t('pageTitle', locale)}>
+        {tabs.map((entry) => (
+          <button
+            key={entry.key}
+            type="button"
+            role="tab"
+            aria-selected={tab === entry.key}
+            onClick={() => selectTab(entry.key)}
+            className={`h-11 rounded-lg px-3 text-sm font-medium transition sm:h-10 ${
+              tab === entry.key ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {entry.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'library' ? <LibraryTab locale={locale} role={user?.role} /> : <LessonMaterialsFeed />}
+    </div>
+  );
+}
+
+/**
+ * «Материалы урока» — the searchable, group-filterable feed of every lesson the viewer may see
  * materials for (§8.2 of the spec). Students/teachers/curators get their own groups and may
  * narrow by one when they have more than one; moderators (admin/head_curator/head_teacher) must
  * pick a group before any lesson loads, since the feed only ever hands them lessons for one.
@@ -45,7 +100,7 @@ function toOptions(groups: GroupOption[], allLabel?: string): SearchableOption[]
  * its own and pinned at the top. A new id (the bell clicked while already on this page) starts
  * over. See `classMaterialsFeed.ts` for the pure decision logic.
  */
-export default function ClassMaterialsPage() {
+function LessonMaterialsFeed() {
   const { user } = useAuth();
   const role = user?.role;
   const locale = materialsLocale(role);
@@ -195,11 +250,7 @@ export default function ClassMaterialsPage() {
   const footer = feedFooter({ loading, failed, loadMoreFailed, nextBefore });
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-4 px-3 py-5 sm:px-4">
-      <header>
-        <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">{t('pageTitle', locale)}</h1>
-      </header>
-
+    <div className="space-y-4">
       <div className="space-y-2.5">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />

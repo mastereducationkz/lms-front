@@ -12,6 +12,8 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   locale: Locale;
+  /** How to log the open and mint its signed URL — the lesson call by default; the library passes its own. */
+  openItem?: (id: number) => Promise<OpenResult>;
 }
 
 const DIALOG_CLASS: Record<'image' | 'pdf' | 'audio' | 'download', string> = {
@@ -31,7 +33,7 @@ const DIALOG_CLASS: Record<'image' | 'pdf' | 'audio' | 'download', string> = {
  * Audio outlives its signed URL on a long listen. If the player errors, the URL is minted again
  * once per open and playback resumes where it stopped.
  */
-export default function MaterialViewer({ item, open, onOpenChange, locale }: Props) {
+export default function MaterialViewer({ item, open, onOpenChange, locale, openItem = openClassMaterialItem }: Props) {
   const [result, setResult] = useState<OpenResult | null>(null);
   const [resumeAt, setResumeAt] = useState<{ at: number; play: boolean } | null>(null);
   // Bumped on every open, so a late URL refresh never lands on a different item's viewer.
@@ -45,7 +47,7 @@ export default function MaterialViewer({ item, open, onOpenChange, locale }: Pro
     setResumeAt(null);
     audioRefreshed.current = false;
     if (!open || !item || viewerContentKind(item) === 'link') return;
-    openClassMaterialItem(item.id)
+    openItem(item.id)
       .then((res) => {
         if (session.current === current) setResult(res);
       })
@@ -74,7 +76,7 @@ export default function MaterialViewer({ item, open, onOpenChange, locale }: Pro
     }
     audioRefreshed.current = true;
     const current = session.current;
-    openClassMaterialItem(item.id)
+    openItem(item.id)
       .then((res) => {
         if (session.current !== current) return;
         setResumeAt({ at: state.currentTime, play: state.playing });
