@@ -1,3 +1,4 @@
+import { LIBRARY_NOTIFICATION_TYPES } from '../../lib/library';
 import { api } from './client';
 
 /**
@@ -17,6 +18,9 @@ export interface AppNotification {
 
 /** The types the bell (Task 15) cares about — new lesson materials, and one removed by a moderator. */
 export const CLASS_MATERIAL_NOTIFICATION_TYPES = ['class_materials', 'class_material_removed'];
+
+/** Everything the bell shows: lesson materials plus the library's (new items, an item removed by a moderator). */
+export const BELL_NOTIFICATION_TYPES = [...CLASS_MATERIAL_NOTIFICATION_TYPES, ...LIBRARY_NOTIFICATION_TYPES];
 
 function typesParams(types: string[]): Record<string, string> {
   return types.length ? { types: types.join(',') } : {};

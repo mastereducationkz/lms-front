@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { FileText, Image as ImageIcon, Link2, Music, Presentation } from 'lucide-react';
-import { openClassMaterialItem, type MaterialItem } from '../../services/api/classMaterials';
+import { openClassMaterialItem, type MaterialItem, type OpenResult } from '../../services/api/classMaterials';
 import { formatSize, t, type Locale } from '../../lib/classMaterials';
 import { materialIconKind, safeLinkHref } from '../../lib/classMaterialsView';
 
@@ -14,6 +14,10 @@ interface Props {
   /** 'compact' (default) keeps the lesson pop-up's tight spacing unchanged; 'comfortable' is a
    *  ≥44px touch target for a standalone list, e.g. the «Материалы» page. */
   density?: 'compact' | 'comfortable';
+  /** Logs a link's open — the lesson call by default; the library passes its own. */
+  openItem?: (id: number) => Promise<OpenResult>;
+  /** Extra chips after the title, e.g. the library's open count for managers. */
+  meta?: ReactNode;
 }
 
 const ICONS = {
@@ -48,7 +52,9 @@ const OPEN_TARGET_CLASS =
  * the open log gets popup-blocked on iOS Safari and a slow Chrome. The open is logged
  * fire-and-forget on click; a link whose URL isn't http(s) is shown but not clickable.
  */
-export default function MaterialRow({ item, locale, onOpen, actions, density = 'compact' }: Props) {
+export default function MaterialRow({
+  item, locale, onOpen, actions, density = 'compact', openItem = openClassMaterialItem, meta,
+}: Props) {
   const Icon = ICONS[materialIconKind(item)];
   const removed = item.removed;
   const padding = ROW_PADDING[density];
@@ -76,6 +82,7 @@ export default function MaterialRow({ item, locale, onOpen, actions, density = '
       {item.kind === 'file' && item.file && (
         <span className="flex-none text-xs text-muted-foreground">{formatSize(item.file.size_bytes, locale)}</span>
       )}
+      {meta}
       {item.hidden_until_end && (
         <span className="flex-none rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
           {t('afterClassChip', locale)}
@@ -93,7 +100,7 @@ export default function MaterialRow({ item, locale, onOpen, actions, density = '
         target="_blank"
         rel="noopener noreferrer"
         onClick={() => {
-          openClassMaterialItem(item.id).catch(() => undefined);
+          openItem(item.id).catch(() => undefined);
         }}
         className={OPEN_TARGET_CLASS}
       >
