@@ -74,7 +74,9 @@ export interface ExamResultRow {
   group_name: string | null;
   planned_test_date: string | null;
   ask_result_on: string | null;
-  triage_status: 'pending' | 'due' | 'overdue' | 'completed' | 'unscheduled' | null;
+  triage_status: 'pending' | 'due' | 'overdue' | 'completed' | 'unscheduled' | 'declined' | null;
+  /** «Не хочет делиться»: the curator's note when the student or parent declined to share. */
+  decline_note?: string | null;
   /** Whether the sales team may use this row; `marketing_basis` says on what grounds. */
   marketing_eligible: boolean;
   /**

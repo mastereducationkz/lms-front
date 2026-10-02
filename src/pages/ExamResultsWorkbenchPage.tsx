@@ -57,6 +57,8 @@ const triageTone: Record<string, string> = {
   pending: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
   completed: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
   unscheduled: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
+  // «Не хочет делиться» (owner, 2026-10-02): handled by the curator, not neglect — neutral, not red.
+  declined: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
 };
 
 const chipBase = 'inline-block rounded px-1.5 py-0.5 text-[10px] leading-4 whitespace-nowrap';
@@ -509,8 +511,11 @@ export default function ExamResultsWorkbenchPage() {
                             <MarketingChips row={row} t={t} />
                           </TableCell>
                           <TableCell>
-                            <Badge variant="secondary" className={triageTone[row.triage_status ?? ''] ?? ''}>
-                              {row.triage_status ?? '—'}
+                            <Badge variant="secondary" className={triageTone[row.triage_status ?? ''] ?? ''}
+                                   title={row.triage_status === 'declined' ? row.decline_note ?? undefined : undefined}>
+                              {row.triage_status === 'declined'
+                                ? t('Не хочет делиться', 'Declined to share')
+                                : row.triage_status ?? '—'}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-center">
