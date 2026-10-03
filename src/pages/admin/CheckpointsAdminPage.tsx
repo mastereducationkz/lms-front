@@ -7,6 +7,7 @@ import { SearchableSelect } from '../../components/ui/searchable-select';
 import { UnitPicker, type PickedUnit } from '../../components/checkpoints/UnitPicker';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
+import { canEditCourseContent } from '../../lib/courseAccess';
 import {
   checkCheckpointQuiz, deadlineCountdown, formatDeadline, getCheckpointMatrix, lateLabel, listCheckpointDefinitions, listCheckpointGroups,
   listUnitOptions, openCheckpoint, reopenCheckpoint, STATUS_CLASS, STATUS_LABEL, updateCheckpointDeadline,
@@ -389,8 +390,14 @@ export default function CheckpointsAdminPage() {
                       )}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
+                      {/* Questions are course content: head curators view them, admins and head
+                          teachers edit them (2026-10-03). */}
                       {d.quiz ? (
-                        <Link className="text-primary hover:underline" to={`/course/${d.quiz.course_id}/lesson/${d.quiz.lesson_id}/edit`}>Edit questions</Link>
+                        canEditCourseContent(role) ? (
+                          <Link className="text-primary hover:underline" to={`/course/${d.quiz.course_id}/lesson/${d.quiz.lesson_id}/edit`}>Edit questions</Link>
+                        ) : (
+                          <Link className="text-primary hover:underline" to={`/course/${d.quiz.course_id}/lesson/${d.quiz.lesson_id}`}>View questions</Link>
+                        )
                       ) : '—'}
                     </td>
                   </tr>

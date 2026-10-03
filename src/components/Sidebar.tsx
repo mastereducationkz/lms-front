@@ -112,9 +112,10 @@ function getNavigationItems(
     // Lateness, missed lessons and their fines. A teacher sees only their own row.
     ['/teacher-discipline', _userRole === 'teacher' ? 'My Discipline' : 'Teacher Discipline', ClipboardCheck, 0, ['admin', 'head_teacher', 'teacher'], 'teacher-discipline-nav', 'primary'],
     ['/courses', 'My Courses', BookOpen, 0, ['student'], 'courses-nav', 'primary'],
+    // Read-only catalog of every published course (2026-10-03); replaced the teacher's /teacher/courses.
+    ['/courses', ['head_curator', 'curator'].includes(_userRole || '') ? 'Курсы' : 'Courses', BookOpen, 0, ['teacher', 'curator', 'head_curator'], 'courses-nav', 'primary'],
     ['/homework', _userRole === 'student' ? 'My Homework' : 'Homework', ClipboardList, _userRole === 'student' ? unseenGradedCount : 0, ['student', 'teacher'], 'assignments-nav', 'primary'],
     ['/favorites', 'My Favorites', Heart, 0, ['student'], 'favorites-nav', 'primary'],
-    ['/teacher/courses', 'My Courses', BookMarked, 0, ['teacher'], 'courses-nav', 'primary'],
     ['/teacher/class', 'My Class', GraduationCap, 0, ['teacher'], 'students-nav', 'primary'],
     ['/attendance', 'Attendance', UserCheck, attendance.count, ['teacher', 'head_teacher', 'head_curator'], 'attendance-nav', 'primary', false, attendance.tone, attendance.title],
     ['/analytics', ['head_curator', 'curator'].includes(_userRole || '') ? 'Аналитика' : 'Analytics', BarChart3, 0, ['teacher', 'curator', 'admin', 'head_curator', 'head_teacher'], 'analytics-nav', 'primary'],
@@ -129,7 +130,7 @@ function getNavigationItems(
     [CRM_WORKSPACE_URL, ['head_curator', 'curator'].includes(_userRole || '') ? 'Вернуться в CRM' : 'Back to CRM', ExternalLink, 0, ['curator', 'head_curator'], 'crm-workspace-nav', 'curator'],
     ['/curator/students', ['head_curator', 'curator'].includes(_userRole || '') ? 'Журнал' : 'Students', Users, 0, ['curator', 'head_curator', 'admin', 'head_teacher'], 'students-journal-nav', 'curator'],
     ['/curator/groups', ['head_curator', 'curator'].includes(_userRole || '') ? 'Мои группы' : 'My groups', UsersRound, 0, ['curator', 'head_curator'], 'curator-groups-nav', 'curator'],
-    ['/admin/courses', 'Manage Courses', BookMarked, 0, ['admin'], 'courses-management', 'admin'],
+    ['/admin/courses', 'Manage Courses', BookMarked, 0, ['admin', 'head_teacher'], 'courses-management', 'admin'],
     ['/admin/users', 'Manage Users', Users, 0, ['admin', 'head_curator'], 'users-management', 'admin'],
     ['/admin/weekly-top-students', 'Weekly Top Students', Trophy, 0, ['admin'], 'weekly-top-students-nav', 'admin'],
     ['/admin/announcements', 'Telegram Announcements', Megaphone, 0, ['admin', 'head_curator', 'head_teacher'], 'announcements-nav', 'admin'],
@@ -138,7 +139,7 @@ function getNavigationItems(
     ['/admin/recordings', 'Recordings Rollout', Video, 0, ['admin', 'head_curator', 'head_teacher'], 'recordings-admin-nav', 'admin'],
     ['/exam-results', ['head_curator', 'curator'].includes(_userRole || '') ? 'Результаты экзаменов' : 'Exam Results', ClipboardCheck, 0, ['teacher', 'curator', 'head_curator', 'head_teacher', 'admin'], 'exam-results-nav', 'primary'],
     ['/bluebook-results', 'Bluebook Results', ClipboardCheck, 0, ['teacher', 'curator', 'head_curator', 'head_teacher', 'admin'], 'bluebook-results-nav', 'primary'],
-    ['/admin/question-reports', 'Question Reports', AlertTriangle, 0, ['admin'], 'question-reports-nav', 'admin'],
+    ['/admin/question-reports', 'Question Reports', AlertTriangle, 0, ['admin', 'head_teacher'], 'question-reports-nav', 'admin'],
     ['/curator/homeworks', 'Homework', FileText, 0, ['head_teacher'], 'head-homework-nav', 'primary'],
     ['/curator/leaderboard', 'Leaderboard', Trophy, 0, ['head_teacher'], 'head-leaderboard-nav', 'primary'],
     ['/head-teacher/lesson-requests', ['head_curator', 'curator'].includes(_userRole || '') ? 'Заявки по урокам' : 'Lesson Requests', ArrowLeftRight, lessonRequestCount, ['head_teacher', 'head_curator'], 'head-lesson-requests-nav', 'primary'],
@@ -351,7 +352,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
   const handleCoursesToggle = () => {
     if (isCollapsed) {
       // If collapsed, navigate to courses page instead of expanding
-      navigate(user?.role === 'teacher' ? '/teacher/courses' : '/courses');
+      navigate('/courses');
       return;
     }
     setIsCoursesExpanded(!isCoursesExpanded);
@@ -417,7 +418,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
               <div className="flex flex-col gap-1">
                 {section.items.map(([to, label, Icon, badge, , dataTour, , comingSoon, badgeTone, badgeTitle]) => {
                   // Handle expandable My Courses
-                  if ((to === '/courses' && user?.role === 'student') || (to === '/teacher/courses' && user?.role === 'teacher')) {
+                  if (to === '/courses' && user?.role === 'student') {
                     return (
                       <div key={to} data-tour={dataTour}>
                         <button
@@ -459,7 +460,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                             )}
                             {courses.length > 5 && (
                               <NavLink
-                                to={user?.role === 'teacher' ? '/teacher/courses' : '/courses'}
+                                to="/courses"
                                 className="flex items-center rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors px-3 py-2 text-sm font-medium"
                               >
                                 <span>{['head_curator', 'curator'].includes(user?.role || '') ? `Все курсы (${courses.length})` : `View all courses (${courses.length})`}</span>
@@ -502,7 +503,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                     <NavLink
                       key={to}
                       to={to}
-                      end={to === '/courses' || to === '/teacher/courses'}
+                      end={to === '/courses'}
                       data-tour={dataTour}
                       className={({ isActive }) =>
                         `flex items-center rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-secondary transition-colors

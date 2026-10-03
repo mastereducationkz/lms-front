@@ -72,8 +72,8 @@ const teacherTourSteps: TourStep[] = [
   },
   {
     target: '[data-tour="courses-nav"]',
-    title: 'Course Management',
-    content: 'Create, edit, and manage your courses. Add lessons, assignments, and track student progress.',
+    title: 'Courses',
+    content: 'Browse every course, read-only: open any lesson and see quiz answers. Nothing you do there counts as progress.',
     placement: 'bottom',
   },
   {

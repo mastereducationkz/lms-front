@@ -364,16 +364,11 @@ export default function Router() {
             </ProtectedRoute>
           } />
 
-          <Route path="/teacher/courses" element={
-            <ProtectedRoute allowedRoles={['teacher', 'admin']}>
-              <AppLayout>
-                <TeacherCoursesPage />
-              </AppLayout>
-            </ProtectedRoute>
-          } />
+          {/* Teachers browse the read-only catalog at /courses since 2026-10-03; old links land there. */}
+          <Route path="/teacher/courses" element={<Navigate to="/courses" replace />} />
 
           <Route path="/teacher/course/new" element={
-            <ProtectedRoute allowedRoles={['admin']}>
+            <ProtectedRoute allowedRoles={['admin', 'head_teacher']}>
               <AppLayout>
                 <CreateCourseWizard />
               </AppLayout>
@@ -381,7 +376,7 @@ export default function Router() {
           } />
 
           <Route path="/teacher/course/:courseId" element={
-            <ProtectedRoute allowedRoles={['admin']}>
+            <ProtectedRoute allowedRoles={['admin', 'head_teacher']}>
               <AppLayout>
                 <CourseBuilderPage />
               </AppLayout>
@@ -406,7 +401,7 @@ export default function Router() {
           } />
 
           <Route path="/course/:courseId/lesson/:lessonId/edit" element={
-            <ProtectedRoute allowedRoles={['admin', 'head_teacher', 'head_curator', 'teacher', 'curator']}>
+            <ProtectedRoute allowedRoles={['admin', 'head_teacher']}>
               <LessonEditPage />
             </ProtectedRoute>
           } />
@@ -486,7 +481,7 @@ export default function Router() {
           } />
 
           <Route path="/admin/courses" element={
-            <ProtectedRoute allowedRoles={['admin']}>
+            <ProtectedRoute allowedRoles={['admin', 'head_teacher']}>
               <AppLayout>
                 <TeacherCoursesPage />
               </AppLayout>
@@ -533,7 +528,7 @@ export default function Router() {
           } />
 
           <Route path="/admin/question-reports" element={
-            <ProtectedRoute allowedRoles={['admin', 'teacher']}>
+            <ProtectedRoute allowedRoles={['admin', 'teacher', 'head_teacher']}>
               <AppLayout>
                 <QuestionReportsPage />
               </AppLayout>

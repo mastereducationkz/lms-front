@@ -312,7 +312,7 @@ export default function TeacherClassPage() {
             Weekly Awards
           </Button>
           <Button
-            onClick={() => navigate('/teacher/courses')}
+            onClick={() => navigate('/courses')}
             variant="outline"
           >
             Back to Courses

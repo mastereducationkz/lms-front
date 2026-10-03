@@ -8,6 +8,7 @@ import CreateCourseModal from '../components/CreateCourseModal.tsx';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
+import { canEditCourseContent } from '../lib/courseAccess';
 
 interface CourseWithStats {
   id: number;
@@ -41,12 +42,10 @@ export default function TeacherCoursesPage() {
       setLoading(true);
       setError('');
 
-      // Get courses for this teacher
-      const coursesData = await apiClient.getCourses();
-      
-      // Filter courses for current teacher if needed
-      const teacherCourses = user?.role === 'admin' 
-        ? coursesData 
+      // Course management (admins and head teachers since 2026-10-03): every course, drafts included.
+      const coursesData = await apiClient.getCourses({ limit: 1000 });
+      const teacherCourses = canEditCourseContent(user?.role)
+        ? coursesData
         : coursesData.filter((course: any) => course.teacher_id === user?.id);
 
       // Enhance with additional stats if available
@@ -167,7 +166,7 @@ export default function TeacherCoursesPage() {
           <BookOpen className="w-8 h-8 mr-3 text-blue-600 dark:text-blue-400" />
           My Courses
         </h1>
-        {user?.role === 'admin' && (
+        {canEditCourseContent(user?.role) && (
           <div className="flex gap-3">
             <Button 
               onClick={() => setCreateOpen(true)}
@@ -293,7 +292,7 @@ export default function TeacherCoursesPage() {
                             <Eye className="w-4 h-4" />
                           </Link>
                         </Button>
-                        {user?.role === 'admin' && (
+                        {canEditCourseContent(user?.role) && (
                           <Button
                             variant="ghost"
                             size="sm"
