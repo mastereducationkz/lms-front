@@ -48,6 +48,8 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { WeeklyAwardsHub } from '../components/gamification/WeeklyAwardsHub';
 import TodayLessons from '../components/dashboard/TodayLessons';
+import { CompletionMeta } from '../components/progress/CompletionMeta';
+import type { CheckpointSummary } from '../lib/completion';
 
 interface TeacherStats {
   total_courses: number;
@@ -93,6 +95,9 @@ interface StudentProgress {
   overall_progress: number;
   completed_modules?: number;
   total_modules?: number;
+  lessons_done?: number;
+  lessons_total?: number;
+  checkpoints?: CheckpointSummary | null;
   last_activity: string | null;
 }
 
@@ -1548,15 +1553,15 @@ export default function TeacherDashboard() {
                             <Progress value={student.overall_progress} className="h-2.5 w-24" />
                           </div>
                           <div className="text-sm font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">
-                            {student.total_modules != null && student.completed_modules != null ? (
-                              <span title={`${student.completed_modules} of ${student.total_modules} units completed`}>
-                                {student.completed_modules}/{student.total_modules} · {student.overall_progress}%
-                              </span>
-                            ) : (
-                              <span>{student.overall_progress}%</span>
-                            )}
+                            <span>{student.overall_progress}%</span>
                           </div>
                         </div>
+                        <CompletionMeta
+                          className="mt-1"
+                          lessonsDone={student.lessons_done ?? student.completed_modules}
+                          lessonsTotal={student.lessons_total ?? student.total_modules}
+                          checkpoints={student.checkpoints}
+                        />
                       </td>
                       <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
                         {student.last_activity 

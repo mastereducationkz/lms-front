@@ -64,11 +64,16 @@ export default function ModulePage() {
       console.log('📖 Module lessons:', moduleLessons);
       setLessons(moduleLessons);
 
-      // Calculate progress (for students)
+      // Module progress (for students) comes from the backend's one completion rule
+      // (required steps of unit lessons) — never recomputed here.
       if (user?.role === 'student') {
-        const completedLessons = moduleLessons.filter(lesson => lesson.is_completed).length;
-        const totalLessons = moduleLessons.length;
-        setProgress(totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0);
+        try {
+          const courseProgress: any = await apiClient.getCourseProgress(courseId);
+          const mod = (courseProgress?.modules || []).find((m: any) => String(m.module_id) === String(moduleId));
+          setProgress(mod?.module_progress ?? 0);
+        } catch {
+          setProgress(0);
+        }
       }
       
     } catch (err) {

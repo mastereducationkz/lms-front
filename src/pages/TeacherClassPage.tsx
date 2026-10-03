@@ -25,6 +25,8 @@ import { Progress } from '../components/ui/progress';
 import { Badge } from '../components/ui/badge';
 import { GiveBonusModal } from '../components/gamification/GiveBonusModal';
 import { WeeklyAwardsHub } from '../components/gamification/WeeklyAwardsHub';
+import { CompletionMeta } from '../components/progress/CompletionMeta';
+import { meanPct, type CheckpointSummary } from '../lib/completion';
 
 interface TeacherGroup extends Group {
   students: User[];
@@ -72,6 +74,7 @@ interface StudentStats {
   completed_steps: number;
   total_time_spent_minutes: number;
   overall_completion_percentage: number;
+  checkpoints?: CheckpointSummary | null;
 }
 
 export default function TeacherClassPage() {
@@ -132,7 +135,8 @@ export default function TeacherClassPage() {
             total_steps: progressOverview.total_steps,
             completed_steps: progressOverview.completed_steps,
             total_time_spent_minutes: progressOverview.total_time_spent_minutes,
-            overall_completion_percentage: progressOverview.overall_completion_percentage
+            overall_completion_percentage: progressOverview.overall_completion_percentage,
+            checkpoints: progressOverview.checkpoints ?? null
           };
           
           return {
@@ -168,11 +172,10 @@ export default function TeacherClassPage() {
       setStudentStats(prev => ({ ...prev, ...statsMap }));
       
       const activeStudents = students.filter(s => s.is_active).length;
-      const totalProgress = students.reduce((sum, student) => {
-        const stats = statsMap[student.id];
-        return sum + (stats?.average_progress || 0);
-      }, 0);
-      const averageProgress = students.length > 0 ? totalProgress / students.length : 0;
+      // Same rule as every backend average: floored mean over current (active) students.
+      const averageProgress = meanPct(
+        students.filter(s => s.is_active).map(s => statsMap[s.id]?.average_progress || 0)
+      );
       
       return {
         ...group,
@@ -287,9 +290,12 @@ export default function TeacherClassPage() {
 
   const totalStudents = visibleGroups.reduce((sum, group) => sum + group.total_students, 0);
   const totalActiveStudents = visibleGroups.reduce((sum, group) => sum + group.active_students, 0);
-  const overallAverageProgress = visibleGroups.length > 0
-    ? visibleGroups.reduce((sum, group) => sum + group.average_progress, 0) / visibleGroups.length
-    : 0;
+  const overallAverageProgress = meanPct(
+    Array.from(new Map(
+      visibleGroups.flatMap(group => group.students.filter(s => s.is_active))
+        .map(s => [s.id, studentStats[s.id]?.average_progress || 0] as const)
+    ).values())
+  );
 
   return (
     <div className="p-6 space-y-6">
@@ -372,7 +378,7 @@ export default function TeacherClassPage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Progress</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-foreground">{overallAverageProgress.toFixed(1)}%</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-foreground">{overallAverageProgress}%</p>
               </div>
             </div>
           </CardContent>
@@ -476,7 +482,7 @@ export default function TeacherClassPage() {
                     </span>
                     <span className="flex items-center gap-1">
                       <TrendingUp className="w-4 h-4" />
-                      {group.average_progress.toFixed(1)}% avg
+                      {group.average_progress}% avg
                     </span>
                   </div>
                 </div>
@@ -563,7 +569,7 @@ export default function TeacherClassPage() {
                                         className="w-20 h-2"
                                       />
                                       <span className="text-sm font-medium text-gray-900 dark:text-foreground">
-                                        {stats?.overall_completion_percentage?.toFixed(1) || 0}%
+                                        {stats?.overall_completion_percentage ?? 0}%
                                       </span>
                                     </div>
                                     <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -574,17 +580,15 @@ export default function TeacherClassPage() {
                                     <div className="text-sm text-gray-900 dark:text-foreground">
                                       {stats?.completed_lessons || 0}/{stats?.total_lessons || 0}
                                     </div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                                      {stats?.total_lessons ? ((stats.completed_lessons / stats.total_lessons) * 100).toFixed(1) : 0}% complete
-                                    </div>
+                                    {/* One number per student (the Progress column); here only the
+                                        counts behind it and the checkpoint line. */}
+                                    <CompletionMeta checkpoints={stats?.checkpoints} />
                                   </td>
                                   <td className="px-4 py-4 whitespace-nowrap">
                                     <div className="text-sm text-gray-900 dark:text-foreground">
                                       {stats?.completed_steps || 0}/{stats?.total_steps || 0}
                                     </div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                                      {stats?.completed_steps ? ((stats.completed_steps / stats.total_steps) * 100).toFixed(1) : 0}% complete
-                                    </div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400">required steps</div>
                                   </td>
                                   <td className="px-4 py-4 whitespace-nowrap">
                                     <div className="flex items-center gap-1 text-sm text-gray-900 dark:text-foreground">

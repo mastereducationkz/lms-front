@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popove
 import { TrackPlatformLinks } from "../components/dashboard/TrackPlatformLinks";
 import { WeeklyTestCountdown } from "../components/dashboard/WeeklyTestCountdown";
 import { CheckpointsCard } from "../components/dashboard/CheckpointsCard";
+import { CompletionMeta } from "../components/progress/CompletionMeta";
 import { TargetsTile } from "../components/dashboard/TargetsTile";
 
 // Dashboard hero background presets (all dark so white text + the flip board stay legible).
@@ -1241,6 +1242,11 @@ export default function StudentDashboard({
                     
                     <CardHeader className="pb-3">
                       <CardTitle className="text-lg truncate">{course.course_title}</CardTitle>
+                      <CompletionMeta
+                        lessonsDone={course.lessons_done ?? course.completed_lessons}
+                        lessonsTotal={course.lessons_total ?? course.total_lessons}
+                        checkpoints={course.checkpoints}
+                      />
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {/* Progress Bar - Only show if no image */}

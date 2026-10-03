@@ -6,6 +6,7 @@ import { Button } from '../components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { CollegeBoardPasswordReveal } from '../components/CollegeBoardPasswordReveal';
 import { collegeBoardPasswordDisplay } from '../lib/assignmentZeroCollegeBoard';
+import { checkpointLabel, lessonsLabel, type CheckpointSummary } from '../lib/completion';
 
 // Older backends may not send `can_reveal_college_board_password` yet; on this
 // page (reachable by curators generally, not just admins) treat that as "no".
@@ -50,6 +51,9 @@ interface LmsCourse {
   completion_percentage: number;
   total_lessons: number;
   completed_lessons: number;
+  lessons_done?: number;
+  lessons_total?: number;
+  checkpoints?: CheckpointSummary | null;
   avg_completion: number;
   last_accessed: string | null;
   lessons: LmsLesson[];
@@ -81,6 +85,9 @@ interface StudentProfile {
   };
   lms_progress: {
     overall: number | null;
+    lessons_done?: number;
+    lessons_total?: number;
+    checkpoints?: CheckpointSummary | null;
     courses: LmsCourse[];
   };
 }
@@ -227,7 +234,10 @@ export default function StudentProfilePage() {
           {
             label: 'LMS прогресс',
             value: lms_progress.overall !== null ? `${lms_progress.overall}%` : '—',
-            sub: `${lms_progress.courses.length} курс(а)`,
+            sub: [
+              lessonsLabel(lms_progress.lessons_done, lms_progress.lessons_total) || `${lms_progress.courses.length} курс(а)`,
+              checkpointLabel(lms_progress.checkpoints),
+            ].filter(Boolean).join(' · '),
             color: 'text-blue-700',
           },
           {
@@ -498,9 +508,12 @@ export default function StudentProfilePage() {
                       <p className="text-sm font-medium text-gray-900 text-left">{course.course_name ?? `Курс ${course.course_id}`}</p>
                       <p className="text-xs text-gray-400 text-left">
                         {course.total_lessons > 0
-                          ? `${course.completed_lessons}/${course.total_lessons} уроков завершено`
+                          ? lessonsLabel(course.lessons_done ?? course.completed_lessons, course.lessons_total ?? course.total_lessons)
                           : `Статус: ${course.status === 'completed' ? 'Завершён' : course.status === 'in_progress' ? 'В процессе' : 'Не начат'}`}
                       </p>
+                      {checkpointLabel(course.checkpoints) && (
+                        <p className="text-xs text-gray-400 text-left">{checkpointLabel(course.checkpoints)}</p>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">

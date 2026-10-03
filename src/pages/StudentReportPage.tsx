@@ -17,6 +17,7 @@ import ParentReportCard from '../components/parentReports/ParentReportCard';
 import { mondayOf } from '../lib/parentReportWeek';
 import { fetchParentStudentFacts, type ParentStudentResponse } from '../services/api/reports';
 import { backendBase, safeUploadUrl } from '../lib/mediaUrl';
+import { checkpointLabel, lessonsLabel } from '../lib/completion';
 import { ArrowLeft, ArrowRight, Check, Paperclip, X } from 'lucide-react';
 
 /**
@@ -589,8 +590,9 @@ export default function StudentReportPage() {
             <thead>
               <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
                 <th className="py-2 pr-3 font-medium">Курс</th>
-                <th className="py-2 pr-3 font-medium">Шаги</th>
+                <th className="py-2 pr-3 font-medium">Уроки</th>
                 <th className="py-2 pr-3 font-medium">Прогресс</th>
+                <th className="py-2 pr-3 font-medium">Чекпоинты</th>
                 <th className="py-2 pr-3 font-medium">Учебное время</th>
                 <th className="py-2 pr-3 font-medium">Последняя активность</th>
               </tr>
@@ -599,8 +601,9 @@ export default function StudentReportPage() {
               {courses.map(c => (
                 <tr key={c.course_id} className="border-b border-gray-50">
                   <td className="py-2 pr-3 text-gray-900">{c.course_title}</td>
-                  <td className="py-2 pr-3">{c.completed_steps} из {c.total_steps}</td>
-                  <td className="py-2 pr-3 font-medium">{fmtPct(c.completion_pct)}</td>
+                  <td className="py-2 pr-3">{lessonsLabel(c.lessons_done, c.lessons_total) || '—'}</td>
+                  <td className="py-2 pr-3 font-medium">{Math.trunc(c.completion_pct)}%</td>
+                  <td className="py-2 pr-3">{checkpointLabel(c.checkpoints).replace('Чекпоинты: ', '') || '—'}</td>
                   <td className="py-2 pr-3">{Math.floor(c.time_spent_minutes / 60)} ч {c.time_spent_minutes % 60} мин</td>
                   <td className="py-2 pr-3">{fmtDate(c.last_activity_at)}</td>
                 </tr>

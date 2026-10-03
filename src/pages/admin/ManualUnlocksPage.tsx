@@ -93,6 +93,9 @@ export default function ManualUnlocksPage() {
   const [targetUnlocks, setTargetUnlocks] = useState<ManualLessonUnlock[]>([])
   const [courseStructure, setCourseStructure] = useState<CourseModule[]>([])
   const [lessonProgress, setLessonProgress] = useState<Record<number, LessonProgressItem>>({})
+  // The course number for the target (student, or the group's average) — from the backend,
+  // the same value every other screen shows; never recomputed here.
+  const [overall, setOverall] = useState<{ completion_percentage: number; lessons_done?: number; lessons_total?: number } | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [studentGroupFilter, setStudentGroupFilter] = useState<string>('all')
   const [groupSearchQuery, setGroupSearchQuery] = useState('')
@@ -250,9 +253,11 @@ export default function ManualUnlocksPage() {
         map[lesson.lesson_id] = lesson
       }
       setLessonProgress(map)
+      setOverall(data.overall ?? null)
     } catch (error) {
       console.error('Failed to load lesson progress:', error)
       setLessonProgress({})
+      setOverall(null)
       toast('Failed to load unit progress', 'error')
     } finally {
       setIsProgressLoading(false)
@@ -424,14 +429,18 @@ export default function ManualUnlocksPage() {
       }
     }
 
+    // Counted lessons and the percentage come from the backend rule (checkpoint quizzes and
+    // step-less lessons are listed but never counted).
+    const countedTotal = overall?.lessons_total ?? total
+    const countedDone = overall?.lessons_done ?? completed
     return {
-      total,
-      completed,
+      total: countedTotal,
+      completed: countedDone,
       unlocked,
-      remaining: total - completed,
-      percent: total > 0 ? Math.round((completed / total) * 100) : 0,
+      remaining: countedTotal - countedDone,
+      percent: overall?.completion_percentage ?? 0,
     }
-  }, [courseStructure, lessonProgress, unlockedLessonIds])
+  }, [courseStructure, lessonProgress, unlockedLessonIds, overall])
 
   const filteredGroups = useMemo(() => {
     const q = groupSearchQuery.toLowerCase()

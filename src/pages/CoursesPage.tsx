@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext.tsx';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Progress } from '../components/ui/progress';
+import { checkpointLabel, lessonsLabel } from '../lib/completion';
 import Skeleton from '../components/Skeleton.tsx';
 import apiClient from "../services/api";
 import type { Course } from '../types';
@@ -56,7 +57,11 @@ export default function CoursesPage() {
           progress: course.completion_percentage,
           status: course.completion_percentage === 100 ? 'completed' : course.completion_percentage > 0 ? 'in_progress' : 'not_started',
           modules: course.total_lessons, // Using lessons as modules for display
-          description: `${course.total_lessons} lessons, ${course.total_steps} steps`
+          // «12 из 30 уроков» (+ the checkpoint line) — the counts behind the one course number
+          description: [
+            lessonsLabel(course.lessons_done ?? course.completed_lessons, course.lessons_total ?? course.total_lessons),
+            checkpointLabel(course.checkpoints),
+          ].filter(Boolean).join(' · ')
         }));
       } else {
         // For teachers/admins, get all courses they have access to
