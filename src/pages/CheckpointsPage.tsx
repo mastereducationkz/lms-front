@@ -32,7 +32,7 @@ export default function CheckpointsPage() {
     <div className="p-4 md:p-6 space-y-4 max-w-3xl">
       <h1 className="text-2xl font-semibold">SAT Checkpoints</h1>
       <p className="text-sm text-muted-foreground">
-        A checkpoint opens the moment you finish its Verbal and Math units, and you have {CHECKPOINT_WINDOW_LABEL} from then. After the deadline you can still submit, but the result is marked late.
+        A checkpoint opens the moment you finish its Verbal and Math units. Checkpoints are optional and your course keeps going either way, so take each one whenever you’re ready. Try to finish within {CHECKPOINT_WINDOW_LABEL} of it opening; after that you can still submit, it’ll just be marked late.
       </p>
       {items.map((item) => {
         const open = item.status === 'available' || item.status === 'reopened' || item.status === 'overdue';
@@ -42,14 +42,14 @@ export default function CheckpointsPage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <p className="font-medium flex items-center gap-2">
-                    {item.status === 'locked' ? <Lock className="h-4 w-4" aria-hidden="true" /> : null}
+                    {item.status === 'locked' && !item.skipped ? <Lock className="h-4 w-4" aria-hidden="true" /> : null}
                     {item.title}
                     <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_CLASS[item.status]}`}>
                       {item.skipped ? 'Skipped' : STATUS_LABEL[item.status]}
                     </span>
                   </p>
                   {open && (
-                    <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">Course paused: the next units unlock when you submit this checkpoint.</p>
+                    <p className="text-xs text-emerald-700 dark:text-emerald-300">Open now. Take it whenever you’re ready.</p>
                   )}
                   <p className="text-xs text-muted-foreground">Covers: {coversLabel(item.covers)} · {item.total_questions} questions</p>
                   {item.deadline && item.status !== 'completed' && (
@@ -76,12 +76,11 @@ export default function CheckpointsPage() {
                 </div>
                 {open && item.quiz && (
                   <div className="flex flex-col items-end gap-1 shrink-0">
-                    <Button variant={item.status === 'overdue' ? 'destructive' : 'default'}
-                            onClick={() => navigate(`/course/${item.quiz!.course_id}/lesson/${item.quiz!.lesson_id}`)}>
+                    <Button onClick={() => navigate(`/course/${item.quiz!.course_id}/lesson/${item.quiz!.lesson_id}`)}>
                       {item.status === 'overdue' ? 'Submit late' : 'Start'}
                     </Button>
                     {item.status === 'overdue' && (
-                      <p className="text-xs text-red-600 max-w-[12rem] text-right">The deadline has passed; a submission now is marked late.</p>
+                      <p className="text-xs text-muted-foreground max-w-[12rem] text-right">The deadline has passed. You can still take it; it’ll be marked late.</p>
                     )}
                   </div>
                 )}

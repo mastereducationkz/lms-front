@@ -1,17 +1,15 @@
 import type { ReactNode } from 'react';
 import { Button } from '../ui/button';
-import { isOpen } from '../../lib/checkpointHints';
 import type { CheckpointLock } from '../../lib/checkpointHints';
 import {
-  CHECKPOINT_WINDOW_LABEL, coversLabel, deadlineCountdown, formatDeadline, lateLabel,
-  type CheckpointUnit,
+  CHECKPOINT_WINDOW_LABEL, formatDeadline, lateLabel, type CheckpointUnit,
 } from '../../services/api/checkpoints';
 import type { LessonLock } from '../../services/api/lessons';
 
 interface CheckpointLockGuideProps {
   /** Why the lesson was refused, or null when checkpoint data doesn't explain it. */
   lock: CheckpointLock | null;
-  /** Title of the unit the student tried to open; null when we couldn't resolve it. */
+  /** Title of the lesson the student tried to open; null when we couldn't resolve it. */
   unitTitle: string | null;
   courseId: string;
   /** The server's own refusal reason, used only when `lock` is null. */
@@ -79,7 +77,6 @@ export default function CheckpointLockGuide({
 }: CheckpointLockGuideProps) {
   // The server's title wins: it can name a unit whose course the client can't even list.
   const resolvedTitle = serverLock?.unit_title || unitTitle || null;
-  const unitName = resolvedTitle || 'This unit';
 
   // Fallback (no checkpoint explains the refusal). The server says which gate fired and what to
   // do about it; we only supply generic advice when it didn't answer at all.
@@ -106,66 +103,8 @@ export default function CheckpointLockGuide({
       </GuideStep>
     </>
   );
-  let primary: ReactNode = null;
 
-  if (lock?.kind === 'unit-blocked') {
-    const cp = lock.blocking;
-    const overdue = cp.status === 'overdue';
-    heading = `${unitName} is locked`;
-
-    if (isOpen(cp)) {
-      // The checkpoint has opened and is waiting to be submitted: that is the whole blockage.
-      lede = `Checkpoint ${cp.number} is waiting for you. The course is paused until you submit it.`;
-      steps = (
-        <>
-          <GuideStep
-            n={1}
-            title={overdue
-              ? `Submit Checkpoint ${cp.number}, the deadline has passed`
-              : `Take Checkpoint ${cp.number}, it’s open now`}
-          >
-            <p>{coversLabel(cp.covers)} · {cp.total_questions} questions</p>
-            <UnitChecklist units={cp.covers} courseId={courseId} linkUnfinished={false} onNavigate={onNavigate} />
-            {cp.deadline ? (
-              <p className={overdue ? 'text-red-600 dark:text-red-400' : ''}>
-                {overdue ? 'Was due ' : 'Due '}{formatDeadline(cp.deadline)} (Almaty) · {deadlineCountdown(cp.deadline)}
-              </p>
-            ) : null}
-            {overdue ? <p className="text-red-600 dark:text-red-400">You can still submit, but the result is marked late.</p> : null}
-          </GuideStep>
-          <GuideStep n={2} title={`${unitName} unlocks as soon as you submit.`} />
-        </>
-      );
-      primary = cp.quiz ? (
-        <Button onClick={() => onNavigate(`/course/${cp.quiz!.course_id}/lesson/${cp.quiz!.lesson_id}`)}>
-          {overdue ? `Submit Checkpoint ${cp.number} late` : `Start Checkpoint ${cp.number}`}
-        </Button>
-      ) : (
-        <p className="text-sm text-red-600 dark:text-red-400">
-          Checkpoint {cp.number} is closed. Ask your curator to reopen it.
-        </p>
-      );
-    } else {
-      // Defensive: unreachable under the current server rule, where only an opened checkpoint
-      // blocks later units. See the Risk section of the design doc.
-      lede = `Checkpoint ${cp.number} comes first, and it hasn’t opened yet.`;
-      steps = (
-        <>
-          <GuideStep n={1} title={`Finish these units to open Checkpoint ${cp.number}`}>
-            <UnitChecklist units={cp.covers} courseId={courseId} linkUnfinished onNavigate={onNavigate} />
-            {cp.locked_reason ? <p>{cp.locked_reason}</p> : null}
-          </GuideStep>
-          <GuideStep
-            n={2}
-            title={`Take Checkpoint ${cp.number}`}
-          >
-            <p>{cp.total_questions} questions · {CHECKPOINT_WINDOW_LABEL} to finish it once it opens.</p>
-          </GuideStep>
-          <GuideStep n={3} title={`${unitName} unlocks after you submit it.`} />
-        </>
-      );
-    }
-  } else if (lock?.kind === 'checkpoint-shut') {
+  if (lock?.kind === 'checkpoint-shut') {
     const cp = lock.item;
 
     if (cp.status === 'completed') {
@@ -182,8 +121,12 @@ export default function CheckpointLockGuide({
         </GuideStep>
       );
     } else if (cp.skipped) {
-      heading = `Checkpoint ${cp.number} isn’t required for your group`;
+      // Stored at switch-on (already earned then) vs. below the group's start number.
+      heading = cp.opened_by === 'baseline'
+        ? `Checkpoint ${cp.number} is optional for you`
+        : `Checkpoint ${cp.number} isn’t required for your group`;
       lede = cp.locked_reason || 'Your group starts from a later checkpoint.';
+      steps = null;
     } else {
       heading = `Checkpoint ${cp.number} isn’t open yet`;
       lede = 'A checkpoint opens the moment you finish every unit it covers.';
@@ -213,7 +156,6 @@ export default function CheckpointLockGuide({
       {steps ? <ol className="mt-8 space-y-4 text-left text-sm">{steps}</ol> : null}
 
       <div className="mt-8 flex flex-wrap justify-center gap-2">
-        {primary}
         <Button variant="outline" onClick={() => onNavigate(`/course/${courseId}`)}>Back to course</Button>
         <Button variant="ghost" onClick={() => onNavigate('/checkpoints')}>My checkpoints</Button>
       </div>
