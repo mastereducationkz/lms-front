@@ -21,6 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import ConfirmDialog from '../components/ConfirmDialog.tsx';
 import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning';
 import UnsavedChangesDialog from '../components/UnsavedChangesDialog';
+import { canManageCourseAccess } from '../lib/courseAccess';
 
 interface SelectedModule {
   module: CourseModule;
@@ -1913,7 +1914,9 @@ export default function CourseBuilderPage() {
                 <Eye className="w-4 h-4" />
                 <span>Preview Course</span>
               </Button>
-              {user?.role === 'admin' && (
+              {/* Which teachers and groups get the course is access management: admins only
+                  (head teachers edit content, 2026-10-03). */}
+              {canManageCourseAccess(user?.role) && (
                 <Button
                   onClick={() => setShowTeacherAccessModal(true)}
                   variant="outline"
@@ -1923,14 +1926,16 @@ export default function CourseBuilderPage() {
                   <span>Manage Teachers</span>
                 </Button>
               )}
-              <Button
-                onClick={handleAutoEnrollStudents}
-                variant="default"
-                className="flex items-center space-x-2"
-              >
-                <Users className="w-4 h-4" />
-                <span>Manage Groups</span>
-              </Button>
+              {canManageCourseAccess(user?.role) && (
+                <Button
+                  onClick={handleAutoEnrollStudents}
+                  variant="default"
+                  className="flex items-center space-x-2"
+                >
+                  <Users className="w-4 h-4" />
+                  <span>Manage Groups</span>
+                </Button>
+              )}
             </div>
           </div>
           {activeSection === 'overview' && renderOverviewSection()}

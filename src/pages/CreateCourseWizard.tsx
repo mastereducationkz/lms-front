@@ -149,7 +149,7 @@ export default function CreateCourseWizard() {
         </div>
 
         <div className="mt-8 flex items-center justify-between">
-          <Button variant="ghost" onClick={() => navigate('/teacher/courses')}>Cancel</Button>
+          <Button variant="ghost" onClick={() => navigate('/admin/courses')}>Cancel</Button>
           <div className="flex items-center gap-3">
             {step > 0 && (
               <Button variant="ghost" onClick={() => setStep(step - 1)}>Back</Button>

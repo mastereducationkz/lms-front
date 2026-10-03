@@ -57,6 +57,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning';
 import UnsavedChangesDialog from '../components/UnsavedChangesDialog';
 import { useAuth } from '../contexts/AuthContext';
+import { canEditCourseContent } from '../lib/courseAccess';
 
 interface LessonSidebarProps {
   course: Course | null;
@@ -1267,7 +1268,7 @@ export default function LessonEditPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {user?.role === 'admin' && (
+                {canEditCourseContent(user?.role) && (
                   <Button
                     variant="outline"
                     size="sm"

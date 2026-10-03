@@ -228,6 +228,9 @@ export interface Course {
   is_linear?: boolean;
   release_schedule?: 'all' | 'weekly'; // "all" = all open; "weekly" = unlock by week from group start
   course_type?: CourseType;
+  status?: 'active' | 'draft' | string;
+  total_modules?: number;
+  in_my_groups?: boolean | null; // staff catalog: one of the viewer's own groups studies it
 }
 
 export interface Group {

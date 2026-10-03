@@ -950,7 +950,7 @@ export default function TeacherDashboard() {
         <div className="flex flex-wrap gap-2">
           {user?.role === 'admin' && (
             <Button
-              onClick={() => navigate('/teacher/courses')}
+              onClick={() => navigate('/admin/courses')}
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               <BookOpen className="w-4 h-4 mr-2" />

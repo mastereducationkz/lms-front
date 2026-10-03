@@ -5,7 +5,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { Skeleton } from '../components/ui/skeleton';
-import { ChevronLeft, ChevronRight, Play, FileText, HelpCircle, ChevronDown, ChevronUp, Lock, Trophy, PanelLeftOpen, PanelLeftClose, SkipForward, Languages, Star, Layers, Check, Cloud, CloudOff, Loader2, Pencil, Printer, ClipboardCheck, Wrench } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, FileText, HelpCircle, ChevronDown, ChevronUp, Lock, Trophy, PanelLeftOpen, PanelLeftClose, SkipForward, Languages, Star, Layers, Check, Cloud, CloudOff, Loader2, Pencil, Printer, ClipboardCheck, Wrench, Eye } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import apiClient from '../services/api';
 import { api } from '../services/api/client';
@@ -25,6 +25,7 @@ import TextLookupPopover from '../components/lesson/TextLookupPopover';
 import { toast } from '../components/Toast';
 import { getAnswerKey, scoreQuiz } from '../components/lesson/quiz/scoring';
 import { isQuizScorePassing, resolveQuizPassingScorePercent } from '../utils/quizPassingScore';
+import { canEditCourseContent, isStaffPreview, seesCorrectAnswers, usesRussianUi } from '../lib/courseAccess';
 
 // Utility function to extract correct answers from gap text
 // If an option ends with *, it's the correct answer (without the *)
@@ -477,6 +478,9 @@ export default function LessonPage() {
   // can flip true -> false -> true as the student browses away and back).
   const checkedLessonsRef = useRef<Set<string>>(new Set());
   const isSpecialGroupStudent = user?.role === 'student' && user?.special_group_only_student === true;
+  // Staff preview (2026-10-03): every lesson open, nothing recorded — no step/lesson progress,
+  // no quiz attempts, no completions. Local state still moves so the player behaves normally.
+  const staffPreview = isStaffPreview(user?.role);
 
   const maybeShowReadyPopup = useCallback((lessonId: string, res: any) => {
     if (checkedLessonsRef.current.has(lessonId)) return;
@@ -595,12 +599,12 @@ export default function LessonPage() {
   // which does not go through the markLessonComplete calls in this file) and fetch
   // newly_ready_assignments once, idempotently, so the "ready to submit" popup can appear.
   useEffect(() => {
-    if (!lesson) return;
+    if (!lesson || staffPreview) return;
     const nowCompleted = Boolean(lesson.is_completed);
     if (nowCompleted && !checkedLessonsRef.current.has(lesson.id)) {
       apiClient.markLessonComplete(String(lesson.id), 0).then(res => maybeShowReadyPopup(lesson.id, res)).catch(() => {});
     }
-  }, [lesson?.id, lesson?.is_completed, maybeShowReadyPopup]);
+  }, [lesson?.id, lesson?.is_completed, maybeShowReadyPopup, staffPreview]);
 
   // Load this student's checkpoint rows for the course, and re-seed the status snapshot
   // (no dialog on initial load — only genuine locked -> open transitions trigger it).
@@ -874,7 +878,7 @@ export default function LessonPage() {
 
   const markStepAsStarted = useCallback(async (stepId: string) => {
     try {
-      await apiClient.markStepStarted(stepId);
+      if (!staffPreview) await apiClient.markStepStarted(stepId);
 
       // Update local progress state
       setStepsProgress(prev => {
@@ -909,7 +913,7 @@ export default function LessonPage() {
     } catch (error) {
       console.error('Failed to mark step as started:', error);
     }
-  }, []);
+  }, [staffPreview]);
 
   const markStepAsVisited = useCallback(async (stepId: string, timeSpent: number = 1) => {
     // Check if already completed locally to avoid redundant requests
@@ -919,7 +923,7 @@ export default function LessonPage() {
     }
 
     try {
-      await apiClient.markStepVisited(stepId, timeSpent);
+      if (!staffPreview) await apiClient.markStepVisited(stepId, timeSpent);
 
       // Update local progress state
       setStepsProgress(prev => {
@@ -959,13 +963,13 @@ export default function LessonPage() {
         return stepProgress?.status === 'completed';
       });
 
-      if (allStepsCompleted) {
+      if (allStepsCompleted && !staffPreview) {
         loadCourseData(false);
       }
     } catch (error) {
       console.error('Failed to mark step as visited:', error);
     }
-  }, [stepsProgress, steps, courseId, lessonId]);
+  }, [stepsProgress, steps, courseId, lessonId, staffPreview]);
 
   const currentStep = orderedSteps[currentStepIndex];
 
@@ -1321,6 +1325,7 @@ export default function LessonPage() {
 
   // Auto-save quiz progress to server (debounced, race-safe)
   useEffect(() => {
+    if (staffPreview) return;
     if (!currentStep?.content_type || currentStep.content_type !== 'quiz') return;
     if (!courseId || !lessonId) return;
     if (quizState === 'completed' || quizState === 'title') return;
@@ -1388,11 +1393,11 @@ export default function LessonPage() {
     setSaveStatus(prev => (prev === 'saving' ? prev : 'idle'));
     const timer = setTimeout(saveToServer, 3000);
     return () => clearTimeout(timer);
-  }, [quizAnswers, gapAnswers, currentQuestionIndex, currentStep, courseId, lessonId, quizState, quizData, questions.length, quizStartTime, quizAttempt, devLog]);
+  }, [quizAnswers, gapAnswers, currentQuestionIndex, currentStep, courseId, lessonId, quizState, quizData, questions.length, quizStartTime, quizAttempt, devLog, staffPreview]);
 
   // Compute proceed reason (or null when allowed)
   const getProceedBlockReason = useCallback((): string | null => {
-    if (user?.role === 'teacher' || user?.role === 'admin') return null;
+    if (staffPreview) return null;
     if (!currentStep) return 'No active step';
     if (currentStep.is_optional) return null;
 
@@ -1410,7 +1415,7 @@ export default function LessonPage() {
       return quizCompleted.get(stepId) ? null : 'Complete the quiz to continue';
     }
     return null;
-  }, [user?.role, currentStep, stepsProgress, videoProgress, quizCompleted]);
+  }, [staffPreview, currentStep, stepsProgress, videoProgress, quizCompleted]);
 
   const canProceedToNext = useCallback((): boolean => getProceedBlockReason() === null, [getProceedBlockReason]);
 
@@ -1491,6 +1496,11 @@ export default function LessonPage() {
 
   const skipLesson = async () => {
     if (!lesson) return;
+    if (staffPreview) {
+      // Staff only move on; nothing is marked complete for them.
+      navigate(nextLessonId ? `/course/${courseId}/lesson/${nextLessonId}` : `/course/${courseId}`);
+      return;
+    }
     if (!confirm('Are you sure you want to skip this lesson? It will be marked as completed.')) return;
 
     try {
@@ -1723,7 +1733,7 @@ export default function LessonPage() {
     // Don't clear localStorage so answers persist
   };
   const autoFillCorrectAnswers = () => {
-    const isTeacher = user?.role === 'teacher' || user?.role === 'admin' || user?.role === 'curator';
+    const isTeacher = seesCorrectAnswers(user?.role);
     if (import.meta.env.DEV || isTeacher) {
       const newQuizAnswers = new Map<string, any>();
       const newGapAnswers = new Map<string, string[]>();
@@ -1773,6 +1783,12 @@ export default function LessonPage() {
 
   const saveQuizAttempt = async (score: number, totalQuestions: number) => {
     if (!currentStep || !courseId || !lessonId) return;
+    if (staffPreview) {
+      // A staff run-through is never stored (the backend would echo it back unsaved anyway).
+      localStorage.removeItem(`quiz_answers_${currentStep.id}`);
+      localStorage.removeItem(`gap_answers_${currentStep.id}`);
+      return;
+    }
 
     // Check if quiz needs manual grading
     const hasLongText = questions.some(q => q.question_type === 'long_text');
@@ -2138,7 +2154,7 @@ export default function LessonPage() {
               clearAllAnswers={clearAllQuizAnswers}
               quizAttempt={quizAttempt}
               highlightedQuestionId={searchParams.get('questionId') || undefined}
-              isTeacher={user?.role === 'teacher' || user?.role === 'admin' || user?.role === 'curator'}
+              isTeacher={seesCorrectAnswers(user?.role)}
               isSpecialGroupStudent={isSpecialGroupStudent}
               passingScorePercent={resolveQuizPassingScorePercent(quizData, currentStep?.is_optional)}
             />
@@ -2353,16 +2369,27 @@ export default function LessonPage() {
               }
               return null;
             })()}
-            {(user?.role === 'teacher' || user?.role === 'admin') && (
+            {staffPreview && (
+              <span
+                className="ml-2 h-5 px-2 inline-flex items-center gap-1 rounded text-[10px] font-medium shrink-0 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                title={usesRussianUi(user?.role)
+                  ? 'Вы смотрите урок как сотрудник: прогресс, попытки и завершения не сохраняются.'
+                  : 'You are previewing as staff: no progress, attempts or completions are saved.'}
+              >
+                <Eye className="w-3 h-3" aria-hidden="true" />
+                {usesRussianUi(user?.role) ? 'Просмотр' : 'Preview'}
+              </span>
+            )}
+            {staffPreview && (
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={skipLesson} 
-                title="Skip Lesson (Teacher Only)"
+                title={usesRussianUi(user?.role) ? 'Следующий урок (ничего не отмечается)' : 'Next lesson (nothing is marked complete)'}
                 className="ml-2 text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20"
               >
                 <SkipForward className="w-4 h-4 mr-1" />
-                Skip
+                {usesRussianUi(user?.role) ? 'Дальше' : 'Skip'}
               </Button>
             )}
             {import.meta.env.DEV && (
@@ -2396,7 +2423,7 @@ export default function LessonPage() {
                 <span className="hidden sm:inline">Practice PDF</span>
               </Button>
             )}
-            {user?.role === 'admin' && (
+            {canEditCourseContent(user?.role) && (
               <Button
                 variant="outline"
                 size="sm"

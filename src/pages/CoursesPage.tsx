@@ -7,7 +7,12 @@ import { Progress } from '../components/ui/progress';
 import Skeleton from '../components/Skeleton.tsx';
 import apiClient from "../services/api";
 import type { Course } from '../types';
-import { BookOpen, Target, CheckCircle, Play } from 'lucide-react';
+import { BookOpen, Target, CheckCircle, Play, Eye, Search, Users } from 'lucide-react';
+import { Input } from '../components/ui/input';
+import { mediaUrl } from '../lib/mediaUrl';
+import {
+  canEditCourseContent, filterCatalog, isReadOnlyCourseViewer, sortStaffCatalog, usesRussianUi,
+} from '../lib/courseAccess';
 
 interface CourseCard {
   id: string;
@@ -19,14 +24,19 @@ interface CourseCard {
   modules: number;
   description: string;
   duration?: number;
+  in_my_groups?: boolean | null;
+  isDraft?: boolean;
 }
 
 export default function CoursesPage() {
   const [courses, setCourses] = useState<CourseCard[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
   const { user } = useAuth();
   const navigate = useNavigate();
+  const ru = usesRussianUi(user?.role);
+  const readOnly = isReadOnlyCourseViewer(user?.role);
 
   useEffect(() => {
     loadCourses();
@@ -59,17 +69,19 @@ export default function CoursesPage() {
           description: `${course.total_lessons} lessons, ${course.total_steps} steps`
         }));
       } else {
-        // For teachers/admins, get all courses they have access to
-        const allCourses = await apiClient.getCourses();
-        coursesData = allCourses.map((course: Course) => ({
-          id: course.id,
+        // Staff catalog (2026-10-03): every course the role may open — all published ones for
+        // teachers/curators/head curators, drafts too for head teachers and admins.
+        const allCourses = await apiClient.getCourses({ limit: 1000 });
+        coursesData = sortStaffCatalog(allCourses.map((course: Course) => ({
+          id: String(course.id),
           title: course.title,
-          teacher: course.teacher?.name || 'Unknown',
-          image: course.image,
+          teacher: course.teacher_name || course.teacher?.name || 'Unknown',
+          image: mediaUrl(course.cover_image_url || course.image) ?? undefined,
           description: course.description,
-          modules: 0, // This would need to come from API
-          duration: 0 // This would need to come from API
-        }));
+          modules: course.total_modules ?? 0,
+          in_my_groups: course.in_my_groups,
+          isDraft: course.status === 'draft',
+        })));
       }
       
       setCourses(coursesData);
@@ -119,13 +131,15 @@ export default function CoursesPage() {
     );
   }
 
+  const visible = user?.role === 'student' ? courses : filterCatalog(courses, search);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h2 className="text-2xl sm:text-3xl font-bold">Courses</h2>
-        {user?.role === 'teacher' && (
+        <h2 className="text-2xl sm:text-3xl font-bold">{ru ? 'Курсы' : 'Courses'}</h2>
+        {canEditCourseContent(user?.role) && (
           <Button 
-            onClick={() => navigate('/teacher/courses')}
+            onClick={() => navigate('/admin/courses')}
             className="px-4 py-2 w-full sm:w-auto"
           >
             Manage Courses
@@ -133,16 +147,39 @@ export default function CoursesPage() {
         )}
       </div>
 
-      {courses.length === 0 ? (
+      {readOnly && (
+        <div className="flex items-start gap-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 px-4 py-3 text-sm text-blue-800 dark:text-blue-300">
+          <Eye className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>
+            {ru
+              ? 'Только просмотр: открывайте любой урок, ответы к тестам видны. Ваши действия не сохраняются как прогресс.'
+              : 'View only: open any lesson, quiz answers included. Nothing you do is saved as progress.'}
+          </span>
+        </div>
+      )}
+
+      {user?.role !== 'student' && courses.length > 0 && (
+        <div className="relative max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={ru ? 'Поиск курса' : 'Search courses'}
+            className="pl-9"
+          />
+        </div>
+      )}
+
+      {visible.length === 0 ? (
         <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-          <p>No courses available</p>
+          <p>{ru ? 'Курсы не найдены' : 'No courses available'}</p>
           {user?.role === 'student' && (
             <p className="text-sm mt-2">Contact your teacher to get enrolled in courses</p>
           )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {courses.map(course => (
+          {visible.map(course => (
             <Card key={course.id} className="hover:shadow-lg transition-shadow overflow-hidden">
               {/* Course Image */}
               {course.image ? (
@@ -195,9 +232,26 @@ export default function CoursesPage() {
               
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg truncate">{course.title}</CardTitle>
-                <CardDescription className="text-sm">
-                  Teacher: {course.teacher}
-                </CardDescription>
+                {(course.in_my_groups || course.isDraft) && (
+                  <div className="flex flex-wrap gap-1.5">
+                    {course.in_my_groups && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                        <Users className="w-3 h-3" />
+                        {ru ? 'Ваши группы' : 'Your groups'}
+                      </span>
+                    )}
+                    {course.isDraft && (
+                      <span className="rounded-full bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300">
+                        {ru ? 'Черновик' : 'Draft'}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {user?.role === 'student' && (
+                  <CardDescription className="text-sm">
+                    Teacher: {course.teacher}
+                  </CardDescription>
+                )}
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Progress Bar - Only show if no image and student */}
@@ -240,7 +294,7 @@ export default function CoursesPage() {
                   ) : (
                     <>
                       <Play className="w-4 h-4 mr-2" />
-                      View course
+                      {ru ? 'Открыть курс' : 'View course'}
                     </>
                   )}
                 </Button>

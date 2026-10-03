@@ -25,6 +25,8 @@ import api from '../../services/api';
 import { renderTextWithLatex } from '../../utils/latex';
 import { TriageBar, TriageChip, TriagePanel } from '../../components/admin/questionReports/Triage';
 import { labelCounts, sortReports, type ReportTriage, type SortMode } from '../../lib/reportTriage';
+import { useAuth } from '../../contexts/AuthContext';
+import { canEditCourseContent } from '../../lib/courseAccess';
 
 interface QuestionReport {
   id: number;
@@ -166,6 +168,10 @@ const resolveCorrectAnswerIndices = (q: any): number[] => {
 
 export default function QuestionReportsPage() {
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
+  // Fixing the question itself is content editing: admins and head teachers (2026-10-03).
+  // Teachers keep working the queue (statuses) but don't get the edit links.
+  const canFixQuestions = canEditCourseContent(user?.role);
   const [reports, setReports] = useState<QuestionReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('');
@@ -603,6 +609,7 @@ export default function QuestionReportsPage() {
                     {/* Action Links in List Item */}
                     {report.course_info && report.step_info?.step_number && (
                       <div className="flex gap-2 mt-2 pt-2 border-t dark:border-border">
+                        {canFixQuestions && (
                         <a 
                           href={`/course/${report.course_info.id}/lesson/${report.course_info.lesson_id}/edit?step=${report.step_info.step_number}&questionId=${report.question_id}`}
                           target="_blank"
@@ -612,6 +619,7 @@ export default function QuestionReportsPage() {
                         >
                           <Edit3 className="w-3 h-3" /> Edit Step
                         </a>
+                        )}
                         <a 
                           href={`/course/${report.course_info.id}/lesson/${report.course_info.lesson_id}?step=${report.step_info.step_number}`}
                           target="_blank"
@@ -769,6 +777,7 @@ export default function QuestionReportsPage() {
                           >
                             <ExternalLink className="w-3 h-3" /> View Question
                           </a>
+                          {canFixQuestions && (
                           <a 
                             href={`/course/${selectedReport.course_info.course_id}/lesson/${selectedReport.course_info.lesson_id}/edit?step=${selectedReport.step.step_number}&questionId=${selectedReport.report.question_id}`}
                             target="_blank"
@@ -777,6 +786,7 @@ export default function QuestionReportsPage() {
                           >
                             <Edit3 className="w-3 h-3" /> Edit Step
                           </a>
+                          )}
                         </>
                       )}
                     </div>
@@ -787,7 +797,7 @@ export default function QuestionReportsPage() {
                 <div>
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-medium text-gray-700">Question Preview</h4>
-                    {selectedReport.question_data && (
+                    {selectedReport.question_data && canFixQuestions && (
                       <Button 
                         size="sm" 
                         onClick={openEditModal}
