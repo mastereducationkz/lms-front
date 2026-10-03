@@ -359,16 +359,28 @@ describe('scrubAnyParams loops instead of recursing, so it cannot overflow the s
   // a 776ms quadratic regression pass right through (round 3's design: a `?`-inclusive value
   // class, with non-secret values split at the `?` and the rest re-scanned; the ratio test
   // measured 56-71 on it). Widening the class alone on today's loop is not quadratic.
+  //
+  // Both samples process the SAME bytes (eight 8 KB calls vs one 64 KB call), each repeated until
+  // it costs >= 20 ms: a single 8 KB call is well under a millisecond, so timer granularity used to
+  // decide the old ratio (21.3 vs the < 20 limit on a busy CI runner, 2026-10-03). Linear now
+  // measures ~1, the round-3 quadratic shape ~8.
   it('scrubAnyParams scales linearly on uncapped input (CPU-time ratio, load-robust)', () => {
     type Cpu = { user: number; system: number };
     const proc = (globalThis as unknown as { process: { cpuUsage(prev?: Cpu): Cpu } }).process;
-    const cpuMs = (s: string) => { const a = proc.cpuUsage(); scrubAnyParams(s); const d = proc.cpuUsage(a); return (d.user + d.system) / 1000; };
+    const cpuMs = (s: string, reps: number) => {
+      const a = proc.cpuUsage();
+      for (let i = 0; i < reps; i++) scrubAnyParams(s);
+      const d = proc.cpuUsage(a);
+      return (d.user + d.system) / 1000;
+    };
     const at = (kb: number) => '?a='.repeat(Math.ceil((kb * 1024) / 3));
     const small = at(8), big = at(64);
     scrubAnyParams(small); scrubAnyParams(big); // JIT warm-up
+    let bigReps = 1;
+    while (cpuMs(big, bigReps) < 20 && bigReps < 1024) bigReps *= 2;
     let s = Infinity, b = Infinity;
-    for (let i = 0; i < 5; i++) { s = Math.min(s, cpuMs(small)); b = Math.min(b, cpuMs(big)); } // interleaved best-of-5
-    expect(b / Math.max(s, 0.05)).toBeLessThan(20); // linear ~7-14 measured; round-3 shape 56-71
+    for (let i = 0; i < 5; i++) { s = Math.min(s, cpuMs(small, 8 * bigReps)); b = Math.min(b, cpuMs(big, bigReps)); } // interleaved best-of-5
+    expect(b / s).toBeLessThan(4); // same bytes: linear ~1, round-3 quadratic shape ~8
   });
 });
 
