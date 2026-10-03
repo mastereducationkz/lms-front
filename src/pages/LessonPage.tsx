@@ -12,7 +12,7 @@ import { api } from '../services/api/client';
 import type { LessonLock } from '../services/api/lessons';
 import type { Lesson, Step, Course, CourseModule, StepProgress, StepAttachment } from '../types';
 import { getMyCheckpoints, coversLabel, deadlineCountdown, formatDeadline, type StudentCheckpointItem } from '../services/api/checkpoints';
-import { buildCheckpointHints, blockingCheckpointForUnit, isOpen as isCheckpointOpen, lockKindFor, type CheckpointHints } from '../lib/checkpointHints';
+import { buildCheckpointHints, isOpen as isCheckpointOpen, lockKindFor, type CheckpointHints } from '../lib/checkpointHints';
 import CheckpointLockGuide from '../components/checkpoints/CheckpointLockGuide';
 import { unitStepProgress } from '../lib/unitProgress';
 import YouTubeVideoPlayer from '../components/YouTubeVideoPlayer';
@@ -324,8 +324,6 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                             const isAccessible = (lecture as any).is_accessible !== false; // Default to accessible if not specified
                             const isCheckpointLesson = (lecture as any).kind === 'checkpoint';
                             const checkpointItem = checkpointHints?.byQuizLesson.get(Number(lecture.id));
-                            const blockingCheckpoint = checkpointHints ? blockingCheckpointForUnit(checkpointHints, Number(lecture.id)) : null;
-                            const lockedByCheckpoint = !!blockingCheckpoint;
                             const progress = unitStepProgress(lecture);
 
                             const getLessonIcon = () => {
@@ -344,9 +342,7 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                                 title={!isAccessible
                                   ? (isCheckpointLesson && checkpointItem
                                       ? (checkpointItem.locked_reason || 'This checkpoint is not open yet')
-                                      : lockedByCheckpoint
-                                        ? `Finish Checkpoint ${blockingCheckpoint!.number} before starting this unit`
-                                        : "Complete previous lessons to unlock")
+                                      : "Complete previous lessons to unlock")
                                   : progress.title}
                                 className={`relative w-full justify-start pl-12 pr-4 py-3 h-auto rounded-none border-b border-border/30 border-l-4 flex items-center gap-3 text-left text-sm ${
                                   isSelected
@@ -456,11 +452,10 @@ export default function LessonPage() {
   // SAT Checkpoints: the student's checkpoint rows for this course (empty if the
   // student's group doesn't have checkpoints enabled — see getMyCheckpoints).
   const [checkpointItems, setCheckpointItems] = useState<StudentCheckpointItem[]>([]);
-  // "Checkpoint N unlocked" dialog. `onContinue` is set only when this dialog is
-  // intercepting the "Next Lesson" action (see goToNextStep) AND the next lesson is
-  // still reachable — its presence switches the footer from [Later/Take checkpoint] to
-  // [Continue to next unit/Take checkpoint]. If the next lesson is itself blocked by an
-  // open checkpoint, goToNextStep passes null so the dialog only offers [Later].
+  // "Checkpoint N is open" dialog. `onContinue` is set only when this dialog is
+  // intercepting the "Next Lesson" action (see goToNextStep) — its presence switches the
+  // footer from [Not now/Take checkpoint] to [Continue to next unit/Take checkpoint].
+  // Checkpoints never lock the next unit, so that path always offers to continue.
   const [checkpointDialog, setCheckpointDialog] = useState<{ item: StudentCheckpointItem; onContinue: (() => void) | null } | null>(null);
   // Checkpoint ids whose "open" banner the student dismissed this page load.
   const [dismissedCheckpointIds, setDismissedCheckpointIds] = useState<Set<number>>(new Set());
@@ -1461,11 +1456,8 @@ export default function LessonPage() {
       };
 
       // The step-visit call above may have just opened a checkpoint that requires the
-      // unit we're leaving — tell the student before moving on. Whether the dialog's
-      // "Continue to next unit" button appears depends on whether the server will
-      // actually let them in: if the next lesson itself belongs to this (or another)
-      // open checkpoint block, the server refuses it, so we offer only "Later" +
-      // "Take checkpoint" instead of an escape route that would just 403.
+      // unit we're leaving — invite the student before moving on. Checkpoints are optional
+      // and never lock the next unit, so "Continue to next unit" is always on offer.
       const currentLessonId = lesson ? String(lesson.id) : null;
       if (currentLessonId) {
         const items = await fetchCheckpoints();
@@ -1475,10 +1467,7 @@ export default function LessonPage() {
         if (pendingItem) {
           checkpointDialogDedupRef.current.add(`${currentLessonId}:${pendingItem.checkpoint_id}`);
           checkpointStatusRef.current = new Map(items.map((item) => [item.checkpoint_id, item.status]));
-          const nextLessonBlocked = modules.some((m) =>
-            (m.lessons || []).some((l: any) => String(l.id) === String(nextLessonId) && l.is_accessible === false)
-          );
-          setCheckpointDialog({ item: pendingItem, onContinue: nextLessonBlocked ? null : proceed });
+          setCheckpointDialog({ item: pendingItem, onContinue: proceed });
           return;
         }
         checkpointStatusRef.current = new Map(items.map((item) => [item.checkpoint_id, item.status]));
@@ -1486,7 +1475,7 @@ export default function LessonPage() {
 
       proceed();
     }
-  }, [currentStep, canProceedToNext, getProceedBlockReason, currentStepIndex, orderedSteps.length, nextLessonId, goToStep, isStepCompleted, markStepAsVisited, navigate, courseId, lesson, fetchCheckpoints, modules]);
+  }, [currentStep, canProceedToNext, getProceedBlockReason, currentStepIndex, orderedSteps.length, nextLessonId, goToStep, isStepCompleted, markStepAsVisited, navigate, courseId, lesson, fetchCheckpoints]);
 
   const goToPreviousStep = useCallback(() => {
     if (currentStepIndex > 0) {
@@ -2112,7 +2101,7 @@ export default function LessonPage() {
                 continueAction={
                   lesson?.kind === 'checkpoint'
                     ? {
-                        note: 'The units this checkpoint was holding back are open again.',
+                        note: 'Done — your result is saved. Well done for taking it!',
                         label: 'Continue the course',
                         onClick: () => navigate(`/course/${courseId}`),
                       }
@@ -2240,11 +2229,9 @@ export default function LessonPage() {
 
   if (accessDenied) {
     const lock = lockKindFor(checkpointHints, Number(lessonId));
-    // The lesson itself never loaded, so its title comes from the checkpoint row that names it,
-    // falling back to the course listing.
+    // The lesson itself never loaded, so its title comes from the course listing.
     const unitTitle =
-      (lock?.kind === 'unit-blocked' ? lock.unit?.title : null)
-      || modules.flatMap((m) => m.lessons || []).find((l) => String(l.id) === lessonId)?.title
+      modules.flatMap((m) => m.lessons || []).find((l) => String(l.id) === lessonId)?.title
       || null;
     const guide = (
       <CheckpointLockGuide
@@ -2360,7 +2347,7 @@ export default function LessonPage() {
                 return (
                   <span className={`h-5 px-2 inline-flex items-center rounded text-[10px] font-medium shrink-0 ${CHECKPOINT_CHIP_CLASS[asCheckpointQuiz.status]}`}>
                     {asCheckpointQuiz.status === 'overdue'
-                      ? `Overdue · ${deadlineCountdown(asCheckpointQuiz.deadline)} · a submission now is marked late`
+                      ? `Overdue · ${deadlineCountdown(asCheckpointQuiz.deadline)} · you can still submit — it’ll just be marked late`
                       : asCheckpointQuiz.deadline && asCheckpointQuiz.status !== 'completed'
                         ? `Due ${formatDeadline(asCheckpointQuiz.deadline)} · ${deadlineCountdown(asCheckpointQuiz.deadline)}`
                         : CHECKPOINT_CHIP_LABEL[asCheckpointQuiz.status]}
@@ -2498,14 +2485,13 @@ export default function LessonPage() {
                     <span className="min-w-0 text-muted-foreground">
                       {openCheckpointBanner.status === 'overdue' ? (
                         <>
-                          <span className="font-semibold text-red-600 dark:text-red-400">Checkpoint {openCheckpointBanner.number} is overdue.</span>
-                          {' '}The next units stay locked until you submit it.{' '}
-                          {deadlineCountdown(openCheckpointBanner.deadline)}, and a submission now is marked late.
+                          <span className="font-semibold text-foreground">Checkpoint {openCheckpointBanner.number} is still open.</span>
+                          {' '}The deadline has passed, but you can still take it — it’ll just be marked late.
                         </>
                       ) : (
                         <>
                           <span className="font-semibold text-foreground">Checkpoint {openCheckpointBanner.number} is open.</span>
-                          {' '}Submit it to unlock the next units. Due{' '}
+                          {' '}Take it whenever you’re ready; it’s optional. Due{' '}
                           <span className="text-foreground">{formatDeadline(openCheckpointBanner.deadline)}</span>
                           {', '}{deadlineCountdown(openCheckpointBanner.deadline)}.
                         </>
@@ -2763,9 +2749,9 @@ export default function LessonPage() {
           {checkpointDialog && (
             <div className="mb-4 space-y-2 text-sm text-muted-foreground">
               <p>
-                You have finished every unit of this block. The next units stay{' '}
-                <span className="font-semibold text-amber-700 dark:text-amber-400">locked</span> until you
-                submit <span className="font-semibold text-foreground">Checkpoint {checkpointDialog.item.number}</span>.
+                Great work — you’ve finished every unit in this block!{' '}
+                <span className="font-semibold text-foreground">Checkpoint {checkpointDialog.item.number}</span> is
+                ready whenever you are: a quick way to see how much you’ve learned. Your next units are already open.
               </p>
               <p>
                 Covers <span className="text-foreground">{coversLabel(checkpointDialog.item.covers)}</span>
@@ -2773,8 +2759,8 @@ export default function LessonPage() {
               </p>
               <p>
                 Due <span className="font-semibold text-foreground">{formatDeadline(checkpointDialog.item.deadline)}</span>{' '}
-                ({deadlineCountdown(checkpointDialog.item.deadline)}). After the deadline you can still submit,
-                but it is marked late.
+                ({deadlineCountdown(checkpointDialog.item.deadline)}). You can still take it after that;
+                it’ll just be marked late.
               </p>
             </div>
           )}

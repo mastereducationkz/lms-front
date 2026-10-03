@@ -182,7 +182,7 @@ export default function CheckpointsAdminPage() {
                        }
                      }} />
               <p className="mt-1 max-w-xs text-[11px] leading-snug text-muted-foreground">
-                Set this before enabling. Checkpoints below it never auto-open and never hold later units back (a mid-course group).
+                Checkpoints below it never auto-open (a mid-course group). Switching checkpoints on marks what students already earned as skipped; only checkpoints earned afterwards open. Checkpoints never hold units back.
                 {suggestedStart != null && (
                   <> Suggested: <strong className="text-foreground">{suggestedStart}</strong>{suggestedStart > 1 ? ` — half the group has finished block ${suggestedStart - 1}.` : ' — nobody has finished block 1 yet.'}</>
                 )}

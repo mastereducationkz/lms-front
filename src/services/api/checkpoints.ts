@@ -22,7 +22,8 @@ export interface CheckpointRow {
   correct_answers: number | null;
   total_questions: number | null;
   percentage: number | null;
-  opened_by: 'auto' | 'admin' | null;
+  /** `baseline`: stored skipped at switch-on (already earned then); `transfer`: carried from another group. */
+  opened_by: 'auto' | 'admin' | 'transfer' | 'baseline' | null;
   reopen_count: number;
   quiz_attempt_id: number | null;
   /** Submitted after the deadline (the deadline is soft: late work is accepted and flagged). */
@@ -39,7 +40,8 @@ export interface StudentCheckpointItem extends CheckpointRow {
   covers: CheckpointUnit[];
   total_questions: number;
   locked_reason: string | null;
-  /** Below the group's start number and never opened: not required, never gates later blocks. */
+  /** Never opens by itself (staff may open it by hand): already earned when checkpoints were
+   *  switched on for the student (`opened_by: 'baseline'`), or below the group's start number. */
   skipped: boolean;
   quiz: { course_id: number; lesson_id: number } | null;
 }
