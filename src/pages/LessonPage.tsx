@@ -2085,7 +2085,7 @@ export default function LessonPage() {
                 continueAction={
                   lesson?.kind === 'checkpoint'
                     ? {
-                        note: 'Your result is saved. Nice work!',
+                        note: 'Done — your result is saved. Well done for taking it!',
                         label: 'Continue the course',
                         onClick: () => navigate(`/course/${courseId}`),
                       }
@@ -2331,7 +2331,7 @@ export default function LessonPage() {
                 return (
                   <span className={`h-5 px-2 inline-flex items-center rounded text-[10px] font-medium shrink-0 ${CHECKPOINT_CHIP_CLASS[asCheckpointQuiz.status]}`}>
                     {asCheckpointQuiz.status === 'overdue'
-                      ? `Overdue · ${deadlineCountdown(asCheckpointQuiz.deadline)} · a submission now is marked late`
+                      ? `Overdue · ${deadlineCountdown(asCheckpointQuiz.deadline)} · you can still submit — it’ll just be marked late`
                       : asCheckpointQuiz.deadline && asCheckpointQuiz.status !== 'completed'
                         ? `Due ${formatDeadline(asCheckpointQuiz.deadline)} · ${deadlineCountdown(asCheckpointQuiz.deadline)}`
                         : CHECKPOINT_CHIP_LABEL[asCheckpointQuiz.status]}
@@ -2459,7 +2459,7 @@ export default function LessonPage() {
                       {openCheckpointBanner.status === 'overdue' ? (
                         <>
                           <span className="font-semibold text-foreground">Checkpoint {openCheckpointBanner.number} is still open.</span>
-                          {' '}It’s {deadlineCountdown(openCheckpointBanner.deadline)}. You can still take it whenever you’re ready; it’ll be marked late.
+                          {' '}The deadline has passed, but you can still take it — it’ll just be marked late.
                         </>
                       ) : (
                         <>
@@ -2722,9 +2722,9 @@ export default function LessonPage() {
           {checkpointDialog && (
             <div className="mb-4 space-y-2 text-sm text-muted-foreground">
               <p>
-                Nice work, you’ve finished every unit of this block!{' '}
+                Great work — you’ve finished every unit in this block!{' '}
                 <span className="font-semibold text-foreground">Checkpoint {checkpointDialog.item.number}</span> is
-                ready whenever you are. It’s optional, and your next units are open either way.
+                ready whenever you are: a quick way to see how much you’ve learned. Your next units are already open.
               </p>
               <p>
                 Covers <span className="text-foreground">{coversLabel(checkpointDialog.item.covers)}</span>

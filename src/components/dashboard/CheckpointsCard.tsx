@@ -54,7 +54,7 @@ export function CheckpointsCard() {
                         {STATUS_LABEL[item.status]}
                       </span>
                     </p>
-                    <p className="text-xs text-emerald-700 dark:text-emerald-300">Take it whenever you’re ready. It’s optional, and your course keeps going either way.</p>
+                    <p className="text-xs text-emerald-700 dark:text-emerald-300">Take it whenever you’re ready — it’s a great way to see how far you’ve come.</p>
                     <p className="text-xs text-muted-foreground truncate">Covers: {coversLabel(item.covers)} · {item.total_questions} questions</p>
                     {item.deadline && (
                       <p className={`text-xs ${item.status === 'overdue' ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
@@ -62,7 +62,7 @@ export function CheckpointsCard() {
                       </p>
                     )}
                     {item.status === 'overdue' && (
-                      <p className="text-xs text-muted-foreground">The deadline has passed. You can still take it; it’ll just be marked late.</p>
+                      <p className="text-xs text-muted-foreground">The deadline has passed, but you can still take it — it’ll just be marked late.</p>
                     )}
                   </div>
                   {clickable && <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />}

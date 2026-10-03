@@ -32,7 +32,7 @@ export default function CheckpointsPage() {
     <div className="p-4 md:p-6 space-y-4 max-w-3xl">
       <h1 className="text-2xl font-semibold">SAT Checkpoints</h1>
       <p className="text-sm text-muted-foreground">
-        A checkpoint opens the moment you finish its Verbal and Math units. Checkpoints are optional and your course keeps going either way, so take each one whenever you’re ready. Try to finish within {CHECKPOINT_WINDOW_LABEL} of it opening; after that you can still submit, it’ll just be marked late.
+        A checkpoint opens as soon as you finish its Verbal and Math units. They’re optional and never hold your course back — just a chance to see how much you’ve learned. Try to take each one within {CHECKPOINT_WINDOW_LABEL} of it opening; after that you can still submit, it’ll just be marked late.
       </p>
       {items.map((item) => {
         const open = item.status === 'available' || item.status === 'reopened' || item.status === 'overdue';
@@ -80,7 +80,7 @@ export default function CheckpointsPage() {
                       {item.status === 'overdue' ? 'Submit late' : 'Start'}
                     </Button>
                     {item.status === 'overdue' && (
-                      <p className="text-xs text-muted-foreground max-w-[12rem] text-right">The deadline has passed. You can still take it; it’ll be marked late.</p>
+                      <p className="text-xs text-muted-foreground max-w-[12rem] text-right">The deadline has passed, but you can still take it — it’ll just be marked late.</p>
                     )}
                   </div>
                 )}

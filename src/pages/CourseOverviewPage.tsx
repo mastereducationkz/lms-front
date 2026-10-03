@@ -198,12 +198,12 @@ export default function CourseOverviewPage() {
           {openCheckpoint && (
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-800 dark:bg-emerald-950/30" role="status">
               <p className="font-semibold text-foreground">
-                Checkpoint {openCheckpoint.number} is open: take it whenever you’re ready
+                Checkpoint {openCheckpoint.number} is open — take it whenever you’re ready
               </p>
               <p className="mt-0.5 text-sm text-foreground/80">
                 {openCheckpoint.status === 'overdue'
-                  ? `${openCheckpoint.total_questions} questions · the deadline has passed, so it’ll be marked late. It’s optional, and your course keeps going either way.`
-                  : `${openCheckpoint.total_questions} questions · due ${formatDeadline(openCheckpoint.deadline)} · ${deadlineCountdown(openCheckpoint.deadline)}. It’s optional, and your course keeps going either way.`}
+                  ? `${openCheckpoint.total_questions} questions · the deadline has passed, but you can still take it — it’ll just be marked late.`
+                  : `${openCheckpoint.total_questions} questions · due ${formatDeadline(openCheckpoint.deadline)} (${deadlineCountdown(openCheckpoint.deadline).replace(/^due /, '')}). It’s optional — your course keeps going either way.`}
               </p>
               {openCheckpoint.quiz && (
                 <Button
