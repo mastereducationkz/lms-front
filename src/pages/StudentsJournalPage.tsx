@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/api';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { CompletionMeta } from '../components/progress/CompletionMeta';
+import type { CheckpointSummary } from '../lib/completion';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import {
@@ -27,6 +29,9 @@ interface StudentRow {
   attendance_total: number;
   attendance_rate: number | null;
   lms_progress: number | null;
+  lms_lessons_done?: number;
+  lms_lessons_total?: number;
+  checkpoints?: CheckpointSummary | null;
   hw_submitted: number;
   hw_avg_score: number | null;
   az_status: 'not_started' | 'draft' | 'submitted';
@@ -235,6 +240,12 @@ export default function StudentsJournalPage() {
                   </td>
                   <td className="px-4 py-3">
                     {progressBar(s.lms_progress)}
+                    <CompletionMeta
+                      className="mt-1"
+                      lessonsDone={s.lms_lessons_done}
+                      lessonsTotal={s.lms_lessons_total}
+                      checkpoints={s.checkpoints}
+                    />
                   </td>
                   <td className="px-4 py-3">
                     {s.hw_submitted > 0 ? (

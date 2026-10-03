@@ -10,6 +10,8 @@ import { buildCheckpointHints, firstOpenCheckpoint, type CheckpointHints } from 
 import { unitStepProgress } from '../lib/unitProgress';
 
 import { Progress } from '../components/ui/progress';
+import { CompletionMeta } from '../components/progress/CompletionMeta';
+import type { CourseCompletion } from '../types';
 
 // Short chip labels/colors for a checkpoint quiz row — mirrors LessonPage's sidebar chips.
 const CHECKPOINT_CHIP_LABEL: Record<StudentCheckpointItem['status'], string> = {
@@ -49,20 +51,18 @@ export default function CourseOverviewPage() {
     return `${hours} ${hours === 1 ? 'hour' : 'hours'} ${remainingMinutes} minutes`;
   };
 
-  const calculateProgress = () => {
-    if (!modules.length) return 0;
-
-    let totalLessons = 0;
-    let completedLessons = 0;
-
-    modules.forEach(module => {
-      const lessons = module.lessons || [];
-      totalLessons += lessons.length;
-      completedLessons += lessons.filter((l: any) => l.is_completed).length;
-    });
-
-    return totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
-  };
+  // The course number comes from the backend — the same value every other screen shows
+  // (required steps of unit lessons; checkpoints and optional steps never count).
+  const [completion, setCompletion] = useState<CourseCompletion | null>(null);
+  useEffect(() => {
+    if (!courseId) return;
+    let cancelled = false;
+    apiClient.getCourseCompletion(courseId)
+      .then((data) => { if (!cancelled) setCompletion(data); })
+      .catch(() => { if (!cancelled) setCompletion(null); });
+    return () => { cancelled = true; };
+  }, [courseId]);
+  const courseProgress = completion?.completion_percentage ?? 0;
 
   useEffect(() => {
     if (courseId) {
@@ -167,9 +167,15 @@ export default function CourseOverviewPage() {
             <div className="mt-6 max-w-xl">
               <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300 mb-2">
                 <span className="font-medium">Course Progress</span>
-                <span className="font-medium">{calculateProgress()}%</span>
+                <span className="font-medium">{courseProgress}%</span>
               </div>
-              <Progress value={calculateProgress()} className="h-2" />
+              <Progress value={courseProgress} className="h-2" />
+              <CompletionMeta
+                className="mt-2"
+                lessonsDone={completion?.lessons_done}
+                lessonsTotal={completion?.lessons_total}
+                checkpoints={completion?.checkpoints}
+              />
             </div>
 
             <div className="mt-6 flex items-center space-x-4">

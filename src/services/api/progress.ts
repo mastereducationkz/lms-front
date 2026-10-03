@@ -1,4 +1,4 @@
-import type { StepProgress, CourseStepsProgress, StudentProgressOverview, DailyStreakInfo } from '../../types';
+import type { StepProgress, CourseStepsProgress, StudentProgressOverview, DailyStreakInfo, CourseCompletion } from '../../types';
 import { api } from './client';
 
 export async function markLessonComplete(lessonId: string, timeSpent: number = 0) {
@@ -88,6 +88,14 @@ export async function getLessonStepsProgress(lessonId: string): Promise<StepProg
   } catch (error) {
     throw new Error('Failed to get lesson steps progress');
   }
+}
+
+/** The course completion number for the current student (or `studentId`, for staff). */
+export async function getCourseCompletion(courseId: string, studentId?: string | number): Promise<CourseCompletion> {
+  const response = await api.get(`/progress/course/${courseId}/completion`, {
+    params: studentId ? { student_id: studentId } : undefined,
+  });
+  return response.data;
 }
 
 export async function getCourseStudentsStepsProgress(courseId: string): Promise<CourseStepsProgress> {
@@ -188,9 +196,11 @@ export async function getLessonProgressSummary(params: {
   course_id?: number;
   student_count?: number;
   overall?: {
-    total_steps: number;
-    completed_steps: number;
+    total_steps?: number;
+    completed_steps?: number;
     completion_percentage: number;
+    lessons_done?: number;
+    lessons_total?: number;
   };
   lessons: LessonProgressItem[];
 }> {

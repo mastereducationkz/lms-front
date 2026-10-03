@@ -1,6 +1,7 @@
 import type { AxiosRequestConfig } from 'axios';
 
 import { api } from './client';
+import type { CheckpointSummary } from '../../lib/completion';
 
 /**
  * Staff-facing student results report (backend /reports).
@@ -132,7 +133,10 @@ export interface StudentReport {
     course_title: string;
     total_steps: number;
     completed_steps: number;
+    lessons_done?: number;
+    lessons_total?: number;
     completion_pct: number;
+    checkpoints?: CheckpointSummary | null;
     time_spent_minutes: number;
     last_activity_at: string | null;
   }[];

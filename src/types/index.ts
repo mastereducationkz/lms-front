@@ -1,3 +1,4 @@
+import type { CheckpointSummary } from '../lib/completion';
 // =============================================================================
 // CORE TYPES
 // =============================================================================
@@ -170,6 +171,9 @@ export interface StudentProgressOverview {
   completed_lessons: number;
   completed_steps: number;
   overall_completion_percentage: number;
+  lessons_done?: number;
+  lessons_total?: number;
+  checkpoints?: CheckpointSummary | null;
   total_time_spent_minutes: number;
   daily_streak?: number; // Current daily streak count
   last_activity_date?: string; // Last date when student was active
@@ -188,8 +192,23 @@ export interface StudentCourseProgress {
   completed_lessons: number;
   completed_steps: number;
   completion_percentage: number;
+  lessons_done?: number;
+  lessons_total?: number;
+  checkpoints?: CheckpointSummary | null;
   time_spent_minutes: number;
   last_accessed?: string;
+}
+
+/** GET /progress/course/{id}/completion — the course number exactly as every screen shows it. */
+export interface CourseCompletion {
+  course_id: number;
+  student_id: number;
+  completion_percentage: number;
+  lessons_done: number;
+  lessons_total: number;
+  required_steps_done: number;
+  required_steps_total: number;
+  checkpoints: CheckpointSummary | null;
 }
 
 export interface DailyStreakInfo {
