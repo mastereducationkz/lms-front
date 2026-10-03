@@ -41,6 +41,7 @@ import type { Event, CreateEventRequest, UpdateEventRequest, EventType, Group, C
 import { EVENT_TYPE_LABELS } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { toDatetimeLocal, fromDatetimeLocalKZ } from '../lib/datetime';
+import { roleLabel } from '@/lib/roleLabel';
 
 interface EventFormProps {
   event?: Event;
@@ -472,7 +473,7 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
                   <SelectItem value="none">No teacher assigned</SelectItem>
                   {teachers.map(teacher => (
                     <SelectItem key={teacher.id} value={teacher.id.toString()}>
-                      {teacher.name} ({teacher.role})
+                      {teacher.name} ({roleLabel(teacher.role)})
                     </SelectItem>
                   ))}
                 </SelectContent>

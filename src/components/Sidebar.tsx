@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Course } from '../types';
+import { roleLabel } from '@/lib/roleLabel';
 
 /** Only three groups: primary nav, curator tools, admin tools */
 type NavCategory = 'primary' | 'curator' | 'admin';
@@ -545,7 +546,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
               {!isCollapsed && (
                 <div className="ml-3 text-left">
                   <div className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">{user?.name || 'User'}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">{user?.role === 'head_curator' ? 'Руководитель кураторов' : user?.role === 'curator' ? 'Куратор' : (user?.role || 'Unknown')}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">{roleLabel(user?.role)}</div>
                 </div>
               )}
             </div>
