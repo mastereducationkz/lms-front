@@ -212,12 +212,16 @@ export interface MeetSync {
   slow: boolean;
 }
 
+export type MeetRecordKind = 'lesson' | 'webinar';
+
 export interface MeetRecord {
   event_id: number;
   title: string;
   start: string;
   end: string;
   state: MeetRecordState;
+  /** A class lesson takes the roll; a webinar or office hours only shows who came. Absent from an older server. */
+  kind?: MeetRecordKind;
   /** Present while `state` is `waiting`. */
   waiting?: MeetWaiting;
   /** The Meet check's status (the single-lesson read only). */

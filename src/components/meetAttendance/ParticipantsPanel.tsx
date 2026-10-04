@@ -48,6 +48,15 @@ const TEXT = {
     joins: (n: number) => `${n} ${n < 5 ? 'входа' : 'входов'}`,
     unconfirmed: 'Неподтверждённые аккаунты', others: 'Другие участники',
     guest: 'гость', google: 'Google-аккаунт', phone: 'телефон', min: 'мин',
+    webinar: {
+      title: 'Кто был на вебинаре',
+      joined: (n: number) => `Подключились: ${n}`,
+      host: 'Ведущий',
+      people: 'Участники',
+      unlinked: 'Аккаунт не связан с LMS',
+      waiting: 'Кто подключался, появится после окончания вебинара.',
+      role: { curator: 'куратор', head_curator: 'старший куратор', teacher: 'преподаватель', head_teacher: 'старший преподаватель', admin: 'администратор' } as Record<string, string>,
+    },
   },
   en: {
     title: 'Participants',
@@ -76,6 +85,15 @@ const TEXT = {
     joins: (n: number) => `${n} joins`,
     unconfirmed: 'Unconfirmed accounts', others: 'Others in the room',
     guest: 'guest', google: 'Google account', phone: 'phone', min: 'min',
+    webinar: {
+      title: 'Who came',
+      joined: (n: number) => `${n} joined`,
+      host: 'Host',
+      people: 'Participants',
+      unlinked: 'Not linked to an LMS account',
+      waiting: 'Who joined appears once the webinar ends.',
+      role: { curator: 'curator', head_curator: 'head curator', teacher: 'teacher', head_teacher: 'head teacher', admin: 'admin' } as Record<string, string>,
+    },
   },
 } as const;
 
@@ -153,6 +171,9 @@ interface Props {
 export function ParticipantsPanel({ view, locale = 'en', defaultOpen = false, className }: Props) {
   const t = TEXT[locale];
   const [open, setOpen] = useState(defaultOpen);
+  if (view.kind === 'webinar') {
+    return <WebinarAudience view={view} locale={locale} open={open} onToggle={() => setOpen((v) => !v)} className={className} />;
+  }
   const ready = view.state === 'ready';
   const students = classOrder(view.students);
   const joined = students.filter((s) => s.first_join).length;
@@ -277,6 +298,72 @@ export function ParticipantsPanel({ view, locale = 'en', defaultOpen = false, cl
               </ul>
             </div>
           )}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/**
+ * A webinar or office hours beside its recording: who came and for how long — the course's
+ * audience, not a class, so no marks, no «not in the room» and nothing to confirm (2026-10-04).
+ */
+function WebinarAudience({ view, locale, open, onToggle, className }: {
+  view: ParticipantsView; locale: Locale; open: boolean; onToggle: () => void; className?: string;
+}) {
+  const t = TEXT[locale];
+  const w = t.webinar;
+  const ready = view.state === 'ready';
+  const waiting = view.state === 'waiting' || view.state === 'not_started';
+  if (!ready && !waiting) return null;
+  const people = classOrder([...view.students, ...view.others]).filter((p) => p.first_join);
+  const count = people.length + view.unknown.length;
+  const summary = ready
+    ? [w.joined(count),
+       view.teacher?.first_join ? `${w.host} ${clock(view.teacher.first_join)}–${clock(view.teacher.last_leave)}` : null,
+      ].filter(Boolean).join(' · ')
+    : null;
+
+  return (
+    <section className={cn('rounded-xl border border-border bg-card', className)} aria-label={w.title}>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-3">
+        <Users className="h-4 w-4 flex-none text-muted-foreground" aria-hidden />
+        <h2 className="text-sm font-semibold text-foreground">{w.title}</h2>
+        {summary && <span className="text-sm text-muted-foreground">{summary}</span>}
+        {ready && count > 0 && (
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={open}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-[13px] font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {open ? t.hide : t.show}
+            <ChevronDown className={cn('h-3.5 w-3.5 transition', open && 'rotate-180')} aria-hidden />
+          </button>
+        )}
+      </div>
+      {!ready && <p className="px-4 pb-3 text-xs text-muted-foreground">{w.waiting}</p>}
+      {ready && view.partial && <p className="px-4 pb-3 text-xs text-muted-foreground">{t.partial}</p>}
+
+      {ready && open && count > 0 && (
+        <div className="border-t border-border px-4 py-3 text-[13px]">
+          <h3 className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{w.people} · {count}</h3>
+          <ul className="space-y-1">
+            {people.map((p, i) => (
+              <li key={`${p.name}-${i}`} className="flex flex-wrap gap-x-2">
+                <span className="font-medium text-foreground">{p.name}</span>
+                {p.role && w.role[p.role] && <span className="text-muted-foreground">({w.role[p.role]})</span>}
+                <Stretch row={p} locale={locale} heldBack={false} />
+              </li>
+            ))}
+            {view.unknown.map((u, i) => (
+              <li key={`unknown-${i}`} className="flex flex-wrap gap-x-2">
+                <span className="font-medium text-foreground">{u.display_name || '—'}</span>
+                <span className="text-muted-foreground">({w.unlinked})</span>
+                <Stretch row={u} locale={locale} heldBack={false} />
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </section>

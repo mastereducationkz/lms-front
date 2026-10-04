@@ -303,6 +303,15 @@ describe('the class beside a recording', () => {
     expect(view.teacher).toBeNull();
   });
 
+  it('tells a webinar apart, so its panel shows who came instead of a class (2026-10-04)', () => {
+    const base = { event_id: 2, title: 'IELTS Writing Office Hours', start: '2026-09-10T14:00:00Z', end: '2026-09-10T15:00:00Z' };
+    const ready = toParticipantsView({ ...base, state: 'ready', kind: 'webinar', teacher: null, students: [],
+      others: [person('Аяулым', '2026-09-10T14:02:00Z')], unknown: [] } as MeetRecord);
+    expect([ready.kind, ready.others.map((o) => o.name)]).toEqual(['webinar', ['Аяулым']]);
+    expect(toParticipantsView({ ...base, state: 'waiting', kind: 'webinar', roster: [] } as MeetRecord).kind).toBe('webinar');
+    expect(toParticipantsView({ ...base, state: 'no_room', roster: [] } as MeetRecord).kind).toBeUndefined();
+  });
+
   it('lists who was in the room first, then who was not', () => {
     const rows = classOrder([person('Шыңғыс', null), person('Елдана', '2026-09-10T14:00:00Z'), person('Аяулым', '2026-09-10T14:07:00Z'), person('Айым', null, 'absent')]);
     expect(rows.map((r) => r.name)).toEqual(['Аяулым', 'Елдана', 'Айым', 'Шыңғыс']);
