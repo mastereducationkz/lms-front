@@ -17,7 +17,7 @@ export function TrendChart({ trend, lang }: { trend: AchievementsAnalytics['tren
           <Tooltip
             cursor={{ fill: 'rgba(37,99,235,0.06)' }}
             formatter={(v: number) => [v, tr(lang, 'Получено', 'Unlocks')]}
-            labelFormatter={(l: string) => tr(lang, `Неделя с ${l}`, `Week of ${l}`)}
+            labelFormatter={(l: string) => tr(lang, `7 дней с ${l}`, `7 days from ${l}`)}
           />
           <Bar dataKey="unlocks" fill="#2563EB" radius={[6, 6, 0, 0]} maxBarSize={36} />
         </BarChart>

@@ -111,7 +111,7 @@ export default function AchievementsAnalyticsPage() {
 
           <div className="grid gap-5 lg:grid-cols-3">
             <Section className="lg:col-span-2" title={tr(lang, 'Новые достижения по неделям', 'Unlocks per week')}
-              subtitle={tr(lang, 'Без выдачи при запуске', 'Launch grants excluded')}>
+              subtitle={tr(lang, 'Скользящие 7-дневные окна до сегодня · без выдачи при запуске', 'Rolling 7-day windows ending today · launch grants excluded')}>
               <TrendChart trend={data.trend} lang={lang} />
             </Section>
             <Section title={tr(lang, 'Самые редкие и самые частые', 'Rarest and most common')}>
