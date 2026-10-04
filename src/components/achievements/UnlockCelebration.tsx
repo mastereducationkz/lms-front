@@ -26,6 +26,7 @@ import {
 import { getMyAchievements, markAchievementsSeen, type MyAchievements } from '@/services/api/achievementsUi';
 import Confetti from './Confetti';
 import RewardPreview from './RewardPreview';
+import { ShareCelebrationButton } from '@/components/share/ShareButtons';
 import { tierStyle } from './tierStyle';
 
 export default function UnlockCelebration() {
@@ -120,6 +121,7 @@ export default function UnlockCelebration() {
             ))}
           </ul>
           <div className="flex gap-2 border-t border-border px-6 py-4">
+            <ShareCelebrationButton achievement={items[0]} onOpen={() => close(false)} />
             {wearable && (
               <Button
                 type="button"

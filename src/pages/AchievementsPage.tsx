@@ -20,6 +20,8 @@ import {
   TOTAL_LABEL,
 } from '@/lib/achievements';
 import { getMyAchievements, type MyAchievements } from '@/services/api/achievementsUi';
+import { ShareStarButton } from '@/components/share/ShareButtons';
+import { CrownsSection, MyShareLinks } from '@/components/share/ShareMoments';
 
 function Section({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
   return (
@@ -165,11 +167,14 @@ export default function AchievementsPage() {
                 </p>
                 <p className="mt-1 text-sm text-gray-700 dark:text-gray-200">«{s.reason}»</p>
                 <p className="mt-1 text-xs text-muted-foreground">{formatUnlockDate(s.created_at)}</p>
+                <ShareStarButton star={s} className="-ml-2.5 mt-1" />
               </li>
             ))}
           </ul>
         </Section>
       )}
+
+      <CrownsSection />
 
       {groups.map((g) => (
         <Section key={g.key} title={g.label} icon={<span className="h-1.5 w-1.5 rounded-full bg-[#2563EB]" aria-hidden />}>
@@ -189,6 +194,8 @@ export default function AchievementsPage() {
           </div>
         </Section>
       ))}
+
+      <MyShareLinks />
     </div>
   );
 }

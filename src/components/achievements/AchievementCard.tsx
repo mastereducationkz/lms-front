@@ -4,6 +4,7 @@ import { CheckCircle2, HelpCircle } from 'lucide-react';
 import { TIER_LABEL } from '@/lib/achievements';
 import type { Achievement } from '@/services/api/achievementsUi';
 import RewardPreview from './RewardPreview';
+import { ShareAchievementButton } from '@/components/share/ShareButtons';
 import { tierStyle } from './tierStyle';
 
 interface AchievementCardProps {
@@ -93,6 +94,7 @@ const AchievementCard = forwardRef<HTMLDivElement, AchievementCardProps>(functio
             </div>
           )
         )}
+        <ShareAchievementButton achievement={a} className="-ml-2.5 mt-1" />
       </div>
     </div>
   );
