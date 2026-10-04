@@ -785,7 +785,7 @@
   0% { transform: translateY(0) scale(0.6); opacity: 0; }
   12% { transform: translateY(-6vh) scale(1.05); opacity: 1; }
   80% { opacity: 1; }
-  100% { transform: translateY(-62vh) scale(0.9); opacity: 0; }
+  100% { transform: translateY(-48vh) scale(0.9); opacity: 0; }
 }
 @keyframes live-orca-swim {
   0% { transform: translate(-70vw, -50%); }
@@ -797,8 +797,16 @@
   75% { transform: rotate(14deg); }
 }
 .live-react-rise { animation: live-react-rise 3.2s ease-out both; }
+/* An in-flow lane: rise only its own height (--rise), then fade. */
+@keyframes live-react-rise-lane {
+  0% { transform: translateY(0) scale(0.6); opacity: 0; }
+  15% { transform: translateY(0) scale(1); opacity: 1; }
+  75% { opacity: 1; }
+  100% { transform: translateY(var(--rise, -40px)) scale(0.9); opacity: 0; }
+}
+.live-react-rise-lane { animation: live-react-rise-lane 3.2s ease-out both; }
 .live-orca-swim { animation: live-orca-swim 1.1s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .live-hand-wave { animation: live-hand-wave 1.2s ease-in-out infinite; transform-origin: 50% 90%; }
 @media (prefers-reduced-motion: reduce) {
-  .live-react-rise, .live-orca-swim, .live-hand-wave { animation: none; }
+  .live-react-rise, .live-react-rise-lane, .live-orca-swim, .live-hand-wave { animation: none; }
 }

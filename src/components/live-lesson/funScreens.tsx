@@ -14,35 +14,106 @@ import ReactionOrca, { REACTION_EMOJI } from '../mascot/ReactionOrca';
 import Confetti from '../achievements/Confetti';
 import { LiveAvatar, reducedMotion } from './orcas';
 
-/** Reactions rising across the screen; identical ones within a second merge into «🔥×7». */
-export function ReactionLayer({ socket, eventId, size = 64 }: { socket?: LiveSocket | null; eventId: number; size?: number }) {
+/** The presenter's content column (max-w-5xl) — reactions never rise over it. */
+export const CONTENT_PX = 1024;
+
+/**
+ * Where reactions may rise without covering anything (owner review, 2026-10-04):
+ * - `side` lanes in the margins beside the content column: the right edge, plus the left one on
+ *   wide screens;
+ * - an `inline` lane: a thin strip in the page flow (the student page; the presenter when its
+ *   window is too narrow for side lanes — just above the «Here now» strip).
+ * Pure, so it is tested without a screen.
+ */
+export function reactionLanes(viewport: number | null, size: number, placement: 'presenter' | 'inline'):
+  { mode: 'side' | 'inline'; lanes: ('left' | 'right')[]; laneWidth: number } {
+  if (placement === 'inline' || viewport == null) return { mode: 'inline', lanes: [], laneWidth: 0 };
+  const margin = (viewport - CONTENT_PX) / 2;
+  if (margin < size + 48) return { mode: 'inline', lanes: [], laneWidth: 0 };
+  const laneWidth = Math.floor(margin - 24);
+  return { mode: 'side', lanes: viewport >= 1360 ? ['right', 'left'] : ['right'], laneWidth };
+}
+
+function useViewport(): number | null {
+  const [width, setWidth] = useState<number | null>(() => (typeof window === 'undefined' ? null : window.innerWidth));
+  useEffect(() => {
+    const onResize = () => setWidth(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  return width;
+}
+
+function useBubbles(socket: LiveSocket | null | undefined, eventId: number) {
   const [state, setState] = useState<BubbleState>(emptyBubbles);
   useLiveEvent<ReactionEvent>(socket, eventId, 'live:reaction', (e) => setState((s) => addReaction(s, e, Date.now())));
   useEffect(() => {
     const tick = window.setInterval(() => setState((s) => prune(s, Date.now())), 500);
     return () => window.clearInterval(tick);
   }, []);
-  const still = reducedMotion();
+  return state;
+}
+
+function BubbleFace({ bubble, size }: { bubble: BubbleState['bubbles'][number]; size: number }) {
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 z-40 overflow-hidden">
-      {state.bubbles.map((b) => (
-        <div key={b.id} className={cn('absolute bottom-6', !still && 'live-react-rise')} style={{ left: `${b.x}%` }}>
-          <div className="relative">
-            <ReactionOrca kind={b.kind} code={b.person?.mascot ?? null} userId={b.person?.user_id ?? null} size={size} />
-            {b.count > 1 && (
-              <span className="absolute -right-2 -top-1 rounded-full bg-primary px-2 py-0.5 text-sm font-bold text-primary-foreground shadow">
-                {REACTION_EMOJI[b.kind]}×{b.count}
-              </span>
-            )}
-          </div>
-        </div>
-      ))}
-      {state.overflow > 0 && (
-        <span className="absolute bottom-4 right-4 rounded-full bg-black/60 px-3 py-1 text-sm font-semibold text-white">
-          +{state.overflow} reactions
+    <div className="relative">
+      <ReactionOrca kind={bubble.kind} code={bubble.person?.mascot ?? null} userId={bubble.person?.user_id ?? null} size={size} />
+      {bubble.count > 1 && (
+        <span className={cn('absolute -right-2 -top-1 rounded-full bg-primary px-1.5 py-0.5 font-bold text-primary-foreground shadow',
+          size >= 56 ? 'text-sm' : 'text-[10px]')}>
+          {REACTION_EMOJI[bubble.kind]}×{bubble.count}
         </span>
       )}
     </div>
+  );
+}
+
+/** Reactions rising in their own lanes; identical ones within a second merge into «🔥×7». */
+export function ReactionLayer({ socket, eventId, size = 64, placement = 'presenter' }: {
+  socket?: LiveSocket | null; eventId: number; size?: number; placement?: 'presenter' | 'inline';
+}) {
+  const state = useBubbles(socket, eventId);
+  const viewport = useViewport();
+  const { mode, lanes, laneWidth } = reactionLanes(viewport, size, placement);
+  const still = reducedMotion();
+  const more = state.overflow > 0 ? `+${state.overflow}` : null;
+
+  if (mode === 'inline') {
+    // A thin strip in the page flow: never over the question or the answer buttons.
+    const face = placement === 'inline' ? size : Math.round(size * 0.6);
+    const height = face + 28;
+    return (
+      <div aria-hidden className="pointer-events-none relative w-full overflow-hidden" style={{ height }}>
+        {state.bubbles.map((b) => (
+          <div key={b.id} className="absolute bottom-0" style={{ left: `calc(${4 + b.x * 0.88}% - ${face / 2}px)` }}>
+            <div className={cn(!still && 'live-react-rise-lane')} style={{ ['--rise' as string]: `-${height - face}px` }}>
+              <BubbleFace bubble={b} size={face} />
+            </div>
+          </div>
+        ))}
+        {more && <span className="absolute bottom-1 right-1 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-white">{more}</span>}
+      </div>
+    );
+  }
+
+  // Side lanes in the margins beside the content column, rising from the bottom and fading out.
+  return (
+    <>
+      {lanes.map((lane) => (
+        <div key={lane} aria-hidden
+          className={cn('pointer-events-none fixed bottom-36 top-36 z-40 overflow-hidden', lane === 'right' ? 'right-3' : 'left-3')}
+          style={{ width: laneWidth }}>
+          {state.bubbles.filter((b) => lanes.length === 1 || (b.id % 2 === 0) === (lane === 'right')).map((b) => (
+            <div key={b.id} className="absolute bottom-0" style={{ left: `calc(${10 + b.x * 0.8}% - ${size / 2}px)` }}>
+              <div className={cn(!still && 'live-react-rise')}><BubbleFace bubble={b} size={size} /></div>
+            </div>
+          ))}
+          {lane === 'right' && more && (
+            <span className="absolute bottom-1 right-1 rounded-full bg-black/60 px-3 py-1 text-sm font-semibold text-white">{more} reactions</span>
+          )}
+        </div>
+      ))}
+    </>
   );
 }
 

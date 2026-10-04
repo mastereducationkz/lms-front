@@ -57,3 +57,21 @@ describe('the fun layer renders', () => {
     }
   });
 });
+
+describe('reactions never cover the lesson', () => {
+  it('uses side lanes only where the margins beside the content column fit them', async () => {
+    const { reactionLanes } = await import('./funScreens');
+    expect(reactionLanes(1440, 64, 'presenter')).toEqual({ mode: 'side', lanes: ['right', 'left'], laneWidth: 184 });
+    expect(reactionLanes(1280, 64, 'presenter')).toMatchObject({ mode: 'side', lanes: ['right'] });
+    expect(reactionLanes(1100, 64, 'presenter')).toMatchObject({ mode: 'inline' });
+    expect(reactionLanes(390, 36, 'inline')).toMatchObject({ mode: 'inline' });
+    expect(reactionLanes(null, 64, 'presenter')).toMatchObject({ mode: 'inline' });
+  });
+  it('renders the student lane in the page flow, never as a full-screen overlay', async () => {
+    const { ReactionLayer } = await import('./funScreens');
+    const html = renderToStaticMarkup(createElement(ReactionLayer, { eventId: 1, size: 36, placement: 'inline' }));
+    expect(html).toContain('overflow-hidden');
+    expect(html).not.toContain('fixed');
+    expect(html).not.toContain('inset-0');
+  });
+});

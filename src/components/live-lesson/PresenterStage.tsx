@@ -41,7 +41,8 @@ export default function PresenterStage({ state, seconds, socket }: { state: Live
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center py-8">
         {state.recap ? <Recap recap={state.recap} big /> : idle ? <Idle link={state.link} /> : <Stage activity={activity!} />}
       </main>
-      <ReactionLayer socket={socket} eventId={state.lesson.id} size={72} />
+      {/* Side lanes beside the content column; on a narrow window, a thin strip just above «Here now». */}
+      <ReactionLayer socket={socket} eventId={state.lesson.id} size={64} />
       {state.room && state.room.length > 0 && (
         <footer className="mx-auto w-full max-w-6xl border-t border-border pt-4">
           <p className="mb-2 text-center text-sm font-semibold uppercase tracking-wide text-muted-foreground">Here now · {state.room.length}</p>

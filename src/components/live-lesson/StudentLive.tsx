@@ -72,9 +72,10 @@ export default function StudentLive({ state, api, seconds, act, socket }: Props)
           <Cheer key={`cheer-${activity.id}`} activity={activity} />
         </section>
       )}
+      {/* Reactions rise in their own strip above the buttons: never over the question or the answers. */}
+      <ReactionLayer socket={socket} eventId={state.lesson.id} size={36} placement="inline" />
       <ReactionBar state={state} api={api} me={me} />
       <HandAndLost state={state} api={api} />
-      <ReactionLayer socket={socket} eventId={state.lesson.id} size={44} />
     </div>
     </MeContext.Provider>
   );
