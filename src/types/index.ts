@@ -199,6 +199,8 @@ export interface StudentCourseProgress {
   lessons_total?: number;
   checkpoints?: CheckpointSummary | null;
   time_spent_minutes: number;
+  /** The first lesson not done yet — «Next: …» on the course card; null once all are done. */
+  next_lesson?: { id: number; title: string } | null;
   last_accessed?: string;
 }
 
