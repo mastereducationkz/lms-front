@@ -1,0 +1,82 @@
+/**
+ * The «Share» entries (SH1). Each renders nothing unless the signed-in user is a student looking
+ * at something they earned — so the same card can show on a staff screen without a Share button.
+ */
+import { Share2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import type { Achievement, StarAward } from '@/services/api/achievementsUi';
+import type { Crown } from '@/services/api/shares';
+import { openShareDialog } from './openShare';
+import { achievementItem, crownItem, starItem, type ShareItem, type ShareUser } from './shareItems';
+
+function useStudent(): ShareUser | null {
+  const { user } = useAuth();
+  return user && user.role === 'student' ? (user as ShareUser) : null;
+}
+
+function ShareEntryButton({ label = 'Share', build, onOpen, className = '' }: {
+  label?: string;
+  build: () => ShareItem | null;
+  onOpen?: () => void;
+  className?: string;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      className={`h-8 gap-1.5 px-2.5 text-[#2563EB] hover:bg-blue-50 hover:text-[#1D4ED8] dark:hover:bg-blue-950/40 ${className}`}
+      onClick={() => {
+        const item = build();
+        if (!item) return;
+        onOpen?.();
+        void openShareDialog(item);
+      }}
+    >
+      <Share2 className="h-4 w-4" aria-hidden /> {label}
+    </Button>
+  );
+}
+
+/** On an unlocked achievement card (the student's own page only). */
+export function ShareAchievementButton({ achievement, className }: { achievement: Achievement; className?: string }) {
+  const student = useStudent();
+  if (!student || !achievement.unlocked) return null;
+  return <ShareEntryButton className={className} build={() => achievementItem(achievement, student)} />;
+}
+
+/** In the unlock celebration: shares the most exciting new achievement, closing the celebration first. */
+export function ShareCelebrationButton({ achievement, onOpen }: { achievement: Achievement | undefined; onOpen: () => void }) {
+  const student = useStudent();
+  if (!student || !achievement?.unlocked) return null;
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="icon"
+      aria-label={`Share ${achievement.title}`}
+      title="Share to your story"
+      onClick={() => {
+        const item = achievementItem(achievement, student);
+        if (!item) return;
+        onOpen();
+        void openShareDialog(item);
+      }}
+    >
+      <Share2 className="h-4 w-4" aria-hidden />
+    </Button>
+  );
+}
+
+export function ShareStarButton({ star, className }: { star: StarAward; className?: string }) {
+  const student = useStudent();
+  if (!student || star.id == null) return null;
+  return <ShareEntryButton className={className} build={() => starItem(star, student)} />;
+}
+
+export function ShareCrownButton({ crown, className }: { crown: Crown; className?: string }) {
+  const student = useStudent();
+  if (!student) return null;
+  return <ShareEntryButton className={className} build={() => crownItem(crown, student)} />;
+}

@@ -28,6 +28,7 @@ import { attention, celebrationMode, useAttention } from '@/lib/attention';
 import { showAchievementToast } from './achievementToast';
 import Confetti from './Confetti';
 import RewardPreview from './RewardPreview';
+import { ShareCelebrationButton } from '@/components/share/ShareButtons';
 import { tierStyle } from './tierStyle';
 
 /** Per page load: whether the visit's opening announcement was decided, and what's been announced. */
@@ -180,6 +181,7 @@ export default function UnlockCelebration() {
             ))}
           </ul>
           <div className="flex gap-2 border-t border-border px-6 py-4">
+            <ShareCelebrationButton achievement={items[0]} onOpen={() => close(false)} />
             {wearable && (
               <Button
                 type="button"
