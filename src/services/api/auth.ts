@@ -112,6 +112,16 @@ export async function updateProfile(userId: number, profileData: { name?: string
   }
 }
 
+/** A student saves their orca avatar code, or null to go back to the automatic orca. */
+export async function updateMyMascot(mascot: string | null): Promise<User> {
+  try {
+    const response = await api.put('/users/me/mascot', { mascot });
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error.response?.data?.detail || 'Could not save your orca');
+  }
+}
+
 export async function forgotPassword(email: string): Promise<{ detail: string }> {
   // Unauthenticated; backend always returns a generic success (no user enumeration)
   const response = await axios.post(`${API_BASE_URL}/auth/forgot-password`, { email });

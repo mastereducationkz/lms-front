@@ -9,7 +9,8 @@ import { Badge } from '../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog';
-import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
+import { Avatar, AvatarFallback } from '../components/ui/avatar';
+import UserAvatar from '@/components/mascot/UserAvatar';
 import { BellOff, Info, Paperclip, Reply as ReplyIcon, X } from 'lucide-react';
 import { connectSocket } from '../services/socket';
 import { useVisiblePolling } from '../hooks/useVisiblePolling';
@@ -643,10 +644,7 @@ export default function ChatPage() {
                                   className="flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded cursor-pointer"
                                   onClick={() => startNewChat(contact)}
                                 >
-                                  <Avatar className="h-8 w-8">
-                                    <AvatarImage src={contact.avatar_url} />
-                                    <AvatarFallback>{getInitials(contact.name)}</AvatarFallback>
-                                  </Avatar>
+                                  <UserAvatar userId={contact.user_id} name={contact.name} avatarUrl={contact.avatar_url} mascot={contact.mascot} isStudent={contact.role === 'student'} size={32} fallbackClassName="bg-muted text-muted-foreground" />
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium truncate">{contact.name}</p>
                                     <p className="text-xs text-gray-500 dark:text-gray-400">Course Teacher</p>
@@ -670,10 +668,7 @@ export default function ChatPage() {
                                   className="flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded cursor-pointer"
                                   onClick={() => startNewChat(contact)}
                                 >
-                                  <Avatar className="h-8 w-8">
-                                    <AvatarImage src={contact.avatar_url} />
-                                    <AvatarFallback>{getInitials(contact.name)}</AvatarFallback>
-                                  </Avatar>
+                                  <UserAvatar userId={contact.user_id} name={contact.name} avatarUrl={contact.avatar_url} mascot={contact.mascot} isStudent={contact.role === 'student'} size={32} fallbackClassName="bg-muted text-muted-foreground" />
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium truncate">{contact.name}</p>
                                     <p className="text-xs text-gray-500 dark:text-gray-400">Group Curator</p>
@@ -697,10 +692,7 @@ export default function ChatPage() {
                                   className="flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded cursor-pointer"
                                   onClick={() => startNewChat(contact)}
                                 >
-                                  <Avatar className="h-8 w-8">
-                                    <AvatarImage src={contact.avatar_url} />
-                                    <AvatarFallback>{getInitials(contact.name)}</AvatarFallback>
-                                  </Avatar>
+                                  <UserAvatar userId={contact.user_id} name={contact.name} avatarUrl={contact.avatar_url} mascot={contact.mascot} isStudent={contact.role === 'student'} size={32} fallbackClassName="bg-muted text-muted-foreground" />
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium truncate">{contact.name}</p>
                                     <p className="text-xs text-gray-500 dark:text-gray-400">Administrator</p>
@@ -742,10 +734,7 @@ export default function ChatPage() {
                     className="flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded cursor-pointer"
                     onClick={() => startNewChat(contact)}
                   >
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={contact.avatar_url} />
-                      <AvatarFallback>{getInitials(contact.name)}</AvatarFallback>
-                    </Avatar>
+                    <UserAvatar userId={contact.user_id} name={contact.name} avatarUrl={contact.avatar_url} mascot={contact.mascot} isStudent={contact.role === 'student'} size={32} fallbackClassName="bg-muted text-muted-foreground" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{contact.name}</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{contact.role}</p>
@@ -770,12 +759,21 @@ export default function ChatPage() {
                 className="flex items-center space-x-3 p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 bg-blue-50 dark:bg-blue-900/20 border-r-2 border-blue-500 dark:border-blue-800"
               >
                 <div className="relative">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={availableContacts.find(c => c.user_id === activePartnerId)?.avatar_url} />
-                    <AvatarFallback>
-                      {getInitials(availableContacts.find(c => c.user_id === activePartnerId)?.name || '')}
-                    </AvatarFallback>
-                  </Avatar>
+                  {(() => {
+                    const c = availableContacts.find(x => x.user_id === activePartnerId);
+                    const th = threads.find(x => x.partner_id === activePartnerId);
+                    return (
+                      <UserAvatar
+                        userId={activePartnerId}
+                        name={c?.name || th?.partner_name || ''}
+                        avatarUrl={c?.avatar_url || th?.partner_avatar}
+                        mascot={c?.mascot ?? th?.partner_mascot}
+                        isStudent={(c?.role ?? th?.partner_role) === 'student'}
+                        size={40}
+                        fallbackClassName="bg-muted text-muted-foreground"
+                      />
+                    );
+                  })()}
                 </div>
                 
                 <div className="flex-1 min-w-0">
@@ -853,10 +851,7 @@ export default function ChatPage() {
                   onClick={() => { setActiveGroupConvId(null); setActivePartnerId(thread.partner_id); }}
                 >
                   <div className="relative">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={thread.partner_avatar} />
-                      <AvatarFallback>{getInitials(thread.partner_name)}</AvatarFallback>
-                    </Avatar>
+                    <UserAvatar userId={thread.partner_id} name={thread.partner_name} avatarUrl={thread.partner_avatar} mascot={thread.partner_mascot} isStudent={thread.partner_role === 'student'} size={40} fallbackClassName="bg-muted text-muted-foreground" />
                     {thread.unread_count > 0 && (
                       <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs">
                         {thread.unread_count}

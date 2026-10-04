@@ -55,6 +55,7 @@ export async function getGamificationLeaderboard(params: {
     user_id: number;
     user_name: string;
     avatar_url: string | null;
+    mascot?: string | null;
     points: number;
     rank: number;
   }>;
@@ -103,6 +104,7 @@ export async function getStudentLeaderboard(period: 'all_time' | 'this_week' | '
     user_id: number;
     user_name: string;
     avatar_url: string | null;
+    mascot?: string | null;
     steps_completed: number;
     time_spent_minutes: number;
     is_current_user: boolean;
@@ -113,6 +115,7 @@ export async function getStudentLeaderboard(period: 'all_time' | 'this_week' | '
     user_id: number;
     user_name: string;
     avatar_url: string | null;
+    mascot?: string | null;
     steps_completed: number;
     time_spent_minutes: number;
     is_current_user: boolean;

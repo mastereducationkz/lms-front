@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import UserAvatar from '@/components/mascot/UserAvatar';
+import OrcaBuilder from '@/components/mascot/OrcaBuilder';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../services/api';
 import { User, Mail, Shield, Calendar, Clock, Save, BellOff } from 'lucide-react';
@@ -100,9 +102,15 @@ export default function ProfilePage() {
 
       <div className="bg-white dark:bg-card rounded-2xl shadow-card p-6 max-w-2xl">
         <div className="flex items-center mb-6">
-          <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-xl font-semibold mr-4">
-            {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
-          </div>
+          <UserAvatar
+            userId={user?.id}
+            name={user?.name}
+            avatarUrl={user?.avatar_url}
+            mascot={user?.mascot}
+            isStudent={user?.role === 'student'}
+            size={64}
+            className="mr-4"
+          />
           <div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{user?.name}</h2>
             <p className="text-gray-600 dark:text-gray-300 capitalize">{user?.role}</p>
@@ -248,6 +256,8 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {user?.role === 'student' && <OrcaBuilder />}
 
       {/* Unsaved Changes Warning Dialog */}
       <UnsavedChangesDialog

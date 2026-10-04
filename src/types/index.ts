@@ -33,6 +33,9 @@ export interface User {
   trial_expires_at?: string; // Earliest active trial deadline; absent/undefined => no active trial
   /** From /auth/me only: the user's own Google Workspace address, used to open Meet on the work account. */
   workspace_email?: string | null;
+  avatar_url?: string | null;
+  /** A student's chosen orca avatar code (components/mascot); null = the automatic one. */
+  mascot?: string | null;
 }
 
 export type UserRole = 'student' | 'teacher' | 'curator' | 'admin' | 'head_curator' | 'head_teacher' | 'parent';
@@ -942,6 +945,7 @@ export interface MessageThread {
   partner_name: string;
   partner_role: string;
   partner_avatar?: string;
+  partner_mascot?: string | null;
   last_message: {
     content: string;
     created_at: string | null;
@@ -1011,6 +1015,7 @@ export interface AvailableContact {
   name: string;
   role: string;
   avatar_url?: string;
+  mascot?: string | null;
   student_id?: string;
 }
 
@@ -1019,6 +1024,7 @@ export interface Conversation {
   partner_name: string;
   partner_role: string;
   partner_avatar?: string;
+  partner_mascot?: string | null;
   last_message: {
     content: string;
     created_at: string | null;

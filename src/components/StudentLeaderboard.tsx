@@ -4,12 +4,14 @@ import { Button } from './ui/button';
 import { Skeleton } from './ui/skeleton';
 import { Crown, Dumbbell, Flame, Star } from 'lucide-react';
 import apiClient from '../services/api';
+import UserAvatar from '@/components/mascot/UserAvatar';
 
 interface LeaderboardEntry {
   rank: number;
   user_id: number;
   user_name: string;
   avatar_url: string | null;
+  mascot?: string | null;
   steps_completed: number;
   time_spent_minutes: number;
   is_current_user: boolean;
@@ -222,6 +224,15 @@ export default function StudentLeaderboard() {
             {myRankInfo ? (
           <div className="mb-4">
             <div className="flex items-end justify-between px-2 mb-2">
+              <div className="flex items-center gap-3">
+              <UserAvatar
+                userId={currentUser?.id}
+                name={currentUser?.name}
+                avatarUrl={currentUser?.avatar_url}
+                mascot={currentUser?.mascot}
+                isStudent={currentUser?.role === 'student'}
+                size={48}
+              />
               <div className="flex flex-col">
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-1">Your Rank</span>
                 <div className="flex items-center gap-2 ">
@@ -236,6 +247,7 @@ export default function StudentLeaderboard() {
                     <span className="inline-flex items-center gap-1 text-sm font-bold text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-secondary px-2 py-0.5 rounded-full"><Dumbbell className="h-3.5 w-3.5" aria-hidden="true" />GRINDING</span>
                   )}
                 </div>
+              </div>
               </div>
               <div className="flex flex-col items-end">
                 <span className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-1">Rank</span>

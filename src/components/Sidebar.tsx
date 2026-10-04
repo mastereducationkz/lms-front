@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import UserAvatar from '@/components/mascot/UserAvatar';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { connectSocket } from '../services/socket';
@@ -539,9 +540,14 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
             className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-secondary transition-colors`}
           >
             <div className="flex items-center">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
-              </div>
+              <UserAvatar
+                userId={user?.id}
+                name={user?.name}
+                avatarUrl={user?.avatar_url}
+                mascot={user?.mascot}
+                isStudent={user?.role === 'student'}
+                size={40}
+              />
               {!isCollapsed && (
                 <div className="ml-3 text-left">
                   <div className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">{user?.name || 'User'}</div>

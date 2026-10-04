@@ -319,6 +319,7 @@ export async function getStudentsJournal(params?: {
     name: string;
     email: string;
     avatar_url: string | null;
+    mascot?: string | null;
     group_id: number;
     group_name: string;
     attendance_attended: number;

@@ -331,6 +331,7 @@ export async function getCuratorDetails(curatorId: number): Promise<{
   name: string;
   email: string;
   avatar_url: string | null;
+  mascot?: string | null;
   groups: Array<{
     id: number;
     name: string;
