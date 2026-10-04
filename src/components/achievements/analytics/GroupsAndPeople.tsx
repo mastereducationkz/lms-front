@@ -68,12 +68,10 @@ export function TopEarners({ people, lang }: { people: AnalyticsPerson[]; lang: 
 export function ShareTotals({ stats, lang }: { stats: ShareStats; lang: Lang }) {
   const m = stats.totals.by_method || {};
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       <StatCard label={tr(lang, 'Поделились', 'Shares')} value={stats.totals.shares} />
-      <StatCard label={tr(lang, 'Просмотры ссылок', 'Link views')} value={stats.totals.views} />
-      <StatCard label={tr(lang, 'В сторис (share)', 'Share sheet')} value={m.native ?? 0}
-        hint={`${tr(lang, 'Скачали', 'Downloads')} ${m.download ?? 0}`} />
-      <StatCard label={tr(lang, 'Ссылка / QR', 'Link / QR')} value={(m.copy ?? 0) + (m.qr ?? 0)} />
+      <StatCard label={tr(lang, 'В сторис (share)', 'Share sheet')} value={m.native ?? 0} />
+      <StatCard label={tr(lang, 'Сохранили картинку', 'Saved image')} value={m.download ?? 0} />
     </div>
   );
 }

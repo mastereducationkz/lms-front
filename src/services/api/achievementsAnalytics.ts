@@ -78,11 +78,12 @@ export interface AchievementsAnalytics {
   };
 }
 
+/** Students share the card image only (owner, 2026-10-04: no links, no public page). */
 export interface ShareStats {
-  totals: { shares: number; views: number; by_method: Partial<Record<'native' | 'download' | 'copy' | 'qr', number>> };
-  by_kind: Record<string, { shares?: number; views?: number }>;
-  by_achievement: { key: string; shares: number; views: number }[];
-  last_30_days: { date: string; shares: number; views: number }[];
+  totals: { shares: number; by_method: Partial<Record<'native' | 'download', number>> };
+  by_kind: Record<string, { shares?: number }>;
+  by_achievement: { key: string; shares: number }[];
+  last_30_days: { date: string; shares: number }[];
 }
 
 export async function getAchievementsAnalytics(params: { groupId?: number | null; weeks?: number } = {}): Promise<AchievementsAnalytics> {
