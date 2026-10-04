@@ -13,13 +13,15 @@ export interface SpotlightInput {
   /** The student is held on the Assignment Zero gate. */
   assignmentZeroGate: boolean;
   pathname: string;
+  /** The one-popup queue lets a nudge show (a quiet, non-first visit); defaults to allowed. */
+  nudgeAllowed?: boolean;
 }
 
 /** Students only, while they still have the automatic orca, outside the tour and the gate. */
 export function shouldShowSpotlight(s: SpotlightInput): boolean {
   if (s.role !== 'student') return false;
   if (s.mascot) return false;
-  if (s.dismissed || s.tourActive || s.assignmentZeroGate) return false;
+  if (s.dismissed || s.tourActive || s.assignmentZeroGate || s.nudgeAllowed === false) return false;
   if (s.pathname.startsWith('/assignment-zero') || s.pathname.startsWith('/profile')) return false;
   return true;
 }
@@ -59,12 +61,5 @@ export function subscribeSpotlight(listener: () => void): () => void {
 
 export const spotlightVersion = () => version;
 
-/** Whether the onboarding tour is still owed to this user (mirrors OnboardingManager). */
-export function onboardingPending(userId: string | number, onboardingCompleted?: boolean): boolean {
-  if (onboardingCompleted) return false;
-  try {
-    return window.localStorage.getItem(`onboarding_completed_${userId}`) !== 'true';
-  } catch {
-    return true;
-  }
-}
+/** Whether the onboarding tour is still owed to this user — one rule, kept in the attention queue. */
+export { onboardingOwed as onboardingPending } from '../../lib/attention';

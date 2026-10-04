@@ -29,6 +29,11 @@ describe('«Meet your Kasatik» spotlight rule', () => {
     }
   });
 
+  it('waits for the one-popup queue: a quiet, non-first visit', () => {
+    expect(shouldShowSpotlight({ ...base, nudgeAllowed: false })).toBe(false);
+    expect(shouldShowSpotlight({ ...base, nudgeAllowed: true })).toBe(true);
+  });
+
   it('respects Later, the onboarding tour and the Assignment Zero gate', () => {
     expect(shouldShowSpotlight({ ...base, dismissed: true })).toBe(false);
     expect(shouldShowSpotlight({ ...base, tourActive: true })).toBe(false);
