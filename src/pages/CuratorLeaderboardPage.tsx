@@ -41,6 +41,7 @@ import LessonMaterialsBadge, { LessonMaterialsDialog } from '../components/class
 import LessonScoresDialog from '../components/attendance/LessonScoresDialog';
 import { lessonPath } from '../lib/lessonLinks';
 import UserAvatar from '@/components/mascot/UserAvatar';
+import { StarOfWeekButton } from '@/components/achievements/StarOfWeekDialog';
 
 interface HomeworkMeta {
     id: number;
@@ -552,6 +553,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   const canMarkAttendance = user?.role !== 'curator';
   // The assignment builder route is teacher/admin-only — gate the Assign shortcut the same way.
   const canAssignHw = isTeacher || user?.role === 'admin';
+  // Star of the Week (2026-10-04): the group's teacher or curator; the backend checks the group.
+  const canGiveStar = ['teacher', 'curator', 'admin'].includes(user?.role || '');
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentWeek, setCurrentWeek] = useState(1);
@@ -1723,6 +1726,13 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                             />
                             {savingOffset && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
                         </div>
+                    )}
+                    {canGiveStar && selectedGroup && data && (
+                        <StarOfWeekButton
+                            groupId={selectedGroup.id}
+                            students={data.students.map((s) => ({ id: s.student_id, name: s.student_name }))}
+                            lang={isTeacher ? 'en' : 'ru'}
+                        />
                     )}
                 </div>
             )}

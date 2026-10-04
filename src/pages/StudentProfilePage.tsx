@@ -8,6 +8,7 @@ import { CollegeBoardPasswordReveal } from '../components/CollegeBoardPasswordRe
 import { collegeBoardPasswordDisplay } from '../lib/assignmentZeroCollegeBoard';
 import { checkpointLabel, lessonsLabel, type CheckpointSummary } from '../lib/completion';
 import UserAvatar from '@/components/mascot/UserAvatar';
+import StudentAchievementsSection from '@/components/achievements/StudentAchievementsSection';
 
 // Older backends may not send `can_reveal_college_board_password` yet; on this
 // page (reachable by curators generally, not just admins) treat that as "no".
@@ -256,6 +257,9 @@ export default function StudentProfilePage() {
           </div>
         ))}
       </div>
+
+      {/* Kasatik Achievements: badges, streak and Stars of the Week (hides itself if unavailable) */}
+      <StudentAchievementsSection studentId={student.id} />
 
       {/* Tabs */}
       <div className="flex gap-0 border-b border-gray-200">
