@@ -3,7 +3,8 @@ import { Check, ChevronDown, ChevronUp, Timer } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { renderTextWithLatex } from '../../utils/latex';
 import { LETTERS, cloudSize, formatSeconds, percents } from '../../lib/liveLesson/logic';
-import type { CloudGroup, LiveOption, PublicQuestion } from '../../lib/liveLesson/types';
+import type { CloudGroup, LiveOption, Person, PublicQuestion } from '../../lib/liveLesson/types';
+import { OrcaStack } from './orcas';
 
 const GAP = '{{gap}}';
 const BLANK = '▁▁▁▁';
@@ -51,10 +52,12 @@ interface OptionRowsProps {
   counts?: number[] | null;
   large?: boolean;
   rich?: boolean;
+  /** A named reveal: the orcas of who picked each option. */
+  voters?: Person[][] | null;
 }
 
 /** Answer options, tappable while open; after «Show», bars with percentages and the right one. */
-export function OptionRows({ options, selected = [], onPick, disabled, correct, counts, large, rich }: OptionRowsProps) {
+export function OptionRows({ options, selected = [], onPick, disabled, correct, counts, large, rich, voters }: OptionRowsProps) {
   const shares = counts ? percents(counts) : null;
   return (
     <div className="grid gap-2">
@@ -79,6 +82,9 @@ export function OptionRows({ options, selected = [], onPick, disabled, correct, 
               {rich ? <RichText text={label} /> : <span className="break-words">{label}</span>}
               {option.image_url && <img src={option.image_url} alt="" className="mt-1 max-h-28 rounded border border-border" />}
             </span>
+            {voters?.[i]?.length ? (
+              <OrcaStack people={voters[i]} size={large ? 40 : 22} max={large ? 8 : 5} pop className="relative flex-none" />
+            ) : null}
             {shares && (
               <span className={cn('relative flex-none tabular-nums font-semibold', large ? 'text-2xl' : 'text-sm')}>
                 {shares[i]}%{counts && !large ? <span className="ml-1 text-xs font-normal text-muted-foreground">({counts[i]})</span> : null}

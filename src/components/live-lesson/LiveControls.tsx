@@ -10,6 +10,7 @@ import type { LiveState, StartActivity } from '../../lib/liveLesson/types';
 import ActivityComposer from './ActivityComposer';
 import StaffActivity from './StaffActivity';
 import { Countdown } from './parts';
+import { LiveAvatar } from './orcas';
 
 interface Props {
   state: LiveState;
@@ -205,7 +206,9 @@ function PickerBlock({ state, busy, onPick, onOutcome }: {
       </div>
       {pick && (
         <div className="mt-2">
-          <p className={cn('text-base font-semibold', !waiting && 'text-muted-foreground')}>{pick.name}</p>
+          <p className={cn('flex items-center gap-2 text-base font-semibold', !waiting && 'text-muted-foreground')}>
+            <LiveAvatar person={pick} size={28} className={waiting ? 'live-orca-wiggle' : undefined} />{pick.name}
+          </p>
           {waiting ? (
             <div className="mt-1.5 grid grid-cols-3 gap-1">
               <OutcomeButton disabled={busy} onClick={() => onOutcome('answered')}><UserCheck className="h-3.5 w-3.5" />Answered</OutcomeButton>

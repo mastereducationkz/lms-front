@@ -1,10 +1,14 @@
-import { useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { CheckCircle2, EyeOff, Hand, Loader2, Lock, Radio, Send, XCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { LiveApi } from '../../lib/liveLesson/api';
 import { correctIndices, mineAt, multiReady } from '../../lib/liveLesson/logic';
 import type { ActivityView, LiveState, PopcheckItem } from '../../lib/liveLesson/types';
 import { vibrate } from '../../lib/liveLesson/chime';
+import { useAuth } from '../../contexts/AuthContext';
+import Confetti from '../achievements/Confetti';
+import { LiveAvatar } from './orcas';
+import type { Person } from '../../lib/liveLesson/types';
 import { CloudView, Countdown, OptionRows, QuestionBody } from './parts';
 
 interface Props {
@@ -17,20 +21,27 @@ interface Props {
 /**
  * A student's live page (owner, 2026-09-29): the question the teacher opened, their own answer,
  * and after «Show» the class totals. Who answered what is never on a student's screen.
+ * Their own orca (owner, 2026-10-04) rides along: next to «Sent», waving when they're picked, and
+ * cheering with a little confetti when a revealed answer of theirs is right.
  */
+const MeContext = createContext<Person | null>(null);
+
 export default function StudentLive({ state, api, seconds, act }: Props) {
   const activity = state.activity;
+  const { user } = useAuth();
+  const me: Person | null = user ? { user_id: Number(user.id), name: user.name ?? null, mascot: user.mascot ?? null, avatar_url: user.avatar_url ?? null } : null;
   return (
+    <MeContext.Provider value={me}>
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <p className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
-          <Radio className="h-3.5 w-3.5" aria-hidden />Live lesson
+        <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+          {me ? <LiveAvatar person={me} size={32} /> : <Radio className="h-3.5 w-3.5" aria-hidden />}Live lesson
         </p>
         <Countdown seconds={seconds} paused={state.timer?.paused_left != null} onEnd={vibrate} />
       </div>
       {state.pick?.me && !state.pick.outcome && (
         <div className="flex items-center gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100">
-          <Hand className="h-6 w-6 flex-none" aria-hidden />
+          {me ? <span className="live-orca-wiggle flex-none"><LiveAvatar person={me} size={52} /></span> : <Hand className="h-6 w-6 flex-none" aria-hidden />}
           <p className="text-base font-semibold">You've been picked. Your turn to answer.</p>
         </div>
       )}
@@ -49,10 +60,43 @@ export default function StudentLive({ state, api, seconds, act }: Props) {
             </p>
           )}
           <ActivityBody key={activity.id} activity={activity} lessonId={state.lesson.id} api={api} act={act} />
+          <Cheer key={`cheer-${activity.id}`} activity={activity} />
         </section>
       )}
     </div>
+    </MeContext.Provider>
   );
+}
+
+/** A revealed answer of theirs was right: their orca cheers, with a short confetti burst, once. */
+function Cheer({ activity }: { activity: ActivityView }) {
+  const me = useContext(MeContext);
+  const right = gotItRight(activity);
+  const [burst, setBurst] = useState(false);
+  useEffect(() => { if (right) setBurst(true); }, [right]);
+  if (!right || !me) return null;
+  return (
+    <div className="mt-3 flex items-center gap-3 rounded-xl bg-emerald-50 p-3 text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
+      <span className="live-orca-wiggle"><LiveAvatar person={me} size={44} /></span>
+      <p className="text-sm font-semibold">Nice one, you got it right!</p>
+      {burst && <Confetti pieces={70} durationMs={1800} />}
+    </div>
+  );
+}
+
+function gotItRight(activity: ActivityView): boolean {
+  if (!activity.revealed) return false;
+  if (activity.kind === 'popcheck') {
+    const mine = (activity.mine ?? {}) as Record<string, { correct: boolean | null }>;
+    return Object.values(mine).some((m) => m?.correct === true);
+  }
+  if (activity.kind === 'mistake' && activity.results?.correct !== undefined) {
+    const stored = activity.mine;
+    const mine = Array.isArray(stored) ? (stored as number[]) : typeof stored === 'number' ? [stored] : [];
+    const correct = correctIndices(activity.results.correct) ?? [];
+    return mine.length > 0 && mine.length === correct.length && mine.every((i) => correct.includes(i));
+  }
+  return false;
 }
 
 function Waiting() {
@@ -106,7 +150,12 @@ function ActivityBody({ activity, lessonId, api, act }: { activity: ActivityView
 }
 
 function Sent({ text }: { text: string }) {
-  return <p className="inline-flex items-center gap-1.5 text-sm text-emerald-700 dark:text-emerald-400"><CheckCircle2 className="h-4 w-4" aria-hidden />{text}</p>;
+  const me = useContext(MeContext);
+  return (
+    <p className="inline-flex items-center gap-1.5 text-sm text-emerald-700 dark:text-emerald-400">
+      {me ? <span className="live-orca-pop"><LiveAvatar person={me} size={24} /></span> : <CheckCircle2 className="h-4 w-4" aria-hidden />}{text}
+    </p>
+  );
 }
 
 function CloudAnswer({ activity, open, busy, onSend, footer }: {

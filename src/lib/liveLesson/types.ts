@@ -38,9 +38,15 @@ export interface PopcheckItem {
   answered?: number;
 }
 
-export interface NamedAnswer {
+/** A named student as a live screen draws them: their orca (mascot code) or photo (owner, 2026-10-04). */
+export interface Person {
   user_id: number;
   name: string | null;
+  mascot?: string | null;
+  avatar_url?: string | null;
+}
+
+export interface NamedAnswer extends Person {
   value?: unknown;
   correct?: boolean | null;
   items?: Record<string, { value: unknown; correct: boolean | null }>;
@@ -53,6 +59,8 @@ export interface CloudEntry {
   hidden: 'filter' | 'ai' | 'teacher' | null;
   user_id?: number;
   name?: string | null;
+  mascot?: string | null;
+  avatar_url?: string | null;
 }
 
 export interface CloudGroup { text: string; count: number }
@@ -75,6 +83,8 @@ export interface ActivityView {
     explanation?: string | null;
   } | null;
   answers: NamedAnswer[] | null;
+  /** Staff, named activities only: who has answered (never what), first answer first. */
+  answered_by?: Person[] | null;
   mine: unknown;
   // poll
   options?: string[];
@@ -94,7 +104,7 @@ export interface ActivityView {
 
 export interface LiveTimer { total: number | null; ends_at: string | null; paused_left: number | null; activity_id: number | null }
 
-export interface LivePick { id: number; user_id: number; name: string | null; at: string; outcome: string | null; me: boolean }
+export interface LivePick extends Person { id: number; at: string; outcome: string | null; me: boolean }
 
 export interface LiveState {
   lesson: { id: number; title: string; start: string; end: string; status: string };
@@ -109,6 +119,8 @@ export interface LiveState {
   pick: LivePick | null;
   activity: ActivityView | null;
   presence?: { here: number; roster: number; in_meet: number; on_page: number };
+  /** Staff only: the students here now, for the presenter's «who's here» strip. */
+  room?: Person[];
 }
 
 export interface CurrentLive {
@@ -149,6 +161,8 @@ export interface MistakePreview {
 export interface ScoreSuggestion {
   user_id: number;
   name: string;
+  mascot?: string | null;
+  avatar_url?: string | null;
   current: number | null;
   suggested: number | null;
   reason: string | null;
