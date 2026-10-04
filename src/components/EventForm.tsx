@@ -221,6 +221,12 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
       return 'Maximum participants must be greater than 0';
     }
 
+    // Without an end date a series' later webinars are never created: no Meet room, no recording,
+    // no pay for the host (2026-10-04). The server refuses it too.
+    if (formData.event_type === 'webinar' && formData.is_recurring && !formData.recurrence_end_date) {
+      return 'A recurring webinar needs an end date — later webinars are only created up to it';
+    }
+
     if (formData.is_recurring && formData.recurrence_end_date) {
       const recurrenceEnd = new Date(formData.recurrence_end_date);
       const eventEnd = new Date(formData.end_datetime);
@@ -548,11 +554,14 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="recurrence_end_date">End Date</Label>
+                  <Label htmlFor="recurrence_end_date">
+                    End Date{formData.event_type === 'webinar' ? ' *' : ''}
+                  </Label>
                   <Input
                     id="recurrence_end_date"
                     type="date"
                     value={formData.recurrence_end_date}
+                    required={formData.event_type === 'webinar'}
                     onChange={(e) => handleInputChange('recurrence_end_date', e.target.value)}
                   />
                 </div>
