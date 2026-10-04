@@ -76,6 +76,7 @@ const HeadTeacherLessonRequestsPage = lazyRoute(() => import('../pages/HeadTeach
 const LandingPage = lazyRoute(() => import('../pages/LandingPage.tsx'));
 const AnalyticsPage = lazyRoute(() => import('../pages/analytics/AnalyticsPage.tsx'));
 const FavoriteFlashcardsPage = lazyRoute(() => import('../pages/FavoriteFlashcardsPage.tsx'));
+const AchievementsPage = lazyRoute(() => import('../pages/AchievementsPage.tsx'));
 const CuratorHomeworksPage = lazyRoute(() => import('../pages/CuratorHomeworksPage.tsx'));
 const CuratorLeaderboardPage = lazyRoute(() => import('../pages/CuratorLeaderboardPage.tsx'));
 const CuratorGroupsPage = lazyRoute(() => import('../pages/CuratorGroupsPage.tsx'));
@@ -247,6 +248,15 @@ export default function Router() {
             <ProtectedRoute allowedRoles={['student']}>
               <AppLayout>
                 <FavoriteFlashcardsPage />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          {/* Kasatik Achievements (2026-10-04). */}
+          <Route path="/achievements" element={
+            <ProtectedRoute allowedRoles={['student']}>
+              <AppLayout>
+                <AchievementsPage />
               </AppLayout>
             </ProtectedRoute>
           } />

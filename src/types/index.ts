@@ -218,6 +218,8 @@ export interface DailyStreakInfo {
   student_id: number;
   student_name: string;
   daily_streak: number;
+  /** The best run of learning days ever (Kasatik Achievements, 2026-10-04); absent on an older backend. */
+  longest_streak?: number;
   last_activity_date?: string;
   streak_status: 'not_started' | 'active' | 'at_risk' | 'broken';
   is_active_today: boolean;

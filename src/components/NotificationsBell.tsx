@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -6,6 +6,8 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { bellPollDelayMs, materialsLocale, relativeTime, t } from '../lib/classMaterials';
 import { lessonPath } from '../lib/lessonLinks';
 import { libraryNotificationPath } from '../lib/library';
+import { ACHIEVEMENT_NOTIFICATION_TYPE, ACHIEVEMENTS_CHECK_EVENT, achievementNotificationPath } from '../lib/achievements';
+import { getMyAchievements } from '../services/api/achievementsUi';
 import {
   BELL_NOTIFICATION_TYPES,
   getNotifications,
@@ -35,6 +37,8 @@ export default function NotificationsBell() {
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<AppNotification[]>([]);
   const [loadingList, setLoadingList] = useState(false);
+  // The last unread count seen, so a rise can tell the unlock celebration to look again.
+  const lastCount = useRef<number | null>(null);
 
   const isParent = user?.role === 'parent';
 
@@ -46,7 +50,12 @@ export default function NotificationsBell() {
       if (document.visibilityState !== 'visible') return;
       getUnreadNotificationCount(BELL_NOTIFICATION_TYPES)
         .then((count) => {
-          if (!cancelled) setUnreadCount(count);
+          if (cancelled) return;
+          if (lastCount.current !== null && count > lastCount.current) {
+            window.dispatchEvent(new Event(ACHIEVEMENTS_CHECK_EVENT));
+          }
+          lastCount.current = count;
+          setUnreadCount(count);
         })
         .catch(() => {
           /* a failed poll just tries again on the next tick */
@@ -102,6 +111,13 @@ export default function NotificationsBell() {
     if (!n.is_read) setUnreadCount((c) => Math.max(0, c - 1));
     setItems((prev) => prev.map((it) => (it.id === n.id ? { ...it, is_read: true } : it)));
     markNotificationRead(n.id).catch(() => {});
+    // An achievement notice opens its card: related_id is the unlock's id, matched to its key.
+    if (n.notification_type === ACHIEVEMENT_NOTIFICATION_TYPE) {
+      getMyAchievements()
+        .then((d) => navigate(achievementNotificationPath(n, d.achievements) ?? '/achievements'))
+        .catch(() => navigate('/achievements'));
+      return;
+    }
     // The library's notices open its tab; a lesson's materials live on its page (2026-09-28).
     const libraryPath = libraryNotificationPath(n.notification_type);
     if (libraryPath) navigate(libraryPath);

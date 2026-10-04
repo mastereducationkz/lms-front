@@ -42,6 +42,7 @@ import SampleBadge from "../components/trial/SampleBadge";
 import { TRIAL_SAMPLE_SESSIONS, TRIAL_SAMPLE_TASKS } from "../data/trialSampleData";
 import { lessonPath } from '../lib/lessonLinks';
 import LiveNowTile from '../components/dashboard/LiveNowTile';
+import { AchievementsTile } from '@/components/achievements/AchievementsTile';
 
 interface StudentDashboardProps {
   firstName: string;
@@ -841,6 +842,8 @@ export default function StudentDashboard({
       {/* Current IELTS weekly test: countdown + one checkmark per part (hides itself when off). */}
       <WeeklyTestCountdown />
       <CheckpointsCard />
+      {/* Kasatik Achievements: next up + latest unlock (hides itself until the service answers). */}
+      <AchievementsTile />
 
       {/* Exam targets vs current level per track (hides itself when off). */}
       <TargetsTile />

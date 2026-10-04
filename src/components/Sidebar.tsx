@@ -119,6 +119,8 @@ function getNavigationItems(
     ['/courses', ['head_curator', 'curator'].includes(_userRole || '') ? 'Курсы' : 'Courses', BookOpen, 0, ['teacher', 'curator', 'head_curator'], 'courses-nav', 'primary'],
     ['/homework', _userRole === 'student' ? 'My Homework' : 'Homework', ClipboardList, _userRole === 'student' ? unseenGradedCount : 0, ['student', 'teacher'], 'assignments-nav', 'primary'],
     ['/favorites', 'My Favorites', Heart, 0, ['student'], 'favorites-nav', 'primary'],
+    // Kasatik Achievements (2026-10-04): badges that unlock new orca items.
+    ['/achievements', 'Achievements', Trophy, 0, ['student'], 'achievements-nav', 'primary'],
     ['/teacher/class', 'My Class', GraduationCap, 0, ['teacher'], 'students-nav', 'primary'],
     ['/attendance', 'Attendance', UserCheck, attendance.count, ['teacher', 'head_teacher', 'head_curator'], 'attendance-nav', 'primary', false, attendance.tone, attendance.title],
     ['/analytics', ['head_curator', 'curator'].includes(_userRole || '') ? 'Аналитика' : 'Analytics', BarChart3, 0, ['teacher', 'curator', 'admin', 'head_curator', 'head_teacher'], 'analytics-nav', 'primary'],
