@@ -42,6 +42,7 @@ import LessonScoresDialog from '../components/attendance/LessonScoresDialog';
 import { lessonPath } from '../lib/lessonLinks';
 import UserAvatar from '@/components/mascot/UserAvatar';
 import { StarOfWeekButton } from '@/components/achievements/StarOfWeekDialog';
+import GroupAchievementsPanel from '@/components/achievements/analytics/GroupAchievementsPanel';
 
 interface HomeworkMeta {
     id: number;
@@ -2413,6 +2414,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
             </Table>
             )}
       </div>
+      {selectedGroup && <GroupAchievementsPanel groupId={selectedGroup.id} lang={isTeacher ? 'en' : 'ru'} />}
     </div>
 
     {/* ── HW Feedback Modal ──────────────────────────────────────── */}

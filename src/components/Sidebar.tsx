@@ -124,6 +124,8 @@ function getNavigationItems(
     ['/teacher/class', 'My Class', GraduationCap, 0, ['teacher'], 'students-nav', 'primary'],
     ['/attendance', 'Attendance', UserCheck, attendance.count, ['teacher', 'head_teacher', 'head_curator'], 'attendance-nav', 'primary', false, attendance.tone, attendance.title],
     ['/analytics', ['head_curator', 'curator'].includes(_userRole || '') ? 'Аналитика' : 'Analytics', BarChart3, 0, ['teacher', 'curator', 'admin', 'head_curator', 'head_teacher'], 'analytics-nav', 'primary'],
+    // How students earn their Kasatik rewards, school-wide (2026-10-04). Teachers and curators see their groups under the leaderboard.
+    ['/admin/achievements', ['head_curator', 'curator'].includes(_userRole || '') ? 'Достижения' : 'Achievements', Trophy, 0, ['admin', 'head_curator', 'head_teacher'], 'achievements-analytics-nav', 'primary'],
     ['/review', 'Quiz Review', Presentation, 0, ['teacher', 'curator', 'admin', 'head_curator', 'head_teacher'], 'quiz-review-nav', 'primary'],
     ['/curator/homeworks', ['head_curator', 'curator'].includes(_userRole || '') ? 'Домашние задания' : 'Homework', FileText, 0, ['curator', 'head_curator'], 'homework-analytics-nav', 'curator'],
     ['/curator/leaderboard', ['head_curator', 'curator'].includes(_userRole || '') ? 'Лидерборд' : 'Leaderboard', Trophy, 0, ['curator', 'head_curator'], 'leaderboard-nav', 'curator'],

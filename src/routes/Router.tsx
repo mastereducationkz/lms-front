@@ -47,6 +47,7 @@ const BluebookGroupGridPage = lazyRoute(() => import('../pages/BluebookGroupGrid
 const ExamResultsWorkbenchPage = lazyRoute(() => import('../pages/ExamResultsWorkbenchPage.tsx'));
 const QuestionReportsPage = lazyRoute(() => import('../pages/admin/QuestionReportsPage.tsx'));
 const WeeklyTopStudentsPage = lazyRoute(() => import('../pages/admin/WeeklyTopStudentsPage.tsx'));
+const AchievementsAnalyticsPage = lazyRoute(() => import('../pages/admin/AchievementsAnalyticsPage.tsx'));
 const TelegramAnnouncementsPage = lazyRoute(() => import('../pages/admin/TelegramAnnouncementsPage.tsx'));
 const CheckpointsAdminPage = lazyRoute(() => import('../pages/admin/CheckpointsAdminPage.tsx'));
 const UserManagement = lazyRoute(() => import('../pages/UserManagement.tsx'));
@@ -457,6 +458,15 @@ export default function Router() {
             <ProtectedRoute allowedRoles={['admin', 'head_curator']}>
               <AppLayout>
                 <UserManagement />
+              </AppLayout>
+            </ProtectedRoute>
+          } />
+
+          {/* Achievements for staff (2026-10-04): the school for admins and head roles. */}
+          <Route path="/admin/achievements" element={
+            <ProtectedRoute allowedRoles={['admin', 'head_teacher', 'head_curator']}>
+              <AppLayout>
+                <AchievementsAnalyticsPage />
               </AppLayout>
             </ProtectedRoute>
           } />
