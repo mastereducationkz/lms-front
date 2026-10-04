@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../ui/button';
 import { Popover, PopoverAnchor, PopoverContent } from '../ui/popover';
 import Orca from './Orca';
+import { useAttention } from '../../lib/attention';
 import { seedMascot } from './config';
 import {
   dismissSpotlight,
@@ -24,6 +25,7 @@ function useKasatikSpotlight() {
   const navigate = useNavigate();
   const { isNextStepVisible } = useNextStep();
   useSyncExternalStore(subscribeSpotlight, spotlightVersion, spotlightVersion);
+  const queue = useAttention(user);
   const userId = user?.id ?? '';
   const visible = !!user && shouldShowSpotlight({
     role: user.role,
@@ -32,7 +34,13 @@ function useKasatikSpotlight() {
     tourActive: isNextStepVisible || onboardingPending(userId, user.onboarding_completed),
     assignmentZeroGate: user.role === 'student' && !user.special_group_only_student && user.assignment_zero_completed === false,
     pathname,
+    // One calm popup at a time: only on a quiet visit (not the first, nothing blocking shown),
+    // and once up it stays for the rest of the visit.
+    nudgeAllowed: queue.firstVisitDone() && queue.nudgeAllowed('spotlight'),
   });
+  useEffect(() => {
+    if (visible) queue.noteNudgeShown('spotlight');
+  }, [visible, queue]);
   return {
     visible,
     userId,

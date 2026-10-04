@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { DailyQuestionsEmptyState } from './DailyQuestionsEmptyState';
@@ -17,6 +18,13 @@ import {
   type QuestionWithSection,
 } from '../lib/dailyQuestions';
 import QuietBoundary from './QuietBoundary';
+import {
+  attention,
+  dailyQuestionsAutoOpenedKey,
+  dailyQuestionsDay,
+  mayAutoOpenDailyQuestions,
+  useAttention,
+} from '../lib/attention';
 import { AlertCircle, Check, X, Loader2 } from 'lucide-react';
 import { InlineMath, BlockMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
@@ -27,6 +35,17 @@ interface DailyQuestionsPopupProps {
   onOpenChange?: (open: boolean) => void;
   onComplete?: () => void;
 }
+
+/** «uid:day» pairs whose auto-open was already decided this page load (AppLayout remounts on navigation). */
+const autoDecided = new Set<string>();
+
+const readFlag = (store: 'localStorage' | 'sessionStorage', key: string) => {
+  try {
+    return window[store].getItem(key) !== null;
+  } catch {
+    return false;
+  }
+};
 
 function DailyQuestionsPopupInner({ 
   controlled = false, 
@@ -49,6 +68,16 @@ function DailyQuestionsPopupInner({
   // usable questions, since both mean "no SAT data yet" for this student.
   const [errorStatus, setErrorStatus] = useState<number | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  const { pathname } = useLocation();
+  const queue = useAttention(user);
+  // Auto mode: questions are ready and waiting for the one-popup queue's slot.
+  const [wants, setWants] = useState(false);
+  const decideKey = user ? `${user.id}:${dailyQuestionsDay()}` : '';
+  const decide = (intent: 'wants' | 'none') => {
+    autoDecided.add(decideKey);
+    if (intent === 'wants') setWants(true);
+    attention.declare('daily_questions', intent);
+  };
 
   // Use controlled or internal state
   const isDialogOpen = controlled ? isOpen : open;
@@ -66,22 +95,30 @@ function DailyQuestionsPopupInner({
     // Skip auto-load if controlled mode
     if (controlled) return;
     
-    // Check if dismissed for this session
-    const dismissedKey = `daily_questions_dismissed_${user.id}_${new Date().toISOString().split('T')[0]}`;
-    if (sessionStorage.getItem(dismissedKey)) return;
+    // The one-popup queue (owner, 2026-10-04): at most once a day, only on the dashboard, and only
+    // when nothing else has had this visit's slot. The dashboard button always opens it.
+    const day = dailyQuestionsDay();
+    const allowed = mayAutoOpenDailyQuestions({
+      pathname,
+      autoOpenedToday: readFlag('localStorage', dailyQuestionsAutoOpenedKey(user.id, day)),
+      dismissedThisSession: readFlag('sessionStorage', `daily_questions_dismissed_${user.id}_${day}`),
+      completedToday: false,
+    });
+    if (!allowed) {
+      decide('none');
+      return;
+    }
 
     try {
       setLoading(true);
       setErrorStatus(null);
       const status = await apiClient.getDailyQuestionsStatus();
 
-      // if (status.completed_today) {
-      //   setCompleted(true);
-      //   // return; // Don't return early, load questions to show results if available
-      // }
-
+      // Never open by itself just to show a finished score — the dashboard button shows it.
       if (status.completed_today) {
         setCompleted(true);
+        decide('none');
+        return;
       }
 
       // Try to load from localStorage first
@@ -96,7 +133,7 @@ function DailyQuestionsPopupInner({
 
           if (questions.length > 0) {
             setAllQuestions(questions);
-            setIsDialogOpen(true);
+            decide('wants');
             setLoading(false);
             return;
           }
@@ -131,34 +168,11 @@ function DailyQuestionsPopupInner({
 
       if (questions.length > 0) {
         setAllQuestions(questions);
-        // Check for saved results in localStorage
-        const resultsKey = `daily_questions_results_${user.id}_${today}`;
-        const savedResults = localStorage.getItem(resultsKey);
-        
-        if (savedResults && status.completed_today) {
-          try {
-            const parsedResults = JSON.parse(savedResults);
-            if (parsedResults.answers && parsedResults.score) {
-              setAnswers(parsedResults.answers);
-              setScore(parsedResults.score);
-              setShowResults(true);
-              console.log('Restored daily questions results from storage');
-            }
-          } catch (e) {
-            console.error('Failed to parse saved results', e);
-          }
-        } else if (status.completed_today && status.score != null && status.total_questions != null) {
-          // Fallback if no local results but we have status score
-          setScore({ correct: status.score, total: status.total_questions });
-          // Show results even if we don't have the user's specific answers
-          setShowResults(true);
-        }
-
-        setIsDialogOpen(true);
+        decide('wants');
+      } else {
+        // No usable questions: stay closed (the controlled dashboard button shows the empty state).
+        decide('none');
       }
-      // else: no usable questions and not completed today — leave the dialog closed,
-      // same as before this fix. (loadQuestions, used by the controlled dashboard
-      // button, is the path that now shows a dedicated empty state.)
     } catch (err: any) {
       console.error('Failed to load daily questions:', err);
       setErrorStatus(err?.response?.status ?? -1);
@@ -166,19 +180,62 @@ function DailyQuestionsPopupInner({
       // Still open dialog to show error in controlled mode
       if (controlled) {
         setIsDialogOpen(true);
+      } else {
+        decide('none');
       }
     } finally {
       setLoading(false);
     }
-  }, [user, controlled]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, controlled, pathname]);
 
   useEffect(() => {
     // Small delay to not block initial page load (only in auto mode)
-    if (!controlled) {
-      const timer = setTimeout(checkAndLoad, 2000);
-      return () => clearTimeout(timer);
+    if (controlled || !user || user.role !== 'student') return undefined;
+    if (pathname !== '/dashboard' || autoDecided.has(decideKey)) {
+      attention.declare('daily_questions', 'none');
+      return undefined;
     }
+    attention.declare('daily_questions', 'unknown'); // the lower nudges wait while it loads
+    const timer = setTimeout(checkAndLoad, 2000);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checkAndLoad, controlled]);
+
+  // The queue grants the slot → open, and remember that today's auto-open is spent.
+  const granted = queue.granted('daily_questions');
+  useEffect(() => {
+    if (controlled || !wants || !granted || open || !user) return;
+    attention.take('daily_questions');
+    try {
+      window.localStorage.setItem(dailyQuestionsAutoOpenedKey(user.id, dailyQuestionsDay()), '1');
+    } catch {
+      /* storage blocked: once per page load still holds */
+    }
+    setWants(false);
+    setOpen(true);
+  }, [controlled, wants, granted, open, user]);
+
+  // Closing frees the slot (the visit has still had its one popup).
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (controlled) return;
+    if (open) {
+      wasOpen.current = true;
+    } else if (wasOpen.current) {
+      wasOpen.current = false;
+      attention.release('daily_questions');
+      attention.declare('daily_questions', 'none');
+    }
+  }, [open, controlled]);
+
+  useEffect(() => {
+    if (controlled) return undefined;
+    return () => {
+      attention.release('daily_questions');
+      attention.declare('daily_questions', 'none');
+    };
+  }, [controlled]);
 
   // Load data when controlled dialog opens
   useEffect(() => {

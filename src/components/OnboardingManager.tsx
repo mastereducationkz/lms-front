@@ -8,6 +8,7 @@ import { storage } from '../utils/storage';
 import apiClient from '../services/api';
 import { NextStepReact } from 'nextstepjs';
 import { getAllTourSteps } from '../config/allTourSteps';
+import { attention } from '../lib/attention';
 
 interface OnboardingManagerProps {
   children: React.ReactNode;
@@ -108,6 +109,11 @@ export default function OnboardingManager({ children }: OnboardingManagerProps) 
         if (!user.onboarding_completed && !localCompleted) {
           // Показываем приветственные экраны
           console.log('[OnboardingManager] Starting onboarding flow for', user.role);
+          // One calm popup at a time: this visit belongs to onboarding — nothing else opens until the next one.
+          attention.begin(user.id, true);
+          attention.markOnboardingVisit();
+          attention.declare('onboarding', 'wants');
+          attention.take('onboarding');
           setShowWelcome(true);
           setOnboardingShownInSession(true); // Помечаем, что уже показали в этой сессии
         } else {
@@ -130,6 +136,8 @@ export default function OnboardingManager({ children }: OnboardingManagerProps) 
   const handleTourComplete = async () => {
     console.log('Tour completed!');
     setShowTour(false);
+    attention.release('onboarding');
+    attention.declare('onboarding', 'none');
     
     // Сохраняем статус на сервере
     if (user) {
