@@ -257,7 +257,10 @@ export default function BluebookGroupGridPage() {
                         <div className="font-semibold">
                           {c.is_baseline ? 'Baseline #5' : `Bluebook #${c.test_number}`}
                         </div>
-                        <div className="text-[10px] font-normal text-muted-foreground">
+                        <div
+                          className="text-[10px] font-normal text-muted-foreground"
+                          title={!c.is_baseline && c.lesson_number ? `Homework of lesson ${c.lesson_number}` : undefined}
+                        >
                           {c.is_baseline
                             ? `${formatDayMonth(c.due_date) ?? '—'} · Assignment Zero`
                             : c.is_assigned

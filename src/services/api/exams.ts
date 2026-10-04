@@ -173,7 +173,10 @@ export interface BluebookGrid {
     test_number: number | null;
     assignment_id: number | null;
     due_date: string | null;
+    /** The group's programme week of the due date — the «Неделя» the leaderboard and the CRM show. */
     week_number: number | null;
+    /** Which of the group's lessons the homework belongs to. Absent from an older server. */
+    lesson_number?: number | null;
     is_baseline: boolean;
     /** False when no Bluebook homework exists for this test in this group. */
     is_assigned: boolean;
