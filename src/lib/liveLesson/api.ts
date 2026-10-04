@@ -1,6 +1,6 @@
 import type {
   CurrentLive, LiveMode, LiveRecord, LiveSettings, LiveState, MistakePreview, PopcheckPreview, QuestionRef,
-  StartActivity, Suggestions,
+  StartActivity, Suggestions, FunResult, ReactionKind,
 } from './types';
 
 /**
@@ -32,6 +32,15 @@ export function liveApi(request: Requester) {
       post<PopcheckPreview>(`${base(id)}/popcheck/preview`, { exclude, count }),
     mistakePreview: (id: number) => request<MistakePreview>(`${base(id)}/mistake/preview`),
     suggestions: (id: number) => request<Suggestions>(`${base(id)}/suggestions`),
+    // The fun layer (owner, 2026-10-04).
+    react: (id: number, kind: ReactionKind) => post<FunResult>(`${base(id)}/react`, { kind }),
+    lost: (id: number) => post<FunResult>(`${base(id)}/lost`),
+    hand: (id: number, up: boolean) => post<FunResult>(`${base(id)}/hand`, { up }),
+    callHand: (id: number, userId: number) => post<void>(`${base(id)}/hands/${userId}/call`),
+    pauseReactions: (id: number, paused: boolean) => post<void>(`${base(id)}/reactions`, { paused }),
+    crownSuggestion: (id: number) => request<{ user_id: number | null }>(`${base(id)}/crown/suggestion`),
+    crown: (id: number, userId: number | null) => post<void>(`${base(id)}/crown`, { user_id: userId }),
+    recap: (id: number, show: boolean) => post<void>(`${base(id)}/recap`, { show }),
     confirm: (id: number, userIds?: number[]) => post<{ written: number }>(`${base(id)}/suggestions/confirm`, { user_ids: userIds ?? null }),
     settings: () => request<LiveSettings>('/live/settings'),
     setMode: (mode: LiveMode) => request<LiveSettings>('/live/settings', { method: 'PUT', body: { mode } }),

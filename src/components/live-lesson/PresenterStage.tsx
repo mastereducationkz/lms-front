@@ -7,6 +7,8 @@ import { popcheckRight, rightAnswerers, votersByOption } from '../../lib/liveLes
 import type { ActivityView, LiveState } from '../../lib/liveLesson/types';
 import { CloudView, Countdown, OptionRows, QuestionBody } from './parts';
 import { OrcaStack, OrcaStrip, PickReveal } from './orcas';
+import { AnswerLane, ReactionLayer, Recap } from './funScreens';
+import type { LiveSocket } from '../../lib/liveLesson/useLiveLesson';
 
 /**
  * The full-screen presenter view the teacher screen-shares (owner, 2026-09-29). Idle: a big QR
@@ -16,7 +18,7 @@ import { OrcaStack, OrcaStrip, PickReveal } from './orcas';
  * named reveal the poll voters per option and only the RIGHT answerers of a quiz — a wrong answer
  * never goes on the big screen. Anonymous activities show no orcas at all.
  */
-export default function PresenterStage({ state, seconds }: { state: LiveState; seconds: number | null }) {
+export default function PresenterStage({ state, seconds, socket }: { state: LiveState; seconds: number | null; socket?: LiveSocket | null }) {
   const activity = state.activity;
   const idle = !activity || (activity.status === 'closed' && !activity.revealed && !activity.answered);
   return (
@@ -37,8 +39,9 @@ export default function PresenterStage({ state, seconds }: { state: LiveState; s
         </div>
       )}
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center py-8">
-        {idle ? <Idle link={state.link} /> : <Stage activity={activity!} />}
+        {state.recap ? <Recap recap={state.recap} big /> : idle ? <Idle link={state.link} /> : <Stage activity={activity!} />}
       </main>
+      <ReactionLayer socket={socket} eventId={state.lesson.id} size={72} />
       {state.room && state.room.length > 0 && (
         <footer className="mx-auto w-full max-w-6xl border-t border-border pt-4">
           <p className="mb-2 text-center text-sm font-semibold uppercase tracking-wide text-muted-foreground">Here now · {state.room.length}</p>
@@ -84,9 +87,9 @@ function Answered({ activity }: { activity: ActivityView }) {
         <Users className="h-8 w-8" aria-hidden />
         <span><b className="text-foreground">{activity.answered}</b>{activity.offered ? ` of ${Math.max(activity.offered, activity.answered)}` : ''} answered</span>
       </p>
-      {/* Who has answered, never what: each orca pops in as its answer arrives. */}
+      {/* The answer race: who has answered, never what — each orca swims in as its answer arrives. */}
       {activity.answered_by && activity.answered_by.length > 0 && (
-        <OrcaStack people={activity.answered_by} size={64} max={24} pop className="flex-wrap gap-y-2" />
+        <AnswerLane people={activity.answered_by} offered={activity.offered} />
       )}
     </div>
   );

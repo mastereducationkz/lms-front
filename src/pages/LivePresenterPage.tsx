@@ -24,5 +24,5 @@ export default function LivePresenterPage() {
       </div>
     );
   }
-  return <PresenterStage state={state} seconds={seconds} />;
+  return <PresenterStage state={state} seconds={seconds} socket={socket} />;
 }

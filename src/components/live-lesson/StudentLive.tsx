@@ -8,6 +8,9 @@ import { vibrate } from '../../lib/liveLesson/chime';
 import { useAuth } from '../../contexts/AuthContext';
 import Confetti from '../achievements/Confetti';
 import { LiveAvatar } from './orcas';
+import { ReactionLayer, Recap } from './funScreens';
+import { HandAndLost, ReactionBar } from './StudentFun';
+import type { LiveSocket } from '../../lib/liveLesson/useLiveLesson';
 import type { Person } from '../../lib/liveLesson/types';
 import { CloudView, Countdown, OptionRows, QuestionBody } from './parts';
 
@@ -16,6 +19,7 @@ interface Props {
   api: LiveApi;
   seconds: number | null;
   act: <T>(write: () => Promise<T>) => Promise<T>;
+  socket?: LiveSocket | null;
 }
 
 /**
@@ -26,7 +30,7 @@ interface Props {
  */
 const MeContext = createContext<Person | null>(null);
 
-export default function StudentLive({ state, api, seconds, act }: Props) {
+export default function StudentLive({ state, api, seconds, act, socket }: Props) {
   const activity = state.activity;
   const { user } = useAuth();
   const me: Person | null = user ? { user_id: Number(user.id), name: user.name ?? null, mascot: user.mascot ?? null, avatar_url: user.avatar_url ?? null } : null;
@@ -44,6 +48,11 @@ export default function StudentLive({ state, api, seconds, act }: Props) {
           {me ? <span className="live-orca-wiggle flex-none"><LiveAvatar person={me} size={52} /></span> : <Hand className="h-6 w-6 flex-none" aria-hidden />}
           <p className="text-base font-semibold">You've been picked. Your turn to answer.</p>
         </div>
+      )}
+      {state.recap && (
+        <section className="rounded-2xl border border-amber-300 bg-amber-50/60 p-4 dark:border-amber-800 dark:bg-amber-950/20">
+          <Recap recap={state.recap} />
+        </section>
       )}
       {!activity ? (
         <Waiting />
@@ -63,6 +72,9 @@ export default function StudentLive({ state, api, seconds, act }: Props) {
           <Cheer key={`cheer-${activity.id}`} activity={activity} />
         </section>
       )}
+      <ReactionBar state={state} api={api} me={me} />
+      <HandAndLost state={state} api={api} />
+      <ReactionLayer socket={socket} eventId={state.lesson.id} size={44} />
     </div>
     </MeContext.Provider>
   );

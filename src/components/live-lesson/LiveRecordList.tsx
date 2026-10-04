@@ -12,6 +12,8 @@ import { CloudView, OptionRows, QuestionBody } from './parts';
  * its results, who answered what, picker turns and the suggested scores; a student sees only their own
  * answers (a pop-check's key once shown, no poll totals).
  */
+const ENERGY_EMOJI: Record<string, string> = { love: '😍', laugh: '😂', fire: '🔥', clap: '👏', mindblown: '🤯', splash: '🌊' };
+
 export default function LiveRecordList({ eventId, api, refreshKey }: { eventId: number; api: LiveApi; refreshKey?: unknown }) {
   const [record, setRecord] = useState<LiveRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +29,14 @@ export default function LiveRecordList({ eventId, api, refreshKey }: { eventId: 
   }
   return (
     <div className="space-y-3">
+      {(record.crowned || (record.energy && record.energy.total > 0)) && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-primary/5 px-3 py-2 text-sm">
+          {record.energy && record.energy.total > 0 && (
+            <span>⚡ Lesson energy: <b>{record.energy.total}</b> reactions{record.energy.top ? <>, {ENERGY_EMOJI[record.energy.top]} most used</> : null}</span>
+          )}
+          {record.crowned && <span>👑 Kasatik of the lesson: <b>{record.crowned.name}</b></span>}
+        </div>
+      )}
       {record.activities.map((a) => (
         <div key={a.id} className="rounded-xl border border-border p-3">
           <p className="mb-1.5 text-[11px] text-muted-foreground">{stampKz(a.started_at, 'en')}</p>

@@ -11,6 +11,8 @@ import ActivityComposer from './ActivityComposer';
 import StaffActivity from './StaffActivity';
 import { Countdown } from './parts';
 import { LiveAvatar } from './orcas';
+import StaffFun, { type RenderStar } from './StaffFun';
+import type { LiveSocket } from '../../lib/liveLesson/useLiveLesson';
 
 interface Props {
   state: LiveState;
@@ -18,6 +20,10 @@ interface Props {
   seconds: number | null;
   act: <T>(write: () => Promise<T>) => Promise<T>;
   presenterUrl: string;
+  /** For the live reaction counter and the «lost» signal (owner, 2026-10-04). */
+  socket?: LiveSocket | null;
+  /** The lesson page's Star of the Week dialog; the Meet panel has none. */
+  renderStar?: RenderStar;
 }
 
 /**
@@ -25,7 +31,7 @@ interface Props {
  * page: the link for the Meet chat, who is here, the timer, the random picker, the question that is
  * open (close, «Show»), and a new question. Two drivers share one state; the last tap wins.
  */
-export default function LiveControls({ state, api, seconds, act, presenterUrl }: Props) {
+export default function LiveControls({ state, api, seconds, act, presenterUrl, socket, renderStar }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const id = state.lesson.id;
@@ -61,6 +67,8 @@ export default function LiveControls({ state, api, seconds, act, presenterUrl }:
 
       <PickerBlock state={state} busy={busy} onPick={() => void run(() => api.pick(id))}
         onOutcome={(outcome) => state.pick && void run(() => api.pickOutcome(id, state.pick!.id, outcome))} />
+
+      <StaffFun state={state} api={api} act={act} socket={socket} renderStar={renderStar} />
 
       {activity && (
         <section className="space-y-2 rounded-xl border border-border p-3">

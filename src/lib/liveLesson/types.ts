@@ -121,7 +121,48 @@ export interface LiveState {
   presence?: { here: number; roster: number; in_meet: number; on_page: number };
   /** Staff only: the students here now, for the presenter's «who's here» strip. */
   room?: Person[];
+  // The fun layer (owner, 2026-10-04).
+  reactions?: ReactionsStatus;
+  crowned?: Person | null;
+  recap?: LiveRecap | null;
+  /** Students: their raised hand's place in the queue. */
+  my_hand?: { position: number; raised_at: string } | null;
+  /** Staff only. */
+  hands?: (Person & { raised_at: string })[];
+  lost?: { count: number };
+  energy?: LessonEnergy;
+  reactions_paused?: boolean;
+  group_ids?: number[];
 }
+
+export type ReactionKind = 'love' | 'laugh' | 'fire' | 'clap' | 'mindblown' | 'splash';
+export interface ReactionsStatus { on: boolean; paused: 'teacher' | 'focus' | 'timer' | null }
+
+/** Per-lesson totals only — nothing per student. */
+export interface LessonEnergy {
+  counts: Partial<Record<ReactionKind, number>>;
+  total: number;
+  top: ReactionKind | null;
+  lost: { count: number; peak: number | null; peak_at: string | null } | null;
+}
+
+export interface LiveRecap {
+  activities: number;
+  answers: number;
+  energy: LessonEnergy;
+  top: Person[];
+  crowned: Person | null;
+}
+
+/** A reaction as it arrives over the socket; an anonymous one carries no identity. */
+export interface ReactionEvent extends Partial<Person> {
+  event_id: number;
+  kind: ReactionKind;
+  at: string;
+  anonymous?: boolean;
+}
+
+export interface FunResult { accepted: boolean; retry_in: number; paused?: ReactionsStatus['paused'] }
 
 export interface CurrentLive {
   lesson: { id: number; title: string; start: string; end: string } | null;
@@ -173,6 +214,8 @@ export interface Suggestions { ran: number; min_activities: number; students: Sc
 export interface LiveRecord {
   activities: ActivityView[];
   is_staff: boolean;
+  energy?: LessonEnergy;
+  crowned?: Person | null;
   picks?: LivePick[];
   scores?: Suggestions;
 }
