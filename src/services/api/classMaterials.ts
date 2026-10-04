@@ -228,7 +228,23 @@ export async function getClassMaterialsFeed(
   if (p.before) params.before = p.before;
   if (p.limit !== undefined) params.limit = p.limit;
   const response = await api.get('/class-materials/feed', { params, cache: false } as never);
-  return response.data as FeedPage;
+  return normalizeFeedPage(response?.data);
+}
+
+/** A feed page the «Материалы» page can always render. A body without a `lessons` array is a
+ *  failed load (the page shows its retry state), and a missing `groups` is just "no groups" —
+ *  LMS-FRONT-B (2026-10-04): a resolved response without `groups` reached `groups.slice()` and
+ *  crashed the whole page into the error screen. */
+export function normalizeFeedPage(data: unknown): FeedPage {
+  const page = data as Partial<FeedPage> | null | undefined;
+  if (!page || typeof page !== 'object' || !Array.isArray(page.lessons)) {
+    throw new Error('Unexpected class-materials feed response');
+  }
+  return {
+    lessons: page.lessons,
+    next_before: typeof page.next_before === 'string' ? page.next_before : null,
+    groups: Array.isArray(page.groups) ? page.groups : [],
+  };
 }
 
 /** The backend refuses more than 100 event ids per request; slice before asking. */

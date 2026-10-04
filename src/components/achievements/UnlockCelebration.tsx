@@ -1,11 +1,12 @@
 /**
- * The unlock moment (owner, 2026-10-04): when the student has unseen achievements — on load, or
- * when the bell's poll sees a new notice — ONE modal shows their orca already wearing the most
- * exciting reward, lists every new unlock (the launch's retro grant arrives as one batch) and
- * throws confetti. «Wear it now» saves the look; both buttons mark everything seen.
+ * The unlock moment (owner, 2026-10-04), announced through the one-popup queue (lib/attention):
+ * a visit opens with the full modal — the orca already wearing the most exciting reward, every new
+ * unlock listed, confetti — only for a legendary unlock or a big batch (the launch grant); smaller
+ * and mid-session unlocks are a toast that opens the card. The onboarding visit announces nothing:
+ * it all waits for the next one. Whatever is announced is marked seen as it's shown.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useNextStep } from 'nextstepjs';
 import { useAuth } from '@/contexts/AuthContext';
 import { parseMascot } from '@/components/mascot/config';
@@ -19,55 +20,114 @@ import {
   byExcitement,
   celebrationReward,
   celebrationTitle,
-  shouldShowCelebration,
   TIER_LABEL,
   withReward,
 } from '@/lib/achievements';
 import { getMyAchievements, markAchievementsSeen, type MyAchievements } from '@/services/api/achievementsUi';
+import { attention, celebrationMode, useAttention } from '@/lib/attention';
+import { showAchievementToast } from './achievementToast';
 import Confetti from './Confetti';
 import RewardPreview from './RewardPreview';
 import { ShareCelebrationButton } from '@/components/share/ShareButtons';
 import { tierStyle } from './tierStyle';
 
+/** Per page load: whether the visit's opening announcement was decided, and what's been announced. */
+const openingDecided = new Set<string>();
+const announced = new Map<string, Set<string>>();
+const announcedFor = (uid: string) => {
+  let s = announced.get(uid);
+  if (!s) announced.set(uid, (s = new Set()));
+  return s;
+};
+
 export default function UnlockCelebration() {
   const { user, updateUser } = useAuth();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const { isNextStepVisible } = useNextStep();
+  const queue = useAttention(user);
   const [data, setData] = useState<MyAchievements | null>(null);
   const [saving, setSaving] = useState(false);
-  const [, rerender] = useState(0);
-  const celebrated = useRef(new Set<string>());
+  // What the open modal shows (captured when it opens), and what waits for the queue's slot.
+  const [modalKeys, setModalKeys] = useState<string[] | null>(null);
+  const [pendingKeys, setPendingKeys] = useState<string[] | null>(null);
   const isStudent = user?.role === 'student';
+  const uid = user ? String(user.id) : '';
 
   const load = useCallback(() => {
     getMyAchievements()
       .then(setData)
       .catch(() => {
         /* no achievements service yet, or offline — nothing to celebrate */
+        attention.declare('celebration', 'none');
       });
   }, []);
 
   useEffect(() => {
     if (!isStudent) return undefined;
+    // AppLayout remounts on every route change: only the page's first decision counts as «deciding»,
+    // so the nudges waiting on the queue don't flicker on each navigation.
+    if (!openingDecided.has(uid)) attention.declare('celebration', 'unknown');
     load();
     window.addEventListener(ACHIEVEMENTS_CHECK_EVENT, load);
-    return () => window.removeEventListener(ACHIEVEMENTS_CHECK_EVENT, load);
-  }, [isStudent, load]);
+    return () => {
+      window.removeEventListener(ACHIEVEMENTS_CHECK_EVENT, load);
+      attention.release('celebration');
+      attention.declare('celebration', 'none');
+    };
+  }, [isStudent, load, uid]);
 
-  if (!user || !isStudent || !data) return null;
+  // Never over the tour, the Assignment Zero gate or its page.
+  const blocked = !user
+    || isNextStepVisible
+    || onboardingPending(user.id, user.onboarding_completed)
+    || (!user.special_group_only_student && user.assignment_zero_completed === false)
+    || pathname.startsWith('/assignment-zero');
 
-  const fresh = data.unseen.filter((k) => !celebrated.current.has(k));
+  // Decide how the new unlocks are announced once the list arrives (and on every bell-driven reload).
+  useEffect(() => {
+    if (!data || !user || !isStudent || blocked || modalKeys || pendingKeys) return;
+    const done = announcedFor(uid);
+    const fresh = data.unseen.filter((k) => !done.has(k));
+    const atVisitStart = !openingDecided.has(uid);
+    openingDecided.add(uid);
+    const list = data.achievements.filter((a) => fresh.includes(a.key));
+    const mode = celebrationMode({
+      count: fresh.length,
+      legendary: list.some((a) => a.tier === 'legendary'),
+      atVisitStart,
+      visit: attention.visitState(),
+      holder: attention.holderNow(),
+    });
+    if (mode === 'modal') {
+      setPendingKeys(fresh);
+      attention.declare('celebration', 'wants');
+      return;
+    }
+    if (mode === 'toasts') {
+      fresh.forEach((k) => done.add(k));
+      markAchievementsSeen(fresh).catch(() => {});
+      byExcitement(list).forEach((a) => showAchievementToast(a.title, () => navigate(`/achievements#${a.key}`)));
+    }
+    if (mode === 'defer') fresh.forEach((k) => done.add(k)); // kept unseen for the next visit's modal
+    attention.declare('celebration', 'none');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, blocked, uid]);
 
-  const open = shouldShowCelebration({
-    role: user.role,
-    unseen: data.unseen,
-    tourActive: isNextStepVisible || onboardingPending(user.id, user.onboarding_completed),
-    assignmentZeroGate: !user.special_group_only_student && user.assignment_zero_completed === false,
-    pathname,
-    celebrated: celebrated.current,
-  });
-  if (!open || fresh.length === 0) return null;
+  // The queue grants the slot → the modal opens, and what it shows is seen.
+  const granted = queue.granted('celebration');
+  useEffect(() => {
+    if (!pendingKeys || !granted || modalKeys) return;
+    attention.take('celebration');
+    pendingKeys.forEach((k) => announcedFor(uid).add(k));
+    markAchievementsSeen(pendingKeys).catch(() => {});
+    setModalKeys(pendingKeys);
+    setPendingKeys(null);
+  }, [pendingKeys, granted, modalKeys, uid]);
 
+  if (!user || !isStudent || !data || !modalKeys) return null;
+
+  const fresh = modalKeys;
   const items = byExcitement(data.achievements.filter((a) => fresh.includes(a.key)));
   const pick = celebrationReward(data.achievements, fresh);
   // Only offer to wear what this build can draw — a part it doesn't know would make the saved
@@ -75,8 +135,9 @@ export default function UnlockCelebration() {
   const wearable = pick !== null && parseMascot(withReward(user.mascot, user.id, pick.reward)) !== null;
 
   const close = (wear: boolean) => {
-    fresh.forEach((k) => celebrated.current.add(k));
-    markAchievementsSeen(fresh).catch(() => {});
+    setModalKeys(null);
+    attention.release('celebration');
+    attention.declare('celebration', 'none');
     if (wear && pick && wearable) {
       setSaving(true);
       updateMyMascot(withReward(user.mascot, user.id, pick.reward))
@@ -87,7 +148,6 @@ export default function UnlockCelebration() {
         .catch((e: Error) => toast(e.message || 'Could not save your orca', 'error'))
         .finally(() => setSaving(false));
     }
-    rerender((n) => n + 1);
   };
 
   return (

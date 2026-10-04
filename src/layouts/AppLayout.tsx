@@ -7,6 +7,7 @@ import DailyQuestionsPopup from '../components/DailyQuestionsPopup.tsx';
 import UnlockCelebration from '../components/achievements/UnlockCelebration';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import apiClient from '../services/api';
+import { hideReferral, readReferralHidden, useAttention } from '../lib/attention';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -16,9 +17,21 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
-  const [isReferralBannerHidden, setIsReferralBannerHidden] = useState(() => {
-    return localStorage.getItem('studentReferralBannerHidden') === 'true';
-  });
+  const queue = useAttention(user);
+  const [referralHiddenNow, setReferralHiddenNow] = useState(false);
+  const localStore = (() => {
+    try {
+      return window.localStorage;
+    } catch {
+      return null;
+    }
+  })();
+  // Per student (the old key was shared by everyone on the browser), and only on a quiet visit:
+  // never the first-login visit, never one that already had a popup — once up, it stays up.
+  const isReferralBannerHidden = referralHiddenNow
+    || !user
+    || readReferralHidden(localStore, user.id)
+    || !queue.nudgeAllowed('referral');
   const [isSpecialGroupStudent, setIsSpecialGroupStudent] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem('mainSidebarCollapsed');
@@ -50,17 +63,22 @@ export default function AppLayout({ children }: AppLayoutProps) {
   }, [user?.id, user?.role]);
 
   const handleCloseReferralBanner = () => {
-    setIsReferralBannerHidden(true);
-    localStorage.setItem('studentReferralBannerHidden', 'true');
+    setReferralHiddenNow(true);
+    if (user) hideReferral(localStore, user.id);
     setIsReferralModalOpen(false);
   };
+
+  const referralVisible = user?.role === 'student' && !isSpecialGroupStudent && !isReferralBannerHidden;
+  useEffect(() => {
+    if (referralVisible) queue.noteNudgeShown('referral');
+  }, [referralVisible, queue]);
 
   return (
     <div className="flex">
       <SidebarDesktop isCollapsed={isSidebarCollapsed} onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
         <main className={`flex-1 bg-gray-50 dark:bg-background h-screen overflow-y-auto overflow-x-hidden transition-all duration-300 ${isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'}`}>
         {/* <MaintenanceBanner /> */}
-        {user?.role === 'student' && !isSpecialGroupStudent && !isReferralBannerHidden && (
+        {referralVisible && (
           <section className="relative mx-4 mt-3 sm:mx-5 md:mx-6 rounded-lg border border-emerald-200/80 bg-emerald-50/70 text-emerald-900 dark:border-emerald-800/80 dark:bg-emerald-950/30 dark:text-emerald-100">
             <button
               onClick={handleCloseReferralBanner}
