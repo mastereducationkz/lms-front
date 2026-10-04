@@ -1,4 +1,5 @@
 import { Button } from "../components/ui/button";
+import { KasatikSpotlightCard } from '@/components/mascot/KasatikSpotlight';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "../components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
@@ -601,6 +602,7 @@ export default function StudentDashboard({
 
   return (
     <div className="space-y-8">
+      <KasatikSpotlightCard />
       {/* Temporarily hidden per product request (2026-08-18) — keep the data loading
           and widget code intact, just don't render it, so this is a one-line revert. */}
       {false && readyToSubmit.length > 0 && (

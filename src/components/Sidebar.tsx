@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { KasatikCoachmark } from '@/components/mascot/KasatikSpotlight';
 import UserAvatar from '@/components/mascot/UserAvatar';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
@@ -540,14 +541,22 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
             className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-secondary transition-colors`}
           >
             <div className="flex items-center">
-              <UserAvatar
-                userId={user?.id}
-                name={user?.name}
-                avatarUrl={user?.avatar_url}
-                mascot={user?.mascot}
-                isStudent={user?.role === 'student'}
-                size={40}
-              />
+              {(() => {
+                const avatar = (
+                  <UserAvatar
+                    userId={user?.id}
+                    name={user?.name}
+                    avatarUrl={user?.avatar_url}
+                    mascot={user?.mascot}
+                    isStudent={user?.role === 'student'}
+                    size={40}
+                  />
+                );
+                // Offsets clear the sidebar (w-64 / collapsed w-20) so the card never covers it.
+                return variant === 'desktop'
+                  ? <KasatikCoachmark sideOffset={isCollapsed ? 34 : 198}>{avatar}</KasatikCoachmark>
+                  : avatar;
+              })()}
               {!isCollapsed && (
                 <div className="ml-3 text-left">
                   <div className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">{user?.name || 'User'}</div>

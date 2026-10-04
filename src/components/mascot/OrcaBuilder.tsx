@@ -1,5 +1,5 @@
 /** «Your orca» on a student's profile: build a look from five layers, or start from a preset. */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Shuffle, RotateCcw, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
@@ -17,6 +17,7 @@ import {
   type MascotConfig,
 } from './config';
 import { PRESETS } from './presets';
+import { ORCA_SECTION_ID } from './KasatikSpotlight';
 
 const TABS: { key: MascotCategory; label: string }[] = [
   { key: 'hat', label: 'Outfit & hat' },
@@ -34,6 +35,14 @@ export default function OrcaBuilder() {
   const [config, setConfig] = useState<MascotConfig>(saved ?? automatic);
   const [tab, setTab] = useState<MascotCategory>('hat');
   const [saving, setSaving] = useState(false);
+  const sectionRef = useRef<HTMLDivElement>(null);
+
+  // Arriving from «Meet your Kasatik» → Customize: bring the builder into view.
+  useEffect(() => {
+    if (window.location.hash !== `#${ORCA_SECTION_ID}`) return undefined;
+    const t = window.setTimeout(() => sectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 150);
+    return () => window.clearTimeout(t);
+  }, []);
 
   if (!user || user.role !== 'student') return null;
 
@@ -59,7 +68,7 @@ export default function OrcaBuilder() {
   const shuffle = () => setConfig(randomMascot(makeRng(Date.now() ^ Math.floor(Math.random() * 1e9))));
 
   return (
-    <div className="bg-white dark:bg-card rounded-2xl shadow-card p-6 max-w-2xl">
+    <div id={ORCA_SECTION_ID} ref={sectionRef} className="bg-white dark:bg-card rounded-2xl shadow-card p-6 max-w-2xl scroll-mt-24">
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Your orca</h2>
         <p className="text-sm text-muted-foreground">
