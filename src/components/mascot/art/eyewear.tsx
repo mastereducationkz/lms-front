@@ -113,4 +113,24 @@ export const EYEWEAR_ART: ((uid: string) => ReactNode)[] = [
       <path d="M66 103 L76 99 M109 103 L119 99" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" opacity="0.85" />
     </g>
   ),
+  // gold-star glasses (achievement reward: Full Marks ×3) — polished gold, warm tint, glints
+  (uid) => (
+    <g>
+      <linearGradient id={`${uid}gstar`} x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stopColor="#FFF1A8" />
+        <stop offset="0.5" stopColor="#FFC531" />
+        <stop offset="1" stopColor="#D08C00" />
+      </linearGradient>
+      <Temples color="#E3A008" />
+      {EYES.map((e) => (
+        <polygon key={e.x} points={star(e.x, e.y + 1, 21)} fill="#FFE9A8" fillOpacity="0.45" stroke={`url(#${uid}gstar)`} strokeWidth="4.6" strokeLinejoin="round" />
+      ))}
+      <path d="M93 104 L107 104" stroke="#E3A008" strokeWidth="4" strokeLinecap="round" />
+      {EYES.map((e) => (
+        <path key={`s${e.x}`} d={`M${e.x - 8} ${e.y - 6} L${e.x - 3} ${e.y - 11}`} stroke="#fff" strokeWidth="2.4" strokeLinecap="round" opacity="0.9" />
+      ))}
+      <path d="M150 74 Q150 80 156 80 Q150 80 150 86 Q150 80 144 80 Q150 80 150 74 Z" fill="#FFF6C8" />
+      <path d="M46 78 Q46 82 50 82 Q46 82 46 86 Q46 82 42 82 Q46 82 46 78 Z" fill="#FFF6C8" />
+    </g>
+  ),
 ];

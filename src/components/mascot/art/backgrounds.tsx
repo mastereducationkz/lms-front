@@ -1,6 +1,7 @@
 /** Backgrounds, one per BACKGROUNDS entry: the brand «SAT» blue plus soft gradients. */
 import type { ReactNode } from 'react';
 import { BRAND_BLUE, MasterMark } from './MasterMark';
+import { REWARD_BACKGROUNDS } from './rewardBackgrounds';
 
 type Bg = (uid: string) => ReactNode;
 
@@ -119,4 +120,6 @@ export const BACKGROUND_ART: Bg[] = [
       ))}
     </g>
   ),
+  // rewards (achievements), in contract order: Sparkle, Sunrise, Aurora
+  ...REWARD_BACKGROUNDS,
 ];
