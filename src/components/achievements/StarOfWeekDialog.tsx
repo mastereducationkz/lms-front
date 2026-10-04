@@ -37,11 +37,14 @@ export function StarOfWeekButton({ groupId, students, lang }: StarOfWeekButtonPr
   );
 }
 
-function StarOfWeekDialog({ groupId, students, lang, onClose }: StarOfWeekButtonProps & { onClose: () => void }) {
+/** Also opened straight from the live lesson's «Also give Star of the Week?», prefilled (2026-10-04). */
+export function StarOfWeekDialog({ groupId, students, lang, onClose, initialStudentId }: StarOfWeekButtonProps & {
+  onClose: () => void; initialStudentId?: number;
+}) {
   const ru = lang === 'ru';
   const [stars, setStars] = useState<GroupStars | null>(null);
   const [loadError, setLoadError] = useState(false);
-  const [studentId, setStudentId] = useState<number | ''>('');
+  const [studentId, setStudentId] = useState<number | ''>(initialStudentId ?? '');
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);

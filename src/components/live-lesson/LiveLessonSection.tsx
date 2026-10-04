@@ -6,6 +6,7 @@ import { live } from '../../services/api/liveLesson';
 import { connectSocket } from '../../services/socket';
 import LiveControls from './LiveControls';
 import LiveRecordList from './LiveRecordList';
+import { StarOfWeekDialog } from '../achievements/StarOfWeekDialog';
 
 /**
  * «Activities» on `/lessons/:id`: while the lesson is on, whoever may run it gets the same controls as
@@ -26,7 +27,11 @@ function Driver({ eventId }: { eventId: number }) {
   }
   return (
     <div className="space-y-4">
-      <LiveControls state={state} api={live} seconds={seconds} act={act} presenterUrl={`/live/present/${eventId}`} />
+      <LiveControls state={state} api={live} seconds={seconds} act={act} presenterUrl={`/live/present/${eventId}`} socket={socket}
+        renderStar={(student, groupId, close) => (
+          <StarOfWeekDialog groupId={groupId} lang="ru" onClose={close} initialStudentId={student.user_id}
+            students={(state.room ?? [student]).map((p) => ({ id: p.user_id, name: p.name ?? '' }))} />
+        )} />
       <details className="rounded-xl border border-border p-3">
         <summary className="cursor-pointer text-sm font-semibold text-foreground">Everything in this lesson so far</summary>
         <div className="mt-3"><LiveRecordList eventId={eventId} api={live} refreshKey={state.version} /></div>

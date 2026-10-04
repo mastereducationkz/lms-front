@@ -22,11 +22,15 @@ export const CLASS_MATERIAL_NOTIFICATION_TYPES = ['class_materials', 'class_mate
 /** A student unlocked an achievement (Kasatik Achievements, 2026-10-04); related_id = the unlock's id. */
 export const ACHIEVEMENT_NOTIFICATION_TYPES = ['achievement_unlocked'];
 
+/** «Kasatik of the lesson» (live lesson, 2026-10-04). */
+export const LIVE_NOTIFICATION_TYPES = ['live_crown'];
+
 /** Everything the bell shows: lesson materials, the library's (new items, an item removed by a moderator), achievements. */
 export const BELL_NOTIFICATION_TYPES = [
   ...CLASS_MATERIAL_NOTIFICATION_TYPES,
   ...LIBRARY_NOTIFICATION_TYPES,
   ...ACHIEVEMENT_NOTIFICATION_TYPES,
+  ...LIVE_NOTIFICATION_TYPES,
 ];
 
 function typesParams(types: string[]): Record<string, string> {

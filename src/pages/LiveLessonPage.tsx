@@ -65,7 +65,7 @@ function LiveLesson({ eventId, title }: { eventId: number; title: string }) {
       ) : state.mode === 'off' ? (
         <Centered title="Live lessons are switched off">Your teacher will tell you when to come back.</Centered>
       ) : (
-        <StudentLive state={state} api={live} seconds={seconds} act={act} />
+        <StudentLive state={state} api={live} seconds={seconds} act={act} socket={socket} />
       )}
     </div>
   );

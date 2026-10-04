@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CheckCircle2, Eye, EyeOff, RotateCcw, XCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { LiveAvatar } from './orcas';
 import { activityLabel, correctIndices, optionLabel } from '../../lib/liveLesson/logic';
 import type { ActivityView, NamedAnswer } from '../../lib/liveLesson/types';
 import { CloudView, OptionRows, QuestionBody } from './parts';
@@ -56,7 +57,7 @@ function Answers({ activity, answers }: { activity: ActivityView; answers: Named
     <ul className="mt-1 divide-y divide-border rounded-lg border border-border text-xs">
       {[...answers].sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'ru')).map((a) => (
         <li key={a.user_id} className="flex items-center justify-between gap-2 px-2 py-1">
-          <span className="truncate text-foreground">{a.name}</span>
+          <span className="flex min-w-0 items-center gap-1.5"><LiveAvatar person={a} size={20} /><span className="truncate text-foreground">{a.name}</span></span>
           <span className={cn('flex-none', a.correct === true && 'text-emerald-700 dark:text-emerald-400', a.correct === false && 'text-rose-600')}>
             {optionText(activity, a.value)}
           </span>
@@ -99,7 +100,11 @@ function Body({ activity, onHide, names }: { activity: ActivityView; onHide?: (i
                 <li key={e.id} className="flex items-center justify-between gap-2 px-2 py-1">
                   <span className={cn('min-w-0 truncate', e.hidden && 'text-muted-foreground line-through')}>
                     {e.text}
-                    {names && e.name && <span className="ml-1.5 text-muted-foreground">· {e.name}</span>}
+                    {names && e.name && (
+                      <span className="ml-1.5 inline-flex items-center gap-1 align-middle text-muted-foreground">
+                        · {e.user_id != null && <LiveAvatar person={{ user_id: e.user_id, name: e.name, mascot: e.mascot, avatar_url: e.avatar_url }} size={16} />}{e.name}
+                      </span>
+                    )}
                     {(e.hidden === 'filter' || e.hidden === 'ai') && (
                       <span className="ml-1.5 text-amber-700 dark:text-amber-400">{e.hidden === 'ai' ? '(hidden by AI check)' : '(filtered)'}</span>
                     )}
@@ -142,7 +147,7 @@ function Body({ activity, onHide, names }: { activity: ActivityView; onHide?: (i
           <ul className="divide-y divide-border">
             {activity.answers.map((a) => (
               <li key={a.user_id} className="flex items-center justify-between gap-2 px-2 py-1">
-                <span className="truncate">{a.name}</span>
+                <span className="flex min-w-0 items-center gap-1.5"><LiveAvatar person={a} size={20} /><span className="truncate">{a.name}</span></span>
                 <span className="flex flex-none gap-1">
                   {items.map((_, i) => {
                     const cell = a.items?.[String(i)];
