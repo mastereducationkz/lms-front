@@ -1,4 +1,8 @@
-/** «Your orca» on a student's profile: build a look from five layers, or start from a preset. */
+/**
+ * «Your orca» on a student's profile: build a look from six layers, or start from a preset.
+ * Reward parts (achievements) show locked until earned; their unlock state comes from
+ * GET /achievements/me — if that fails, every reward simply stays locked.
+ */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Shuffle, RotateCcw, Check } from 'lucide-react';
 import { toast } from 'sonner';
@@ -7,15 +11,18 @@ import apiClient from '../../services/api';
 import { Button } from '../ui/button';
 import Orca from './Orca';
 import {
-  CATEGORY_PARTS,
   makeRng,
   parseMascot,
   randomMascot,
   seedMascot,
   serializeMascot,
+  usesLockedPart,
+  type LockedParts,
   type MascotCategory,
   type MascotConfig,
 } from './config';
+import OrcaPartGrid from './OrcaPartGrid';
+import { getMyAchievements, type Achievement } from '../../services/api/achievements';
 import { PRESETS } from './presets';
 import { ORCA_SECTION_ID } from './KasatikSpotlight';
 
@@ -25,6 +32,7 @@ const TABS: { key: MascotCategory; label: string }[] = [
   { key: 'expression', label: 'Expression' },
   { key: 'prop', label: 'Prop' },
   { key: 'background', label: 'Background' },
+  { key: 'frame', label: 'Frame' },
 ];
 
 export default function OrcaBuilder() {
@@ -35,7 +43,26 @@ export default function OrcaBuilder() {
   const [config, setConfig] = useState<MascotConfig>(saved ?? automatic);
   const [tab, setTab] = useState<MascotCategory>('hat');
   const [saving, setSaving] = useState(false);
+  const [locked, setLocked] = useState<LockedParts | null>(null);
+  const [achievements, setAchievements] = useState<Achievement[] | null>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
+  const isStudent = user?.role === 'student';
+
+  // Which reward parts this student has earned. On failure (or an older backend) they stay locked.
+  useEffect(() => {
+    if (!isStudent) return undefined;
+    let alive = true;
+    getMyAchievements()
+      .then((data) => {
+        if (!alive) return;
+        setLocked(data.locked_parts ?? {});
+        setAchievements(data.achievements ?? []);
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [isStudent, user?.id]);
 
   // Arriving from «Meet your Kasatik» → Customize: bring the builder into view.
   useEffect(() => {
@@ -44,11 +71,12 @@ export default function OrcaBuilder() {
     return () => window.clearTimeout(t);
   }, []);
 
-  if (!user || user.role !== 'student') return null;
+  if (!user || !isStudent) return null;
 
   const current = serializeMascot(config);
   const savedCode = saved ? serializeMascot(saved) : serializeMascot(automatic);
   const dirty = current !== savedCode;
+  const lockedLook = usesLockedPart(config, locked);
   const presetName = PRESETS.find((p) => serializeMascot(p.config) === current)?.name;
 
   const save = async (code: string | null) => {
@@ -85,9 +113,12 @@ export default function OrcaBuilder() {
               <Shuffle className="w-4 h-4 mr-1" /> Shuffle
             </Button>
           </div>
-          <Button type="button" size="sm" className="w-full" disabled={!dirty || saving} onClick={() => save(current)}>
+          <Button type="button" size="sm" className="w-full" disabled={!dirty || saving || lockedLook} onClick={() => save(current)}>
             <Check className="w-4 h-4 mr-1" /> {saving ? 'Saving…' : 'Save'}
           </Button>
+          {lockedLook && (
+            <p className="text-[11px] text-center text-amber-700 dark:text-amber-400">This look uses a part you haven't unlocked yet.</p>
+          )}
           {saved && (
             <button
               type="button"
@@ -119,28 +150,7 @@ export default function OrcaBuilder() {
               </button>
             ))}
           </div>
-          <div className="grid grid-cols-4 sm:grid-cols-5 gap-2" role="tabpanel">
-            {CATEGORY_PARTS[tab].map((part, i) => {
-              const option = { ...config, [tab]: i };
-              const active = config[tab] === i;
-              return (
-                <button
-                  key={part.key}
-                  type="button"
-                  title={part.label}
-                  aria-label={part.label}
-                  aria-pressed={active}
-                  onClick={() => setConfig(option)}
-                  className={`flex flex-col items-center gap-1 rounded-xl p-1.5 transition-colors ${
-                    active ? 'bg-blue-50 dark:bg-blue-900/30 ring-2 ring-blue-500' : 'hover:bg-gray-50 dark:hover:bg-secondary'
-                  }`}
-                >
-                  <Orca config={option} size={56} title={part.label} />
-                  <span className="text-[10px] leading-tight text-center text-gray-600 dark:text-gray-400 line-clamp-2">{part.label}</span>
-                </button>
-              );
-            })}
-          </div>
+          <OrcaPartGrid tab={tab} config={config} locked={locked} achievements={achievements} onPick={setConfig} />
         </div>
       </div>
 

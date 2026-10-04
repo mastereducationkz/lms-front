@@ -1,4 +1,4 @@
-/** Ready-made looks for the builder's Presets row. Each is [hat, eyewear, expression, prop, background]. */
+/** Ready-made looks for the builder's Presets row. Each is [hat, eyewear, expression, prop, background] — free parts only. */
 import type { MascotConfig } from './config';
 
 type Tuple = [number, number, number, number, number];
@@ -60,5 +60,6 @@ export interface MascotPreset {
 
 export const PRESETS: MascotPreset[] = RAW.map(([name, [hat, eyewear, expression, prop, background]]) => ({
   name,
-  config: { hat, eyewear, expression, prop, background },
+  // presets are free looks: no reward parts, no frame
+  config: { hat, eyewear, expression, prop, background, frame: 0 },
 }));
