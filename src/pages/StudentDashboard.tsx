@@ -13,7 +13,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popove
 import { TrackPlatformLinks } from "../components/dashboard/TrackPlatformLinks";
 import { WeeklyTestCountdown } from "../components/dashboard/WeeklyTestCountdown";
 import { CheckpointsCard } from "../components/dashboard/CheckpointsCard";
-import { CompletionMeta } from "../components/progress/CompletionMeta";
+import CourseCard from "../components/courses/CourseCard";
+import { mediaUrl } from "../lib/mediaUrl";
 import { TargetsTile } from "../components/dashboard/TargetsTile";
 
 // Dashboard hero background presets (all dark so white text + the flip board stay legible).
@@ -1196,99 +1197,23 @@ export default function StudentDashboard({
               {/* Course Progress Details */}
               <div className={`${isSpecialGroupStudent ? "grid grid-cols-1 justify-items-start gap-4 sm:gap-6" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"}`}>
                 {progressData.courses.map((course) => (
-                  <Card
+                  <CourseCard
                     key={course.course_id}
-                    className={`w-full ${isSpecialGroupStudent ? "max-w-[300px]" : ""} hover:shadow-lg transition-shadow overflow-hidden`}
-                  >
-                    {/* Course Image */}
-                    {course.cover_image_url ? (
-                      <div className="relative h-48 bg-gray-200 dark:bg-secondary">
-                        <img
-                          src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + course.cover_image_url}
-                          alt={course.course_title}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            target.parentElement!.style.display = 'none';
-                          }}
-                        />
-                        {/* Progress Overlay */}
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                          <div className="flex items-center justify-between text-white">
-                            <span className="text-sm font-medium">Progress</span>
-                            <span className="text-sm font-bold">{course.completion_percentage}%</span>
-                          </div>
-                          <Progress 
-                            value={course.completion_percentage} 
-                            className="h-1 mt-2"
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="relative h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                        <div className="text-center text-white">
-                          <BookOpen className="w-12 h-12 mx-auto mb-2 opacity-80" />
-                          <div className="text-sm font-medium opacity-90">{course.course_title}</div>
-                        </div>
-                        {/* Progress Overlay */}
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                          <div className="flex items-center justify-between text-white">
-                            <span className="text-sm font-medium">Progress</span>
-                            <span className="text-sm font-bold">{course.completion_percentage}%</span>
-                          </div>
-                          <Progress 
-                            value={course.completion_percentage} 
-                            className="h-1 mt-2"
-                          />
-                        </div>
-                      </div>
-                    )}
-                    
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-lg truncate">{course.course_title}</CardTitle>
-                      <CompletionMeta
-                        lessonsDone={course.lessons_done ?? course.completed_lessons}
-                        lessonsTotal={course.lessons_total ?? course.total_lessons}
-                        checkpoints={course.checkpoints}
-                      />
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {/* Progress Bar - Only show if no image */}
-                      {!course.cover_image_url && (
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span>Course progress</span>
-                            <span className={`font-medium ${getProgressColor(course.completion_percentage)}`}>
-                              {course.completion_percentage}%
-                            </span>
-                          </div>
-                          <Progress 
-                            value={course.completion_percentage} 
-                            className="h-2"
-                          />
-                        </div>
-                      )}
-                      {/* Continue Button */}
-                      <Button 
-                        onClick={() => onContinueCourse(course.course_id.toString())}
-                        className="w-full"
-                        variant={course.completion_percentage === 100 ? "outline" : "default"}
-                      >
-                        {course.completion_percentage === 100 ? (
-                          <>
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Course completed
-                          </>
-                        ) : (
-                          <>
-                            <Target className="w-4 h-4 mr-2" />
-                            Continue learning
-                          </>
-                        )}
-                      </Button>
-                    </CardContent>
-                  </Card>
+                    className={`w-full ${isSpecialGroupStudent ? "max-w-[300px]" : ""}`}
+                    title={course.course_title}
+                    coverUrl={mediaUrl(course.cover_image_url)}
+                    progress={course.completion_percentage}
+                    lessonsDone={course.lessons_done ?? course.completed_lessons}
+                    lessonsTotal={course.lessons_total ?? course.total_lessons}
+                    checkpoints={course.checkpoints}
+                    nextLesson={course.next_lesson}
+                    actionLabel={course.completion_percentage === 100 ? 'Course completed' : 'Continue learning'}
+                    actionIcon={course.completion_percentage === 100
+                      ? <CheckCircle className="w-4 h-4 mr-2" />
+                      : <Target className="w-4 h-4 mr-2" />}
+                    actionVariant={course.completion_percentage === 100 ? 'outline' : 'default'}
+                    onOpen={() => onContinueCourse(course.course_id.toString())}
+                  />
                 ))}
               </div>
             </div>

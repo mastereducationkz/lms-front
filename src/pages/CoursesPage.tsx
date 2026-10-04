@@ -2,20 +2,19 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { Button } from '../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Progress } from '../components/ui/progress';
-import { checkpointLabel, lessonsLabel } from '../lib/completion';
+import type { CheckpointSummary } from '../lib/completion';
+import CourseCard from '../components/courses/CourseCard';
 import Skeleton from '../components/Skeleton.tsx';
 import apiClient from "../services/api";
 import type { Course } from '../types';
-import { BookOpen, Target, CheckCircle, Play, Eye, Search, Users } from 'lucide-react';
+import { Target, CheckCircle, Play, Eye, Search, Users } from 'lucide-react';
 import { Input } from '../components/ui/input';
 import { mediaUrl } from '../lib/mediaUrl';
 import {
   canEditCourseContent, filterCatalog, isReadOnlyCourseViewer, sortStaffCatalog, usesRussianUi,
 } from '../lib/courseAccess';
 
-interface CourseCard {
+interface CourseItem {
   id: string;
   title: string;
   teacher: string;
@@ -27,10 +26,14 @@ interface CourseCard {
   duration?: number;
   in_my_groups?: boolean | null;
   isDraft?: boolean;
+  lessonsDone?: number | null;
+  lessonsTotal?: number | null;
+  checkpoints?: CheckpointSummary | null;
+  nextLesson?: { id: number; title: string } | null;
 }
 
 export default function CoursesPage() {
-  const [courses, setCourses] = useState<CourseCard[]>([]);
+  const [courses, setCourses] = useState<CourseItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -43,18 +46,12 @@ export default function CoursesPage() {
     loadCourses();
   }, []);
 
-  const getProgressColor = (percentage: number) => {
-    if (percentage >= 80) return 'text-green-600 dark:text-green-400';
-    if (percentage >= 50) return 'text-yellow-600 dark:text-yellow-400';
-    return 'text-red-600 dark:text-red-400';
-  };
-
   const loadCourses = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      let coursesData: CourseCard[];
+      let coursesData: CourseItem[];
       if (user?.role === 'student') {
         // For students, get their progress overview with detailed course data
         const progressOverview = await apiClient.getStudentProgressOverview();
@@ -63,15 +60,16 @@ export default function CoursesPage() {
           id: course.course_id.toString(),
           title: course.course_title,
           teacher: course.teacher_name,
-          image: course.cover_image_url ? (import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + course.cover_image_url : undefined,
+          image: mediaUrl(course.cover_image_url) ?? undefined,
           progress: course.completion_percentage,
           status: course.completion_percentage === 100 ? 'completed' : course.completion_percentage > 0 ? 'in_progress' : 'not_started',
           modules: course.total_lessons, // Using lessons as modules for display
+          description: course.teacher_name && course.teacher_name !== 'Unknown' ? `Teacher: ${course.teacher_name}` : '',
           // «12 из 30 уроков» (+ the checkpoint line) — the counts behind the one course number
-          description: [
-            lessonsLabel(course.lessons_done ?? course.completed_lessons, course.lessons_total ?? course.total_lessons),
-            checkpointLabel(course.checkpoints),
-          ].filter(Boolean).join(' · ')
+          lessonsDone: course.lessons_done ?? course.completed_lessons,
+          lessonsTotal: course.lessons_total ?? course.total_lessons,
+          checkpoints: course.checkpoints,
+          nextLesson: course.next_lesson ?? null,
         }));
       } else {
         // Staff catalog (2026-10-03): every course the role may open — all published ones for
@@ -185,126 +183,40 @@ export default function CoursesPage() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {visible.map(course => (
-            <Card key={course.id} className="hover:shadow-lg transition-shadow overflow-hidden">
-              {/* Course Image */}
-              {course.image ? (
-                <div className="relative h-48 bg-gray-200 dark:bg-gray-700">
-                  <img
-                    src={course.image}
-                    alt={course.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      target.parentElement!.style.display = 'none';
-                    }}
-                  />
-                  {/* Progress Overlay for students */}
-                  {user?.role === 'student' && course.progress !== undefined && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                      <div className="flex items-center justify-between text-white">
-                        <span className="text-sm font-medium">Progress</span>
-                        <span className="text-sm font-bold">{course.progress}%</span>
-                      </div>
-                      <Progress 
-                        value={course.progress} 
-                        className="h-1 mt-2"
-                      />
-                    </div>
+            <CourseCard
+              key={course.id}
+              title={course.title}
+              coverUrl={course.image}
+              progress={user?.role === 'student' ? course.progress ?? 0 : undefined}
+              lessonsDone={course.lessonsDone}
+              lessonsTotal={course.lessonsTotal}
+              checkpoints={course.checkpoints}
+              nextLesson={course.nextLesson}
+              description={course.description}
+              badges={(course.in_my_groups || course.isDraft) ? (
+                <>
+                  {course.in_my_groups && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                      <Users className="w-3 h-3" />
+                      {ru ? 'Ваши группы' : 'Your groups'}
+                    </span>
                   )}
-                </div>
-              ) : (
-                <div className="relative h-48 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                  <div className="text-center text-white">
-                    <BookOpen className="w-12 h-12 mx-auto mb-2 opacity-80" />
-                    <div className="text-sm font-medium opacity-90">{course.title}</div>
-                  </div>
-                  {/* Progress Overlay for students */}
-                  {user?.role === 'student' && course.progress !== undefined && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-4">
-                      <div className="flex items-center justify-between text-white">
-                        <span className="text-sm font-medium">Progress</span>
-                        <span className="text-sm font-bold">{course.progress}%</span>
-                      </div>
-                      <Progress 
-                        value={course.progress} 
-                        className="h-1 mt-2"
-                      />
-                    </div>
+                  {course.isDraft && (
+                    <span className="rounded-full bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300">
+                      {ru ? 'Черновик' : 'Draft'}
+                    </span>
                   )}
-                </div>
-              )}
-              
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg truncate">{course.title}</CardTitle>
-                {(course.in_my_groups || course.isDraft) && (
-                  <div className="flex flex-wrap gap-1.5">
-                    {course.in_my_groups && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-300">
-                        <Users className="w-3 h-3" />
-                        {ru ? 'Ваши группы' : 'Your groups'}
-                      </span>
-                    )}
-                    {course.isDraft && (
-                      <span className="rounded-full bg-amber-100 dark:bg-amber-900/30 px-2 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300">
-                        {ru ? 'Черновик' : 'Draft'}
-                      </span>
-                    )}
-                  </div>
-                )}
-                {user?.role === 'student' && (
-                  <CardDescription className="text-sm">
-                    Teacher: {course.teacher}
-                  </CardDescription>
-                )}
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Progress Bar - Only show if no image and student */}
-                {!course.image && user?.role === 'student' && course.progress !== undefined && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Course progress</span>
-                      <span className={`font-medium ${getProgressColor(course.progress)}`}>
-                        {course.progress}%
-                      </span>
-                    </div>
-                    <Progress 
-                      value={course.progress} 
-                      className="h-2"
-                    />
-                  </div>
-                )}
-                {/* Course Info */}
-                <div className="text-sm text-gray-600 dark:text-gray-300">
-                  {course.description}
-                </div>
-                {/* Action Button */}
-                <Button 
-                  onClick={() => navigate(`/course/${course.id}`)}
-                  className="w-full"
-                  variant={user?.role === 'student' && course.progress === 100 ? "outline" : "default"}
-                >
-                  {user?.role === 'student' ? (
-                    course.progress === 100 ? (
-                      <>
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        Course completed
-                      </>
-                    ) : (
-                      <>
-                        <Target className="w-4 h-4 mr-2" />
-                        Continue learning
-                      </>
-                    )
-                  ) : (
-                    <>
-                      <Play className="w-4 h-4 mr-2" />
-                      {ru ? 'Открыть курс' : 'View course'}
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
+                </>
+              ) : undefined}
+              actionLabel={user?.role === 'student'
+                ? (course.progress === 100 ? 'Course completed' : 'Continue learning')
+                : (ru ? 'Открыть курс' : 'View course')}
+              actionIcon={user?.role === 'student'
+                ? (course.progress === 100 ? <CheckCircle className="w-4 h-4 mr-2" /> : <Target className="w-4 h-4 mr-2" />)
+                : <Play className="w-4 h-4 mr-2" />}
+              actionVariant={user?.role === 'student' && course.progress === 100 ? 'outline' : 'default'}
+              onOpen={() => navigate(`/course/${course.id}`)}
+            />
           ))}
         </div>
       )}
