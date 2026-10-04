@@ -109,6 +109,10 @@ export function KasatikCoachmark({ children, sideOffset = 24 }: { children: Reac
         onOpenAutoFocus={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={later}
+        // The card is portaled, but React still bubbles its clicks to the sidebar's avatar button
+        // (the dropdown toggle) — «Customize» / «Later» must not open the account menu.
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
       >
         <SpotlightBody userId={String(userId)} onCustomize={customize} onLater={later} />
       </PopoverContent>
