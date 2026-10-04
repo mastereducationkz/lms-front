@@ -496,6 +496,8 @@ export interface UnconfirmedRow {
  */
 export interface ParticipantsView {
   state: MeetRecord['state'];
+  /** 'webinar': who came, with no class, marks or flags (2026-10-04). Absent = a lesson. */
+  kind?: MeetRecord['kind'];
   /** Present while the lesson waits on Google Meet: its stage and times. */
   waiting?: MeetRecord['waiting'] | null;
   teacher: ParticipantRow | null;
@@ -513,7 +515,7 @@ export function toParticipantsView(record: MeetRecord): ParticipantsView {
   });
   if (record.state !== 'ready') {
     return {
-      state: record.state, waiting: record.waiting ?? null, teacher: null, unknown: [], others: [], held_back: false, partial: false,
+      state: record.state, kind: record.kind, waiting: record.waiting ?? null, teacher: null, unknown: [], others: [], held_back: false, partial: false,
       students: (record.roster ?? []).map((r) => ({
         name: r.name, mark: r.mark, first_join: null, last_leave: null, minutes_in_lesson: 0, joins: 0, flags: [],
       })),
@@ -521,6 +523,7 @@ export function toParticipantsView(record: MeetRecord): ParticipantsView {
   }
   return {
     state: 'ready',
+    kind: record.kind,
     teacher: record.teacher ? row(record.teacher) : null,
     students: (record.students ?? []).map(row),
     unknown: (record.unknown ?? []).map((u) => ({
