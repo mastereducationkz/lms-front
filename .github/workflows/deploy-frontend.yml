@@ -15,8 +15,37 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  # Which commit to ship (2026-10-04): the newest commit on master that passed CI, not the one
+  # that triggered this run. CI runs finish out of commit order, so "ship the trigger" could land
+  # an older commit last, and the server used to build whatever master was at that moment, CI or not. scripts/ci/pick_deploy_sha.py walks the branch from
+  # its tip: a commit still in CI → skip (its own CI completion deploys it); passed → ship it;
+  # failed/cancelled or never run (paths filter) → keep walking back.
+  pick:
     if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'master' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      deploy: ${{ steps.pick.outputs.deploy }}
+      sha: ${{ steps.pick.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          sparse-checkout: scripts/ci
+      - name: Pick the newest verified commit
+        id: pick
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 scripts/ci/pick_deploy_sha.py --self-test
+          python3 scripts/ci/pick_deploy_sha.py --repo "${{ github.repository }}" --branch master \
+            --ci-workflow frontend-ci.yml --trigger-sha "${{ github.event.workflow_run.head_sha }}" | tee -a "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: pick
+    if: ${{ needs.pick.outputs.deploy == 'true' }}
     runs-on: ubuntu-latest
     env:
       # A step-level `if: env.SENTRY_AUTH_TOKEN != ''` was tried first and was ALWAYS skipped
@@ -39,9 +68,13 @@ jobs:
             # The production host cannot reach GitHub over SSH (port 22); use the public
             # repository's HTTPS endpoint for deployment fetches.
             git remote set-url origin https://github.com/mastereducationkz/lms-front.git
+            # Build exactly the commit the pick job verified (never master's tip, which may still
+            # be in CI); checkout -B refuses, like pull did, if the server has local edits in the way.
+            SHA='${{ needs.pick.outputs.sha }}'
+            case "$SHA" in *[!0-9a-f]*|'') echo "❌ bad sha '$SHA'"; exit 1;; esac
+            [ "${#SHA}" -eq 40 ] || { echo "❌ bad sha '$SHA'"; exit 1; }
             git fetch origin master
-            git checkout master
-            git pull --ff-only origin master
+            git checkout -B master "$SHA"
             # The commit being built, as the Sentry release (the image has no .git to ask).
             LMS_FRONT_GIT_COMMIT="$(git rev-parse HEAD)" docker compose build
             docker compose up -d lms-frontend
@@ -119,7 +152,7 @@ jobs:
           # The commit Frontend CI actually validated, not whatever `github.sha` resolves to on
           # a workflow_run trigger (that's the default branch tip at trigger time, not the run
           # being deployed).
-          ref: ${{ github.event.workflow_run.head_sha }}
+          ref: ${{ needs.pick.outputs.sha }}
 
       - name: Sentry release + deploy marker
         # scripts/sentry-release.sh also validates the sha against ^[0-9a-f]{40}$ itself (no
