@@ -4,6 +4,7 @@ import { CheckCircle2, HelpCircle } from 'lucide-react';
 import { TIER_LABEL } from '@/lib/achievements';
 import type { Achievement } from '@/services/api/achievementsUi';
 import RewardPreview from './RewardPreview';
+import TryOnButton from './TryOnButton';
 import { tierStyle } from './tierStyle';
 
 interface AchievementCardProps {
@@ -93,6 +94,7 @@ const AchievementCard = forwardRef<HTMLDivElement, AchievementCardProps>(functio
             </div>
           )
         )}
+        {!a.unlocked && !hidden && a.rewards.length > 0 && <TryOnButton rewards={a.rewards} className="mt-2" />}
       </div>
     </div>
   );

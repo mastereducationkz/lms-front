@@ -11,6 +11,7 @@ import { nextAchievement, recentlyUnlocked, TOTAL_LABEL } from '@/lib/achievemen
 import { getMyAchievements, type MyAchievements } from '@/services/api/achievementsUi';
 import { ProgressBar } from './AchievementCard';
 import RewardPreview from './RewardPreview';
+import TryOnButton from './TryOnButton';
 import { tierStyle } from './tierStyle';
 
 export function AchievementsTile() {
@@ -44,24 +45,27 @@ export function AchievementsTile() {
         </div>
         <div className="mt-3 grid gap-4 sm:grid-cols-2">
           {next && (
-            <button
-              type="button"
-              onClick={() => navigate(`/achievements#${next.key}`)}
-              className="flex items-center gap-3 rounded-xl text-left hover:bg-muted/40 p-1 -m-1"
-            >
-              <RewardPreview code={user.mascot} userId={user.id} reward={next.rewards[0]} size={48} locked />
-              <span className="min-w-0 flex-1">
-                <span className="block text-xs text-muted-foreground">Next up</span>
-                <span className="block truncate font-medium">{next.title}</span>
-                {next.progress && next.progress.target > 0 ? (
-                  <span className="mt-1 block">
-                    <ProgressBar current={next.progress.current} target={next.progress.target} barClass={tierStyle(next.tier).bar} />
-                  </span>
-                ) : (
-                  <span className="block truncate text-xs text-muted-foreground">{next.how_to}</span>
-                )}
-              </span>
-            </button>
+            <div className="flex flex-col items-start gap-1.5">
+              <button
+                type="button"
+                onClick={() => navigate(`/achievements#${next.key}`)}
+                className="flex self-stretch items-center gap-3 rounded-xl text-left hover:bg-muted/40 p-1 -m-1"
+              >
+                <RewardPreview code={user.mascot} userId={user.id} reward={next.rewards[0]} size={48} locked />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-xs text-muted-foreground">Next up</span>
+                  <span className="block truncate font-medium">{next.title}</span>
+                  {next.progress && next.progress.target > 0 ? (
+                    <span className="mt-1 block">
+                      <ProgressBar current={next.progress.current} target={next.progress.target} barClass={tierStyle(next.tier).bar} />
+                    </span>
+                  ) : (
+                    <span className="block truncate text-xs text-muted-foreground">{next.how_to}</span>
+                  )}
+                </span>
+              </button>
+              {!next.secret && next.rewards.length > 0 && <TryOnButton rewards={next.rewards} className="ml-[60px]" />}
+            </div>
           )}
           {latest && (
             <button
