@@ -40,6 +40,7 @@ import { getClassMaterialCounts } from '../services/api/classMaterials';
 import LessonMaterialsBadge, { LessonMaterialsDialog } from '../components/class-materials/LessonMaterialsBadge';
 import LessonScoresDialog from '../components/attendance/LessonScoresDialog';
 import { lessonPath } from '../lib/lessonLinks';
+import UserAvatar from '@/components/mascot/UserAvatar';
 
 interface HomeworkMeta {
     id: number;
@@ -117,6 +118,7 @@ interface StudentRow {
     student_id: number;
     student_name: string;
     avatar_url: string | null;
+    mascot?: string | null;
     /** Present while the CRM has an active freeze for this student. Staff-facing detail. */
     freeze?: {
         is_frozen: boolean;
@@ -1977,6 +1979,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                         <TableCell className="p-2 sticky left-0 z-30 bg-white dark:bg-card border-r border-gray-300 dark:border-border">
                              <div className="flex items-center gap-2">
                                 <span className="text-[10px] text-muted-foreground w-4 text-right font-mono">{index + 1}</span>
+                                <UserAvatar userId={student.student_id} name={student.student_name} avatarUrl={student.avatar_url} mascot={student.mascot} isStudent size={26} className="hidden md:block" />
                                 <button
                                     type="button"
                                     onClick={() => setStudentHwModal({ open: true, studentId: student.student_id, studentName: student.student_name })}

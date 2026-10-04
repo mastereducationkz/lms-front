@@ -21,12 +21,14 @@ import {
 } from 'recharts';
 import apiClient from '../services/api';
 import { ChevronLeft } from 'lucide-react';
+import UserAvatar from '@/components/mascot/UserAvatar';
 
 interface Student {
     id: number;
     name: string;
     email: string;
     avatar_url: string | null;
+    mascot?: string | null;
     avg_progress: number;
     overdue_count: number;
 }
@@ -267,11 +269,7 @@ export default function HeadCuratorCuratorPage() {
                                                         >
                                                             <td className="px-4 py-3">
                                                                 <div className="flex items-center gap-3">
-                                                                    <Avatar className="h-8 w-8">
-                                                                        <AvatarFallback className="bg-blue-100 text-blue-700 text-xs font-bold">
-                                                                            {student.name.charAt(0)}
-                                                                        </AvatarFallback>
-                                                                    </Avatar>
+                                                                    <UserAvatar userId={student.id} name={student.name} avatarUrl={student.avatar_url} mascot={student.mascot} isStudent size={32} />
                                                                     <span className="font-medium text-slate-900">{student.name}</span>
                                                                 </div>
                                                             </td>

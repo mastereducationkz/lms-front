@@ -7,6 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 import { CollegeBoardPasswordReveal } from '../components/CollegeBoardPasswordReveal';
 import { collegeBoardPasswordDisplay } from '../lib/assignmentZeroCollegeBoard';
 import { checkpointLabel, lessonsLabel, type CheckpointSummary } from '../lib/completion';
+import UserAvatar from '@/components/mascot/UserAvatar';
 
 // Older backends may not send `can_reveal_college_board_password` yet; on this
 // page (reachable by curators generally, not just admins) treat that as "no".
@@ -65,6 +66,7 @@ interface StudentProfile {
     name: string;
     email: string;
     avatar_url: string | null;
+    mascot?: string | null;
     created_at: string | null;
     last_activity_date: string | null;
     daily_streak: number;
@@ -196,13 +198,7 @@ export default function StudentProfilePage() {
 
       {/* Student card */}
       <div className="flex items-start gap-4 p-5 bg-white border border-gray-200 rounded-xl">
-        {student.avatar_url ? (
-          <img src={student.avatar_url} className="w-14 h-14 rounded-full object-cover" alt="" />
-        ) : (
-          <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center text-xl font-semibold text-gray-500">
-            {student.name.charAt(0).toUpperCase()}
-          </div>
-        )}
+        <UserAvatar userId={student.id} name={student.name} avatarUrl={student.avatar_url} mascot={student.mascot} isStudent size={56} />
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-semibold text-gray-900">{student.name}</h1>
           <p className="text-sm text-gray-400">{student.email}</p>

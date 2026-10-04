@@ -36,7 +36,7 @@ export * from './notifications';
 export { api, API_BASE_URL, clearCache } from './client';
 
 // Import all functions to build the apiClient object
-import { login, logout, getCurrentUser, updateProfile, isAuthenticated, getCurrentUserSync, completeOnboarding, forgotPassword, resetPassword, changePassword } from './auth';
+import { login, logout, getCurrentUser, updateProfile, updateMyMascot, isAuthenticated, getCurrentUserSync, completeOnboarding, forgotPassword, resetPassword, changePassword } from './auth';
 import { CookieUtils } from './client';
 
 function _setCurrentUser(user: any): void {
@@ -80,7 +80,7 @@ import { getReviewQuizzes, getReviewSession } from './review';
 
 const apiClient = {
   // Auth
-  login, logout, getCurrentUser, updateProfile, isAuthenticated, getCurrentUserSync, completeOnboarding, forgotPassword, resetPassword, changePassword,
+  login, logout, getCurrentUser, updateProfile, updateMyMascot, isAuthenticated, getCurrentUserSync, completeOnboarding, forgotPassword, resetPassword, changePassword,
   // Dashboard
   getDashboardStats, getAttendanceDue, getRecentActivity, updateStudyTime, getTeacherSalaryBreakdown,
   // Courses

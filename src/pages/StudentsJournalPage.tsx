@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { Button } from '../components/ui/button';
+import UserAvatar from '@/components/mascot/UserAvatar';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,6 +24,7 @@ interface StudentRow {
   email: string;
   is_inactive?: boolean;
   avatar_url: string | null;
+  mascot?: string | null;
   group_id: number;
   group_name: string;
   attendance_attended: number;
@@ -214,13 +216,7 @@ export default function StudentsJournalPage() {
                 >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      {s.avatar_url ? (
-                        <img src={s.avatar_url} className="w-7 h-7 rounded-full object-cover" alt="" />
-                      ) : (
-                        <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium text-gray-500">
-                          {s.name.charAt(0).toUpperCase()}
-                        </div>
-                      )}
+                      <UserAvatar userId={s.id} name={s.name} avatarUrl={s.avatar_url} mascot={s.mascot} isStudent size={28} />
                       <div>
                         <p className="font-medium text-gray-900 text-sm leading-tight">
                           {s.name}
