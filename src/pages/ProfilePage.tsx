@@ -5,6 +5,7 @@ import { User, Mail, Shield, Calendar, Clock, Save, BellOff } from 'lucide-react
 import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning';
 import UnsavedChangesDialog from '../components/UnsavedChangesDialog';
 import ResetOnboardingButton from '../components/ResetOnboardingButton';
+import { roleLabel } from '@/lib/roleLabel';
 
 export default function ProfilePage() {
   const { user, refreshUser } = useAuth();
@@ -105,7 +106,7 @@ export default function ProfilePage() {
           </div>
           <div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{user?.name}</h2>
-            <p className="text-gray-600 dark:text-gray-300 capitalize">{user?.role}</p>
+            <p className="text-gray-600 dark:text-gray-300">{roleLabel(user?.role)}</p>
           </div>
         </div>
 

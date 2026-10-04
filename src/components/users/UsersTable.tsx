@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '../ui/dropdown-menu';
 import type { User } from '../../types';
+import { roleLabel } from '@/lib/roleLabel';
 
 interface UsersTableProps {
   users: User[];
@@ -124,7 +125,7 @@ export function UsersTable({
                 </td>
                 {showRole && (
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs rounded-full ${roleBadgeClass(user.role)}`}>{user.role}</span>
+                    <span className={`px-2 py-1 text-xs rounded-full ${roleBadgeClass(user.role)}`}>{roleLabel(user.role)}</span>
                   </td>
                 )}
                 <td className="px-6 py-4 whitespace-nowrap">
