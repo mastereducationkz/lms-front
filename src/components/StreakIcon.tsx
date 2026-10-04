@@ -201,6 +201,14 @@ const StreakIcon: React.FC = () => {
           <div className="text-center mb-3">
             <h3 className="font-semibold text-gray-900 dark:text-foreground">{monthName}</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{getTooltipText()}</p>
+            {typeof streakData.longest_streak === 'number' && streakData.longest_streak > 0 && (
+              <p className="text-xs font-medium text-orange-600 dark:text-orange-400 mt-1">
+                Best streak: {streakData.longest_streak} day{streakData.longest_streak === 1 ? '' : 's'}
+              </p>
+            )}
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              Your streak counts days you learn: a finished step, homework, a lesson attended, a live answer or a weekly test.
+            </p>
           </div>
           
           {/* Calendar Grid */}

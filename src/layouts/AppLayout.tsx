@@ -5,6 +5,7 @@ import Topbar from '../components/Topbar.tsx';
 import { Toaster } from '../components/Toast.tsx';
 import PlatformUpdatesModal from '../components/PlatformUpdatesModal.tsx';
 import DailyQuestionsPopup from '../components/DailyQuestionsPopup.tsx';
+import UnlockCelebration from '../components/achievements/UnlockCelebration';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import apiClient from '../services/api';
 
@@ -138,6 +139,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
       
       {/* Daily Questions Popup - shows automatically to students */}
       {user?.role === 'student' && <DailyQuestionsPopup />}
+
+      {/* Kasatik Achievements: one celebration for every new unlock */}
+      {user?.role === 'student' && <UnlockCelebration />}
     </div>
   );
 }
