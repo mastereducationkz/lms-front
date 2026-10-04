@@ -1,6 +1,8 @@
 /** Hats & outfits, one per HATS entry. `back` draws behind the orca, `front` over its face. */
 import type { ReactNode } from 'react';
+import { BRAND_BLUE, MasterMark, MERCH_GOLD } from './MasterMark';
 import { BODY_PATH } from './base';
+import { masterHoodie } from './hoodie';
 
 export interface Piece {
   back?: (uid: string) => ReactNode;
@@ -37,7 +39,7 @@ export const HAT_ART: Piece[] = [
         <polygon points="50,51 100,35 114,40 58,57" fill="#fff" opacity="0.12" />
         <path d="M100 52 L154 58 L156 84" stroke={GOLD} strokeWidth="2.6" fill="none" strokeLinecap="round" />
         <rect x="151" y="82" width="10" height="16" rx="3" fill={GOLD} />
-        <circle cx="100" cy="52" r="3.6" fill={GOLD} />
+        <MasterMark x={100} y={52} size={13} color={GOLD} />
       </g>
     ),
   },
@@ -51,8 +53,8 @@ export const HAT_ART: Piece[] = [
         <rect x="41" y="100" width="8" height="26" rx="4" fill="#FFE1EA" />
         <rect x="155" y="94" width="25" height="38" rx="11" fill="#FF5C8A" />
         <rect x="151" y="100" width="8" height="26" rx="4" fill="#FFE1EA" />
-        <ellipse cx="29" cy="104" rx="3" ry="6" fill="#fff" opacity="0.45" />
-        <ellipse cx="164" cy="104" rx="3" ry="6" fill="#fff" opacity="0.45" />
+        <MasterMark x={32.5} y={113} size={17} color="#fff" />
+        <MasterMark x={167.5} y={113} size={17} color="#fff" />
       </g>
     ),
   },
@@ -69,8 +71,10 @@ export const HAT_ART: Piece[] = [
         <path d="M44 82 A62 62 0 0 1 88 42" stroke="#fff" strokeWidth="6" fill="none" opacity="0.75" strokeLinecap="round" />
         <circle cx="38" cy="98" r="3.5" fill="#fff" opacity="0.75" />
         <path d="M30 172 Q100 200 170 172 L172 192 Q100 222 28 192 Z" fill="#E9EEF6" stroke="#C3CEE0" strokeWidth="2" />
-        <rect x="82" y="181" width="36" height="15" rx="4" fill="#1F57F5" />
-        <text x="100" y="192.5" textAnchor="middle" fontSize="11" fontWeight="800" fill="#fff" fontFamily="Arial, Helvetica, sans-serif">1600</text>
+        <circle cx="66" cy="186" r="13" fill={BRAND_BLUE} stroke="#fff" strokeWidth="2.2" />
+        <MasterMark x={66} y={186} size={19} color="#fff" />
+        <rect x="86" y="181" width="36" height="15" rx="4" fill="#1F57F5" />
+        <text x="104" y="192.5" textAnchor="middle" fontSize="11" fontWeight="800" fill="#fff" fontFamily="Arial, Helvetica, sans-serif">1600</text>
       </g>
     ),
   },
@@ -87,8 +91,8 @@ export const HAT_ART: Piece[] = [
         <path d="M40 152 Q100 180 160 152" stroke="#E8364F" strokeWidth="6" fill="none" strokeLinecap="round" />
         <circle cx="44" cy="153" r="6" fill={GOLD} stroke={GOLD_DARK} strokeWidth="1.5" />
         <circle cx="156" cy="153" r="6" fill={GOLD} stroke={GOLD_DARK} strokeWidth="1.5" />
-        <circle cx="100" cy="190" r="15" fill="#E8364F" />
-        <Star5 x={100} y={191} r={10} fill="#FFE066" />
+        <circle cx="100" cy="188" r="17" fill="#E8364F" stroke={MERCH_GOLD} strokeWidth="2.6" />
+        <MasterMark x={100} y={188} size={25} color={MERCH_GOLD} />
       </g>
     ),
   },
@@ -211,9 +215,10 @@ export const HAT_ART: Piece[] = [
           <path d="M52 86 C 52 40 148 40 148 86 Z" />
         </clipPath>
         <path d="M52 86 C 52 40 148 40 148 86 Z" fill="#FF8A3D" />
-        <g clipPath={`url(#${uid}beanie)`} stroke="#FFD166" strokeWidth="6">
-          <path d="M50 58 L150 58 M50 70 L150 70" />
+        <g clipPath={`url(#${uid}beanie)`} stroke="#FFD166" strokeWidth="5">
+          <path d="M44 74 L156 74" />
         </g>
+        <MasterMark x={100} y={59} size={19} color="#fff" />
         <path d="M49 80 Q100 70 151 80 L152 94 Q100 85 48 94 Z" fill="#E8692A" />
         <g stroke="#C9531D" strokeWidth="1.6">
           <path d="M58 80 L58 91 M70 78 L70 89 M82 77 L82 88 M94 76 L94 87 M106 76 L106 87 M118 77 L118 88 M130 78 L130 89 M142 80 L142 91" />
@@ -255,6 +260,7 @@ export const HAT_ART: Piece[] = [
         <path d="M86 82 Q100 63 114 82 Z" fill="#1B2236" />
         <rect x="83" y="79" width="34" height="5" rx="2" fill="#fff" />
         <circle cx="100" cy="47" r="3.5" fill="#118F76" />
+        <MasterMark x={100} y={63} size={18} color="#fff" />
         <ellipse cx="82" cy="62" rx="9" ry="4" fill="#fff" opacity="0.18" transform="rotate(-25 82 62)" />
       </g>
     ),
@@ -278,4 +284,6 @@ export const HAT_ART: Piece[] = [
       </g>
     ),
   },
+  // Master hoodie — appended last so saved codes keep their meaning
+  masterHoodie,
 ];

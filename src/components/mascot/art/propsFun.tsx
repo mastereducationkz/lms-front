@@ -1,5 +1,6 @@
 /** Dream & fun props. */
 import type { PropPiece } from './props';
+import { BRAND_BLUE, MasterMark } from './MasterMark';
 
 export const rocket: PropPiece = {
   front: () => (
@@ -7,7 +8,7 @@ export const rocket: PropPiece = {
       <path d="M156 160 Q164 176 172 160 Q170 170 164 182 Q158 170 156 160 Z" fill="#FFB020" />
       <path d="M164 98 C 176 110 178 138 174 160 L154 160 C 150 138 152 110 164 98 Z" fill="#fff" stroke="#E3E8F2" strokeWidth="1.5" />
       <path d="M164 98 C 170 104 173 110 175 118 L153 118 C 155 110 158 104 164 98 Z" fill="#FF4D6D" />
-      <circle cx="164" cy="132" r="6.5" fill="#4DA3FF" stroke="#2B5FD9" strokeWidth="2" />
+      <MasterMark x={164} y={139} size={17} color={BRAND_BLUE} />
       <path d="M154 146 L144 164 L155 160 Z M174 146 L184 164 L173 160 Z" fill="#FF4D6D" />
     </g>
   ),
@@ -94,7 +95,7 @@ export const trophy: PropPiece = {
       <path d="M146 112 L180 112 L178 132 Q163 148 148 132 Z" fill={`url(#${uid}cup)`} stroke="#E39A00" strokeWidth="1.6" />
       <rect x="159" y="140" width="8" height="12" fill="#F2A400" />
       <rect x="150" y="150" width="26" height="8" rx="2" fill="#8A5A2E" />
-      <path d="M163 116 L165 121 L170 121.5 L166 124.5 L167.5 129.5 L163 126.8 L158.5 129.5 L160 124.5 L156 121.5 L161 121 Z" fill="#fff" opacity="0.9" />
+      <MasterMark x={163} y={124} size={19} color="#B97800" />
     </g>
   ),
 };

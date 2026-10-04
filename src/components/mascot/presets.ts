@@ -4,6 +4,11 @@ import type { MascotConfig } from './config';
 type Tuple = [number, number, number, number, number];
 
 const RAW: [string, Tuple][] = [
+  ['Master Kasatik', [16, 0, 0, 1, 10]],
+  ['Master grad', [1, 0, 7, 14, 10]],
+  ['Master hero', [4, 0, 4, 7, 10]],
+  ['Master astronaut', [3, 0, 3, 7, 10]],
+  ['Master late night', [16, 1, 2, 3, 4]],
   ['Classic Kasatik', [0, 0, 0, 1, 0]],
   ['Graduate', [1, 0, 0, 14, 0]],
   ['Bookworm', [0, 1, 4, 2, 9]],

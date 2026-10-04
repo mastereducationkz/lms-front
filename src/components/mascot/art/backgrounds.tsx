@@ -1,5 +1,6 @@
 /** Backgrounds, one per BACKGROUNDS entry: the brand «SAT» blue plus soft gradients. */
 import type { ReactNode } from 'react';
+import { BRAND_BLUE, MasterMark } from './MasterMark';
 
 type Bg = (uid: string) => ReactNode;
 
@@ -102,6 +103,20 @@ export const BACKGROUND_ART: Bg[] = [
       <Gradient uid={uid} from="#DCCBFF" to="#8C6CFF" />
       <Sparkle x={36} y={44} r={5} />
       <Sparkle x={166} y={36} r={4} />
+    </g>
+  ),
+  // Master blue — brand blue with a tonal pattern of emblems (appended last)
+  (uid) => (
+    <g>
+      <radialGradient id={`${uid}bg`} cx="0.5" cy="0.4" r="0.75">
+        <stop offset="0" stopColor="#3B7BF5" />
+        <stop offset="0.6" stopColor={BRAND_BLUE} />
+        <stop offset="1" stopColor="#1C4FD6" />
+      </radialGradient>
+      <rect width="200" height="200" fill={`url(#${uid}bg)`} />
+      {[[30, 32, 34], [100, 12, 26], [168, 32, 34], [12, 96, 26], [188, 96, 26], [36, 160, 30], [164, 160, 30], [100, 100, 30]].map(([x, y, s]) => (
+        <MasterMark key={`${x}-${y}`} x={x} y={y} size={s} color="#fff" opacity={0.13} />
+      ))}
     </g>
   ),
 ];

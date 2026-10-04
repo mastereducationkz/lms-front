@@ -31,15 +31,15 @@ describe('mascot codes', () => {
       e: CATEGORY_PARTS.expression.length,
       p: CATEGORY_PARTS.prop.length,
       b: CATEGORY_PARTS.background.length,
-    }).toEqual({ h: 16, g: 8, e: 8, p: 16, b: 10 });
+    }).toEqual({ h: 17, g: 8, e: 8, p: 16, b: 11 });
   });
 
   it('refuses anything that is not a valid v1 code', () => {
-    for (const bad of ['', 'v2.h1.g0.e0.p0.b0', 'v1.h1.g0.e0.p0', 'v1.h16.g0.e0.p0.b0', 'v1.g0.h1.e0.p0.b0', 'v1.h1.g0.e0.p0.b0.x', 'nonsense']) {
+    for (const bad of ['', 'v2.h1.g0.e0.p0.b0', 'v1.h1.g0.e0.p0', 'v1.h17.g0.e0.p0.b0', 'v1.h0.g0.e0.p0.b11', 'v1.g0.h1.e0.p0.b0', 'v1.h1.g0.e0.p0.b0.x', 'nonsense']) {
       expect(parseMascot(bad)).toBeNull();
     }
     expect(parseMascot(null)).toBeNull();
-    expect(parseMascot('v1.h15.g7.e7.p15.b9')).toEqual({ hat: 15, eyewear: 7, expression: 7, prop: 15, background: 9 });
+    expect(parseMascot('v1.h16.g7.e7.p15.b10')).toEqual({ hat: 16, eyewear: 7, expression: 7, prop: 15, background: 10 });
   });
 });
 
@@ -122,5 +122,30 @@ describe('UserAvatar', () => {
     expect(initialsOf('aru')).toBe('A');
     expect(initialsOf('  Oskenbay   Nur Bek ')).toBe('ON');
     expect(initialsOf('')).toBe('U');
+  });
+});
+
+describe('Master Education branding', () => {
+  it('appends the Master hoodie and Master blue last, so older codes keep their meaning', () => {
+    expect(CATEGORY_PARTS.hat[16].key).toBe('master-hoodie');
+    expect(CATEGORY_PARTS.background[10].key).toBe('master');
+    expect(CATEGORY_PARTS.hat[15].key).toBe('bandana');
+    expect(CATEGORY_PARTS.background[9].key).toBe('lilac');
+  });
+
+  it('opens the presets with Master Kasatik: hoodie, laptop, Master blue', () => {
+    expect(PRESETS[0].name).toBe('Master Kasatik');
+    expect(PRESETS[0].config).toEqual({ hat: 16, eyewear: 0, expression: 0, prop: 1, background: 10 });
+  });
+
+  it('draws the emblem from the one shared path set on every branded part', () => {
+    const emblem = (svg: string) => (svg.match(/d="M556 1221/g) || []).length;
+    const draw = (cfg: Partial<Record<MascotCategory, number>>) =>
+      renderToStaticMarkup(createElement(Orca, { config: { hat: 0, eyewear: 0, expression: 0, prop: 0, background: 0, ...cfg } }));
+    expect(emblem(draw({}))).toBe(0);
+    expect(emblem(draw({ hat: 16 }))).toBe(1); // hoodie chest
+    expect(emblem(draw({ prop: 1 }))).toBe(1); // laptop lid
+    expect(emblem(draw({ hat: 2 }))).toBe(2); // both ear cups
+    expect(emblem(draw({ background: 10 }))).toBeGreaterThan(4); // tonal pattern
   });
 });

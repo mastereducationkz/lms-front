@@ -1,5 +1,6 @@
 /** Study props. Held ones sit just above the resting right fin (which is drawn over them). */
 import type { PropPiece } from './props';
+import { BRAND_BLUE, MasterMark } from './MasterMark';
 
 function Steam({ x }: { x: number }) {
   return (
@@ -18,23 +19,21 @@ export const laptop: PropPiece = {
         <stop offset="1" stopColor="#AEB8C9" />
       </linearGradient>
       <rect x="54" y="160" width="92" height="50" rx="7" fill={`url(#${uid}lid)`} stroke="#fff" strokeWidth="2" />
-      <circle cx="100" cy="184" r="9" fill="#2F6BFF" />
-      <path d="M100 178 L101.8 182.2 L106 182.6 L102.8 185.4 L103.8 189.6 L100 187.4 L96.2 189.6 L97.2 185.4 L94 182.6 L98.2 182.2 Z" fill="#fff" />
+      <MasterMark x={100} y={183} size={28} color={BRAND_BLUE} />
       <rect x="40" y="203" width="120" height="8" rx="3" fill="#8F9AAE" />
     </g>
   ),
 };
 
+/** A Master Education hardcover: brand-blue cover, white emblem, page block peeking out. */
 export const book: PropPiece = {
   front: () => (
-    <g>
-      <path d="M52 172 Q78 160 100 170 Q122 160 148 172 L148 212 L52 212 Z" fill="#2F6BFF" />
-      <path d="M57 172 Q78 162 100 172 L100 210 Q78 200 57 210 Z" fill="#fff" />
-      <path d="M143 172 Q122 162 100 172 L100 210 Q122 200 143 210 Z" fill="#F4F1EA" />
-      <g stroke="#B9C2D3" strokeWidth="2" strokeLinecap="round">
-        <path d="M64 180 Q78 175 93 181 M64 188 Q78 183 93 189 M64 196 Q78 191 90 196" />
-        <path d="M107 181 Q122 175 136 180 M107 189 Q122 183 136 188 M110 196 Q122 191 136 196" />
-      </g>
+    <g transform="rotate(-5 100 186)">
+      <rect x="64" y="163" width="76" height="52" rx="5" fill="#EEF1F7" stroke="#fff" strokeWidth="1.5" />
+      <path d="M134 168 L134 212 M137 167 L137 212" stroke="#C9D2E3" strokeWidth="1.2" />
+      <rect x="58" y="160" width="76" height="54" rx="5" fill={BRAND_BLUE} stroke="#fff" strokeWidth="2" />
+      <rect x="58" y="160" width="9" height="54" rx="3" fill="#1D4ED8" />
+      <MasterMark x={100.5} y={185} size={28} color="#fff" />
     </g>
   ),
 };
@@ -43,10 +42,10 @@ export const coffee: PropPiece = {
   front: () => (
     <g>
       <Steam x={158} />
-      <path d="M176 134 a8 8 0 1 1 0 16" stroke="#FF6B6B" strokeWidth="4.5" fill="none" />
-      <rect x="148" y="126" width="30" height="32" rx="6" fill="#FF6B6B" />
-      <rect x="148" y="136" width="30" height="6" fill="#fff" opacity="0.9" />
-      <ellipse cx="163" cy="127" rx="13" ry="3" fill="#7A4A2B" />
+      <path d="M177 134 a8 8 0 1 1 0 16" stroke={BRAND_BLUE} strokeWidth="4.5" fill="none" />
+      <rect x="147" y="124" width="32" height="34" rx="6" fill={BRAND_BLUE} stroke="#fff" strokeWidth="1.8" />
+      <ellipse cx="163" cy="125.5" rx="14" ry="3" fill="#7A4A2B" />
+      <MasterMark x={163} y={142} size={21} color="#fff" />
     </g>
   ),
 };

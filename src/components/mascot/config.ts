@@ -39,6 +39,7 @@ export const HATS: MascotPart[] = [
   { key: 'nightcap', label: 'Nightcap' },
   { key: 'cap', label: 'Backwards cap' },
   { key: 'bandana', label: 'Rockstar bandana' },
+  { key: 'master-hoodie', label: 'Master hoodie' },
 ];
 
 export const EYEWEAR: MascotPart[] = [
@@ -93,6 +94,7 @@ export const BACKGROUNDS: MascotPart[] = [
   { key: 'space', label: 'Deep space' },
   { key: 'forest', label: 'Forest' },
   { key: 'lilac', label: 'Lilac' },
+  { key: 'master', label: 'Master blue' },
 ];
 
 export const CATEGORY_PARTS: Record<MascotCategory, MascotPart[]> = {
