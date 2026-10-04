@@ -30,8 +30,8 @@ const ALL_GROUPS = 'all';
 
 type GroupOption = { id: number; name: string };
 
-function toOptions(groups: GroupOption[], allLabel?: string): SearchableOption[] {
-  const sorted = groups.slice().sort((a, b) => a.name.localeCompare(b.name));
+function toOptions(groups: GroupOption[] | undefined, allLabel?: string): SearchableOption[] {
+  const sorted = (groups ?? []).slice().sort((a, b) => a.name.localeCompare(b.name));
   const rows = sorted.map((g) => ({ value: String(g.id), label: g.name }));
   return allLabel ? [{ value: ALL_GROUPS, label: allLabel }, ...rows] : rows;
 }
