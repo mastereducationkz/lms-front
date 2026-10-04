@@ -3,7 +3,7 @@
  * dashboard tile, the unlock celebration and Star of the Week. No React, no requests — tested in
  * achievements.test.ts.
  */
-import { seedMascot } from '../components/mascot/config';
+import { applyPart } from '../components/mascot/config';
 import type { Achievement, AchievementReward, AchievementTier, GroupStars, StarAward } from '../services/api/achievementsUi';
 
 export const TOTAL_LABEL = (list: Achievement[]) => `${list.filter((a) => a.unlocked).length} / ${list.length}`;
@@ -65,45 +65,10 @@ export function groupByCategory(list: Achievement[]): { key: string; label: stri
 
 // ── the orca wearing a reward ───────────────────────────────────────────────────────────
 
-export interface MascotLayers {
-  h: number;
-  g: number;
-  e: number;
-  p: number;
-  b: number;
-  f: number;
-}
-
-const TAGS = ['h', 'g', 'e', 'p', 'b', 'f'] as const;
-
-/** Reads a v1 or v2 mascot code without judging the part numbers (the mascot module does that). */
-export function parseLayers(code: string | null | undefined): MascotLayers | null {
-  if (!code) return null;
-  const parts = code.trim().split('.');
-  if (parts[0] !== 'v1' && parts[0] !== 'v2') return null;
-  const out: Partial<MascotLayers> = { f: 0 };
-  for (const seg of parts.slice(1)) {
-    const m = /^([hgepbf])(\d{1,2})$/.exec(seg);
-    if (!m) return null;
-    out[m[1] as keyof MascotLayers] = Number(m[2]);
-  }
-  return TAGS.every((t) => typeof out[t] === 'number') ? (out as MascotLayers) : null;
-}
-
-export const serializeLayers = (l: MascotLayers) => `v2.${TAGS.map((t) => `${t}${l[t]}`).join('.')}`;
-
-/** The student's current look as layers: their saved code, else their automatic orca. */
-export function currentLayers(code: string | null | undefined, userId: number | string): MascotLayers {
-  const parsed = parseLayers(code);
-  if (parsed) return parsed;
-  const c = seedMascot(userId) as unknown as Record<string, number>;
-  return { h: c.hat, g: c.eyewear, e: c.expression, p: c.prop, b: c.background, f: Number(c.frame) || 0 };
-}
-
-/** Their current look with one reward put on — the code «Wear it now» saves. */
+/** Their current look (saved code, else the automatic orca) with one reward put on — the code
+ *  «Wear it now» saves. One code format, owned by the mascot module. */
 export function withReward(code: string | null | undefined, userId: number | string, reward: AchievementReward): string {
-  const layers = currentLayers(code, userId);
-  return serializeLayers({ ...layers, [reward.layer]: reward.index });
+  return applyPart(code, userId, reward.layer, reward.index);
 }
 
 /** Most exciting first (legendary → earned), keeping the given order within a tier. */

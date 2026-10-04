@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { parseMascot, resolveMascot } from '../components/mascot/config';
 import type { Achievement, GroupStars } from '../services/api/achievementsUi';
 import {
   achievementNotificationPath,
@@ -6,10 +7,8 @@ import {
   byExcitement,
   celebrationReward,
   celebrationTitle,
-  currentLayers,
   groupByCategory,
   nextAchievement,
-  parseLayers,
   recentlyUnlocked,
   resolveHighlight,
   shouldShowCelebration,
@@ -87,23 +86,14 @@ describe('recent unlocks and categories', () => {
 });
 
 describe('the orca wearing a reward', () => {
-  it('reads v1 and v2 codes, frame defaulting to none', () => {
-    expect(parseLayers('v1.h3.g0.e2.p5.b4')).toEqual({ h: 3, g: 0, e: 2, p: 5, b: 4, f: 0 });
-    expect(parseLayers('v2.h17.g8.e1.p20.b13.f3')).toEqual({ h: 17, g: 8, e: 1, p: 20, b: 13, f: 3 });
-    expect(parseLayers('v1.h3')).toBeNull();
-    expect(parseLayers('x')).toBeNull();
-  });
-
   it('puts one reward on the current look and saves it as v2', () => {
     expect(withReward('v1.h3.g0.e2.p5.b4', 7, { layer: 'p', index: 20, name: 'Golden clock' })).toBe('v2.h3.g0.e2.p20.b4.f0');
     expect(withReward('v2.h3.g0.e2.p5.b4.f1', 7, { layer: 'f', index: 3, name: 'Gold laurel frame' })).toBe('v2.h3.g0.e2.p5.b4.f3');
   });
 
   it('starts from the automatic orca when nothing is saved', () => {
-    const auto = currentLayers(null, 42);
-    expect(withReward(null, 42, { layer: 'b', index: 11, name: 'Sparkle' })).toBe(
-      `v2.h${auto.h}.g${auto.g}.e${auto.e}.p${auto.p}.b11.f${auto.f}`,
-    );
+    const auto = resolveMascot(null, 42);
+    expect(parseMascot(withReward(null, 42, { layer: 'b', index: 11, name: 'Sparkle' }))).toEqual({ ...auto, background: 11 });
   });
 
   it('dresses the orca in the most exciting new reward', () => {
