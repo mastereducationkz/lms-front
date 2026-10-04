@@ -2,7 +2,8 @@
 import type { ReactNode } from 'react';
 import { BRAND_BLUE, MasterMark, MERCH_GOLD } from './MasterMark';
 import { BODY_PATH } from './base';
-import { masterHoodie } from './hoodie';
+import { goldMasterHoodie, masterHoodie } from './hoodie';
+import { REWARD_HATS } from './rewardHats';
 
 export interface Piece {
   back?: (uid: string) => ReactNode;
@@ -286,4 +287,7 @@ export const HAT_ART: Piece[] = [
   },
   // Master hoodie — appended last so saved codes keep their meaning
   masterHoodie,
+  // rewards (achievements), in contract order: h17 Gold Master hoodie, then h18–h25
+  goldMasterHoodie,
+  ...REWARD_HATS,
 ];

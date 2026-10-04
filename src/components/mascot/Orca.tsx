@@ -1,9 +1,13 @@
-/** One orca avatar: background → back of outfit → orca → face → eyewear → hat → prop → fin. */
+/**
+ * One orca avatar: background → back of outfit/prop → orca → face → eyewear → hat → prop → fin,
+ * clipped to a circle; a worn frame (achievement reward) rings the circle in an added margin.
+ */
 import { useId } from 'react';
 import { BACKGROUND_ART } from './art/backgrounds';
 import { Blush, OrcaBody, OrcaDefs, OrcaFinRight } from './art/base';
 import { EXPRESSION_ART } from './art/expressions';
 import { EYEWEAR_ART } from './art/eyewear';
+import { FRAME_ART, FRAME_PAD } from './art/frames';
 import { HAT_ART } from './art/hats';
 import { PROP_ART } from './art/props';
 import { CATEGORY_PARTS, type MascotConfig } from './config';
@@ -23,8 +27,11 @@ export default function Orca({ config, size = 40, className, title, idPrefix }: 
   const hat = HAT_ART[config.hat] ?? {};
   const prop = PROP_ART[config.prop] ?? {};
   const label = title ?? `Orca: ${CATEGORY_PARTS.hat[config.hat]?.label ?? ''}`;
+  const frame = config.frame ? FRAME_ART[config.frame] : undefined;
+  // Unframed orcas keep the exact 0–200 box; a frame widens it so the ring sits outside the circle.
+  const viewBox = frame ? `${-FRAME_PAD} ${-FRAME_PAD} ${200 + 2 * FRAME_PAD} ${200 + 2 * FRAME_PAD}` : '0 0 200 200';
   return (
-    <svg viewBox="0 0 200 200" width={size} height={size} className={className} role="img" aria-label={label}>
+    <svg viewBox={viewBox} width={size} height={size} className={className} role="img" aria-label={label}>
       <defs>
         <clipPath id={`${uid}circle`}>
           <circle cx="100" cy="100" r="100" />
@@ -34,6 +41,7 @@ export default function Orca({ config, size = 40, className, title, idPrefix }: 
       <g clipPath={`url(#${uid}circle)`}>
         {BACKGROUND_ART[config.background]?.(uid)}
         {hat.back?.(uid)}
+        {prop.back?.(uid)}
         <OrcaBody uid={uid} dorsal={!hat.noDorsal} />
         <Blush />
         {EXPRESSION_ART[config.expression]?.(uid)}
@@ -43,6 +51,7 @@ export default function Orca({ config, size = 40, className, title, idPrefix }: 
         <OrcaFinRight uid={uid} />
         {prop.over?.(uid)}
       </g>
+      {frame?.(uid)}
     </svg>
   );
 }
