@@ -75,7 +75,7 @@ const AchievementCard = forwardRef<HTMLDivElement, AchievementCardProps>(functio
           {hidden ? '???' : a.title}
         </p>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          {hidden ? 'A secret — keep learning to discover it.' : a.unlocked ? a.description || a.how_to : a.how_to || a.description}
+          {hidden ? (a.hint ? `Secret · hint: ${a.hint}` : 'A secret — keep learning to discover it.') : a.unlocked ? a.description || a.how_to : a.how_to || a.description}
         </p>
         {!hidden && reward && (
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
