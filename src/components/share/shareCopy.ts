@@ -106,14 +106,28 @@ export function crownText(c: { lesson_title: string | null; lesson_date: string 
 export const SHARE_CAPTION = 'Tag @master.education in your story!';
 export const TAG_PROMPT = 'Tag @master.education in your story to get featured!';
 
-export type ShareMethod = 'native' | 'download' | 'copy' | 'qr';
+/** How a card left the device: the system share sheet, or saved as an image. */
+export type ShareMethod = 'native' | 'download';
 
-/** Which primary action this device gets. On a phone the system share sheet is where Instagram,
- *  WhatsApp and Snapchat live. A computer's share sheet never offers a story, so there it's
- *  Download, Copy link and a QR code to finish on the phone. */
-export function primaryAction(env: { canShareFiles: boolean; isDesktop: boolean }): 'share' | 'download' {
-  return env.canShareFiles && !env.isDesktop ? 'share' : 'download';
+/** The dialog's buttons. [Share] wherever the device can share files (on a phone that sheet is
+ *  where Instagram, WhatsApp and Snapchat live); [Save image] always. A computer's share sheet
+ *  never offers a story, so there Save image comes first. */
+export function shareButtons(env: { canShareFiles: boolean; isDesktop: boolean }): { share: boolean; primary: 'share' | 'save' } {
+  return { share: env.canShareFiles, primary: env.canShareFiles && !env.isDesktop ? 'share' : 'save' };
 }
+
+/** iPhone / iPad (incl. iPadOS, which reports itself as a Mac with touch). */
+export function isIOSDevice(nav: { userAgent: string; platform?: string; maxTouchPoints?: number }): boolean {
+  return /iPad|iPhone|iPod/.test(nav.userAgent) || (nav.platform === 'MacIntel' && (nav.maxTouchPoints ?? 0) > 1);
+}
+
+/** How [Save image] saves: on iOS a download of a blob can open a tab instead of saving, so it
+ *  goes through the share sheet (its «Save Image» puts the card in Photos); elsewhere a download. */
+export function saveMethod(env: { ios: boolean; canShareFiles: boolean }): 'sheet' | 'download' {
+  return env.ios && env.canShareFiles ? 'sheet' : 'download';
+}
+
+export const DESKTOP_HINT = 'Open the LMS on your phone to post it to your story.';
 
 /** A share attempt's outcome, worded honestly: a closed sheet isn't an error, a failure isn't «cancelled». */
 export function shareErrorMessage(error: unknown): string | null {

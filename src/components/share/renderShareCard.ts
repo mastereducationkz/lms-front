@@ -398,14 +398,9 @@ export async function drawShareCard(spec: CardSpec, canvas?: HTMLCanvasElement):
   return el;
 }
 
-function toBlob(canvas: HTMLCanvasElement, type: string, quality?: number): Promise<Blob> {
-  return new Promise((resolve, reject) =>
-    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Could not prepare the card'))), type, quality));
-}
-
-/** The card twice: a crisp PNG for the share sheet and Download, a light JPEG for a share link. */
-export async function renderShareCard(spec: CardSpec): Promise<{ png: Blob; jpeg: Blob }> {
+/** The card as a PNG, for the share sheet and Save image. */
+export async function renderShareCard(spec: CardSpec): Promise<Blob> {
   const canvas = await drawShareCard(spec);
-  const [png, jpeg] = await Promise.all([toBlob(canvas, 'image/png'), toBlob(canvas, 'image/jpeg', 0.92)]);
-  return { png, jpeg };
+  return new Promise((resolve, reject) =>
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Could not prepare the card'))), 'image/png'));
 }

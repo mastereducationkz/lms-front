@@ -21,7 +21,7 @@ import {
 } from '@/lib/achievements';
 import { getMyAchievements, type MyAchievements } from '@/services/api/achievementsUi';
 import { ShareStarButton } from '@/components/share/ShareButtons';
-import { CrownsSection, MyShareLinks } from '@/components/share/ShareMoments';
+import { CrownsSection } from '@/components/share/ShareMoments';
 
 function Section({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
   return (
@@ -194,8 +194,6 @@ export default function AchievementsPage() {
           </div>
         </Section>
       ))}
-
-      <MyShareLinks />
     </div>
   );
 }

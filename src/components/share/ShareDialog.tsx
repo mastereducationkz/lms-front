@@ -1,25 +1,31 @@
 /**
- * «Share achievement» dialog (SH1–SH8): the student's story card, the name option, and the ways
- * out — the phone's share sheet (Instagram, Snapchat and WhatsApp live there), Download, Copy
- * link, and on a computer a QR code to finish on the phone.
+ * «Share achievement» dialog (owner, 2026-10-04): the student's story card, the name option, and
+ * two ways out — [Share] (the phone's share sheet: Instagram, Snapchat and WhatsApp live there)
+ * and [Save image]. No links: the card never leaves the device, only a count of the share does.
  *
- * The card is drawn the moment the dialog opens, so «Share» hands the file to the share sheet
- * synchronously inside the tap — iPhones refuse a share that starts after an await (the SAT
- * platform's bug). A link is a snapshot, made once per name option and only when first needed.
+ * The card is drawn the moment the dialog opens, so both buttons hand the file over synchronously
+ * inside the tap — iPhones refuse a share started after an await (the SAT platform's bug).
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import QRCode from 'qrcode';
-import { AtSign, Check, Download, Link2, QrCode, Share2, Smartphone } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { AtSign, Download, Laptop, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import { toast } from '@/components/Toast';
-import { createShare, revokeShare, trackShare, type ShareLink } from '@/services/api/shares';
+import { trackShare } from '@/services/api/shares';
 import { renderShareCard } from './renderShareCard';
-import { formatShareName, primaryAction, SHARE_CAPTION, shareErrorMessage, TAG_PROMPT, type NameMode, type ShareMethod } from './shareCopy';
+import {
+  DESKTOP_HINT,
+  formatShareName,
+  isIOSDevice,
+  saveMethod,
+  SHARE_CAPTION,
+  shareButtons,
+  shareErrorMessage,
+  TAG_PROMPT,
+  type NameMode,
+} from './shareCopy';
 import type { ShareItem } from './shareItems';
 
 const FILE_NAME = 'master-education.png';
-const EXPIRY = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' });
 
 function isDesktop(): boolean {
   try {
@@ -32,19 +38,11 @@ function isDesktop(): boolean {
 export default function ShareDialog({ item, onClose }: { item: ShareItem; onClose: () => void }) {
   const [nameMode, setNameMode] = useState<NameMode>('short');
   const [file, setFile] = useState<File | null>(null);
-  const [linkImage, setLinkImage] = useState<Blob | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [drawFailed, setDrawFailed] = useState(false);
-  const [linkByMode, setLinkByMode] = useState<Partial<Record<NameMode, ShareLink>>>({});
-  const [qr, setQr] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [busy, setBusy] = useState<ShareMethod | null>(null);
-  const [confirmOff, setConfirmOff] = useState(false);
-  const links = useRef<Partial<Record<NameMode, Promise<ShareLink>>>>({});
-  const tracked = useRef<Set<string>>(new Set());
   const desktop = useMemo(isDesktop, []);
-  const link = linkByMode[nameMode] ?? null;
-  const setLink = useCallback((l: ShareLink) => setLinkByMode((m) => ({ ...m, [nameMode]: l })), [nameMode]);
+  const ios = useMemo(() => typeof navigator !== 'undefined' && isIOSDevice(navigator), []);
 
   const short = formatShareName(item.userName, 'short');
   const full = formatShareName(item.userName, 'full');
@@ -61,15 +59,13 @@ export default function ShareDialog({ item, onClose }: { item: ShareItem; onClos
     setFile(null);
     setDrawFailed(false);
     renderShareCard({ text: item.text, name: formatShareName(item.userName, nameMode), orca: item.orca, crown: item.crown })
-      .then(({ png, jpeg }) => {
+      .then((png) => {
         if (cancelled) return;
         url = URL.createObjectURL(png);
         setPreview(url);
         setFile(new File([png], FILE_NAME, { type: 'image/png' }));
-        setLinkImage(jpeg);
       })
       .catch(() => { if (!cancelled) setDrawFailed(true); });
-    setQr(null);
     return () => {
       cancelled = true;
       if (url) URL.revokeObjectURL(url);
@@ -85,27 +81,8 @@ export default function ShareDialog({ item, onClose }: { item: ShareItem; onClos
     }
   }, [file]);
 
-  /** The snapshot link for the current name option — created once, on first need. */
-  const ensureLink = useCallback((): Promise<ShareLink> => {
-    if (!file || !linkImage) return Promise.reject(new Error('The card is still being drawn'));
-    const existing = links.current[nameMode];
-    if (existing) return existing;
-    const made = createShare({ kind: item.kind, ref: item.ref, nameMode, image: linkImage }).then((l) => {
-      setLink(l);
-      return l;
-    });
-    made.catch(() => { delete links.current[nameMode]; });
-    links.current[nameMode] = made;
-    return made;
-  }, [file, linkImage, item.kind, item.ref, nameMode, setLink]);
-
-  const count = useCallback((method: ShareMethod) => {
-    ensureLink().then((l) => {
-      const key = `${l.slug}:${method}`;
-      if (method !== 'qr' || !tracked.current.has(key)) trackShare(l.slug, method);
-      tracked.current.add(key);
-    }).catch(() => undefined);
-  }, [ensureLink]);
+  const buttons = shareButtons({ canShareFiles, isDesktop: desktop });
+  const viaSheet = saveMethod({ ios, canShareFiles }) === 'sheet';
 
   const share = () => {
     if (!file) return;
@@ -114,79 +91,62 @@ export default function ShareDialog({ item, onClose }: { item: ShareItem; onClos
     navigator.share({ files: [file], title: item.text.title, text: SHARE_CAPTION })
       .then(() => {
         setMessage('Shared! Tag @master.education so we can see it.');
-        count('native');
+        trackShare(item.kind, item.ref, 'native');
       })
       .catch((error) => setMessage(shareErrorMessage(error)));
   };
 
-  const download = () => {
+  const save = () => {
     if (!file || !preview) return;
+    setMessage(null);
+    if (viaSheet) {
+      // iOS: a blob download can open a tab instead of saving; the sheet's «Save Image» puts it in Photos.
+      navigator.share({ files: [file] })
+        .then(() => {
+          setMessage('Saved. Post it from your Photos as a story.');
+          trackShare(item.kind, item.ref, 'download');
+        })
+        .catch((error) => setMessage(shareErrorMessage(error)));
+      return;
+    }
     const a = document.createElement('a');
     a.href = preview;
     a.download = FILE_NAME;
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setMessage('Saved. Post it from your gallery as a story.');
-    count('download');
-  };
-
-  const copy = async () => {
-    setMessage(null);
-    setBusy('copy');
-    const urlBlob = ensureLink().then((l) => new Blob([l.url], { type: 'text/plain' }));
-    try {
-      if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
-        // A promised clipboard item keeps the tap's permission while the link is being made.
-        await navigator.clipboard.write([new ClipboardItem({ 'text/plain': urlBlob })]);
-      } else {
-        const l = await ensureLink();
-        await navigator.clipboard.writeText(l.url);
-      }
-      toast('Link copied — paste it anywhere.', 'success');
-      count('copy');
-    } catch (error) {
-      const failed = await urlBlob.then(() => null, (e: Error) => e);
-      setMessage(failed ? failed.message : 'Couldn’t copy automatically — select the link below and copy it.');
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const showQr = async () => {
-    setMessage(null);
-    setBusy('qr');
-    try {
-      const l = await ensureLink();
-      setQr(await QRCode.toDataURL(l.url, { margin: 1, width: 232, errorCorrectionLevel: 'M', color: { dark: '#0B1B4D', light: '#FFFFFF' } }));
-      count('qr');
-    } catch (error) {
-      setMessage((error as Error).message || 'Couldn’t make the QR code.');
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const turnOff = async () => {
-    if (!link) return;
-    if (!confirmOff) {
-      setConfirmOff(true);
-      return;
-    }
-    try {
-      const off = await revokeShare(link.slug);
-      setLink(off);
-      setQr(null);
-      delete links.current[nameMode];
-      setConfirmOff(false);
-      setMessage('Link turned off. Nobody can open it now.');
-    } catch (error) {
-      setMessage((error as Error).message);
-    }
+    setMessage(desktop ? 'Saved to your downloads.' : 'Saved. Post it from your gallery as a story.');
+    trackShare(item.kind, item.ref, 'download');
   };
 
   const ready = Boolean(file);
-  const showShare = primaryAction({ canShareFiles, isDesktop: desktop }) === 'share';
+  const shareButton = (primary: boolean) => (
+    <Button
+      key="share"
+      type="button"
+      size={primary ? 'lg' : 'default'}
+      variant={primary ? 'default' : 'outline'}
+      className={primary ? 'h-12 bg-[#2563EB] text-base text-white hover:bg-[#1D4ED8]' : ''}
+      disabled={!ready}
+      onClick={share}
+    >
+      <Share2 className={`mr-2 ${primary ? 'h-5 w-5' : 'h-4 w-4'}`} aria-hidden /> Share
+    </Button>
+  );
+  const saveButton = (primary: boolean) => (
+    <Button
+      key="save"
+      type="button"
+      size={primary ? 'lg' : 'default'}
+      variant={primary ? 'default' : 'outline'}
+      className={primary ? 'h-12 bg-[#2563EB] text-base text-white hover:bg-[#1D4ED8]' : ''}
+      disabled={!ready}
+      onClick={save}
+    >
+      <Download className={`mr-2 ${primary ? 'h-5 w-5' : 'h-4 w-4'}`} aria-hidden /> Save image
+    </Button>
+  );
+
   return (
     <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="max-h-[94vh] max-w-3xl overflow-y-auto rounded-3xl p-0 sm:p-0">
@@ -236,25 +196,14 @@ export default function ShareDialog({ item, onClose }: { item: ShareItem; onClos
             </fieldset>
 
             <div className="flex flex-col gap-2">
-              {showShare ? (
-                <Button type="button" size="lg" className="h-12 bg-[#2563EB] text-base text-white hover:bg-[#1D4ED8]" disabled={!ready} onClick={share}>
-                  <Share2 className="mr-2 h-5 w-5" aria-hidden /> Share
-                </Button>
-              ) : (
-                <Button type="button" size="lg" className="h-12 bg-[#2563EB] text-base text-white hover:bg-[#1D4ED8]" disabled={!ready} onClick={download}>
-                  <Download className="mr-2 h-5 w-5" aria-hidden /> Download image
-                </Button>
+              {buttons.primary === 'share'
+                ? [shareButton(true), saveButton(false)]
+                : [saveButton(true), ...(buttons.share ? [shareButton(false)] : [])]}
+              {desktop && (
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Laptop className="h-4 w-4 shrink-0" aria-hidden /> {DESKTOP_HINT}
+                </p>
               )}
-              <div className="grid grid-cols-2 gap-2">
-                {showShare && (
-                  <Button type="button" variant="outline" disabled={!ready} onClick={download}>
-                    <Download className="mr-2 h-4 w-4" aria-hidden /> Download
-                  </Button>
-                )}
-                <Button type="button" variant="outline" disabled={!ready || busy === 'copy'} onClick={copy} className={showShare ? '' : 'col-span-2'}>
-                  <Link2 className="mr-2 h-4 w-4" aria-hidden /> {busy === 'copy' ? 'Making the link…' : 'Copy link'}
-                </Button>
-              </div>
             </div>
 
             <div className="rounded-2xl bg-blue-50/80 dark:bg-blue-950/30 p-3 text-sm">
@@ -266,54 +215,10 @@ export default function ShareDialog({ item, onClose }: { item: ShareItem; onClos
                 <li><span className="font-semibold text-gray-700 dark:text-gray-200">WhatsApp</span> → My status</li>
                 <li><span className="font-semibold text-gray-700 dark:text-gray-200">Snapchat</span> → My Story</li>
               </ul>
+              {viaSheet && (
+                <p className="mt-2 text-xs text-muted-foreground">Save image opens the share menu — choose «Save Image».</p>
+              )}
             </div>
-
-            {desktop && (
-              <div className="flex items-center gap-4 rounded-2xl border border-gray-200 dark:border-border p-3">
-                {qr ? (
-                  <img src={qr} alt="QR code for your share link" width={116} height={116} className="rounded-lg" />
-                ) : (
-                  <span className="flex h-[116px] w-[116px] shrink-0 items-center justify-center rounded-lg bg-gray-50 dark:bg-gray-900">
-                    <Smartphone className="h-8 w-8 text-gray-400" aria-hidden />
-                  </span>
-                )}
-                <div className="min-w-0 text-sm">
-                  <p className="font-semibold text-gray-900 dark:text-white">On your phone?</p>
-                  <p className="mt-0.5 text-muted-foreground">
-                    {qr ? 'Scan it with your phone camera, then tap «Share to your story».' : 'Get a QR code and post it to your story from your phone.'}
-                  </p>
-                  {!qr && (
-                    <Button type="button" variant="outline" size="sm" className="mt-2" disabled={!ready || busy === 'qr'} onClick={showQr}>
-                      <QrCode className="mr-2 h-4 w-4" aria-hidden /> {busy === 'qr' ? 'Making the link…' : 'Show QR code'}
-                    </Button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {link && (
-              <div className="rounded-2xl border border-gray-200 dark:border-border p-3 text-xs">
-                {link.live ? (
-                  <>
-                    <p className="flex items-center gap-1.5 font-medium text-emerald-700 dark:text-emerald-400">
-                      <Check className="h-3.5 w-3.5" aria-hidden /> Link ready · works until {EXPIRY.format(new Date(link.expires_at))}
-                    </p>
-                    <input
-                      readOnly
-                      value={link.url}
-                      onFocus={(e) => e.currentTarget.select()}
-                      className="mt-2 w-full rounded-lg border border-gray-200 dark:border-border bg-gray-50 dark:bg-gray-900 px-2 py-1.5 text-xs"
-                      aria-label="Share link"
-                    />
-                    <button type="button" onClick={turnOff} className="mt-2 font-medium text-gray-500 underline-offset-2 hover:text-red-600 hover:underline">
-                      {confirmOff ? 'Tap again to turn the link off' : 'Turn off this link'}
-                    </button>
-                  </>
-                ) : (
-                  <p className="text-muted-foreground">This link is turned off. Copy a new one any time.</p>
-                )}
-              </div>
-            )}
 
             <p role="status" aria-live="polite" className="min-h-[1.25rem] text-sm text-gray-600 dark:text-gray-300">{message}</p>
           </div>

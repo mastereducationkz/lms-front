@@ -15,7 +15,7 @@ function useStudent(): ShareUser | null {
   return user && user.role === 'student' ? (user as ShareUser) : null;
 }
 
-function ShareLinkButton({ label = 'Share', build, onOpen, className = '' }: {
+function ShareEntryButton({ label = 'Share', build, onOpen, className = '' }: {
   label?: string;
   build: () => ShareItem | null;
   onOpen?: () => void;
@@ -43,7 +43,7 @@ function ShareLinkButton({ label = 'Share', build, onOpen, className = '' }: {
 export function ShareAchievementButton({ achievement, className }: { achievement: Achievement; className?: string }) {
   const student = useStudent();
   if (!student || !achievement.unlocked) return null;
-  return <ShareLinkButton className={className} build={() => achievementItem(achievement, student)} />;
+  return <ShareEntryButton className={className} build={() => achievementItem(achievement, student)} />;
 }
 
 /** In the unlock celebration: shares the most exciting new achievement, closing the celebration first. */
@@ -72,11 +72,11 @@ export function ShareCelebrationButton({ achievement, onOpen }: { achievement: A
 export function ShareStarButton({ star, className }: { star: StarAward; className?: string }) {
   const student = useStudent();
   if (!student || star.id == null) return null;
-  return <ShareLinkButton className={className} build={() => starItem(star, student)} />;
+  return <ShareEntryButton className={className} build={() => starItem(star, student)} />;
 }
 
 export function ShareCrownButton({ crown, className }: { crown: Crown; className?: string }) {
   const student = useStudent();
   if (!student) return null;
-  return <ShareLinkButton className={className} build={() => crownItem(crown, student)} />;
+  return <ShareEntryButton className={className} build={() => crownItem(crown, student)} />;
 }

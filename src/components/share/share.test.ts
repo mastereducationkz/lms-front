@@ -4,8 +4,10 @@ import {
   achievementText,
   crownText,
   formatShareName,
-  primaryAction,
+  isIOSDevice,
   PROUD_LINES,
+  saveMethod,
+  shareButtons,
   shareErrorMessage,
   starText,
 } from './shareCopy';
@@ -80,10 +82,22 @@ describe('what can be shared', () => {
 });
 
 describe('sharing fallbacks', () => {
-  it('uses the share sheet only when the device can share files', () => {
-    expect(primaryAction({ canShareFiles: true, isDesktop: false })).toBe('share');
-    expect(primaryAction({ canShareFiles: false, isDesktop: false })).toBe('download');
-    expect(primaryAction({ canShareFiles: true, isDesktop: true })).toBe('download');   // no stories on a laptop
+  it('offers Share where files can be shared and Save image always; a laptop leads with Save', () => {
+    expect(shareButtons({ canShareFiles: true, isDesktop: false })).toEqual({ share: true, primary: 'share' });
+    expect(shareButtons({ canShareFiles: false, isDesktop: false })).toEqual({ share: false, primary: 'save' });
+    expect(shareButtons({ canShareFiles: true, isDesktop: true })).toEqual({ share: true, primary: 'save' });
+    expect(shareButtons({ canShareFiles: false, isDesktop: true })).toEqual({ share: false, primary: 'save' });
+  });
+
+  it('saves through the share sheet on iOS, by download elsewhere', () => {
+    const iphone = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)';
+    expect(isIOSDevice({ userAgent: iphone })).toBe(true);
+    expect(isIOSDevice({ userAgent: 'Mozilla/5.0 (Macintosh)', platform: 'MacIntel', maxTouchPoints: 5 })).toBe(true);
+    expect(isIOSDevice({ userAgent: 'Mozilla/5.0 (Macintosh)', platform: 'MacIntel', maxTouchPoints: 0 })).toBe(false);
+    expect(isIOSDevice({ userAgent: 'Mozilla/5.0 (Linux; Android 14)' })).toBe(false);
+    expect(saveMethod({ ios: true, canShareFiles: true })).toBe('sheet');
+    expect(saveMethod({ ios: true, canShareFiles: false })).toBe('download');
+    expect(saveMethod({ ios: false, canShareFiles: true })).toBe('download');
   });
 
   it('never calls a failure «cancelled», and stays quiet when the student closes the sheet', () => {
