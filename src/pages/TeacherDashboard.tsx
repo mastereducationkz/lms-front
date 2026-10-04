@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { WebinarPayCard, type WebinarPay } from '../components/teacher/WebinarPayCard';
 import { lessonPath } from '../lib/lessonLinks';
 import apiClient from '../services/api';
 import type { TeacherTodayHomework } from '../services/api';
@@ -169,6 +170,8 @@ interface SalaryBreakdownResult {
   /** False while the half-month is open: the figure can still move. */
   fines_final?: boolean
   net_amount_tenge?: number
+  /** Webinars and office hours: paid lines (inside `total_amount_tenge`) and unpaid ones with why. */
+  webinars?: WebinarPay
   groups: SalaryBreakdownGroup[]
   message_text: string
   contacts: {
@@ -2089,6 +2092,7 @@ export default function TeacherDashboard() {
                 {(salaryResult.fines_tenge ?? 0) > 0 ? 'Начислено' : 'Итого'}:{' '}
                 <span className="font-semibold">{salaryResult.total_amount_tenge.toLocaleString()} тг</span>
               </div>
+              <WebinarPayCard webinars={salaryResult.webinars} />
               {/* The deduction is its own line under the pay, never folded into it. A teacher
                   who sees only a smaller number has to ask somebody what happened, and this
                   card exists so that they do not have to. */}
@@ -2149,7 +2153,7 @@ export default function TeacherDashboard() {
                       {salaryResult.reference_rates.trial_hourly} ₸/час
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Вебинары, Office Hours и пробные уроки добавляются менеджером вручную.
+                      Вебинары и Office Hours считаются автоматически; пробные уроки добавляются менеджером вручную.
                     </p>
                   </>
                 )}
