@@ -19,6 +19,8 @@ export interface Achievement {
   title: string;
   description: string | null;
   how_to: string | null;
+  /** A nudge shown while a secret is still locked (never the rule itself). */
+  hint?: string | null;
   tier: AchievementTier;
   category: string;
   secret: boolean;

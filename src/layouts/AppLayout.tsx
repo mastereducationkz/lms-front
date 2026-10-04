@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { SidebarDesktop, SidebarMobile } from '../components/Sidebar.tsx';
 import Topbar from '../components/Topbar.tsx';
-import { Toaster } from '../components/Toast.tsx';
 import PlatformUpdatesModal from '../components/PlatformUpdatesModal.tsx';
 import DailyQuestionsPopup from '../components/DailyQuestionsPopup.tsx';
 import UnlockCelebration from '../components/achievements/UnlockCelebration';
@@ -130,7 +129,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
         <div className="p-4 sm:p-6 lg:p-8">
           {children}
         </div>
-        <Toaster />
       </main>
       <SidebarMobile open={mobileOpen} onClose={() => setMobileOpen(false)} />
       
