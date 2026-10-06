@@ -16,7 +16,7 @@ import TopicSuggestionRow from './TopicSuggestionRow';
 interface Props {
   eventId: number;
   /** 'page' (default) is a section stacked under other lesson content, so it draws its own top
-   *  rule; 'dialog' is the whole content of a dialog (the attendance grid's 📎), with no rule. */
+   *  rule; 'dialog' is the whole content of a dialog (the attendance grid's paperclip), with no rule. */
   variant?: 'dialog' | 'page';
   /** Called after any write (upload/attach/copy/edit/detach/moderate/topic save) refreshes the
    * section, so the caller can refresh anything else derived from the lesson (e.g. an
@@ -66,7 +66,7 @@ function sameLesson(data: LessonMaterials | null, eventId: number): data is Less
 export default function ClassMaterialsSection({ eventId, variant = 'page', onChanged, initialData }: Props) {
   const { user } = useAuth();
   // In a dialog the heading row is the first thing in it, so it keeps clear of the dialog's
-  // own close ✕ in the top-right corner instead of drawing a top rule.
+  // own close X in the top-right corner instead of drawing a top rule.
   const frame = variant === 'dialog' ? '' : 'mt-4 border-t border-border pt-4';
   const headingRow = `flex flex-wrap items-center justify-between gap-2${variant === 'dialog' ? ' pr-6' : ''}`;
   const isParent = user?.role === 'parent';

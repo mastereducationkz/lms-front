@@ -110,12 +110,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
             onClick={() => setIsReferralModalOpen(false)}
           >
             <div
-              className="relative w-full max-w-xl rounded-xl border border-emerald-200 bg-white p-4 text-emerald-950 shadow-xl dark:border-emerald-800 dark:bg-card dark:text-emerald-100 sm:p-5"
+              className="relative w-full max-w-xl rounded-xl border border-emerald-200 bg-card p-4 text-emerald-950 shadow-xl dark:border-emerald-800 dark:text-emerald-100 sm:p-5"
               onClick={(event) => event.stopPropagation()}
             >
               <button
                 onClick={() => setIsReferralModalOpen(false)}
-                className="absolute right-2 top-2 rounded-md p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+                className="absolute right-2 top-2 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-gray-800 dark:hover:text-foreground"
                 aria-label="Закрыть окно с подробной информацией"
               >
                 <X className="h-4 w-4" aria-hidden="true" />

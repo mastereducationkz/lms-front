@@ -44,7 +44,7 @@ function numberLabel(n: number, word: string): string {
 
 function groupStateClass(state: RecordingFolderGroup['state']): string {
   if (state === 'finished') return 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-300';
-  if (state === 'archived') return 'border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900/40 dark:text-slate-300';
+  if (state === 'archived') return 'border-border bg-muted text-slate-700 dark:text-foreground';
   return 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/70 dark:bg-emerald-950/30 dark:text-emerald-300';
 }
 
@@ -178,7 +178,7 @@ export default function RecordingFoldersView({ filters, locale, onOpen }: Props)
 
       {teacherId === undefined ? (
         tree && tree.length > 0 ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 @lg:grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4">
             {tree.map((teacher) => (
               <button key={teacher.id ?? 'unassigned'} type="button" onClick={() => setTeacherId(teacher.id)}
                 className="group flex min-h-28 items-start gap-3 rounded-xl border border-border bg-card p-4 text-left shadow-sm transition hover:border-primary/40 hover:bg-muted/40 hover:shadow">
@@ -197,7 +197,7 @@ export default function RecordingFoldersView({ filters, locale, onOpen }: Props)
       ) : !selectedTeacher ? (
         <EmptyState icon={<Folder className="h-6 w-6" aria-hidden />} title={t.noFolders} />
       ) : groupId === undefined ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 @lg:grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4">
           {selectedTeacher.groups.map((group) => (
             <button key={group.id} type="button" onClick={() => setGroupId(group.id)}
               className="group flex min-h-32 items-start gap-3 rounded-xl border border-border bg-card p-4 text-left shadow-sm transition hover:border-primary/40 hover:bg-muted/40 hover:shadow">
@@ -234,7 +234,7 @@ export default function RecordingFoldersView({ filters, locale, onOpen }: Props)
                 <span className="text-[15px] font-semibold text-foreground">{dayHeading(day.key, now, locale)}</span>
                 <span className="text-[13px] tabular-nums text-muted-foreground">{day.items.length}</span>
               </h2>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-4 @lg:grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4">
                 {day.items.map((item) => <RecordingCard key={item.event_id} item={item} locale={locale} onOpen={onOpen} substitutionFor={substitutionFor} />)}
               </div>
             </section>
@@ -260,7 +260,7 @@ function EmptyState({ icon, title, children }: { icon: ReactNode; title: string;
 }
 
 function FolderSkeleton() {
-  return <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" aria-busy="true">
+  return <div className="grid grid-cols-1 gap-3 @lg:grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4" aria-busy="true">
     {Array.from({ length: 8 }).map((_, index) => <div key={index} className="h-28 animate-pulse rounded-xl border border-border bg-muted/40" />)}
   </div>;
 }

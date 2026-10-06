@@ -23,11 +23,11 @@ export default function CourseCard({ course, onContinue }: CourseCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
-        return 'bg-green-100 text-green-800 hover:bg-green-200';
+        return 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-200 dark:hover:bg-green-900/60';
       case 'in-progress':
-        return 'bg-blue-100 text-blue-800 hover:bg-blue-200';
+        return 'bg-brand-subtle text-brand-subtle-foreground hover:bg-blue-200 dark:hover:bg-brand-subtle/80';
       default:
-        return 'bg-gray-100 text-gray-700 hover:bg-gray-200';
+        return 'bg-muted text-gray-700 dark:text-foreground hover:bg-gray-200 dark:hover:bg-foreground/10';
     }
   };
 
@@ -65,7 +65,7 @@ export default function CourseCard({ course, onContinue }: CourseCardProps) {
   return (
     <Card className="group overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-0 shadow-sm">
       {/* Course Image */}
-      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="relative h-48 overflow-hidden bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-brand-surface dark:to-brand-subtle">
         {course.image ? (
           <img
             src={course.image}
@@ -74,7 +74,7 @@ export default function CourseCard({ course, onContinue }: CourseCardProps) {
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <BookOpen className="h-16 w-16 text-gray-400" />
+            <BookOpen className="h-16 w-16 text-gray-400 dark:text-muted-foreground" />
           </div>
         )}
         {/* Status Badge Overlay */}
@@ -91,26 +91,26 @@ export default function CourseCard({ course, onContinue }: CourseCardProps) {
 
       <CardContent className="p-6">
         {/* Course Title */}
-        <h3 className="text-xl font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+        <h3 className="text-xl font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-brand transition-colors">
           {course.title}
         </h3>
 
         {/* Course Description */}
         {course.description && (
-          <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+          <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
             {course.description}
           </p>
         )}
 
         {/* Course Meta Information */}
-        <div className="flex items-center text-gray-500 text-sm mb-4 space-x-3">
+        <div className="flex items-center text-muted-foreground text-sm mb-4 space-x-3">
           <div className="flex items-center gap-1">
             <User className="h-4 w-4" />
             <span>{course.teacher || 'Unknown Teacher'}</span>
           </div>
           {course.modulesCount && (
             <>
-              <span className="text-gray-300">•</span>
+              <span className="text-gray-300 dark:text-muted-foreground">•</span>
               <div className="flex items-center gap-1">
                 <BookOpen className="h-4 w-4" />
                 <span>{course.modulesCount} modules</span>
@@ -122,18 +122,18 @@ export default function CourseCard({ course, onContinue }: CourseCardProps) {
         {/* Progress Section */}
         <div className="space-y-3 mb-6">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">Progress</span>
-            <span className="text-sm font-semibold text-gray-900">{course.progress}%</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-foreground">Progress</span>
+            <span className="text-sm font-semibold text-foreground">{course.progress}%</span>
           </div>
           <div className="relative">
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div className="w-full bg-gray-200 dark:bg-secondary rounded-full h-2">
               <div
                 className={`h-2 rounded-full transition-all duration-500 ${
                   course.progress >= 100 
                     ? 'bg-gradient-to-r from-green-400 to-green-600' 
                     : course.progress > 0 
                     ? 'bg-gradient-to-r from-blue-400 to-blue-600'
-                    : 'bg-gray-300'
+                    : 'bg-gray-300 dark:bg-secondary'
                 }`}
                 style={{ width: `${course.progress}%` }}
               />

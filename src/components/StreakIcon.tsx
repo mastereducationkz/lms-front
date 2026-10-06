@@ -50,15 +50,15 @@ const StreakIcon: React.FC = () => {
   const getStreakColor = () => {
     switch (streakData?.streak_status) {
       case 'active':
-        return 'bg-white dark:bg-card text-orange-600 dark:text-orange-400';
+        return 'bg-card text-orange-600 dark:text-orange-400';
       case 'at_risk':
-        return 'bg-white dark:bg-card text-amber-600 dark:text-amber-400';
+        return 'bg-card text-amber-600 dark:text-amber-400';
       case 'broken':
-        return 'bg-white dark:bg-card text-gray-500 dark:text-gray-400';
+        return 'bg-card text-muted-foreground';
       case 'not_started':
-        return 'bg-white dark:bg-card text-gray-500 dark:text-gray-400';
+        return 'bg-card text-muted-foreground';
       default:
-        return 'bg-white dark:bg-card text-gray-500 dark:text-gray-400';
+        return 'bg-card text-muted-foreground';
     }
   };
 
@@ -197,16 +197,16 @@ const StreakIcon: React.FC = () => {
       
       {/* Calendar Popover */}
       {showCalendar && (
-        <div className="absolute top-full right-0 mt-2 bg-white dark:bg-popover rounded-lg shadow-xl border border-gray-200 dark:border-border p-4 z-50 w-72">
+        <div className="absolute top-full right-0 mt-2 bg-popover rounded-lg shadow-xl border border-border p-4 z-50 w-72">
           <div className="text-center mb-3">
-            <h3 className="font-semibold text-gray-900 dark:text-foreground">{monthName}</h3>
-            <p className="text-sm text-gray-600 dark:text-muted-foreground mt-1">{getTooltipText()}</p>
+            <h3 className="font-semibold text-foreground">{monthName}</h3>
+            <p className="text-sm text-muted-foreground mt-1">{getTooltipText()}</p>
             {typeof streakData.longest_streak === 'number' && streakData.longest_streak > 0 && (
               <p className="text-xs font-medium text-orange-600 dark:text-orange-400 mt-1">
                 Best streak: {streakData.longest_streak} day{streakData.longest_streak === 1 ? '' : 's'}
               </p>
             )}
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            <p className="text-xs text-muted-foreground mt-2">
               Your streak counts days you learn: a finished step, homework, a lesson attended, a live answer or a weekly test.
             </p>
           </div>
@@ -215,7 +215,7 @@ const StreakIcon: React.FC = () => {
           <div className="grid grid-cols-7 gap-1">
             {/* Day headers */}
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="text-xs font-medium text-gray-500 dark:text-gray-400 text-center py-1">
+              <div key={day} className="text-xs font-medium text-muted-foreground text-center py-1">
                 {day}
               </div>
             ))}
@@ -229,15 +229,15 @@ const StreakIcon: React.FC = () => {
               let dayClasses = "aspect-square flex items-center justify-center text-sm rounded-md transition-colors ";
               
               if (day.isToday) {
-                dayClasses += "ring-2 ring-blue-500 dark:ring-brand font-bold ";
+                dayClasses += "ring-2 ring-ring dark:ring-brand font-bold ";
               }
               
               if (day.isActive) {
                 dayClasses += "bg-orange-500 text-white font-semibold ";
               } else if (day.isPast) {
-                dayClasses += "text-gray-400 dark:text-gray-500 ";
+                dayClasses += "text-gray-400 dark:text-muted-foreground ";
               } else {
-                dayClasses += "text-gray-700 dark:text-gray-300 ";
+                dayClasses += "text-gray-700 dark:text-foreground ";
               }
               
               return (
@@ -249,14 +249,14 @@ const StreakIcon: React.FC = () => {
           </div>
           
           {/* Legend */}
-          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-border flex items-center justify-between text-xs">
+          <div className="mt-3 pt-3 border-t border-border flex items-center justify-between text-xs">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 rounded bg-orange-500"></div>
-              <span className="text-gray-600 dark:text-gray-400">Active days</span>
+              <span className="text-muted-foreground">Active days</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded ring-2 ring-blue-500 dark:ring-brand"></div>
-              <span className="text-gray-600 dark:text-gray-400">Today</span>
+              <div className="w-4 h-4 rounded ring-2 ring-ring dark:ring-brand"></div>
+              <span className="text-muted-foreground">Today</span>
             </div>
           </div>
         </div>

@@ -13,7 +13,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 const STATUS_META: Record<string, { label: string; dot: string; text: string }> = {
   pending: { label: 'Awaiting approval', dot: 'bg-amber-500', text: 'text-amber-700 dark:text-amber-400' },
-  pending_teacher: { label: 'Awaiting teacher', dot: 'bg-blue-500', text: 'text-blue-700 dark:text-blue-400' },
+  pending_teacher: { label: 'Awaiting teacher', dot: 'bg-brand-solid', text: 'text-brand-subtle-foreground' },
   approved: { label: 'Approved', dot: 'bg-emerald-500', text: 'text-emerald-700 dark:text-emerald-400' },
   rejected: { label: 'Rejected', dot: 'bg-rose-500', text: 'text-rose-700 dark:text-rose-400' },
 };

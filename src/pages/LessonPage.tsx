@@ -182,9 +182,9 @@ const CHECKPOINT_CHIP_LABEL: Record<StudentCheckpointItem['status'], string> = {
   locked: 'Locked', available: 'Open', completed: 'Done', overdue: 'Overdue', reopened: 'Open',
 };
 const CHECKPOINT_CHIP_CLASS: Record<StudentCheckpointItem['status'], string> = {
-  locked: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
+  locked: 'bg-muted text-muted-foreground',
   available: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
-  completed: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+  completed: 'bg-brand-subtle text-brand-subtle-foreground',
   overdue: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
   reopened: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
 };
@@ -1870,7 +1870,7 @@ export default function LessonPage() {
       if (!attachments || attachments.length === 0) return null;
 
       return (
-        <div className="mt-6 p-4 rounded-lg border dark:border-gray-700">
+        <div className="mt-6 p-4 rounded-lg border dark:border-border">
           <div className="space-y-4">
             {attachments.map((attachment) => (
               <div key={attachment.id} className="rounded">
@@ -1929,10 +1929,10 @@ export default function LessonPage() {
 
 
     const optionalBanner = currentStep.is_optional ? (
-      <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-md p-3 mb-4 flex items-start gap-3">
+      <div className="bg-brand-surface border border-brand-border rounded-md p-3 mb-4 flex items-start gap-3">
          <div>
-            <h4 className="text-sm font-medium text-indigo-800 dark:text-indigo-400">Optional Step</h4>
-            <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
+            <h4 className="text-sm font-medium text-brand-subtle-foreground">Optional Step</h4>
+            <p className="text-xs text-brand mt-1">
               {currentStep.content_type === 'quiz'
                 ? `You can skip this quiz, but to mark it complete you need at least ${resolveQuizPassingScorePercent(quizData, true)}%.`
                 : 'You can skip this step and proceed to the next one without completing it.'}
@@ -1951,7 +1951,7 @@ export default function LessonPage() {
               
               {/* Special "Read explanation" text above everything */}
               {currentStep.content_text && currentStep.content_text.includes("Read the explanation and make notes.") && (
-                <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 text-blue-700 dark:text-blue-400">
+                <div className="mb-4 p-4 bg-brand-surface border-l-4 border-blue-500 dark:border-brand text-brand-subtle-foreground">
                   <p className="font-medium">Read the explanation and make notes.</p>
                 </div>
               )}
@@ -2004,16 +2004,16 @@ export default function LessonPage() {
   
               {/* Special "Watch explanations" text above video */}
               {currentStep.content_text && currentStep.content_text.includes("Watch the explanations for the previous questions") && (
-                <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 text-blue-700 dark:text-blue-400">
+                <div className="mb-4 p-4 bg-brand-surface border-l-4 border-blue-500 dark:border-brand text-brand-subtle-foreground">
                   <p className="font-medium">Watch the explanations for the previous questions</p>
                 </div>
               )}
   
               {(hasRuVideo || hasEnVideo) && (
-                <div className="bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
+                <div className="bg-muted rounded-lg overflow-hidden">
                   {hasRuVideo && hasEnVideo && (
-                    <div className="flex items-center justify-end gap-2 p-3 border-b border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-900/40">
-                      <span className="text-xs text-gray-500 dark:text-gray-400">Video language</span>
+                    <div className="flex items-center justify-end gap-2 p-3 border-b border-border bg-white/80 dark:bg-background">
+                      <span className="text-xs text-muted-foreground">Video language</span>
                       <Button
                         variant={selectedVideoLanguage === 'ru' ? 'default' : 'outline'}
                         size="sm"
@@ -2338,14 +2338,14 @@ export default function LessonPage() {
               const asCheckpointQuiz = checkpointHints.byQuizLesson.get(Number(lesson.id));
               if (requiredByCheckpoint) {
                 return (
-                  <span className="h-5 px-2 inline-flex items-center rounded bg-muted text-muted-foreground border border-border text-[10px] font-medium shrink-0">
+                  <span className="h-5 min-w-0 truncate px-2 inline-block leading-5 rounded bg-muted text-muted-foreground border border-border text-[10px] font-medium">
                     Counts toward Checkpoint {requiredByCheckpoint.number}
                   </span>
                 );
               }
               if (asCheckpointQuiz) {
                 return (
-                  <span className={`h-5 px-2 inline-flex items-center rounded text-[10px] font-medium shrink-0 ${CHECKPOINT_CHIP_CLASS[asCheckpointQuiz.status]}`}>
+                  <span className={`h-5 min-w-0 truncate px-2 inline-block leading-5 rounded text-[10px] font-medium ${CHECKPOINT_CHIP_CLASS[asCheckpointQuiz.status]}`}>
                     {asCheckpointQuiz.status === 'overdue'
                       ? `Overdue · ${deadlineCountdown(asCheckpointQuiz.deadline)} · you can still submit — it’ll just be marked late`
                       : asCheckpointQuiz.deadline && asCheckpointQuiz.status !== 'completed'
@@ -2358,7 +2358,7 @@ export default function LessonPage() {
             })()}
             {staffPreview && (
               <span
-                className="ml-2 h-5 px-2 inline-flex items-center gap-1 rounded text-[10px] font-medium shrink-0 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                className="ml-2 h-5 px-2 inline-flex items-center gap-1 rounded text-[10px] font-medium shrink-0 bg-brand-surface text-brand-subtle-foreground"
                 title={usesRussianUi(user?.role)
                   ? 'Вы смотрите урок как сотрудник: прогресс, попытки и завершения не сохраняются.'
                   : 'You are previewing as staff: no progress, attempts or completions are saved.'}
@@ -2387,8 +2387,8 @@ export default function LessonPage() {
                 title="DEV: Auto-complete all steps"
                 className="ml-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 font-mono text-xs"
               >
-                <Wrench className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
-                Auto-Complete
+                <Wrench className="h-3.5 w-3.5 sm:mr-1" aria-hidden="true" />
+                <span className="hidden sm:inline">Auto-Complete</span>
               </Button>
             )}
           </div>
@@ -2671,15 +2671,15 @@ export default function LessonPage() {
                       {currentStep?.is_optional && (
                         <>
                           <span className="hidden sm:inline">•</span>
-                          <span className="text-blue-600 dark:text-blue-400 font-medium">(Optional)</span>
+                          <span className="text-brand font-medium">(Optional)</span>
                         </>
                       )}
                     </div>
                     {currentStep?.content_type === 'quiz' && saveStatus !== 'idle' && (
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground" aria-live="polite">
                         {saveStatus === 'saving' && (<><Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /><span>Saving…</span></>)}
-                        {saveStatus === 'saved' && (<><Cloud className="w-3 h-3 text-emerald-500" aria-hidden="true" /><span>Saved</span></>)}
-                        {saveStatus === 'error' && (<><CloudOff className="w-3 h-3 text-rose-500" aria-hidden="true" /><span>Save failed</span></>)}
+                        {saveStatus === 'saved' && (<><Cloud className="w-3 h-3 text-emerald-500 dark:text-emerald-400" aria-hidden="true" /><span>Saved</span></>)}
+                        {saveStatus === 'error' && (<><CloudOff className="w-3 h-3 text-rose-500 dark:text-rose-400" aria-hidden="true" /><span>Save failed</span></>)}
                       </div>
                     )}
                     {!canProceedToNext() && getProceedBlockReason() && (

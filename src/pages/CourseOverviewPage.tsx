@@ -18,9 +18,9 @@ const CHECKPOINT_CHIP_LABEL: Record<StudentCheckpointItem['status'], string> = {
   locked: 'Locked', available: 'Open', completed: 'Done', overdue: 'Overdue', reopened: 'Open',
 };
 const CHECKPOINT_CHIP_CLASS: Record<StudentCheckpointItem['status'], string> = {
-  locked: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
+  locked: 'bg-muted text-muted-foreground',
   available: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
-  completed: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+  completed: 'bg-brand-subtle text-brand-subtle-foreground',
   overdue: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
   reopened: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
 };
@@ -135,7 +135,7 @@ export default function CourseOverviewPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
       </div>
     );
   }
@@ -144,8 +144,8 @@ export default function CourseOverviewPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Error</h2>
-          <p className="text-gray-600 dark:text-gray-300">{error || 'Course not found'}</p>
+          <h2 className="text-xl font-semibold text-foreground mb-2">Error</h2>
+          <p className="text-muted-foreground">{error || 'Course not found'}</p>
           <Button onClick={() => navigate('/courses')} className="mt-4">
             Back to Courses
           </Button>
@@ -158,14 +158,14 @@ export default function CourseOverviewPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-background">
       {/* Course Info (not a header) */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-2">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col @lg:flex-row @lg:items-center @lg:justify-between gap-4">
           <div className="w-full">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{course.title}</h1>
-            <p className="mt-1 text-base text-gray-600 dark:text-gray-300">{course.description}</p>
+            <h1 className="text-2xl font-bold text-foreground">{course.title}</h1>
+            <p className="mt-1 text-base text-muted-foreground">{course.description}</p>
 
             {/* Progress Bar */}
             <div className="mt-6 max-w-xl">
-              <div className="flex justify-between text-sm text-gray-600 dark:text-gray-300 mb-2">
+              <div className="flex justify-between text-sm text-muted-foreground mb-2">
                 <span className="font-medium">Course Progress</span>
                 <span className="font-medium">{courseProgress}%</span>
               </div>
@@ -181,15 +181,15 @@ export default function CourseOverviewPage() {
             <div className="mt-6 flex items-center space-x-4">
               {course.estimated_duration_minutes && course.estimated_duration_minutes > 0 && (
                 <div className="flex items-center space-x-1">
-                  <Clock className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                  <Clock className="w-4 h-4 text-gray-400 dark:text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">
                     {formatDuration(course.estimated_duration_minutes)}
                   </span>
                 </div>
               )}
               <div className="flex items-center space-x-1">
-                <Users className="w-4 h-4 text-gray-400 dark:text-gray-500" />
-                <span className="text-xs text-gray-500 dark:text-gray-400">
+                <Users className="w-4 h-4 text-gray-400 dark:text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">
                   {modules.length} modules
                 </span>
               </div>
@@ -236,10 +236,10 @@ export default function CourseOverviewPage() {
                       )}
                     </div>
                     {module.description && (
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{module.description}</p>
+                      <p className="text-sm text-muted-foreground mt-1">{module.description}</p>
                     )}
                   </div>
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100">
+                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-muted text-foreground">
                     {module.total_lessons} lessons
                   </span>
                 </CardTitle>
@@ -265,10 +265,10 @@ export default function CourseOverviewPage() {
                           : progress.title}
                         className={`relative overflow-hidden w-full flex items-center justify-between p-4 rounded-lg border transition-colors text-left ${
                           !isAccessible
-                            ? 'opacity-50 cursor-not-allowed bg-gray-50 dark:bg-secondary border-gray-200 dark:border-border'
+                            ? 'opacity-50 cursor-not-allowed bg-muted border-border'
                             : lesson.is_completed
                               ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 hover:border-green-300 dark:hover:border-green-700 hover:bg-green-100 dark:hover:bg-green-900/30'
-                              : 'border-gray-200 dark:border-border hover:border-gray-300 dark:hover:border-border hover:bg-gray-100 dark:hover:bg-secondary'
+                              : 'border-border hover:border-gray-300 dark:hover:border-border hover:bg-muted'
                         }`}
                       >
                         {isAccessible && progress.showFill && (
@@ -281,10 +281,10 @@ export default function CourseOverviewPage() {
                         <div className="relative flex items-center space-x-3">
                           <div className={`flex-shrink-0 ${
                             !isAccessible 
-                              ? 'text-gray-400 dark:text-gray-500' 
+                              ? 'text-gray-400 dark:text-muted-foreground' 
                               : lesson.is_completed 
                                 ? 'text-green-600 dark:text-green-400' 
-                                : 'text-gray-400 dark:text-gray-500'
+                                : 'text-gray-400 dark:text-muted-foreground'
                           }`}>
                             {!isAccessible ? (
                               <Lock className="w-5 h-5" />
@@ -296,7 +296,7 @@ export default function CourseOverviewPage() {
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <h3 className={`font-medium ${lesson.is_completed ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-white'}`}>
+                              <h3 className={`font-medium ${lesson.is_completed ? 'text-green-900 dark:text-green-100' : 'text-foreground'}`}>
                                 {lesson.title}
                               </h3>
                               {isCheckpointLesson && checkpointItem ? (
@@ -306,24 +306,24 @@ export default function CourseOverviewPage() {
                               ) : null}
                             </div>
                             {lesson.description && (
-                              <p className={`text-sm mt-1 ${lesson.is_completed ? 'text-green-700 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                              <p className={`text-sm mt-1 ${lesson.is_completed ? 'text-green-700 dark:text-green-400' : 'text-muted-foreground'}`}>
                                 {lesson.description}
                               </p>
                             )}
                             {lesson.steps && lesson.steps.length > 0 && (
-                              <p className={`text-xs mt-1 ${lesson.is_completed ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
+                              <p className={`text-xs mt-1 ${lesson.is_completed ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-muted-foreground'}`}>
                                 {lesson.steps.length} steps
                               </p>
                             )}
                           </div>
                         </div>
-                        <ChevronRight className={`relative w-4 h-4 ${lesson.is_completed ? 'text-green-400' : 'text-gray-400'}`} />
+                        <ChevronRight className={`relative w-4 h-4 ${lesson.is_completed ? 'text-green-400' : 'text-gray-400 dark:text-muted-foreground'}`} />
                       </button>
                     )})}
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-gray-500">No lessons in this module yet.</p>
+                    <p className="text-muted-foreground">No lessons in this module yet.</p>
                   </div>
                 )}
               </CardContent>

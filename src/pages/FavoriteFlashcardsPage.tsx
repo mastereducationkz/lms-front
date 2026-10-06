@@ -72,10 +72,10 @@ export default function FavoriteFlashcardsPage() {
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'easy': return 'bg-green-100 text-green-800';
-      case 'normal': return 'bg-blue-100 text-blue-800';
-      case 'hard': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'easy': return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200';
+      case 'normal': return 'bg-brand-subtle text-brand-subtle-foreground';
+      case 'hard': return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -146,7 +146,7 @@ export default function FavoriteFlashcardsPage() {
         {/* Practice Header */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-foreground">Practice Mode</h2>
+            <h2 className="text-2xl font-bold text-foreground">Practice Mode</h2>
             <Button variant="outline" onClick={handleExitPractice}>
               Exit Practice
             </Button>
@@ -154,13 +154,13 @@ export default function FavoriteFlashcardsPage() {
           
           {/* Progress Bar */}
           <div className="space-y-2">
-            <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+            <div className="flex justify-between text-sm text-muted-foreground">
               <span>Card {currentPracticeIndex + 1} of {favorites.length}</span>
               <span>{Math.round(progress)}% complete</span>
             </div>
             <div className="w-full bg-gray-200 dark:bg-secondary rounded-full h-2">
               <div 
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                className="bg-brand-solid h-2 rounded-full transition-all duration-300"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -180,7 +180,7 @@ export default function FavoriteFlashcardsPage() {
             {!practiceFlipped ? (
               // Question Side
               <div className="space-y-6 w-full flex flex-col items-center justify-center">
-                <div className="text-sm text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-8">
+                <div className="text-sm text-gray-400 dark:text-muted-foreground uppercase tracking-wider mb-8">
                   Question
                 </div>
                 {flashcard.front_image_url && (
@@ -190,17 +190,17 @@ export default function FavoriteFlashcardsPage() {
                     className="max-w-full max-h-48 object-contain rounded mb-6 mx-auto"
                   />
                 )}
-                <div className="text-3xl font-bold text-gray-900 dark:text-foreground text-center">
+                <div className="text-3xl font-bold text-foreground text-center">
                   {flashcard.front_text}
                 </div>
-                <div className="text-sm text-gray-400 dark:text-gray-500 mt-8">
+                <div className="text-sm text-gray-400 dark:text-muted-foreground mt-8">
                   Click to reveal answer
                 </div>
               </div>
             ) : (
               // Answer Side
               <div className="space-y-6 w-full flex flex-col items-center justify-center">
-                <div className="text-sm text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-4">
+                <div className="text-sm text-gray-400 dark:text-muted-foreground uppercase tracking-wider mb-4">
                   Answer
                 </div>
                 {flashcard.back_image_url && (
@@ -210,7 +210,7 @@ export default function FavoriteFlashcardsPage() {
                     className="max-w-full max-h-48 object-contain rounded mb-6 mx-auto"
                   />
                 )}
-                <div className="text-3xl font-bold text-gray-900 dark:text-foreground mb-8 text-center">
+                <div className="text-3xl font-bold text-foreground mb-8 text-center">
                   {flashcard.back_text}
                 </div>
                 
@@ -261,7 +261,7 @@ export default function FavoriteFlashcardsPage() {
             Previous
           </Button>
           
-          <div className="text-sm text-gray-500 dark:text-gray-400">
+          <div className="text-sm text-muted-foreground">
             {practiceCompleted.size} cards marked as known
           </div>
 
@@ -292,8 +292,8 @@ export default function FavoriteFlashcardsPage() {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground">My Flashcards</h1>
-              <p className="text-gray-600 dark:text-gray-400">
+              <h1 className="text-3xl font-bold text-foreground">My Flashcards</h1>
+              <p className="text-muted-foreground">
                 {favorites.length} flashcard{favorites.length !== 1 ? 's' : ''} saved
               </p>
             </div>
@@ -314,11 +314,11 @@ export default function FavoriteFlashcardsPage() {
       {favorites.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
-            <Heart className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            <Heart className="h-16 w-16 text-gray-300 dark:text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-700 dark:text-foreground mb-2">
               No favorite flashcards yet
             </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">
+            <p className="text-muted-foreground mb-6">
               Start adding flashcards to your favorites while studying!
             </p>
             <Button onClick={() => navigate('/courses')}>
@@ -328,7 +328,7 @@ export default function FavoriteFlashcardsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 @lg:grid-cols-2 @4xl:grid-cols-3 gap-6">
           {favorites.map((favorite) => {
             const flashcard = parseFlashcardData(favorite.flashcard_data);
             if (!flashcard) return null;
@@ -346,7 +346,7 @@ export default function FavoriteFlashcardsPage() {
                     variant="ghost"
                     size="sm"
                     onClick={(e) => handleRemoveFavorite(favorite.id, e)}
-                    className="absolute top-3 right-3 z-10 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-3 right-3 z-10 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -363,7 +363,7 @@ export default function FavoriteFlashcardsPage() {
                     {!isFlipped ? (
                       // Front of card
                       <div className="space-y-3 w-full flex flex-col justify-center flex-1">
-                        <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider flex items-center justify-center gap-2 mb-2">
+                        <div className="text-xs text-gray-400 dark:text-muted-foreground uppercase tracking-wider flex items-center justify-center gap-2 mb-2">
                           <Eye className="h-3 w-3" />
                           Question
                         </div>
@@ -374,15 +374,15 @@ export default function FavoriteFlashcardsPage() {
                             className="max-w-full max-h-24 object-contain rounded mb-2 mx-auto"
                           />
                         )}
-                        <div className="text-xl font-semibold text-gray-900 dark:text-foreground line-clamp-3 px-2">
+                        <div className="text-xl font-semibold text-foreground line-clamp-3 px-2">
                           {flashcard.front_text}
                         </div>
-                        <div className="text-xs text-gray-400 dark:text-gray-500 mt-auto">Click to reveal</div>
+                        <div className="text-xs text-gray-400 dark:text-muted-foreground mt-auto">Click to reveal</div>
                       </div>
                     ) : (
                       // Back of card
                       <div className="space-y-3 w-full flex flex-col justify-center flex-1">
-                        <div className="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wider flex items-center justify-center gap-2 mb-2">
+                        <div className="text-xs text-gray-400 dark:text-muted-foreground uppercase tracking-wider flex items-center justify-center gap-2 mb-2">
                           <EyeOff className="h-3 w-3" />
                           Answer
                         </div>
@@ -393,10 +393,10 @@ export default function FavoriteFlashcardsPage() {
                             className="max-w-full max-h-24 object-contain rounded mb-2 mx-auto"
                           />
                         )}
-                        <div className="text-xl font-semibold text-gray-900 dark:text-foreground line-clamp-3 px-2">
+                        <div className="text-xl font-semibold text-foreground line-clamp-3 px-2">
                           {flashcard.back_text}
                         </div>
-                        <div className="text-xs text-gray-400 dark:text-gray-500 mt-auto">Click to flip back</div>
+                        <div className="text-xs text-gray-400 dark:text-muted-foreground mt-auto">Click to flip back</div>
                       </div>
                     )}
 

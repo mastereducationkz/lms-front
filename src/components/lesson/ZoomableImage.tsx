@@ -194,7 +194,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
       <div className="relative group">
         <div 
           ref={containerRef}
-          className={`rounded-lg border bg-gray-50 ${
+          className={`rounded-lg border bg-muted ${
             zoom > 1
               ? 'max-h-[min(90vh,1600px)] overflow-hidden'
               : 'overflow-visible'
@@ -222,14 +222,14 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
 
         {/* Drag hint when zoomed */}
         {zoom > 1 && (
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-gray-500 bg-white/90 px-2 py-1 rounded-full shadow-sm">
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-muted-foreground bg-white/90 dark:bg-popover/90 px-2 py-1 rounded-full shadow-sm">
             Drag to pan • Ctrl+Scroll to zoom
           </div>
         )}
 
         {/* Zoom Controls - visible on hover (always visible when zoomed) */}
         <div
-          className={`absolute top-2 right-2 flex items-center gap-1 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border p-1 z-10 transition-opacity duration-200 ${
+          className={`absolute top-2 right-2 flex items-center gap-1 bg-white/95 dark:bg-popover/95 backdrop-blur-sm rounded-lg shadow-lg border p-1 z-10 transition-opacity duration-200 ${
             zoom > 1
               ? 'opacity-100'
               : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto'
@@ -242,7 +242,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
             size="sm"
             onClick={handleZoomOut}
             disabled={currentZoom <= MIN_ZOOM}
-            className="h-8 w-8 p-0 hover:bg-gray-100 disabled:opacity-40"
+            className="h-8 w-8 p-0 hover:bg-muted disabled:opacity-40"
             title="Zoom Out (−)"
           >
             <ZoomOut className="h-4 w-4" />
@@ -252,7 +252,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
           <button
             type="button"
             onClick={handleResetZoom}
-            className="px-2 min-w-[50px] text-xs font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
+            className="px-2 min-w-[50px] text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
             title="Reset Zoom"
           >
             {zoomPercentage}%
@@ -265,14 +265,14 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
             size="sm"
             onClick={handleZoomIn}
             disabled={currentZoom >= MAX_ZOOM}
-            className="h-8 w-8 p-0 hover:bg-gray-100 disabled:opacity-40"
+            className="h-8 w-8 p-0 hover:bg-muted disabled:opacity-40"
             title="Zoom In (+)"
           >
             <ZoomIn className="h-4 w-4" />
           </Button>
 
           {/* Separator */}
-          <div className="w-px h-6 bg-gray-200 mx-1" />
+          <div className="w-px h-6 bg-gray-200 dark:bg-secondary mx-1" />
 
           {/* Fullscreen */}
           <Button
@@ -280,7 +280,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
             variant="ghost"
             size="sm"
             onClick={openFullscreen}
-            className="h-8 w-8 p-0 hover:bg-gray-100"
+            className="h-8 w-8 p-0 hover:bg-muted"
             title="View Fullscreen"
           >
             <Maximize2 className="h-4 w-4" />
@@ -289,7 +289,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
 
         {/* Caption */}
         {caption && (
-          <p className="text-sm text-gray-600 mt-2 text-center">{caption}</p>
+          <p className="text-sm text-muted-foreground mt-2 text-center">{caption}</p>
         )}
       </div>
 
@@ -301,7 +301,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
           onWheel={handleWheel}
         >
           {/* Controls Bar */}
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/95 backdrop-blur-sm rounded-xl shadow-xl border p-2 z-10">
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/95 dark:bg-popover/95 backdrop-blur-sm rounded-xl shadow-xl border p-2 z-10">
             {/* Zoom Out */}
             <Button
               type="button"
@@ -309,7 +309,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
               size="sm"
               onClick={handleZoomOut}
               disabled={fullscreenZoom <= MIN_ZOOM}
-              className="h-10 w-10 p-0 hover:bg-gray-100 disabled:opacity-40"
+              className="h-10 w-10 p-0 hover:bg-muted disabled:opacity-40"
               title="Zoom Out (−)"
             >
               <ZoomOut className="h-5 w-5" />
@@ -319,7 +319,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
             <button
               type="button"
               onClick={handleResetZoom}
-              className="px-3 min-w-[60px] text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg py-2 transition-colors"
+              className="px-3 min-w-[60px] text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg py-2 transition-colors"
               title="Reset Zoom (Press 0)"
             >
               {Math.round(fullscreenZoom * 100)}%
@@ -332,14 +332,14 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
               size="sm"
               onClick={handleZoomIn}
               disabled={fullscreenZoom >= MAX_ZOOM}
-              className="h-10 w-10 p-0 hover:bg-gray-100 disabled:opacity-40"
+              className="h-10 w-10 p-0 hover:bg-muted disabled:opacity-40"
               title="Zoom In (+)"
             >
               <ZoomIn className="h-5 w-5" />
             </Button>
 
             {/* Separator */}
-            <div className="w-px h-8 bg-gray-200 mx-1" />
+            <div className="w-px h-8 bg-gray-200 dark:bg-secondary mx-1" />
 
             {/* Exit Fullscreen */}
             <Button
@@ -347,7 +347,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
               variant="ghost"
               size="sm"
               onClick={closeFullscreen}
-              className="h-10 w-10 p-0 hover:bg-gray-100"
+              className="h-10 w-10 p-0 hover:bg-muted"
               title="Exit Fullscreen (Esc)"
             >
               <Minimize2 className="h-5 w-5" />
@@ -359,7 +359,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
             type="button"
             variant="ghost"
             onClick={closeFullscreen}
-            className="absolute top-4 right-4 h-12 w-12 p-0 bg-white/90 hover:bg-white rounded-full shadow-lg"
+            className="absolute top-4 right-4 h-12 w-12 p-0 bg-white/90 hover:bg-white dark:bg-popover/90 dark:hover:bg-popover dark:text-foreground rounded-full shadow-lg"
             title="Close (Esc)"
           >
             <X className="h-6 w-6" />

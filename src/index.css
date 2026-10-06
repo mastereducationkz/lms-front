@@ -293,7 +293,7 @@
   }
 
   .dark .custom-scrollbar {
-    scrollbar-color: #4b5563 #1f2937;
+    scrollbar-color: hsl(var(--input)) hsl(var(--muted));
   }
 
   .custom-scrollbar::-webkit-scrollbar {
@@ -306,7 +306,7 @@
   }
 
   .dark .custom-scrollbar::-webkit-scrollbar-track {
-    background: #1f2937;
+    background: hsl(var(--muted));
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
@@ -316,7 +316,7 @@
   }
 
   .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #4b5563;
+    background: hsl(var(--input));
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -324,7 +324,7 @@
   }
 
   .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #6b7280;
+    background: hsl(var(--muted-foreground));
   }
 
   /* Rich Text Editor Styles */
@@ -523,8 +523,9 @@
        brand-subtle-foreground    #1D4ED8 (blue-700)   #93C5FD    text/icons on brand-subtle or brand-surface
        brand-border               #BFDBFE (blue-200)   #2F456A    borders of brand-surface / brand-subtle panels
 
-     shadcn's --primary stays #0249f9 in light (unchanged); in dark it follows
-     brand-solid, and text-primary follows brand (via --primary-text).
+     shadcn's --primary is the logo blue #2563EB in light (it was #0249F9 until the
+     sweep, owner decision Q24: one blue, not two); in dark it follows brand-solid,
+     and text-primary follows brand (via --primary-text).
      Shadows are tokens too (--shadow-*): Tailwind's values in light, deeper in dark
      where a 5-10% black shadow would vanish. */
   :root {
@@ -534,8 +535,8 @@
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    /* Primary brand: #0249f9 (HSL: 223 98% 49%) */
-    --primary: 223 98% 49%;
+    /* Primary = the logo blue #2563EB, same as brand-solid (#F8FAFC on it: 4.9:1) */
+    --primary: 221.2 83.2% 53.3%;
     --primary-foreground: 210 40% 98%;
     --primary-text: var(--primary);
     --secondary: 0 0% 96.1%;

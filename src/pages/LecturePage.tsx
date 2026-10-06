@@ -50,8 +50,8 @@ export default function LecturePage() {
   if (!lesson) {
     return (
       <div className="text-center py-8">
-        <h2 className="text-xl font-semibold text-gray-900">Lesson not found</h2>
-        <p className="text-gray-600 mt-2">The lesson you're looking for doesn't exist or you don't have access to it.</p>
+        <h2 className="text-xl font-semibold text-foreground">Lesson not found</h2>
+        <p className="text-muted-foreground mt-2">The lesson you're looking for doesn't exist or you don't have access to it.</p>
       </div>
     );
   }
@@ -66,9 +66,9 @@ export default function LecturePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{lesson.title}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{lesson.title}</h1>
           {lesson.description && (
-            <p className="text-gray-600 mt-1">{lesson.description}</p>
+            <p className="text-muted-foreground mt-1">{lesson.description}</p>
           )}
         </div>
       </div>
@@ -80,7 +80,7 @@ export default function LecturePage() {
       {tab === 0 && (
         <div className="space-y-4">
           {contentType === 'video_text' && videoUrl ? (
-            <div className="bg-gray-900 rounded-2xl overflow-hidden aspect-video">
+            <div className="bg-black rounded-2xl overflow-hidden aspect-video">
               {videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be') ? (
                 <iframe
                   src={videoUrl.replace('watch?v=', 'embed/')}
@@ -98,7 +98,7 @@ export default function LecturePage() {
                 {contentText ? (
                   <div dangerouslySetInnerHTML={{ __html: contentText }} />
                 ) : (
-                  <p className="text-gray-500">No content available for this lesson</p>
+                  <p className="text-muted-foreground">No content available for this lesson</p>
                 )}
               </div>
             </div>
@@ -110,15 +110,15 @@ export default function LecturePage() {
         <div className="card p-5">
           <div className="font-semibold mb-3">Assignments</div>
           {assignments.length === 0 ? (
-            <div className="text-gray-500 text-sm">No assignments for this lesson</div>
+            <div className="text-muted-foreground text-sm">No assignments for this lesson</div>
           ) : (
             <ul className="space-y-3">
               {assignments.map(assignment => (
-                <li key={assignment.id} className="flex items-center justify-between p-4 bg-gray-50 rounded">
+                <li key={assignment.id} className="flex items-center justify-between p-4 bg-muted rounded">
                   <div>
                     <div className="font-medium">{assignment.title}</div>
-                    <div className="text-sm text-gray-600">{assignment.description}</div>
-                    <div className="text-xs text-gray-500 mt-1">
+                    <div className="text-sm text-muted-foreground">{assignment.description}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
                       Type: {assignment.assignment_type} • Max Score: {assignment.max_score}
                       {assignment.time_limit_minutes && (
                         <span> • Time Limit: {assignment.time_limit_minutes} minutes</span>

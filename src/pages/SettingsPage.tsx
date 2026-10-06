@@ -290,8 +290,8 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <div className="w-10 h-10 bg-brand-subtle rounded-lg flex items-center justify-center">
+                <CheckCircle className="w-5 h-5 text-brand" />
               </div>
               <div>
                 <CardTitle>Управление прогрессом студентов</CardTitle>
@@ -301,7 +301,7 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Selection Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 @2xl:grid-cols-2 gap-4">
               {/* User Search & Selection */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
@@ -311,16 +311,16 @@ export default function SettingsPage() {
                 
                 <div className="relative user-search-dropdown">
                   {selectedUser ? (
-                    <div className="flex items-center justify-between px-3 py-2 border rounded-md bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-gray-700">
+                    <div className="flex items-center justify-between px-3 py-2 border rounded-md bg-brand-surface border-brand-border">
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{selectedUser.name}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{selectedUser.email}</p>
+                        <p className="text-xs text-muted-foreground truncate">{selectedUser.email}</p>
                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={clearUserSelection}
-                        className="ml-2 h-8 w-8 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                        className="ml-2 h-8 w-8 p-0 hover:bg-brand-subtle"
                       >
                         <X className="w-4 h-4" />
                       </Button>
@@ -328,7 +328,7 @@ export default function SettingsPage() {
                   ) : (
                     <>
                       <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-muted-foreground" />
                         <Input
                           placeholder="Поиск по имени или email..."
                           value={userSearch}
@@ -342,9 +342,9 @@ export default function SettingsPage() {
                       </div>
                       
                       {isUserDropdownOpen && (
-                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-card border dark:border-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                        <div className="absolute z-50 w-full mt-1 bg-card border dark:border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
                           {filteredUsers.length === 0 ? (
-                            <div className="px-3 py-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+                            <div className="px-3 py-4 text-center text-muted-foreground text-sm">
                               {userSearch ? 'Студенты не найдены' : 'Введите имя или email'}
                             </div>
                           ) : (
@@ -352,15 +352,15 @@ export default function SettingsPage() {
                               <div
                                 key={u.id}
                                 onClick={() => selectUserFromDropdown(u.id)}
-                                className="px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 border-b dark:border-gray-700 last:border-b-0"
+                                className="px-3 py-2 cursor-pointer hover:bg-muted border-b dark:border-border last:border-b-0"
                               >
                                 <p className="font-medium text-sm">{u.name}</p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">{u.email}</p>
+                                <p className="text-xs text-muted-foreground">{u.email}</p>
                               </div>
                             ))
                           )}
                           {filteredUsers.length > 50 && (
-                            <div className="px-3 py-2 text-center text-gray-400 dark:text-gray-500 text-xs">
+                            <div className="px-3 py-2 text-center text-gray-400 dark:text-muted-foreground text-xs">
                               Показано 50 из {filteredUsers.length}. Уточните поиск.
                             </div>
                           )}
@@ -398,26 +398,26 @@ export default function SettingsPage() {
             {/* Progress Summary */}
             {isLoadingProgress && (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-blue-600 dark:text-blue-400" />
-                <span className="ml-2 text-gray-600 dark:text-gray-300">Загрузка прогресса...</span>
+                <Loader2 className="w-6 h-6 animate-spin text-brand" />
+                <span className="ml-2 text-muted-foreground">Загрузка прогресса...</span>
               </div>
             )}
             
             {progressSummary && !isLoadingProgress && (
               <div className="space-y-4">
                 {/* Overall Progress Card */}
-                <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-100 dark:border-gray-700">
+                <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100 dark:bg-none dark:bg-brand-surface dark:border-brand-border">
                   <CardContent className="pt-4">
                     <div className="flex items-center justify-between mb-3">
                       <div>
-                        <p className="font-semibold text-gray-900 dark:text-white">{progressSummary.user.name}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{progressSummary.course.title}</p>
+                        <p className="font-semibold text-foreground">{progressSummary.user.name}</p>
+                        <p className="text-sm text-muted-foreground">{progressSummary.course.title}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                        <p className="text-2xl font-bold text-brand">
                           {progressSummary.overall.completion_percentage.toFixed(0)}%
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-xs text-muted-foreground">
                           {progressSummary.overall.completed_steps} / {progressSummary.overall.total_steps} шагов
                         </p>
                       </div>
@@ -436,13 +436,13 @@ export default function SettingsPage() {
                       Выберите уроки (или оставьте пустым для всех)
                     </Label>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="text-xs text-muted-foreground">
                         {selectedLessons.length > 0 ? `Выбрано: ${selectedLessons.length}` : 'Все уроки'}
                       </span>
                       {showLessons ? (
-                        <ChevronUp className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                        <ChevronUp className="w-4 h-4 text-gray-400 dark:text-muted-foreground" />
                       ) : (
-                        <ChevronDown className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                        <ChevronDown className="w-4 h-4 text-gray-400 dark:text-muted-foreground" />
                       )}
                     </div>
                   </div>
@@ -468,12 +468,12 @@ export default function SettingsPage() {
                         </Button>
                       </div>
                       
-                      <div className="max-h-64 overflow-y-auto border dark:border-gray-700 rounded-lg divide-y dark:divide-gray-700">
+                      <div className="max-h-64 overflow-y-auto border dark:border-border rounded-lg divide-y dark:divide-border">
                         {progressSummary.lessons.map(lesson => (
                           <div
                             key={lesson.lesson_id}
-                            className={`flex items-center p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${
-                              selectedLessons.includes(lesson.lesson_id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                            className={`flex items-center p-3 cursor-pointer hover:bg-muted transition-colors ${
+                              selectedLessons.includes(lesson.lesson_id) ? 'bg-brand-surface' : ''
                             }`}
                             onClick={() => toggleLessonSelection(lesson.lesson_id)}
                           >
@@ -483,10 +483,10 @@ export default function SettingsPage() {
                               className="mr-3"
                             />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                              <p className="text-sm font-medium text-foreground truncate">
                                 {lesson.lesson_title}
                               </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                              <p className="text-xs text-muted-foreground">
                                 {lesson.module_title}
                               </p>
                             </div>
@@ -495,7 +495,7 @@ export default function SettingsPage() {
                                 <p className="text-xs font-medium">
                                   {lesson.completed_steps}/{lesson.total_steps}
                                 </p>
-                                <p className="text-xs text-gray-400 dark:text-gray-500">
+                                <p className="text-xs text-gray-400 dark:text-muted-foreground">
                                   {lesson.completion_percentage}%
                                 </p>
                               </div>
@@ -518,8 +518,8 @@ export default function SettingsPage() {
                 {actionResult && (
                   <div className={`p-4 rounded-lg flex items-start gap-3 ${
                     actionResult.type === 'success' 
-                      ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-gray-700' 
-                      : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-gray-700'
+                      ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-border' 
+                      : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-border'
                   }`}>
                     {actionResult.type === 'success' ? (
                       <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
@@ -553,7 +553,7 @@ export default function SettingsPage() {
                     onClick={handleResetProgress}
                     disabled={isLoading}
                     variant="outline"
-                    className="flex-1 border-red-300 dark:border-gray-600 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-400 dark:hover:border-red-500"
+                    className="flex-1 border-red-300 dark:border-input text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-400 dark:hover:border-red-500"
                   >
                     {isLoading ? (
                       <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -568,15 +568,15 @@ export default function SettingsPage() {
             
             {/* Hint when nothing selected */}
             {!selectedUserId && !selectedCourseId && !isLoadingProgress && (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <Users className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-400" />
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-muted-foreground" />
                 <p className="text-sm">Выберите студента и курс, чтобы управлять прогрессом</p>
               </div>
             )}
             
             {selectedUserId && !selectedCourseId && !isLoadingProgress && (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <BookOpen className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-400" />
+              <div className="text-center py-8 text-muted-foreground">
+                <BookOpen className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-muted-foreground" />
                 <p className="text-sm">Выберите курс для просмотра прогресса</p>
               </div>
             )}
@@ -629,7 +629,7 @@ export default function SettingsPage() {
             Restart Tour
           </Button>
           
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-muted-foreground">
             The tour will guide you through the main features of your {user?.role || 'user'} dashboard.
           </p>
         </CardContent>

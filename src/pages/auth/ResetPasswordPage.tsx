@@ -43,7 +43,7 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-1">
-          <KeyRound className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <KeyRound className="w-5 h-5 text-brand" />
           <h1 className="text-lg font-semibold text-foreground">Set a new password</h1>
         </div>
 
@@ -52,7 +52,7 @@ export default function ResetPasswordPage() {
             <p className="text-sm text-muted-foreground mt-2">
               This link is invalid or has expired. Please request a new one.
             </p>
-            <Link to="/forgot-password" className="inline-flex items-center gap-1.5 text-sm text-blue-600 dark:text-blue-400 mt-5 hover:underline">
+            <Link to="/forgot-password" className="inline-flex items-center gap-1.5 text-sm text-brand mt-5 hover:underline">
               <ArrowLeft className="w-4 h-4" /> Request a new link
             </Link>
           </>

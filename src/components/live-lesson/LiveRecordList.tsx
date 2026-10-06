@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Dices, Loader2, XCircle } from 'lucide-react';
+import { CheckCircle2, Crown, Dices, Loader2, XCircle, Zap } from 'lucide-react';
 import type { LiveApi } from '../../lib/liveLesson/api';
 import { activityLabel, correctIndices, mineAt, optionLabel } from '../../lib/liveLesson/logic';
 import type { ActivityView, LiveRecord } from '../../lib/liveLesson/types';
 import { stampKz } from '../../lib/classLessonPage';
 import StaffActivity from './StaffActivity';
+import { ReactionGlyph } from './reactionIcons';
 import { CloudView, OptionRows, QuestionBody } from './parts';
 
 /**
@@ -12,8 +13,6 @@ import { CloudView, OptionRows, QuestionBody } from './parts';
  * its results, who answered what, picker turns and the suggested scores; a student sees only their own
  * answers (a pop-check's key once shown, no poll totals).
  */
-const ENERGY_EMOJI: Record<string, string> = { love: '😍', laugh: '😂', fire: '🔥', clap: '👏', mindblown: '🤯', splash: '🌊' };
-
 export default function LiveRecordList({ eventId, api, refreshKey }: { eventId: number; api: LiveApi; refreshKey?: unknown }) {
   const [record, setRecord] = useState<LiveRecord | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,9 +31,9 @@ export default function LiveRecordList({ eventId, api, refreshKey }: { eventId: 
       {(record.crowned || (record.energy && record.energy.total > 0)) && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-primary/5 px-3 py-2 text-sm">
           {record.energy && record.energy.total > 0 && (
-            <span>⚡ Lesson energy: <b>{record.energy.total}</b> reactions{record.energy.top ? <>, {ENERGY_EMOJI[record.energy.top]} most used</> : null}</span>
+            <span className="inline-flex items-center gap-1"><Zap className="h-4 w-4 text-amber-500" aria-hidden />Lesson energy: <b>{record.energy.total}</b> reactions{record.energy.top ? <>, <ReactionGlyph kind={record.energy.top} /> most used</> : null}</span>
           )}
-          {record.crowned && <span>👑 Kasatik of the lesson: <b>{record.crowned.name}</b></span>}
+          {record.crowned && <span className="inline-flex items-center gap-1"><Crown className="h-4 w-4 text-amber-500" aria-hidden />Kasatik of the lesson: <b>{record.crowned.name}</b></span>}
         </div>
       )}
       {record.activities.map((a) => (
@@ -96,7 +95,7 @@ function Mine({ activity }: { activity: ActivityView }) {
                 correct={item.key ? correctIndices(item.key.correct) : undefined} />
             ) : <p>Your answer: <b>{String(mine.value ?? '')}</b></p>}
             {mine.correct != null && (
-              <p className={mine.correct ? 'mt-1 inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400' : 'mt-1 inline-flex items-center gap-1 text-rose-600'}>
+              <p className={mine.correct ? 'mt-1 inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400' : 'mt-1 inline-flex items-center gap-1 text-rose-600 dark:text-rose-400'}>
                 {mine.correct ? <CheckCircle2 className="h-4 w-4" aria-hidden /> : <XCircle className="h-4 w-4" aria-hidden />}
                 {mine.correct ? 'Right' : 'Not quite'}
               </p>

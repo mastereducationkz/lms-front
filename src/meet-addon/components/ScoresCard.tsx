@@ -110,7 +110,7 @@ export default function ScoresCard({ view, onSaved }: { view: LessonView; onSave
                   onClick={() => setPicking(picking === s.user_id ? null : s.user_id)}
                   className={cn(
                     'inline-flex h-7 min-w-[2.75rem] flex-none items-center justify-center gap-1 rounded-lg border px-1.5 text-xs font-bold tabular-nums',
-                    value != null ? 'border-yellow-400 bg-yellow-400 text-foreground'
+                    value != null ? 'border-yellow-400 bg-yellow-400 text-yellow-950'
                       : suggested ? 'border-dashed border-yellow-400 bg-yellow-50 dark:bg-yellow-500/15 text-muted-foreground' : 'border-border text-muted-foreground',
                     editable ? 'hover:bg-yellow-100 dark:hover:bg-yellow-500/20' : 'cursor-default',
                   )}

@@ -89,8 +89,8 @@ export default function ChatPage() {
     const el = messageRefs.current[id];
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      el.classList.add('ring-2', 'ring-blue-400', 'rounded-xl');
-      setTimeout(() => el.classList.remove('ring-2', 'ring-blue-400', 'rounded-xl'), 1200);
+      el.classList.add('ring-2', 'ring-brand', 'rounded-xl');
+      setTimeout(() => el.classList.remove('ring-2', 'ring-brand', 'rounded-xl'), 1200);
     }
   };
 
@@ -292,13 +292,13 @@ export default function ChatPage() {
 
   const loadAvailableContacts = async () => {
      try {
-       console.log('🔍 Loading available contacts...');
-       console.log('👤 Current user:', currentUser);
+       console.log('Loading available contacts...');
+       console.log('Current user:', currentUser);
        const contacts = await getAvailableContacts();
-       console.log('📞 Available contacts:', contacts);
+       console.log('Available contacts:', contacts);
        setAvailableContacts(contacts);
      } catch (error) {
-       console.error('❌ Failed to load contacts:', error);
+       console.error('Failed to load contacts:', error);
      }
    };
 
@@ -634,20 +634,20 @@ export default function ChatPage() {
                         {/* Teachers Section */}
                         {grouped.teachers && grouped.teachers.length > 0 && (
                           <div>
-                            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-2">
+                            <h4 className="text-sm font-semibold text-gray-700 dark:text-foreground mb-2 flex items-center gap-2">
                               {getRoleIcon('teacher')} {getRoleDisplayName('teacher')}
                             </h4>
                             <div className="space-y-1">
                               {grouped.teachers.map(contact => (
                                 <div
                                   key={contact.user_id}
-                                  className="flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded cursor-pointer"
+                                  className="flex items-center space-x-3 p-2 hover:bg-muted rounded cursor-pointer"
                                   onClick={() => startNewChat(contact)}
                                 >
                                   <UserAvatar userId={contact.user_id} name={contact.name} avatarUrl={contact.avatar_url} mascot={contact.mascot} isStudent={contact.role === 'student'} size={32} fallbackClassName="bg-muted text-muted-foreground" />
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium truncate">{contact.name}</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Course Teacher</p>
+                                    <p className="text-xs text-muted-foreground">Course Teacher</p>
                                   </div>
                                 </div>
                               ))}
@@ -658,20 +658,20 @@ export default function ChatPage() {
                         {/* Curators Section */}
                         {grouped.curators && grouped.curators.length > 0 && (
                           <div>
-                            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-2">
+                            <h4 className="text-sm font-semibold text-gray-700 dark:text-foreground mb-2 flex items-center gap-2">
                               {getRoleIcon('curator')} {getRoleDisplayName('curator')}
                             </h4>
                             <div className="space-y-1">
                               {grouped.curators.map(contact => (
                                 <div
                                   key={contact.user_id}
-                                  className="flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded cursor-pointer"
+                                  className="flex items-center space-x-3 p-2 hover:bg-muted rounded cursor-pointer"
                                   onClick={() => startNewChat(contact)}
                                 >
                                   <UserAvatar userId={contact.user_id} name={contact.name} avatarUrl={contact.avatar_url} mascot={contact.mascot} isStudent={contact.role === 'student'} size={32} fallbackClassName="bg-muted text-muted-foreground" />
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium truncate">{contact.name}</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Group Curator</p>
+                                    <p className="text-xs text-muted-foreground">Group Curator</p>
                                   </div>
                                 </div>
                               ))}
@@ -682,20 +682,20 @@ export default function ChatPage() {
                         {/* Admins Section */}
                         {grouped.admins && grouped.admins.length > 0 && (
                           <div>
-                            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-2">
+                            <h4 className="text-sm font-semibold text-gray-700 dark:text-foreground mb-2 flex items-center gap-2">
                               {getRoleIcon('admin')} {getRoleDisplayName('admin')}
                             </h4>
                             <div className="space-y-1">
                               {grouped.admins.map(contact => (
                                 <div
                                   key={contact.user_id}
-                                  className="flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded cursor-pointer"
+                                  className="flex items-center space-x-3 p-2 hover:bg-muted rounded cursor-pointer"
                                   onClick={() => startNewChat(contact)}
                                 >
                                   <UserAvatar userId={contact.user_id} name={contact.name} avatarUrl={contact.avatar_url} mascot={contact.mascot} isStudent={contact.role === 'student'} size={32} fallbackClassName="bg-muted text-muted-foreground" />
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium truncate">{contact.name}</p>
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">Administrator</p>
+                                    <p className="text-xs text-muted-foreground">Administrator</p>
                                   </div>
                                 </div>
                               ))}
@@ -704,16 +704,16 @@ export default function ChatPage() {
                         )}
 
                         {availableContacts.length === 0 && (
-                          <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+                          <div className="text-center text-muted-foreground py-8">
                             <p className="text-sm mb-2">No contacts available</p>
-                            <div className="text-xs space-y-1 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border dark:border-gray-700">
-                              <p className="font-medium text-blue-800 dark:text-blue-400">To see your contacts, you need:</p>
-                              <ul className="text-blue-700 dark:text-blue-400 space-y-1">
+                            <div className="text-xs space-y-1 bg-brand-surface p-3 rounded-lg border border-brand-border">
+                              <p className="font-medium text-brand-subtle-foreground">To see your contacts, you need:</p>
+                              <ul className="text-brand-subtle-foreground space-y-1">
                                 <li>• Be enrolled in courses</li>
                                 <li>• Be assigned to a student group</li>
                                 <li>• Have active course teachers</li>
                               </ul>
-                              <p className="text-blue-600 dark:text-blue-400 mt-2">Contact your administrator if you don't see any teachers.</p>
+                              <p className="text-brand mt-2">Contact your administrator if you don't see any teachers.</p>
                             </div>
                           </div>
                         )}
@@ -731,18 +731,18 @@ export default function ChatPage() {
                       .map(contact => (
                   <div
                     key={contact.user_id}
-                    className="flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded cursor-pointer"
+                    className="flex items-center space-x-3 p-2 hover:bg-muted rounded cursor-pointer"
                     onClick={() => startNewChat(contact)}
                   >
                     <UserAvatar userId={contact.user_id} name={contact.name} avatarUrl={contact.avatar_url} mascot={contact.mascot} isStudent={contact.role === 'student'} size={32} fallbackClassName="bg-muted text-muted-foreground" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{contact.name}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{contact.role}</p>
+                      <p className="text-xs text-muted-foreground capitalize">{contact.role}</p>
                     </div>
                   </div>
                 ))}
                 {availableContacts.length === 0 && (
-                  <p className="text-center text-gray-500 dark:text-gray-400 py-4">No available contacts</p>
+                  <p className="text-center text-muted-foreground py-4">No available contacts</p>
                     )}
                   </>
                 )}
@@ -756,7 +756,7 @@ export default function ChatPage() {
           {activePartnerId && !threads.find(t => t.partner_id === activePartnerId) && (
             <div className="space-y-1">
               <div
-                className="flex items-center space-x-3 p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 bg-blue-50 dark:bg-blue-900/20 border-r-2 border-blue-500 dark:border-blue-800"
+                className="flex items-center space-x-3 p-3 cursor-pointer bg-brand-surface"
               >
                 <div className="relative">
                   {(() => {
@@ -781,9 +781,9 @@ export default function ChatPage() {
                     <p className="text-sm font-medium truncate">
                       {availableContacts.find(c => c.user_id === activePartnerId)?.name || 'Unknown'}
                     </p>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">New chat</span>
+                    <span className="text-xs text-muted-foreground">New chat</span>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  <p className="text-xs text-muted-foreground truncate">
                     Start conversation
                   </p>
                 </div>
@@ -793,14 +793,14 @@ export default function ChatPage() {
           
           {groupThreads.length > 0 && (
             <div className="space-y-1">
-              <p className="px-3 pt-3 pb-1 text-xs font-semibold uppercase text-gray-500 dark:text-gray-400">
+              <p className="px-3 pt-3 pb-1 text-xs font-semibold uppercase text-muted-foreground">
                 Группы
               </p>
               {groupThreads.map(conv => (
                 <div
                   key={conv.id}
-                  className={`flex items-center space-x-3 p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                    activeGroupConvId === conv.id ? 'bg-blue-50 dark:bg-blue-900/20 border-r-2 border-blue-500 dark:border-blue-800' : ''
+                  className={`flex items-center space-x-3 p-3 cursor-pointer hover:bg-muted ${
+                    activeGroupConvId === conv.id ? 'bg-brand-surface' : ''
                   }`}
                   onClick={() => openGroup(conv)}
                 >
@@ -819,12 +819,12 @@ export default function ChatPage() {
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium truncate">{conv.title}</p>
                       {conv.last_message?.created_at && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                        <span className="text-xs text-muted-foreground">
                           {formatTime(conv.last_message.created_at)}
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    <p className="text-xs text-muted-foreground truncate">
                       {conv.last_message?.content || ''}
                     </p>
                   </div>
@@ -834,7 +834,7 @@ export default function ChatPage() {
           )}
 
           {threads.length === 0 && !activePartnerId ? (
-            <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+            <div className="p-4 text-center text-muted-foreground">
               <p className="text-sm">No active conversations</p>
               {currentUser?.role === 'student' && (
                 <p className="text-xs mt-2">Click "Contact" to start a new conversation</p>
@@ -845,8 +845,8 @@ export default function ChatPage() {
               {threads.map(thread => (
                 <div
                   key={thread.partner_id}
-                  className={`flex items-center space-x-3 p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                    activePartnerId === thread.partner_id ? 'bg-blue-50 dark:bg-blue-900/20 border-r-2 border-blue-500 dark:border-blue-800' : ''
+                  className={`flex items-center space-x-3 p-3 cursor-pointer hover:bg-muted ${
+                    activePartnerId === thread.partner_id ? 'bg-brand-surface' : ''
                   }`}
                   onClick={() => { setActiveGroupConvId(null); setActivePartnerId(thread.partner_id); }}
                 >
@@ -863,17 +863,17 @@ export default function ChatPage() {
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium truncate flex items-center gap-1">
                         {(thread.is_muted || mutedIds.has(thread.partner_id)) && (
-                          <BellOff className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                          <BellOff className="w-3.5 h-3.5 text-gray-400 dark:text-muted-foreground shrink-0" />
                         )}
                         <span className="truncate">{thread.partner_name}</span>
                       </p>
                       {thread.last_message.created_at && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                        <span className="text-xs text-muted-foreground">
                           {formatTime(thread.last_message.created_at)}
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    <p className="text-xs text-muted-foreground truncate">
                       {thread.last_message.from_me ? 'You: ' : ''}{thread.last_message.content}
                     </p>
                   </div>
@@ -901,7 +901,7 @@ export default function ChatPage() {
                   : getActivePartnerName()}
               </CardTitle>
               {activePartnerId && mutedIds.has(activePartnerId) && (
-                <BellOff className="w-4 h-4 text-gray-400 shrink-0" />
+                <BellOff className="w-4 h-4 text-gray-400 dark:text-muted-foreground shrink-0" />
               )}
             </button>
             {activePartnerId && (
@@ -912,7 +912,7 @@ export default function ChatPage() {
           </div>
           {activePartnerId && (
             <div className="flex items-center space-x-2 mt-2">
-              <span className="text-sm text-gray-500 dark:text-gray-400">
+              <span className="text-sm text-muted-foreground">
                 {availableContacts.find(c => c.user_id === activePartnerId)?.role
                   || threads.find(t => t.partner_id === activePartnerId)?.partner_role || 'User'}
               </span>
@@ -922,9 +922,9 @@ export default function ChatPage() {
         
         <CardContent className="flex-1 flex flex-col p-0 min-h-0">
           {/* Сообщения */}
-          <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 bg-gray-50 dark:bg-gray-800">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 bg-muted">
             {messages.length === 0 ? (
-              <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+              <div className="text-center text-muted-foreground py-8">
                 {activePartnerId || activeGroupConvId ? (
                   currentUser?.role === 'student' ?
                     'Start your conversation' :
@@ -950,22 +950,22 @@ export default function ChatPage() {
                     <div className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
                       <div className="max-w-[85%] sm:max-w-[70%]">
                         {!isMine && (
-                          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-0.5 px-1">
+                          <p className="text-xs font-medium text-muted-foreground mb-0.5 px-1">
                             {gMsg.sender_name}
                           </p>
                         )}
                         <div
                           className={`px-3 py-2 rounded-xl text-sm ${
                             isMine
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-white dark:bg-card border dark:border-gray-700 shadow-sm'
+                              ? 'bg-brand-solid text-brand-solid-foreground'
+                              : 'bg-card border dark:border-border shadow-sm'
                           } ${isPending ? 'opacity-70' : ''} ${isFailed ? 'ring-1 ring-red-500' : ''}`}
                         >
                           {gMsg.file_url && <ChatAttachment fileUrl={gMsg.file_url} />}
                           <div className="flex items-start gap-2">
                             <span className="flex-1">{gMsg.content}</span>
                             <span className={`text-[10px] whitespace-nowrap mt-auto flex items-center gap-0.5 ${
-                              isMine ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
+                              isMine ? 'text-blue-100' : 'text-muted-foreground'
                             }`}>
                               {formatMessageTime(gMsg.created_at)}
                               {isPending && <span>· sending…</span>}
@@ -1013,20 +1013,20 @@ export default function ChatPage() {
           
           {/* Reply preview above the composer (DM only) */}
           {replyingTo && activePartnerId && (
-            <div className="flex items-center gap-2 px-3 sm:px-4 pt-2 border-t dark:border-gray-700">
-              <ReplyIcon className="w-4 h-4 text-blue-500 shrink-0" />
-              <div className="flex-1 min-w-0 border-l-2 border-blue-500 pl-2">
-                <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 truncate">
+            <div className="flex items-center gap-2 px-3 sm:px-4 pt-2 border-t dark:border-border">
+              <ReplyIcon className="w-4 h-4 text-brand shrink-0" />
+              <div className="flex-1 min-w-0 border-l-2 border-brand pl-2">
+                <p className="text-xs font-semibold text-brand truncate">
                   {replyingTo.from_user_id === Number(currentUser?.id) ? 'You' : (replyingTo.sender_name || 'Message')}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                <p className="text-xs text-muted-foreground truncate">
                   {replyingTo.content || (replyingTo.file_url ? <><Paperclip className="inline h-3 w-3 mr-1 align-[-2px]" aria-hidden="true" />Attachment</> : '')}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setReplyingTo(null)}
-                className="p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                className="p-1 text-gray-400 dark:text-muted-foreground hover:text-gray-700 dark:hover:text-foreground"
                 aria-label="Cancel reply"
               >
                 <X className="w-4 h-4" />
@@ -1035,7 +1035,7 @@ export default function ChatPage() {
           )}
 
           {/* Форма отправки */}
-          <form onSubmit={handleSendMessage} className="p-3 sm:p-4 border-t dark:border-gray-700">
+          <form onSubmit={handleSendMessage} className="p-3 sm:p-4 border-t dark:border-border">
             <div className="flex items-center gap-2">
               <Input
                 value={text}

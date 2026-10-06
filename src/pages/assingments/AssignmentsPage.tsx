@@ -6,6 +6,7 @@ import { ClipboardList, Calendar, AlertCircle, Eye, Edit, Archive, ArchiveRestor
 import { Button } from '../../components/ui/button';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Input } from '../../components/ui/input';
+import StudentHomeworkCards from '../../components/assignments/StudentHomeworkCards';
 import { Group } from '../../types';
 import { filterNonCompletedGroups, sortGroupEntriesByLessonTime, sortGroupsByLessonTime } from '../../lib/groupList';
 
@@ -541,7 +542,7 @@ export default function AssignmentsPage() {
         );
       case 'submitted':
         return (
-          <span className={`${baseClasses} bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800`}>
+          <span className={`${baseClasses} bg-brand-surface text-brand-subtle-foreground border border-brand-border`}>
             Submitted
           </span>
         );
@@ -553,7 +554,7 @@ export default function AssignmentsPage() {
         );
       default:
         return (
-          <span className={`${baseClasses} bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700`}>
+          <span className={`${baseClasses} bg-muted text-muted-foreground border border-border`}>
             Not Submitted
           </span>
         );
@@ -568,11 +569,11 @@ export default function AssignmentsPage() {
     return (
       <div className="space-y-6">
         <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-48 mb-6"></div>
-          <div className="bg-white dark:bg-card rounded-xl shadow p-6">
+          <div className="h-8 bg-gray-200 dark:bg-secondary rounded w-48 mb-6"></div>
+          <div className="bg-card rounded-xl shadow p-6">
             <div className="space-y-4">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="h-12 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                <div key={i} className="h-12 bg-gray-200 dark:bg-secondary rounded"></div>
               ))}
             </div>
           </div>
@@ -610,49 +611,49 @@ export default function AssignmentsPage() {
       : 0;
     return (
       <div className="p-8 space-y-6 max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white uppercase">Homework</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground uppercase">Homework</h1>
 
         {monitorRaw === null ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="h-36 rounded-lg bg-gray-100 dark:bg-gray-800 animate-pulse" />
+              <div key={i} className="h-36 rounded-lg bg-muted animate-pulse" />
             ))}
           </div>
         ) : (
           <>
             {/* Summary rollup */}
-            <div className="flex flex-wrap items-center gap-x-7 gap-y-2 rounded-lg border border-slate-200 dark:border-border bg-white dark:bg-card px-5 py-3">
+            <div className="flex flex-wrap items-center gap-x-7 gap-y-2 rounded-lg border border-border bg-card px-5 py-3">
               <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-bold text-slate-900 dark:text-white tabular-nums">{monitorRollup.groups}</span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">groups</span>
+                <span className="text-xl font-bold text-foreground tabular-nums">{monitorRollup.groups}</span>
+                <span className="text-xs text-muted-foreground">groups</span>
               </div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-bold text-slate-900 dark:text-white tabular-nums">{monitorRollup.assignments}</span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">assignments</span>
+                <span className="text-xl font-bold text-foreground tabular-nums">{monitorRollup.assignments}</span>
+                <span className="text-xs text-muted-foreground">assignments</span>
               </div>
               <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-bold text-blue-600 dark:text-blue-400 tabular-nums">{rollupRate}%</span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">submitted</span>
+                <span className="text-xl font-bold text-brand tabular-nums">{rollupRate}%</span>
+                <span className="text-xs text-muted-foreground">submitted</span>
               </div>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">{monitorRollup.notSubmitted}</span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">not submitted</span>
+                <span className="text-xs text-muted-foreground">not submitted</span>
               </div>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-xl font-bold text-red-600 dark:text-red-400 tabular-nums">{monitorRollup.overdue}</span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">overdue</span>
+                <span className="text-xs text-muted-foreground">overdue</span>
               </div>
             </div>
 
             {/* Controls */}
             <div className="flex flex-wrap items-center gap-3">
               <div className="relative w-full max-w-sm">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-muted-foreground" />
                 <Input
                   placeholder="Search groups..."
                   value={groupSearch}
                   onChange={(e) => setGroupSearch(e.target.value)}
-                  className="pl-9 bg-white dark:bg-card"
+                  className="pl-9 bg-card"
                 />
               </div>
               <button
@@ -661,7 +662,7 @@ export default function AssignmentsPage() {
                 className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-md border text-sm font-medium transition-colors ${
                   needsAttentionOnly
                     ? 'border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
-                    : 'border-slate-200 dark:border-border bg-white dark:bg-card text-gray-600 dark:text-gray-300 hover:border-slate-300 dark:hover:border-slate-600'
+                    : 'border-border bg-card text-muted-foreground hover:border-slate-300 dark:hover:border-input'
                 }`}
               >
                 <AlertCircle className="w-4 h-4" />
@@ -673,7 +674,7 @@ export default function AssignmentsPage() {
                   checked={showCompletedGroups}
                   onCheckedChange={(checked) => setShowCompletedGroups(checked === true)}
                 />
-                <label htmlFor="show-completed-monitor" className="text-sm text-gray-600 dark:text-gray-300 cursor-pointer select-none">
+                <label htmlFor="show-completed-monitor" className="text-sm text-muted-foreground cursor-pointer select-none">
                   Show completed groups
                 </label>
               </div>
@@ -681,12 +682,12 @@ export default function AssignmentsPage() {
 
             {/* Group cards */}
             {monitorVisible.length === 0 ? (
-              <div className="bg-white dark:bg-card rounded-xl shadow-sm border border-gray-200 dark:border-border p-12 text-center">
-                <ClipboardList className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              <div className="bg-card rounded-xl shadow-sm border border-border p-12 text-center">
+                <ClipboardList className="w-12 h-12 text-gray-400 dark:text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">
                   {needsAttentionOnly ? 'Everything is on track' : 'No homework yet'}
                 </h3>
-                <p className="text-gray-600 dark:text-gray-300">
+                <p className="text-muted-foreground">
                   {needsAttentionOnly
                     ? 'No groups have overdue or unsubmitted homework right now.'
                     : 'Homework will appear here once teachers create it.'}
@@ -696,32 +697,32 @@ export default function AssignmentsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {monitorVisible.map((g) => {
                   const pct = Math.round(g.rate * 100);
-                  const barColor = pct >= 90 ? 'bg-green-500' : pct >= 60 ? 'bg-blue-500' : 'bg-red-500';
+                  const barColor = pct >= 90 ? 'bg-green-500' : pct >= 60 ? 'bg-brand-solid' : 'bg-red-500';
                   return (
                     <button
                       key={g.id}
                       onClick={() => setGroupId(g.id)}
-                      className="bg-white dark:bg-card rounded-lg border border-slate-200 dark:border-border p-4 text-left hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-md transition-all"
+                      className="bg-card rounded-lg border border-border p-4 text-left hover:border-brand hover:shadow-md transition-all"
                     >
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                        <Users className="w-4 h-4 text-slate-400 dark:text-gray-500 shrink-0" />
-                        <h3 className="font-bold text-slate-900 dark:text-white truncate">{g.name}</h3>
+                        <Users className="w-4 h-4 text-slate-400 dark:text-muted-foreground shrink-0" />
+                        <h3 className="font-bold text-foreground truncate">{g.name}</h3>
                         {g.isOver && (
-                          <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-gray-400 shrink-0">
+                          <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border border-slate-300 dark:border-input text-muted-foreground shrink-0">
                             Completed
                           </span>
                         )}
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-2.5">
+                      <div className="text-xs text-muted-foreground mb-2.5">
                         {g.assignmentsCount} assignment{g.assignmentsCount !== 1 ? 's' : ''}
                       </div>
                       <div className="flex items-center gap-2 mb-1">
-                        <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                        <div className="flex-1 bg-gray-200 dark:bg-secondary rounded-full h-1.5">
                           <div className={`h-1.5 rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
                         </div>
-                        <span className="text-xs font-medium text-gray-600 dark:text-gray-300 tabular-nums whitespace-nowrap">{pct}%</span>
+                        <span className="text-xs font-medium text-muted-foreground tabular-nums whitespace-nowrap">{pct}%</span>
                       </div>
-                      <div className="text-[11px] text-gray-500 dark:text-gray-400 mb-2.5 tabular-nums">
+                      <div className="text-[11px] text-muted-foreground mb-2.5 tabular-nums">
                         {g.submitted}/{g.expected} submitted
                       </div>
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
@@ -768,7 +769,7 @@ export default function AssignmentsPage() {
   const renderAssignmentRow = (assignment: AssignmentWithStatus) => {
     const stats = assignmentStats.get(assignment.id);
     const dueDateCell = (
-      <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
+      <td className="px-6 py-4 text-muted-foreground">
         {assignment.extended_deadline ? (
           <div className="flex items-center text-green-600 dark:text-green-400">
             <Calendar className="w-4 h-4 mr-1 text-green-400 dark:text-green-500" />
@@ -777,16 +778,16 @@ export default function AssignmentsPage() {
           </div>
         ) : assignment.due_date ? (
           <div className={`flex items-center ${isOverdue(assignment.due_date) && assignment.status === 'not_submitted' ? 'text-red-600 dark:text-red-400' : ''}`}>
-            <Calendar className={`w-4 h-4 mr-1 ${isOverdue(assignment.due_date) && assignment.status === 'not_submitted' ? 'text-red-400 dark:text-red-500' : 'text-gray-400 dark:text-gray-500'}`} />
+            <Calendar className={`w-4 h-4 mr-1 ${isOverdue(assignment.due_date) && assignment.status === 'not_submitted' ? 'text-red-400 dark:text-red-500' : 'text-gray-400 dark:text-muted-foreground'}`} />
             <span className="font-medium">{formatToKZTime(assignment.due_date)}</span>
           </div>
         ) : assignment.event_start_datetime ? (
           <div className="flex items-center">
-            <Calendar className="w-4 h-4 mr-1 text-gray-400 dark:text-gray-500" />
+            <Calendar className="w-4 h-4 mr-1 text-gray-400 dark:text-muted-foreground" />
             <span className="font-medium">{formatToKZTime(assignment.event_start_datetime)}</span>
           </div>
         ) : (
-          <span className="text-gray-400 dark:text-gray-500">-</span>
+          <span className="text-gray-400 dark:text-muted-foreground">-</span>
         )}
       </td>
     );
@@ -796,21 +797,21 @@ export default function AssignmentsPage() {
                             <td className="px-6 py-4">
                               <div>
                                 <div 
-                                  className="font-medium text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                  className="font-medium text-foreground cursor-pointer hover:text-brand transition-colors"
                                   onClick={() => navigate(`/homework/${assignment.id}`)}
                                 >
                                   {assignment.title}
                                 </div>
                                 {assignment.is_previous && assignment.previous_group_name && (
                                   <div className="mt-1">
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded border border-slate-200 dark:border-border text-slate-500 dark:text-gray-400">
+                                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded border border-border text-muted-foreground">
                                       <Archive className="w-3 h-3" />
                                       {assignment.previous_group_name}
                                     </span>
                                   </div>
                                 )}
                                 {assignment.description && (
-                                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">
+                                  <div className="text-xs text-muted-foreground mt-1 line-clamp-1">
                                     {assignment.description}
                                   </div>
                                 )}
@@ -821,31 +822,31 @@ export default function AssignmentsPage() {
         {isManagerView ? (
           <>
             {/* Lesson */}
-            <td className="px-6 py-4 text-gray-500 dark:text-gray-400 text-sm">
+            <td className="px-6 py-4 text-muted-foreground text-sm">
               {assignment.lesson_number != null
-                ? <span className="font-medium text-slate-700 dark:text-slate-300">Lesson {assignment.lesson_number}</span>
-                : <span className="text-gray-300 dark:text-gray-600">—</span>
+                ? <span className="font-medium text-slate-700 dark:text-foreground">Lesson {assignment.lesson_number}</span>
+                : <span className="text-gray-300 dark:text-muted-foreground">—</span>
               }
             </td>
             {/* Points */}
             <td className="px-6 py-4">
-              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{assignment.max_score ?? 100} pts</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-foreground">{assignment.max_score ?? 100} pts</span>
             </td>
             {/* Submission stats */}
             <td className="px-6 py-4">
               {statsLoading && !stats ? (
-                <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                <div className="h-4 w-24 bg-gray-200 dark:bg-secondary rounded animate-pulse" />
               ) : stats ? (
                 <div className="space-y-1.5 min-w-[130px]">
                   {/* Progress bar */}
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                    <div className="flex-1 bg-gray-200 dark:bg-secondary rounded-full h-1.5">
                       <div
-                        className="bg-blue-500 h-1.5 rounded-full"
+                        className="bg-brand-solid h-1.5 rounded-full"
                         style={{ width: `${stats.total_students > 0 ? Math.round(((stats.submitted + stats.graded) / stats.total_students) * 100) : 0}%` }}
                       />
                                 </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 tabular-nums whitespace-nowrap">
+                    <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
                       {stats.submitted + stats.graded}/{stats.total_students}
                                   </span>
                                 </div>
@@ -861,12 +862,12 @@ export default function AssignmentsPage() {
                                   </span>
                     )}
                     {stats.graded === 0 && stats.submitted === 0 && (
-                      <span className="text-gray-400 dark:text-gray-500">No submissions</span>
+                      <span className="text-gray-400 dark:text-muted-foreground">No submissions</span>
                     )}
                   </div>
                                 </div>
                               ) : (
-                <span className="text-gray-300 dark:text-gray-600 text-xs">—</span>
+                <span className="text-gray-300 dark:text-muted-foreground text-xs">—</span>
                               )}
                             </td>
           </>
@@ -877,12 +878,12 @@ export default function AssignmentsPage() {
                               {assignment.status === 'graded' ? (
                                 <div className="flex flex-col">
                                   <span className="text-green-600 dark:text-green-400 font-semibold">{assignment.score}/{assignment.max_score ?? 100}</span>
-                                  <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                                  <span className="text-[10px] text-gray-400 dark:text-muted-foreground">
                                     {Math.round((assignment.score || 0) / (assignment.max_score || 100) * 100)}%
                                   </span>
                                 </div>
                               ) : (
-                                <span className="text-gray-400 dark:text-gray-500">-</span>
+                                <span className="text-gray-400 dark:text-muted-foreground">-</span>
                               )}
                             </td>
           </>
@@ -892,15 +893,15 @@ export default function AssignmentsPage() {
                               <div className="flex items-center justify-end gap-1">
             {isManagerView ? (
               <>
-                <Button onClick={() => navigate(`/homework/${assignment.id}/progress`)} variant="ghost" size="icon" title="View Progress" className="h-8 w-8 text-slate-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400">
+                <Button onClick={() => navigate(`/homework/${assignment.id}/progress`)} variant="ghost" size="icon" title="View Progress" className="h-8 w-8 text-slate-400 dark:text-muted-foreground hover:text-brand">
                                       <Eye className="w-4 h-4" />
                                     </Button>
                 {canEdit && (
                   <>
-                    <Button onClick={() => navigate(`/homework/new?copyFrom=${assignment.id}`)} variant="ghost" size="icon" title="Copy Assignment" className="h-8 w-8 text-slate-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400">
+                    <Button onClick={() => navigate(`/homework/new?copyFrom=${assignment.id}`)} variant="ghost" size="icon" title="Copy Assignment" className="h-8 w-8 text-slate-400 dark:text-muted-foreground hover:text-brand">
                                       <Copy className="w-4 h-4" />
                                     </Button>
-                    <Button onClick={() => navigate(`/homework/${assignment.id}/edit`)} variant="ghost" size="icon" title="Edit Assignment" className="h-8 w-8 text-slate-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400">
+                    <Button onClick={() => navigate(`/homework/${assignment.id}/edit`)} variant="ghost" size="icon" title="Edit Assignment" className="h-8 w-8 text-slate-400 dark:text-muted-foreground hover:text-brand">
                                       <Edit className="w-4 h-4" />
                                     </Button>
                                     <Button
@@ -915,7 +916,7 @@ export default function AssignmentsPage() {
                                       variant="ghost"
                                       size="icon"
                                       title={assignment.is_hidden ? "Restore" : "Archive"}
-                                      className={`h-8 w-8 ${assignment.is_hidden ? "text-orange-500 dark:text-orange-400 hover:text-orange-600 dark:hover:text-orange-400" : "text-slate-400 dark:text-gray-500 hover:text-slate-600 dark:hover:text-gray-400"}`}
+                                      className={`h-8 w-8 ${assignment.is_hidden ? "text-orange-500 dark:text-orange-400 hover:text-orange-600 dark:hover:text-orange-400" : "text-slate-400 dark:text-muted-foreground hover:text-slate-600 dark:hover:text-gray-400"}`}
                                     >
                                       {assignment.is_hidden ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
                                     </Button>
@@ -927,7 +928,7 @@ export default function AssignmentsPage() {
                                     size="sm"
                                     onClick={() => navigate(`/homework/${assignment.id}`)}
                                     variant="ghost"
-                                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 font-bold uppercase tracking-widest text-[10px]"
+                                    className="text-brand hover:text-brand-subtle-foreground hover:bg-brand-surface font-bold uppercase tracking-widest text-[10px]"
                                   >
                                     {assignment.status === 'graded' || assignment.status === 'submitted' ? 'View' : 'Submit'}
                                   </Button>
@@ -939,9 +940,9 @@ export default function AssignmentsPage() {
   };
 
   return (
-    <div className="p-8 space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-6 @2xl:space-y-8 @2xl:p-8 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white uppercase">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground uppercase">
           Homework
         </h1>
         {canEdit ? (
@@ -952,8 +953,8 @@ export default function AssignmentsPage() {
       </div>
 
       {/* Sticky Filter Bar */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2 -mx-8 px-8 flex flex-wrap items-center gap-4">
-        <div className="bg-white dark:bg-card rounded-lg p-1 shadow-sm border border-gray-200 dark:border-border inline-flex">
+      <div style={{ top: 'var(--topbar-h, 0px)' }} className="sticky z-[9] bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2 -mx-4 px-4 sm:-mx-6 sm:px-6 @2xl:-mx-8 @2xl:px-8 flex flex-wrap items-center gap-4">
+        <div className="bg-card rounded-lg p-1 shadow-sm border border-border flex flex-wrap max-w-full">
           {[
             { key: 'all', label: 'All' },
             { key: 'pending', label: 'Pending' },
@@ -964,8 +965,8 @@ export default function AssignmentsPage() {
             <button
               key={tab.key}
               onClick={() => setFilter(tab.key as any)}
-              className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-                filter === tab.key ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+              className={`px-3 @lg:px-4 py-2 rounded text-sm font-medium whitespace-nowrap transition-colors ${
+                filter === tab.key ? 'bg-brand-solid text-brand-solid-foreground dark:bg-brand-surface dark:text-brand-subtle-foreground dark:shadow-[inset_0_0_0_1px_hsl(var(--brand-border))]' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               {tab.label} ({tabCounts[tab.key as keyof typeof tabCounts]})
@@ -988,13 +989,13 @@ export default function AssignmentsPage() {
                 checked={showCompletedGroups}
                 onCheckedChange={(checked) => setShowCompletedGroups(checked === true)}
               />
-              <label htmlFor="show-completed-groups" className="text-sm text-gray-600 dark:text-gray-300 cursor-pointer select-none">
+              <label htmlFor="show-completed-groups" className="text-sm text-muted-foreground cursor-pointer select-none">
                 Show completed groups
               </label>
             </div>
             <div className="flex items-center gap-2">
               <Checkbox id="show-hidden" checked={includeHidden} onCheckedChange={(checked) => setIncludeHidden(checked === true)} />
-              <label htmlFor="show-hidden" className="text-sm text-gray-600 dark:text-gray-300 cursor-pointer select-none">Show archived</label>
+              <label htmlFor="show-hidden" className="text-sm text-muted-foreground cursor-pointer select-none">Show archived</label>
             </div>
           </div>
         )}
@@ -1004,20 +1005,20 @@ export default function AssignmentsPage() {
       {effectiveOverviewMode ? (
         <div className="space-y-6">
           <div className="relative w-full max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-muted-foreground" />
             <Input
               placeholder="Search groups..."
               value={groupSearch}
               onChange={(e) => setGroupSearch(e.target.value)}
-              className="pl-9 bg-white dark:bg-card"
+              className="pl-9 bg-card"
             />
           </div>
 
           {filteredGroupsForOverview.length === 0 ? (
-            <div className="bg-white dark:bg-card rounded-xl shadow-sm border border-gray-200 dark:border-border p-12 text-center">
-              <ClipboardList className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No homework yet</h3>
-              <p className="text-gray-600 dark:text-gray-300">Homework will appear here when they are created by your teachers.</p>
+            <div className="bg-card rounded-xl shadow-sm border border-border p-12 text-center">
+              <ClipboardList className="w-12 h-12 text-gray-400 dark:text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">No homework yet</h3>
+              <p className="text-muted-foreground">Homework will appear here when they are created by your teachers.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -1045,31 +1046,31 @@ export default function AssignmentsPage() {
                   <button
                     key={g.id}
                     onClick={() => setGroupId(g.id)}
-                    className="bg-white dark:bg-card rounded-lg border border-slate-200 dark:border-border p-4 text-left hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-md transition-all"
+                    className="bg-card rounded-lg border border-border p-4 text-left hover:border-brand hover:shadow-md transition-all"
                   >
                     <div className="flex items-center gap-2 mb-3 flex-wrap">
-                      <Users className="w-4 h-4 text-slate-400 dark:text-gray-500 shrink-0" />
-                      <h3 className="font-bold text-slate-900 dark:text-white truncate">{g.name}</h3>
+                      <Users className="w-4 h-4 text-slate-400 dark:text-muted-foreground shrink-0" />
+                      <h3 className="font-bold text-foreground truncate">{g.name}</h3>
                       {g.is_over && (
-                        <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border border-slate-300 dark:border-slate-600 text-slate-500 dark:text-gray-400 shrink-0">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border border-slate-300 dark:border-input text-muted-foreground shrink-0">
                           Completed
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">{total} assignment{total !== 1 ? 's' : ''}</div>
+                    <div className="text-xs text-muted-foreground mb-2">{total} assignment{total !== 1 ? 's' : ''}</div>
                     {isManagerView ? (
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
-                        <span className={`flex items-center gap-1 font-medium ${toGradeCount > 0 ? "text-amber-600 dark:text-amber-400" : "text-gray-400 dark:text-gray-500"}`}>
+                        <span className={`flex items-center gap-1 font-medium ${toGradeCount > 0 ? "text-amber-600 dark:text-amber-400" : "text-gray-400 dark:text-muted-foreground"}`}>
                           {toGradeCount} to grade
                         </span>
                       </div>
                     ) : (
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
                         {pending > 0 && <span className="text-amber-600 dark:text-amber-400">{pending} pending</span>}
-                        {submitted > 0 && <span className="text-blue-600 dark:text-blue-400">{submitted} submitted</span>}
+                        {submitted > 0 && <span className="text-brand">{submitted} submitted</span>}
                         {graded > 0 && <span className="text-green-600 dark:text-green-400">{graded} graded</span>}
                         {pending === 0 && submitted === 0 && graded === 0 && (
-                          <span className="text-gray-400 dark:text-gray-500">All done</span>
+                          <span className="text-gray-400 dark:text-muted-foreground">All done</span>
                         )}
                       </div>
                     )}
@@ -1082,21 +1083,25 @@ export default function AssignmentsPage() {
       ) : (
         <div className="space-y-6">
           {filteredAssignments.length === 0 ? (
-            <div className="bg-white dark:bg-card rounded-xl shadow-sm border border-gray-200 dark:border-border p-12 text-center">
-              <ClipboardList className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            <div className="bg-card rounded-xl shadow-sm border border-border p-12 text-center">
+              <ClipboardList className="w-12 h-12 text-gray-400 dark:text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">
                 {filter === 'all' ? 'No homework in this group' : `No ${filter} homework in this group`}
               </h3>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="text-muted-foreground">
                 {filter === 'all' ? 'Select another group or create new homework.' : `You don't have any ${filter} homework in this group.`}
               </p>
             </div>
           ) : (
             <>
-              <div className="bg-white dark:bg-card rounded-lg border border-slate-200 dark:border-border overflow-hidden shadow-none">
+              {isStudentView && (
+                <StudentHomeworkCards items={paginatedAssignments} renderStatus={getStatusBadge} formatDate={formatToKZTime}
+                  isOverdue={isOverdue} onOpen={(id) => navigate(`/homework/${id}`)} className="@xl:hidden" />
+              )}
+              <div className={`bg-card rounded-lg border border-border overflow-hidden shadow-none ${isStudentView ? 'hidden @xl:block' : ''}`}>
                 <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead className="bg-white dark:bg-card text-slate-500 dark:text-gray-400 border-b border-slate-100 dark:border-border">
+                  <table className="w-full min-w-[640px] text-sm">
+                    <thead className="bg-card text-muted-foreground border-b border-border">
                       <tr>
                         <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Homework</th>
                         <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Due Date</th>
@@ -1115,7 +1120,7 @@ export default function AssignmentsPage() {
                         <th className="text-right px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-border">
+                    <tbody className="divide-y divide-border">
                       {paginatedAssignments.map(assignment => renderAssignmentRow(assignment))}
                       </tbody>
                     </table>
@@ -1124,7 +1129,7 @@ export default function AssignmentsPage() {
 
               {totalPages > 1 && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                  <span className="text-sm text-muted-foreground">
                     Showing {(page - 1) * PAGE_SIZE + 1}-{Math.min(page * PAGE_SIZE, filteredAssignments.length)} of {filteredAssignments.length}
                   </span>
                   <div className="flex gap-2">
@@ -1143,18 +1148,20 @@ export default function AssignmentsPage() {
           {isStudentView && filteredPreviousHomework.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center gap-2 pt-2">
-                <Archive className="w-5 h-5 text-slate-400 dark:text-gray-500" />
+                <Archive className="w-5 h-5 text-slate-400 dark:text-muted-foreground" />
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Previous homework</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <h2 className="text-lg font-semibold text-foreground">Previous homework</h2>
+                  <p className="text-sm text-muted-foreground">
                     Homework from groups you were in before. View only — you cannot submit here anymore.
                   </p>
                 </div>
               </div>
-              <div className="bg-white dark:bg-card rounded-lg border border-slate-200 dark:border-border overflow-hidden shadow-none">
+              <StudentHomeworkCards items={filteredPreviousHomework} renderStatus={getStatusBadge} formatDate={formatToKZTime}
+                isOverdue={isOverdue} onOpen={(id) => navigate(`/homework/${id}`)} className="@xl:hidden" />
+              <div className="hidden @xl:block bg-card rounded-lg border border-border overflow-hidden shadow-none">
                 <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead className="bg-white dark:bg-card text-slate-500 dark:text-gray-400 border-b border-slate-100 dark:border-border">
+                  <table className="w-full min-w-[640px] text-sm">
+                    <thead className="bg-card text-muted-foreground border-b border-border">
                       <tr>
                         <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Homework</th>
                         <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Due Date</th>
@@ -1163,7 +1170,7 @@ export default function AssignmentsPage() {
                         <th className="text-right px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-border">
+                    <tbody className="divide-y divide-border">
                       {filteredPreviousHomework.map(assignment => renderAssignmentRow(assignment))}
                     </tbody>
                   </table>

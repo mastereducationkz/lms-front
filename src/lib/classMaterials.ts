@@ -370,7 +370,7 @@ export type MaterialsBadgeVariant = 'count' | 'add' | null;
 const MATERIALS_MANAGER_ROLES = ['teacher', 'head_teacher', 'admin'];
 
 /**
- * What the attendance-grid 📎 badge shows for one lesson: the count once it's above zero (any
+ * What the attendance-grid paperclip badge shows for one lesson: the count once it's above zero (any
  * viewer who can see the grid), a faint "add" invitation at zero for a role that can plausibly
  * manage a lesson (teacher/head_teacher/admin — `ClassMaterialsSection`'s own `can_manage` is
  * what actually gates adding; this only decides which roles are worth the invitation), or

@@ -246,7 +246,7 @@ export default function Calendar() {
   const peekLocale = recordingsLocale(user?.role);
 
   if (loading && events.length === 0) {
-    return <Loader size="xl" animation="spin" color="#2563eb" />;
+    return <Loader size="xl" animation="spin" className="text-brand" />;
   }
 
   const dayPeekAll = dayPeek ? eventsOnDay(dayPeek, filtered) : [];
@@ -301,7 +301,7 @@ export default function Calendar() {
                 className={cx(
                   'rounded-md px-3 py-1.5 text-[13px] font-medium transition',
                   view === v.id
-                    ? 'bg-card text-foreground shadow-sm'
+                    ? 'bg-card text-foreground shadow-sm dark:bg-brand-surface dark:text-brand-subtle-foreground dark:shadow-[inset_0_0_0_1px_hsl(var(--brand-border))]'
                     : 'text-muted-foreground hover:text-foreground',
                 )}
               >
@@ -351,7 +351,7 @@ export default function Calendar() {
                 id="show-archived"
                 checked={showArchived}
                 onChange={(e) => setShowArchived(e.target.checked)}
-                className="h-4 w-4 cursor-pointer rounded border-border text-blue-600 dark:text-blue-400 focus:ring-blue-500"
+                className="h-4 w-4 cursor-pointer rounded border-border text-brand focus:ring-ring"
               />
               <label htmlFor="show-archived" className="cursor-pointer whitespace-nowrap text-[13px] font-medium text-muted-foreground">
                 Show finished
@@ -410,7 +410,7 @@ export default function Calendar() {
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-1">
         <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <span className="flex -space-x-1">
-            <i className="h-2 w-2 rounded-full bg-blue-500 ring-1 ring-card" />
+            <i className="h-2 w-2 rounded-full bg-brand-solid ring-1 ring-card" />
             <i className="h-2 w-2 rounded-full bg-emerald-500 ring-1 ring-card" />
             <i className="h-2 w-2 rounded-full bg-fuchsia-500 ring-1 ring-card" />
           </span>

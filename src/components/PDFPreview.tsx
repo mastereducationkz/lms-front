@@ -44,15 +44,15 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({
   if (!showFullPreview) {
     // Compact preview for FileUploadArea
     return (
-      <div className="relative bg-gray-50 border rounded-lg overflow-hidden">
+      <div className="relative bg-muted border rounded-lg overflow-hidden">
         <div className="aspect-[4/3] relative">
           {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <div className="absolute inset-0 flex items-center justify-center bg-muted">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand"></div>
             </div>
           )}
           {hasError ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-500">
+            <div className="absolute inset-0 flex items-center justify-center bg-muted text-muted-foreground">
               <div className="text-center">
                 <FileText className="mx-auto mb-2 h-6 w-6" aria-hidden="true" />
                 <div className="text-xs">PDF Preview</div>
@@ -68,11 +68,11 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({
             />
           )}
         </div>
-        <div className="p-2 bg-white border-t">
+        <div className="p-2 bg-card border-t">
           <div className="flex items-center justify-between">
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium text-gray-900 truncate">{filename}</p>
-              <p className="text-xs text-gray-500">{formatFileSize(fileSize)}</p>
+              <p className="text-xs font-medium text-foreground truncate">{filename}</p>
+              <p className="text-xs text-muted-foreground">{formatFileSize(fileSize)}</p>
             </div>
             <div className="flex items-center space-x-1 ml-2">
               <Button
@@ -100,11 +100,11 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({
         {/* Fullscreen Modal */}
         {isFullscreen && (
           <div className="fixed inset-0 z-50 bg-black bg-opacity-75 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg w-full h-full max-w-6xl max-h-[90vh] flex flex-col">
+            <div className="bg-card rounded-lg w-full h-full max-w-6xl max-h-[90vh] flex flex-col">
               <div className="flex items-center justify-between p-4 border-b">
                 <div>
                   <h3 className="text-lg font-semibold">{filename}</h3>
-                  <p className="text-sm text-gray-500">{formatFileSize(fileSize)}</p>
+                  <p className="text-sm text-muted-foreground">{formatFileSize(fileSize)}</p>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button
@@ -142,11 +142,11 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({
 
   // Full preview mode
   return (
-    <div className="w-full h-full bg-white rounded-lg border overflow-hidden">
-      <div className="flex items-center justify-between p-3 border-b bg-gray-50">
+    <div className="w-full h-full bg-card rounded-lg border overflow-hidden">
+      <div className="flex items-center justify-between p-3 border-b bg-muted">
         <div>
           <h4 className="text-sm font-medium">{filename}</h4>
-          <p className="text-xs text-gray-500">{formatFileSize(fileSize)}</p>
+          <p className="text-xs text-muted-foreground">{formatFileSize(fileSize)}</p>
         </div>
         <div className="flex items-center space-x-2">
           <Button
@@ -169,7 +169,7 @@ const PDFPreview: React.FC<PDFPreviewProps> = ({
       <div className="relative" style={{ height: 'calc(100% - 60px)' }}>
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
           </div>
         )}
         <iframe

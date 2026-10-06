@@ -76,7 +76,7 @@ export default function ClassMaterialsPage() {
             aria-selected={tab === entry.key}
             onClick={() => selectTab(entry.key)}
             className={`h-11 rounded-lg px-3 text-sm font-medium transition sm:h-10 ${
-              tab === entry.key ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+              tab === entry.key ? 'bg-card text-foreground shadow-sm dark:bg-brand-surface dark:text-brand-subtle-foreground dark:shadow-[inset_0_0_0_1px_hsl(var(--brand-border))]' : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             {entry.label}

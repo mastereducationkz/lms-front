@@ -36,9 +36,9 @@ export default function YouTubeVideoPlayer({
     const errorMessage = "Invalid YouTube URL";
     onError?.(errorMessage);
     return (
-      <div className={`bg-gray-100 rounded-lg p-4 text-center ${className}`}>
-        <div className="text-gray-500 text-sm">
-          <svg className="w-8 h-8 mx-auto mb-2 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+      <div className={`bg-muted rounded-lg p-4 text-center ${className}`}>
+        <div className="text-muted-foreground text-sm">
+          <svg className="w-8 h-8 mx-auto mb-2 text-gray-400 dark:text-muted-foreground" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
           </svg>
           <p>{errorMessage}</p>
@@ -260,14 +260,14 @@ export default function YouTubeVideoPlayer({
             type="button"
             onClick={() => setTroubleOpen(open => !open)}
             aria-expanded={troubleOpen}
-            className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-gray-800 dark:hover:text-foreground"
           >
             <TriangleAlert className="h-3.5 w-3.5" />
             Video glitching or not playing?
           </button>
         </div>
         {troubleOpen && (
-          <div className="mt-2 space-y-3 rounded-md border border-gray-200 bg-white p-3 text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300">
+          <div className="mt-2 space-y-3 rounded-md border border-border bg-card p-3 text-gray-700 dark:text-foreground">
             <p>
               Stripes, green or pink blocks, or a frozen picture come from how your computer's graphics
               card plays YouTube video, not from the lesson itself.
@@ -284,7 +284,7 @@ export default function YouTubeVideoPlayer({
                 Open on YouTube
               </Button>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-muted-foreground">
               Still broken? Update Chrome and your graphics driver, or open Chrome's Settings → System,
               turn off «Use graphics acceleration when available» and relaunch Chrome.
             </p>

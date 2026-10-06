@@ -219,7 +219,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, className, onErro
   return (
     <div
       className={cn(
-        'flex items-center gap-3 rounded-lg border border-border bg-card dark:bg-card px-3 py-2',
+        'flex items-center gap-3 rounded-lg border border-border bg-card px-3 py-2',
         className
       )}
     >

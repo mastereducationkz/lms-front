@@ -178,7 +178,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                         name="email"
                         type="email"
                         placeholder="Enter your email address"
-                        className="w-full bg-white dark:bg-card text-lg p-4 focus:outline-none "
+                        className="w-full bg-card text-lg p-4 focus:outline-none "
                         required
                         disabled={loading}
                       />
@@ -193,7 +193,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                           name="password"
                           type={showPassword ? 'text' : 'password'}
                           placeholder="Enter your password"
-                          className="w-full bg-white dark:bg-card text-lg p-4 focus:outline-none"
+                          className="w-full bg-card text-lg p-4 focus:outline-none"
                           required
                           disabled={loading}
                         />

@@ -91,7 +91,7 @@ export const TextCompletionRenderer: React.FC<TextCompletionRendererProps> = ({
     return (
         <div
             ref={containerRef}
-            className="text-gray-800 dark:text-gray-100 text-lg leading-relaxed prose prose-lg dark:prose-invert max-w-none"
+            className="text-foreground text-lg leading-relaxed prose prose-lg dark:prose-invert max-w-none"
         >
             {mounted && gaps.map((gap) => {
                 if (!gap.container) return null;
@@ -111,7 +111,7 @@ export const TextCompletionRenderer: React.FC<TextCompletionRendererProps> = ({
                 return createPortal(
                     <span className="inline-flex items-center align-baseline gap-1">
                         {showNumbering && (
-                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                            <span className="text-sm font-semibold text-gray-700 dark:text-foreground">
                                 {gap.index + 1}.
                             </span>
                         )}
@@ -124,11 +124,10 @@ export const TextCompletionRenderer: React.FC<TextCompletionRendererProps> = ({
                             placeholder={showNumbering ? '' : `#${gap.index + 1}`}
                             className={`
               inline-flex items-center h-8 py-0.5 px-2 text-sm font-medium border-2 rounded
-              ${disabled ? 'cursor-not-allowed opacity-70 bg-gray-100' : 'cursor-text bg-white hover:bg-gray-50'}
-              ${isCorrect ? 'border-green-500 bg-green-50' : ''}
-              ${isIncorrect ? 'border-red-500 bg-red-50' : ''}
-              ${!showCorrectAnswers ? 'border-blue-400' : ''}
-              transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500
+              ${disabled ? 'cursor-not-allowed opacity-70' : 'cursor-text hover:bg-muted'}
+              ${isCorrect ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : isIncorrect ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : disabled ? 'bg-muted' : 'bg-card'}
+              ${!showCorrectAnswers ? 'border-blue-400 dark:border-brand/60' : ''}
+              transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring
             `.trim().replace(/\s+/g, ' ')}
                             style={{
                                 display: 'inline-flex',

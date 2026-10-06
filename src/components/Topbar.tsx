@@ -70,10 +70,10 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
   };
 
   return (
-    <div ref={bar} className="sticky top-0 z-10 bg-gray-50/80 dark:bg-card/80 backdrop-blur border-b border-border px-4 sm:px-5 md:px-6 py-3 sm:py-3.5 flex items-center justify-between">
+    <div ref={bar} className="sticky top-0 z-10 bg-gray-50/80 dark:bg-card/80 backdrop-blur border-b border-border px-4 sm:px-5 md:px-6 py-3 sm:py-3.5 flex items-center justify-between gap-3">
       <div className="min-w-0">
-        <div className="text-sm sm:text-[14px] text-gray-500 dark:text-muted-foreground">{['curator', 'head_curator'].includes(user?.role || '') ? 'С возвращением' : 'Welcome back'}</div>
-        <div className="text-[16px] sm:text-xl font-semibold text-gray-900 dark:text-foreground">{user?.name}!</div>
+        <div className="truncate text-sm sm:text-[14px] text-muted-foreground">{['curator', 'head_curator'].includes(user?.role || '') ? 'С возвращением' : 'Welcome back'}</div>
+        <div className="truncate text-[16px] sm:text-xl font-semibold text-foreground">{user?.name}!</div>
       </div>
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         {/* <WhatsNewButton userRole={user?.role} /> */}
@@ -83,12 +83,12 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
         <StreakIcon />
         <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="w-9 h-9 rounded-lg bg-white dark:bg-card border flex items-center justify-center text-gray-600 dark:text-muted-foreground hover:bg-gray-100 dark:hover:bg-secondary dark:hover:text-foreground transition-colors"
+          className="w-9 h-9 rounded-lg bg-card border flex items-center justify-center text-muted-foreground hover:bg-muted dark:hover:text-foreground transition-colors"
           aria-label="Toggle theme"
         >
           {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
-        <button className="lg:hidden w-10 h-10 rounded-lg bg-white dark:bg-card border flex items-center justify-center text-gray-700 dark:text-foreground" onClick={onOpenSidebar} aria-label="Open menu"><Menu className="w-5 h-5" aria-hidden="true" /></button>
+        <button className="lg:hidden w-10 h-10 rounded-lg bg-card border flex items-center justify-center text-gray-700 dark:text-foreground" onClick={onOpenSidebar} aria-label="Open menu"><Menu className="w-5 h-5" aria-hidden="true" /></button>
       </div>
     </div>
   );

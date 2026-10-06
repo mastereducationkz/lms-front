@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ChevronLeft, ChevronRight, ListChecks, Video } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -40,9 +41,19 @@ export default function LessonHeader({ view, group, onGroup, sections, onJump, n
   const status = STATUS[view.status];
   const join = joinState(view, now);
   const journal = group ? journalUrl(view.viewer.role, group.id, view.start) : null;
+  const stuck = useStuck();
 
   return (
-    <header style={{ top: 'var(--topbar-h, 0px)' }} className="sticky z-[9] rounded-b-2xl border border-t-0 border-border bg-card/95 px-4 pb-3 pt-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/85 sm:px-5">
+    <header
+      ref={stuck.ref}
+      style={{ top: 'var(--topbar-h, 0px)' }}
+      className={cn(
+        'sticky z-[9] border border-border bg-card/95 px-4 pb-3 pt-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-card/85 sm:px-5',
+        // Only a header that is actually stuck hangs off the topbar (no top edge); at rest the
+        // page padding keeps it apart from the topbar, so it is a whole card.
+        stuck.on ? 'rounded-b-2xl border-t-0' : 'rounded-2xl',
+      )}
+    >
       <div className="flex items-start gap-3">
         <Link
           to="/calendar"
@@ -64,7 +75,7 @@ export default function LessonHeader({ view, group, onGroup, sections, onJump, n
             {group ? groupLabel(group.name) : view.title}
             {group?.lesson_number ? <span className="font-normal text-muted-foreground"> · {t('урок', 'lesson')} {group.lesson_number}</span> : null}
           </h1>
-          {view.topic && <p className="line-clamp-2 text-sm text-blue-700 dark:text-blue-300" title={view.topic}>{view.topic}</p>}
+          {view.topic && <p className="line-clamp-2 text-sm text-brand-subtle-foreground" title={view.topic}>{view.topic}</p>}
           <p className="mt-0.5 text-xs text-muted-foreground">
             {view.teacher ? view.teacher.name : t('Преподаватель не указан', 'No teacher set')}
             {view.is_substitution && (
@@ -138,6 +149,29 @@ export default function LessonHeader({ view, group, onGroup, sections, onJump, n
       )}
     </header>
   );
+}
+
+/** Whether a sticky element sits at its `top` offset in the scrolling <main>, i.e. is stuck. */
+function useStuck() {
+  const ref = useRef<HTMLElement>(null);
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    const scroller = el?.closest('main');
+    if (!el || !scroller) return;
+    const check = () => {
+      const offset = el.getBoundingClientRect().top - scroller.getBoundingClientRect().top;
+      setOn(scroller.scrollTop > 0 && offset <= (parseFloat(getComputedStyle(el).top) || 0) + 0.5);
+    };
+    check();
+    scroller.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('resize', check);
+    return () => {
+      scroller.removeEventListener('scroll', check);
+      window.removeEventListener('resize', check);
+    };
+  }, []);
+  return { ref, on };
 }
 
 function NavArrow({ to, label, dir }: { to: string | null; label: string; dir: 'prev' | 'next' }) {

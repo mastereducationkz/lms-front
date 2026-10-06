@@ -126,7 +126,7 @@ export default function ShareDialog({ item, onClose }: { item: ShareItem; onClos
       type="button"
       size={primary ? 'lg' : 'default'}
       variant={primary ? 'default' : 'outline'}
-      className={primary ? 'h-12 bg-[#2563EB] text-base text-white hover:bg-[#1D4ED8]' : ''}
+      className={primary ? 'h-12 bg-brand-solid text-base text-brand-solid-foreground hover:bg-brand-solid-hover' : ''}
       disabled={!ready}
       onClick={share}
     >
@@ -139,7 +139,7 @@ export default function ShareDialog({ item, onClose }: { item: ShareItem; onClos
       type="button"
       size={primary ? 'lg' : 'default'}
       variant={primary ? 'default' : 'outline'}
-      className={primary ? 'h-12 bg-[#2563EB] text-base text-white hover:bg-[#1D4ED8]' : ''}
+      className={primary ? 'h-12 bg-brand-solid text-base text-brand-solid-foreground hover:bg-brand-solid-hover' : ''}
       disabled={!ready}
       onClick={save}
     >
@@ -152,12 +152,12 @@ export default function ShareDialog({ item, onClose }: { item: ShareItem; onClos
       <DialogContent className="max-h-[94vh] max-w-3xl overflow-y-auto rounded-3xl p-0 sm:p-0">
         <div className="grid gap-0 md:grid-cols-[minmax(0,300px)_1fr]">
           {/* Card preview */}
-          <div className="flex items-center justify-center bg-gradient-to-br from-[#1E3A8A] via-[#1D4ED8] to-[#172554] p-5 md:rounded-l-3xl">
+          <div className="flex items-center justify-center bg-gradient-to-br from-blue-900 via-blue-700 to-blue-950 p-5 md:rounded-l-3xl dark:bg-none dark:bg-brand-surface">
             <div className="relative aspect-[9/16] w-[min(168px,44vw)] overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15 md:w-[260px]">
               {preview && !drawFailed ? (
                 <img src={preview} alt={`Story card: ${item.text.title}`} className={`h-full w-full object-cover transition-opacity ${ready ? 'opacity-100' : 'opacity-60'}`} />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-white/10 text-center text-sm text-blue-100">
+                <div className="flex h-full w-full items-center justify-center bg-white/10 text-center text-sm text-blue-100 dark:text-brand-surface-foreground">
                   {drawFailed ? 'We couldn’t draw your card. Close and try again.' : 'Drawing your card…'}
                 </div>
               )}
@@ -185,8 +185,8 @@ export default function ShareDialog({ item, onClose }: { item: ShareItem; onClos
                     onClick={() => setNameMode(o.mode)}
                     className={`rounded-full border px-3 py-1.5 text-sm transition-colors ${
                       nameMode === o.mode
-                        ? 'border-[#2563EB] bg-[#2563EB] text-white'
-                        : 'border-gray-200 dark:border-border text-gray-700 dark:text-gray-200 hover:border-[#2563EB]/50'
+                        ? 'border-brand-solid bg-brand-solid text-brand-solid-foreground dark:border-brand-border dark:bg-brand-surface dark:text-brand-subtle-foreground'
+                        : 'border-border text-gray-700 dark:text-foreground hover:border-brand/50'
                     }`}
                   >
                     {o.label}
@@ -206,21 +206,21 @@ export default function ShareDialog({ item, onClose }: { item: ShareItem; onClos
               )}
             </div>
 
-            <div className="rounded-2xl bg-blue-50/80 dark:bg-blue-950/30 p-3 text-sm">
-              <p className="flex items-center gap-2 font-medium text-gray-900 dark:text-white">
-                <AtSign className="h-4 w-4 text-[#2563EB]" aria-hidden /> {TAG_PROMPT}
+            <div className="rounded-2xl bg-brand-surface/80 p-3 text-sm">
+              <p className="flex items-center gap-2 font-medium text-foreground">
+                <AtSign className="h-4 w-4 text-brand" aria-hidden /> {TAG_PROMPT}
               </p>
               <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                <li><span className="font-semibold text-gray-700 dark:text-gray-200">Instagram</span> → Your story</li>
-                <li><span className="font-semibold text-gray-700 dark:text-gray-200">WhatsApp</span> → My status</li>
-                <li><span className="font-semibold text-gray-700 dark:text-gray-200">Snapchat</span> → My Story</li>
+                <li><span className="font-semibold text-gray-700 dark:text-foreground">Instagram</span> → Your story</li>
+                <li><span className="font-semibold text-gray-700 dark:text-foreground">WhatsApp</span> → My status</li>
+                <li><span className="font-semibold text-gray-700 dark:text-foreground">Snapchat</span> → My Story</li>
               </ul>
               {viaSheet && (
                 <p className="mt-2 text-xs text-muted-foreground">Save image opens the share menu — choose «Save Image».</p>
               )}
             </div>
 
-            <p role="status" aria-live="polite" className="min-h-[1.25rem] text-sm text-gray-600 dark:text-gray-300">{message}</p>
+            <p role="status" aria-live="polite" className="min-h-[1.25rem] text-sm text-muted-foreground">{message}</p>
           </div>
         </div>
       </DialogContent>

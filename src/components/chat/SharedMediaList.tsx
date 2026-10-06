@@ -36,7 +36,7 @@ export function SharedMediaList({ media }: { media: SharedMediaItem[] }) {
               return (
                 <div
                   key={m.id}
-                  className="w-full h-20 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400"
+                  className="w-full h-20 rounded-lg bg-muted flex items-center justify-center text-gray-400 dark:text-muted-foreground"
                 >
                   <ImageOff className="w-5 h-5" />
                 </div>
@@ -61,7 +61,7 @@ export function SharedMediaList({ media }: { media: SharedMediaItem[] }) {
             const href = safeUploadUrl(m.file_url);
             if (!href) {
               return (
-                <p key={m.id} className="text-sm text-gray-500 dark:text-gray-400 break-all">
+                <p key={m.id} className="text-sm text-muted-foreground break-all">
                   <Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{fileName} (unavailable)
                 </p>
               );
@@ -72,7 +72,7 @@ export function SharedMediaList({ media }: { media: SharedMediaItem[] }) {
                 href={href}
                 target="_blank"
                 rel="noreferrer"
-                className="block text-sm text-blue-600 dark:text-blue-400 underline break-all"
+                className="block text-sm text-brand underline break-all"
               >
                 <Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{fileName}
               </a>

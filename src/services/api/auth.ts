@@ -12,7 +12,7 @@ function getCurrentUserFromStorage(): User | null {
       if (userData) {
         CookieUtils.setCookie('current_user', userData, 7);
         localStorage.removeItem('current_user');
-        console.info('🔄 Данные пользователя перенесены в cookies');
+        console.info('Данные пользователя перенесены в cookies');
       }
     }
     return userData ? JSON.parse(userData) : null;

@@ -32,7 +32,7 @@ export default function UserAvatar({
   isStudent = false,
   size = 40,
   className = '',
-  fallbackClassName = 'bg-brand-solid text-white',
+  fallbackClassName = 'bg-brand-solid text-brand-solid-foreground',
 }: UserAvatarProps) {
   const box = { width: size, height: size };
   if (avatarUrl) {

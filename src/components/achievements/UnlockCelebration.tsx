@@ -155,7 +155,7 @@ export default function UnlockCelebration() {
       <Confetti />
       <Dialog open onOpenChange={(o) => { if (!o) close(false); }}>
         <DialogContent className="max-w-md overflow-hidden rounded-3xl border-0 p-0">
-          <div className="relative bg-gradient-to-br from-[#2563EB] via-[#1D4ED8] to-[#1E3A8A] px-6 pb-6 pt-8 text-center text-white dark:from-brand-subtle dark:via-brand-surface dark:to-brand-surface dark:text-brand-surface-foreground">
+          <div className="relative bg-gradient-to-br from-brand-solid via-brand-solid-hover to-blue-900 px-6 pb-6 pt-8 text-center text-white dark:from-brand-subtle dark:via-brand-surface dark:to-brand-surface dark:text-brand-surface-foreground">
             <div aria-hidden className="pointer-events-none absolute -left-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
             <div className="relative mx-auto w-fit rounded-full bg-white/15 p-2 ring-4 ring-white/25">
               <RewardPreview code={user.mascot} userId={user.id} reward={pick?.reward} size={128} />

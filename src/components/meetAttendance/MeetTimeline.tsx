@@ -39,7 +39,7 @@ const BAR: Record<RowKind, string> = {
 
 const MARK_CHIP: Record<string, string> = {
   present: 'bg-emerald-500 text-white',
-  late: 'bg-amber-400 text-foreground',
+  late: 'bg-amber-400 text-gray-900',
   absent: 'bg-rose-500 text-white',
   removed: 'bg-slate-300 dark:bg-border text-foreground',
 };

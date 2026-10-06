@@ -98,8 +98,8 @@ export default function HlsVideoPlayer({
 
   if (failed) {
     return (
-      <div className={`bg-gray-100 dark:bg-gray-800 rounded-lg p-6 text-center ${className}`}>
-        <p className="text-sm text-gray-600 dark:text-gray-300">Video is temporarily unavailable.</p>
+      <div className={`bg-muted rounded-lg p-6 text-center ${className}`}>
+        <p className="text-sm text-muted-foreground">Video is temporarily unavailable.</p>
       </div>
     );
   }

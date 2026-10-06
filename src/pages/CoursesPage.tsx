@@ -101,7 +101,7 @@ export default function CoursesPage() {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-40" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 @lg:grid-cols-2 @4xl:grid-cols-3 gap-4 sm:gap-6">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="card p-6">
               <Skeleton className="h-40 mb-4" />
@@ -138,12 +138,12 @@ export default function CoursesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex flex-col @lg:flex-row @lg:items-center @lg:justify-between gap-3">
         <h2 className="text-2xl sm:text-3xl font-bold">{ru ? 'Курсы' : 'Courses'}</h2>
         {canEditCourseContent(user?.role) && (
           <Button 
             onClick={() => navigate('/admin/courses')}
-            className="px-4 py-2 w-full sm:w-auto"
+            className="px-4 py-2 w-full @lg:w-auto"
           >
             Manage Courses
           </Button>
@@ -151,7 +151,7 @@ export default function CoursesPage() {
       </div>
 
       {readOnly && (
-        <div className="flex items-start gap-2 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20 px-4 py-3 text-sm text-blue-800 dark:text-blue-300">
+        <div className="flex items-start gap-2 rounded-lg border border-brand-border bg-brand-surface px-4 py-3 text-sm text-brand-subtle-foreground">
           <Eye className="w-4 h-4 mt-0.5 shrink-0" />
           <span>
             {ru
@@ -163,7 +163,7 @@ export default function CoursesPage() {
 
       {user?.role !== 'student' && courses.length > 0 && (
         <div className="relative max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -174,14 +174,14 @@ export default function CoursesPage() {
       )}
 
       {visible.length === 0 ? (
-        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+        <div className="text-center py-12 text-muted-foreground">
           <p>{ru ? 'Курсы не найдены' : 'No courses available'}</p>
           {user?.role === 'student' && (
             <p className="text-sm mt-2">Contact your teacher to get enrolled in courses</p>
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 @lg:grid-cols-2 @4xl:grid-cols-3 gap-4 sm:gap-6">
           {visible.map(course => (
             <CourseCard
               key={course.id}

@@ -102,7 +102,7 @@ export const FillInBlankRenderer: React.FC<FillInBlankRendererProps> = ({
   return (
     <div
       ref={containerRef}
-      className="text-gray-800 dark:text-gray-100 text-lg leading-relaxed prose prose-lg dark:prose-invert max-w-none"
+      className="text-foreground text-lg leading-relaxed prose prose-lg dark:prose-invert max-w-none"
     >
       {mounted && gaps.map((gap) => {
         if (!gap.container) return null;
@@ -129,10 +129,9 @@ export const FillInBlankRenderer: React.FC<FillInBlankRendererProps> = ({
               <SelectTrigger
                 className={`
                   inline-flex !w-auto w-fit items-center justify-between h-8 py-0.5 px-2 text-sm font-medium border-2 rounded
-                  ${disabled ? 'cursor-not-allowed opacity-70 bg-gray-100' : 'cursor-pointer bg-white hover:bg-gray-50'}
-                  ${isCorrect ? 'border-green-500 bg-green-50' : ''}
-                  ${isIncorrect ? 'border-red-500 bg-red-50' : ''}
-                  ${!showCorrectAnswers ? 'border-blue-400' : ''}
+                  ${disabled ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:bg-muted'}
+                  ${isCorrect ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : isIncorrect ? 'border-red-500 bg-red-50 dark:bg-red-900/20' : disabled ? 'bg-muted' : 'bg-card'}
+                  ${!showCorrectAnswers ? 'border-blue-400 dark:border-brand/60' : ''}
                   transition-colors duration-200
                 `.trim().replace(/\s+/g, ' ')}
                 style={{ display: 'inline-flex', width: 'auto', minWidth: '52px' }}

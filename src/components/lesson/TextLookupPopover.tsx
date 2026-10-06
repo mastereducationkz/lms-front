@@ -158,7 +158,7 @@ export const TextLookupPopover: React.FC<TextLookupPopoverProps> = ({ containerR
         top: `${position.y}px`
       }}
     >
-      <Card className="bg-white/60 backdrop-blur-xl border border-gray-200/40 shadow-lg shadow-black/10 overflow-hidden max-w-[380px]">
+      <Card className="bg-white/60 backdrop-blur-xl border border-gray-200/40 shadow-lg shadow-black/10 overflow-hidden max-w-[380px] dark:bg-popover/90 dark:border-border">
         {/* Initial toolbar - before lookup */}
         {!result && !error && (
           <div className="group flex items-center gap-1 px-1 py-1 min-w-max">
@@ -171,7 +171,7 @@ export const TextLookupPopover: React.FC<TextLookupPopoverProps> = ({ containerR
               
               {/* Button Container */}
               <button 
-                className={`col-start-1 row-start-1 flex items-center text-[13px] text-gray-500 hover:text-gray-700 hover:bg-gray-100/50 px-1.5 py-1 rounded-md transition-all duration-300 font-medium text-left ${isLoading ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
+                className={`col-start-1 row-start-1 flex items-center text-[13px] text-muted-foreground hover:text-foreground hover:bg-gray-100/50 dark:hover:bg-foreground/10 px-1.5 py-1 rounded-md transition-all duration-300 font-medium text-left ${isLoading ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
                 onClick={() => handleLookup(selectedText, contextSentence)}
               >
                 {/* Icon - always visible but subtle */}
@@ -187,7 +187,7 @@ export const TextLookupPopover: React.FC<TextLookupPopoverProps> = ({ containerR
             {!isLoading && (
               <button 
                 onClick={handleClose}
-                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100/50 rounded-md transition-colors shrink-0"
+                className="p-1 text-gray-400 dark:text-muted-foreground hover:text-gray-600 hover:bg-gray-100/50 dark:hover:text-foreground dark:hover:bg-foreground/10 rounded-md transition-colors shrink-0"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -198,7 +198,7 @@ export const TextLookupPopover: React.FC<TextLookupPopoverProps> = ({ containerR
         {/* Error */}
         {error && (
           <div className="p-4 text-center">
-            <p className="text-sm text-red-500 mb-2">{error}</p>
+            <p className="text-sm text-red-500 dark:text-red-400 mb-2">{error}</p>
             <Button size="sm" variant="ghost" onClick={handleClose} className="text-xs">
               Close
             </Button>
@@ -209,26 +209,26 @@ export const TextLookupPopover: React.FC<TextLookupPopoverProps> = ({ containerR
         {result && (
           <div>
             {/* Header */}
-            <div className="px-4 pt-4 pb-3 border-b border-gray-100">
+            <div className="px-4 pt-4 pb-3 border-b border-border">
               <div className="flex items-start justify-between">
                 <div className="flex flex-wrap items-baseline gap-2">
-                  <span className="text-xl font-semibold text-gray-900 tracking-tight">
+                  <span className="text-xl font-semibold text-foreground tracking-tight">
                     {result.word}
                   </span>
                   {result.phonetic && (
-                    <span className="text-sm text-gray-400">
+                    <span className="text-sm text-gray-400 dark:text-muted-foreground">
                       {result.phonetic}
                     </span>
                   )}
                   {result.part_of_speech && (
-                    <span className="text-xs text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
+                    <span className="text-xs text-brand bg-brand-surface px-1.5 py-0.5 rounded">
                       {result.part_of_speech}
                     </span>
                   )}
                 </div>
                 <button 
                   onClick={handleClose}
-                  className="p-1 -mr-1 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="p-1 -mr-1 text-gray-400 dark:text-muted-foreground hover:text-gray-600 dark:hover:text-foreground transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -239,32 +239,32 @@ export const TextLookupPopover: React.FC<TextLookupPopoverProps> = ({ containerR
             <div className="px-4 py-3 space-y-3 max-h-[280px] overflow-y-auto">
               {/* Definition */}
               <div>
-                <p className="text-[13px] leading-relaxed text-gray-700">
+                <p className="text-[13px] leading-relaxed text-gray-700 dark:text-foreground">
                   {result.definition_en}
                 </p>
               </div>
               
               {/* Translation */}
-              <div className="pt-2 border-t border-gray-100">
-                <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+              <div className="pt-2 border-t border-border">
+                <span className="text-xs font-medium text-gray-400 dark:text-muted-foreground uppercase tracking-wide">
                   Перевод
                 </span>
-                <p className="mt-1 text-[13px] text-gray-600">
+                <p className="mt-1 text-[13px] text-muted-foreground">
                   {result.translation_ru}
                 </p>
               </div>
               
               {/* Synonyms */}
               {result.synonyms.length > 0 && (
-                <div className="pt-2 border-t border-gray-100">
-                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                <div className="pt-2 border-t border-border">
+                  <span className="text-xs font-medium text-gray-400 dark:text-muted-foreground uppercase tracking-wide">
                     Synonyms
                   </span>
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {result.synonyms.slice(0, 5).map((syn, i) => (
                       <span 
                         key={i} 
-                        className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-md"
+                        className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md"
                       >
                         {syn}
                       </span>
@@ -275,11 +275,11 @@ export const TextLookupPopover: React.FC<TextLookupPopoverProps> = ({ containerR
               
               {/* Example */}
               {result.usage_example && (
-                <div className="pt-2 border-t border-gray-100">
-                  <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                <div className="pt-2 border-t border-border">
+                  <span className="text-xs font-medium text-gray-400 dark:text-muted-foreground uppercase tracking-wide">
                     Example
                   </span>
-                  <p className="mt-1 text-[13px] text-gray-500 italic">
+                  <p className="mt-1 text-[13px] text-muted-foreground italic">
                     "{result.usage_example}"
                   </p>
                 </div>
@@ -287,9 +287,9 @@ export const TextLookupPopover: React.FC<TextLookupPopoverProps> = ({ containerR
             </div>
             
             {/* Footer */}
-            <div className="px-4 py-3 bg-gray-50/50 border-t border-gray-100">
+            <div className="px-4 py-3 bg-gray-50/50 dark:bg-muted/50 border-t border-border">
               {saveSuccess ? (
-                <div className="flex items-center justify-center gap-1.5 text-green-600">
+                <div className="flex items-center justify-center gap-1.5 text-green-600 dark:text-green-400">
                   <Check className="w-4 h-4" />
                   <span className="text-sm font-medium">Added to vocabulary</span>
                 </div>
@@ -298,7 +298,7 @@ export const TextLookupPopover: React.FC<TextLookupPopoverProps> = ({ containerR
                   size="sm"
                   onClick={handleSaveToFlashcards}
                   disabled={isSaving}
-                  className="w-full h-8 text-xs font-medium bg-gray-900 hover:bg-gray-800"
+                  className="w-full h-8 text-xs font-medium bg-gray-900 hover:bg-gray-800 dark:bg-foreground dark:text-background dark:hover:bg-foreground/90"
                 >
                   {isSaving ? (
                     <>

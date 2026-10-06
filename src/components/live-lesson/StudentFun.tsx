@@ -4,7 +4,7 @@
  * signal that only the teacher sees as an anonymous count, and a raised hand with its place in line.
  */
 import { useEffect, useState } from 'react';
-import { Hand, HelpCircle } from 'lucide-react';
+import { Frown, Hand } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { LiveApi } from '../../lib/liveLesson/api';
 import { cooldownLeft } from '../../lib/liveLesson/reactions';
@@ -115,7 +115,7 @@ export function HandAndLost({ state, api }: { state: LiveState; api: LiveApi }) 
         </button>
         <button type="button" onClick={() => void sayLost()} disabled={lostCooling}
           className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted/60 disabled:opacity-50">
-          <HelpCircle className="h-4 w-4" aria-hidden />I'm lost 😕
+          <Frown className="h-4 w-4" aria-hidden />I'm lost
         </button>
       </div>
       {mine && <p className="text-center text-xs text-muted-foreground">Tap again to lower your hand.</p>}

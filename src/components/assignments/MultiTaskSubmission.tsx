@@ -177,7 +177,7 @@ function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId, unitGa
   if (loading) {
     return (
       <div className="space-y-3">
-        <div className="text-sm text-gray-600 dark:text-gray-400">Loading course information...</div>
+        <div className="text-sm text-muted-foreground">Loading course information...</div>
       </div>
     );
   }
@@ -185,14 +185,14 @@ function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId, unitGa
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-600 dark:text-gray-400">
+        <div className="text-sm text-muted-foreground">
           Complete the following lessons:
         </div>
       </div>
-      <div className="bg-gray-50 dark:bg-secondary p-3 rounded-md">
+      <div className="bg-muted p-3 rounded-md">
         <div className="flex items-center space-x-2 mb-2">
           <BookOpen className="w-4 h-4 text-muted-foreground" />
-          <span className="font-medium text-slate-900 dark:text-slate-100">
+          <span className="font-medium text-foreground">
             {courseData?.title || (resolvedCourseId ? `Course #${resolvedCourseId}` : 'Course not linked')}
           </span>
         </div>
@@ -204,9 +204,9 @@ function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId, unitGa
                 <div key={lesson.id} className="text-sm flex items-center justify-between">
                   <div className="flex items-center space-x-2 flex-1">
                     {lessonCompleted ? (
-                      <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                      <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
                     ) : (
-                      <div className="w-4 h-4 rounded-full border-2 border-gray-300 dark:border-gray-600 flex-shrink-0" />
+                      <div className="w-4 h-4 rounded-full border-2 border-gray-300 dark:border-input flex-shrink-0" />
                     )}
                     <span className={lessonCompleted ? 'text-green-700 dark:text-green-400 line-through' : 'text-foreground'}>
                       {lesson.title}
@@ -244,11 +244,11 @@ function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId, unitGa
           )}
         </div>
         {totalCount > 0 && (
-          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-border">
-            <div className="text-xs text-gray-600 dark:text-gray-400">
+          <div className="mt-3 pt-3 border-t border-border">
+            <div className="text-xs text-muted-foreground">
              Progress: {completedCount} / {totalCount} lessons completed
             </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-1">
+            <div className="w-full bg-gray-200 dark:bg-secondary rounded-full h-2 mt-1">
               <div 
                 className="bg-green-600 h-2 rounded-full transition-all" 
                 style={{ width: `${(completedCount / totalCount) * 100}%` }}
@@ -257,8 +257,8 @@ function CourseUnitTaskDisplay({ task, onCompletion, readOnly, studentId, unitGa
           </div>
         )}
         {!readOnly && allLessonsCompleted && (
-          <div className="mt-3 flex items-center gap-2 rounded-md border border-gray-200 dark:border-border bg-white dark:bg-card p-3">
-            <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+          <div className="mt-3 flex items-center gap-2 rounded-md border border-border bg-card p-3">
+            <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
             <span className="text-sm leading-snug text-foreground">
               All lessons for this task are complete.
             </span>
@@ -482,12 +482,12 @@ function AudioTaskSubmission({ task, audioUrl, readOnly, onRecorded }: AudioTask
 
   return (
     <div className="space-y-3">
-      <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{task.content.question}</div>
+      <div className="text-sm font-medium text-foreground">{task.content.question}</div>
 
       {showSavedRecording && (
         <div className="space-y-2">
           {readOnly && (
-            <div className="text-xs font-medium text-gray-500 dark:text-gray-400">Student's Recording:</div>
+            <div className="text-xs font-medium text-muted-foreground">Student's Recording:</div>
           )}
           {safeAudioUrl ? (
             <AudioPlayer src={safeAudioUrl} />
@@ -685,7 +685,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
           fileToUpload = await compressImage(fileToUpload);
         }
 
-        console.log(`🚀 Uploading file: ${fileToUpload.name}, Size: ${(fileToUpload.size / 1024 / 1024).toFixed(2)} MB`);
+        console.log(`Uploading file: ${fileToUpload.name}, Size: ${(fileToUpload.size / 1024 / 1024).toFixed(2)} MB`);
         
         // Upload file using existing API
         const response = await apiClient.uploadTeacherFile(fileToUpload);
@@ -800,7 +800,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
 
         return (
           <div className="space-y-4">
-            <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
+            <div className="text-sm font-medium text-foreground">
               Bluebook Test #{expected ?? '—'}
             </div>
 
@@ -899,14 +899,14 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
 
         return (
           <div className="space-y-3">
-            <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{task.content.question}</div>
+            <div className="text-sm font-medium text-foreground">{task.content.question}</div>
             
             {/* Teacher Reference File */}
             {task.content.teacher_file_url && (
               <div className="space-y-2">
                 {/* Image Preview for teacher's reference file */}
                 {task.content.teacher_file_name && /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(task.content.teacher_file_name) && (
-                  <div className="border dark:border-border rounded-lg overflow-hidden bg-gray-50 dark:bg-secondary">
+                  <div className="border dark:border-border rounded-lg overflow-hidden bg-muted">
                     <img 
                       src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + task.content.teacher_file_url}
                       alt={task.content.teacher_file_name || 'Reference image'}
@@ -937,7 +937,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                         <div key={index} className="space-y-3">
                             {/* Image Preview */}
                             {fileHref && file.file_name && /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(file.file_name) && (
-                                <div className="border dark:border-border rounded-lg overflow-hidden bg-gray-50 dark:bg-secondary">
+                                <div className="border dark:border-border rounded-lg overflow-hidden bg-muted">
                                 <img
                                     src={fileHref}
                                     alt={file.file_name || 'Uploaded image'}
@@ -1036,7 +1036,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                     className={cn(
                       'relative rounded-xl border-2 border-dashed transition-colors duration-150',
                       isOver
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30'
+                        ? 'border-brand bg-brand-surface'
                         : 'border-border hover:border-muted-foreground/50',
                       isUploading && 'pointer-events-none opacity-60'
                     )}
@@ -1060,9 +1060,9 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                     >
                       <div className={cn(
                         'rounded-full p-3 transition-colors',
-                        isOver ? 'bg-blue-100 dark:bg-blue-900/50' : 'bg-muted'
+                        isOver ? 'bg-brand-subtle' : 'bg-muted'
                       )}>
-                        <Upload className={cn('w-6 h-6', isOver ? 'text-blue-500 dark:text-blue-400' : 'text-muted-foreground')} />
+                        <Upload className={cn('w-6 h-6', isOver ? 'text-brand' : 'text-muted-foreground')} />
                       </div>
                       <div className="text-center">
                         <p className="text-sm font-medium text-foreground">
@@ -1105,7 +1105,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                   
                   return (
                     <div key={field.id} className="flex items-center gap-2">
-                      <span className="text-base font-semibold text-gray-700 dark:text-gray-300 min-w-[24px]">{field.label || (fieldIndex + 1)}.</span>
+                      <span className="text-base font-semibold text-gray-700 dark:text-foreground min-w-[24px]">{field.label || (fieldIndex + 1)}.</span>
                       <div className="relative flex-1">
                         <Input
                           type="text"
@@ -1147,10 +1147,10 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
         return (
           <div className="space-y-3">
      
-            <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{task.content.question}</div>
+            <div className="text-sm font-medium text-foreground">{task.content.question}</div>
             {/* Student Response Label */}
             {readOnly && taskAnswer.text_response && (
-              <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">Student's Response:</div>
+              <div className="text-xs text-muted-foreground font-medium">Student's Response:</div>
             )}
             <Textarea
               value={taskAnswer.text_response || ''}
@@ -1158,10 +1158,10 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
               placeholder="Type your answer here..."
               rows={4}
               disabled={readOnly}
-              className={readOnly ? 'bg-gray-50 text-slate-900 dark:bg-secondary dark:text-slate-100' : ''}
+              className={readOnly ? 'bg-muted text-foreground' : ''}
             />
             {!readOnly && task.content.max_length && (
-              <div className="text-xs text-right text-gray-500 dark:text-gray-400">
+              <div className="text-xs text-right text-muted-foreground">
                 {(taskAnswer.text_response?.length || 0)} / {task.content.max_length} characters
               </div>
             )}
@@ -1193,7 +1193,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                   
                   return (
                     <div key={field.id} className="flex items-center gap-2">
-                      <span className="min-w-[24px] text-base font-semibold text-slate-700 dark:text-slate-300">{field.label || (fieldIndex + 1)}.</span>
+                      <span className="min-w-[24px] text-base font-semibold text-slate-700 dark:text-foreground">{field.label || (fieldIndex + 1)}.</span>
                       <div className="relative flex-1">
                         <Input
                           type="text"
@@ -1234,13 +1234,13 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
       case 'link_task':
         return (
           <div className="space-y-3">
-            <div className="text-sm text-slate-700 dark:text-slate-300">{task.content.link_description}</div>
-            <div className="flex items-center p-3 border rounded-lg bg-slate-100 dark:bg-secondary border-border">
+            <div className="text-sm text-slate-700 dark:text-foreground">{task.content.link_description}</div>
+            <div className="flex items-center p-3 border rounded-lg bg-muted border-border">
               <LinkIcon className="w-4 h-4 text-muted-foreground mr-2" />
-              <a href={task.content.url} target="_blank" rel="noopener noreferrer" className="text-slate-900 dark:text-slate-100 hover:underline flex-1 truncate">
+              <a href={task.content.url} target="_blank" rel="noopener noreferrer" className="text-foreground hover:underline flex-1 truncate">
                 {task.content.url}
               </a>
-              <ExternalLink className="w-3 h-3 text-slate-500 dark:text-slate-400 ml-2" />
+              <ExternalLink className="w-3 h-3 text-muted-foreground ml-2" />
             </div>
             <div className="flex items-center space-x-2 mt-2">
               <Checkbox 
@@ -1249,7 +1249,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                 onCheckedChange={(checked) => handleTaskCompletion(task.id, { completed: checked })}
                 disabled={readOnly}
               />
-              <Label htmlFor={`task-${task.id}`} className="text-slate-800 dark:text-slate-200 font-normal">
+              <Label htmlFor={`task-${task.id}`} className="text-foreground font-normal">
                 I have {task.content.completion_criteria === 'watch' ? 'watched' : 
                         task.content.completion_criteria === 'read' ? 'read' : 
                         task.content.completion_criteria === 'complete' ? 'completed' : 'visited'} this resource
@@ -1299,11 +1299,11 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
             })()}
             
             {/* Question/Instructions */}
-            <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{task.content.question}</div>
+            <div className="text-sm font-medium text-foreground">{task.content.question}</div>
             
             {/* Student Response Label */}
             {readOnly && taskAnswer.text_response && (
-              <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">Student's Response:</div>
+              <div className="text-xs text-muted-foreground font-medium">Student's Response:</div>
             )}
             
             {/* Text Response */}
@@ -1313,10 +1313,10 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
               placeholder="Type your answer here..."
               rows={5}
               disabled={readOnly}
-              className={readOnly ? 'bg-gray-50 text-slate-900 dark:bg-secondary dark:text-slate-100' : ''}
+              className={readOnly ? 'bg-muted text-foreground' : ''}
             />
             {!readOnly && task.content.max_length && (
-              <div className="text-xs text-right text-gray-500 dark:text-gray-400">
+              <div className="text-xs text-right text-muted-foreground">
                 {(taskAnswer.text_response?.length || 0)} / {task.content.max_length} characters
               </div>
             )}
@@ -1349,7 +1349,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                   
                   return (
                     <div key={field.id} className="flex items-center gap-2">
-                      <span className="min-w-[24px] text-base font-semibold text-slate-700 dark:text-slate-300">{field.label || (fieldIndex + 1)}.</span>
+                      <span className="min-w-[24px] text-base font-semibold text-slate-700 dark:text-foreground">{field.label || (fieldIndex + 1)}.</span>
                       <div className="relative flex-1">
                         <Input
                           type="text"
@@ -1473,8 +1473,8 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
       {assignment.content.instructions && (
         <Card className="border-border bg-secondary/50 dark:bg-secondary">
           <CardContent className="pt-6">
-            <h4 className="mb-2 font-medium text-slate-900 dark:text-slate-100">Instructions</h4>
-            <p className="whitespace-pre-wrap text-sm text-slate-800 dark:text-slate-200">{assignment.content.instructions}</p>
+            <h4 className="mb-2 font-medium text-foreground">Instructions</h4>
+            <p className="whitespace-pre-wrap text-sm text-foreground">{assignment.content.instructions}</p>
           </CardContent>
         </Card>
       )}
@@ -1482,7 +1482,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
       {/* Points Summary */}
       {tasks.some(t => t.is_optional) && (
         <div className="flex items-center gap-4 text-sm px-1">
-          <span className="text-gray-600 dark:text-gray-400">
+          <span className="text-muted-foreground">
             Required: <span className="font-semibold">{tasks.filter(t => !t.is_optional).reduce((sum, t) => sum + t.points, 0)}</span> pts
           </span>
           <span className="text-amber-600 dark:text-amber-400">
@@ -1501,19 +1501,19 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
               key={task.id}
               className={cn(
                 isCompleted &&
-                  'border-green-200 bg-green-50/70 text-slate-900 dark:border-green-700 dark:bg-green-950 dark:text-slate-100',
+                  'border-green-200 bg-green-50/70 text-foreground dark:border-green-700 dark:bg-green-950',
                 task.is_optional && 'border-amber-200 dark:border-amber-700'
               )}
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center space-x-3">
-                    <div className={`shrink-0 p-2 rounded-full ${isCompleted ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' : task.is_optional ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300' : 'bg-gray-100 dark:bg-secondary text-gray-600 dark:text-gray-400'}`}>
+                    <div className={`shrink-0 p-2 rounded-full ${isCompleted ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300' : task.is_optional ? 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300' : 'bg-muted text-muted-foreground'}`}>
                       <Icon className="w-5 h-5" />
                     </div>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h4 className="min-w-0 break-words font-medium text-slate-900 dark:text-slate-100">{formatAssignmentTaskLabel(task.title, index)}</h4>
+                        <h4 className="min-w-0 break-words font-medium text-foreground">{formatAssignmentTaskLabel(task.title, index)}</h4>
                         {task.is_optional && (
                           <span className="text-xs px-2 py-0.5 bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 rounded-full flex items-center gap-1">
                             <Star className="w-3 h-3" />
@@ -1521,7 +1521,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center space-x-2 text-xs text-slate-600 dark:text-slate-400">
+                      <div className="flex items-center space-x-2 text-xs text-muted-foreground">
                         <span>Task {index + 1}</span>
                         <span>•</span>
                         <span>{task.is_optional ? `+${task.points} bonus points` : `${task.points} points`}</span>
@@ -1575,13 +1575,13 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
               </div>
             )}
             {hasOnlyOptionalTasks && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 All tasks are optional — you can submit at any time
                 {completedOptionalCount > 0 && ` (${completedOptionalCount}/${optionalTasks.length} completed)`}
               </p>
             )}
             {!hasOnlyOptionalTasks && canSubmit && optionalTasks.length > 0 && completedOptionalCount < optionalTasks.length && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 {completedOptionalCount}/{optionalTasks.length} bonus tasks completed (optional)
               </p>
             )}

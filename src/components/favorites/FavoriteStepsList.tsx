@@ -56,11 +56,11 @@ export default function FavoriteStepsList() {
     return (
       <Card>
         <CardContent className="p-12 text-center">
-          <Bookmark className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          <Bookmark className="h-16 w-16 text-gray-300 dark:text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-700 dark:text-foreground mb-2">
             No saved pages yet
           </h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-6">
+          <p className="text-muted-foreground mb-6">
             Tap the star on a lesson page to save it here.
           </p>
           <Button onClick={() => navigate('/courses')}>
@@ -73,7 +73,7 @@ export default function FavoriteStepsList() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 @2xl:grid-cols-2 gap-4">
       {items.map((i) => (
         <Card
           key={i.id}
@@ -83,7 +83,7 @@ export default function FavoriteStepsList() {
           <CardContent className="p-4 flex items-center gap-3">
             <div className="text-primary shrink-0">{getStepTypeIcon(i.content_type)}</div>
             <div className="min-w-0 flex-1">
-              <div className="font-semibold text-gray-900 dark:text-foreground truncate">
+              <div className="font-semibold text-foreground truncate">
                 {i.lesson_title} — Step {i.order_index}
               </div>
               {i.step_title && (
@@ -95,7 +95,7 @@ export default function FavoriteStepsList() {
               variant="ghost"
               size="sm"
               onClick={(e) => handleRemove(i.step_id, e)}
-              className="shrink-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="shrink-0 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-opacity"
               aria-label="Remove from favorites"
             >
               <Trash2 className="h-4 w-4" />

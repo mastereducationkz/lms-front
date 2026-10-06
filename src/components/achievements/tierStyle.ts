@@ -10,10 +10,10 @@ export interface TierStyle {
 
 export const TIER_STYLE: Record<AchievementTier, TierStyle> = {
   earned: {
-    card: 'border-slate-200 dark:border-slate-700',
-    badge: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200',
+    card: 'border-slate-200 dark:border-border',
+    badge: 'bg-slate-100 text-slate-700 dark:bg-secondary dark:text-foreground',
     bar: 'bg-slate-500',
-    ring: 'ring-slate-300 dark:ring-slate-600',
+    ring: 'ring-slate-300 dark:ring-input',
   },
   rare: {
     card: 'border-sky-200 dark:border-sky-900',

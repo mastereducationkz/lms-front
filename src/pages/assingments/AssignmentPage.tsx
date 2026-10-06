@@ -150,7 +150,7 @@ export default function AssignmentPage() {
   const isReadOnlyPrevious = status?.is_read_only === true;
 
   const answerKeyPanel = answerKeys.length === 0 ? null : (
-    <Card className="border-blue-200 dark:border-blue-900">
+    <Card className="border-brand-border">
       <CardHeader><CardTitle className="text-base">Check your work</CardTitle><CardDescription>Answer keys and worked examples released by your teacher.</CardDescription></CardHeader>
       <CardContent className="space-y-4">{answerKeys.flatMap((task: any) => task.answer_keys.map((key: any) => (
         <div key={`${task.task_id}-${key.id}`} className="rounded-md border p-3 space-y-2">
@@ -162,7 +162,7 @@ export default function AssignmentPage() {
             const href = safeLinkUrl(resource.file_url);
             const label = resource.file_name || 'Open answer-key file';
             return href ? (
-              <a key={resource.id} className="block text-blue-600 dark:text-blue-400 hover:underline" href={href} target="_blank" rel="noreferrer">{label}</a>
+              <a key={resource.id} className="block text-brand hover:underline" href={href} target="_blank" rel="noreferrer">{label}</a>
             ) : (
               <p key={resource.id} className="text-sm text-muted-foreground">{label}</p>
             );
@@ -199,7 +199,7 @@ export default function AssignmentPage() {
       if (files.length > 0) {
         for (let i = 0; i < files.length; i++) {
             const fileToUpload = files[i];
-            console.log(`🚀 Submitting file ${i+1}/${files.length}: ${fileToUpload.name}, Size: ${(fileToUpload.size / 1024 / 1024).toFixed(2)} MB`);
+            console.log(`Submitting file ${i+1}/${files.length}: ${fileToUpload.name}, Size: ${(fileToUpload.size / 1024 / 1024).toFixed(2)} MB`);
             const result = await apiClient.uploadSubmissionFile(id, fileToUpload);
             
             uploadedFiles.push({
@@ -372,9 +372,9 @@ export default function AssignmentPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Score Display */}
-                <div className="flex items-center justify-between p-4 bg-white dark:bg-card rounded-lg border dark:border-border">
+                <div className="flex items-center justify-between p-4 bg-card rounded-lg border dark:border-border">
                   <div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">Your Score</div>
+                    <div className="text-sm text-muted-foreground">Your Score</div>
                     <div className="text-3xl font-bold">
                       {submission.status === 'graded' ? (
                         <span className={(submission.score || 0) >= (effectiveMaxScore * 0.6) ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
@@ -383,12 +383,12 @@ export default function AssignmentPage() {
                       ) : (
                         <span className="text-muted-foreground">—</span>
                       )}
-                      <span className="text-lg text-gray-500 dark:text-gray-400 font-normal"> / {effectiveMaxScore}</span>
+                      <span className="text-lg text-muted-foreground font-normal"> / {effectiveMaxScore}</span>
                     </div>
                   </div>
                   {submission.status === 'graded' && (
                     <div className="text-right">
-                      <div className="text-sm text-gray-600 dark:text-gray-400">Percentage</div>
+                      <div className="text-sm text-muted-foreground">Percentage</div>
                       <div className={`text-2xl font-bold ${(submission.score || 0) >= (effectiveMaxScore * 0.6) ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                         {Math.round(((submission.score || 0) / effectiveMaxScore) * 100)}%
                       </div>
@@ -397,14 +397,14 @@ export default function AssignmentPage() {
                 </div>
 
                 {/* Teacher Feedback */}
-                <div className="p-4 bg-white dark:bg-card rounded-lg border dark:border-border">
+                <div className="p-4 bg-card rounded-lg border dark:border-border">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="font-medium text-gray-900 dark:text-foreground">Teacher Feedback</span>
+                    <span className="font-medium text-foreground">Teacher Feedback</span>
                   </div>
                   {submission.feedback ? (
-                    <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{submission.feedback}</p>
+                    <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{submission.feedback}</p>
                   ) : (
-                    <p className="text-gray-500 dark:text-gray-400 italic">No feedback provided yet</p>
+                    <p className="text-muted-foreground italic">No feedback provided yet</p>
                   )}
                 </div>
                 <div className="flex items-center justify-between gap-3">
@@ -418,7 +418,7 @@ export default function AssignmentPage() {
                 </div>
 
                 {previousAttempts.length > 0 && (
-                  <div className="rounded-lg border border-border bg-white dark:bg-card">
+                  <div className="rounded-lg border border-border bg-card">
                     <Button
                       variant="ghost"
                       className="w-full justify-between"
@@ -508,7 +508,7 @@ export default function AssignmentPage() {
                   return audioHref ? (
                     <AudioPlayer src={audioHref} />
                   ) : (
-                    <div className="text-gray-500 dark:text-gray-400 italic">No recording found.</div>
+                    <div className="text-muted-foreground italic">No recording found.</div>
                   );
                 })()}
               </CardContent>
@@ -524,15 +524,15 @@ export default function AssignmentPage() {
                      {submittedFiles.map((file: any, index: number) => {
                        const href = safeUploadUrl(file.file_url);
                        return (
-                        <div key={index} className="flex items-center justify-between gap-3 p-3 bg-gray-50 dark:bg-secondary rounded border dark:border-border">
+                        <div key={index} className="flex items-center justify-between gap-3 p-3 bg-muted rounded border dark:border-border">
                             <div className="flex min-w-0 items-center">
-                            <FileText className="w-5 h-5 shrink-0 text-gray-500 dark:text-gray-400 mr-3" />
+                            <FileText className="w-5 h-5 shrink-0 text-muted-foreground mr-3" />
                             <span className="min-w-0 break-all">{file.file_name || file.submitted_file_name || 'File'}</span>
                             </div>
                             {href && (
                               <div className="flex gap-2">
                                   <Button variant="ghost" size="sm" onClick={() => window.open(href, '_blank')}>
-                                      <ExternalLink className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                      <ExternalLink className="w-4 h-4 text-muted-foreground" />
                                   </Button>
                                   <a
                                   href={href}
@@ -554,9 +554,9 @@ export default function AssignmentPage() {
                 {submittedFiles.length === 0 && submission.file_url && (() => {
                   const legacyHref = safeUploadUrl(submission.file_url);
                   return (
-                   <div className="flex items-center justify-between gap-3 p-3 bg-gray-50 dark:bg-secondary rounded border dark:border-border">
+                   <div className="flex items-center justify-between gap-3 p-3 bg-muted rounded border dark:border-border">
                     <div className="flex min-w-0 items-center">
-                      <FileText className="w-5 h-5 shrink-0 text-gray-500 dark:text-gray-400 mr-3" />
+                      <FileText className="w-5 h-5 shrink-0 text-muted-foreground mr-3" />
                       <span className="min-w-0 break-all">{submission.submitted_file_name}</span>
                     </div>
                     {legacyHref && (
@@ -574,7 +574,7 @@ export default function AssignmentPage() {
                 })()}
 
                 {submission.answers?.text && (
-                  <div className="p-4 bg-gray-50 dark:bg-secondary rounded border dark:border-border whitespace-pre-wrap mt-4">
+                  <div className="p-4 bg-muted rounded border dark:border-border whitespace-pre-wrap mt-4">
                     {submission.answers.text}
                   </div>
                 )}
@@ -605,7 +605,7 @@ export default function AssignmentPage() {
           All units completed — ready to submit
         </div>
       ) : (
-        <div className="mb-3 rounded-md border border-slate-300 dark:border-border bg-slate-50 dark:bg-secondary px-3 py-2 text-sm text-slate-700 dark:text-slate-200">
+        <div className="mb-3 rounded-md border border-slate-300 dark:border-border bg-muted px-3 py-2 text-sm text-slate-700 dark:text-foreground">
           To submit, complete these units: {(status as any).unit_gate.missing.map((m: any) => m.title).join(', ')}
         </div>
       )
@@ -668,7 +668,7 @@ export default function AssignmentPage() {
           {readinessBanner}
           <div className="prose dark:prose-invert max-w-none">
             <h3 className="text-lg font-medium mb-2">Instructions</h3>
-            <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+            <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">
               {assignment.content?.question || assignment.description}
             </p>
 
@@ -695,7 +695,7 @@ export default function AssignmentPage() {
                 <CardTitle>Your Submission</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
+                <div className="border-2 border-dashed border-gray-300 dark:border-input rounded-lg p-8 text-center">
                   <input
                     type="file"
                     id="file-upload"
@@ -715,13 +715,13 @@ export default function AssignmentPage() {
                     className="cursor-pointer flex flex-col items-center justify-center"
                   >
                     <Upload className="w-12 h-12 text-muted-foreground mb-3" />
-                    <span className="text-lg font-medium text-gray-900 dark:text-foreground mb-1">
+                    <span className="text-lg font-medium text-foreground mb-1">
                       {files.length > 0 ? 'Add more files' : 'Drop your files here or click to upload'}
                     </span>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                    <span className="text-sm text-muted-foreground">
                       Allowed types: {assignment.allowed_file_types?.join(', ') || 'All files'}
                     </span>
-                    <span className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    <span className="text-sm text-muted-foreground mt-1">
                       Max size: {assignment.max_file_size_mb}MB
                     </span>
                   </label>
@@ -758,7 +758,7 @@ export default function AssignmentPage() {
                   <div className="pt-4 border-t space-y-4">
                     <div>
                       <Label className="text-sm font-semibold">Enter Your Answers</Label>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         Fill in your answers below. They will be auto-checked.
                       </p>
                     </div>
@@ -833,21 +833,21 @@ export default function AssignmentPage() {
 
   if (!assignment) return (
     <div className="flex items-center justify-center min-h-[400px]">
-      <div className="text-gray-500 dark:text-gray-400 text-lg">Loading assignment...</div>
+      <div className="text-muted-foreground text-lg">Loading assignment...</div>
     </div>
   );
 
   // The weekly test lives on the exam platform: one checkmark per part, no submit form.
   if (assignment.assignment_type === 'platform_test') {
     return (
-      <div className="max-w-4xl mx-auto space-y-6 p-6">
+      <div className="max-w-4xl mx-auto space-y-6 @2xl:p-6">
         <PlatformTestPanel assignment={assignment} />
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 p-6">
+    <div className="max-w-4xl mx-auto space-y-6 @2xl:p-6">
       {/* Header Card */}
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center text-red-800 dark:text-red-400">
@@ -856,7 +856,7 @@ export default function AssignmentPage() {
         </div>
       )}
       {isReadOnlyPrevious && (
-        <div className="bg-slate-50 dark:bg-secondary border border-slate-200 dark:border-border rounded-lg p-4 text-sm text-slate-700 dark:text-slate-200">
+        <div className="bg-muted border border-border rounded-lg p-4 text-sm text-slate-700 dark:text-foreground">
           This homework is from a previous group
           {status?.previous_group_name ? ` (${status.previous_group_name})` : ''}.
           You can view your submission and grade here, but cannot submit again.
@@ -866,20 +866,20 @@ export default function AssignmentPage() {
         <CardHeader>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 flex-1 space-y-3">
-              <CardTitle className="text-2xl font-bold text-gray-900 dark:text-foreground sm:text-3xl">
+              <CardTitle className="text-2xl font-bold text-foreground sm:text-3xl">
                 <div className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-1">
                   <span className="min-w-0 break-words">{assignment.title}</span>
                   {submission && submission.status === 'graded' && (
                     <div className="flex items-center space-x-2 ">
                       <Award className="w-4 h-4 text-yellow-600 dark:text-yellow-500" />
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                      <span className="text-sm font-medium text-gray-700 dark:text-foreground whitespace-nowrap">
                         Score: {submission.score}/{assignment.max_score}
                       </span>
                     </div>
                   )}
                 </div>
               </CardTitle>
-              <CardDescription className="text-base text-gray-600 dark:text-gray-400">
+              <CardDescription className="text-base text-muted-foreground">
                 {assignment.description}
               </CardDescription>
             </div>
@@ -898,7 +898,7 @@ export default function AssignmentPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-600 dark:text-gray-400">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
             {assignment.due_date && (
               <div className={`flex items-center space-x-2 ${isOverdue ? 'text-red-600 dark:text-red-400' : ''}`}>
                 <Calendar className="w-4 h-4" />
@@ -920,7 +920,7 @@ export default function AssignmentPage() {
                   Extended Deadline: {new Date(extension.extended_deadline).toLocaleDateString()} {new Date(extension.extended_deadline).toLocaleTimeString()}
                 </span>
                 {extension.reason && (
-                  <span className="text-xs text-gray-500 dark:text-gray-400">({extension.reason})</span>
+                  <span className="text-xs text-muted-foreground">({extension.reason})</span>
                 )}
               </div>
             )}
@@ -950,8 +950,8 @@ export default function AssignmentPage() {
                   <Download className="w-5 h-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-foreground">Assignment File</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Download the assignment file to get started</p>
+                  <p className="text-sm font-medium text-foreground">Assignment File</p>
+                  <p className="text-xs text-muted-foreground">Download the assignment file to get started</p>
                 </div>
               </div>
               <Button
