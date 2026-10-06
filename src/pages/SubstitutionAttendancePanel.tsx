@@ -33,7 +33,7 @@ function statusColor(status: string, excused = false) {
     case 'attended': return 'bg-green-200 dark:bg-green-900/40 text-green-700 dark:text-green-400';
     case 'late': return 'bg-yellow-200 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400';
     case 'missed': return 'bg-rose-500 dark:bg-rose-900/50 text-white dark:text-rose-400';
-    default: return 'bg-gray-100 dark:bg-secondary text-muted-foreground';
+    default: return 'bg-muted dark:bg-secondary text-muted-foreground';
   }
 }
 
@@ -234,15 +234,15 @@ export default function SubstitutionAttendancePanel() {
         key={lesson.event_id}
         className={cn(
           'flex items-center justify-between gap-4 rounded-lg border p-4 transition-colors',
-          'border-gray-200 dark:border-border bg-white dark:bg-card',
-          !locked && 'hover:bg-gray-50 dark:hover:bg-secondary cursor-pointer',
+          'border-border bg-card',
+          !locked && 'hover:bg-muted dark:hover:bg-secondary cursor-pointer',
           lesson.marked && 'opacity-70'
         )}
         onClick={() => !locked && openRoster(lesson)}
       >
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-gray-900 dark:text-foreground truncate">
+            <span className="text-sm font-semibold text-foreground truncate">
               {primary}
             </span>
             <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300">
@@ -250,7 +250,7 @@ export default function SubstitutionAttendancePanel() {
             </span>
           </div>
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            <span className="font-medium text-gray-600 dark:text-gray-300">
+            <span className="font-medium text-muted-foreground">
               Covering for {lesson.original_teacher_name || '—'}
             </span>
             <span>{formatDateTime(lesson.start_datetime)}</span>
@@ -271,7 +271,7 @@ export default function SubstitutionAttendancePanel() {
             <Check className="w-3.5 h-3.5" /> Marked
           </span>
         ) : (
-          <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 shrink-0">
+          <span className="text-xs font-semibold text-brand  shrink-0">
             Mark attendance
           </span>
         )}
@@ -284,7 +284,7 @@ export default function SubstitutionAttendancePanel() {
     return (
       <div className="space-y-2">
         <div className="flex items-center gap-2 px-1">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</h3>
           <span className="text-xs text-muted-foreground">{items.length}</span>
         </div>
         <div className="space-y-2">{items.map(renderCard)}</div>
@@ -304,7 +304,7 @@ export default function SubstitutionAttendancePanel() {
 
   if (lessons.length === 0) {
     return (
-      <div className="py-24 text-center text-gray-500 dark:text-gray-400">
+      <div className="py-24 text-center text-muted-foreground">
         <CalendarClock className="w-10 h-10 mx-auto mb-3 opacity-40" />
         <p className="font-medium">You have no substitution lessons.</p>
         <p className="text-sm mt-1">Lessons you're covering for another teacher will appear here.</p>
@@ -340,13 +340,13 @@ export default function SubstitutionAttendancePanel() {
               <>
                 <div className="flex justify-end mb-2">
                   <button
-                    className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                    className="text-xs font-semibold text-brand  hover:underline"
                     onClick={markAllPresent}
                   >
                     Mark all present
                   </button>
                 </div>
-                <div className="max-h-[50vh] overflow-y-auto divide-y divide-gray-100 dark:divide-border">
+                <div className="max-h-[50vh] overflow-y-auto divide-y divide-border">
                   {roster.map(s => {
                     // The dialog itself never opens for a locked (future) lesson — see the
                     // card's onClick guard above — so this is always false in practice.
@@ -357,7 +357,7 @@ export default function SubstitutionAttendancePanel() {
                     const showExcuseAffordance = canBeExcused(s.attendance_status, lessonIsFuture);
                     return (
                     <div key={s.student_id} className="flex items-center justify-between gap-3 py-2">
-                      <span className="text-sm text-gray-900 dark:text-foreground truncate">{s.name}</span>
+                      <span className="text-sm text-foreground truncate">{s.name}</span>
                       <div className="flex items-center gap-2 shrink-0">
                         {(s.attendance_status === 'attended' || s.attendance_status === 'late') && (
                           <button
@@ -372,7 +372,7 @@ export default function SubstitutionAttendancePanel() {
                               'w-3.5 h-3.5',
                               s.activity_score ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
                             )} />
-                            <span className={cn('text-[10px]', s.activity_score ? 'text-yellow-600' : 'text-muted-foreground')}>
+                            <span className={cn('text-[10px]', s.activity_score ? 'text-yellow-600 dark:text-yellow-400' : 'text-muted-foreground')}>
                               {s.activity_score || '+'}
                             </span>
                           </button>
@@ -448,7 +448,7 @@ export default function SubstitutionAttendancePanel() {
             <DialogTitle>Activity Score</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               Set activity score for <strong>{activityModal.studentName}</strong>
             </p>
             <div className="flex flex-wrap gap-2 justify-center">

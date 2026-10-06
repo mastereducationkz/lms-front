@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { chartColors, chartTick, chartTooltipStyle } from '../lib/chartTheme';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -83,85 +84,85 @@ export default function HeadCuratorCuratorPage() {
     if (loading) {
         return (
             <div className="p-8 flex justify-center items-center">
-                <div className="animate-pulse text-slate-500">Загрузка данных куратора...</div>
+                <div className="animate-pulse text-muted-foreground">Загрузка данных куратора...</div>
             </div>
         );
     }
 
     if (!curator) {
         return (
-            <div className="p-8 text-center text-slate-500">
+            <div className="p-8 text-center text-muted-foreground">
                 Куратор не найден
             </div>
         );
     }
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+        <div className="max-w-7xl mx-auto space-y-6">
             {/* Header */}
             <div className="flex flex-col space-y-2">
                 <Button 
                     variant="ghost" 
                     onClick={() => navigate('/dashboard')} 
-                    className="w-fit pl-0 mb-2 hover:bg-slate-100 -ml-2 text-slate-600"
+                    className="w-fit pl-0 mb-2 hover:bg-muted -ml-2 text-muted-foreground"
                 >
                     <ChevronLeft className="mr-2 h-4 w-4" /> Назад к дашборду
                 </Button>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Avatar className="h-14 w-14">
-                            <AvatarFallback className="bg-indigo-100 text-indigo-700 font-bold text-xl">
+                            <AvatarFallback className="bg-brand-subtle text-brand-subtle-foreground font-bold text-xl">
                                 {curator.name.charAt(0)}
                             </AvatarFallback>
                         </Avatar>
                         <div>
-                            <h1 className="text-3xl font-bold tracking-tight text-slate-900">{curator.name}</h1>
-                            <p className="text-slate-500">{curator.email}</p>
+                            <h1 className="text-3xl font-bold tracking-tight text-foreground">{curator.name}</h1>
+                            <p className="text-muted-foreground">{curator.email}</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 @2xl:grid-cols-3 gap-4">
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-slate-500">Студентов</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Студентов</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{curator.total_students}</div>
-                        <p className="text-xs text-slate-400 mt-1">В {curator.groups.length} группах</p>
+                        <p className="text-xs text-muted-foreground mt-1">В {curator.groups.length} группах</p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-slate-500">Просрочено</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Просрочено</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-amber-600">{curator.total_overdue}</div>
-                        <p className="text-xs text-slate-400 mt-1">Просроченные задания</p>
+                        <div className="text-2xl font-bold text-amber-600 dark:text-amber-300">{curator.total_overdue}</div>
+                        <p className="text-xs text-muted-foreground mt-1">Просроченные задания</p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-slate-500">Ср. прогресс</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Ср. прогресс</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className={`text-2xl font-bold ${
-                            curator.avg_progress > 80 ? 'text-emerald-600' : 
-                            curator.avg_progress > 60 ? 'text-amber-600' : 'text-slate-900'
+                            curator.avg_progress > 80 ? 'text-emerald-600 dark:text-emerald-300' : 
+                            curator.avg_progress > 60 ? 'text-amber-600 dark:text-amber-300' : 'text-foreground'
                         }`}>
                             {curator.avg_progress}%
                         </div>
-                        <p className="text-xs text-slate-400 mt-1">Средний прогресс</p>
+                        <p className="text-xs text-muted-foreground mt-1">Средний прогресс</p>
                     </CardContent>
                 </Card>
             </div>
 
             {/* Overdue History Chart */}
-            <Card className="border-slate-200 shadow-sm">
+            <Card className="border-border shadow-sm">
                 <CardHeader>
                     <CardTitle className="text-lg">Тренды просрочек</CardTitle>
                     <CardDescription>Новые просроченные задания за последние 30 дней</CardDescription>
@@ -170,23 +171,23 @@ export default function HeadCuratorCuratorPage() {
                     <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={curator.overdue_history || []}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartColors.grid} />
                                 <XAxis 
                                     dataKey="date" 
                                     tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })}
-                                    tick={{ fontSize: 12, fill: '#64748b' }} 
+                                    tick={chartTick(12)} 
                                     axisLine={false}
                                     tickLine={false}
                                     minTickGap={30}
                                 />
                                 <YAxis 
                                     allowDecimals={false}
-                                    tick={{ fontSize: 12, fill: '#64748b' }} 
+                                    tick={chartTick(12)} 
                                     axisLine={false}
                                     tickLine={false}
                                 />
                                 <RechartsTooltip 
-                                    contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                    contentStyle={chartTooltipStyle}
                                     labelFormatter={(label) => new Date(label).toLocaleDateString()}
                                 />
                                 <Line 
@@ -194,7 +195,7 @@ export default function HeadCuratorCuratorPage() {
                                     dataKey="count" 
                                     stroke="#f59e0b" 
                                     strokeWidth={3}
-                                    dot={{ r: 4, fill: "#f59e0b", strokeWidth: 2, stroke: "#fff" }}
+                                    dot={{ r: 4, fill: "#f59e0b", strokeWidth: 2, stroke: chartColors.surface }}
                                     activeDot={{ r: 6 }}
                                 />
                             </LineChart>
@@ -204,24 +205,24 @@ export default function HeadCuratorCuratorPage() {
             </Card>
 
             {/* Groups with Student Details */}
-            <Card className="border-slate-200 shadow-sm">
+            <Card className="border-border shadow-sm">
                 <CardHeader className="pb-3">
                     <CardTitle className="text-lg">Группы и студенты</CardTitle>
                     <CardDescription>Подробная информация о студентах каждой группы</CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
                     {curator.groups.length === 0 && (
-                        <p className="p-6 text-center text-gray-400 italic">У этого куратора нет групп.</p>
+                        <p className="p-6 text-center text-muted-foreground italic">У этого куратора нет групп.</p>
                     )}
                     <Accordion type="multiple" className="w-full">
                         {curator.groups.map((group) => (
                             <AccordionItem key={group.id} value={`group-${group.id}`} className="border-b last:border-b-0">
-                                <AccordionTrigger className="px-6 py-4 hover:bg-slate-50/50 hover:no-underline">
+                                <AccordionTrigger className="px-6 py-4 hover:bg-muted/60 hover:no-underline">
                                     <div className="flex items-center justify-between w-full pr-4">
                                         <div className="flex items-center gap-4">
                                             <div>
-                                                <p className="font-semibold text-gray-900 text-left">{group.name}</p>
-                                                <p className="text-sm text-gray-500 text-left">{group.student_count} студентов</p>
+                                                <p className="font-semibold text-foreground text-left">{group.name}</p>
+                                                <p className="text-sm text-muted-foreground text-left">{group.student_count} студентов</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-3">
@@ -230,13 +231,13 @@ export default function HeadCuratorCuratorPage() {
                                                     {group.overdue_count} просрочено
                                                 </Badge>
                                             )}
-                                            <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                                            <Badge variant="outline" className="text-xs bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 border-green-200 dark:border-green-500/30">
                                                 {group.avg_progress}%
                                             </Badge>
                                             <Button 
                                                 variant="ghost" 
                                                 size="sm" 
-                                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                                className="text-brand hover:text-brand-subtle-foreground hover:bg-brand-surface"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     navigate(`/curator/leaderboard?groupId=${group.id}`);
@@ -247,50 +248,50 @@ export default function HeadCuratorCuratorPage() {
                                         </div>
                                     </div>
                                 </AccordionTrigger>
-                                <AccordionContent className="px-6 pb-4 bg-slate-50/30">
+                                <AccordionContent className="px-6 pb-4 bg-slate-50/30 dark:bg-muted/40">
                                     {group.students.length === 0 ? (
-                                        <p className="text-center text-gray-400 italic py-4">Студентов не найдено.</p>
+                                        <p className="text-center text-muted-foreground italic py-4">Студентов не найдено.</p>
                                     ) : (
                                         <div className="overflow-x-auto">
-                                            <table className="w-full border-collapse bg-white rounded-lg overflow-hidden">
+                                            <table className="w-full border-collapse bg-card rounded-lg overflow-hidden">
                                                 <thead>
-                                                    <tr className="bg-slate-50 border-b">
-                                                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Студент</th>
-                                                        <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Email</th>
-                                                        <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase">Прогресс</th>
-                                                        <th className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase">Просрочено</th>
+                                                    <tr className="bg-slate-50 dark:bg-muted border-b">
+                                                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Студент</th>
+                                                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Email</th>
+                                                        <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Прогресс</th>
+                                                        <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Просрочено</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-gray-100">
+                                                <tbody className="divide-y divide-border">
                                                     {group.students.map((student) => (
                                                         <tr 
                                                             key={student.id}
-                                                            className="hover:bg-slate-50/50 transition-colors"
+                                                            className="hover:bg-muted/60 transition-colors"
                                                         >
                                                             <td className="px-4 py-3">
                                                                 <div className="flex items-center gap-3">
                                                                     <UserAvatar userId={student.id} name={student.name} avatarUrl={student.avatar_url} mascot={student.mascot} isStudent size={32} />
-                                                                    <span className="font-medium text-slate-900">{student.name}</span>
+                                                                    <span className="font-medium text-foreground">{student.name}</span>
                                                                 </div>
                                                             </td>
                                                             <td className="px-4 py-3">
-                                                                <span className="text-sm text-slate-500">{student.email}</span>
+                                                                <span className="text-sm text-muted-foreground">{student.email}</span>
                                                             </td>
                                                             <td className="px-4 py-3">
                                                                 <div className="flex items-center justify-center gap-2">
-                                                                    <div className="w-20 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                                                    <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
                                                                         <div 
                                                                             className="h-full bg-green-500 rounded-full transition-all" 
                                                                             style={{ width: `${student.avg_progress}%` }} 
                                                                         />
                                                                     </div>
-                                                                    <span className="text-xs font-bold text-slate-700 min-w-[35px]">{student.avg_progress}%</span>
+                                                                    <span className="text-xs font-bold text-foreground min-w-[35px]">{student.avg_progress}%</span>
                                                                 </div>
                                                             </td>
                                                             <td className="px-4 py-3 text-center">
                                                                 <Badge 
                                                                     variant={student.overdue_count > 0 ? "destructive" : "secondary"}
-                                                                    className={student.overdue_count === 0 ? "bg-green-50 text-green-700 border-green-100" : ""}
+                                                                    className={student.overdue_count === 0 ? "bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 border-green-100" : ""}
                                                                 >
                                                                     {student.overdue_count}
                                                                 </Badge>

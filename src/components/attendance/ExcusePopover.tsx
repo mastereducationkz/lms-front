@@ -109,7 +109,7 @@ export function ExcusePopover({
             <button
               type="button"
               onClick={onClear}
-              className="text-[11px] text-muted-foreground underline hover:text-rose-600"
+              className="text-[11px] text-muted-foreground underline hover:text-rose-600 hover:dark:text-rose-300"
             >
               {en ? 'Not excused' : 'Снять уважительную'}
             </button>
@@ -120,7 +120,7 @@ export function ExcusePopover({
             <button
               type="button"
               onClick={onClose}
-              className="rounded px-2 py-1 text-[11px] text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-secondary"
+              className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted dark:hover:bg-secondary"
             >
               {en ? 'Cancel' : 'Отмена'}
             </button>

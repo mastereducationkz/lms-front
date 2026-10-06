@@ -221,7 +221,7 @@ export default function CuratorGroupsPage() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-5">
+    <div className="container mx-auto space-y-5">
       <h1 className="text-2xl font-bold">Мои группы</h1>
 
       {loading ? (
@@ -246,11 +246,11 @@ export default function CuratorGroupsPage() {
               <p>{groups.length === 0 ? 'У вас пока нет групп' : 'Ничего не найдено'}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 gap-3">
               {filtered.map((g) => (
                 <div
                   key={g.id}
-                  className="bg-card rounded-lg border p-4 hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-md transition-all"
+                  className="bg-card rounded-lg border p-4 hover:border-brand hover:shadow-md transition-all"
                 >
                   <button onClick={() => setActive(g)} className="w-full text-left">
                     <div className="flex items-center gap-2">
@@ -267,14 +267,14 @@ export default function CuratorGroupsPage() {
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 mt-2 font-medium">
+                    <div className="flex items-center gap-1 text-xs text-brand mt-2 font-medium">
                       Управлять составом
                       <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                     </div>
                   </button>
                   <Link
                     to={`/curator/parent-reports?group=${g.id}`}
-                    className="mt-2 flex w-fit items-center gap-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+                    className="mt-2 flex w-fit items-center gap-1 text-xs font-medium text-brand hover:underline"
                   >
                     Отчёты родителям
                     <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />

@@ -45,9 +45,9 @@ export default function CourseProgressPage() {
   };
 
   const getProgressColor = (percentage: number) => {
-    if (percentage >= 80) return 'text-green-600';
-    if (percentage >= 50) return 'text-yellow-600';
-    return 'text-red-600';
+    if (percentage >= 80) return 'text-green-600 dark:text-green-400';
+    if (percentage >= 50) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   };
 
   const getProgressBarColor = (percentage: number) => {
@@ -59,7 +59,7 @@ export default function CourseProgressPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
       </div>
     );
   }
@@ -68,8 +68,8 @@ export default function CourseProgressPage() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Error</h2>
-          <p className="text-gray-600">{error || 'Progress data not found'}</p>
+          <h2 className="text-xl font-semibold text-foreground mb-2">Error</h2>
+          <p className="text-muted-foreground">{error || 'Progress data not found'}</p>
         </div>
       </div>
     );
@@ -79,10 +79,10 @@ export default function CourseProgressPage() {
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-bold text-foreground mb-2">
           Progress Report: {progressData.course_title}
         </h1>
-        <div className="flex items-center gap-6 text-gray-600">
+        <div className="flex items-center gap-6 text-muted-foreground">
           <div className="flex items-center gap-2">
             <Users className="w-5 h-5" />
             <span>{progressData.total_students} students</span>
@@ -95,10 +95,10 @@ export default function CourseProgressPage() {
       </div>
 
       {/* Overall Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 @2xl:grid-cols-3 gap-6 mb-8">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total Students</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Students</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{progressData.total_students}</div>
@@ -107,7 +107,7 @@ export default function CourseProgressPage() {
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total Modules</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Modules</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{progressData.modules.length}</div>
@@ -116,7 +116,7 @@ export default function CourseProgressPage() {
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600">Total Lessons</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Lessons</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -133,15 +133,15 @@ export default function CourseProgressPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <BookOpen className="w-5 h-5 text-blue-600" />
+                  <BookOpen className="w-5 h-5 text-brand" />
                   <div>
                     <CardTitle className="text-lg">{module.module_title}</CardTitle>
-                    <p className="text-sm text-gray-600">{module.lessons.length} lessons</p>
+                    <p className="text-sm text-muted-foreground">{module.lessons.length} lessons</p>
                   </div>
                 </div>
                 <button
                   onClick={() => toggleModuleExpanded(module.module_id)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="p-2 hover:bg-muted rounded-lg transition-colors"
                 >
                   {expandedModules.has(module.module_id) ? (
                     <ChevronUp className="w-5 h-5" />
@@ -158,7 +158,7 @@ export default function CourseProgressPage() {
                   {module.lessons.map((lesson) => (
                     <div key={lesson.lesson_id} className="border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-4">
-                        <h3 className="font-semibold text-gray-900">{lesson.lesson_title}</h3>
+                        <h3 className="font-semibold text-foreground">{lesson.lesson_title}</h3>
                         <Badge variant="outline">
                           {lesson.total_steps} steps
                         </Badge>
@@ -193,7 +193,7 @@ export default function CourseProgressPage() {
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">
-                                  <CheckCircle className="w-4 h-4 text-green-600" />
+                                  <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                                   <span>
                                     {student.completed_steps}/{student.total_steps}
                                   </span>
@@ -201,14 +201,14 @@ export default function CourseProgressPage() {
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-1">
-                                  <Clock className="w-4 h-4 text-gray-500" />
+                                  <Clock className="w-4 h-4 text-muted-foreground" />
                                   <span>{student.time_spent_minutes} min</span>
                                 </div>
                               </TableCell>
                               <TableCell>
                                 <Badge 
                                   variant={student.completion_percentage === 100 ? "default" : "secondary"}
-                                  className={student.completion_percentage === 100 ? "bg-green-100 text-green-800" : ""}
+                                  className={student.completion_percentage === 100 ? "bg-green-100 dark:bg-green-500/20 text-green-800 dark:text-green-300" : ""}
                                 >
                                   {student.completion_percentage === 100 ? "Completed" : "In Progress"}
                                 </Badge>

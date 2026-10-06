@@ -358,12 +358,12 @@ const SortableStepItem = ({ step, isSelected, onSelect }: SortableStepItemProps)
         onClick={onSelect}
         className={`aspect-square rounded-md text-white p-1 relative shadow-sm hover:shadow-md transition-all cursor-pointer ${
           isSelected
-            ? 'bg-blue-800 ring-2 ring-blue-400'
-            : 'bg-blue-600 hover:bg-blue-700'
+            ? 'bg-brand-solid-hover ring-2 ring-brand'
+            : 'bg-brand-solid hover:bg-brand-solid-hover'
         }`}
       >
         <div className="h-full w-full flex flex-col items-start justify-end">
-          <div className="absolute top-1 left-1 text-[10px] sm:text-[11px] bg-white/20 rounded px-1 py-0.5">
+          <div className="absolute top-1 left-1 text-[10px] sm:text-[11px] bg-card/20 rounded px-1 py-0.5">
             {step.order_index}
           </div>
           <div className="flex items-center gap-1 opacity-90">
@@ -1225,7 +1225,7 @@ export default function LessonEditPage() {
   if (isLoading && !course) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <Loader size="xl" animation="spin" color="#2563eb" />
+        <Loader size="xl" animation="spin" color="hsl(var(--brand))" />
       </div>
     );
   }
@@ -1233,7 +1233,7 @@ export default function LessonEditPage() {
   if (!lesson) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-lg text-red-600">Lesson not found</div>
+        <div className="text-lg text-red-600 dark:text-red-400">Lesson not found</div>
       </div>
     );
   }
@@ -1286,14 +1286,14 @@ export default function LessonEditPage() {
                   </Button>
                 )}
                 {showSaveSuccess && (
-                  <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-md border border-green-200">
+                  <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-md border border-green-200 dark:bg-green-950/40 dark:text-green-300 dark:border-green-800/60">
                     <CheckCircle className="w-4 h-4" />
                     <span className="text-sm font-medium">Lesson saved</span>
                   </div>
                 )}
                 {autoSaveStatus === 'saving' && (
-                  <div className="flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-md border border-blue-200">
-                    <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                  <div className="flex items-center gap-2 px-3 py-1 bg-brand-surface text-brand-subtle-foreground rounded-md border border-brand-border">
+                    <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
                     <span className="text-sm font-medium">Saving...</span>
                   </div>
                 )}
@@ -1403,7 +1403,7 @@ export default function LessonEditPage() {
                       ))}
                     <button
                       onClick={addNewStep}
-                      className="aspect-square rounded-md border-2 border-dashed border-blue-300 hover:border-blue-500 flex items-center justify-center text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors"
+                      className="aspect-square rounded-md border-2 border-dashed border-brand-border hover:border-brand flex items-center justify-center text-brand hover:text-brand-subtle-foreground bg-brand-surface hover:bg-brand-subtle transition-colors"
                     >
                       <div className="flex flex-col items-center gap-0.5">
                         <Plus className="w-6 h-6" />
@@ -1416,7 +1416,7 @@ export default function LessonEditPage() {
                          <div className="flex-1 overflow-y-auto mt-4">
                {isLoadingStep ? (
                  <div className="flex items-center justify-center py-16" aria-busy="true" aria-label="Loading step content">
-                   <Loader size="lg" animation="spin" color="#2563eb" />
+                   <Loader size="lg" animation="spin" color="hsl(var(--brand))" />
                  </div>
                ) : selectedStepId && (
                  <div className="space-y-2">
@@ -1429,7 +1429,7 @@ export default function LessonEditPage() {
                          variant="outline" 
                          size="icon"
                          onClick={() => splitLessonAtStep(selectedStepId)}
-                         className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                         className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-indigo-950/40"
                          title="Split lesson after this step"
                        >
                          <Scissors className="w-4 h-4" />
@@ -1438,7 +1438,7 @@ export default function LessonEditPage() {
                          variant="outline" 
                          size="icon"
                          onClick={() => deleteStep(selectedStepId)}
-                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                         className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/40"
                        >
                          <Trash2 className="w-4 h-4" />
                        </Button>
@@ -1449,7 +1449,7 @@ export default function LessonEditPage() {
                       <input
                         type="checkbox"
                         id="is-optional"
-                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
                         checked={stepIsOptional}
                         onChange={(e) => handleStepIsOptionalChange(e.target.checked)}
                       />
@@ -1617,7 +1617,7 @@ export default function LessonEditPage() {
       {/* Add Step Modal */}
       {showAddStepModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="bg-card rounded-lg p-6 w-full max-w-md">
             <div className="mb-6">
               <h2 className="text-xl font-semibold mb-2">Add New Step</h2>
               <p className="text-muted-foreground">Choose the content type for your new step</p>
@@ -1627,14 +1627,14 @@ export default function LessonEditPage() {
               <div 
                 className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
                   newStepType === 'text' 
-                    ? 'border-blue-500 bg-blue-50' 
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-brand bg-brand-surface' 
+                    : 'border-border hover:border-input'
                 }`}
                 onClick={() => setNewStepType('text')}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <FileText className="w-5 h-5 text-blue-600" />
+                  <div className="w-10 h-10 bg-brand-subtle rounded-lg flex items-center justify-center">
+                    <FileText className="w-5 h-5 text-brand" />
                   </div>
                   <div>
                     <h3 className="font-medium">Text</h3>
@@ -1646,14 +1646,14 @@ export default function LessonEditPage() {
               <div 
                 className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
                   newStepType === 'video_text' 
-                    ? 'border-blue-500 bg-blue-50' 
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-brand bg-brand-surface' 
+                    : 'border-border hover:border-input'
                 }`}
                 onClick={() => setNewStepType('video_text')}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Video className="w-5 h-5 text-blue-600" />
+                  <div className="w-10 h-10 bg-brand-subtle rounded-lg flex items-center justify-center">
+                    <Video className="w-5 h-5 text-brand" />
                   </div>
                   <div>
                     <h3 className="font-medium">Video + Text</h3>
@@ -1665,14 +1665,14 @@ export default function LessonEditPage() {
               <div 
                 className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
                   newStepType === 'quiz' 
-                    ? 'border-blue-500 bg-blue-50' 
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-brand bg-brand-surface' 
+                    : 'border-border hover:border-input'
                 }`}
                 onClick={() => setNewStepType('quiz')}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <QuizIcon className="w-5 h-5 text-blue-600" />
+                  <div className="w-10 h-10 bg-brand-subtle rounded-lg flex items-center justify-center">
+                    <QuizIcon className="w-5 h-5 text-brand" />
                   </div>
                   <div>
                     <h3 className="font-medium">Quiz</h3>
@@ -1684,14 +1684,14 @@ export default function LessonEditPage() {
               <div 
                 className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
                   newStepType === 'flashcard' 
-                    ? 'border-blue-500 bg-blue-50' 
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-brand bg-brand-surface' 
+                    : 'border-border hover:border-input'
                 }`}
                 onClick={() => setNewStepType('flashcard')}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <BookOpen className="w-5 h-5 text-purple-600" />
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center dark:bg-purple-900/40">
+                    <BookOpen className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div>
                     <h3 className="font-medium">Flashcards</h3>
@@ -1703,14 +1703,14 @@ export default function LessonEditPage() {
               <div 
                 className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
                   newStepType === 'summary' 
-                    ? 'border-blue-500 bg-blue-50' 
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-brand bg-brand-surface' 
+                    : 'border-border hover:border-input'
                 }`}
                 onClick={() => setNewStepType('summary')}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
-                    <Trophy className="w-5 h-5 text-yellow-600" />
+                  <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center dark:bg-yellow-900/40">
+                    <Trophy className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
                   </div>
                   <div>
                     <h3 className="font-medium">Summary</h3>
@@ -1730,7 +1730,7 @@ export default function LessonEditPage() {
               >
                 Cancel
               </Button>
-              <Button onClick={createStep} className="bg-blue-600 hover:bg-blue-700">
+              <Button onClick={createStep} className="bg-brand-solid hover:bg-brand-solid-hover">
                 Create Step
               </Button>
             </div>

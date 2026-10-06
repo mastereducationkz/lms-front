@@ -138,7 +138,7 @@ export default function DecisionDialog({
           )}
 
           <div className="space-y-1.5">
-            <Label htmlFor="decision-note">Note <span className="text-gray-500">(optional)</span></Label>
+            <Label htmlFor="decision-note">Note <span className="text-muted-foreground">(optional)</span></Label>
             <Textarea
               id="decision-note"
               rows={2}

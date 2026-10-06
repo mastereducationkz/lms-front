@@ -54,9 +54,9 @@ export default function MaterialsCard({ eventId, locale }: { eventId: number; lo
     }
   };
 
-  if (failed) return <p className="text-xs text-slate-500">{t('Материалы не загрузились.', 'Materials did not load.')}</p>;
-  if (items === null) return <Loader2 className="h-4 w-4 animate-spin text-slate-400" />;
-  if (items.length === 0) return <p className="text-xs text-slate-500">{t('Материалов пока нет.', 'No materials yet.')}</p>;
+  if (failed) return <p className="text-xs text-muted-foreground">{t('Материалы не загрузились.', 'Materials did not load.')}</p>;
+  if (items === null) return <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />;
+  if (items.length === 0) return <p className="text-xs text-muted-foreground">{t('Материалов пока нет.', 'No materials yet.')}</p>;
   return (
     <ul className="space-y-1">
       {items.map((item) => (
@@ -64,12 +64,12 @@ export default function MaterialsCard({ eventId, locale }: { eventId: number; lo
           <button
             type="button"
             onClick={() => void open(item)}
-            className="flex w-full items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-[13px] text-slate-900 transition hover:bg-slate-50"
+            className="flex w-full items-center gap-2 rounded-md px-1.5 py-1.5 text-left text-[13px] text-foreground transition hover:bg-muted"
           >
-            {opening === item.id ? <Loader2 className="h-4 w-4 flex-none animate-spin text-slate-400" /> : <KindIcon item={item} />}
+            {opening === item.id ? <Loader2 className="h-4 w-4 flex-none animate-spin text-muted-foreground" /> : <KindIcon item={item} />}
             <span className="min-w-0 flex-1 truncate">{item.title}</span>
-            {item.hidden_until_end && <span className="flex-none text-[10px] text-slate-400">{t('после урока', 'after class')}</span>}
-            <ExternalLink className="h-3 w-3 flex-none text-slate-400" aria-hidden />
+            {item.hidden_until_end && <span className="flex-none text-[10px] text-muted-foreground">{t('после урока', 'after class')}</span>}
+            <ExternalLink className="h-3 w-3 flex-none text-muted-foreground" aria-hidden />
           </button>
         </li>
       ))}
@@ -78,7 +78,7 @@ export default function MaterialsCard({ eventId, locale }: { eventId: number; lo
 }
 
 function KindIcon({ item }: { item: MaterialItem }) {
-  const cls = 'h-4 w-4 flex-none text-slate-500';
+  const cls = 'h-4 w-4 flex-none text-muted-foreground';
   if (item.kind === 'link') return <Link2 className={cls} aria-hidden />;
   if (item.file?.kind === 'image') return <ImageIcon className={cls} aria-hidden />;
   if (item.file?.kind === 'audio') return <Music className={cls} aria-hidden />;

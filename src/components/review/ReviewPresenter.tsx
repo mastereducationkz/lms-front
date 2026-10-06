@@ -16,7 +16,7 @@ interface Props {
   actions: ReviewSessionActions
 }
 
-const BADGE = 'rounded-md border border-gray-200 dark:border-border px-2 py-0.5 text-xs font-medium text-gray-500 dark:text-gray-400'
+const BADGE = 'rounded-md border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground'
 
 export const ReviewPresenter: React.FC<Props> = ({ state, actions }) => {
   const total = state.questions.length
@@ -98,7 +98,7 @@ export const ReviewPresenter: React.FC<Props> = ({ state, actions }) => {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-lg font-bold text-gray-900 dark:text-foreground">
+        <span className="text-lg font-bold text-foreground">
           {total > 0 ? format(EN.questionOf, { n: state.index + 1, total }) : EN.noData}
         </span>
         {/* Reads the CURRENT question's step, not a fixed step from the start of the
@@ -172,13 +172,13 @@ export const ReviewPresenter: React.FC<Props> = ({ state, actions }) => {
         <Button variant="outline" onClick={actions.prev} disabled={state.index <= 0}>{EN.prev}</Button>
         <Button variant="outline" onClick={actions.next} disabled={state.index >= total - 1}>{EN.next}</Button>
         <div className="flex-1" />
-        <span className="text-xs text-gray-500 dark:text-gray-400">
+        <span className="text-xs text-muted-foreground">
           {isGapQuestion ? EN.keyboardHintGap : EN.keyboardHint}
         </span>
       </div>
 
       {state.gridOpen && (
-        <div className="rounded-lg border border-gray-200 dark:border-border p-4">
+        <div className="rounded-lg border border-border p-4">
           <ReviewQuestionGrid
             questions={state.questions}
             questionSteps={state.questionSteps}

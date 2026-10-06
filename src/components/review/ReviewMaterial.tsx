@@ -12,11 +12,11 @@ import { AudioPlayer } from '../lesson/quiz/AudioPlayer'
 import { EN } from './strings'
 import type { QuizMaterial, ReferenceSet } from './reviewMedia'
 
-const MUTED = 'text-gray-500 dark:text-gray-400'
+const MUTED = 'text-muted-foreground'
 
 function Unavailable({ url }: { url: string | null }) {
   return (
-    <div className={`flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-gray-300 dark:border-border px-4 py-6 text-sm ${MUTED}`}>
+    <div className={`flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-border px-4 py-6 text-sm ${MUTED}`}>
       <FileText className="h-5 w-5 shrink-0" aria-hidden />
       <span>{EN.mediaUnavailable}</span>
       {url && (
@@ -51,7 +51,7 @@ export function MediaPdf({ path, title, heightClass = 'h-[60vh]' }: { path: stri
       <iframe
         src={`${url}#toolbar=0&navpanes=0&scrollbar=1`}
         title={title}
-        className={`w-full rounded-lg border border-gray-200 dark:border-border bg-white ${heightClass}`}
+        className={`w-full rounded-lg border border-border bg-card ${heightClass}`}
       />
       <a href={url} target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-1 text-xs font-medium hover:underline ${MUTED}`}>
         {EN.openFile} <ExternalLink className="h-3 w-3" aria-hidden />
@@ -64,12 +64,12 @@ export function MediaPdf({ path, title, heightClass = 'h-[60vh]' }: { path: stri
 function Section({ icon, title, children }: { icon: React.ReactNode; title: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(true)
   return (
-    <section className="rounded-xl border border-gray-200 dark:border-border bg-white dark:bg-card">
+    <section className="rounded-xl border border-border bg-card">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-semibold text-gray-900 dark:text-foreground"
+        className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-semibold text-foreground"
       >
         <span className={MUTED}>{icon}</span>
         <span className="flex-1">{title}</span>
@@ -78,7 +78,7 @@ function Section({ icon, title, children }: { icon: React.ReactNode; title: stri
           {open ? <ChevronUp className="h-4 w-4" aria-hidden /> : <ChevronDown className="h-4 w-4" aria-hidden />}
         </span>
       </button>
-      {open && <div className="border-t border-gray-200 dark:border-border p-4">{children}</div>}
+      {open && <div className="border-t border-border p-4">{children}</div>}
     </section>
   )
 }

@@ -68,25 +68,25 @@ export default function MeetAddonLinkPage() {
   };
 
   if (loading || !isAuthenticated) {
-    return <Frame><Loader2 className="mx-auto h-6 w-6 animate-spin text-slate-400" /></Frame>;
+    return <Frame><Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" /></Frame>;
   }
   if (!id) {
-    return <Frame><Message icon={<XCircle className="h-8 w-8 text-slate-400" />} title="This link is incomplete" text="Open the LMS panel in Google Meet and press «Sign in with LMS» again." /></Frame>;
+    return <Frame><Message icon={<XCircle className="h-8 w-8 text-muted-foreground" />} title="This link is incomplete" text="Open the LMS panel in Google Meet and press «Sign in with LMS» again." /></Frame>;
   }
 
   return (
     <Frame>
-      {state.kind === 'loading' && <Loader2 className="mx-auto h-6 w-6 animate-spin text-slate-400" />}
+      {state.kind === 'loading' && <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />}
       {(state.kind === 'ask' || state.kind === 'other_network') && (
         <div className="text-center">
-          <MonitorPlay className="mx-auto h-10 w-10 text-blue-600" aria-hidden />
-          <h1 className="mt-3 text-lg font-semibold text-slate-900">Connect the LMS panel in Google Meet?</h1>
-          <p className="mt-2 text-sm text-slate-600">
+          <MonitorPlay className="mx-auto h-10 w-10 text-brand" aria-hidden />
+          <h1 className="mt-3 text-lg font-semibold text-foreground">Connect the LMS panel in Google Meet?</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
             The Meet side panel{state.info.meeting_code ? <> in meeting <b className="font-mono">{state.info.meeting_code}</b></> : null} will
             act as <b>{user?.name || user?.email}</b>: it shows the lesson's room, scores, notes and materials, and saves scores and notes.
           </p>
           {state.kind === 'other_network' ? (
-            <div className="mt-4 flex gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-left text-sm text-amber-900">
+            <div className="mt-4 flex gap-2 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/15 p-3 text-left text-sm text-amber-900 dark:text-amber-300">
               <ShieldAlert className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
               <span>
                 This request came from a different network than this window, and this window was not opened by the LMS panel
@@ -95,14 +95,14 @@ export default function MeetAddonLinkPage() {
               </span>
             </div>
           ) : (
-            <p className="mt-3 text-xs text-slate-500">Only allow it if you just pressed «Sign in with LMS» in Meet yourself.</p>
+            <p className="mt-3 text-xs text-muted-foreground">Only allow it if you just pressed «Sign in with LMS» in Meet yourself.</p>
           )}
           <div className="mt-5 flex justify-center gap-2">
             <button
               type="button"
               disabled={busy}
               onClick={() => void answer(false)}
-              className="rounded-full border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              className="rounded-full border border-border px-5 py-2 text-sm font-semibold text-foreground hover:bg-muted disabled:opacity-50"
             >
               Deny
             </button>
@@ -111,7 +111,7 @@ export default function MeetAddonLinkPage() {
                 type="button"
                 disabled={busy}
                 onClick={() => void answer(true)}
-                className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-full bg-brand-solid px-5 py-2 text-sm font-semibold text-white hover:bg-brand-solid-hover disabled:opacity-50"
               >
                 {busy && <Loader2 className="h-4 w-4 animate-spin" />}Allow
               </button>
@@ -121,23 +121,23 @@ export default function MeetAddonLinkPage() {
       )}
       {state.kind === 'done' && (
         <Message
-          icon={state.approved ? <CheckCircle2 className="h-10 w-10 text-emerald-600" /> : <XCircle className="h-10 w-10 text-slate-400" />}
+          icon={state.approved ? <CheckCircle2 className="h-10 w-10 text-emerald-600 dark:text-emerald-400" /> : <XCircle className="h-10 w-10 text-muted-foreground" />}
           title={state.approved ? 'Done — return to Meet' : 'Denied'}
           text={state.approved ? 'The panel signs in within a few seconds. You can close this window.' : 'The Meet panel was not connected. You can close this window.'}
         />
       )}
-      {state.kind === 'answered' && <Message icon={<CheckCircle2 className="h-10 w-10 text-slate-400" />} title="Already answered" text="This request was already allowed or denied. You can close this window." />}
-      {state.kind === 'expired' && <Message icon={<XCircle className="h-10 w-10 text-slate-400" />} title="This link has expired" text="Open the LMS panel in Google Meet and press «Sign in with LMS» again." />}
-      {state.kind === 'staff_only' && <Message icon={<ShieldAlert className="h-10 w-10 text-slate-400" />} title="For teachers only" text="The LMS panel in Google Meet is for teachers, head teachers and admins." />}
-      {state.kind === 'error' && <Message icon={<XCircle className="h-10 w-10 text-rose-500" />} title="Could not connect the panel" text={state.message} />}
+      {state.kind === 'answered' && <Message icon={<CheckCircle2 className="h-10 w-10 text-muted-foreground" />} title="Already answered" text="This request was already allowed or denied. You can close this window." />}
+      {state.kind === 'expired' && <Message icon={<XCircle className="h-10 w-10 text-muted-foreground" />} title="This link has expired" text="Open the LMS panel in Google Meet and press «Sign in with LMS» again." />}
+      {state.kind === 'staff_only' && <Message icon={<ShieldAlert className="h-10 w-10 text-muted-foreground" />} title="For teachers only" text="The LMS panel in Google Meet is for teachers, head teachers and admins." />}
+      {state.kind === 'error' && <Message icon={<XCircle className="h-10 w-10 text-rose-500 dark:text-rose-400" />} title="Could not connect the panel" text={state.message} />}
     </Frame>
   );
 }
 
 function Frame({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">{children}</div>
+    <div className="flex min-h-screen items-center justify-center bg-muted px-4">
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-sm">{children}</div>
     </div>
   );
 }
@@ -146,8 +146,8 @@ function Message({ icon, title, text }: { icon: ReactNode; title: string; text: 
   return (
     <div className="text-center">
       <div className="flex justify-center">{icon}</div>
-      <h1 className="mt-3 text-lg font-semibold text-slate-900">{title}</h1>
-      <p className="mt-2 text-sm text-slate-600">{text}</p>
+      <h1 className="mt-3 text-lg font-semibold text-foreground">{title}</h1>
+      <p className="mt-2 text-sm text-muted-foreground">{text}</p>
     </div>
   );
 }

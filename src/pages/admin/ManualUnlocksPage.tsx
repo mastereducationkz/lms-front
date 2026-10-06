@@ -485,37 +485,37 @@ export default function ManualUnlocksPage() {
   return (
     <div className="p-4 md:p-6 max-w-[1440px] mx-auto space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col @lg:flex-row @lg:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Manual Unlocks</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Unlock units or mark them complete for a student or group</p>
+          <h1 className="text-xl font-semibold text-foreground">Manual Unlocks</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Unlock units or mark them complete for a student or group</p>
         </div>
         {selectedTarget && selectedCourseId && stats.total > 0 && (
           <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500">{stats.completed}/{stats.total} completed</span>
-            <div className="w-32 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+            <span className="text-sm text-muted-foreground">{stats.completed}/{stats.total} completed</span>
+            <div className="w-32 h-1.5 bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full bg-green-500 rounded-full transition-all"
                 style={{ width: `${stats.percent}%` }}
               />
             </div>
-            <span className="text-sm font-medium text-gray-700 tabular-nums w-10">{stats.percent}%</span>
+            <span className="text-sm font-medium text-foreground tabular-nums w-10">{stats.percent}%</span>
           </div>
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+      <div className="grid grid-cols-1 @3xl:grid-cols-12 gap-4 items-start">
         {/* ── Left panel: selector ── */}
-        <div className="lg:col-span-4 xl:col-span-3 flex flex-col gap-3">
+        <div className="@3xl:col-span-4 @6xl:col-span-3 flex flex-col gap-3">
           {/* Tabs */}
-          <div className="flex border border-gray-200 rounded-lg overflow-hidden bg-white">
+          <div className="flex border border-border rounded-lg overflow-hidden bg-card">
             <button
               type="button"
               onClick={() => { setActiveTab('user'); setSelectedTarget(null); setSearchQuery(''); setGroupSearchQuery('') }}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-medium transition-colors ${
                 activeTab === 'user'
-                  ? 'bg-gray-900 text-white'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  ? 'bg-gray-900 text-white dark:bg-brand-surface dark:text-brand-subtle-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
               }`}
             >
               <UserIcon className="w-3.5 h-3.5" />
@@ -524,10 +524,10 @@ export default function ManualUnlocksPage() {
             <button
               type="button"
               onClick={() => { setActiveTab('group'); setSelectedTarget(null); setSearchQuery(''); setGroupSearchQuery('') }}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-medium transition-colors border-l border-gray-200 ${
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-sm font-medium transition-colors border-l border-border ${
                 activeTab === 'group'
-                  ? 'bg-gray-900 text-white'
-                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                  ? 'bg-gray-900 text-white dark:bg-brand-surface dark:text-brand-subtle-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
               }`}
             >
               <Users className="w-3.5 h-3.5" />
@@ -549,7 +549,7 @@ export default function ManualUnlocksPage() {
                   </SelectContent>
                 </Select>
                 <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                   <Input
                     ref={studentSearchRef}
                     placeholder="Search by name or email..."
@@ -561,7 +561,7 @@ export default function ManualUnlocksPage() {
               </>
             ) : (
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                 <Input
                   placeholder="Search groups..."
                   value={groupSearchQuery}
@@ -573,15 +573,15 @@ export default function ManualUnlocksPage() {
           </div>
 
           {/* List */}
-          <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+          <div className="border border-border rounded-xl overflow-hidden bg-card">
             <div className="max-h-[calc(100vh-280px)] overflow-y-auto">
               {activeTab === 'user' ? (
                 <>
                   {!canSearchStudents && recentTargets.filter((t) => t.type === 'user').length > 0 && (
                     <>
-                      <div className="px-4 py-2 bg-gray-50 border-b border-gray-100 flex items-center gap-1.5">
-                        <History className="w-3 h-3 text-gray-400" />
-                        <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Recent</span>
+                      <div className="px-4 py-2 bg-muted border-b border-border flex items-center gap-1.5">
+                        <History className="w-3 h-3 text-muted-foreground" />
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Recent</span>
                       </div>
                       {recentTargets.filter((t) => t.type === 'user').map((t) => (
                         <PersonRow
@@ -592,14 +592,14 @@ export default function ManualUnlocksPage() {
                           onClick={() => handleSelectTarget(t)}
                         />
                       ))}
-                      <div className="border-t border-gray-100" />
+                      <div className="border-t border-border" />
                     </>
                   )}
                   {!canSearchStudents ? (
                     <div className="py-12 text-center px-4">
-                      <UserIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                      <p className="text-sm font-medium text-gray-900">Find a student</p>
-                      <p className="text-xs text-gray-400 mt-1">Select a group or type to search</p>
+                      <UserIcon className="w-8 h-8 text-gray-300 dark:text-muted-foreground/50 mx-auto mb-2" />
+                      <p className="text-sm font-medium text-foreground">Find a student</p>
+                      <p className="text-xs text-muted-foreground mt-1">Select a group or type to search</p>
                     </div>
                   ) : studentsLoading && students.length === 0 ? (
                     <div className="py-12 flex justify-center">
@@ -607,12 +607,12 @@ export default function ManualUnlocksPage() {
                     </div>
                   ) : students.length === 0 ? (
                     <div className="py-10 text-center">
-                      <p className="text-sm text-gray-400">No students found</p>
+                      <p className="text-sm text-muted-foreground">No students found</p>
                     </div>
                   ) : (
                     <>
-                      <div className="px-4 py-2 bg-gray-50 border-b border-gray-100">
-                        <span className="text-xs text-gray-400">{students.length} of {studentsTotal} students</span>
+                      <div className="px-4 py-2 bg-muted border-b border-border">
+                        <span className="text-xs text-muted-foreground">{students.length} of {studentsTotal} students</span>
                       </div>
                       {students.map((s) => {
                         const name = s.name || s.full_name || ''
@@ -631,7 +631,7 @@ export default function ManualUnlocksPage() {
                           type="button"
                           disabled={studentsLoading}
                           onClick={() => fetchStudents(false)}
-                          className="w-full py-2.5 text-xs text-blue-600 hover:bg-blue-50 transition-colors border-t border-gray-100 font-medium"
+                          className="w-full py-2.5 text-xs text-brand hover:bg-brand-subtle transition-colors border-t border-border font-medium"
                         >
                           {studentsLoading ? 'Loading...' : `Load more (${studentsTotal - students.length} left)`}
                         </button>
@@ -641,8 +641,8 @@ export default function ManualUnlocksPage() {
                 </>
               ) : filteredGroups.length === 0 ? (
                 <div className="py-12 text-center">
-                  <Users className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-400">No groups found</p>
+                  <Users className="w-8 h-8 text-gray-300 dark:text-muted-foreground/50 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">No groups found</p>
                 </div>
               ) : (
                 filteredGroups.map((g) => (
@@ -660,18 +660,18 @@ export default function ManualUnlocksPage() {
         </div>
 
         {/* ── Right panel: units ── */}
-        <div className="lg:col-span-8 xl:col-span-9">
-          <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+        <div className="@3xl:col-span-8 @6xl:col-span-9">
+          <div className="border border-border rounded-xl overflow-hidden bg-card">
             {/* Panel header */}
-            <div className="border-b border-gray-200 px-4 py-3 flex flex-col gap-3">
+            <div className="border-b border-border px-4 py-3 flex flex-col gap-3">
               <div className="flex items-center justify-between gap-3 min-w-0">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 truncate">
+                    <p className="text-sm font-semibold text-foreground truncate">
                       {selectedTarget ? selectedTarget.name : 'No target selected'}
                     </p>
                     {selectedTarget && (
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-muted-foreground">
                         {selectedTarget.type === 'user' ? 'Student' : 'Group'}
                         {selectedTarget && selectedCourseId && stats.total > 0 && (
                           <> · {stats.completed} done · {stats.unlocked} unlocked</>
@@ -684,7 +684,7 @@ export default function ManualUnlocksPage() {
                   <button
                     type="button"
                     onClick={handleClearTarget}
-                    className="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100 transition-colors shrink-0"
+                    className="text-muted-foreground hover:text-muted-foreground p-1 rounded hover:bg-muted transition-colors shrink-0"
                     title="Change"
                   >
                     <X className="w-4 h-4" />
@@ -692,7 +692,7 @@ export default function ManualUnlocksPage() {
                 )}
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-col @lg:flex-row gap-2">
                 <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
                   <SelectTrigger className="h-8 text-sm sm:max-w-xs">
                     <SelectValue placeholder="Select a course..." />
@@ -707,7 +707,7 @@ export default function ManualUnlocksPage() {
                 {selectedTarget && selectedCourseId && (
                   <>
                     <div className="relative flex-1">
-                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                       <Input
                         placeholder="Search units..."
                         value={unitSearch}
@@ -723,8 +723,8 @@ export default function ManualUnlocksPage() {
                           onClick={() => setUnitFilter(opt.value)}
                           className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
                             unitFilter === opt.value
-                              ? 'bg-gray-900 text-white'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                              ? 'bg-gray-900 text-white dark:bg-brand-surface dark:text-brand-subtle-foreground'
+                              : 'bg-muted text-muted-foreground hover:bg-gray-200 dark:hover:bg-secondary'
                           }`}
                         >
                           {opt.label}
@@ -739,15 +739,15 @@ export default function ManualUnlocksPage() {
             {/* Units content */}
             {!selectedTarget ? (
               <div className="py-20 text-center px-8">
-                <UserIcon className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                <p className="text-sm font-medium text-gray-900">Select a student or group</p>
-                <p className="text-xs text-gray-400 mt-1">Choose from the list on the left</p>
+                <UserIcon className="w-10 h-10 text-gray-200 dark:text-muted-foreground/50 mx-auto mb-3" />
+                <p className="text-sm font-medium text-foreground">Select a student or group</p>
+                <p className="text-xs text-muted-foreground mt-1">Choose from the list on the left</p>
               </div>
             ) : !selectedCourseId ? (
               <div className="py-20 text-center px-8">
-                <BookOpen className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                <p className="text-sm font-medium text-gray-900">Select a course</p>
-                <p className="text-xs text-gray-400 mt-1">Pick a course to see its units</p>
+                <BookOpen className="w-10 h-10 text-gray-200 dark:text-muted-foreground/50 mx-auto mb-3" />
+                <p className="text-sm font-medium text-foreground">Select a course</p>
+                <p className="text-xs text-muted-foreground mt-1">Pick a course to see its units</p>
               </div>
             ) : isStructureLoading || isProgressLoading ? (
               <div className="py-20 flex justify-center">
@@ -755,9 +755,9 @@ export default function ManualUnlocksPage() {
               </div>
             ) : filteredModules.length === 0 ? (
               <div className="py-20 text-center px-8">
-                <Layout className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                <p className="text-sm font-medium text-gray-900">No units match</p>
-                <p className="text-xs text-gray-400 mt-1">Try clearing the filter</p>
+                <Layout className="w-10 h-10 text-gray-200 dark:text-muted-foreground/50 mx-auto mb-3" />
+                <p className="text-sm font-medium text-foreground">No units match</p>
+                <p className="text-xs text-muted-foreground mt-1">Try clearing the filter</p>
               </div>
             ) : (
               <div className="max-h-[calc(100vh-300px)] overflow-y-auto">
@@ -772,19 +772,19 @@ export default function ManualUnlocksPage() {
                       <button
                         type="button"
                         onClick={() => toggleModule(moduleId)}
-                        className="w-full flex items-center justify-between px-4 py-2.5 bg-gray-50 border-b border-gray-200 hover:bg-gray-100 transition-colors text-left"
+                        className="w-full flex items-center justify-between px-4 py-2.5 bg-muted border-b border-border hover:bg-muted transition-colors text-left"
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <ChevronDown
-                            className={`w-3.5 h-3.5 text-gray-400 shrink-0 transition-transform ${isOpen ? '' : '-rotate-90'}`}
+                            className={`w-3.5 h-3.5 text-muted-foreground shrink-0 transition-transform ${isOpen ? '' : '-rotate-90'}`}
                           />
-                          <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide truncate">
+                          <span className="text-xs font-semibold text-foreground uppercase tracking-wide truncate">
                             {module.title}
                           </span>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="text-xs text-gray-400 tabular-nums">{ms.done}/{ms.total}</span>
-                          <div className="w-14 h-1 bg-gray-200 rounded-full overflow-hidden">
+                          <span className="text-xs text-muted-foreground tabular-nums">{ms.done}/{ms.total}</span>
+                          <div className="w-14 h-1 bg-gray-200 dark:bg-secondary rounded-full overflow-hidden">
                             <div
                               className="h-full bg-green-500 rounded-full transition-all"
                               style={{ width: ms.total ? `${(ms.done / ms.total) * 100}%` : '0%' }}
@@ -807,40 +807,40 @@ export default function ManualUnlocksPage() {
                             return (
                               <div
                                 key={lesson.id}
-                                className={`flex items-center gap-3 px-4 py-3 border-b border-gray-100 last:border-b-0 transition-colors ${
-                                  isComplete ? 'bg-green-50/50' : 'hover:bg-gray-50/50'
+                                className={`flex items-center gap-3 px-4 py-3 border-b border-border last:border-b-0 transition-colors ${
+                                  isComplete ? 'bg-green-50/50 dark:bg-green-500/15' : 'hover:bg-muted/50'
                                 }`}
                               >
                                 {/* Status dot */}
-                                <div className={`w-2 h-2 rounded-full shrink-0 ${isComplete ? 'bg-green-500' : 'bg-gray-200'}`} />
+                                <div className={`w-2 h-2 rounded-full shrink-0 ${isComplete ? 'bg-green-500' : 'bg-gray-200 dark:bg-secondary'}`} />
 
                                 {/* Info */}
                                 <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="text-xs text-gray-400">Unit {lesson.order_index}</span>
+                                    <span className="text-xs text-muted-foreground">Unit {lesson.order_index}</span>
                                     {unlocked && (
-                                      <span className="text-[10px] font-medium px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded">
+                                      <span className="text-[10px] font-medium px-1.5 py-0.5 bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 rounded">
                                         Unlocked
                                       </span>
                                     )}
                                     {isComplete && (
-                                      <span className="text-[10px] font-medium px-1.5 py-0.5 bg-green-100 text-green-700 rounded">
+                                      <span className="text-[10px] font-medium px-1.5 py-0.5 bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300 rounded">
                                         Completed
                                       </span>
                                     )}
                                   </div>
-                                  <p className={`text-sm font-medium mt-0.5 truncate ${isComplete ? 'text-green-800' : 'text-gray-900'}`}>
+                                  <p className={`text-sm font-medium mt-0.5 truncate ${isComplete ? 'text-green-800 dark:text-green-300' : 'text-foreground'}`}>
                                     {lesson.title}
                                   </p>
                                   {progress && (
                                     <div className="flex items-center gap-2 mt-1">
-                                      <div className="w-20 h-1 bg-gray-100 rounded-full overflow-hidden">
+                                      <div className="w-20 h-1 bg-muted rounded-full overflow-hidden">
                                         <div
-                                          className={`h-full rounded-full ${isComplete ? 'bg-green-500' : 'bg-blue-500'}`}
+                                          className={`h-full rounded-full ${isComplete ? 'bg-green-500' : 'bg-brand-solid'}`}
                                           style={{ width: `${percent}%` }}
                                         />
                                       </div>
-                                      <span className="text-xs text-gray-400">
+                                      <span className="text-xs text-muted-foreground">
                                         {selectedTarget.type === 'group'
                                           ? `${progress.completed_students}/${progress.student_count} students`
                                           : `${progress.completed_steps}/${progress.total_steps} steps`
@@ -859,12 +859,12 @@ export default function ManualUnlocksPage() {
                                     disabled={isBusy}
                                     className={`h-7 px-2 text-xs ${
                                       unlocked
-                                        ? 'border-red-200 text-red-600 hover:bg-red-50'
-                                        : 'text-gray-600'
+                                        ? 'border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/15'
+                                        : 'text-muted-foreground'
                                     }`}
                                   >
                                     {unlocked ? <Unlock className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
-                                    <span className="ml-1 hidden sm:inline">{unlocked ? 'Revoke' : 'Unlock'}</span>
+                                    <span className="ml-1 hidden @lg:inline">{unlocked ? 'Revoke' : 'Unlock'}</span>
                                   </Button>
 
                                   {isComplete ? (
@@ -873,10 +873,10 @@ export default function ManualUnlocksPage() {
                                       variant="outline"
                                       onClick={() => handleResetLesson(lessonId)}
                                       disabled={isBusy}
-                                      className="h-7 px-2 text-xs border-orange-200 text-orange-600 hover:bg-orange-50"
+                                      className="h-7 px-2 text-xs border-orange-200 dark:border-orange-500/30 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/15"
                                     >
                                       <RotateCcw className="w-3 h-3" />
-                                      <span className="ml-1 hidden sm:inline">Reset</span>
+                                      <span className="ml-1 hidden @lg:inline">Reset</span>
                                     </Button>
                                   ) : (
                                     <Button
@@ -921,14 +921,14 @@ const PersonRow = ({
   <button
     type="button"
     onClick={onClick}
-    className={`w-full text-left flex items-center gap-3 px-4 py-2.5 border-b border-gray-100 last:border-b-0 transition-colors ${
-      selected ? 'bg-blue-50' : 'hover:bg-gray-50'
+    className={`w-full text-left flex items-center gap-3 px-4 py-2.5 border-b border-border last:border-b-0 transition-colors ${
+      selected ? 'bg-brand-surface' : 'hover:bg-muted'
     }`}
   >
     <div className="flex-1 min-w-0 overflow-hidden">
-      <p className={`text-sm font-medium truncate ${selected ? 'text-blue-700' : 'text-gray-900'}`}>{name}</p>
-      <p className="text-xs text-gray-400 truncate">{sub}</p>
+      <p className={`text-sm font-medium truncate ${selected ? 'text-brand' : 'text-foreground'}`}>{name}</p>
+      <p className="text-xs text-muted-foreground truncate">{sub}</p>
     </div>
-    {selected && <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />}
+    {selected && <div className="w-1.5 h-1.5 rounded-full bg-brand-solid shrink-0" />}
   </button>
 )

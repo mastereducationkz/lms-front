@@ -86,7 +86,7 @@ export default function StudentSearchBox({ className = '' }: { className?: strin
   return (
     <div ref={boxRef} className={`relative ${className}`}>
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         <input
           type="text"
           value={query}
@@ -94,13 +94,13 @@ export default function StudentSearchBox({ className = '' }: { className?: strin
           onKeyDown={onKeyDown}
           onFocus={() => { if (results.length > 0) setOpen(true); }}
           placeholder="Найти студента: имя или email…"
-          className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-gray-200 rounded-lg outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 placeholder:text-gray-400"
+          className="w-full pl-9 pr-3 py-2 text-sm bg-card border border-border rounded-lg outline-none focus:border-brand focus:ring-2 focus:ring-brand-border placeholder:text-muted-foreground"
         />
       </div>
       {open && (
-        <div className="absolute z-30 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute z-30 mt-1 w-full bg-card border border-border rounded-lg shadow-lg overflow-hidden">
           {results.length === 0 ? (
-            <p className="px-3 py-2.5 text-sm text-gray-400">
+            <p className="px-3 py-2.5 text-sm text-muted-foreground">
               {loading ? 'Ищем…' : 'Студенты не найдены'}
             </p>
           ) : (
@@ -111,18 +111,18 @@ export default function StudentSearchBox({ className = '' }: { className?: strin
                 onMouseEnter={() => setHighlight(i)}
                 onClick={() => openStudent(s)}
                 className={`w-full text-left px-3 py-2 flex items-center justify-between gap-3 ${
-                  i === highlight ? 'bg-blue-50' : 'bg-white'
+                  i === highlight ? 'bg-brand-surface' : 'bg-card'
                 }`}
               >
                 <span className="min-w-0">
-                  <span className="block text-sm text-gray-900 truncate">
+                  <span className="block text-sm text-foreground truncate">
                     {s.name}
-                    {s.is_inactive && <span className="ml-1.5 text-[10px] text-red-500">деактивирован</span>}
+                    {s.is_inactive && <span className="ml-1.5 text-[10px] text-red-500 dark:text-red-400">деактивирован</span>}
                   </span>
-                  <span className="block text-xs text-gray-400 truncate">{s.email}</span>
+                  <span className="block text-xs text-muted-foreground truncate">{s.email}</span>
                 </span>
                 {s.group_name && (
-                  <span className="shrink-0 text-xs text-gray-500 bg-gray-100 rounded px-1.5 py-0.5">
+                  <span className="shrink-0 text-xs text-muted-foreground bg-muted rounded px-1.5 py-0.5">
                     {s.group_name}
                   </span>
                 )}

@@ -541,6 +541,7 @@ const PRINT_CSS = `
 .practice-print .gap-key-item .katex { font-size: 1.3em; }
 
 @media print {
+  html, body { background: #ffffff !important; color: #111111 !important; }
   .no-print { display: none !important; }
   .practice-print { max-width: none; margin: 0; padding: 0; font-size: 12pt; }
   .answer-row, .gap-option-row, .option, .match-item { page-break-inside: avoid; }

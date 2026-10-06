@@ -11,6 +11,7 @@ import {
   DialogTitle
 } from './ui/dialog';
 import 'katex/dist/katex.min.css';
+import './rich-text-dark.css';
 import { InlineMath, BlockMath } from 'react-katex';
 
 // Функция для рендеринга контента с LaTeX
@@ -175,7 +176,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const renderPreview = () => {
     if (!latexInput.trim()) {
       return (
-        <div className="p-4 border border-dashed border-gray-300 rounded-lg bg-gray-50 text-center text-gray-500">
+        <div className="p-4 border border-dashed border-input rounded-lg bg-muted text-center text-muted-foreground">
           Formula preview will appear here
         </div>
       );
@@ -184,13 +185,13 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     try {
       if (latexType === 'inline') {
         return (
-          <div className="p-4 border border-gray-200 rounded-lg bg-white">
+          <div className="p-4 border border-border rounded-lg bg-card">
             <InlineMath math={latexInput} />
           </div>
         );
       } else {
         return (
-          <div className="p-4 border border-gray-200 rounded-lg bg-white">
+          <div className="p-4 border border-border rounded-lg bg-card">
             <BlockMath math={latexInput} />
           </div>
         );
@@ -198,7 +199,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     } catch (error) {
       setLatexError('Invalid LaTeX formula');
       return (
-        <div className="p-4 border border-red-200 rounded-lg bg-red-50 text-red-600">
+        <div className="p-4 border border-red-200 rounded-lg bg-red-50 text-red-600 dark:border-red-800/60 dark:bg-red-950/40 dark:text-red-400">
           Invalid LaTeX formula
         </div>
       );

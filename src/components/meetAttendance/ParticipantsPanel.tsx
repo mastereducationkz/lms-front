@@ -101,7 +101,7 @@ const MARK_CHIP: Record<Exclude<MeetMark, null>, string> = {
   present: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
   late: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
   absent: 'bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300',
-  removed: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+  removed: 'bg-muted text-muted-foreground',
 };
 
 function Mark({ mark, locale }: { mark: MeetMark; locale: Locale }) {
@@ -127,7 +127,7 @@ function Flag({ flag, locale }: { flag: MeetFlag; locale: Locale }) {
       <span className={cn(
         'inline-flex max-w-full items-center gap-1 rounded px-1.5 py-px text-[11px] font-medium leading-4 ring-1 ring-inset',
         flag.review
-          ? 'bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800/60 dark:text-slate-300 dark:ring-slate-700'
+          ? 'bg-muted text-muted-foreground ring-border'
           : isMismatch(flag.code)
             ? 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-900'
             : 'bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-900',

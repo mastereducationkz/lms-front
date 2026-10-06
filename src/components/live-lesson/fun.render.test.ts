@@ -47,8 +47,9 @@ describe('the fun layer renders', () => {
         top: [person(4, 'Алихан Т.')], crowned: person(5, 'Мадина К.') },
     }));
     expect(html).toContain('Kasatik of the lesson');
-    expect(html).toContain('👑');
-    expect(html).toContain('9 🔥');
+    expect(html).toContain('lucide-crown'); // drawn icons, never native emoji
+    expect(html).toContain('lucide-flame');
+    expect(html).not.toMatch(/\p{Extended_Pictographic}/u);
   });
   it('draws every reaction for a student and for an anonymous plain orca', () => {
     for (const kind of REACTION_KINDS) {

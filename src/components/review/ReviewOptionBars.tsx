@@ -14,7 +14,7 @@ interface Props {
 }
 
 const MAX_TEXT_ROWS = 8
-const CHIP = 'rounded-full border border-gray-200 dark:border-border bg-gray-50 dark:bg-secondary px-2 py-0.5 text-xs text-gray-500 dark:text-gray-400'
+const CHIP = 'rounded-full border border-border bg-muted dark:bg-secondary px-2 py-0.5 text-xs text-muted-foreground'
 
 function barClass(option: OptionStat, revealed: boolean): string {
   if (revealed && option.isCorrect) return 'bg-emerald-500/70'
@@ -24,7 +24,7 @@ function barClass(option: OptionStat, revealed: boolean): string {
 
 export const ReviewOptionBars: React.FC<Props> = ({ stat, revealed, showNames }) => {
   if (!stat || stat.options.length === 0) {
-    return <p className="text-sm text-gray-500 dark:text-gray-400">{EN.noData}</p>
+    return <p className="text-sm text-muted-foreground">{EN.noData}</p>
   }
 
   const rows = stat.distributionKind === 'text'
@@ -36,9 +36,9 @@ export const ReviewOptionBars: React.FC<Props> = ({ stat, revealed, showNames })
     <div className="space-y-2">
       {rows.map((option) => (
         <div key={option.key} className="space-y-1.5">
-          <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <div className="flex items-center gap-2 text-sm text-foreground">
             {option.label && (
-              <span className="w-6 shrink-0 font-semibold text-gray-900 dark:text-foreground">{option.label}</span>
+              <span className="w-6 shrink-0 font-semibold text-foreground">{option.label}</span>
             )}
             {/* 'choice' rows are the question's own authored option text — safe to render as
                 HTML via renderTextWithLatex/dangerouslySetInnerHTML, same as ChoiceQuestion.
@@ -51,8 +51,8 @@ export const ReviewOptionBars: React.FC<Props> = ({ stat, revealed, showNames })
               ? (stat.distributionKind === 'choice'
                   ? <span className="flex-1 break-words" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(option.text) }} />
                   : <span className="flex-1 break-words">{option.text}</span>)
-              : <span className="flex-1 text-gray-500 dark:text-gray-400">—</span>}
-            <span className="shrink-0 tabular-nums text-xs text-gray-500 dark:text-gray-400">
+              : <span className="flex-1 text-muted-foreground">—</span>}
+            <span className="shrink-0 tabular-nums text-xs text-muted-foreground">
               {option.count} · {option.percent}%
             </span>
           </div>
@@ -75,7 +75,7 @@ export const ReviewOptionBars: React.FC<Props> = ({ stat, revealed, showNames })
       ))}
 
       {hidden > 0 && (
-        <p className="text-xs text-gray-500 dark:text-gray-400">{EN.otherAnswers}: {hidden}</p>
+        <p className="text-xs text-muted-foreground">{EN.otherAnswers}: {hidden}</p>
       )}
     </div>
   )

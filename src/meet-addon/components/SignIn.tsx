@@ -30,8 +30,8 @@ export default function SignIn({ meetingCode, onSignedIn }: { meetingCode: strin
   return (
     <div className="flex flex-col items-center px-2 py-10 text-center">
       <img src="/meet-addon/logo-256.png" alt="" className="mb-4 h-12 w-12" />
-      <h1 className="text-base font-semibold text-slate-900">Master LMS in Meet</h1>
-      <p className="mt-1 max-w-[18rem] text-sm text-slate-600">
+      <h1 className="text-base font-semibold text-foreground">Master LMS in Meet</h1>
+      <p className="mt-1 max-w-[18rem] text-sm text-muted-foreground">
         This lesson's room, scores, notes and materials, next to the call. Sign in once with your LMS account.
       </p>
 
@@ -39,7 +39,7 @@ export default function SignIn({ meetingCode, onSignedIn }: { meetingCode: strin
         <button
           type="button"
           onClick={start}
-          className="mt-5 inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+          className="mt-5 inline-flex items-center gap-2 rounded-full bg-brand-solid px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-solid-hover"
         >
           <LogIn className="h-4 w-4" aria-hidden />
           {state?.kind === 'expired' || state?.kind === 'denied' || state?.kind === 'error' ? 'Try again' : 'Sign in with LMS'}
@@ -48,12 +48,12 @@ export default function SignIn({ meetingCode, onSignedIn }: { meetingCode: strin
 
       {state?.kind === 'starting' && <Line><Loader2 className="h-4 w-4 animate-spin" />Opening the LMS…</Line>}
       {state?.kind === 'waiting' && (
-        <div className="mt-5 w-full max-w-[18rem] rounded-xl border border-slate-200 bg-slate-50 p-3 text-left text-sm">
-          <p className="flex items-center gap-2 font-medium text-slate-800">
-            <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+        <div className="mt-5 w-full max-w-[18rem] rounded-xl border border-border bg-muted p-3 text-left text-sm">
+          <p className="flex items-center gap-2 font-medium text-foreground">
+            <Loader2 className="h-4 w-4 animate-spin text-brand" />
             {state.popupBlocked ? 'Your browser blocked the window' : 'Waiting for you to allow it…'}
           </p>
-          <p className="mt-1 text-xs text-slate-600">
+          <p className="mt-1 text-xs text-muted-foreground">
             {state.popupBlocked
               ? 'Open the LMS sign-in page and press «Allow» there:'
               : 'Press «Allow» in the LMS window. Closed it by mistake?'}
@@ -62,7 +62,7 @@ export default function SignIn({ meetingCode, onSignedIn }: { meetingCode: strin
             href={state.linkUrl}
             target="lms-meet-addon-link"
             rel="opener"
-            className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:underline"
+            className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline"
           >
             Open the LMS sign-in page <ExternalLink className="h-3 w-3" aria-hidden />
           </a>
@@ -77,6 +77,6 @@ export default function SignIn({ meetingCode, onSignedIn }: { meetingCode: strin
 }
 
 function Line({ children, tone }: { children: ReactNode; tone?: 'rose' | 'amber' }) {
-  const color = tone === 'rose' ? 'text-rose-700' : tone === 'amber' ? 'text-amber-700' : 'text-slate-600';
+  const color = tone === 'rose' ? 'text-rose-700 dark:text-rose-300' : tone === 'amber' ? 'text-amber-700 dark:text-amber-300' : 'text-muted-foreground';
   return <p className={`mt-4 flex items-center justify-center gap-2 text-sm ${color}`}>{children}</p>;
 }
