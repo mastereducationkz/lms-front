@@ -38,10 +38,10 @@ const STATUS_TABS: { value: StatusFilter; label: string }[] = [
 ]
 
 const STATUS_BADGE_CLASSES: Record<TrialAccess['status'], string> = {
-  active: 'border-transparent bg-green-100 text-green-700 hover:bg-green-100',
-  expired: 'border-transparent bg-gray-100 text-gray-600 hover:bg-gray-100',
-  revoked: 'border-transparent bg-red-100 text-red-700 hover:bg-red-100',
-  converted: 'border-transparent bg-blue-100 text-blue-700 hover:bg-blue-100',
+  active: 'border-transparent bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-900/40 dark:text-green-300 dark:hover:bg-green-900/40',
+  expired: 'border-transparent bg-muted text-muted-foreground hover:bg-border',
+  revoked: 'border-transparent bg-red-100 text-red-700 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/40',
+  converted: 'border-transparent bg-brand-subtle text-brand-subtle-foreground hover:bg-brand-subtle',
 }
 
 /** Formats a Date as "YYYY-MM-DDTHH:mm" in the *browser's local* timezone for a datetime-local input. */
@@ -178,7 +178,7 @@ function CourseSelectionBlock({
             type="button"
             variant="ghost"
             size="icon"
-            className="text-gray-400 hover:text-red-600"
+            className="text-muted-foreground hover:text-red-600 dark:hover:text-red-400"
             title="Remove course"
             onClick={onRemove}
           >
@@ -195,9 +195,9 @@ function CourseSelectionBlock({
               <Loader size="sm" />
             </div>
           ) : !selection.courseId ? (
-            <p className="text-sm text-gray-400 text-center py-8">Select a course first</p>
+            <p className="text-sm text-muted-foreground text-center py-8">Select a course first</p>
           ) : modules.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">No units in this course</p>
+            <p className="text-sm text-muted-foreground text-center py-8">No units in this course</p>
           ) : (
             modules.map((module) => {
               const moduleId = Number(module.id)
@@ -206,7 +206,7 @@ function CourseSelectionBlock({
               const isOpen = expanded[moduleId] ?? true
               return (
                 <div key={module.id} className="border-b last:border-b-0">
-                  <div className="flex items-center gap-2 px-3 py-2 bg-gray-50">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-muted">
                     <Checkbox
                       checked={allChecked}
                       onCheckedChange={(checked) =>
@@ -218,11 +218,11 @@ function CourseSelectionBlock({
                       onClick={() => setExpanded((prev) => ({ ...prev, [moduleId]: !isOpen }))}
                       className="flex-1 flex items-center justify-between text-left"
                     >
-                      <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                      <span className="text-xs font-semibold text-foreground/80 uppercase tracking-wide">
                         {module.title}
                       </span>
                       <ChevronDown
-                        className={`w-3.5 h-3.5 text-gray-400 transition-transform ${isOpen ? '' : '-rotate-90'}`}
+                        className={`w-3.5 h-3.5 text-muted-foreground transition-transform ${isOpen ? '' : '-rotate-90'}`}
                       />
                     </button>
                   </div>
@@ -230,7 +230,7 @@ function CourseSelectionBlock({
                     lessons.map((lesson) => (
                       <label
                         key={lesson.id}
-                        className="flex items-center gap-2 px-3 py-1.5 pl-8 text-sm hover:bg-gray-50 cursor-pointer"
+                        className="flex items-center gap-2 px-3 py-1.5 pl-8 text-sm hover:bg-muted cursor-pointer"
                       >
                         <Checkbox
                           checked={selection.lessonIds.has(Number(lesson.id))}
@@ -513,11 +513,11 @@ export default function TrialAccessPage() {
     <div className="p-4 md:p-6 max-w-[1440px] mx-auto space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+          <h1 className="text-xl font-semibold text-foreground flex items-center gap-2">
             <Timer className="w-5 h-5" />
             Trial Access
           </h1>
-          <p className="text-sm text-gray-500 mt-0.5">Grant time-limited course access to prospects</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Grant time-limited course access to prospects</p>
         </div>
         <Button onClick={openCreateDialog} className="gap-2">
           <Plus className="w-4 h-4" />
@@ -532,7 +532,7 @@ export default function TrialAccessPage() {
             type="button"
             onClick={() => setStatusFilter(tab.value)}
             className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-              statusFilter === tab.value ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              statusFilter === tab.value ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground hover:bg-border'
             }`}
           >
             {tab.label}
@@ -544,9 +544,9 @@ export default function TrialAccessPage() {
         <CardContent className="p-0">
           {visible.length === 0 ? (
             <div className="py-16 text-center">
-              <Timer className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-              <p className="text-sm font-medium text-gray-900">No trials found</p>
-              <p className="text-xs text-gray-400 mt-1">Grant trial access to get started</p>
+              <Timer className="w-10 h-10 text-border mx-auto mb-3" />
+              <p className="text-sm font-medium text-foreground">No trials found</p>
+              <p className="text-xs text-muted-foreground mt-1">Grant trial access to get started</p>
             </div>
           ) : (
             <Table>
@@ -576,10 +576,10 @@ export default function TrialAccessPage() {
                       <TableCell>
                         {isFirstOfGroup && (
                           <>
-                            <p className="font-medium text-gray-900">{trial.user_name}</p>
-                            <p className="text-xs text-gray-400">{trial.user_email}</p>
+                            <p className="font-medium text-foreground">{trial.user_name}</p>
+                            <p className="text-xs text-muted-foreground">{trial.user_email}</p>
                             {group.length > 1 && (
-                              <p className="text-xs text-gray-400 mt-0.5">{group.length} courses</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">{group.length} courses</p>
                             )}
                           </>
                         )}
@@ -589,7 +589,7 @@ export default function TrialAccessPage() {
                       <TableCell>
                         <p className="whitespace-nowrap">{parseAsUTC(trial.expires_at).toLocaleString()}</p>
                         {trial.status === 'active' && (
-                          <p className="text-xs text-gray-500">{formatCountdown(trial.expires_at, now)}</p>
+                          <p className="text-xs text-muted-foreground">{formatCountdown(trial.expires_at, now)}</p>
                         )}
                       </TableCell>
                       <TableCell>
@@ -627,7 +627,7 @@ export default function TrialAccessPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-7 px-2 text-xs border-blue-200 text-blue-600 hover:bg-blue-50"
+                              className="h-7 px-2 text-xs border-brand-border text-brand hover:bg-brand-surface"
                               disabled={isBusy}
                               title="Convert to full student"
                               onClick={() => handleConvert(trial)}
@@ -639,7 +639,7 @@ export default function TrialAccessPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              className="h-7 px-2 text-xs border-red-200 text-red-600 hover:bg-red-50"
+                              className="h-7 px-2 text-xs border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800/60 dark:text-red-400 dark:hover:bg-red-950/40"
                               disabled={isBusy}
                               title="Revoke"
                               onClick={() => handleRevoke(trial)}
@@ -679,7 +679,7 @@ export default function TrialAccessPage() {
             <div className="space-y-4">
               {createResult.password ? (
                 <div className="space-y-2">
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     A new account was created and an invite email was sent. Temporary password:
                   </p>
                   <div className="flex items-center gap-2">
@@ -690,7 +690,7 @@ export default function TrialAccessPage() {
                   </div>
                 </div>
               ) : (
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   This prospect already had an account — existing credentials remain valid. No email was sent.
                 </p>
               )}

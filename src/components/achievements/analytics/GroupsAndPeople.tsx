@@ -13,7 +13,7 @@ export function GroupsTable({ groups, lang, onPick }: { groups: AnalyticsGroup[]
   return (
     <div>
       {groups.length > 8 && (
-        <label className="mb-3 flex items-center gap-2 rounded-lg border border-gray-200 dark:border-border px-3 py-2 text-sm">
+        <label className="mb-3 flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm">
           <Search className="h-4 w-4 text-muted-foreground" />
           <input
             value={query}
@@ -26,19 +26,19 @@ export function GroupsTable({ groups, lang, onPick }: { groups: AnalyticsGroup[]
       {!shown.length ? (
         <Empty>{tr(lang, 'Нет групп', 'No groups')}</Empty>
       ) : (
-        <div className="max-h-[420px] overflow-y-auto divide-y divide-gray-100 dark:divide-border">
+        <div className="max-h-[420px] overflow-y-auto divide-y divide-border">
           {shown.map((g) => (
             <button
               key={g.id}
               type="button"
               onClick={onPick ? () => onPick(g.id) : undefined}
-              className={`flex w-full items-center gap-3 py-2.5 text-left ${onPick ? 'hover:bg-gray-50 dark:hover:bg-secondary/40 rounded-lg px-1' : 'cursor-default'}`}
+              className={`flex w-full items-center gap-3 py-2.5 text-left ${onPick ? 'hover:bg-muted dark:hover:bg-secondary/40 rounded-lg px-1' : 'cursor-default'}`}
             >
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{g.name}</p>
+                <p className="truncate text-sm font-medium text-foreground">{g.name}</p>
                 <div className="mt-1 flex items-center gap-2">
-                  <div className="h-1.5 w-28 rounded-full bg-gray-100 dark:bg-secondary">
-                    <div className="h-1.5 rounded-full bg-[#2563EB]" style={{ width: `${Math.round((g.avg_achievements / best) * 100)}%` }} />
+                  <div className="h-1.5 w-28 rounded-full bg-muted dark:bg-secondary">
+                    <div className="h-1.5 rounded-full bg-brand-solid" style={{ width: `${Math.round((g.avg_achievements / best) * 100)}%` }} />
                   </div>
                   <span className="text-xs text-muted-foreground tabular-nums">
                     {g.avg_achievements} {tr(lang, 'в среднем', 'avg')} · {g.students} {tr(lang, 'уч.', 'students')}
@@ -57,7 +57,7 @@ export function GroupsTable({ groups, lang, onPick }: { groups: AnalyticsGroup[]
 export function TopEarners({ people, lang }: { people: AnalyticsPerson[]; lang: Lang }) {
   if (!people.length) return <Empty>{tr(lang, 'Пока никто ничего не получил', 'Nobody has earned anything yet')}</Empty>;
   return (
-    <div className="divide-y divide-gray-100 dark:divide-border">
+    <div className="divide-y divide-border">
       {people.map((p, i) => (
         <PersonRow key={p.id} person={p} rank={i + 1} lang={lang} sub={(p.groups || []).join(', ')} />
       ))}

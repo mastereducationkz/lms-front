@@ -250,7 +250,7 @@ export default function WeeklyTopStudentsPage() {
       </Card>
 
       {error && (
-        <div className="text-sm text-rose-600 bg-rose-50 dark:bg-rose-950/40 rounded-md px-4 py-3">{error}</div>
+        <div className="text-sm text-rose-600 bg-rose-50 dark:bg-rose-950/40 rounded-md px-4 py-3 dark:text-rose-400">{error}</div>
       )}
 
       {/* Leaderboard */}
@@ -326,7 +326,7 @@ export default function WeeklyTopStudentsPage() {
         <Card>
           <CardHeader className="cursor-pointer" onClick={() => setShowAttention((v) => !v)}>
             <CardTitle className="text-base flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-rose-500" />
+              <AlertTriangle className="h-4 w-4 text-rose-500 dark:text-rose-400" />
               Needs Attention — {needsAttention.length} students with missing / late homework
               <span className="ml-auto text-sm font-normal text-muted-foreground">{showAttention ? 'Hide' : 'Show'}</span>
             </CardTitle>

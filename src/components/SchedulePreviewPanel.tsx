@@ -108,7 +108,7 @@ export default function SchedulePreviewPanel({ payload }: SchedulePreviewPanelPr
         >
             <p className="text-muted-foreground">{summary.started}</p>
             <p>{summary.planned}</p>
-            <p className="font-medium text-gray-900 dark:text-foreground">{summary.total}</p>
+            <p className="font-medium text-foreground">{summary.total}</p>
             <p className="text-muted-foreground">{summary.changes}</p>
 
             {preview.warnings.map((warning) => (
@@ -121,7 +121,7 @@ export default function SchedulePreviewPanel({ payload }: SchedulePreviewPanelPr
                 <div className="pt-0.5">
                     <button
                         type="button"
-                        className="text-blue-600 hover:underline dark:text-blue-400"
+                        className="text-brand hover:underline"
                         onClick={() => setShowDates((open) => !open)}
                         aria-expanded={showDates}
                     >

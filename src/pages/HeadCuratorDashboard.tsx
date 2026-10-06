@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { chartColors, chartTick, chartTooltipStyle } from '../lib/chartTheme';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import apiClient from '../services/api';
@@ -99,10 +100,10 @@ export default function HeadCuratorDashboard() {
     return (
       <div className="space-y-6">
         <Skeleton className="h-8 w-64" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 @2xl:grid-cols-2 @4xl:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-32 rounded-xl" />)}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6">
           <Skeleton className="h-80 rounded-xl" />
           <Skeleton className="h-80 rounded-xl" />
         </div>
@@ -120,23 +121,23 @@ export default function HeadCuratorDashboard() {
     <div className="space-y-6">
       <StudentSearchBox className="max-w-md" />
       {/* Заголовок */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-foreground">Рады видеть вас, {user?.name}!</h1>
-          <p className="text-gray-500 dark:text-gray-400 flex items-center gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-foreground dark:text-foreground">Рады видеть вас, {user?.name}!</h1>
+          <p className="text-muted-foreground flex items-center gap-2">
             {user?.role === 'head_curator' 
               ? "Обзор эффективности кураторов и активности студентов" 
               : "Обзор успеваемости ваших групп и активности студентов"}
             {loading && (
-              <span className="inline-flex items-center text-xs text-blue-500 animate-pulse font-medium">
+              <span className="inline-flex items-center text-xs text-brand animate-pulse font-medium">
                 • Обновление данных...
               </span>
             )}
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <div className="flex flex-wrap items-center gap-3 max-w-full">
           <Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
-            <SelectTrigger className="w-[180px] bg-white border-gray-200 dark:bg-card dark:border-border">
+            <SelectTrigger className="w-[180px] max-w-full bg-card border-border">
               <SelectValue placeholder="Все группы" />
             </SelectTrigger>
             <SelectContent>
@@ -155,11 +156,11 @@ export default function HeadCuratorDashboard() {
                 id="date"
                 variant="outline"
                 className={cn(
-                  "w-[260px] justify-start text-left font-normal bg-white dark:bg-card",
+                  "w-[260px] max-w-full justify-start text-left font-normal bg-card",
                   !dateRange && "text-muted-foreground"
                 )}
               >
-                <CalendarIcon className="mr-2 h-4 w-4 text-gray-400" />
+                <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
                 {dateRange?.from ? (
                   dateRange.to ? (
                     <>
@@ -175,8 +176,8 @@ export default function HeadCuratorDashboard() {
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 flex flex-row" align="end">
-              <div className="flex flex-col border-r border-gray-200 dark:border-border p-2 gap-1 min-w-[120px]">
-                <p className="text-[10px] font-semibold text-gray-400 dark:text-gray-500 px-2 py-1 uppercase tracking-wider">Периоды</p>
+              <div className="flex flex-col border-r border-border p-2 gap-1 min-w-[120px]">
+                <p className="text-[10px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">Периоды</p>
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -234,7 +235,7 @@ export default function HeadCuratorDashboard() {
               onClick={() => navigate('/attendance')}
               size="sm"
               variant="outline"
-              className="text-xs h-6 px-2 border-yellow-300 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100 dark:border-yellow-800 dark:hover:bg-yellow-900/20"
+              className="text-xs h-6 px-2 border-yellow-300 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100 hover:dark:bg-yellow-500/15 dark:border-yellow-800 dark:hover:bg-yellow-900/20"
             >
               Перейти к посещаемости
             </Button>
@@ -252,7 +253,7 @@ export default function HeadCuratorDashboard() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-[11px] text-yellow-700">
+                  <span className="text-[11px] text-yellow-700 dark:text-yellow-300">
                     {reminder.recorded_students}/{reminder.expected_students}
                   </span>
                   <Button
@@ -265,7 +266,7 @@ export default function HeadCuratorDashboard() {
                     }}
                     size="sm"
                     variant="ghost"
-                    className="text-[11px] h-6 px-2 text-yellow-700 hover:bg-yellow-100"
+                    className="text-[11px] h-6 px-2 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 hover:dark:bg-yellow-500/15"
                   >
                     Заполнить
                   </Button>
@@ -277,16 +278,16 @@ export default function HeadCuratorDashboard() {
       )}
 
       {/* Верхние карточки KPI */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-600 to-indigo-700 text-white">
-          <CardContent className="p-6 text-white">
-            <p className="text-blue-100 text-sm font-medium">
+      <div className="grid grid-cols-1 @2xl:grid-cols-2 @4xl:grid-cols-4 gap-4">
+        <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-600 to-indigo-700 text-white dark:from-brand-surface dark:to-brand-surface dark:border dark:border-brand-border dark:text-brand-surface-foreground">
+          <CardContent className="p-6">
+            <p className="text-blue-100 dark:text-brand-subtle-foreground text-sm font-medium">
               {user?.role === 'head_curator' ? "Всего кураторов" : "Всего групп"}
             </p>
-            <h3 className="text-3xl font-bold mt-1 text-white">
+            <h3 className="text-3xl font-bold mt-1">
               {user?.role === 'head_curator' ? stats.total_curators : stats.total_groups}
             </h3>
-            <div className="mt-4 text-xs text-blue-100 flex items-center">
+            <div className="mt-4 text-xs text-blue-100 dark:text-brand-subtle-foreground flex items-center">
               {user?.role === 'head_curator' ? "Активных на платформе" : "Прикреплено к вам"}
             </div>
           </CardContent>
@@ -294,9 +295,9 @@ export default function HeadCuratorDashboard() {
 
         <Card className="border-0 shadow-sm">
           <CardContent className="p-6">
-            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Студентов всего</p>
-            <h3 className="text-3xl font-bold mt-1 text-gray-900 dark:text-foreground">{stats.total_students}</h3>
-            <div className="mt-4 text-xs text-indigo-600 flex items-center font-medium">
+            <p className="text-muted-foreground text-sm font-medium">Студентов всего</p>
+            <h3 className="text-3xl font-bold mt-1 text-foreground dark:text-foreground">{stats.total_students}</h3>
+            <div className="mt-4 text-xs text-brand flex items-center font-medium">
               {stats.active_students_7d} активны за 7д
             </div>
           </CardContent>
@@ -304,11 +305,11 @@ export default function HeadCuratorDashboard() {
 
         <Card className="border-0 shadow-sm">
           <CardContent className="p-6">
-            <p className="text-gray-500 text-sm font-medium">Просрочено ДЗ</p>
-            <h3 className="text-3xl font-bold mt-1 text-red-600">
+            <p className="text-muted-foreground text-sm font-medium">Просрочено ДЗ</p>
+            <h3 className="text-3xl font-bold mt-1 text-red-600 dark:text-red-300">
               {stats.total_overdue || 0}
             </h3>
-            <div className="mt-4 text-xs text-red-500 flex items-center font-medium">
+            <div className="mt-4 text-xs text-red-500 dark:text-red-400 flex items-center font-medium">
               Требует внимания
             </div>
           </CardContent>
@@ -316,11 +317,11 @@ export default function HeadCuratorDashboard() {
 
         <Card className="border-0 shadow-sm">
           <CardContent className="p-6">
-            <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">Неактивных</p>
-            <h3 className="text-3xl font-bold mt-1 text-amber-600">
+            <p className="text-muted-foreground text-sm font-medium">Неактивных</p>
+            <h3 className="text-3xl font-bold mt-1 text-amber-600 dark:text-amber-300">
               {stats.inactive_students || 0}
             </h3>
-            <div className="mt-4 text-xs text-amber-600 flex items-center font-medium">
+            <div className="mt-4 text-xs text-amber-600 dark:text-amber-300 flex items-center font-medium">
               Бездействуют на протяжении 7 дней
             </div>
           </CardContent>
@@ -328,7 +329,7 @@ export default function HeadCuratorDashboard() {
       </div>
 
       {/* Графики */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6">
         <Card className="shadow-sm border-0">
           <CardHeader>
             <CardTitle className="text-lg font-bold">Активность студентов (%)</CardTitle>
@@ -337,7 +338,7 @@ export default function HeadCuratorDashboard() {
             <div className="h-80 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={activityTrends}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartColors.grid} />
                   <XAxis 
                     dataKey="date" 
                     tickFormatter={(val) => {
@@ -346,25 +347,25 @@ export default function HeadCuratorDashboard() {
                     }}
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                    tick={chartTick(12)}
                   />
                   <YAxis 
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                    tick={chartTick(12)}
                     domain={[0, 100]}
                     tickFormatter={(val) => `${val}%`}
                   />
                   <Tooltip 
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                    contentStyle={chartTooltipStyle}
                     formatter={(val: number) => [`${val}%`, 'Активность']}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="percentage" 
-                    stroke="#3B82F6" 
+                    stroke={chartColors.brand} 
                     strokeWidth={3} 
-                    dot={{ r: 4, fill: '#3B82F6', strokeWidth: 2, stroke: '#fff' }}
+                    dot={{ r: 4, fill: chartColors.brand, strokeWidth: 2, stroke: chartColors.surface }}
                     activeDot={{ r: 6 }} 
                   />
                 </LineChart>
@@ -379,7 +380,7 @@ export default function HeadCuratorDashboard() {
               {user?.role === 'head_curator' ? "Эффективность кураторов (%)" : "Прогресс по группам (%)"}
             </CardTitle>
             <div 
-              className="text-gray-400 hover:text-gray-600 cursor-help p-1"
+              className="text-muted-foreground hover:text-muted-foreground cursor-help p-1"
               title={user?.role === 'head_curator' 
                 ? "Эффективность рассчитывается на основе среднего прогресса студентов, отсутствия просрочек и скорости проверки работ."
                 : "Средний прогресс освоения курсов студентами в каждой группе."}
@@ -391,21 +392,21 @@ export default function HeadCuratorDashboard() {
             <div className="h-80 w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={curatorPerformance}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartColors.grid} />
                   <XAxis 
                     dataKey="name" 
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 11, fill: '#9CA3AF' }}
+                    tick={chartTick(11)}
                   />
                   <YAxis 
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 12, fill: '#9CA3AF' }}
+                    tick={chartTick(12)}
                   />
                   <Tooltip 
-                    cursor={{ fill: '#F9FAFB' }}
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                    cursor={{ fill: chartColors.cursor }}
+                    contentStyle={chartTooltipStyle}
                   />
                   <Bar dataKey="avg_progress" name="Ср. прогресс (%)" radius={[4, 4, 0, 0]}>
                     {curatorPerformance.map((_: any, index: number) => (
@@ -421,7 +422,7 @@ export default function HeadCuratorDashboard() {
 
       {/* Таблица кураторов/групп */}
       <Card className="shadow-sm border-0 overflow-hidden">
-        <CardHeader className="bg-white dark:bg-card">
+        <CardHeader className="bg-card dark:bg-card">
           <CardTitle className="text-lg font-bold">
             {user?.role === 'head_curator' ? "Сводная таблица по кураторам" : "Сводная таблица по группам"}
           </CardTitle>
@@ -429,7 +430,7 @@ export default function HeadCuratorDashboard() {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50/80 dark:bg-secondary/30 text-gray-600 dark:text-gray-400 border-b border-gray-100 dark:border-border uppercase text-[10px] font-bold">
+              <thead className="bg-gray-50/80 dark:bg-secondary/30 text-muted-foreground border-b border-border uppercase text-[10px] font-bold">
                 <tr>
                   <th className="text-left px-6 py-4">
                     {user?.role === 'head_curator' ? "Куратор" : "Группа"}
@@ -442,50 +443,50 @@ export default function HeadCuratorDashboard() {
                   <th className="text-right px-6 py-4">Действия</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-border">
+              <tbody className="divide-y divide-border dark:divide-border">
                 {curatorPerformance.map((item: any) => (
-                  <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-secondary/30 transition-colors">
+                  <tr key={item.id} className="hover:bg-muted/60 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                          <AvatarFallback className="bg-indigo-100 text-indigo-700 font-bold text-xs">
+                          <AvatarFallback className="bg-brand-subtle text-brand-subtle-foreground font-bold text-xs">
                             {item.name.charAt(0)}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="font-semibold text-gray-900 dark:text-foreground">{item.name}</span>
+                        <span className="font-semibold text-foreground dark:text-foreground">{item.name}</span>
                       </div>
                     </td>
                     {user?.role === 'head_curator' && (
-                       <td className="px-4 py-4 text-center text-gray-600 dark:text-gray-400 font-medium">{item.groups_count}</td>
+                       <td className="px-4 py-4 text-center text-muted-foreground font-medium">{item.groups_count}</td>
                     )}
-                    <td className="px-4 py-4 text-center text-gray-600 dark:text-gray-400 font-medium">{item.students_count}</td>
+                    <td className="px-4 py-4 text-center text-muted-foreground font-medium">{item.students_count}</td>
                     <td className="px-4 py-4 text-center">
                       <div className="flex items-center justify-center gap-2">
-                        <div className="w-16 h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden hidden sm:block">
+                        <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden hidden sm:block">
                           <div 
                             className="h-full bg-green-500 rounded-full" 
                             style={{ width: `${item.avg_progress}%` }} 
                           />
                         </div>
-                        <span className="text-xs font-bold text-gray-700">{item.avg_progress}%</span>
+                        <span className="text-xs font-bold text-foreground">{item.avg_progress}%</span>
                       </div>
                     </td>
                     <td className="px-4 py-4 text-center">
                       <div className="flex flex-col items-center justify-center gap-1">
-                        <Badge variant={item.overdue_count > 5 ? "destructive" : "secondary"} className={item.overdue_count === 0 ? "bg-green-50 text-green-700 border-green-100 hover:bg-green-50" : ""}>
+                        <Badge variant={item.overdue_count > 5 ? "destructive" : "secondary"} className={item.overdue_count === 0 ? "bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 border-green-100 hover:bg-green-50 hover:dark:bg-green-500/15" : ""}>
                           {item.overdue_count}
                         </Badge>
-                        <span className="text-[10px] text-gray-500 font-medium">
+                        <span className="text-[10px] text-muted-foreground font-medium">
                           из {item.total_due} ({item.overdue_perc}%)
                         </span>
                       </div>
                     </td>
                     <td className="px-4 py-4 text-center">
                       <div className="flex flex-col items-center justify-center gap-1">
-                        <Badge variant="outline" className="border-amber-200 text-amber-700 bg-amber-50">
+                        <Badge variant="outline" className="border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/15">
                           {item.pending_grading}
                         </Badge>
-                        <span className="text-[10px] text-gray-500 font-medium">
+                        <span className="text-[10px] text-muted-foreground font-medium">
                           из {item.total_submissions} ({item.pending_perc}%)
                         </span>
                       </div>
@@ -494,7 +495,7 @@ export default function HeadCuratorDashboard() {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50" 
+                        className="text-brand hover:text-brand-subtle-foreground hover:bg-brand-surface" 
                         onClick={() => {
                           if (user?.role === 'head_curator') {
                             navigate(`/head-curator/curator/${item.id}`);
@@ -519,18 +520,18 @@ export default function HeadCuratorDashboard() {
       <Card className="shadow-sm border-0 overflow-hidden">
         <CardHeader className="flex flex-col pb-2">
           <div className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg font-bold flex items-center gap-2 text-red-700">
+            <CardTitle className="text-lg font-bold flex items-center gap-2 text-red-700 dark:text-red-300">
               Группы с просрочками
             </CardTitle>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Здесь отображаются группы, в которых есть студенты с невыполненными вовремя заданиями или заданиями, сданными после дедлайна.
           </p>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
-              <thead className="bg-red-50/50 text-red-800 text-[10px] uppercase font-bold border-b border-red-100">
+              <thead className="bg-red-50/50 dark:bg-red-500/15 text-red-800 dark:text-red-300 text-[10px] uppercase font-bold border-b border-red-100">
                 <tr>
                   <th className="px-6 py-3 text-left">Группа</th>
                   <th className="px-6 py-3 text-left">Куратор</th>
@@ -539,15 +540,15 @@ export default function HeadCuratorDashboard() {
               </thead>
               <tbody className="divide-y divide-red-50">
                 {atRiskGroups.map((group: any) => (
-                  <tr key={group.id} className="hover:bg-red-50 transition-colors">
-                    <td className="px-6 py-4 font-bold text-gray-900">{group.title}</td>
-                    <td className="px-6 py-4 text-gray-600">{group.curator}</td>
-                    <td className="px-6 py-4 text-center font-black text-red-600">{group.overdue_count}</td>
+                  <tr key={group.id} className="hover:bg-red-50 hover:dark:bg-red-500/15 transition-colors">
+                    <td className="px-6 py-4 font-bold text-foreground">{group.title}</td>
+                    <td className="px-6 py-4 text-muted-foreground">{group.curator}</td>
+                    <td className="px-6 py-4 text-center font-black text-red-600 dark:text-red-300">{group.overdue_count}</td>
                   </tr>
                 ))}
                 {atRiskGroups.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="px-6 py-10 text-center text-gray-500 dark:text-gray-400 italic bg-white dark:bg-card">
+                    <td colSpan={3} className="px-6 py-10 text-center text-muted-foreground italic bg-card dark:bg-card">
                       Проблемных групп не обнаружено. Все задания под контролем!
                     </td>
                   </tr>

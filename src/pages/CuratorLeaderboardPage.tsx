@@ -223,7 +223,7 @@ const ScoreSelect = ({
           "hover:bg-black/5 dark:hover:bg-white/5" 
       )}>
           <SelectValue>
-            <span className="truncate text-xs text-gray-900 dark:text-foreground">{value}</span>
+            <span className="truncate text-xs text-foreground dark:text-foreground">{value}</span>
           </SelectValue>
       </SelectTrigger>
       <SelectContent>
@@ -287,12 +287,12 @@ const AttendanceToggle = ({
   const normalizedStatus = displaysAsAbsence(initialStatus) ? 'missed' : initialStatus;
 
   const getStatusConfig = () => {
-    if (initialStatus === 'cancelled') return { label: en ? 'Cancelled' : 'Отменён', color: 'bg-slate-400 text-white', title: en ? 'Lesson cancelled' : 'Урок отменён' };
+    if (initialStatus === 'cancelled') return { label: en ? 'Cancelled' : 'Отменён', color: 'bg-muted-foreground/60 text-white', title: en ? 'Lesson cancelled' : 'Урок отменён' };
     const s = normalizedStatus;
 
     // A lesson that hasn't happened yet shouldn't read as "Не был" — the backend
     // just defaults an unmarked lesson to "missed". Show a neutral "—" instead.
-    if (isFuture && s === 'missed') return { label: '—', color: 'bg-gray-100 text-gray-400 dark:bg-secondary dark:text-gray-500', title: en ? "Lesson hasn't happened yet" : 'Занятие ещё не прошло' };
+    if (isFuture && s === 'missed') return { label: '—', color: 'bg-muted text-muted-foreground dark:bg-secondary', title: en ? "Lesson hasn't happened yet" : 'Занятие ещё не прошло' };
 
     if (s === 'missed' && excused) {
       return {
@@ -302,9 +302,9 @@ const AttendanceToggle = ({
       };
     }
 
-    if (s === 'attended') return { label: en ? 'Present' : 'Был', color: 'bg-emerald-500 text-white', title: en ? 'Present' : 'Был' };
-    if (s === 'late') return { label: en ? 'Late' : 'Опоздал', color: 'bg-amber-400 text-gray-900 font-bold', title: en ? 'Late' : 'Опоздал' };
-    return { label: en ? 'Absent' : 'Не был', color: 'bg-rose-500 text-white', title: en ? 'Absent' : 'Не был' };
+    if (s === 'attended') return { label: en ? 'Present' : 'Был', color: 'bg-emerald-500 text-white dark:bg-emerald-600', title: en ? 'Present' : 'Был' };
+    if (s === 'late') return { label: en ? 'Late' : 'Опоздал', color: 'bg-amber-400 text-amber-950 font-bold dark:bg-amber-500', title: en ? 'Late' : 'Опоздал' };
+    return { label: en ? 'Absent' : 'Не был', color: 'bg-rose-500 text-white dark:bg-rose-600', title: en ? 'Absent' : 'Не был' };
   };
 
   const config = getStatusConfig();
@@ -478,7 +478,7 @@ const renderInline = (text: string): React.ReactNode[] => {
       if (before) parts.push(<span key={key++}>{before}</span>)
       const end = remaining.indexOf('**', boldIdx + 2)
       if (end === -1) { parts.push(<span key={key++}>{remaining}</span>); break }
-      parts.push(<strong key={key++} className="font-semibold text-gray-900 dark:text-foreground">{remaining.slice(boldIdx + 2, end)}</strong>)
+      parts.push(<strong key={key++} className="font-semibold text-foreground dark:text-foreground">{remaining.slice(boldIdx + 2, end)}</strong>)
       remaining = remaining.slice(end + 2)
     } else if (italicIdx !== -1) {
       const before = remaining.slice(0, italicIdx)
@@ -504,11 +504,11 @@ const MarkdownContent = ({ children }: { children: string }) => {
     const line = lines[i]
 
     if (line.startsWith('### ')) {
-      elements.push(<h3 key={i} className="text-sm font-bold text-gray-800 dark:text-gray-200 mt-3 mb-1 first:mt-0">{renderInline(line.slice(4))}</h3>)
+      elements.push(<h3 key={i} className="text-sm font-bold text-foreground mt-3 mb-1 first:mt-0">{renderInline(line.slice(4))}</h3>)
     } else if (line.startsWith('## ')) {
-      elements.push(<h2 key={i} className="text-sm font-bold text-gray-900 dark:text-foreground mt-4 mb-1 first:mt-0 border-b border-gray-200 dark:border-border pb-0.5">{renderInline(line.slice(3))}</h2>)
+      elements.push(<h2 key={i} className="text-sm font-bold text-foreground dark:text-foreground mt-4 mb-1 first:mt-0 border-b border-border pb-0.5">{renderInline(line.slice(3))}</h2>)
     } else if (line.startsWith('# ')) {
-      elements.push(<h1 key={i} className="text-base font-bold text-gray-900 dark:text-foreground mt-3 mb-1.5 first:mt-0">{renderInline(line.slice(2))}</h1>)
+      elements.push(<h1 key={i} className="text-base font-bold text-foreground dark:text-foreground mt-3 mb-1.5 first:mt-0">{renderInline(line.slice(2))}</h1>)
     } else if (/^[-*] /.test(line)) {
       // collect consecutive list items
       const listItems: React.ReactNode[] = []
@@ -516,7 +516,7 @@ const MarkdownContent = ({ children }: { children: string }) => {
         listItems.push(<li key={i} className="leading-relaxed">{renderInline(lines[i].slice(2))}</li>)
         i++
       }
-      elements.push(<ul key={`ul-${i}`} className="list-disc list-inside space-y-0.5 mb-2 text-sm text-gray-700 dark:text-gray-300">{listItems}</ul>)
+      elements.push(<ul key={`ul-${i}`} className="list-disc list-inside space-y-0.5 mb-2 text-sm text-foreground">{listItems}</ul>)
       continue
     } else if (/^\d+\. /.test(line)) {
       const listItems: React.ReactNode[] = []
@@ -524,13 +524,13 @@ const MarkdownContent = ({ children }: { children: string }) => {
         listItems.push(<li key={i} className="leading-relaxed">{renderInline(lines[i].replace(/^\d+\. /, ''))}</li>)
         i++
       }
-      elements.push(<ol key={`ol-${i}`} className="list-decimal list-inside space-y-0.5 mb-2 text-sm text-gray-700 dark:text-gray-300">{listItems}</ol>)
+      elements.push(<ol key={`ol-${i}`} className="list-decimal list-inside space-y-0.5 mb-2 text-sm text-foreground">{listItems}</ol>)
       continue
     } else if (line.trim() === '' || line === '---') {
-      if (line === '---') elements.push(<hr key={i} className="border-gray-200 dark:border-border my-2" />)
+      if (line === '---') elements.push(<hr key={i} className="border-border my-2" />)
       // empty line → skip
     } else {
-      elements.push(<p key={i} className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-1.5 last:mb-0">{renderInline(line)}</p>)
+      elements.push(<p key={i} className="text-sm text-foreground leading-relaxed mb-1.5 last:mb-0">{renderInline(line)}</p>)
     }
 
     i++
@@ -999,10 +999,10 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   };
 
   const getPercentColor = (percent: number) => {
-      if (percent >= 90) return "bg-[#e6f4ea] text-[#137333] dark:bg-green-900/30 dark:text-green-400";
-      if (percent >= 75) return "bg-[#e8f0fe] text-[#1967d2] dark:bg-blue-900/30 dark:text-blue-400";
-      if (percent >= 50) return "bg-[#fef7e0] text-[#a55800] dark:bg-amber-900/30 dark:text-amber-400";
-      return "bg-[#fce8e6] text-[#c5221f] dark:bg-red-900/30 dark:text-red-400";
+      if (percent >= 90) return "bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-300";
+      if (percent >= 75) return "bg-brand-subtle text-brand-subtle-foreground";
+      if (percent >= 50) return "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300";
+      return "bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-300";
   };
 
   const handleManualScoreChange = (studentId: number, field: keyof StudentRow, value: string) => {
@@ -1403,7 +1403,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
 
   // A section cell: the raw correct/total fraction.
   const renderExamSectionContent = (correct?: number | null, total?: number | null) => (
-    <span className="text-gray-900 dark:text-foreground">{renderSectionFraction(correct, total)}</span>
+    <span className="text-foreground dark:text-foreground">{renderSectionFraction(correct, total)}</span>
   );
 
   // IELTS bands are conventionally rendered with one decimal: 7.0, 7.5
@@ -1441,7 +1441,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
     completed: { label: t('Проведено', 'Completed'), short: t('Сдано', 'Done'), className: 'text-emerald-700 bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-900/40', dot: 'bg-emerald-500' },
     scheduled: { label: t('Запланировано', 'Scheduled'), short: t('Запл.', 'Sched.'), className: 'text-amber-700 bg-amber-100 dark:text-amber-300 dark:bg-amber-900/40', dot: 'bg-amber-500' },
     no_show: { label: t('Неявка', 'No-show'), short: t('Неявка', 'No-show'), className: 'text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900/40', dot: 'bg-red-500' },
-    cancelled: { label: t('Отменено', 'Cancelled'), short: t('Отменено', 'Cancelled'), className: 'text-gray-600 bg-gray-100 dark:text-gray-300 dark:bg-secondary', dot: 'bg-gray-400' },
+    cancelled: { label: t('Отменено', 'Cancelled'), short: t('Отменено', 'Cancelled'), className: 'text-muted-foreground bg-muted dark:bg-secondary', dot: 'bg-muted-foreground/50' },
   };
 
   const hasIeltsEnFeedback = (s: StudentRow) =>
@@ -1472,19 +1472,19 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
 
   return (
     <>
-    <div className={cn("w-full h-full space-y-4", !embedded && "p-4 bg-white dark:bg-card rounded")}>
+    <div className={cn("w-full h-full space-y-4", !embedded && "p-4 bg-card dark:bg-card rounded")}>
       {/* Header Controls */}
       <div className="flex flex-col gap-3 border-b pb-4 dark:border-border">
         {/* Row 1: title (or the wrapper's view toggle) + save */}
         <div className="flex items-center justify-between gap-3">
-          {titleSlot ?? <h1 className="text-xl font-semibold text-gray-800 dark:text-foreground">{t('Лидерборд', 'Leaderboard')}</h1>}
+          {titleSlot ?? <h1 className="text-xl font-semibold text-foreground dark:text-foreground">{t('Лидерборд', 'Leaderboard')}</h1>}
           <Button
               onClick={() => void handleSaveChanges()}
               disabled={(!configChanged && changedEntries.size === 0) || isSaving}
               size="sm"
               className={cn(
                   "h-8 transition-colors rounded-md font-medium",
-                  (configChanged || changedEntries.size > 0) ? "bg-green-600 hover:bg-green-700 text-white" : "bg-gray-100 text-gray-400 dark:bg-secondary dark:text-gray-500"
+                  (configChanged || changedEntries.size > 0) ? "bg-green-600 hover:bg-green-700 text-white dark:bg-green-700 dark:hover:bg-green-600" : "bg-muted text-muted-foreground dark:bg-secondary"
               )}
           >
               {isSaving ? (
@@ -1496,13 +1496,13 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         </div>
 
         {/* Row 2: filters (left) + week navigation (right) */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-col @4xl:flex-row @4xl:items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
                 <Select
                     value={programFilter}
                     onValueChange={(value) => setProgramFilter(value as 'all' | CourseType)}
                 >
-                    <SelectTrigger className="h-8 w-[130px] rounded-md border-gray-300 dark:border-border text-xs">
+                    <SelectTrigger className="h-8 w-[130px] rounded-md border-border text-xs">
                         <SelectValue placeholder={t('Предмет', 'Subject')} />
                     </SelectTrigger>
                     <SelectContent>
@@ -1514,12 +1514,12 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     </SelectContent>
                 </Select>
 
-                <div className="w-full sm:w-[300px] md:w-[360px]">
+                <div className="w-full @xl:w-[300px] @2xl:w-[360px] max-w-full">
                     <Popover open={groupPickerOpen} onOpenChange={(open) => { setGroupPickerOpen(open); if (!open) setGroupQuery(''); }}>
                         <PopoverTrigger asChild>
                             <button
                                 type="button"
-                                className="flex h-8 w-full items-center justify-between rounded-md border border-gray-300 dark:border-border bg-transparent px-3 text-xs"
+                                className="flex h-8 w-full items-center justify-between rounded-md border border-border bg-transparent px-3 text-xs"
                             >
                                 <span className="truncate">
                                     {(() => {
@@ -1531,7 +1531,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                             </button>
                         </PopoverTrigger>
                         <PopoverContent className="w-[min(300px,calc(100vw-2rem))] md:w-[360px] p-0" align="start">
-                            <div className="p-2 border-b border-gray-200 dark:border-border">
+                            <div className="p-2 border-b border-border">
                                 <Input
                                     autoFocus
                                     value={groupQuery}
@@ -1540,7 +1540,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     className="h-8 text-xs"
                                 />
                             </div>
-                            <div className="flex items-center justify-between px-3 py-1 border-b border-gray-100 dark:border-border">
+                            <div className="flex items-center justify-between px-3 py-1 border-b border-border">
                                 <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                                     {groupMatches.length} {isTeacher ? (groupMatches.length === 1 ? 'group' : 'groups') : pluralizeGroups(groupMatches.length)}
                                 </span>
@@ -1567,11 +1567,11 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                     setGroupQuery('');
                                                 }}
                                                 className={cn(
-                                                    "flex w-full items-start gap-2 px-3 py-1.5 text-left hover:bg-gray-100 dark:hover:bg-secondary",
-                                                    selectedGroupId === g.id && "bg-blue-50/60 dark:bg-secondary"
+                                                    "flex w-full items-start gap-2 px-3 py-1.5 text-left hover:bg-muted dark:hover:bg-secondary",
+                                                    selectedGroupId === g.id && "bg-brand-surface/60 dark:bg-secondary"
                                                 )}
                                             >
-                                                <Check className={cn('h-3.5 w-3.5 shrink-0 mt-px', selectedGroupId === g.id ? 'opacity-100 text-blue-600 dark:text-blue-400' : 'opacity-0')} />
+                                                <Check className={cn('h-3.5 w-3.5 shrink-0 mt-px', selectedGroupId === g.id ? 'opacity-100 text-brand' : 'opacity-0')} />
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-center gap-1.5">
                                                         <span className={cn(
@@ -1580,7 +1580,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                         )}>
                                                             {PROGRAM_LABELS[program]}
                                                         </span>
-                                                        <span className="truncate text-xs font-medium text-gray-900 dark:text-foreground">
+                                                        <span className="truncate text-xs font-medium text-foreground dark:text-foreground">
                                                             {getGroupDateText(g)}
                                                         </span>
                                                         {g.is_over ? (
@@ -1623,25 +1623,25 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
             {/* Week navigation */}
             {selectedGroupId && (
                 <div className="flex items-center gap-2 shrink-0">
-                    <div className="flex items-stretch rounded-lg border border-gray-200 dark:border-border overflow-hidden bg-white dark:bg-card">
+                    <div className="flex items-stretch rounded-lg border border-border overflow-hidden bg-card dark:bg-card">
                         <button
                             type="button"
                             onClick={() => setCurrentWeek(Math.max(1, currentWeek - 1))}
                             disabled={currentWeek <= 1}
                             title={currentWeek <= 1 ? t('Это первая неделя', 'This is the first week') : t('Предыдущая неделя', 'Previous week')}
-                            className="flex w-8 items-center justify-center border-r border-gray-200 dark:border-border text-muted-foreground hover:bg-gray-50 dark:hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed"
+                            className="flex w-8 items-center justify-center border-r border-border text-muted-foreground hover:bg-muted/60 disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                             <ChevronLeft className="w-4 h-4" />
                         </button>
 
                         <Select value={currentWeek.toString()} onValueChange={(val) => setCurrentWeek(parseInt(val))}>
-                            <SelectTrigger className="h-auto min-w-[150px] gap-2 border-none rounded-none px-3 py-1 focus:ring-0 shadow-none bg-transparent hover:bg-gray-50 dark:hover:bg-secondary">
+                            <SelectTrigger className="h-auto min-w-[150px] gap-2 border-none rounded-none px-3 py-1 focus:ring-0 shadow-none bg-transparent hover:bg-muted/60">
                                 <SelectValue>
                                     <div className="flex flex-col items-center leading-tight text-center">
-                                        <span className="text-xs font-semibold text-gray-900 dark:text-foreground">
+                                        <span className="text-xs font-semibold text-foreground dark:text-foreground">
                                             {t(`Неделя ${currentWeek}`, `Week ${currentWeek}`)}
                                             <span className="text-muted-foreground font-normal"> / {maxWeek}</span>
-                                            {isViewingCurrentWeek && <span className="ml-1 text-[9px] font-bold uppercase text-blue-500 dark:text-blue-400 align-middle">{t('сейчас', 'now')}</span>}
+                                            {isViewingCurrentWeek && <span className="ml-1 text-[9px] font-bold uppercase text-brand align-middle">{t('сейчас', 'now')}</span>}
                                         </span>
                                         <span className="text-[10px] text-muted-foreground">{viewedRangeLabel}</span>
                                     </div>
@@ -1653,7 +1653,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                         <span className="flex items-center gap-2">
                                             <span className="font-medium">{t(`Неделя ${w}`, `Week ${w}`)}</span>
                                             {selectedGroup && <span className="text-muted-foreground">{weekRangeLabel(groupWeekAnchor(selectedGroup), w, isTeacher)}</span>}
-                                            {w === realCurrentWeek && <span className="text-[9px] font-bold uppercase text-blue-500 dark:text-blue-400">{t('сейчас', 'now')}</span>}
+                                            {w === realCurrentWeek && <span className="text-[9px] font-bold uppercase text-brand">{t('сейчас', 'now')}</span>}
                                         </span>
                                     </SelectItem>
                                 ))}
@@ -1665,7 +1665,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                             onClick={() => setCurrentWeek(Math.min(maxWeek, currentWeek + 1))}
                             disabled={currentWeek >= maxWeek}
                             title={currentWeek >= maxWeek ? t('Это последняя неделя', 'This is the last week') : t('Следующая неделя', 'Next week')}
-                            className="flex w-8 items-center justify-center border-l border-gray-200 dark:border-border text-muted-foreground hover:bg-gray-50 dark:hover:bg-secondary disabled:opacity-30 disabled:cursor-not-allowed"
+                            className="flex w-8 items-center justify-center border-l border-border text-muted-foreground hover:bg-muted/60 disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                             <ChevronRight className="w-4 h-4" />
                         </button>
@@ -1685,7 +1685,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
 
                     {isIeltsGroup && (
                         <label
-                            className="flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-card px-2 h-8 cursor-pointer select-none"
+                            className="flex items-center gap-1.5 rounded-lg border border-border bg-card dark:bg-card px-2 h-8 cursor-pointer select-none"
                             title={t(
                                 'Автоматические задания «недельный тест IELTS» для этой группы (создаются при публикации набора на платформе).',
                                 'Auto-created "IELTS weekly test" assignments for this group (created when a set is published on the platform).',
@@ -1698,19 +1698,19 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 onChange={(e) => savePlatformTests(e.target.checked)}
                                 className="h-3.5 w-3.5"
                             />
-                            <span className="text-[10px] text-gray-500 dark:text-gray-400 whitespace-nowrap">{t('Авто-тесты', 'Auto tests')}</span>
+                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">{t('Авто-тесты', 'Auto tests')}</span>
                             {savingPlatformTests && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
                         </label>
                     )}
                     {isNuetGroup && (
                         <div
-                            className="flex items-center gap-1.5 rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-card px-2 h-8"
+                            className="flex items-center gap-1.5 rounded-lg border border-border bg-card dark:bg-card px-2 h-8"
                             title={t(
                                 'Смещение недели для NUET: контентная неделя = неделя − смещение. Укажите, если группа стартовала с середины недели (напр. 1).',
                                 'NUET week offset: content week = week − offset. Set this if the group started mid-week (e.g. 1).'
                             )}
                         >
-                            <span className="text-[10px] text-gray-500 dark:text-gray-400 whitespace-nowrap">{t('Смещение', 'Offset')}</span>
+                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">{t('Смещение', 'Offset')}</span>
                             <input
                                 type="number"
                                 min={0}
@@ -1723,7 +1723,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     if (v !== (selectedGroup?.weekly_set_week_offset ?? 0)) saveWeekOffset(v);
                                 }}
                                 onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                                className="w-10 text-center text-xs bg-transparent outline-none text-gray-900 dark:text-foreground"
+                                className="w-10 text-center text-xs bg-transparent outline-none text-foreground dark:text-foreground"
                             />
                             {savingOffset && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
                         </div>
@@ -1741,7 +1741,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       </div>
 
       {/* Spreadsheet Table */}
-      <div className="border border-gray-300 dark:border-border overflow-x-auto">
+      <div className="border border-border overflow-x-auto">
             {filteredGroups.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                     <p className="text-sm">{t('Нет групп по выбранным фильтрам', 'No groups match the filters')}</p>
@@ -1749,22 +1749,22 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                 </div>
             ) : loading || !data ? (
                 <Table className="border-collapse w-full text-xs">
-                    <TableHeader className="bg-gray-100 dark:bg-secondary sticky top-0 z-30">
-                        <TableRow className="h-auto border-b border-gray-300 dark:border-border hover:bg-gray-100 dark:hover:bg-secondary">
-                             <TableHead className="w-48 sticky left-0 z-40 bg-gray-100 dark:bg-secondary p-2 border-r border-gray-300 dark:border-border"><Skeleton className="h-4 w-20 bg-gray-200 dark:bg-gray-700" /></TableHead>
+                    <TableHeader className="bg-muted dark:bg-secondary sticky top-0 z-30">
+                        <TableRow className="h-auto border-b border-border hover:bg-muted dark:hover:bg-secondary">
+                             <TableHead className="w-48 sticky left-0 z-40 bg-muted dark:bg-secondary p-2 border-r border-border"><Skeleton className="h-4 w-20 bg-gray-200 dark:bg-muted" /></TableHead>
                              {/* Skeleton columns */}
                              {[1, 2, 3].map(i => (
-                                <TableHead key={i} className="p-0 border-r border-gray-300 dark:border-border h-12 min-w-[100px] align-middle bg-gray-100 dark:bg-secondary">
-                                   <div className="p-1 flex justify-center"><Skeleton className="h-3 w-12 bg-gray-200 dark:bg-gray-700" /></div>
+                                <TableHead key={i} className="p-0 border-r border-border h-12 min-w-[100px] align-middle bg-muted dark:bg-secondary">
+                                   <div className="p-1 flex justify-center"><Skeleton className="h-3 w-12 bg-gray-200 dark:bg-muted" /></div>
                                 </TableHead>
                             ))}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {Array.from({ length: 5 }).map((_, idx) => (
-                            <TableRow key={idx} className="border-b border-gray-300 dark:border-border h-8">
-                                <TableCell className="p-2 sticky left-0 z-30 bg-white dark:bg-card border-r border-gray-300 dark:border-border">
-                                    <Skeleton className="h-3 w-32 bg-gray-100 dark:bg-gray-700" />
+                            <TableRow key={idx} className="border-b border-border h-8">
+                                <TableCell className="p-2 sticky left-0 z-30 bg-card dark:bg-card border-r border-border">
+                                    <Skeleton className="h-3 w-32 bg-muted" />
                                 </TableCell>
                             </TableRow>
                         ))}
@@ -1772,29 +1772,29 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                 </Table>
             ) : (
             <Table className="border-collapse w-full text-xs">
-              <TableHeader className="bg-gray-100 dark:bg-secondary sticky top-0 z-30">
-                <TableRow className="h-auto border-b border-gray-300 dark:border-border hover:bg-gray-100 dark:hover:bg-secondary">
-                    <TableHead className="w-28 md:w-48 sticky left-0 z-40 bg-gray-100 dark:bg-secondary font-semibold text-gray-700 dark:text-gray-300 p-2 border-r border-gray-300 dark:border-border text-left align-middle text-center">
+              <TableHeader className="bg-muted dark:bg-secondary sticky top-0 z-30">
+                <TableRow className="h-auto border-b border-border hover:bg-muted dark:hover:bg-secondary">
+                    <TableHead className="w-28 md:w-48 sticky left-0 z-40 bg-muted dark:bg-secondary font-semibold text-foreground p-2 border-r border-border text-left align-middle text-center">
                         {t('Студент', 'Student')}
                     </TableHead>
                     {/* Dynamic Lesson Columns */}
                     {data.lessons.map(lesson => {
                         const lessonIsFuture = isAttendanceLockedLesson(lesson.start_datetime);
                         return (
-                        <TableHead key={`lesson-${lesson.lesson_number}`} className="p-0 text-center border-r border-gray-300 dark:border-border h-auto min-w-[168px] md:min-w-[196px] align-top bg-gray-100 dark:bg-secondary">
+                        <TableHead key={`lesson-${lesson.lesson_number}`} className="p-0 text-center border-r border-border h-auto min-w-[168px] md:min-w-[196px] align-top bg-muted dark:bg-secondary">
                             <div className="flex flex-col h-full">
                                 <div
                                     className={cn(
-                                        "py-2 border-b border-gray-300 dark:border-border font-semibold text-gray-700 dark:text-gray-300 bg-gray-200/50 dark:bg-gray-700/50 text-xs flex flex-col items-center relative group/lesson",
-                                        canMarkAttendance && !lessonIsFuture && "cursor-pointer hover:bg-gray-300/50 dark:hover:bg-gray-600/50"
+                                        "py-2 border-b border-border font-semibold text-foreground bg-gray-200/50 dark:bg-muted/60 text-xs flex flex-col items-center relative group/lesson",
+                                        canMarkAttendance && !lessonIsFuture && "cursor-pointer hover:bg-gray-300/50 dark:hover:bg-muted"
                                     )}
                                     onClick={() => markAllPresentForLesson(lesson)}
                                     title={canMarkAttendance && !lessonIsFuture ? t('Нажмите, чтобы отметить всех «Был»', 'Click to mark everyone Present') : undefined}
                                 >
                                     <span className="text-sm">{formatDateParts(lesson.start_datetime).date}</span>
-                                    <span className="text-[10px] font-normal text-gray-500 dark:text-gray-400 leading-tight uppercase">{formatDateParts(lesson.start_datetime).dayTime}</span>
+                                    <span className="text-[10px] font-normal text-muted-foreground leading-tight uppercase">{formatDateParts(lesson.start_datetime).dayTime}</span>
                                     {/* Слоты рендерятся всегда (invisible, когда пусто), чтобы шапки всех уроков были одной высоты */}
-                                    <span className={cn("text-[9px] font-normal text-blue-600 dark:text-blue-400 truncate max-w-[150px] leading-tight", !lesson.topic && "invisible")} title={lesson.topic ?? undefined}>{lesson.topic || '·'}</span>
+                                    <span className={cn("text-[9px] font-normal text-brand truncate max-w-[150px] leading-tight", !lesson.topic && "invisible")} title={lesson.topic ?? undefined}>{lesson.topic || '·'}</span>
                                     {/* Замена: показываем имя подменяющего учителя под датой (тот же приём с invisible-слотом) */}
                                     <span
                                         className={cn("text-[9px] font-medium text-amber-600 dark:text-amber-400 truncate max-w-[150px] leading-tight", !lesson.substitute_teacher_name && "invisible")}
@@ -1804,14 +1804,14 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     </span>
                                     {canMarkAttendance && (
                                         <span className={cn("mt-0.5 flex items-center gap-1.5 leading-tight", lessonIsFuture && "invisible")}>
-                                            <span className="text-[9px] font-bold uppercase tracking-tight text-blue-600 dark:text-blue-400">
+                                            <span className="text-[9px] font-bold uppercase tracking-tight text-brand">
                                                 {t('Отметить всех', 'Mark all')}
                                             </span>
                                             {/* «Баллы за урок» (2026-09-28): the whole lesson's scores on one screen, from its start. */}
                                             {lesson.event_id && !(isTeacher && lesson.is_substitution) && (
                                                 <button
                                                     type="button"
-                                                    className="inline-flex items-center gap-0.5 rounded px-1 text-[9px] font-bold uppercase tracking-tight text-yellow-600 hover:bg-yellow-100 dark:text-yellow-400 dark:hover:bg-yellow-900/30"
+                                                    className="inline-flex items-center gap-0.5 rounded px-1 text-[9px] font-bold uppercase tracking-tight text-yellow-600 hover:bg-yellow-100 hover:dark:bg-yellow-500/15 dark:text-yellow-400 dark:hover:bg-yellow-900/30"
                                                     title={t('Баллы за активность для всего урока', 'Activity scores for the whole lesson')}
                                                     onClick={(e) => { e.stopPropagation(); setScoresLesson(lesson); }}
                                                 >
@@ -1826,7 +1826,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                         <Link
                                             to={lessonPath(lesson.event_id)}
                                             onClick={(e) => e.stopPropagation()}
-                                            className="absolute top-1 right-1 p-1 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+                                            className="absolute top-1 right-1 p-1 text-muted-foreground hover:text-brand"
                                             title={t('Открыть урок', 'Open lesson')}
                                             aria-label={t('Открыть урок', 'Open lesson')}
                                         >
@@ -1836,7 +1836,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     {canMarkAttendance && (
                                         <button
                                             type="button"
-                                            className="absolute top-1 right-6 p-1 text-muted-foreground hover:text-blue-500 opacity-100 md:opacity-0 md:group-hover/lesson:opacity-100 transition-opacity"
+                                            className="absolute top-1 right-6 p-1 text-muted-foreground hover:text-brand opacity-100 md:opacity-0 md:group-hover/lesson:opacity-100 transition-opacity"
                                             title={t('Тема урока', 'Lesson topic')}
                                             onClick={(e) => { e.stopPropagation(); setTopicModal({ open: true, lesson, value: lesson.topic ?? '' }); }}
                                         >
@@ -1852,20 +1852,20 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     />
                                 </div>
                                 <div className="flex flex-1 items-stretch">
-                                    <div className="w-1/2 py-2 text-[10px] font-bold text-gray-600 dark:text-gray-400 border-r border-gray-300 dark:border-border text-center uppercase tracking-tighter flex items-center justify-center">
+                                    <div className="w-1/2 py-2 text-[10px] font-bold text-muted-foreground border-r border-border text-center uppercase tracking-tighter flex items-center justify-center">
                                         {t('Урок', 'Lesson')}
                                     </div>
                                     {lessonHomeworks(lesson).length === 0 && canAssignHw && selectedGroupId ? (
                                         <button
                                             type="button"
-                                            className="w-1/2 py-2 text-[10px] font-bold bg-gray-50 dark:bg-secondary text-center uppercase tracking-tighter flex items-center justify-center gap-0.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                                            className="w-1/2 py-2 text-[10px] font-bold bg-gray-50 dark:bg-secondary text-center uppercase tracking-tighter flex items-center justify-center gap-0.5 text-brand hover:bg-brand-surface transition-colors"
                                             title={t('Задать ДЗ к этому уроку', 'Assign homework for this lesson')}
                                             onClick={() => navigate(`/homework/new/group/${selectedGroupId}?lesson_number=${lesson.lesson_number}`)}
                                         >
                                             <Plus className="w-3 h-3" />{t('Задать', 'Assign')}
                                         </button>
                                     ) : (
-                                    <div className="w-1/2 py-2 text-[10px] font-bold text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-secondary text-center uppercase tracking-tighter flex items-center justify-center" title={lessonHomeworks(lesson).map(h => h.title).join(', ') || t("Без ДЗ", "No homework")}>
+                                    <div className="w-1/2 py-2 text-[10px] font-bold text-muted-foreground bg-gray-50 dark:bg-secondary text-center uppercase tracking-tighter flex items-center justify-center" title={lessonHomeworks(lesson).map(h => h.title).join(', ') || t("Без ДЗ", "No homework")}>
                                         {lessonHomeworks(lesson).length > 1 ? t(`ДЗ (${lessonHomeworks(lesson).length})`, `HW (${lessonHomeworks(lesson).length})`) : t('ДЗ', 'HW')}
                                     </div>
                                     )}
@@ -1878,7 +1878,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     {/* Ручные кураторские колонки не показываем учителям — их зона это уроки и тесты */}
                     {!isTeacher && (
                     <TableHead
-                        className={cn("text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-gray-200 dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.curator_hour && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-muted-foreground")}
+                        className={cn("text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-muted dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.curator_hour && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-muted-foreground")}
                         onClick={() => toggleColumn('curator_hour')}
                         title={enabledCols.curator_hour ? "Нажмите, чтобы скрыть" : "Нажмите, чтобы показать"}
                     >
@@ -1886,7 +1886,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                             <span>Час<br/>куратора</span>
                             <Input
                                 type="date"
-                                className="h-6 w-24 text-[10px] p-1 mt-1 border-gray-300 dark:border-border"
+                                className="h-6 w-24 text-[10px] p-1 mt-1 border-border"
                                 value={enabledCols.curator_hour_date || ''}
                                 disabled={isTeacher}
                                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
@@ -1911,21 +1911,21 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     )}
                     {showExamSections ? (
                         <>
-                            <TableHead className="text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight">
+                            <TableHead className="text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight">
                                 {examLabel} Math
                             </TableHead>
-                            <TableHead className="text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight">
+                            <TableHead className="text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight">
                                 {examLabel} Verbal
                             </TableHead>
                         </>
                     ) : isIeltsGroup ? (
-                        <TableHead className="text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight">IELTS</TableHead>
+                        <TableHead className="text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight">IELTS</TableHead>
                     ) : (
-                        <TableHead className="text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight">{isTeacher ? <>Mock<br/>exam</> : <>Пробный<br/>экзамен</>}</TableHead>
+                        <TableHead className="text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight">{isTeacher ? <>Mock<br/>exam</> : <>Пробный<br/>экзамен</>}</TableHead>
                     )}
                     {!isTeacher && (<>
                     <TableHead
-                        className={cn("text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-gray-200 dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.study_buddy && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-muted-foreground")}
+                        className={cn("text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-muted dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.study_buddy && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-muted-foreground")}
                         onClick={() => toggleColumn('study_buddy')}
                         title={enabledCols.study_buddy ? "Нажмите, чтобы скрыть" : "Нажмите, чтобы показать"}
                     >
@@ -1938,7 +1938,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                         </div>
                     </TableHead>
                     <TableHead 
-                        className={cn("text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-gray-200 dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.self_reflection_journal && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-muted-foreground")}
+                        className={cn("text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-muted dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.self_reflection_journal && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-muted-foreground")}
                         onClick={() => toggleColumn('self_reflection_journal')}
                         title={enabledCols.self_reflection_journal ? "Нажмите, чтобы скрыть" : "Нажмите, чтобы показать"}
                     >
@@ -1951,7 +1951,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                         </div>
                     </TableHead>
                     <TableHead 
-                        className={cn("text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-gray-200 dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.weekly_evaluation && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-muted-foreground")}
+                        className={cn("text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-muted dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.weekly_evaluation && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-muted-foreground")}
                         onClick={() => toggleColumn('weekly_evaluation')}
                         title={enabledCols.weekly_evaluation ? "Нажмите, чтобы скрыть" : "Нажмите, чтобы показать"}
                     >
@@ -1964,7 +1964,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                         </div>
                     </TableHead>
                     <TableHead 
-                        className={cn("text-center font-semibold p-2 w-28 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-gray-200 dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.extra_points && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-muted-foreground")}
+                        className={cn("text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-muted dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.extra_points && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-muted-foreground")}
                         onClick={() => toggleColumn('extra_points')}
                         title={enabledCols.extra_points ? "Нажмите, чтобы скрыть" : "Нажмите, чтобы показать"}
                     >
@@ -1978,16 +1978,16 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     </TableHead>
                     </>)}
 
-                    <TableHead className="text-center font-bold p-2 w-16 text-gray-800 dark:text-foreground bg-gray-100 dark:bg-secondary border-r border-gray-300 dark:border-border align-middle">{t('Итого', 'Total')}</TableHead>
-                    <TableHead className="text-center font-bold p-2 w-16 md:sticky md:right-0 z-40 bg-gray-100 dark:bg-secondary align-middle md:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">%</TableHead>
+                    <TableHead className="text-center font-bold p-2 w-16 text-foreground dark:text-foreground bg-muted dark:bg-secondary border-r border-border align-middle">{t('Итого', 'Total')}</TableHead>
+                    <TableHead className="text-center font-bold p-2 w-16 md:sticky md:right-0 z-40 bg-muted dark:bg-secondary align-middle md:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">%</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {data.students.map((student, index) => {
                     const percent = calculatePercent(student);
                     return (
-                    <TableRow key={student.student_id} className="hover:bg-blue-50/50 dark:hover:bg-secondary/50 border-b border-gray-300 dark:border-border h-16">
-                        <TableCell className="p-2 sticky left-0 z-30 bg-white dark:bg-card border-r border-gray-300 dark:border-border">
+                    <TableRow key={student.student_id} className="hover:bg-brand-surface/50 dark:hover:bg-secondary/50 border-b border-border h-16">
+                        <TableCell className="p-2 sticky left-0 z-30 bg-card dark:bg-card border-r border-border">
                              <div className="flex items-center gap-2">
                                 <span className="text-[10px] text-muted-foreground w-4 text-right font-mono">{index + 1}</span>
                                 <UserAvatar userId={student.student_id} name={student.student_name} avatarUrl={student.avatar_url} mascot={student.mascot} isStudent size={26} className="hidden md:block" />
@@ -1995,7 +1995,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     type="button"
                                     onClick={() => setStudentHwModal({ open: true, studentId: student.student_id, studentName: student.student_name })}
                                     title={t(`${student.student_name} — все домашние задания`, `${student.student_name} — all homework`)}
-                                    className="group flex items-center gap-1 truncate max-w-[84px] md:max-w-[150px] font-medium text-gray-900 dark:text-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:underline transition-colors"
+                                    className="group flex items-center gap-1 truncate max-w-[84px] md:max-w-[150px] font-medium text-foreground dark:text-foreground hover:text-brand hover:underline transition-colors"
                                 >
                                     <span className="truncate">{student.student_name}</span>
                                     {student.freeze?.is_frozen && (
@@ -2009,7 +2009,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                             {student.freeze.label}
                                         </span>
                                     )}
-                                    <ClipboardList className="w-3 h-3 shrink-0 text-gray-300 group-hover:text-blue-500 dark:text-gray-600 dark:group-hover:text-blue-400" />
+                                    <ClipboardList className="w-3 h-3 shrink-0 text-muted-foreground/50 group-hover:text-brand " />
                                 </button>
                             </div>
                         </TableCell>
@@ -2034,28 +2034,28 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                             const needsScore = scoreDue(meetDecidedLessons.has(lessonInfo.event_id ?? -1), status, lessonStatus?.activity_score);
 
                             return (
-                                <TableCell key={`cell-${lessonKey}`} className="p-0 border-r border-gray-300 dark:border-border">
+                                <TableCell key={`cell-${lessonKey}`} className="p-0 border-r border-border">
                                     <div className="flex w-full h-16 items-stretch">
                                         {preEnroll ? (
                                         <div
-                                            className="w-1/2 border-r border-gray-300 dark:border-border flex items-center justify-center text-[11px] text-gray-300 dark:text-gray-600 select-none"
+                                            className="w-1/2 border-r border-border flex items-center justify-center text-[11px] text-muted-foreground/50 select-none"
                                             title={t('Ученик ещё не был в группе на этом уроке', 'Student had not joined the group for this lesson')}
                                         >—</div>
                                         ) : frozenLesson ? (
                                         <div
-                                            className="w-1/2 border-r border-gray-300 dark:border-border flex items-center justify-center bg-sky-50 dark:bg-sky-950/30 text-[10px] text-sky-700 dark:text-sky-300 select-none"
+                                            className="w-1/2 border-r border-border flex items-center justify-center bg-sky-50 dark:bg-sky-950/30 text-[10px] text-sky-700 dark:text-sky-300 select-none"
                                             title={t('Ученик был на заморозке — урок не учитывается', 'Student was frozen — the lesson does not count')}
                                         >{t('Заморозка', 'Frozen')}</div>
                                         ) : blockedLesson ? (
                                         <div
-                                            className="w-1/2 border-r border-gray-300 dark:border-border flex items-center justify-center bg-amber-50 dark:bg-amber-950/30 text-[10px] text-amber-800 dark:text-amber-300 select-none"
+                                            className="w-1/2 border-r border-border flex items-center justify-center bg-amber-50 dark:bg-amber-950/30 text-[10px] text-amber-800 dark:text-amber-300 select-none"
                                             title={t('Доступ к платформе был закрыт (не продлил) — урок не учитывается', 'Platform access was off (not renewed) — the lesson does not count')}
                                         >{t('Нет доступа', 'No access')}</div>
                                         ) : unmarked ? (
                                         <div
                                             className={cn(
-                                                "relative w-1/2 border-r border-gray-300 dark:border-border flex items-center justify-center p-1",
-                                                canMarkAttendance ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-secondary/40 transition-colors" : "cursor-default"
+                                                "relative w-1/2 border-r border-border flex items-center justify-center p-1",
+                                                canMarkAttendance ? "cursor-pointer hover:bg-muted/60 transition-colors" : "cursor-default"
                                             )}
                                             onClick={() => { if (canMarkAttendance) handleAttendanceChange(student.student_id, lessonKey, 'attended'); }}
                                             title={(canMarkAttendance
@@ -2065,7 +2065,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                     ? `\n${verdictNote(meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`), isTeacher ? 'en' : 'ru')}`
                                                     : '')}
                                         >
-                                            <span className="w-full text-center text-[9px] md:text-[10px] leading-tight font-semibold uppercase text-muted-foreground border border-dashed border-gray-300 dark:border-border rounded px-1 py-1">
+                                            <span className="w-full text-center text-[9px] md:text-[10px] leading-tight font-semibold uppercase text-muted-foreground border border-dashed border-border rounded px-1 py-1">
                                                 {registerMode === 'live' && meetLessonState.get(lessonInfo.event_id ?? -1) === 'waiting'
                                                     ? (isTeacher ? <>Meet<br/>will mark</> : <>Meet<br/>отметит</>)
                                                     : (isTeacher ? <>Not<br/>marked</> : <>Не<br/>отмечено</>)}
@@ -2075,14 +2075,14 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                             )}
                                             {/* A score given before Meet marked the student waits here and stays. */}
                                             {lessonStatus?.activity_score != null && (
-                                                <span className="absolute top-0 right-0 text-[10px] px-1.5 bg-yellow-400 text-gray-900 rounded-bl font-bold pointer-events-none" title={t(`Активность: ${lessonStatus.activity_score}/10`, `Activity: ${lessonStatus.activity_score}/10`)}>
+                                                <span className="absolute top-0 right-0 text-[10px] px-1.5 bg-yellow-400 text-yellow-950 rounded-bl font-bold pointer-events-none" title={t(`Активность: ${lessonStatus.activity_score}/10`, `Activity: ${lessonStatus.activity_score}/10`)}>
                                                     {lessonStatus.activity_score}
                                                 </span>
                                             )}
                                         </div>
                                         ) : (
                                         <div
-                                            className="w-1/2 border-r border-gray-300 dark:border-border relative group/att"
+                                            className="w-1/2 border-r border-border relative group/att"
                                             onContextMenu={(e) => {
                                                 if (!canMarkAttendance || !lessonStatus || cellIsFuture) return;
                                                 e.preventDefault();
@@ -2123,7 +2123,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                 return (
                                                     <span
                                                         key={f.code}
-                                                        className={`absolute left-0.5 top-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full ring-2 ring-white dark:ring-card pointer-events-auto ${f.review ? 'bg-slate-400 dark:bg-slate-500' : 'bg-rose-600'}`}
+                                                        className={`absolute left-0.5 top-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full ring-2 ring-white dark:ring-card pointer-events-auto ${f.review ? 'bg-muted-foreground/60 dark:bg-slate-500' : 'bg-rose-600'}`}
                                                         title={`Meet: ${t(flagTextRu(f), flagText(f))}${answered}`}
                                                         aria-label={f.review
                                                             ? t('Расхождение с Meet проверено', 'Mark disagreement reviewed')
@@ -2134,7 +2134,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                 );
                                             })}
                                             {lessonStatus?.activity_score != null && (
-                                                <span className="absolute top-0 right-0 text-[10px] px-1.5 bg-yellow-400 text-gray-900 rounded-bl font-bold pointer-events-none" title={t(`Активность: ${lessonStatus.activity_score}/10`, `Activity: ${lessonStatus.activity_score}/10`)}>
+                                                <span className="absolute top-0 right-0 text-[10px] px-1.5 bg-yellow-400 text-yellow-950 rounded-bl font-bold pointer-events-none" title={t(`Активность: ${lessonStatus.activity_score}/10`, `Activity: ${lessonStatus.activity_score}/10`)}>
                                                     {lessonStatus.activity_score}
                                                 </span>
                                             )}
@@ -2171,14 +2171,14 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                         <div className="w-1/2 bg-gray-50 dark:bg-secondary flex items-center justify-center p-0">
                                             {(() => {
                                                 if (preEnroll) {
-                                                    return <span className="w-full text-center text-[11px] text-gray-300 dark:text-gray-600 select-none">—</span>;
+                                                    return <span className="w-full text-center text-[11px] text-muted-foreground/50 select-none">—</span>;
                                                 }
                                                 const hws = lessonHomeworks(lessonInfo);
                                                 if (hws.length === 0) {
                                                     // Для учителя «Не задано» — сигнал (ДЗ не создано); кнопка Assign живёт в шапке колонки
                                                     return <span className={cn(
                                                         "w-full text-center text-[11px] italic leading-tight",
-                                                        isTeacher ? "text-rose-500 dark:text-rose-400 font-medium" : "text-gray-300 dark:text-gray-600"
+                                                        isTeacher ? "text-rose-500 dark:text-rose-400 font-medium" : "text-muted-foreground/50"
                                                     )}>{isTeacher ? <>Not<br/>assigned</> : <>Не<br/>задано</>}</span>;
                                                 }
                                                 const statuses = lessonHwStatuses(lessonStatus);
@@ -2211,9 +2211,9 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                                     className={cn(
                                                                         "flex-1 min-h-0 w-full text-center flex items-center justify-center",
                                                                         single ? "text-[11px]" : rows.length > 2 ? "text-[9px]" : "text-[10px]",
-                                                                        !single && i > 0 && "border-t border-gray-200 dark:border-border/60",
+                                                                        !single && i > 0 && "border-t border-border/60",
                                                                         submitted ? "text-green-700 dark:text-green-400 font-bold" : "text-muted-foreground",
-                                                                        submitted && "cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+                                                                        submitted && "cursor-pointer hover:bg-green-100 hover:dark:bg-green-500/15 dark:hover:bg-green-900/30 transition-colors"
                                                                     )}
                                                                     onClick={() => { if (submitted && st) openFeedback(hw, st); }}
                                                                     title={submitted
@@ -2260,7 +2260,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                         })}
 
                         {!isTeacher && (
-                        <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border h-16", !enabledCols.curator_hour && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
+                        <TableCell className={cn("p-0 border-r border-border h-16", !enabledCols.curator_hour && "bg-muted dark:bg-secondary opacity-50 pointer-events-none")}>
                             <ScoreSelect value={student.curator_hour} max={MAX_SCORES.curator_hour} onChange={(v) => handleManualScoreChange(student.student_id, 'curator_hour', v)} disabled={isTeacher} />
                         </TableCell>
                         )}
@@ -2271,11 +2271,11 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     const verbalHasData = student.sat_verbal_correct_count != null;
                                     return (
                                         <>
-                                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-16">
+                                            <TableCell className="p-0 border-r border-border h-16">
                                                 <div
                                                     className={cn(
                                                         "w-full h-full flex items-center justify-center text-xs font-semibold transition-colors",
-                                                        mathHasData ? "cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20" : ""
+                                                        mathHasData ? "cursor-pointer hover:bg-brand-surface" : ""
                                                     )}
                                                     onClick={() => {
                                                         if (!mathHasData) return
@@ -2297,11 +2297,11 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                     {renderExamSectionContent(student.sat_math_correct_count, student.sat_math_total_count)}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-16">
+                                            <TableCell className="p-0 border-r border-border h-16">
                                                 <div
                                                     className={cn(
                                                         "w-full h-full flex items-center justify-center text-xs font-semibold transition-colors",
-                                                        verbalHasData ? "cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20" : ""
+                                                        verbalHasData ? "cursor-pointer hover:bg-brand-surface" : ""
                                                     )}
                                                     onClick={() => {
                                                         if (!verbalHasData) return
@@ -2328,12 +2328,12 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 })()}
                             </>
                         ) : isIeltsGroup ? (
-                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-16">
+                            <TableCell className="p-0 border-r border-border h-16">
                                 <div
                                     className={cn(
                                         "w-full h-full flex items-center justify-center text-xs font-semibold transition-colors",
                                         hasIeltsData(student)
-                                            ? "cursor-pointer hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                                            ? "cursor-pointer hover:bg-emerald-50 hover:dark:bg-emerald-500/15 dark:hover:bg-emerald-900/20"
                                             : ""
                                     )}
                                     onClick={() => {
@@ -2344,7 +2344,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     title={hasIeltsData(student) ? 'Click to see IELTS results and feedback' : undefined}
                                 >
                                     {student.ielts_overall_band != null ? (
-                                        <span className="text-gray-900 dark:text-foreground">{formatBand(student.ielts_overall_band)}</span>
+                                        <span className="text-foreground dark:text-foreground">{formatBand(student.ielts_overall_band)}</span>
                                     ) : (student.ielts_speaking_status && student.ielts_speaking_status !== 'completed') ? (
                                         (() => {
                                             const meta = SPEAKING_STATUS_META[student.ielts_speaking_status!];
@@ -2360,17 +2360,17 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                             );
                                         })()
                                     ) : hasIeltsData(student) ? (
-                                        <span className="text-gray-500 dark:text-gray-400">—</span>
+                                        <span className="text-muted-foreground">—</span>
                                     ) : (
                                         <span className="text-muted-foreground italic">{t('Не сдано', 'Not taken')}</span>
                                     )}
                                 </div>
                             </TableCell>
                         ) : (
-                            <TableCell className="p-0 border-r border-gray-300 dark:border-border h-16">
+                            <TableCell className="p-0 border-r border-border h-16">
                                 <div className="w-full h-full flex items-center justify-center text-xs font-medium">
                                     {student.mock_exam > 0 ? (
-                                        <span className="text-gray-900 dark:text-foreground">{student.mock_exam}%</span>
+                                        <span className="text-foreground dark:text-foreground">{student.mock_exam}%</span>
                                     ) : (
                                         <span className="text-muted-foreground italic">{t('Не сдано', 'Not taken')}</span>
                                     )}
@@ -2378,7 +2378,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                             </TableCell>
                         )}
                         {!isTeacher && (<>
-                        <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border", !enabledCols.study_buddy && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
+                        <TableCell className={cn("p-0 border-r border-border", !enabledCols.study_buddy && "bg-muted dark:bg-secondary opacity-50 pointer-events-none")}>
                             <div className="h-16 w-full">
                                 <AttendanceToggle
                                     initialStatus={student.study_buddy === 15 ? 'attended' : 'absent'}
@@ -2387,18 +2387,18 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 />
                             </div>
                         </TableCell>
-                        <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border", !enabledCols.self_reflection_journal && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
+                        <TableCell className={cn("p-0 border-r border-border", !enabledCols.self_reflection_journal && "bg-muted dark:bg-secondary opacity-50 pointer-events-none")}>
                             <ScoreSelect value={student.self_reflection_journal} max={MAX_SCORES.self_reflection_journal} onChange={(v) => handleManualScoreChange(student.student_id, 'self_reflection_journal', v)} disabled={isTeacher} />
                         </TableCell>
-                        <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border", !enabledCols.weekly_evaluation && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
+                        <TableCell className={cn("p-0 border-r border-border", !enabledCols.weekly_evaluation && "bg-muted dark:bg-secondary opacity-50 pointer-events-none")}>
                             <ScoreSelect value={student.weekly_evaluation} max={MAX_SCORES.weekly_evaluation} onChange={(v) => handleManualScoreChange(student.student_id, 'weekly_evaluation', v)} disabled={isTeacher} />
                         </TableCell>
-                        <TableCell className={cn("p-0 border-r border-gray-300 dark:border-border", !enabledCols.extra_points && "bg-gray-100 dark:bg-secondary opacity-50 pointer-events-none")}>
+                        <TableCell className={cn("p-0 border-r border-border", !enabledCols.extra_points && "bg-muted dark:bg-secondary opacity-50 pointer-events-none")}>
                             <ScoreSelect value={student.extra_points} max={10} onChange={(v) => handleManualScoreChange(student.student_id, 'extra_points', v)} disabled={isTeacher} />
                         </TableCell>
                         </>)}
 
-                        <TableCell className="p-2 text-center font-semibold text-gray-900 dark:text-foreground border-r border-gray-300 dark:border-border bg-white dark:bg-card">
+                        <TableCell className="p-2 text-center font-semibold text-foreground dark:text-foreground border-r border-border bg-card dark:bg-card">
                             {calculateTotal(student)}
                         </TableCell>
                          <TableCell className={cn(
@@ -2421,9 +2421,9 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
     <Dialog open={hwModal.open} onOpenChange={(open) => setHwModal(prev => ({ ...prev, open }))}>
       <DialogContent className="sm:max-w-md p-0 overflow-hidden">
         {/* Header */}
-        <div className="px-5 pt-5 pb-4 border-b border-gray-100 dark:border-border">
+        <div className="px-5 pt-5 pb-4 border-b border-border">
           <p className="text-xs text-muted-foreground mb-0.5">{hwModal.lessonTitle}</p>
-          <h2 className="text-base font-semibold text-gray-900 dark:text-foreground">{hwModal.studentName}</h2>
+          <h2 className="text-base font-semibold text-foreground dark:text-foreground">{hwModal.studentName}</h2>
           {hwModal.submittedAt && (
             <p className="text-xs text-muted-foreground mt-1">
               Submitted {new Date(hwModal.submittedAt).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
@@ -2452,7 +2452,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         {/* Feedback body */}
         <div className="px-5 py-4">
           {hwModal.feedback ? (
-            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">
+            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
               {hwModal.feedback}
             </p>
           ) : (
@@ -2466,12 +2466,12 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
     <Dialog open={satModal.open} onOpenChange={(open) => setSatModal(prev => ({ ...prev, open }))}>
       <DialogContent className="sm:max-w-xl p-0 overflow-hidden max-h-[85vh] flex flex-col">
         {/* Header */}
-        <div className="px-5 pt-5 pb-4 border-b border-gray-100 dark:border-border shrink-0">
+        <div className="px-5 pt-5 pb-4 border-b border-border shrink-0">
           <div className="flex items-center gap-2 mb-0.5">
             <span className={cn(
               "text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded",
               satModal.section === 'math'
-                ? "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400"
+                ? "bg-brand-subtle text-brand"
                 : "bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400"
             )}>
               {examLabel} {satModal.section === 'math' ? 'Math' : 'Verbal'}
@@ -2482,7 +2482,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
               </span>
             )}
           </div>
-          <h2 className="text-base font-semibold text-gray-900 dark:text-foreground">{satModal.studentName}</h2>
+          <h2 className="text-base font-semibold text-foreground dark:text-foreground">{satModal.studentName}</h2>
           {satModal.testName && (
             <p className="text-xs text-muted-foreground mt-0.5">{satModal.testName}</p>
           )}
@@ -2492,18 +2492,18 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         <div className={cn(
           "flex items-center gap-3 px-5 py-3 shrink-0",
           satModal.section === 'math'
-            ? "bg-blue-50 dark:bg-blue-900/20"
+            ? "bg-brand-surface"
             : "bg-purple-50 dark:bg-purple-900/20"
         )}>
           <span className={cn(
             "text-2xl font-bold tabular-nums",
-            satModal.section === 'math' ? "text-blue-700 dark:text-blue-400" : "text-purple-700 dark:text-purple-400"
+            satModal.section === 'math' ? "text-brand-subtle-foreground" : "text-purple-700 dark:text-purple-400"
           )}>
             {satModal.correct ?? '—'}
           </span>
           <span className="text-muted-foreground text-sm">/ {satModal.total ?? '—'}</span>
           {satModal.correct != null && satModal.total ? (
-            <span className="ml-auto text-sm font-medium text-gray-500 dark:text-gray-400">
+            <span className="ml-auto text-sm font-medium text-muted-foreground">
               {Math.round((satModal.correct / satModal.total) * 100)}%
             </span>
           ) : null}
@@ -2523,8 +2523,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                       className={cn(
                         "px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors",
                         satFeedbackLang === lang
-                          ? "bg-gray-900 text-white dark:bg-foreground dark:text-background"
-                          : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-secondary dark:text-gray-400 dark:hover:bg-secondary/80"
+                          ? "bg-foreground text-background"
+                          : "bg-muted text-muted-foreground hover:bg-muted dark:bg-secondary dark:hover:bg-secondary/80"
                       )}
                     >
                       {label}
@@ -2584,20 +2584,20 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
           return (
             <>
               {/* Header */}
-              <div className="px-5 pt-5 pb-4 border-b border-gray-100 dark:border-border shrink-0">
+              <div className="px-5 pt-5 pb-4 border-b border-border shrink-0">
                 <div className="flex items-center gap-2 mb-0.5">
                   <span className="text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400">
                     IELTS
                   </span>
                 </div>
-                <h2 className="text-base font-semibold text-gray-900 dark:text-foreground">{s.student_name}</h2>
+                <h2 className="text-base font-semibold text-foreground dark:text-foreground">{s.student_name}</h2>
               </div>
 
               {/* Band strip */}
               <div className="flex items-center gap-2 px-5 py-3 bg-emerald-50 dark:bg-emerald-900/20 shrink-0">
                 {bands.map(b => (
                   <div key={b.label} className="flex flex-col items-center flex-1">
-                    <span className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">{b.label.slice(0, 1)}</span>
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{b.label.slice(0, 1)}</span>
                     <span className={cn(
                       "text-sm font-bold tabular-nums",
                       b.value != null ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"
@@ -2607,7 +2607,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                   </div>
                 ))}
                 <div className="flex flex-col items-center flex-1 border-l border-emerald-200 dark:border-emerald-800 pl-2">
-                  <span className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Overall</span>
+                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Overall</span>
                   <span className={cn(
                     "text-2xl font-bold tabular-nums",
                     s.ielts_overall_band != null ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"
@@ -2626,7 +2626,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                 const sessionAt = formatSpeakingSessionAt(s.ielts_speaking_session_at);
                 const isAi = s.ielts_speaking_source === 'ai';
                 return (
-                  <div className="px-5 py-3 border-b border-gray-100 dark:border-border shrink-0">
+                  <div className="px-5 py-3 border-b border-border shrink-0">
                     <div className="flex items-start gap-2.5">
                       <span className="mt-0.5 shrink-0">
                         {isAi
@@ -2635,7 +2635,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                       </span>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
+                          <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                             Speaking
                           </span>
                           <span className={cn(
@@ -2652,13 +2652,13 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                             </span>
                           )}
                         </div>
-                        <div className="mt-1 text-sm text-gray-700 dark:text-gray-300">
+                        <div className="mt-1 text-sm text-foreground">
                           {isAi ? (
                             <>
                               {s.ielts_speaking_band != null ? (
                                 <>Оценка ИИ: <span className="font-semibold tabular-nums">{formatBand(s.ielts_speaking_band)}</span></>
                               ) : (
-                                <span className="text-gray-500 dark:text-gray-400">Оценка ИИ ещё не готова</span>
+                                <span className="text-muted-foreground">Оценка ИИ ещё не готова</span>
                               )}
                               {s.ielts_speaking_test_name && (
                                 <span className="text-muted-foreground"> · {s.ielts_speaking_test_name}</span>
@@ -2668,7 +2668,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                             <>
                               {s.ielts_speaking_examiner && <span className="font-medium">{s.ielts_speaking_examiner}</span>}
                               {sessionAt && (
-                                <span className={s.ielts_speaking_examiner ? "text-gray-500 dark:text-gray-400" : ""}>
+                                <span className={s.ielts_speaking_examiner ? "text-muted-foreground" : ""}>
                                   {s.ielts_speaking_examiner ? ' · ' : ''}{sessionAt}
                                 </span>
                               )}
@@ -2676,7 +2676,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 <span> · <span className="font-semibold tabular-nums">{formatBand(s.ielts_speaking_band)}</span></span>
                               )}
                               {!s.ielts_speaking_examiner && !sessionAt && s.ielts_speaking_band == null && meta && (
-                                <span className="text-gray-500 dark:text-gray-400">{meta.label}</span>
+                                <span className="text-muted-foreground">{meta.label}</span>
                               )}
                             </>
                           )}
@@ -2699,8 +2699,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                         className={cn(
                           "px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors",
                           ieltsFeedbackLang === lang
-                            ? "bg-gray-900 text-white dark:bg-foreground dark:text-background"
-                            : "bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-secondary dark:text-gray-400 dark:hover:bg-secondary/80"
+                            ? "bg-foreground text-background"
+                            : "bg-muted text-muted-foreground hover:bg-muted dark:bg-secondary dark:hover:bg-secondary/80"
                         )}
                       >
                         {label}
@@ -2710,22 +2710,22 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                 )}
                 {examFeedbacks.filter(f => f.text).map(f => (
                   <div key={f.label}>
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
                       {f.label} feedback{f.testName ? ` · ${f.testName}` : ''}
                     </h3>
-                    <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{f.text}</p>
+                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{f.text}</p>
                   </div>
                 ))}
                 {hasWritingFb && (
                   <div>
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
                       Writing feedback{s.ielts_writing_test_name ? ` · ${s.ielts_writing_test_name}` : ''}
                     </h3>
                     <div className="space-y-3">
                       {writingTasks.filter(t => t.text).map(t => (
                         <div key={t.label}>
-                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">{t.label}</p>
-                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{t.text}</p>
+                          <p className="text-xs font-semibold text-foreground mb-1">{t.label}</p>
+                          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{t.text}</p>
                         </div>
                       ))}
                     </div>
@@ -2733,14 +2733,14 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                 )}
                 {hasSpeakingFb && (
                   <div>
-                    <h3 className="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-2">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
                       Speaking feedback{s.ielts_speaking_test_name ? ` · ${s.ielts_speaking_test_name}` : ''}
                     </h3>
                     <div className="space-y-3">
                       {speakingCriteria.filter(c => c.text).map(c => (
                         <div key={c.label}>
-                          <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">{c.label}</p>
-                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{c.text}</p>
+                          <p className="text-xs font-semibold text-foreground mb-1">{c.label}</p>
+                          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{c.text}</p>
                         </div>
                       ))}
                     </div>
@@ -2770,7 +2770,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
           <DialogTitle>{t('Балл за активность', 'Activity Score')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-muted-foreground">
             {t('Балл за активность для', 'Set activity score for')} <strong>{activityModal.studentName}</strong>
           </p>
           <div className="flex flex-wrap gap-2 justify-center">
@@ -2789,14 +2789,14 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
               </Button>
             ))}
           </div>
-          <div className="mt-3 rounded-lg bg-gray-50 dark:bg-secondary border border-gray-200 dark:border-border p-3 text-xs text-gray-500 dark:text-gray-400 space-y-1">
-            <p className="font-semibold text-gray-700 dark:text-gray-300 mb-1">{t('Шкала оценки:', 'Scoring guide:')}</p>
-            <div className="flex items-center gap-2"><span className="font-medium text-gray-600 dark:text-gray-400 w-10">0</span> {t('Не участвовал(а) вообще', 'Did not participate at all')}</div>
-            <div className="flex items-center gap-2"><span className="font-medium text-gray-600 dark:text-gray-400 w-10">1-3</span> {t('Минимальное участие, преимущественно пассивен(на)', 'Minimal participation, mostly passive')}</div>
-            <div className="flex items-center gap-2"><span className="font-medium text-gray-600 dark:text-gray-400 w-10">4-5</span> {t('Среднее участие, отвечал(а) при обращении', 'Average participation, answered when called on')}</div>
-            <div className="flex items-center gap-2"><span className="font-medium text-gray-600 dark:text-gray-400 w-10">6-7</span> {t('Активен(на), вызывался(лась) отвечать, вовлечён(а)', 'Active, volunteered to answer, engaged')}</div>
-            <div className="flex items-center gap-2"><span className="font-medium text-gray-600 dark:text-gray-400 w-10">8-9</span> {t('Очень активен(на), помогал(а) другим, задавал(а) вопросы', 'Very active, helped others, asked questions')}</div>
-            <div className="flex items-center gap-2"><span className="font-medium text-gray-600 dark:text-gray-400 w-10">10</span> {t('Выдающееся участие, вёл(а) обсуждение, исключительные усилия', 'Outstanding participation, led the discussion, exceptional effort')}</div>
+          <div className="mt-3 rounded-lg bg-gray-50 dark:bg-secondary border border-border p-3 text-xs text-muted-foreground space-y-1">
+            <p className="font-semibold text-foreground mb-1">{t('Шкала оценки:', 'Scoring guide:')}</p>
+            <div className="flex items-center gap-2"><span className="font-medium text-muted-foreground w-10">0</span> {t('Не участвовал(а) вообще', 'Did not participate at all')}</div>
+            <div className="flex items-center gap-2"><span className="font-medium text-muted-foreground w-10">1-3</span> {t('Минимальное участие, преимущественно пассивен(на)', 'Minimal participation, mostly passive')}</div>
+            <div className="flex items-center gap-2"><span className="font-medium text-muted-foreground w-10">4-5</span> {t('Среднее участие, отвечал(а) при обращении', 'Average participation, answered when called on')}</div>
+            <div className="flex items-center gap-2"><span className="font-medium text-muted-foreground w-10">6-7</span> {t('Активен(на), вызывался(лась) отвечать, вовлечён(а)', 'Active, volunteered to answer, engaged')}</div>
+            <div className="flex items-center gap-2"><span className="font-medium text-muted-foreground w-10">8-9</span> {t('Очень активен(на), помогал(а) другим, задавал(а) вопросы', 'Very active, helped others, asked questions')}</div>
+            <div className="flex items-center gap-2"><span className="font-medium text-muted-foreground w-10">10</span> {t('Выдающееся участие, вёл(а) обсуждение, исключительные усилия', 'Outstanding participation, led the discussion, exceptional effort')}</div>
           </div>
         </div>
         <DialogFooter>
@@ -2844,7 +2844,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         </DialogHeader>
         <div className="space-y-3 py-2">
           {topicModal.lesson && (
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               {topicModal.lesson.title}
             </p>
           )}

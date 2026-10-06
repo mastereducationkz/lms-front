@@ -109,7 +109,7 @@ export function ExcusePopover({
             <button
               type="button"
               onClick={onClear}
-              className="text-[11px] text-muted-foreground underline hover:text-rose-600 dark:hover:text-rose-400"
+              className="text-[11px] text-muted-foreground underline hover:text-rose-600 hover:dark:text-rose-300"
             >
               {en ? 'Not excused' : 'Снять уважительную'}
             </button>

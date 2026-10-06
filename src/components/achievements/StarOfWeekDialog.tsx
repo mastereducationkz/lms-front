@@ -25,7 +25,7 @@ export function StarOfWeekButton({ groupId, students, lang }: StarOfWeekButtonPr
         type="button"
         variant="outline"
         size="sm"
-        className="h-8 gap-1.5 border-yellow-300 text-xs text-yellow-800 hover:bg-yellow-50 dark:border-yellow-800 dark:text-yellow-300 dark:hover:bg-yellow-950/30"
+        className="h-8 gap-1.5 border-yellow-300 text-xs text-yellow-800 hover:bg-yellow-50 hover:dark:bg-yellow-500/15 dark:border-yellow-800 dark:text-yellow-300 dark:hover:bg-yellow-950/30"
         onClick={() => setOpen(true)}
         disabled={students.length === 0}
       >
@@ -94,12 +94,12 @@ export function StarOfWeekDialog({ groupId, students, lang, onClose, initialStud
           <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden /></div>
         )}
         {loadError && (
-          <p className="text-sm text-red-600">{ru ? 'Не удалось загрузить звёзды группы.' : 'Couldn’t load this group’s stars.'}</p>
+          <p className="text-sm text-red-600 dark:text-red-300">{ru ? 'Не удалось загрузить звёзды группы.' : 'Couldn’t load this group’s stars.'}</p>
         )}
 
         {stars && (
           <div className="space-y-4">
-            <p className={`rounded-lg px-3 py-2 text-sm ${left > 0 ? 'bg-yellow-50 text-yellow-900 dark:bg-yellow-950/30 dark:text-yellow-200' : 'bg-gray-50 text-gray-600 dark:bg-gray-900 dark:text-gray-300'}`}>
+            <p className={`rounded-lg px-3 py-2 text-sm ${left > 0 ? 'bg-yellow-50 text-yellow-900 dark:bg-yellow-950/30 dark:text-yellow-200' : 'bg-gray-50 dark:bg-muted text-muted-foreground'}`}>
               {stars.can_award ? starQuotaLabel(left, lang) : ru ? 'Звезду выдают учитель и куратор этой группы.' : 'Only this group’s teacher and curator can give the star.'}
             </p>
 
@@ -121,7 +121,7 @@ export function StarOfWeekDialog({ groupId, students, lang, onClose, initialStud
                 <label className="block space-y-1.5">
                   <span className="flex items-center justify-between text-sm font-medium">
                     {ru ? 'За что' : 'Why'}
-                    <span className={`text-xs font-normal ${reason.trim().length > STAR_REASON_MAX ? 'text-red-600' : 'text-muted-foreground'}`}>
+                    <span className={`text-xs font-normal ${reason.trim().length > STAR_REASON_MAX ? 'text-red-600 dark:text-red-300' : 'text-muted-foreground'}`}>
                       {reason.trim().length}/{STAR_REASON_MAX}
                     </span>
                   </span>
@@ -146,8 +146,8 @@ export function StarOfWeekDialog({ groupId, students, lang, onClose, initialStud
                 </p>
                 <ul className="mt-1.5 space-y-1">
                   {stars.this_week.map((s, i) => (
-                    <li key={`${s.created_at}-${i}`} className="text-sm text-gray-700 dark:text-gray-200">
-                      <Star className="mr-1 inline h-3.5 w-3.5 -translate-y-px fill-amber-400 text-amber-500" aria-hidden /> {s.student_name ?? `#${s.student_id}`} — <span className="text-muted-foreground">{s.awarded_by_name}: «{s.reason}»</span>
+                    <li key={`${s.created_at}-${i}`} className="text-sm text-foreground">
+                      <Star className="mr-1 inline h-3.5 w-3.5 fill-current text-amber-500" aria-hidden /> {s.student_name ?? `#${s.student_id}`} — <span className="text-muted-foreground">{s.awarded_by_name}: «{s.reason}»</span>
                     </li>
                   ))}
                 </ul>

@@ -214,21 +214,21 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
                         key={`${item.assignment_id}-${item.group_id}`}
                         onClick={() => handleRowClick(item)}
                         className={
-                          'border-b border-border/40 ' +
+                          'border-b border-border/50 dark:border-border/50 ' +
                           (clickable
-                            ? 'cursor-pointer hover:bg-muted dark:hover:bg-muted/40 transition-colors'
+                            ? 'cursor-pointer hover:bg-muted/60 transition-colors'
                             : 'opacity-70')
                         }
                       >
-                        <td className="py-2.5 pr-2 font-medium text-foreground">
+                        <td className="py-2.5 pr-2 font-medium text-foreground dark:text-foreground">
                           {item.title}
                         </td>
                         {showGroupColumn && (
-                          <td className="py-2.5 pr-2 text-muted-foreground truncate max-w-[160px]" title={item.group_name}>
+                          <td className="py-2.5 pr-2 text-muted-foreground dark:text-muted-foreground truncate max-w-[160px]" title={item.group_name}>
                             {item.group_name}
                           </td>
                         )}
-                        <td className="py-2.5 pr-2 text-muted-foreground whitespace-nowrap">
+                        <td className="py-2.5 pr-2 text-muted-foreground dark:text-muted-foreground whitespace-nowrap">
                           {formatDeadline(item.due_date)}
                         </td>
                         <td className="py-2.5 pl-2 text-right">
