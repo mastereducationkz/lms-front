@@ -140,7 +140,7 @@ export default function LessonScoresDialog({ open, onOpenChange, eventId, start,
                             className={cn(
                               'h-8 w-8 rounded-md border text-xs font-semibold tabular-nums transition',
                               value === n
-                                ? 'border-yellow-500 bg-yellow-400 text-gray-900'
+                                ? 'border-yellow-500 bg-yellow-400 text-yellow-950'
                                 : 'border-border bg-card text-foreground hover:bg-muted',
                             )}
                           >
@@ -173,7 +173,7 @@ export default function LessonScoresDialog({ open, onOpenChange, eventId, start,
             {error && students && <span className="ml-2 text-rose-600 dark:text-rose-400">{error}</span>}
           </span>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>{t('Отмена', 'Cancel')}</Button>
-          <Button onClick={save} disabled={!changes.length || saving} className="bg-yellow-500 text-gray-900 hover:bg-yellow-600">
+          <Button onClick={save} disabled={!changes.length || saving} className="bg-yellow-500 text-yellow-950 hover:bg-yellow-600">
             {saving && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
             {t('Сохранить', 'Save')}{changes.length > 0 && ` (${changes.length})`}
           </Button>

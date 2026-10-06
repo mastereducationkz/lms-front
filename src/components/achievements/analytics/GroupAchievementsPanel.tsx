@@ -48,26 +48,26 @@ export default function GroupAchievementsPanel({ groupId, lang }: { groupId: num
   const picks = data ? highlights(data.achievements, 3) : null;
 
   return (
-    <section className="mt-6 rounded-2xl border border-gray-200 dark:border-border bg-white dark:bg-card shadow-sm">
+    <section className="mt-6 rounded-2xl border border-border bg-card dark:bg-card shadow-sm">
       <button type="button" onClick={toggle} className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left">
         <span className="flex items-center gap-2">
           <Trophy className="h-4 w-4 text-amber-500" />
-          <span className="font-semibold text-gray-900 dark:text-white">{tr(lang, 'Достижения группы', 'Group achievements')}</span>
+          <span className="font-semibold text-foreground">{tr(lang, 'Достижения группы', 'Group achievements')}</span>
           {data && <span className="text-xs text-muted-foreground">· {data.summary.unlocks} {tr(lang, 'всего', 'earned')}</span>}
         </span>
         <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className="space-y-5 border-t border-gray-100 dark:border-border px-5 py-4">
+        <div className="space-y-5 border-t border-border px-5 py-4">
           {failed ? (
             <Empty>{tr(lang, 'Не удалось загрузить достижения группы', 'Could not load the group achievements')}</Empty>
           ) : !data ? (
             <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 @2xl:grid-cols-4">
                 <StatCard label={tr(lang, 'Есть хотя бы одно', 'Earned at least one')} value={formatPct(data.summary.students_with_any_pct)}
-                  hint={`${data.summary.students_with_any}/${data.summary.active_students} ${tr(lang, 'уч.', 'students')}`} accent="text-[#2563EB]" />
+                  hint={`${data.summary.students_with_any}/${data.summary.active_students} ${tr(lang, 'уч.', 'students')}`} accent="text-brand" />
                 <StatCard label={tr(lang, 'В среднем на ученика', 'Average per student')} value={data.summary.avg_per_student}
                   hint={`${tr(lang, 'из', 'of')} ${data.summary.achievements_total}`} />
                 <StatCard label={tr(lang, 'За 7 дней', 'Last 7 days')} value={data.summary.last_7_days}
@@ -79,7 +79,7 @@ export default function GroupAchievementsPanel({ groupId, lang }: { groupId: num
                 <div>
                   <p className="mb-1 text-xs font-medium text-muted-foreground">{tr(lang, 'Больше всего достижений', 'Most achievements')}</p>
                   {top.length ? (
-                    <div className="divide-y divide-gray-100 dark:divide-border">
+                    <div className="divide-y divide-border dark:divide-border">
                       {top.map((p, i) => <PersonRow key={p.id} person={p} rank={i + 1} lang={lang} />)}
                     </div>
                   ) : <Empty>{tr(lang, 'Пока никто ничего не получил', 'Nobody has earned anything yet')}</Empty>}
@@ -88,7 +88,7 @@ export default function GroupAchievementsPanel({ groupId, lang }: { groupId: num
                   <p className="mb-1 text-xs font-medium text-muted-foreground">{tr(lang, 'Самые редкие в группе', 'Rarest in this group')}</p>
                   {picks && picks.rarest.length ? picks.rarest.map((a) => (
                     <p key={a.key} className="flex justify-between py-1.5 text-sm">
-                      <span className="text-gray-900 dark:text-white">{a.title}</span>
+                      <span className="text-foreground">{a.title}</span>
                       <span className="tabular-nums text-muted-foreground">{a.unlocked} · {formatPct(a.pct)}</span>
                     </p>
                   )) : <Empty>{tr(lang, 'Пока пусто', 'Nothing yet')}</Empty>}
@@ -99,7 +99,7 @@ export default function GroupAchievementsPanel({ groupId, lang }: { groupId: num
                 <StarsByStaff stars={data.stars} lang={lang} />
               </div>
               <div>
-                <button type="button" onClick={() => setShowAll((v) => !v)} className="text-sm font-medium text-[#2563EB] hover:underline">
+                <button type="button" onClick={() => setShowAll((v) => !v)} className="text-sm font-medium text-brand hover:underline">
                   {showAll ? tr(lang, 'Скрыть все достижения', 'Hide every achievement') : tr(lang, 'Показать все достижения', 'Show every achievement')}
                 </button>
                 {showAll && <div className="mt-3"><RarityTable items={data.achievements} lang={lang} /></div>}

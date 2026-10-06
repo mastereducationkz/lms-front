@@ -80,7 +80,7 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="min-h-[50vh] flex items-center justify-center">
-        <Loader size="lg" animation="spin" color="#2563eb" />
+        <Loader size="lg" animation="spin" color="hsl(var(--brand))" />
       </div>
     )
   }

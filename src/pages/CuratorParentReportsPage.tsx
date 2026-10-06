@@ -167,25 +167,25 @@ export default function CuratorParentReportsPage() {
   ).length;
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="space-y-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold text-gray-900">Отчёты родителям</h1>
+        <h1 className="text-xl font-semibold text-foreground">Отчёты родителям</h1>
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="flex h-9 w-9 items-center justify-center border border-gray-300 dark:border-border rounded disabled:opacity-50"
+            className="flex h-9 w-9 items-center justify-center border border-border rounded disabled:opacity-50"
             disabled={busy}
             onClick={() => goToWeek(shiftWeek(week, -1))}
             aria-label="Предыдущая неделя"
           >
             <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           </button>
-          <span className="text-sm text-gray-700 dark:text-gray-300 min-w-[7.5rem] text-center">
+          <span className="text-sm text-foreground min-w-[7.5rem] text-center">
             {weekLabel(week)}
           </span>
           <button
             type="button"
-            className="flex h-9 w-9 items-center justify-center border border-gray-300 dark:border-border rounded disabled:opacity-50"
+            className="flex h-9 w-9 items-center justify-center border border-border rounded disabled:opacity-50"
             disabled={busy}
             onClick={() => goToWeek(shiftWeek(week, 1))}
             aria-label="Следующая неделя"
@@ -196,13 +196,13 @@ export default function CuratorParentReportsPage() {
       </header>
 
       {!groupId && (
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           Откройте страницу с карточки группы — нужен параметр <code>?group=</code>.
         </p>
       )}
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      {loading && !overview && <p className="text-sm text-gray-500">Загружаем…</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-300">{error}</p>}
+      {loading && !overview && <p className="text-sm text-muted-foreground">Загружаем…</p>}
 
       {overview && (
         <>
@@ -211,29 +211,29 @@ export default function CuratorParentReportsPage() {
               type="button"
               onClick={generateMissing}
               disabled={busy || missingCount === 0}
-              className="px-3 py-2 text-sm rounded-lg bg-gray-900 text-white disabled:opacity-50"
+              className="px-3 py-2 text-sm rounded-lg bg-brand-solid hover:bg-brand-solid-hover text-brand-solid-foreground disabled:opacity-50"
             >
               {bulkRunning
                 ? 'Генерируем…'
                 : `Сгенерировать всем, у кого нет (${missingCount})`}
             </button>
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-muted-foreground">
               Готово {students.length - missingCount} из {students.length}
             </span>
             {failedCount > 0 && (
-              <span className="text-sm text-amber-700">
+              <span className="text-sm text-amber-700 dark:text-amber-300">
                 Не получилось: {failedCount} — откройте карточку и попробуйте ещё раз
               </span>
             )}
             {loading && (
-              <span className="text-sm text-gray-500">Догружаем данные учеников…</span>
+              <span className="text-sm text-muted-foreground">Догружаем данные учеников…</span>
             )}
           </div>
 
           {loadedCount > 0
             && (withoutTestCount > 0 || unknownTestCount > 0 || partlyMissingCount > 0) && (
             // Спокойный тон нарочно: отсутствие теста — не поломка, поэтому не amber и не error.
-            <div className="text-sm text-gray-500 space-y-0.5">
+            <div className="text-sm text-muted-foreground space-y-0.5">
               {withoutTestCount > 0 && (
                 <p>
                   Тест за эту неделю есть у {withTestCount} из {loadedCount} — у остальных отчёт
@@ -252,7 +252,7 @@ export default function CuratorParentReportsPage() {
             </div>
           )}
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 @4xl:grid-cols-2">
             {students.map(student => {
               const key = cardKey(student.id, week);
               // Факты по ученику ещё летят — карточка появится, как только придёт её
@@ -261,10 +261,10 @@ export default function CuratorParentReportsPage() {
                 return (
                   <div
                     key={key}
-                    className="bg-white border border-gray-200 rounded-xl p-4 space-y-2 animate-pulse"
+                    className="bg-card border border-border rounded-xl p-4 space-y-2 animate-pulse"
                   >
-                    <h3 className="text-base font-semibold text-gray-900">{student.name}</h3>
-                    <p className="text-sm text-gray-500">Загружаем данные…</p>
+                    <h3 className="text-base font-semibold text-foreground">{student.name}</h3>
+                    <p className="text-sm text-muted-foreground">Загружаем данные…</p>
                   </div>
                 );
               }
@@ -276,23 +276,23 @@ export default function CuratorParentReportsPage() {
               return (
                 <div key={key} className="space-y-1">
                   {failed[key] && (
-                    <p className="text-xs text-amber-700">
+                    <p className="text-xs text-amber-700 dark:text-amber-300">
                       Не удалось сгенерировать при массовом запуске
                     </p>
                   )}
                   {/* Тише amber-уведомления выше: отсутствие теста — это факт, а не сбой. */}
                   {noTestYet && (
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-muted-foreground">
                       Теста за эту неделю нет — отчёт будет без результатов
                     </p>
                   )}
                   {testStatusUnknown && (
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-muted-foreground">
                       Платформа не ответила — есть ли тест, неизвестно
                     </p>
                   )}
                   {partlyMissing.length > 0 && (
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-muted-foreground">
                       Нет теста по {partlyMissing.map(p => p.toUpperCase()).join(' и ')} — отчёт
                       попросит родителя проконтролировать
                     </p>

@@ -43,7 +43,7 @@ export default function EditEvent() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <Loader size="xl" animation="spin" color="#2563eb" />
+        <Loader size="xl" animation="spin" color="hsl(var(--brand))" />
       </div>
     );
   }
