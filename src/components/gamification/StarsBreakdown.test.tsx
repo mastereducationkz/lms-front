@@ -175,6 +175,30 @@ describe('PointsDisplay', () => {
     expect(document.activeElement).toBe(pill);
   });
 
+  it('dims the page behind the open panel, and a click on the dimmed page closes it', async () => {
+    const pill = await mountPill();
+    expect(document.querySelector('.backdrop-blur-\\[2px\\]')).toBeNull();
+    pill.focus();
+    act(() => pill.click());
+    await flush();
+
+    const scrim = document.querySelector<HTMLElement>('.backdrop-blur-\\[2px\\]');
+    expect(scrim).not.toBeNull();
+    expect(scrim!.className).toContain('bg-black/20');
+    expect(scrim!.className).toContain('dark:bg-black/50');
+
+    // A whole click: Radix's modal popover waits for the click before it dismisses.
+    act(() => {
+      for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']) {
+        scrim!.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, button: 0 }));
+      }
+    });
+    await flush();
+    expect(pill.getAttribute('aria-expanded')).toBe('false');
+    expect(document.querySelector('.backdrop-blur-\\[2px\\]')).toBeNull();
+    expect(document.activeElement).toBe(pill);
+  });
+
   it('opens as a bottom sheet on a narrow screen', async () => {
     setNarrow(true);
     const pill = await mountPill();
@@ -185,6 +209,7 @@ describe('PointsDisplay', () => {
     const sheet = document.querySelector('.stars-sheet');
     expect(sheet?.getAttribute('role')).toBe('dialog');
     expect(sheet?.textContent).toContain('How to earn stars');
+    expect(document.querySelector('.backdrop-blur-\\[2px\\]')).not.toBeNull(); // the same scrim
 
     pressKey('Escape');
     await flush();

@@ -75,7 +75,7 @@ function Header({ titleId, empty, total }: { titleId: string; empty: boolean; to
         {empty ? (
           <>
             <h2 id={titleId} className="text-base font-semibold text-foreground">Earn your first stars</h2>
-            <p className="text-sm text-muted-foreground">Here is everything that adds stars to your total.</p>
+            <p className="text-sm text-foreground/70">Here is everything that adds stars to your total.</p>
           </>
         ) : (
           <>
@@ -83,7 +83,7 @@ function Header({ titleId, empty, total }: { titleId: string; empty: boolean; to
               <span className="text-2xl font-semibold tabular-nums">{total.toLocaleString('en-US')}</span>
               <span className="ml-1.5 text-base font-medium">{total === 1 ? 'star' : 'stars'}</span>
             </h2>
-            <p className="text-sm text-muted-foreground">Everything you have earned so far</p>
+            <p className="text-sm text-foreground/70">Everything you have earned so far</p>
           </>
         )}
       </div>
@@ -152,7 +152,7 @@ function StreakPanel({ data }: { data: Breakdown }) {
       <div className="min-w-0 space-y-1">
         <p className="text-sm font-semibold text-foreground tabular-nums">{copy.title}</p>
         <p className="text-sm text-foreground">{copy.status}</p>
-        <p className="text-xs leading-relaxed text-muted-foreground">{copy.rule}</p>
+        <p className="text-[13px] leading-snug text-foreground/70">{copy.rule}</p>
       </div>
     </div>
   );
@@ -180,7 +180,7 @@ function RulesList({ rules, twoColumn = false }: { rules: StarRule[]; twoColumn?
                     {starRange(rule.min, rule.max)}
                   </span>
                 </div>
-                <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">{rule.note}</p>
+                <p className="mt-0.5 text-[13px] leading-snug text-foreground/70">{rule.note}</p>
               </div>
             </li>
           );
@@ -235,7 +235,7 @@ function ErrorPanel({ titleId, onRetry }: { titleId: string; onRetry: () => void
       <AlertCircle className="h-6 w-6 text-muted-foreground" aria-hidden />
       <div className="space-y-1">
         <h2 id={titleId} className="text-sm font-semibold text-foreground">Couldn't load your stars</h2>
-        <p className="text-sm text-muted-foreground">Check your connection and try again.</p>
+        <p className="text-sm text-foreground/70">Check your connection and try again.</p>
       </div>
       <button
         type="button"

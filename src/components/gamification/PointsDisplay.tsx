@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import * as SheetPrimitive from '@radix-ui/react-dialog';
 import { X } from 'lucide-react';
 import { getGamificationStatus } from '../../services/api';
@@ -16,6 +17,10 @@ interface GamificationStatus {
 
 /** Below this width the breakdown opens as a bottom sheet instead of a popover. */
 const SHEET_QUERY = '(max-width: 479px)';
+
+/** Dims the page behind the open panel so the panel is the one thing in focus (owner, 2026-10-07). */
+const SCRIM =
+  'fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px] dark:bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0';
 
 function useNarrowScreen(): boolean {
   const [narrow, setNarrow] = useState(
@@ -111,10 +116,10 @@ export const PointsDisplay: React.FC = () => {
         <SheetPrimitive.Root open={open} onOpenChange={setOpen}>
           <SheetPrimitive.Trigger asChild>{pill}</SheetPrimitive.Trigger>
           <SheetPrimitive.Portal>
-            <SheetPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+            <SheetPrimitive.Overlay className={SCRIM} />
             <SheetPrimitive.Content
               aria-describedby={undefined}
-              className="stars-sheet fixed inset-x-0 bottom-0 z-50 max-h-[88dvh] overflow-y-auto rounded-t-2xl border-t border-border bg-popover px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3 text-popover-foreground shadow-xl outline-none duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom"
+              className="stars-sheet fixed inset-x-0 bottom-0 z-50 max-h-[88dvh] overflow-y-auto rounded-t-2xl border-t border-border bg-popover px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3 text-popover-foreground shadow-2xl outline-none duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom"
             >
               <SheetPrimitive.Title className="sr-only">Your stars</SheetPrimitive.Title>
               <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border" aria-hidden />
@@ -129,19 +134,21 @@ export const PointsDisplay: React.FC = () => {
           </SheetPrimitive.Portal>
         </SheetPrimitive.Root>
       ) : (
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover open={open} onOpenChange={setOpen} modal>
           <PopoverTrigger asChild>{pill}</PopoverTrigger>
           <PopoverContent
             align="end"
             sideOffset={8}
             collisionPadding={8}
             aria-labelledby={titleId}
-            className="w-[min(40rem,calc(100vw-1rem))] max-h-[min(42rem,calc(var(--radix-popover-content-available-height)-8px))] overflow-y-auto rounded-xl p-5 shadow-lg"
+            className="w-[min(40rem,calc(100vw-1rem))] max-h-[min(42rem,calc(var(--radix-popover-content-available-height)-8px))] overflow-y-auto rounded-xl border-border p-5 shadow-2xl"
           >
             {panel}
           </PopoverContent>
         </Popover>
       )}
+      {/* Clicking the scrim is a click outside the (modal) popover: it closes and focus returns to the pill. */}
+      {open && !narrow && createPortal(<div className={SCRIM} data-state="open" aria-hidden />, document.body)}
     </div>
   );
 };
