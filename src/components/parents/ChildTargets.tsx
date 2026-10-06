@@ -46,15 +46,15 @@ export function ChildTargets({ studentId }: { studentId: number }) {
     lines.push(`NUET: цель ${score(data.targets.nuet?.targets.total)}`);
   }
   return (
-    <div className="mt-3 rounded-lg border border-gray-100 dark:border-border p-3 text-sm">
-      <p className="flex items-center gap-1 text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+    <div className="mt-3 rounded-lg border border-border p-3 text-sm">
+      <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground mb-1">
         <Target className="w-3.5 h-3.5" aria-hidden="true" /> Цели
       </p>
       {lines.map((line) => (
-        <p key={line} className="text-gray-800 dark:text-foreground">{line}</p>
+        <p key={line} className="text-foreground dark:text-foreground">{line}</p>
       ))}
       {data.tracks.includes('sat') && sat?.current && (
-        <p className="mt-1 text-[11px] italic text-gray-500 dark:text-gray-400">
+        <p className="mt-1 text-[11px] italic text-muted-foreground">
           Баллы SAT — оценка по числу правильных ответов, не официальный результат.
         </p>
       )}

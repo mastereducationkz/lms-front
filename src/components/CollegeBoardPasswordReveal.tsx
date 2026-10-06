@@ -151,7 +151,7 @@ export function CollegeBoardPasswordReveal({
         type="button"
         onClick={load}
         className={cn(
-          'inline-flex items-center gap-1 font-mono text-sm text-gray-600 underline decoration-dotted hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100',
+          'inline-flex items-center gap-1 font-mono text-sm text-muted-foreground underline decoration-dotted hover:text-foreground',
           className,
         )}
       >
@@ -163,9 +163,9 @@ export function CollegeBoardPasswordReveal({
 
   return (
     <span className={cn('inline-flex flex-wrap items-center gap-1.5', className)}>
-      {state.status === 'loading' && <span className="text-xs text-gray-500">{t.loading}</span>}
+      {state.status === 'loading' && <span className="text-xs text-muted-foreground">{t.loading}</span>}
       {state.status === 'revealed' && (
-        <code className="rounded bg-gray-100 px-1.5 py-0.5 font-mono text-sm break-all dark:border dark:border-border dark:bg-card">
+        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-sm break-all dark:border dark:border-border dark:bg-card">
           {state.value}
         </code>
       )}
@@ -174,13 +174,13 @@ export function CollegeBoardPasswordReveal({
           type="button"
           onClick={copy}
           title={t.copy}
-          className="rounded p-0.5 text-gray-500 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-secondary dark:hover:text-gray-100"
+          className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-secondary"
         >
           <Copy className="w-3.5 h-3.5" />
         </button>
       )}
       {state.status === 'error' && (
-        <span className="text-xs text-rose-600">
+        <span className="text-xs text-rose-600 dark:text-rose-300">
           {state.kind === 'forbidden' ? t.forbidden : state.kind === 'not_found' ? t.notFound : t.network}
         </span>
       )}
@@ -188,7 +188,7 @@ export function CollegeBoardPasswordReveal({
         <button
           type="button"
           onClick={load}
-          className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline"
+          className="inline-flex items-center gap-1 text-xs text-brand hover:underline"
         >
           <RotateCw className="w-3 h-3" />
           {t.retry}
@@ -199,7 +199,7 @@ export function CollegeBoardPasswordReveal({
           type="button"
           onClick={hide}
           title={t.hide}
-          className="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-secondary"
+          className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-secondary"
         >
           <EyeOff className="w-3.5 h-3.5" />
         </button>

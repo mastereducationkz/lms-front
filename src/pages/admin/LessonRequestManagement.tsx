@@ -295,13 +295,13 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
     const label = STATUS_LABELS[status] ?? status;
     switch (status) {
       case 'approved':
-        return <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">{label}</Badge>;
+        return <Badge className="bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300 hover:bg-green-100 hover:dark:bg-green-500/15 border-green-200 dark:border-green-500/30">{label}</Badge>;
       case 'rejected':
         return <Badge variant="destructive">{label}</Badge>;
       case 'pending_teacher':
-        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200">{label}</Badge>;
+        return <Badge className="bg-brand-subtle text-brand-subtle-foreground hover:bg-brand-subtle border-brand-border">{label}</Badge>;
       case 'pending':
-        return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">{label}</Badge>;
+        return <Badge className="bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 hover:bg-amber-100 hover:dark:bg-amber-500/15 border-amber-200 dark:border-amber-500/30">{label}</Badge>;
       default:
         return <Badge variant="secondary">{label}</Badge>;
     }
@@ -416,13 +416,13 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
       </div>
 
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div className="rounded-md border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/15 px-4 py-3 text-sm text-red-800 dark:text-red-300">
           {error}
         </div>
       )}
 
       {inconsistentCount > 0 && (
-        <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900">
+        <div className="rounded-md border border-red-300 dark:border-red-500/30 bg-red-50 dark:bg-red-500/15 px-4 py-3 text-sm text-red-900 dark:text-red-300">
           <strong>Расхождение с расписанием: {inconsistentCount}.</strong>{' '}
           Одобренная замена не отражена в уроке — откройте заявку, чтобы увидеть подробности.
         </div>
@@ -468,7 +468,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                   return [
                     <TableRow
                       key={req.id}
-                      className={`cursor-pointer ${bad ? 'bg-red-50/60' : ''}`}
+                      className={`cursor-pointer ${bad ? 'bg-red-50/60 dark:bg-red-500/15' : ''}`}
                       onClick={() => setExpanded(isOpen ? null : req.id)}
                     >
                       <TableCell className="text-muted-foreground tabular-nums">{req.id}</TableCell>
@@ -477,7 +477,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                         {req.status === 'approved' && req.cancel_resolution === 'add_replacement' && (
                           <Badge
                             variant="secondary"
-                            className="mt-1 block w-fit bg-sky-100 text-sky-800 hover:bg-sky-100 border-sky-200 px-1.5 py-0 text-[10px] font-medium"
+                            className="mt-1 block w-fit bg-sky-100 dark:bg-sky-500/15 text-sky-800 dark:text-sky-300 hover:bg-sky-100 hover:dark:bg-sky-500/15 border-sky-200 dark:border-sky-500/30 px-1.5 py-0 text-[10px] font-medium"
                           >
                             + урок в конце
                           </Badge>
@@ -517,14 +517,14 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                         )}
                       </TableCell>
                       <TableCell>
-                        <span className={bad ? 'text-red-700 font-medium' : ''}>
+                        <span className={bad ? 'text-red-700 dark:text-red-300 font-medium' : ''}>
                           {req.current_event_teacher_name || '—'}
                         </span>
                         {req.group_teacher_name &&
                           req.current_event_teacher_id !== req.group_teacher_id && (
                             <Badge
                               variant="secondary"
-                              className="ml-2 bg-purple-100 text-purple-800 hover:bg-purple-100"
+                              className="ml-2 bg-purple-100 dark:bg-purple-500/15 text-purple-800 dark:text-purple-300 hover:bg-purple-100 hover:dark:bg-purple-500/15"
                             >
                               Замена
                             </Badge>
@@ -533,7 +533,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                       <TableCell>
                         {statusBadge(req.status)}
                         {bad && (
-                          <span className="mt-1 block text-xs font-medium text-red-700">
+                          <span className="mt-1 block text-xs font-medium text-red-700 dark:text-red-300">
                             не применено
                           </span>
                         )}
@@ -589,7 +589,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="h-7 text-xs hover:bg-green-50 hover:text-green-700 hover:border-green-200"
+                                className="h-7 text-xs hover:bg-green-50 hover:dark:bg-green-500/15 hover:text-green-700 hover:dark:text-green-300 hover:border-green-200 hover:dark:border-green-500/30"
                                 onClick={() => handleApprove(req)}
                                 disabled={processing === req.id || needsCancelChoice(req)}
                                 title={needsCancelChoice(req) ? 'Сначала выберите решение по уроку' : undefined}
@@ -599,7 +599,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="h-7 text-xs hover:bg-red-50 hover:text-red-700 hover:border-red-200"
+                                className="h-7 text-xs hover:bg-red-50 hover:dark:bg-red-500/15 hover:text-red-700 hover:dark:text-red-300 hover:border-red-200 hover:dark:border-red-500/30"
                                 onClick={() => handleReject(req.id)}
                                 disabled={processing === req.id}
                               >
@@ -615,7 +615,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                       <TableRow key={`${req.id}-details`} className="bg-muted/30 hover:bg-muted/30">
                         <TableCell colSpan={7} className="p-6">
                           {bad && (
-                            <div className="mb-4 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900">
+                            <div className="mb-4 rounded-md border border-red-300 dark:border-red-500/30 bg-red-50 dark:bg-red-500/15 px-4 py-3 text-sm text-red-900 dark:text-red-300">
                               <strong>Одобренная замена не применена к уроку.</strong>
                               <div className="mt-1">
                                 Одобрен педагог{' '}
@@ -626,13 +626,13 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                                 <strong>{req.current_event_teacher_name || '—'}</strong>.
                               </div>
                               {req.consistency_note && (
-                                <div className="mt-1 text-red-800">{req.consistency_note}</div>
+                                <div className="mt-1 text-red-800 dark:text-red-300">{req.consistency_note}</div>
                               )}
                             </div>
                           )}
 
-                          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-                            <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                          <div className="grid gap-6 @4xl:grid-cols-[1fr_320px]">
+                            <dl className="grid gap-4 @xl:grid-cols-2 @6xl:grid-cols-3">
                               <Fact label="Тип заявки">{typeLabel(req.request_type)}</Fact>
                               <Fact label="Статус">{STATUS_LABELS[req.status] ?? req.status}</Fact>
                               <Fact label="Автор заявки">{req.requester_name}</Fact>
@@ -669,7 +669,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                                 {req.confirmed_teacher_name}
                               </Fact>
                               <Fact label="Сейчас урок ведёт">
-                                <span className={bad ? 'text-red-700 font-medium' : ''}>
+                                <span className={bad ? 'text-red-700 dark:text-red-300 font-medium' : ''}>
                                   {req.current_event_teacher_name}
                                 </span>
                               </Fact>

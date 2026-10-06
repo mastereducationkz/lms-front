@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { chartColors, chartTick, chartTooltipStyle } from '../lib/chartTheme';
 import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '../services/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
@@ -240,14 +241,14 @@ export default function HeadTeacherTeacherDetailsPage() {
   // `excused` is an overlay on "missed"/"absent" only, matching CuratorLeaderboardPage's
   // AttendanceToggle and SubstitutionAttendancePanel — same lighter red, same short label.
   const getAttendanceStatusColor = (status: string, excused = false) => {
-    if ((status === 'missed' || status === 'absent') && excused) return 'bg-rose-200 text-rose-900';
+    if ((status === 'missed' || status === 'absent') && excused) return 'bg-rose-200 text-rose-900 dark:text-rose-300';
     switch (status) {
-      case 'attended': return 'bg-green-200 text-green-700';
-      case 'late': return 'bg-yellow-200 text-yellow-700';
+      case 'attended': return 'bg-green-200 text-green-700 dark:text-green-300';
+      case 'late': return 'bg-yellow-200 text-yellow-700 dark:text-yellow-300';
       case 'missed':
       case 'absent': return 'bg-rose-500 text-white';
-      case 'pending': return 'bg-gray-100/50 text-gray-400';
-      default: return 'bg-gray-50 text-gray-400 border-gray-100';
+      case 'pending': return 'bg-muted/50 text-muted-foreground';
+      default: return 'bg-gray-50 dark:bg-muted text-muted-foreground border-border';
     }
   };
 
@@ -266,84 +267,84 @@ export default function HeadTeacherTeacherDetailsPage() {
   if (loadingDetails) {
     return (
       <div className="p-8 flex justify-center items-center">
-        <div className="animate-pulse text-slate-500">Loading teacher details...</div>
+        <div className="animate-pulse text-muted-foreground">Loading teacher details...</div>
       </div>
     );
   }
 
   if (!teacherDetails) {
     return (
-      <div className="p-8 text-center text-slate-500">
+      <div className="p-8 text-center text-muted-foreground">
         Teacher not found
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex flex-col space-y-2">
         <Button 
           variant="ghost" 
           onClick={() => navigate('/dashboard')} 
-          className="w-fit pl-0 mb-2 hover:bg-slate-100 -ml-2 text-slate-600"
+          className="w-fit pl-0 mb-2 hover:bg-muted -ml-2 text-muted-foreground"
         >
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
         </Button>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">{teacherDetails.teacher_name}</h1>
-            <p className="text-slate-500">{teacherDetails.email}</p>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">{teacherDetails.teacher_name}</h1>
+            <p className="text-muted-foreground">{teacherDetails.email}</p>
           </div>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 @2xl:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Students</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Students</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{teacherDetails.students_count}</div>
-            <p className="text-xs text-slate-400 mt-1">Across {teacherDetails.groups_count} groups</p>
+            <p className="text-xs text-muted-foreground mt-1">Across {teacherDetails.groups_count} groups</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Total Feedbacks</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Feedbacks</CardTitle>
           </CardHeader>
           <CardContent>
-             <div className="text-2xl font-bold text-blue-600">{teacherDetails.total_feedbacks}</div>
-             <p className="text-xs text-slate-400 mt-1">Written comments</p>
+             <div className="text-2xl font-bold text-brand">{teacherDetails.total_feedbacks}</div>
+             <p className="text-xs text-muted-foreground mt-1">Written comments</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Avg Score Given</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Avg Score Given</CardTitle>
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${
-              (teacherDetails.avg_score_given || 0) > 80 ? 'text-emerald-600' : 
-              (teacherDetails.avg_score_given || 0) > 60 ? 'text-amber-600' : 'text-slate-900'
+              (teacherDetails.avg_score_given || 0) > 80 ? 'text-emerald-600 dark:text-emerald-300' : 
+              (teacherDetails.avg_score_given || 0) > 60 ? 'text-amber-600 dark:text-amber-300' : 'text-foreground'
             }`}>
               {teacherDetails.avg_score_given !== null ? teacherDetails.avg_score_given.toFixed(1) : '-'}
             </div>
-            <p className="text-xs text-slate-400 mt-1">Average points</p>
+            <p className="text-xs text-muted-foreground mt-1">Average points</p>
           </CardContent>
         </Card>
 
         <Card>
            <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500">Missed Attendance</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Missed Attendance</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${(teacherDetails.missed_attendance_count || 0) > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+            <div className={`text-2xl font-bold ${(teacherDetails.missed_attendance_count || 0) > 0 ? 'text-red-600 dark:text-red-300' : 'text-emerald-600 dark:text-emerald-300'}`}>
               {teacherDetails.missed_attendance_count || 0}
             </div>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Total times forgot • {teacherDetails.missed_attendance_details?.length || 0} pending
             </p>
           </CardContent>
@@ -352,15 +353,15 @@ export default function HeadTeacherTeacherDetailsPage() {
 
       {/* Missed Attendance Alert */}
       {(teacherDetails.missed_attendance_details?.length || 0) > 0 && (
-        <Card className="border-red-200 bg-red-50/50">
+        <Card className="border-red-200 dark:border-red-500/30 bg-red-50/50 dark:bg-red-500/15">
           <CardHeader className="pb-2">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-500" />
-              <CardTitle className="text-base text-red-900">
+              <CardTitle className="text-base text-red-900 dark:text-red-300">
                 Missing Attendance Records ({teacherDetails.missed_attendance_details?.length})
               </CardTitle>
             </div>
-            <CardDescription className="text-red-700">
+            <CardDescription className="text-red-700 dark:text-red-300">
               These classes still need attendance to be recorded
             </CardDescription>
           </CardHeader>
@@ -369,15 +370,15 @@ export default function HeadTeacherTeacherDetailsPage() {
               {teacherDetails.missed_attendance_details?.map((item) => (
                 <div 
                   key={`${item.event_id}-${item.group_id}`} 
-                  className="flex items-center justify-between bg-white rounded-md px-3 py-2 border border-red-100"
+                  className="flex items-center justify-between bg-card rounded-md px-3 py-2 border border-red-100"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-900 truncate">{item.event_title}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-sm font-medium text-foreground truncate">{item.event_title}</p>
+                    <p className="text-xs text-muted-foreground">
                       {item.group_name} • {new Date(item.event_date).toLocaleDateString()}
                     </p>
                   </div>
-                  <Badge variant="secondary" className="bg-red-100 text-red-700 border-red-200">
+                  <Badge variant="secondary" className="bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/30">
                     {item.recorded_count}/{item.expected_count} recorded
                   </Badge>
                 </div>
@@ -406,9 +407,9 @@ export default function HeadTeacherTeacherDetailsPage() {
 
         {/* Overview Tab */}
         <TabsContent value="overview">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
+          <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6 pt-2">
             {/* Grade Distribution Chart */}
-            <Card className="border-slate-200 shadow-sm">
+            <Card className="border-border shadow-sm">
                 <CardHeader>
                   <CardTitle className="text-lg">Grade Distribution</CardTitle>
                   <CardDescription>How grades are distributed across assignments</CardDescription>
@@ -417,22 +418,22 @@ export default function HeadTeacherTeacherDetailsPage() {
                     <div className="h-[300px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={teacherDetails.grade_distribution}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartColors.grid} />
                           <XAxis 
                             dataKey="score_range" 
-                            tick={{ fontSize: 12, fill: '#64748b' }} 
+                            tick={chartTick(12)} 
                             axisLine={false}
                             tickLine={false}
                           />
                           <YAxis 
                              allowDecimals={false}
-                             tick={{ fontSize: 12, fill: '#64748b' }} 
+                             tick={chartTick(12)} 
                              axisLine={false}
                              tickLine={false}
                           />
                           <RechartsTooltip 
                              cursor={{ fill: 'transparent' }}
-                             contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                             contentStyle={chartTooltipStyle}
                           />
                           <Bar dataKey="count" name="Students" radius={[4, 4, 0, 0]}>
                             {teacherDetails.grade_distribution.map((_, index) => (
@@ -446,7 +447,7 @@ export default function HeadTeacherTeacherDetailsPage() {
             </Card>
 
             {/* Activity History Chart */}
-             <Card className="border-slate-200 shadow-sm">
+             <Card className="border-border shadow-sm">
                 <CardHeader>
                   <CardTitle className="text-lg">Recent Activity</CardTitle>
                   <CardDescription>Grading volume over the last 30 days</CardDescription>
@@ -455,31 +456,31 @@ export default function HeadTeacherTeacherDetailsPage() {
                     <div className="h-[300px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={teacherDetails.activity_history}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartColors.grid} />
                           <XAxis 
                             dataKey="date" 
                             tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })}
-                            tick={{ fontSize: 12, fill: '#64748b' }} 
+                            tick={chartTick(12)} 
                             axisLine={false}
                             tickLine={false}
                             minTickGap={30}
                           />
                           <YAxis 
                              allowDecimals={false}
-                             tick={{ fontSize: 12, fill: '#64748b' }} 
+                             tick={chartTick(12)} 
                              axisLine={false}
                              tickLine={false}
                           />
                           <RechartsTooltip 
-                             contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                             contentStyle={chartTooltipStyle}
                              labelFormatter={(label) => new Date(label).toLocaleDateString()}
                           />
                           <Line 
                             type="monotone" 
                             dataKey="submissions_graded" 
-                            stroke="#3b82f6" 
+                            stroke={chartColors.brand} 
                             strokeWidth={3}
-                            dot={{ r: 4, fill: "#3b82f6", strokeWidth: 2, stroke: "#fff" }}
+                            dot={{ r: 4, fill: chartColors.brand, strokeWidth: 2, stroke: chartColors.surface }}
                             activeDot={{ r: 6 }}
                           />
                         </LineChart>
@@ -492,50 +493,50 @@ export default function HeadTeacherTeacherDetailsPage() {
 
         {/* Feedbacks Tab */}
         <TabsContent value="feedbacks">
-           <Card className="border-slate-200 shadow-sm">
+           <Card className="border-border shadow-sm">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div>
                    <CardTitle className="text-lg">Recent Feedbacks</CardTitle>
                    <CardDescription>History of feedback given to students</CardDescription>
                 </div>
-                {feedbacks.length > 0 && <Badge variant="outline" className="bg-slate-50 text-slate-600">{feedbacks.length} items</Badge>}
+                {feedbacks.length > 0 && <Badge variant="outline" className="bg-slate-50 dark:bg-muted text-muted-foreground">{feedbacks.length} items</Badge>}
               </div>
             </CardHeader>
             <CardContent className="p-0">
                {loadingFeedbacks ? (
                 <div className="p-12 flex justify-center">
-                  <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+                  <div className="animate-spin h-8 w-8 border-4 border-brand border-t-transparent rounded-full"></div>
                 </div>
               ) : feedbacks.length === 0 ? (
-                <div className="p-12 text-center text-slate-400 bg-slate-50/50 border-t border-slate-100">
-                  <MessageSquare className="h-12 w-12 mx-auto mb-3 text-slate-300" />
+                <div className="p-12 text-center text-muted-foreground bg-slate-50/50 dark:bg-muted/40 border-t border-border">
+                  <MessageSquare className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
                   No feedbacks found in the recent history.
                 </div>
               ) : (
-                <div className="space-y-0 divide-y divide-slate-100">
+                <div className="space-y-0 divide-y divide-border">
                    {feedbacks.map((item) => (
-                     <div key={item.submission_id} className="p-4 hover:bg-slate-50/50 transition-colors group">
+                     <div key={item.submission_id} className="p-4 hover:bg-muted/60 transition-colors group">
                        <div className="flex items-start justify-between mb-2">
                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-slate-900">{item.student_name}</span>
-                            <span className="text-xs text-slate-400">•</span>
-                            <span className="text-sm text-slate-600">{item.assignment_title}</span>
+                            <span className="font-semibold text-foreground">{item.student_name}</span>
+                            <span className="text-xs text-muted-foreground">•</span>
+                            <span className="text-sm text-muted-foreground">{item.assignment_title}</span>
                          </div>
-                         <div className="flex items-center gap-2 text-xs text-slate-400">
+                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Calendar className="h-3 w-3" />
                             {new Date(item.graded_at).toLocaleDateString()}
                          </div>
                        </div>
                        
                        <div className="mb-2">
-                          <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-md border border-slate-100">
+                          <p className="text-sm text-muted-foreground leading-relaxed bg-slate-50 dark:bg-muted p-3 rounded-md border border-border">
                             {item.feedback}
                           </p>
                        </div>
                        
                        <div className="flex items-center gap-2 mt-2">
-                          <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-100">
+                          <Badge variant="secondary" className="bg-brand-surface text-brand-subtle-foreground hover:bg-brand-subtle border-brand-border">
                              Score: {item.score}/{item.max_score}
                           </Badge>
                        </div>
@@ -550,35 +551,35 @@ export default function HeadTeacherTeacherDetailsPage() {
         {/* Assignments Tab */}
         <TabsContent value="assignments">
           <div className="space-y-6">
-            <Card className="border-slate-200 shadow-sm">
+            <Card className="border-border shadow-sm">
              <CardHeader className="pb-3">
                <div className="flex items-center justify-between">
                 <div>
                    <CardTitle className="text-lg">Assignments Management</CardTitle>
                    <CardDescription>Overview of assignments managed by this teacher</CardDescription>
                 </div>
-                {assignments.length > 0 && <Badge variant="outline" className="bg-slate-50 text-slate-600">{assignments.length} assignments</Badge>}
+                {assignments.length > 0 && <Badge variant="outline" className="bg-slate-50 dark:bg-muted text-muted-foreground">{assignments.length} assignments</Badge>}
                </div>
              </CardHeader>
              <CardContent className="p-0">
                {loadingAssignments ? (
                  <div className="p-12 flex justify-center">
-                   <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+                   <div className="animate-spin h-8 w-8 border-4 border-brand border-t-transparent rounded-full"></div>
                  </div>
                ) : assignments.length === 0 ? (
-                 <div className="p-12 text-center text-slate-400 bg-slate-50/50 border-t border-slate-100">
-                   <FileText className="h-12 w-12 mx-auto mb-3 text-slate-300" />
+                 <div className="p-12 text-center text-muted-foreground bg-slate-50/50 dark:bg-muted/40 border-t border-border">
+                   <FileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
                    No assignments found.
                  </div>
                ) : (
                  <Table>
                    <TableHeader>
-                     <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
-                       <TableHead className="font-semibold text-slate-900">Assignment</TableHead>
-                       <TableHead className="font-semibold text-slate-900">Group</TableHead>
-                       <TableHead className="text-center font-semibold text-slate-900">Completion</TableHead>
-                       <TableHead className="text-center font-semibold text-slate-900">Grading Status</TableHead>
-                       <TableHead className="text-right font-semibold text-slate-900">Due Date</TableHead>
+                     <TableRow className="bg-slate-50/80 dark:bg-muted/40 hover:bg-muted/60">
+                       <TableHead className="font-semibold text-foreground">Assignment</TableHead>
+                       <TableHead className="font-semibold text-foreground">Group</TableHead>
+                       <TableHead className="text-center font-semibold text-foreground">Completion</TableHead>
+                       <TableHead className="text-center font-semibold text-foreground">Grading Status</TableHead>
+                       <TableHead className="text-right font-semibold text-foreground">Due Date</TableHead>
                      </TableRow>
                    </TableHeader>
                    <TableBody>
@@ -588,15 +589,15 @@ export default function HeadTeacherTeacherDetailsPage() {
                          : 0;
                          
                        return (
-                         <TableRow key={assignment.assignment_id} className="hover:bg-slate-50/50">
+                         <TableRow key={assignment.assignment_id} className="hover:bg-muted/60">
                            <TableCell className="font-medium">
                              <div className="flex items-center gap-2">
-                               <FileText className="h-4 w-4 text-slate-400" />
+                               <FileText className="h-4 w-4 text-muted-foreground" />
                                {assignment.title}
                              </div>
                            </TableCell>
                            <TableCell>
-                             <Badge variant="outline" className="font-normal text-slate-600">{assignment.group_name}</Badge>
+                             <Badge variant="outline" className="font-normal text-muted-foreground">{assignment.group_name}</Badge>
                            </TableCell>
                            <TableCell className="text-center">
                              <div className="flex flex-col items-center gap-1">
@@ -605,13 +606,13 @@ export default function HeadTeacherTeacherDetailsPage() {
                            </TableCell>
                            <TableCell className="text-center">
                               <div className="w-full max-w-[120px] mx-auto">
-                                <div className="flex justify-between text-[10px] text-slate-500 mb-1">
+                                <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
                                   <span>{assignment.graded_submissions} graded</span>
                                   <span>{Math.round(gradingProgress)}%</span>
                                 </div>
-                                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
                                   <div 
-                                    className={`h-full rounded-full ${gradingProgress === 100 ? 'bg-emerald-500' : 'bg-blue-500'}`} 
+                                    className={`h-full rounded-full ${gradingProgress === 100 ? 'bg-emerald-500' : 'bg-brand-solid'}`} 
                                     style={{ width: `${gradingProgress}%` }}
                                   />
                                 </div>
@@ -619,12 +620,12 @@ export default function HeadTeacherTeacherDetailsPage() {
                            </TableCell>
                            <TableCell className="text-right">
                              {assignment.due_date ? (
-                               <div className="flex items-center justify-end gap-1.5 text-slate-500">
+                               <div className="flex items-center justify-end gap-1.5 text-muted-foreground">
                                    <Clock className="h-3.5 w-3.5" />
                                    <span className="text-sm">{new Date(assignment.due_date).toLocaleDateString()}</span>
                                </div>
                              ) : (
-                               <span className="text-slate-400 text-sm">-</span>
+                               <span className="text-muted-foreground text-sm">-</span>
                              )}
                            </TableCell>
                          </TableRow>
@@ -640,9 +641,9 @@ export default function HeadTeacherTeacherDetailsPage() {
 
         {/* Attendance Tab */}
         <TabsContent value="attendance">
-          <Card className="border-slate-200 shadow-sm">
+          <Card className="border-border shadow-sm">
             <CardHeader className="pb-3">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex flex-col @xl:flex-row sm:items-center gap-4">
                 <div>
                   <CardTitle className="text-lg">Attendance Records</CardTitle>
                   <CardDescription>View how this teacher marks attendance by group</CardDescription>
@@ -666,43 +667,43 @@ export default function HeadTeacherTeacherDetailsPage() {
             </CardHeader>
             <CardContent className="p-0">
               {!teacherDetails.groups?.length ? (
-                <div className="p-12 text-center text-slate-400 bg-slate-50/50 border-t border-slate-100">
-                  <ClipboardCheck className="h-12 w-12 mx-auto mb-3 text-slate-300" />
+                <div className="p-12 text-center text-muted-foreground bg-slate-50/50 dark:bg-muted/40 border-t border-border">
+                  <ClipboardCheck className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
                   No groups found for this teacher.
                 </div>
               ) : !selectedAttendanceGroupId ? (
-                <div className="p-12 text-center text-slate-400 bg-slate-50/50 border-t border-slate-100">
+                <div className="p-12 text-center text-muted-foreground bg-slate-50/50 dark:bg-muted/40 border-t border-border">
                   Select a group to view attendance
                 </div>
               ) : loadingAttendance ? (
                 <div className="p-12 flex justify-center">
-                  <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+                  <div className="animate-spin h-8 w-8 border-4 border-brand border-t-transparent rounded-full" />
                 </div>
               ) : !attendanceData || attendanceData.lessons.length === 0 ? (
-                <div className="py-24 text-center text-slate-500 font-medium">
+                <div className="py-24 text-center text-muted-foreground font-medium">
                   No lessons available for this group.
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <Table className="border-collapse text-left">
                     <TableHeader>
-                      <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
-                        <TableHead className="sticky left-0 z-40 bg-slate-50 border-r border-slate-200 px-3 py-3 min-w-[140px]">
-                          <span className="text-sm font-semibold text-slate-500">Student</span>
+                      <TableRow className="bg-slate-50/80 dark:bg-muted/40 hover:bg-muted/60">
+                        <TableHead className="sticky left-0 z-40 bg-slate-50 dark:bg-muted border-r border-border px-3 py-3 min-w-[140px]">
+                          <span className="text-sm font-semibold text-muted-foreground">Student</span>
                         </TableHead>
                         {attendanceData.lessons.map((lesson) => (
                           <TableHead
                             key={lesson.event_id}
                             className={cn(
-                              'text-center min-w-[100px] px-2 py-3 border-r border-slate-200',
-                              isFutureLesson(lesson.start_datetime) && 'bg-slate-50/50 font-normal text-slate-400'
+                              'text-center min-w-[100px] px-2 py-3 border-r border-border',
+                              isFutureLesson(lesson.start_datetime) && 'bg-slate-50/50 dark:bg-muted/40 font-normal text-muted-foreground'
                             )}
                           >
                             <div className="flex flex-col items-center">
-                              <span className="text-[10px] font-medium text-slate-500">
+                              <span className="text-[10px] font-medium text-muted-foreground">
                                 {formatAttendanceDay(lesson.start_datetime)}
                               </span>
-                              <span className="text-sm font-semibold text-slate-900">
+                              <span className="text-sm font-semibold text-foreground">
                                 {formatAttendanceDate(lesson.start_datetime)}
                               </span>
                             </div>
@@ -710,11 +711,11 @@ export default function HeadTeacherTeacherDetailsPage() {
                         ))}
                       </TableRow>
                     </TableHeader>
-                    <TableBody className="divide-y divide-slate-100">
+                    <TableBody className="divide-y divide-border">
                       {attendanceData.students.map((student) => (
-                        <TableRow key={student.student_id} className="hover:bg-slate-50/50">
-                          <TableCell className="sticky left-0 z-30 bg-white border-r border-slate-200 px-3 py-3">
-                            <span className="text-sm font-medium text-slate-900 truncate block max-w-[140px]">
+                        <TableRow key={student.student_id} className="hover:bg-muted/60">
+                          <TableCell className="sticky left-0 z-30 bg-card border-r border-border px-3 py-3">
+                            <span className="text-sm font-medium text-foreground truncate block max-w-[140px]">
                               {student.student_name}
                             </span>
                           </TableCell>
@@ -731,19 +732,19 @@ export default function HeadTeacherTeacherDetailsPage() {
                                 key={`${student.student_id}-${lesson.event_id}`}
                                 title={!isFuture && excused ? `Excused absence${excuseNote ? `: ${excuseNote}` : ''}` : undefined}
                                 className={cn(
-                                  'p-2 text-center border-r border-slate-100 min-w-[100px]',
-                                  isFuture ? 'bg-slate-50/30' : getAttendanceStatusColor(status, excused)
+                                  'p-2 text-center border-r border-border min-w-[100px]',
+                                  isFuture ? 'bg-slate-50/30 dark:bg-muted/40' : getAttendanceStatusColor(status, excused)
                                 )}
                               >
                                 {isFuture ? (
-                                  <div className="w-1.5 h-1.5 bg-slate-200 rounded-full mx-auto" />
+                                  <div className="w-1.5 h-1.5 bg-slate-200 dark:bg-border rounded-full mx-auto" />
                                 ) : (
                                   <div className="flex flex-col items-center gap-0.5">
                                     <span className="font-bold text-[11px]">
                                       {getAttendanceStatusLabel(status, excused)}
                                     </span>
                                     {(status === 'attended' || status === 'late') && activityScore !== undefined && activityScore > 0 && (
-                                      <span className="text-[9px] font-medium text-slate-600">
+                                      <span className="text-[9px] font-medium text-muted-foreground">
                                         {activityScore}
                                       </span>
                                     )}

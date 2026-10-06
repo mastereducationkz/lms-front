@@ -28,10 +28,10 @@ export function Section({ title, subtitle, action, children, className = '' }: {
   title: string; subtitle?: string; action?: ReactNode; children: ReactNode; className?: string;
 }) {
   return (
-    <section className={`rounded-2xl border border-gray-200 dark:border-border bg-white dark:bg-card p-5 shadow-sm ${className}`}>
+    <section className={`rounded-2xl border border-border bg-card dark:bg-card p-5 shadow-sm ${className}`}>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-gray-900 dark:text-white">{title}</h2>
+          <h2 className="text-base font-semibold text-foreground">{title}</h2>
           {subtitle && <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>}
         </div>
         {action}
@@ -41,11 +41,11 @@ export function Section({ title, subtitle, action, children, className = '' }: {
   );
 }
 
-export function StatCard({ label, value, hint, accent = 'text-gray-900 dark:text-white' }: {
+export function StatCard({ label, value, hint, accent = 'text-foreground' }: {
   label: string; value: ReactNode; hint?: ReactNode; accent?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-gray-200 dark:border-border bg-white dark:bg-card p-4 shadow-sm">
+    <div className="rounded-2xl border border-border bg-card dark:bg-card p-4 shadow-sm">
       <p className="text-xs font-medium text-muted-foreground">{label}</p>
       <p className={`mt-1 text-2xl font-bold tabular-nums ${accent}`}>{value}</p>
       {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
@@ -60,10 +60,10 @@ export function PersonRow({ person, rank, lang, sub }: { person: AnalyticsPerson
       {rank !== undefined && <span className="w-5 text-right text-xs font-semibold text-muted-foreground tabular-nums">{rank}</span>}
       <UserAvatar userId={person.id} name={person.name} avatarUrl={person.avatar_url} mascot={person.mascot} isStudent size={36} />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{person.name}</p>
+        <p className="truncate text-sm font-medium text-foreground">{person.name}</p>
         {sub && <p className="truncate text-xs text-muted-foreground">{sub}</p>}
       </div>
-      <span className="text-sm font-semibold tabular-nums text-gray-900 dark:text-white">
+      <span className="text-sm font-semibold tabular-nums text-foreground">
         {person.count}
         <span className="ml-1 text-xs font-normal text-muted-foreground">{tr(lang, 'дост.', person.count === 1 ? 'badge' : 'badges')}</span>
       </span>
