@@ -19,7 +19,7 @@ export default function StarsByStaff({ stars, lang, limit }: { stars: Achievemen
             <th className="pb-2 text-right font-medium">{tr(lang, 'Всего', 'Total')}</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-border dark:divide-border">
+        <tbody className="divide-y divide-border">
           {rows.map((s) => (
             <tr key={s.user_id}>
               <td className="py-2 pr-3">
@@ -33,7 +33,7 @@ export default function StarsByStaff({ stars, lang, limit }: { stars: Achievemen
                       <Star className="h-3 w-3 fill-current" aria-hidden />{n > 1 ? `×${n}` : ''}
                     </span>
                   ) : (
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-gray-200 dark:bg-muted" aria-label="0" />
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-border" aria-label="0" />
                   )}
                 </td>
               ))}

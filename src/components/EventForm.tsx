@@ -392,7 +392,7 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
         {formData.event_type === 'class' && (
           <Card className="border-brand-border bg-brand-surface/20">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-brand-subtle-foreground">
+              <CardTitle className="flex items-center gap-2 text-brand">
                 <BookOpen className="w-5 h-5" />
                 Link to Course Lesson (Optional)
               </CardTitle>

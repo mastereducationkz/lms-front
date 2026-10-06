@@ -101,7 +101,7 @@ export default function TextLessonEditor({
   return (
     <div className="space-y-6">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-foreground/80 mb-2">
           Lesson Content
         </label>
         <div className="flex items-center space-x-2 mb-4">
@@ -133,7 +133,7 @@ export default function TextLessonEditor({
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-foreground/80 mb-2">
           File Attachments
         </label>
         <FileUploadArea

@@ -117,7 +117,7 @@ export default function StudentSearchBox({ className = '' }: { className?: strin
                 <span className="min-w-0">
                   <span className="block text-sm text-foreground truncate">
                     {s.name}
-                    {s.is_inactive && <span className="ml-1.5 text-[10px] text-red-500">деактивирован</span>}
+                    {s.is_inactive && <span className="ml-1.5 text-[10px] text-red-500 dark:text-red-400">деактивирован</span>}
                   </span>
                   <span className="block text-xs text-muted-foreground truncate">{s.email}</span>
                 </span>

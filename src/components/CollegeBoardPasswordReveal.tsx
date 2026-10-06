@@ -180,7 +180,7 @@ export function CollegeBoardPasswordReveal({
         </button>
       )}
       {state.status === 'error' && (
-        <span className="text-xs text-rose-600 dark:text-rose-300">
+        <span className="text-xs text-rose-600 dark:text-rose-400">
           {state.kind === 'forbidden' ? t.forbidden : state.kind === 'not_found' ? t.notFound : t.network}
         </span>
       )}
@@ -199,7 +199,7 @@ export function CollegeBoardPasswordReveal({
           type="button"
           onClick={hide}
           title={t.hide}
-          className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground dark:hover:bg-secondary"
+          className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground/80 dark:hover:bg-secondary"
         >
           <EyeOff className="w-3.5 h-3.5" />
         </button>

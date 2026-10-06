@@ -1133,10 +1133,10 @@ export default function UserManagement() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-foreground flex items-center">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground dark:text-foreground flex items-center">
             User Management
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage system users and permissions</p>
+          <p className="text-muted-foreground mt-1">Manage system users and permissions</p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <DropdownMenu>
@@ -1171,11 +1171,11 @@ export default function UserManagement() {
       {/* Filters */}
       <Card>
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 @lg:grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-5 gap-4">
             <div>
               <Label htmlFor="search" className="text-sm font-medium">Search</Label>
               <div className="relative mt-2">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="search"
                   type="text"
@@ -1283,18 +1283,18 @@ export default function UserManagement() {
           </div>
           {activeFilterChips.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t dark:border-border">
-              <span className="text-xs text-gray-500 dark:text-gray-400">Фильтры:</span>
+              <span className="text-xs text-muted-foreground">Фильтры:</span>
               {activeFilterChips.map((chip) => (
                 <button
                   key={chip.key}
                   onClick={chip.clear}
-                  className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40"
+                  className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-brand-subtle text-brand-subtle-foreground hover:bg-brand-subtle"
                 >
                   {chip.label}
                   <X className="w-3 h-3" />
                 </button>
               ))}
-              <button onClick={clearAllFilters} className="text-xs text-gray-500 dark:text-gray-400 hover:text-foreground underline ml-1">
+              <button onClick={clearAllFilters} className="text-xs text-muted-foreground hover:text-foreground underline ml-1">
                 Сбросить всё
               </button>
             </div>
@@ -1341,7 +1341,7 @@ export default function UserManagement() {
           
           {isLoading ? (
             <div className="p-6 text-center">
-              <Loader size="lg" animation="spin" color="#2563eb" />
+              <Loader size="lg" animation="spin" color="hsl(var(--brand))" />
             </div>
           ) : error ? (
             <div className="p-6 text-center">
@@ -1385,9 +1385,9 @@ export default function UserManagement() {
               
               {/* Pagination */}
               {totalPages > 1 && (
-                <div className="px-6 py-3 border-t dark:border-border bg-gray-50 dark:bg-secondary">
+                <div className="px-6 py-3 border-t dark:border-border bg-muted dark:bg-secondary">
                   <div className="flex items-center justify-between">
-                    <div className="text-sm text-gray-700 dark:text-gray-400">
+                    <div className="text-sm text-foreground/80">
                       {`Showing ${((currentPage - 1) * pageSize) + 1} to ${Math.min(currentPage * pageSize, totalUsers)} of ${totalUsers} results`}
                     </div>
                     <div className="flex items-center gap-2">
@@ -1519,82 +1519,82 @@ export default function UserManagement() {
             
             <div className="overflow-x-auto">
               <table className="w-full">
-<thead className="bg-gray-50 dark:bg-secondary">
+<thead className="bg-muted dark:bg-secondary">
                 <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Group Name
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Group Type
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Программа
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Teacher
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Curator
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Students
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    <th className="px-3 @4xl:px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-card divide-y divide-gray-200 dark:divide-border">
+                <tbody className="bg-card dark:bg-card divide-y divide-border dark:divide-border">
                   {groups?.filter(g => !groupSearch.trim() || (g.name || '').toLowerCase().includes(groupSearch.trim().toLowerCase())).map((group) => (
-                    <tr key={group.id} className="hover:bg-gray-50 dark:hover:bg-secondary">
-                      <td className="px-6 py-4 whitespace-nowrap">
+                    <tr key={group.id} className="hover:bg-muted dark:hover:bg-secondary">
+                      <td className="px-3 @4xl:px-6 py-4 whitespace-nowrap">
                         <div>
-                          <div className="text-sm font-medium text-gray-900 dark:text-foreground">{group.name}</div>
+                          <div className="text-sm font-medium text-foreground dark:text-foreground">{group.name}</div>
                           {group.description && (
-                            <div className="text-sm text-gray-500 dark:text-gray-400">{group.description}</div>
+                            <div className="text-sm text-muted-foreground">{group.description}</div>
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 py-1 text-xs rounded-full bg-slate-100 dark:bg-slate-900/40 dark:text-slate-300 text-slate-700">
+                      <td className="px-3 @4xl:px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 py-1 text-xs rounded-full bg-muted text-foreground/80">
                           {GROUP_TYPE_LABELS[(group.group_type as GroupType) || 'group']}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 @4xl:px-6 py-4 whitespace-nowrap">
                         <span className="px-2 py-1 text-xs rounded-full bg-amber-100 dark:bg-amber-900/35 dark:text-amber-200 text-amber-900">
                           {COURSE_TYPE_LABELS[(group.program_type as CourseType) || 'general_english']}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 @4xl:px-6 py-4 whitespace-nowrap">
                         <span className="px-2 py-1 text-xs rounded-full bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400 text-purple-700">
                           {group.teacher_name || 'No Teacher'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 @4xl:px-6 py-4 whitespace-nowrap">
                         {group.curator_name ? (
-                          <span className="px-2 py-1 text-xs rounded-full bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 text-blue-700">
+                          <span className="px-2 py-1 text-xs rounded-full bg-brand-subtle text-brand-subtle-foreground">
                             {group.curator_name}
                           </span>
                         ) : (
-                          <span className="text-sm text-gray-500 dark:text-gray-400">No Curator</span>
+                          <span className="text-sm text-muted-foreground">No Curator</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 @4xl:px-6 py-4 whitespace-nowrap">
                         <span className="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700">
                           {group.student_count || 0} students
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 @4xl:px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs rounded-full ${
-                          group.is_active ? 'bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700' : 'bg-gray-100 dark:bg-gray-800 dark:text-gray-400 text-gray-700'
+                          group.is_active ? 'bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700' : 'bg-muted text-foreground/80'
                         }`}>
                           {group.is_active ? 'Active' : 'Inactive'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <td className="px-3 @4xl:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
                           <Button
                             onClick={() => { void openEditGroupModal(group) }}
@@ -1657,7 +1657,7 @@ export default function UserManagement() {
         {formData.role === 'student' && (
           <label className="flex items-center gap-2 mt-2 px-1 cursor-pointer">
             <Checkbox checked={sendInviteOnCreate} onCheckedChange={(c) => setSendInviteOnCreate(c === true)} />
-            <span className="text-sm text-gray-700 dark:text-gray-300">Отправить приглашение на почту (логин и пароль)</span>
+            <span className="text-sm text-foreground/80">Отправить приглашение на почту (логин и пароль)</span>
           </label>
         )}
       </Modal>
@@ -1701,7 +1701,7 @@ export default function UserManagement() {
           <div>
             <Label className="text-sm font-medium mb-1.5 block">Generated Password</Label>
             <div className="flex items-center gap-2">
-              <div className="bg-gray-100 dark:bg-secondary border border-gray-200 dark:border-border rounded-md p-3 flex-1 font-mono text-lg tracking-wider text-center select-all">
+              <div className="bg-muted dark:bg-secondary border border-border dark:border-border rounded-md p-3 flex-1 font-mono text-lg tracking-wider text-center select-all">
                 {generatedPassword}
               </div>
               <Button
@@ -1721,7 +1721,7 @@ export default function UserManagement() {
             </div>
           </div>
           
-<p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+<p className="text-xs text-muted-foreground mt-2">
           Please copy and share this password with the user. It will not be shown again.
         </p>
         </div>
@@ -1806,7 +1806,7 @@ export default function UserManagement() {
         submitText="Deactivate"
       >
         <div>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
+          <p className="text-muted-foreground mb-4">
             {selectedUser ? (
               <>Are you sure you want to deactivate <strong>{selectedUser.name}</strong>? This action can be undone later.</>
             ) : (
@@ -1881,18 +1881,18 @@ export default function UserManagement() {
         <div className="space-y-4">
           <div className="p-1">
             <Label className="text-sm font-medium">Schedule Data (TSV Format)</Label>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-2">
+            <p className="text-xs text-muted-foreground mt-1 mb-2">
               Format: Date [tab] Student [tab] Teacher [tab] Course [tab] Lessons [tab] Shorthand
             </p>
             <textarea
               value={bulkScheduleText}
               onChange={(e) => setBulkScheduleText(e.target.value)}
               placeholder="February 5 2026	Student Name	Teacher Name	SAT 4 months	48	пн ср пт 20 00"
-              className="w-full h-64 p-3 border rounded-md text-sm font-mono resize-y focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full h-64 p-3 border rounded-md text-sm font-mono resize-y focus:ring-2 focus:ring-brand focus:border-brand"
               disabled={isBulkScheduleLoading}
             />
             <div className="flex justify-between items-center mt-1">
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-muted-foreground">
                 {bulkScheduleText.trim().split('\n').filter(l => l.trim()).length} lines detected
               </p>
               <Button
@@ -1972,7 +1972,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
             className={errors.name ? 'border-red-500' : ''}
           />
           {errors.name && (
-            <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+            <p className="text-red-500 text-xs mt-1 dark:text-red-400">{errors.name}</p>
           )}
         </div>
         
@@ -1987,7 +1987,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
             className={errors.email ? 'border-red-500' : ''}
           />
           {errors.email && (
-            <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+            <p className="text-red-500 text-xs mt-1 dark:text-red-400">{errors.email}</p>
           )}
         </div>
       </div>
@@ -2045,9 +2045,9 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
               className={errors.workspace_email ? 'border-red-500' : ''}
             />
             {errors.workspace_email && (
-              <p className="text-red-500 text-xs mt-1">{errors.workspace_email}</p>
+              <p className="text-red-500 text-xs mt-1 dark:text-red-400">{errors.workspace_email}</p>
             )}
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Connecting gives this teacher's lessons Meet rooms, recordings and Telegram
               invitations. The account must already exist in the Workspace users list uploaded
               on Admin → Recordings Rollout. Clear the field to disconnect.
@@ -2060,12 +2060,12 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
           <div className="p-1">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium">Groups</Label>
-              <span className="text-xs text-gray-500 dark:text-gray-400">Выбрано: {formData.group_ids.length}</span>
+              <span className="text-xs text-muted-foreground">Выбрано: {formData.group_ids.length}</span>
             </div>
             {selectedGroups.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {selectedGroups.map((g) => (
-                  <span key={g.id} className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300">
+                  <span key={g.id} className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-brand-subtle text-brand-subtle-foreground">
                     {g.name}
                     <button type="button" aria-label={`Убрать ${g.name}`} onClick={() => setFormData({ ...formData, group_ids: formData.group_ids.filter((id) => id !== g.id) })}>
                       <X className="w-3 h-3" />
@@ -2075,7 +2075,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
               </div>
             )}
             <div className="relative mt-2">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input value={groupSearch} onChange={(e) => setGroupSearch(e.target.value)} placeholder="Поиск группы…" className="pl-9 h-9" />
             </div>
             <div className="mt-2 max-h-48 overflow-y-auto space-y-0.5 border rounded-md p-2">
@@ -2095,7 +2095,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
                   </label>
                 ))
               ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400 px-2 py-1.5">
+                <p className="text-sm text-muted-foreground px-2 py-1.5">
                   {groups && groups.length > 0 ? 'Ничего не найдено' : 'No groups available'}
                 </p>
               )}
@@ -2135,11 +2135,11 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400">No courses available</p>
+                <p className="text-sm text-muted-foreground">No courses available</p>
               )}
             </div>
             {formData.course_ids.length > 0 && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Selected: {formData.course_ids.length} course(s)
               </p>
             )}
@@ -2151,12 +2151,12 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
           <div className="p-1">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium">Children (students)</Label>
-              <span className="text-xs text-gray-500 dark:text-gray-400">Выбрано: {formData.child_ids.length}</span>
+              <span className="text-xs text-muted-foreground">Выбрано: {formData.child_ids.length}</span>
             </div>
             {selectedChildren.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {selectedChildren.map((s) => (
-                  <span key={s.id} className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300">
+                  <span key={s.id} className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-brand-subtle text-brand-subtle-foreground">
                     {s.name}
                     <button type="button" aria-label={`Убрать ${s.name}`} onClick={() => setFormData({ ...formData, child_ids: formData.child_ids.filter((id) => id !== Number(s.id)) })}>
                       <X className="w-3 h-3" />
@@ -2166,7 +2166,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
               </div>
             )}
             <div className="relative mt-2">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input value={childSearch} onChange={(e) => setChildSearch(e.target.value)} placeholder="Поиск студента по имени или email…" className="pl-9 h-9" />
             </div>
             <div className="mt-2 max-h-48 overflow-y-auto space-y-0.5 border rounded-md p-2">
@@ -2184,12 +2184,12 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
                             : { ...formData, child_ids: formData.child_ids.filter((id) => id !== sid) });
                         }}
                       />
-                      <span className="text-sm font-normal">{s.name}{s.email ? <span className="text-gray-400"> · {s.email}</span> : null}</span>
+                      <span className="text-sm font-normal">{s.name}{s.email ? <span className="text-muted-foreground"> · {s.email}</span> : null}</span>
                     </label>
                   );
                 })
               ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400 px-2 py-1.5">
+                <p className="text-sm text-muted-foreground px-2 py-1.5">
                   {students && students.length > 0 ? 'Ничего не найдено' : 'No students available'}
                 </p>
               )}
@@ -2215,7 +2215,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
         {isEdit && !changePassword ? (
           <button
             type="button"
-            className="mt-1 block text-sm text-blue-600 hover:underline"
+            className="mt-1 block text-sm text-brand hover:underline"
             onClick={() => setChangePassword(true)}
           >
             Set a new password
@@ -2234,7 +2234,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
             {isEdit && (
               <button
                 type="button"
-                className="mt-1 block text-xs text-gray-500 hover:underline"
+                className="mt-1 block text-xs text-muted-foreground hover:underline"
                 onClick={() => { setChangePassword(false); setFormData({ ...formData, password: '' }); }}
               >
                 Cancel password change
@@ -2243,7 +2243,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
           </>
         )}
         {errors.password && (
-          <p className="mt-1 text-xs text-red-600">{errors.password}</p>
+          <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.password}</p>
         )}
       </div>
       
@@ -2396,7 +2396,7 @@ function GroupForm({
             </SelectContent>
           </Select>
           {errors.teacher_id && (
-            <p className="text-red-500 text-xs mt-1">{errors.teacher_id}</p>
+            <p className="text-red-500 text-xs mt-1 dark:text-red-400">{errors.teacher_id}</p>
           )}
         </div>
         
@@ -2421,7 +2421,7 @@ function GroupForm({
             </SelectContent>
           </Select>
           {errors.curator_id && (
-            <p className="text-red-500 text-xs mt-1">{errors.curator_id}</p>
+            <p className="text-red-500 text-xs mt-1 dark:text-red-400">{errors.curator_id}</p>
           )}
         </div>
       </div>
@@ -2448,9 +2448,9 @@ function GroupForm({
           </SelectContent>
         </Select>
         {errors.course_id ? (
-          <p className="text-red-500 text-xs mt-1">{errors.course_id}</p>
+          <p className="text-red-500 text-xs mt-1 dark:text-red-400">{errors.course_id}</p>
         ) : (
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Select a course to automatically grant this group access
           </p>
         )}
@@ -2476,9 +2476,9 @@ function GroupForm({
             }}
           />
           {errors.max_open_lessons && (
-            <p className="text-red-500 text-xs mt-1">{errors.max_open_lessons}</p>
+            <p className="text-red-500 text-xs mt-1 dark:text-red-400">{errors.max_open_lessons}</p>
           )}
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             In each module, only the first N lessons (by order) are available—the same limit applies separately in every module. No homework for students who only have special access.
           </p>
         </div>
@@ -2501,9 +2501,9 @@ function GroupForm({
           }
         />
         {errors.name && (
-          <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+          <p className="text-red-500 text-xs mt-1 dark:text-red-400">{errors.name}</p>
         )}
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-xs text-muted-foreground mt-1">
           Format: "First Name - Description". You can edit this field.
         </p>
       </div>
@@ -2518,7 +2518,7 @@ function GroupForm({
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           placeholder="Optional description (will be used in group name)"
         />
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-xs text-muted-foreground mt-1">
           This description will be used in the group name format: "Teacher - Description"
         </p>
       </div>
@@ -2537,7 +2537,7 @@ function GroupForm({
             <SelectItem value="individual">{GROUP_TYPE_LABELS.individual}</SelectItem>
           </SelectContent>
         </Select>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-xs text-muted-foreground mt-1">
           By default, groups are set to Group; use Individual for one-on-one classes.
         </p>
       </div>
@@ -2553,9 +2553,9 @@ function GroupForm({
         />
         <div className="mt-2 max-h-40 overflow-y-auto border rounded-md p-2 space-y-2">
           {students.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400 text-sm">No students available</p>
+            <p className="text-muted-foreground text-sm">No students available</p>
           ) : displayedStudents.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400 text-sm">No students found</p>
+            <p className="text-muted-foreground text-sm">No students found</p>
           ) : (
             displayedStudents.map((student) => (
               <div key={student.id} className="flex items-center space-x-2">
@@ -2585,7 +2585,7 @@ function GroupForm({
           )}
         </div>
         {formData.student_ids.length > 0 && (
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Selected: {formData.student_ids.length} student(s)
           </p>
         )}
@@ -2700,7 +2700,7 @@ function BulkAddStudentsForm({ formData, setFormData, groups, students, errors =
           </SelectContent>
         </Select>
         {errors.groupId && (
-          <p className="text-red-500 text-xs mt-1">{errors.groupId}</p>
+          <p className="text-red-500 text-xs mt-1 dark:text-red-400">{errors.groupId}</p>
         )}
       </div>
 
@@ -2738,10 +2738,10 @@ function BulkAddStudentsForm({ formData, setFormData, groups, students, errors =
 
         <div className="mt-2 max-h-60 overflow-y-auto border rounded-md p-2 space-y-2">
           {displayedBulkStudents.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400 text-sm text-center py-4">No students found</p>
+            <p className="text-muted-foreground text-sm text-center py-4">No students found</p>
           ) : (
             displayedBulkStudents.map((student) => (
-              <div key={student.id} className="flex items-center space-x-2 hover:bg-gray-50 dark:hover:bg-secondary p-1 rounded">
+              <div key={student.id} className="flex items-center space-x-2 hover:bg-muted dark:hover:bg-secondary p-1 rounded">
                 <Checkbox
                   id={`bulk-student-${student.id}`}
                   checked={formData.studentIds.includes(Number(student.id))}
@@ -2749,7 +2749,7 @@ function BulkAddStudentsForm({ formData, setFormData, groups, students, errors =
                 />
                 <Label htmlFor={`bulk-student-${student.id}`} className="text-sm cursor-pointer flex-1">
                   <div className="font-medium">{student.name || student.full_name}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">{student.email}</div>
+                  <div className="text-xs text-muted-foreground">{student.email}</div>
                 </Label>
               </div>
             ))
@@ -2757,11 +2757,11 @@ function BulkAddStudentsForm({ formData, setFormData, groups, students, errors =
         </div>
         
         <div className="flex justify-between items-center mt-2">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-muted-foreground">
             Selected: {formData.studentIds.length} student(s)
           </p>
           {errors.studentIds && (
-            <p className="text-red-500 text-xs">{errors.studentIds}</p>
+            <p className="text-red-500 text-xs dark:text-red-400">{errors.studentIds}</p>
           )}
         </div>
       </div>
@@ -2789,18 +2789,18 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
     <div className="space-y-4">
       <div className="p-1">
         <Label className="text-sm font-medium">Student Data (Tab-separated)</Label>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-2">
+        <p className="text-xs text-muted-foreground mt-1 mb-2">
           Paste data with columns: Name, Phone, Months, Date, Email (separated by tabs)
         </p>
         <textarea
           value={formData.text}
           onChange={(e) => setFormData({ ...formData, text: e.target.value })}
           placeholder={exampleText}
-          className="w-full h-48 p-3 border rounded-md text-sm font-mono resize-y focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-full h-48 p-3 border rounded-md text-sm font-mono resize-y focus:ring-2 focus:ring-brand focus:border-brand"
           disabled={isLoading}
         />
         <div className="flex justify-between items-center mt-1">
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-muted-foreground">
             {formData.text.trim().split('\n').filter(l => l.trim()).length} lines detected
           </p>
           <Button
@@ -2822,7 +2822,7 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
           onCheckedChange={(c) => setFormData({ ...formData, sendInvites: c === true })}
           disabled={isLoading}
         />
-        <span className="text-sm text-gray-700 dark:text-gray-300">Отправить приглашения на почту (логин и пароль каждому студенту)</span>
+        <span className="text-sm text-foreground/80">Отправить приглашения на почту (логин и пароль каждому студенту)</span>
       </label>
 
       <div className="p-1">
@@ -2855,11 +2855,11 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
               </div>
             ))
           ) : (
-            <p className="text-sm text-gray-500 dark:text-gray-400">No groups available</p>
+            <p className="text-sm text-muted-foreground">No groups available</p>
           )}
         </div>
         {formData.groupIds.length > 0 && (
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Selected: {formData.groupIds.length} group(s)
           </p>
         )}
@@ -2896,7 +2896,7 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
               </div>
               <div className="max-h-40 overflow-y-auto space-y-1">
                 {results.created.map((item, idx) => (
-                  <div key={idx} className="text-xs text-green-700 dark:text-green-400 flex justify-between items-center bg-white dark:bg-card p-2 rounded">
+                  <div key={idx} className="text-xs text-green-700 dark:text-green-400 flex justify-between items-center bg-card p-2 rounded">
                     <span>{item.user.name} ({item.user.email})</span>
                     {item.generated_password && (
                       <code className="bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded text-green-800 dark:text-green-400 cursor-pointer hover:bg-green-200 dark:hover:bg-green-800/50"
@@ -2922,7 +2922,7 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
               </h5>
               <div className="max-h-40 overflow-y-auto space-y-1">
                 {results.failed.map((item, idx) => (
-                  <div key={idx} className="text-xs text-red-700 dark:text-red-400 bg-white dark:bg-card p-2 rounded">
+                  <div key={idx} className="text-xs text-red-700 dark:text-red-400 bg-card p-2 rounded">
                     <span className="font-medium">{item.email}:</span> {item.error}
                   </div>
                 ))}

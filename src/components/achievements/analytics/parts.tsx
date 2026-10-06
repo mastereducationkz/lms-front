@@ -28,7 +28,7 @@ export function Section({ title, subtitle, action, children, className = '' }: {
   title: string; subtitle?: string; action?: ReactNode; children: ReactNode; className?: string;
 }) {
   return (
-    <section className={`rounded-2xl border border-border bg-card dark:bg-card p-5 shadow-sm ${className}`}>
+    <section className={`rounded-2xl border border-border bg-card p-5 shadow-sm ${className}`}>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="text-base font-semibold text-foreground">{title}</h2>
@@ -45,7 +45,7 @@ export function StatCard({ label, value, hint, accent = 'text-foreground' }: {
   label: string; value: ReactNode; hint?: ReactNode; accent?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-card dark:bg-card p-4 shadow-sm">
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
       <p className="text-xs font-medium text-muted-foreground">{label}</p>
       <p className={`mt-1 text-2xl font-bold tabular-nums ${accent}`}>{value}</p>
       {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
@@ -75,7 +75,7 @@ export function OrcaStack({ people, size = 28, max = 3 }: { people: AnalyticsPer
   return (
     <div className="flex -space-x-2">
       {people.slice(0, max).map((p) => (
-        <span key={p.id} title={`${p.name} · ${p.count}`} className="rounded-full ring-2 ring-white dark:ring-card">
+        <span key={p.id} title={`${p.name} · ${p.count}`} className="rounded-full ring-2 ring-card">
           <UserAvatar userId={p.id} name={p.name} avatarUrl={p.avatar_url} mascot={p.mascot} isStudent size={size} />
         </span>
       ))}
