@@ -207,21 +207,21 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
                 <DialogHeader>
                     <DialogTitle>Generate Class Schedule</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4 py-4 text-gray-700 dark:text-gray-300">
+                <div className="space-y-4 py-4 text-foreground/80">
                     {isLoading ? (
                         <div className="flex justify-center items-center py-12">
-                            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                            <Loader2 className="w-8 h-8 animate-spin text-brand" />
                         </div>
                     ) : (
                         <>
                             <div className="grid gap-2">
-                                <Label htmlFor="shorthand" className="text-gray-900 dark:text-foreground font-semibold">Быстрый ввод (пн ср пт 19:00-20:30)</Label>
+                                <Label htmlFor="shorthand" className="text-foreground dark:text-foreground font-semibold">Быстрый ввод (пн ср пт 19:00-20:30)</Label>
                                 <Input
                                     id="shorthand"
                                     placeholder="вт чт 20 00 сб 12 00"
                                     value={shorthandText}
                                     onChange={(e) => handleShorthandChange(e.target.value)}
-                                    className="border-gray-300 dark:border-border focus:border-blue-500"
+                                    className="border-input dark:border-border focus:border-brand"
                                 />
                                 {shorthandProblems.length > 0 && (
                                     <ul className="text-xs text-red-500 dark:text-red-400 space-y-0.5">
@@ -233,13 +233,13 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="start-date" className="text-gray-900 dark:text-foreground font-semibold">Start Date</Label>
+                                <Label htmlFor="start-date" className="text-foreground dark:text-foreground font-semibold">Start Date</Label>
                                 <Input
                                     id="start-date"
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
-                                    className="border-gray-300 dark:border-border focus:border-blue-500"
+                                    className="border-input dark:border-border focus:border-brand"
                                 />
                             </div>
 

@@ -21,22 +21,22 @@ export default function RarityTable({ items, lang }: { items: AnalyticsAchieveme
             <th className="pb-2 font-medium text-right">{tr(lang, '30 дн.', '30 days')}</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100 dark:divide-border">
+        <tbody className="divide-y divide-border">
           {held.map((a) => (
             <tr key={a.key}>
               <td className="py-2.5 pr-3">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-gray-900 dark:text-white">{a.title}</span>
+                  <span className="font-medium text-foreground">{a.title}</span>
                   {a.secret && <span className="text-[10px] text-muted-foreground">{tr(lang, 'секретное', 'secret')}</span>}
                 </div>
                 <div className="mt-1"><TierBadge tier={a.tier} lang={lang} /></div>
               </td>
               <td className="py-2.5 pr-3">
                 <div className="flex items-center gap-2">
-                  <div className="h-2 flex-1 rounded-full bg-gray-100 dark:bg-secondary">
+                  <div className="h-2 flex-1 rounded-full bg-muted dark:bg-secondary">
                     <div className={`h-2 rounded-full ${(TIER_STYLE[a.tier] ?? TIER_STYLE.earned).bar}`} style={{ width: barWidth(a.pct) }} />
                   </div>
-                  <span className="w-12 text-right text-xs font-semibold tabular-nums text-gray-700 dark:text-gray-200">{formatPct(a.pct)}</span>
+                  <span className="w-12 text-right text-xs font-semibold tabular-nums text-foreground/80">{formatPct(a.pct)}</span>
                 </div>
               </td>
               <td className="py-2.5 text-right tabular-nums">{a.unlocked}</td>
@@ -48,13 +48,13 @@ export default function RarityTable({ items, lang }: { items: AnalyticsAchieveme
       </table>
     </div>
     {notYet.length > 0 && (
-      <div className="mt-4 rounded-xl bg-gray-50 dark:bg-secondary/40 p-3">
+      <div className="mt-4 rounded-xl bg-muted dark:bg-secondary/40 p-3">
         <p className="mb-2 text-xs font-medium text-muted-foreground">
           {tr(lang, `Пока никто не получил · ${notYet.length}`, `Not earned yet · ${notYet.length}`)}
         </p>
         <div className="flex flex-wrap gap-2">
           {notYet.map((a) => (
-            <span key={a.key} className="inline-flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-border bg-white dark:bg-card px-2.5 py-1 text-xs text-gray-700 dark:text-gray-200">
+            <span key={a.key} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-xs text-foreground/80">
               {a.title}
               <TierBadge tier={a.tier} lang={lang} />
             </span>

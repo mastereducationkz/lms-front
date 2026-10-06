@@ -96,7 +96,7 @@ const DraggableModule = ({
     <div 
       ref={setNodeRef} 
       style={style}
-      className={`bg-white rounded-[5px] border border-l-8 border-l-blue-500 ${isDragging ? 'shadow-lg' : ''}`}
+      className={`bg-card rounded-[5px] border border-l-8 border-l-blue-500 ${isDragging ? 'shadow-lg' : ''}`}
     >
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
@@ -104,9 +104,9 @@ const DraggableModule = ({
             <div 
               {...attributes}
               {...listeners}
-              className="cursor-grab hover:cursor-grabbing p-1 hover:bg-gray-100 rounded"
+              className="cursor-grab hover:cursor-grabbing p-1 hover:bg-muted rounded"
             >
-              <GripVertical className="w-4 h-4 text-gray-400" />
+              <GripVertical className="w-4 h-4 text-muted-foreground" />
             </div>
             <span className="text-lg font-medium">{index + 1}</span>
             <div className="flex-1">
@@ -123,13 +123,13 @@ const DraggableModule = ({
                             onUpdatePendingModule(module.id, 'title', e.target.value);
                           }
                         }}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                       />
                     </div>
                     <div className="flex items-center gap-2 ml-4">
-                      <span className="text-sm text-gray-500">Total points: 0</span>
-                      <button className="p-2 hover:bg-gray-100 rounded">
-                        <MoreVertical className="w-4 h-4 text-gray-500" />
+                      <span className="text-sm text-muted-foreground">Total points: 0</span>
+                      <button className="p-2 hover:bg-muted rounded">
+                        <MoreVertical className="w-4 h-4 text-muted-foreground" />
                       </button>
                     </div>
                   </div>
@@ -144,14 +144,14 @@ const DraggableModule = ({
                       }
                     }}
                     maxLength={254}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                   />
                 </div>
               ) : (
                 <>
                   <h3 className="text-lg font-medium">{module.title}</h3>
                   {module.description && (
-                    <p className="text-gray-600 text-sm mt-1">{module.description}</p>
+                    <p className="text-muted-foreground text-sm mt-1">{module.description}</p>
                   )}
                 </>
               )}
@@ -161,7 +161,7 @@ const DraggableModule = ({
             {!isPending && (
               <button 
                 onClick={() => onToggleExpanded(module.id)}
-                className="p-2 hover:bg-gray-100 rounded"
+                className="p-2 hover:bg-muted rounded"
               >
                 {expandedModules.has(module.id) ? 
                   <ChevronUp className="w-4 h-4" /> : 
@@ -172,19 +172,19 @@ const DraggableModule = ({
             <div className="relative dropdown-container">
               <button 
                 onClick={() => onToggleDropdown(module.id)}
-                className="p-2 hover:bg-gray-100 rounded"
+                className="p-2 hover:bg-muted rounded"
               >
-                <MoreVertical className="w-4 h-4 text-gray-500" />
+                <MoreVertical className="w-4 h-4 text-muted-foreground" />
               </button>
               {openDropdown === module.id && (
-                <div className="absolute right-0 top-full mt-1 bg-white dark:bg-card border dark:border-border rounded-lg shadow-lg z-10 min-w-[120px]">
+                <div className="absolute right-0 top-full mt-1 bg-card dark:bg-card border dark:border-border rounded-lg shadow-lg z-10 min-w-[120px]">
                   {!isPending && (
                     <button 
                       onClick={() => {
                         onEditModule(module);
                         // onToggleDropdown(null) will be handled by parent
                       }}
-                      className="block w-full text-left px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-secondary rounded-t-lg"
+                      className="block w-full text-left px-4 py-2 text-sm text-brand hover:bg-brand-surface dark:hover:bg-secondary rounded-t-lg"
                     >
                       Edit
                     </button>
@@ -194,7 +194,7 @@ const DraggableModule = ({
                       onRemoveModule(module.id);
                       // onToggleDropdown(null) will be handled by parent
                     }}
-                    className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-secondary rounded-b-lg"
+                    className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-secondary rounded-b-lg dark:hover:bg-red-950/40"
                   >
                     Delete
                   </button>
@@ -245,11 +245,11 @@ const DraggableLesson = ({
   const getLessonTypeIcon = (type: LessonContentType) => {
     switch (type) {
       case 'video':
-        return <Video className="w-4 h-4 text-purple-600" />;
+        return <Video className="w-4 h-4 text-purple-600 dark:text-purple-400" />;
       case 'quiz':
-        return <HelpCircle className="w-4 h-4 text-green-600" />;
+        return <HelpCircle className="w-4 h-4 text-green-600 dark:text-green-400" />;
       default:
-        return <FileText className="w-4 h-4 text-blue-600" />;
+        return <FileText className="w-4 h-4 text-brand" />;
     }
   };
 
@@ -265,25 +265,25 @@ const DraggableLesson = ({
     <div 
       ref={setNodeRef} 
       style={style}
-      className={`flex items-center justify-between p-3 bg-gray-50 rounded-lg ${isDragging ? 'shadow-lg' : ''}`}
+      className={`flex items-center justify-between p-3 bg-muted rounded-lg ${isDragging ? 'shadow-lg' : ''}`}
     >
       <div className="flex items-center gap-3">
         <div 
           {...attributes}
           {...listeners}
-          className="cursor-grab hover:cursor-grabbing p-1 hover:bg-gray-200 rounded"
+          className="cursor-grab hover:cursor-grabbing p-1 hover:bg-border rounded"
         >
-          <GripVertical className="w-4 h-4 text-gray-400" />
+          <GripVertical className="w-4 h-4 text-muted-foreground" />
         </div>
-        <div className="flex items-center justify-center w-8 h-8 bg-white rounded-md">
+        <div className="flex items-center justify-center w-8 h-8 bg-card rounded-md">
           {getLessonTypeIcon(getLessonType(lesson))}
         </div>
         <div>
-          <div className="font-medium text-gray-900 text-sm">{lesson?.title || 'Untitled'}</div>
-          <div className="text-xs text-gray-500 capitalize">
+          <div className="font-medium text-foreground text-sm">{lesson?.title || 'Untitled'}</div>
+          <div className="text-xs text-muted-foreground capitalize">
             {getLessonType(lesson)} • {index + 1}
             {lesson?.is_initially_unlocked && (
-              <span className="ml-2 inline-flex items-center gap-0.5 normal-case text-green-700 font-medium"><LockOpen className="h-3 w-3" aria-hidden="true" />Unlocked</span>
+              <span className="ml-2 inline-flex items-center gap-0.5 normal-case text-green-700 font-medium dark:text-green-300"><LockOpen className="h-3 w-3" aria-hidden="true" />Unlocked</span>
             )}
           </div>
         </div>
@@ -294,8 +294,8 @@ const DraggableLesson = ({
             onClick={() => onToggleInitiallyUnlocked(lesson?.id, !lesson?.is_initially_unlocked)}
             className={`px-2 py-1 text-xs rounded flex items-center gap-1 ${
               lesson?.is_initially_unlocked 
-                ? 'bg-green-100 text-green-700 hover:bg-green-200' 
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-300 dark:hover:bg-green-900/50' 
+                : 'bg-muted text-muted-foreground hover:bg-border'
             }`}
             title={lesson?.is_initially_unlocked ? 'Lesson is initially unlocked for students' : 'Click to make lesson initially unlocked'}
             aria-label={lesson?.is_initially_unlocked ? 'Lesson is initially unlocked for students' : 'Make lesson initially unlocked'}
@@ -306,13 +306,13 @@ const DraggableLesson = ({
         )}
         <button 
           onClick={() => navigate(`/course/${courseId}/lesson/${lesson?.id}/edit`)} 
-          className="px-3 py-1 text-sm text-blue-600 hover:bg-blue-100 rounded"
+          className="px-3 py-1 text-sm text-brand hover:bg-brand-subtle rounded"
         >
           Edit
         </button>
         <button 
           onClick={() => onRemove(lesson?.id)} 
-          className="px-3 py-1 text-sm text-red-600 hover:bg-red-100 rounded"
+          className="px-3 py-1 text-sm text-red-600 hover:bg-red-100 rounded dark:text-red-400 dark:hover:bg-red-900/40"
           aria-label="Remove lesson"
           title="Remove lesson"
         >
@@ -800,14 +800,14 @@ export default function CourseBuilderPage() {
           
           {/* Pending Lectures */}
           {pendingLectures.filter(l => l && l.module_id === moduleId).map((l: any, lecIndex: number) => (
-            <div key={l?.id || lecIndex} className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200 mb-2 animate-in slide-in-from-top-2 duration-200">
+            <div key={l?.id || lecIndex} className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200 mb-2 animate-in slide-in-from-top-2 duration-200 dark:bg-green-950/40 dark:border-green-800/60">
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8 bg-green-200 rounded-md">
+                <div className="flex items-center justify-center w-8 h-8 bg-green-200 rounded-md dark:bg-green-900/50">
                   {getLessonTypeIcon(getLessonType(l))}
                 </div>
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900 text-sm">{l?.title || "Untitled"}</div>
-                  <div className="text-xs text-green-600 flex items-center gap-1">
+                  <div className="font-medium text-foreground text-sm">{l?.title || "Untitled"}</div>
+                  <div className="text-xs text-green-600 flex items-center gap-1 dark:text-green-400">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                     Created - will be saved
                   </div>
@@ -815,7 +815,7 @@ export default function CourseBuilderPage() {
               </div>
               <button 
                 onClick={() => onRemoveLecture(l?.id)}
-                className="px-3 py-1 text-xs text-red-600 hover:bg-red-100 rounded"
+                className="px-3 py-1 text-xs text-red-600 hover:bg-red-100 rounded dark:text-red-400 dark:hover:bg-red-900/40"
               >
                 ×
               </button>
@@ -824,10 +824,10 @@ export default function CourseBuilderPage() {
 
           {/* Inline Lecture Creation Form */}
           {showInlineLectureForm === String(moduleId) && (
-            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 mb-4 animate-in slide-in-from-top-2 duration-200">
+            <div className="bg-brand-surface rounded-lg p-4 border border-brand-border mb-4 animate-in slide-in-from-top-2 duration-200">
               <div className="space-y-3">
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center justify-center w-10 h-10 bg-blue-200 rounded-lg">
+                  <div className="flex items-center justify-center w-10 h-10 bg-brand-subtle rounded-lg">
                     {getLessonTypeIcon(inlineLectureData.type)}
                   </div>
                   <div className="flex-1">
@@ -847,7 +847,7 @@ export default function CourseBuilderPage() {
                           handleCancelInlineLecture();
                         }
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                       autoFocus
                     />
                   </div>
@@ -855,22 +855,22 @@ export default function CourseBuilderPage() {
                     <button
                       onClick={() => handleCreateInlineLecture(String(moduleId))}
                       disabled={!inlineLectureData.title.trim() || isCreatingLesson}
-                      className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1 text-sm bg-brand-solid hover:bg-brand-solid-hover text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isCreatingLesson ? 'Creating...' : 'Create'}
                     </button>
                     <button
                       onClick={handleCancelInlineLecture}
-                      className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded"
+                      className="px-3 py-1 text-sm text-muted-foreground hover:bg-muted rounded"
                     >
                       Cancel
                     </button>
                   </div>
                 </div>
-                <div className="text-xs text-blue-600 flex items-center gap-1">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div className="text-xs text-brand flex items-center gap-1">
+                  <div className="w-2 h-2 bg-brand-solid rounded-full"></div>
                   Press Enter to add lesson or Escape to cancel
-                  {isCreatingLesson && <span className="ml-2 text-orange-600">Creating...</span>}
+                  {isCreatingLesson && <span className="ml-2 text-orange-600 dark:text-orange-400">Creating...</span>}
                 </div>
               </div>
             </div>
@@ -880,7 +880,7 @@ export default function CourseBuilderPage() {
           {!showInlineLectureForm && (
             <button 
               onClick={() => onAddLecture(moduleId)}
-              className="w-full py-3 border border-dashed border-gray-300 rounded-md text-gray-500 hover:border-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+              className="w-full py-3 border border-dashed border-input rounded-md text-muted-foreground hover:border-input hover:text-foreground/80 hover:bg-muted transition-colors"
             >
               <div className="flex items-center justify-center gap-2">
                 <span className="text-lg">+</span>
@@ -895,14 +895,14 @@ export default function CourseBuilderPage() {
         <div className="text-center py-6">
           {/* Pending Lectures */}
           {pendingLectures.filter(l => l && l.module_id === moduleId).map((l: any, lecIndex: number) => (
-            <div key={l?.id || lecIndex} className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200 mb-2 animate-in slide-in-from-top-2 duration-200">
+            <div key={l?.id || lecIndex} className="flex items-center justify-between p-3 bg-green-50 rounded-md border border-green-200 mb-2 animate-in slide-in-from-top-2 duration-200 dark:bg-green-950/40 dark:border-green-800/60">
               <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8 bg-green-200 rounded-md">
+                <div className="flex items-center justify-center w-8 h-8 bg-green-200 rounded-md dark:bg-green-900/50">
                   {getLessonTypeIcon(getLessonType(l))}
                 </div>
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900 text-sm">{l?.title || "Untitled"}</div>
-                  <div className="text-xs text-green-600 flex items-center gap-1">
+                  <div className="font-medium text-foreground text-sm">{l?.title || "Untitled"}</div>
+                  <div className="text-xs text-green-600 flex items-center gap-1 dark:text-green-400">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                     Created - will be saved
                   </div>
@@ -910,7 +910,7 @@ export default function CourseBuilderPage() {
               </div>
               <button 
                 onClick={() => onRemoveLecture(l?.id)}
-                className="px-3 py-1 text-xs text-red-600 hover:bg-red-100 rounded"
+                className="px-3 py-1 text-xs text-red-600 hover:bg-red-100 rounded dark:text-red-400 dark:hover:bg-red-900/40"
               >
                 ×
               </button>
@@ -919,10 +919,10 @@ export default function CourseBuilderPage() {
 
           {/* Inline Lecture Creation Form */}
           {showInlineLectureForm === String(moduleId) && (
-            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200 mb-4 animate-in slide-in-from-top-2 duration-200">
+            <div className="bg-brand-surface rounded-lg p-4 border border-brand-border mb-4 animate-in slide-in-from-top-2 duration-200">
               <div className="space-y-3">
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center justify-center w-10 h-10 bg-blue-200 rounded-lg">
+                  <div className="flex items-center justify-center w-10 h-10 bg-brand-subtle rounded-lg">
                     {getLessonTypeIcon(inlineLectureData.type)}
                   </div>
                   <div className="flex-1">
@@ -942,7 +942,7 @@ export default function CourseBuilderPage() {
                           handleCancelInlineLecture();
                         }
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                       autoFocus
                     />
                   </div>
@@ -950,22 +950,22 @@ export default function CourseBuilderPage() {
                     <button
                       onClick={() => handleCreateInlineLecture(String(moduleId))}
                       disabled={!inlineLectureData.title.trim() || isCreatingLesson}
-                      className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1 text-sm bg-brand-solid hover:bg-brand-solid-hover text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isCreatingLesson ? 'Creating...' : 'Create'}
                     </button>
                     <button
                       onClick={handleCancelInlineLecture}
-                      className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded"
+                      className="px-3 py-1 text-sm text-muted-foreground hover:bg-muted rounded"
                     >
                       Cancel
                     </button>
                   </div>
                 </div>
-                <div className="text-xs text-blue-600 flex items-center gap-1">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div className="text-xs text-brand flex items-center gap-1">
+                  <div className="w-2 h-2 bg-brand-solid rounded-full"></div>
                   Press Enter to add lesson or Escape to cancel
-                  {isCreatingLesson && <span className="ml-2 text-orange-600">Creating...</span>}
+                  {isCreatingLesson && <span className="ml-2 text-orange-600 dark:text-orange-400">Creating...</span>}
                 </div>
               </div>
             </div>
@@ -1077,13 +1077,13 @@ export default function CourseBuilderPage() {
   const getLessonTypeIcon = (type: LessonContentType) => {
     switch (type) {
       case 'text':
-        return <FileText className="w-4 h-4 text-gray-600" />;
+        return <FileText className="w-4 h-4 text-muted-foreground" />;
       case 'video':
-        return <Video className="w-4 h-4 text-gray-600" />;
+        return <Video className="w-4 h-4 text-muted-foreground" />;
       case 'quiz':
-        return <HelpCircle className="w-4 h-4 text-gray-600" />;
+        return <HelpCircle className="w-4 h-4 text-muted-foreground" />;
       default:
-        return <FileText className="w-4 h-4 text-gray-600" />;
+        return <FileText className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
@@ -1243,38 +1243,38 @@ export default function CourseBuilderPage() {
         {course && (
           <>
             {/* Course Information Card */}
-            <div className="bg-white rounded-lg border p-6">
+            <div className="bg-card rounded-lg border p-6">
               <h2 className="text-xl font-semibold mb-4">Course Information</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 @xl:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Title</label>
+                    <label className="block text-sm font-medium text-foreground/80">Title</label>
                     <p className="mt-1 text-lg font-medium">{course.title}</p>
                   </div>
                                     <div>
-                    <label className="block text-sm font-medium text-gray-700">Status</label>
+                    <label className="block text-sm font-medium text-foreground/80">Status</label>
                     <div className="mt-1 flex items-center gap-2">
                       <span className={`w-2 h-2 rounded-full ${
-                        (course as any).is_active ? 'bg-green-500' : 'bg-gray-400'
+                        (course as any).is_active ? 'bg-green-500' : 'bg-muted-foreground/50'
                       }`}></span>
                       <span className={`text-sm font-medium ${
-                        (course as any).is_active ? 'text-green-600' : 'text-gray-500'
+                        (course as any).is_active ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'
                       }`}>
                         {(course as any).is_active ? 'Active' : 'Draft'}
                       </span>
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">Created</label>
-                    <p className="mt-1 text-gray-600">
+                    <label className="block text-sm font-medium text-foreground/80">Created</label>
+                    <p className="mt-1 text-muted-foreground">
                       {course.created_at ? new Date(course.created_at).toLocaleDateString() : 'Unknown'}
                     </p>
                   </div>
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Description</label>
-                  <p className="mt-1 text-gray-600 leading-relaxed">
+                  <label className="block text-sm font-medium text-foreground/80">Description</label>
+                  <p className="mt-1 text-muted-foreground leading-relaxed">
                     {(course as any).description || 'No description provided'}
                   </p>
                 </div>
@@ -1282,57 +1282,57 @@ export default function CourseBuilderPage() {
             </div>
 
             {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-white rounded-lg border p-4">
+            <div className="grid grid-cols-1 @md:grid-cols-2 @3xl:grid-cols-4 gap-4">
+              <div className="bg-card rounded-lg border p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Total Modules</p>
-                    <p className="text-2xl font-bold text-blue-600">{mods.length}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Total Modules</p>
+                    <p className="text-2xl font-bold text-brand">{mods.length}</p>
                   </div>
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-8 h-8 bg-brand-subtle rounded-lg flex items-center justify-center">
+                    <svg className="w-4 h-4 text-brand" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                     </svg>
                   </div>
                 </div>
       </div>
 
-              <div className="bg-white rounded-lg border p-4">
+              <div className="bg-card rounded-lg border p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Total Lessons</p>
-                    <p className="text-2xl font-bold text-green-600">{totalLessons}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Total Lessons</p>
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">{totalLessons}</p>
                   </div>
-                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center dark:bg-green-900/40">
+                    <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg border p-4">
+              <div className="bg-card rounded-lg border p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Text Lessons</p>
-                    <p className="text-2xl font-bold text-purple-600">{lessonTypes.text || 0}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Text Lessons</p>
+                    <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{lessonTypes.text || 0}</p>
                   </div>
-                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center dark:bg-purple-900/40">
+                    <svg className="w-4 h-4 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-lg border p-4">
+              <div className="bg-card rounded-lg border p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Video Lessons</p>
-                    <p className="text-2xl font-bold text-red-600">{lessonTypes.video || 0}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Video Lessons</p>
+                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">{lessonTypes.video || 0}</p>
                   </div>
-                  <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center dark:bg-red-900/40">
+                    <svg className="w-4 h-4 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
                   </div>
@@ -1342,14 +1342,14 @@ export default function CourseBuilderPage() {
 
             {/* Quiz Statistics */}
             {(lessonTypes.quiz || 0) > 0 && (
-              <div className="bg-white rounded-lg border p-4">
+              <div className="bg-card rounded-lg border p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Quiz Lessons</p>
-                    <p className="text-2xl font-bold text-orange-600">{lessonTypes.quiz || 0}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Quiz Lessons</p>
+                    <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{lessonTypes.quiz || 0}</p>
                   </div>
-                  <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                    <svg className="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center dark:bg-orange-900/40">
+                    <svg className="w-4 h-4 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                     </svg>
                   </div>
@@ -1358,20 +1358,20 @@ export default function CourseBuilderPage() {
             )}
 
             {/* Recent Activity */}
-            <div className="bg-white rounded-lg border p-6">
+            <div className="bg-card rounded-lg border p-6">
               <h2 className="text-xl font-semibold mb-4">Recent Activity</h2>
               <div className="space-y-3">
                 {mods.length > 0 ? (
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                    <div className="w-2 h-2 bg-brand-solid rounded-full"></div>
                     <div className="flex-1">
                       <p className="text-sm font-medium">Course structure updated</p>
-                      <p className="text-xs text-gray-500">{mods.length} modules, {totalLessons} lessons</p>
+                      <p className="text-xs text-muted-foreground">{mods.length} modules, {totalLessons} lessons</p>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="text-center py-8 text-muted-foreground">
+                    <svg className="w-12 h-12 mx-auto mb-4 text-muted-foreground/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                     </svg>
                     <p className="text-sm">No activity yet. Start by adding modules and lessons.</p>
@@ -1389,7 +1389,7 @@ export default function CourseBuilderPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Course Description</h1>
-        <span className="text-xs text-gray-500">
+        <span className="text-xs text-muted-foreground">
           {course?.updated_at ? `Last updated: ${new Date((course as any).updated_at).toLocaleString()}` : ''}
         </span>
       </div>
@@ -1406,7 +1406,7 @@ export default function CourseBuilderPage() {
                 <Label htmlFor="course-image">Course Cover Image</Label>
                 <div className="flex items-center gap-4">
                   <div className="relative">
-                    <div className="w-32 h-24 bg-gray-100 rounded-lg overflow-hidden border">
+                    <div className="w-32 h-24 bg-muted rounded-lg overflow-hidden border">
                       {(course as any).cover_image_url ? (
                         <img 
                           src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + (course as any).cover_image_url} 
@@ -1414,7 +1414,7 @@ export default function CourseBuilderPage() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                           <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                           </svg>
@@ -1423,7 +1423,7 @@ export default function CourseBuilderPage() {
                     </div>
                     <button
                       onClick={() => document.getElementById('course-image-input')?.click()}
-                      className="absolute -bottom-2 -right-2 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors"
+                      className="absolute -bottom-2 -right-2 w-8 h-8 bg-brand-solid text-white rounded-full flex items-center justify-center hover:bg-brand-solid-hover transition-colors"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -1439,13 +1439,13 @@ export default function CourseBuilderPage() {
                       onChange={handleImageUpload}
                     />
                     <div className="space-y-2">
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-muted-foreground">
                         {(course as any).cover_image_url ? 'Click the edit button to change the image' : 'Upload a cover image for your course'}
                       </p>
                       {(course as any).cover_image_url && (
                         <button
                           onClick={() => setCourse(prev => prev ? { ...prev, cover_image_url: '' } : prev)}
-                          className="text-sm text-red-600 hover:text-red-700"
+                          className="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                         >
                           Remove image
                         </button>
@@ -1497,7 +1497,7 @@ export default function CourseBuilderPage() {
                     <SelectItem value="weekly">Weekly (modules unlock by week from group start)</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-sm text-gray-500">For weekly: set start_date in group schedule_config</p>
+                <p className="text-sm text-muted-foreground">For weekly: set start_date in group schedule_config</p>
               </div>
               <div className="flex items-center justify-end gap-2 pt-2">
                 <Button
@@ -1527,29 +1527,29 @@ export default function CourseBuilderPage() {
   const renderContentSection = () => (
     <div className="space-y-8">
       {/* Header with better visual hierarchy */}
-      <div className="bg-white rounded-lg border p-6">
+      <div className="bg-card rounded-lg border p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Course Program</h1>
-            <p className="text-gray-600 mt-1">Organize your course content into modules and lessons</p>
+            <h1 className="text-2xl font-bold text-foreground">Course Program</h1>
+            <p className="text-muted-foreground mt-1">Organize your course content into modules and lessons</p>
           </div>
         </div>
         
         {/* Quick stats */}
         <div className="grid grid-cols-3 gap-4">
-          <div className="text-center p-3 bg-gray-50 rounded-lg">
-            <div className="text-2xl font-bold text-gray-900">{mods.length}</div>
-            <div className="text-sm text-gray-600">Modules</div>
+          <div className="text-center p-3 bg-muted rounded-lg">
+            <div className="text-2xl font-bold text-foreground">{mods.length}</div>
+            <div className="text-sm text-muted-foreground">Modules</div>
           </div>
-          <div className="text-center p-3 bg-gray-50 rounded-lg">
-            <div className="text-2xl font-bold text-gray-900">
+          <div className="text-center p-3 bg-muted rounded-lg">
+            <div className="text-2xl font-bold text-foreground">
               {Array.from(moduleLectures.values()).reduce((total, lectures) => total + lectures.length, 0)}
             </div>
-            <div className="text-sm text-gray-600">Total Lessons</div>
+            <div className="text-sm text-muted-foreground">Total Lessons</div>
           </div>
-          <div className="text-center p-3 bg-gray-50 rounded-lg">
-            <div className="text-2xl font-bold text-gray-900">{pendingModules.length + pendingLectures.length}</div>
-            <div className="text-sm text-gray-600">Pending</div>
+          <div className="text-center p-3 bg-muted rounded-lg">
+            <div className="text-2xl font-bold text-foreground">{pendingModules.length + pendingLectures.length}</div>
+            <div className="text-sm text-muted-foreground">Pending</div>
           </div>
         </div>
       </div>
@@ -1595,9 +1595,9 @@ export default function CourseBuilderPage() {
 
       {/* Inline Module Creation Form */}
       {showInlineModuleForm && (
-        <div className="bg-white rounded-lg border p-5">
+        <div className="bg-card rounded-lg border p-5">
           <div className="flex items-start gap-3">
-            <div className="flex items-center justify-center w-8 h-8 bg-blue-50 text-blue-600 rounded-md font-medium text-sm">
+            <div className="flex items-center justify-center w-8 h-8 bg-brand-surface text-brand rounded-md font-medium text-sm">
               {getDisplayModules().length + 1}
             </div>
             <div className="flex-1 space-y-3">
@@ -1614,7 +1614,7 @@ export default function CourseBuilderPage() {
                     handleSaveInlineModule();
                   }
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+                className="w-full px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent font-medium"
                 autoFocus
               />
               
@@ -1624,20 +1624,20 @@ export default function CourseBuilderPage() {
                 value={inlineModuleData.description}
                 onChange={(e) => setInlineModuleData(prev => ({ ...prev, description: e.target.value }))}
                 maxLength={254}
-                className="w-full px-3 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                className="w-full px-3 py-1 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent text-sm"
               />
               
               <div className="flex items-center gap-2 pt-1">
                 <button 
                   onClick={handleSaveInlineModule}
                   disabled={!inlineModuleData.title.trim()}
-                  className="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded disabled:opacity-50"
+                  className="px-3 py-1 text-sm bg-brand-solid hover:bg-brand-solid-hover text-white rounded disabled:opacity-50"
                 >
                   Create
                 </button>
                 <button 
                   onClick={handleCancelInlineModule}
-                  className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded"
+                  className="px-3 py-1 text-sm text-muted-foreground hover:bg-muted rounded"
                 >
                   Cancel
                 </button>
@@ -1648,19 +1648,19 @@ export default function CourseBuilderPage() {
       )}
 
       {/* Add New Module Button */}
-      <div className="bg-white rounded-lg border p-6">
+      <div className="bg-card rounded-lg border p-6">
         <Button 
           onClick={onAddModule}
           variant="outline"
-          className="w-full py-6 border-2 border-dashed border-gray-300 hover:border-blue-400 hover:bg-blue-50 text-gray-600 hover:text-blue-600"
+          className="w-full py-6 border-2 border-dashed border-input hover:border-brand hover:bg-brand-surface text-muted-foreground hover:text-brand"
         >
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-              <span className="text-blue-600 font-bold text-lg">+</span>
+            <div className="w-8 h-8 bg-brand-subtle rounded-full flex items-center justify-center">
+              <span className="text-brand font-bold text-lg">+</span>
             </div>
             <div className="text-left">
               <div className="font-medium">Add New Module</div>
-              <div className="text-sm text-gray-500">Create a new module for your course</div>
+              <div className="text-sm text-muted-foreground">Create a new module for your course</div>
             </div>
           </div>
         </Button>
@@ -1865,14 +1865,14 @@ export default function CourseBuilderPage() {
 
 
 
-  if (!course) return <Loader size="xl" animation="spin" color="#2563eb" />
+  if (!course) return <Loader size="xl" animation="spin" color="hsl(var(--brand))" />
 
 
   return (
     <>
       <div className="flex gap-6 h-full">
         {/* Course Navigation Panel */}
-        <div className="w-64 bg-white rounded-lg border flex-shrink-0 h-full">
+        <div className="w-64 bg-card rounded-lg border flex-shrink-0 h-full">
           <CourseSidebar 
             courseTitle={course.title}
             courseId={courseId}
@@ -1890,13 +1890,13 @@ export default function CourseBuilderPage() {
       </div>
 
         {/* Main Content Area */}
-        <div className="flex-1">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{course?.title || 'Course Builder'}</h1>
-              <p className="text-gray-600 mt-1">Create and organize your course content</p>
+        <div className="flex-1 min-w-0 @container">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold text-foreground">{course?.title || 'Course Builder'}</h1>
+              <p className="text-muted-foreground mt-1">Create and organize your course content</p>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex flex-wrap items-center gap-3">
               <Button
                 onClick={handleAddSummaries}
                 variant="outline"
@@ -1958,18 +1958,18 @@ export default function CourseBuilderPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Module title</label>
+              <label className="block text-sm text-muted-foreground mb-1">Module title</label>
               <input 
-                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand" 
                 value={modForm.title} 
                 onChange={e => setModForm(f => ({ ...f, title: e.target.value }))} 
                 placeholder="Enter module title"
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Description (optional)</label>
+              <label className="block text-sm text-muted-foreground mb-1">Description (optional)</label>
               <textarea 
-                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand" 
                 value={modForm.description || ''} 
                 onChange={e => setModForm(f => ({ ...f, description: e.target.value }))} 
                 placeholder="Module description"
@@ -1978,16 +1978,16 @@ export default function CourseBuilderPage() {
             </div>
             {(course as any)?.release_schedule === 'weekly' && (
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Week number (opens in)</label>
+                <label className="block text-sm text-muted-foreground mb-1">Week number (opens in)</label>
                 <input
                   type="number"
                   min={1}
-                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand"
                   value={modForm.week_number ?? ''}
                   onChange={e => setModForm(f => ({ ...f, week_number: e.target.value ? parseInt(e.target.value, 10) : undefined }))}
                   placeholder="1 = week 1, 2 = week 2..."
                 />
-                <p className="text-xs text-gray-500 mt-1">Which week (from group start) this module unlocks. Leave empty to use order.</p>
+                <p className="text-xs text-muted-foreground mt-1">Which week (from group start) this module unlocks. Leave empty to use order.</p>
               </div>
             )}
           </div>
@@ -2036,18 +2036,18 @@ export default function CourseBuilderPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Lesson title</label>
+              <label className="block text-sm text-muted-foreground mb-1">Lesson title</label>
               <input 
-                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand" 
                 value={lecForm.title} 
                 onChange={e => setLecForm(f => ({ ...f, title: e.target.value }))} 
                 placeholder="Enter lesson title"
               />
             </div>
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Lesson type</label>
+              <label className="block text-sm text-muted-foreground mb-1">Lesson type</label>
               <select 
-                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand" 
                 value={lecForm.type} 
                 onChange={(e) => setLecForm(f => ({ ...f, type: (e.target as HTMLSelectElement).value as any }))}
               >
@@ -2058,9 +2058,9 @@ export default function CourseBuilderPage() {
             </div>
             {lecForm.type === 'video' && (
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Video URL</label>
+                <label className="block text-sm text-muted-foreground mb-1">Video URL</label>
                 <input 
-                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                  className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand" 
                   value={lecForm.videoUrl || ''} 
                   onChange={e => setLecForm(f => ({ ...f, videoUrl: e.target.value }))} 
                   placeholder="https://..." 
@@ -2138,7 +2138,7 @@ export default function CourseBuilderPage() {
             </div>
           ) : availableGroups.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500 mb-4">
+              <p className="text-muted-foreground mb-4">
                 {user?.role === 'admin' 
                   ? "No groups available yet." 
                   : user?.role === 'curator'
@@ -2176,25 +2176,25 @@ export default function CourseBuilderPage() {
                   return (
                     <div 
                       key={group.id} 
-                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted"
                     >
                       <div>
                         <h4 className="font-medium">{group.name}</h4>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-sm text-muted-foreground">
                           {group.student_count || 0} students
                         </p>
                       </div>
                       <div className="flex items-center space-x-2">
                         {hasAccess ? (
                           <>
-                            <Badge variant="secondary" className="text-green-600 bg-green-50">
+                            <Badge variant="secondary" className="text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-950/40">
                               Access granted
                             </Badge>
                             <Button
                               onClick={() => revokeAccessFromGroup(group.id.toString())}
                               size="sm"
                               variant="outline"
-                              className="flex items-center space-x-1 text-red-600 hover:text-red-700"
+                              className="flex items-center space-x-1 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                             >
                               <X className="w-3 h-3" />
                               <span>Revoke</span>
@@ -2254,11 +2254,11 @@ export default function CourseBuilderPage() {
                   return (
                     <div 
                       key={teacher.id} 
-                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
+                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted"
                     >
                       <div>
                         <h4 className="font-medium">{teacher.name}</h4>
-                        <p className="text-sm text-gray-500">{teacher.email}</p>
+                        <p className="text-sm text-muted-foreground">{teacher.email}</p>
                       </div>
                       <div className="flex items-center space-x-2">
                         {hasAccess ? (
@@ -2266,7 +2266,7 @@ export default function CourseBuilderPage() {
                             onClick={() => revokeAccessFromTeacher(teacher.id.toString())}
                             size="sm"
                             variant="outline"
-                            className="flex items-center space-x-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="flex items-center space-x-1 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/40"
                           >
                             <X className="w-3 h-3" />
                             <span>Revoke</span>
@@ -2287,7 +2287,7 @@ export default function CourseBuilderPage() {
                   );
                 })}
                 {availableTeachers.length === 0 && (
-                  <p className="text-center text-gray-500 py-4">No teachers found.</p>
+                  <p className="text-center text-muted-foreground py-4">No teachers found.</p>
                 )}
               </div>
             </>

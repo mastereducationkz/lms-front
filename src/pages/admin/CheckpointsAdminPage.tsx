@@ -242,7 +242,7 @@ export default function CheckpointsAdminPage() {
                           </span>
                           {cell.deadline && cell.status !== 'completed' && <> · due {formatDeadline(cell.deadline)} ({deadlineCountdown(cell.deadline)})</>}
                           {cell.status === 'completed' && <> · {cell.correct_answers}/{cell.total_questions} ({cell.percentage}%)</>}
-                          {cell.late && <span className="text-red-600"> · {lateLabel(cell)}</span>}
+                          {cell.late && <span className="text-red-600 dark:text-red-400"> · {lateLabel(cell)}</span>}
                         </div>
                       </button>
                     </td>
@@ -280,7 +280,7 @@ export default function CheckpointsAdminPage() {
           <dl className="grid grid-cols-2 gap-x-4 text-xs text-muted-foreground">
             <dt>Opened</dt><dd>{formatDeadline(selected.cell.opened_at) || '—'} {selected.cell.opened_by ? `(${selected.cell.opened_by})` : ''}</dd>
             <dt>Deadline</dt><dd>{formatDeadline(selected.cell.deadline) || '—'}</dd>
-            <dt>Submitted</dt><dd>{formatDeadline(selected.cell.submitted_at) || '—'}{selected.cell.submitted_at && (selected.cell.late ? <span className="text-red-600"> · {lateLabel(selected.cell)}</span> : ' · on time')}</dd>
+            <dt>Submitted</dt><dd>{formatDeadline(selected.cell.submitted_at) || '—'}{selected.cell.submitted_at && (selected.cell.late ? <span className="text-red-600 dark:text-red-400"> · {lateLabel(selected.cell)}</span> : ' · on time')}</dd>
             <dt>Result</dt><dd>{selected.cell.percentage != null ? `${selected.cell.correct_answers}/${selected.cell.total_questions} (${selected.cell.percentage}%)` : '—'}</dd>
             <dt>Reopened</dt><dd>{selected.cell.reopen_count}×</dd>
           </dl>
@@ -367,7 +367,7 @@ export default function CheckpointsAdminPage() {
                                 })).then((ok) => { if (ok) discardUnits(); });
                               }}>Save</Button>
                               <Button size="sm" variant="ghost" disabled={busy} onClick={discardUnits}>Cancel</Button>
-                              {!unitsValid && <span className="text-[11px] text-red-600">Pick 2–3 Verbal and 1–2 Math units (4 at most)</span>}
+                              {!unitsValid && <span className="text-[11px] text-red-600 dark:text-red-400">Pick 2–3 Verbal and 1–2 Math units (4 at most)</span>}
                             </div>
                           )}
                         </div>
@@ -385,7 +385,7 @@ export default function CheckpointsAdminPage() {
                       {check && (
                         <div className="text-[11px] text-muted-foreground">
                           E{check.by_difficulty.easy} M{check.by_difficulty.medium} H{check.by_difficulty.hard} ?{check.by_difficulty.unset}
-                          {check.problems.length === 0 ? <div className="text-emerald-600">OK</div> : check.problems.map((p) => <div key={p} className="text-red-600">{p}</div>)}
+                          {check.problems.length === 0 ? <div className="text-emerald-600 dark:text-emerald-400">OK</div> : check.problems.map((p) => <div key={p} className="text-red-600 dark:text-red-400">{p}</div>)}
                         </div>
                       )}
                     </td>
