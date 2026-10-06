@@ -100,7 +100,7 @@ const StudentReportPage = lazyRoute(() => import('../pages/StudentReportPage.tsx
 
 // Fallback shown while a route chunk is fetched.
 const RouteFallback = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+  <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-background">
     <ThinkingLoader state="breathing" size={64} label="Loading page…" />
   </div>
 );

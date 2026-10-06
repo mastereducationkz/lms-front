@@ -122,7 +122,7 @@ export default function CourseCard({
               {lessons && ` · ${lessons}`}
             </p>
             <div
-              className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-secondary"
+              className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
               role="progressbar"
               aria-valuenow={pct}
               aria-valuemin={0}

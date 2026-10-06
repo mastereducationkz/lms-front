@@ -513,7 +513,7 @@ function DailyQuestionsPopupInner({
                   style={{ width: `${((currentIndex + 1) / allQuestions.length) * 100}%` }}
                 />
               </div>
-              <span className="text-sm text-gray-600 dark:text-gray-400 font-medium whitespace-nowrap">
+              <span className="text-sm text-muted-foreground font-medium whitespace-nowrap">
                 {currentIndex + 1} / {allQuestions.length}
               </span>
             </div>
@@ -523,8 +523,8 @@ function DailyQuestionsPopupInner({
         {/* Content */}
         {view === 'loading' ? (
           <div className="flex items-center justify-center p-12">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
-            <span className="ml-3 text-gray-600 dark:text-gray-400">Loading questions...</span>
+            <Loader2 className="h-8 w-8 animate-spin text-brand" />
+            <span className="ml-3 text-muted-foreground">Loading questions...</span>
           </div>
         ) : view === 'empty' ? (
           <DailyQuestionsEmptyState onDismiss={handleDismiss} />
@@ -543,9 +543,9 @@ function DailyQuestionsPopupInner({
           <div className="pt-4">
             {/* Question metadata */}
             <div className="flex items-center gap-2 mb-4 flex-wrap text-sm">
-              <span className="text-gray-600 dark:text-gray-400">{getSectionLabel(currentQuestion.section)}</span>
+              <span className="text-muted-foreground">{getSectionLabel(currentQuestion.section)}</span>
               <span className="text-muted-foreground/50" aria-hidden="true">•</span>
-              <span className="text-gray-600 dark:text-gray-400">{difficultyLabel(currentQuestion.difficulty)}</span>
+              <span className="text-muted-foreground">{difficultyLabel(currentQuestion.difficulty)}</span>
               <span className="text-muted-foreground/50" aria-hidden="true">•</span>
               <span className="text-muted-foreground">{formatTag(currentQuestion.primaryTag)}</span>
               {currentQuestion.questionType && (
@@ -594,7 +594,7 @@ function DailyQuestionsPopupInner({
               {isMultipleChoice(currentQuestion) ? (
                 // Multiple choice options
                 <div>
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Choose an answer:</p>
+                  <p className="text-sm font-medium text-gray-700 dark:text-foreground mb-3">Choose an answer:</p>
                   <div className="space-y-2">
                     {questionOptions(currentQuestion).map(({ letter, text: optionText, imageUrl, imageAlt }) => {
                       const isSelected = answers[currentQuestion.questionId] === letter;
@@ -604,8 +604,8 @@ function DailyQuestionsPopupInner({
                           key={letter}
                           className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
                             isSelected 
-                              ? 'border-blue-500 bg-blue-50 dark:border-brand dark:bg-brand-surface' 
-                              : 'border-border hover:border-gray-300 hover:bg-muted/60 dark:hover:border-gray-600'
+                              ? 'border-blue-500 bg-brand-surface dark:border-brand' 
+                              : 'border-border hover:border-gray-300 hover:bg-muted/60 dark:hover:border-input'
                           }`}
                         >
                           <input
@@ -617,17 +617,17 @@ function DailyQuestionsPopupInner({
                               ...prev,
                               [currentQuestion.questionId]: letter
                             }))}
-                            className="mt-0.5 h-4 w-4 text-blue-600 dark:text-blue-400 border-gray-300 dark:border-border focus:ring-blue-500"
+                            className="mt-0.5 h-4 w-4 text-brand border-gray-300 dark:border-border focus:ring-ring"
                           />
                           <span className="text-sm text-foreground flex-1">
-                            <span className="font-medium text-gray-600 dark:text-gray-400 mr-2">{letter}.</span>
+                            <span className="font-medium text-muted-foreground mr-2">{letter}.</span>
                             {optionText.trim() ? formatQuestionText(optionText) : null}
                             {imageUrl ? (
                               <img
                                 src={imageUrl}
                                 alt={imageAlt ?? `Option ${letter}`}
                                 loading="lazy"
-                                className="mt-2 block max-h-56 max-w-full rounded-md border border-border bg-white object-contain p-1"
+                                className="mt-2 block max-h-56 max-w-full rounded-md border border-border bg-card object-contain p-1"
                               />
                             ) : null}
                           </span>
@@ -639,7 +639,7 @@ function DailyQuestionsPopupInner({
               ) : (
                 // Free text input (Student Response)
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-foreground mb-2">
                     Your answer:
                   </label>
                   <input
@@ -650,7 +650,7 @@ function DailyQuestionsPopupInner({
                       [currentQuestion.questionId]: e.target.value 
                     }))}
                     placeholder="Enter your answer..."
-                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-border bg-background text-foreground rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-border bg-background text-foreground rounded-md focus:ring-2 focus:ring-ring focus:border-ring outline-none transition-all"
                   />
                 </div>
               )}
@@ -745,7 +745,7 @@ function DailyQuestionsPopupInner({
                         <span className="text-muted-foreground font-normal">{formatTag(q.primaryTag)}</span>
                       </div>
                       {!isCorrect && q.correctAnswer && (
-                        <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                        <div className="text-xs text-muted-foreground mt-0.5">
                           Correct answer: <span className="font-medium text-green-700 dark:text-green-400">{q.correctAnswer}</span>
                           {wasAnswered && (
                             <span className="ml-2 text-red-600 dark:text-red-400">Your answer: {userAnswer}</span>
@@ -779,7 +779,7 @@ function DailyQuestionsPopupInner({
               <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-1">Great job!</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Daily questions completed</p>
+            <p className="text-sm text-muted-foreground">Daily questions completed</p>
           </div>
         )}
       </DialogContent>

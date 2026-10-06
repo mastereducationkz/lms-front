@@ -121,7 +121,7 @@ export default function RecordingCard({ item, locale, onOpen, substitutionFor }:
         {progress && <RecordingStageBadge progress={progress} locale={locale} className="absolute left-2 top-2" />}
 
         {justReady && (
-          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-md bg-emerald-100 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-900 shadow-sm animate-in fade-in zoom-in-95">
+          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-md bg-emerald-100 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-900 shadow-sm dark:bg-emerald-950/90 dark:text-emerald-200 animate-in fade-in zoom-in-95">
             <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
             {t.ready}
           </span>

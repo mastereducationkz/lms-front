@@ -30,12 +30,12 @@ export function MessageContextMenu({
       </ContextMenuPrimitive.Trigger>
       <ContextMenuPrimitive.Portal>
         <ContextMenuPrimitive.Content className="z-50 min-w-[11rem] overflow-hidden rounded-lg border bg-popover p-1 text-popover-foreground shadow-md">
-          <div className="flex items-center gap-0.5 pb-1 mb-1 border-b dark:border-gray-700">
+          <div className="flex items-center gap-0.5 pb-1 mb-1 border-b dark:border-border">
             {QUICK_REACTIONS.map((emoji) => (
               <ContextMenuPrimitive.Item
                 key={emoji}
                 onSelect={() => onReact(emoji)}
-                className="cursor-pointer rounded-full p-1 text-xl leading-none outline-none transition-transform focus:scale-125 focus:bg-gray-100 dark:focus:bg-gray-800"
+                className="cursor-pointer rounded-full p-1 text-xl leading-none outline-none transition-transform focus:scale-125 focus:bg-muted"
                 aria-label={`React ${emoji}`}
               >
                 {emoji}
@@ -43,7 +43,7 @@ export function MessageContextMenu({
             ))}
             <ContextMenuPrimitive.Item
               onSelect={onMoreEmojis}
-              className="ml-auto cursor-pointer rounded-full p-1.5 text-gray-500 outline-none focus:bg-gray-100 dark:text-gray-400 dark:focus:bg-gray-800"
+              className="ml-auto cursor-pointer rounded-full p-1.5 text-muted-foreground outline-none focus:bg-muted"
               aria-label="More emoji"
             >
               <Plus className="w-4 h-4" />

@@ -218,7 +218,7 @@ export default function AssignmentRecordPage() {
 
   if (loadError) {
     return (
-      <div className="max-w-2xl mx-auto p-6">
+      <div className="max-w-2xl mx-auto @2xl:p-6">
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center text-red-800 dark:text-red-400">
           <AlertCircle className="w-5 h-5 mr-2" />
           {loadError}
@@ -230,20 +230,20 @@ export default function AssignmentRecordPage() {
   if (!assignment) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-gray-500 dark:text-gray-400 text-lg">Loading assignment...</div>
+        <div className="text-muted-foreground text-lg">Loading assignment...</div>
       </div>
     );
   }
 
   if (submitted) {
     return (
-      <div className="max-w-2xl mx-auto p-6 space-y-6">
+      <div className="max-w-2xl mx-auto @2xl:p-6 space-y-6">
         <Card className="border-green-200 dark:border-green-800 bg-green-50/30 dark:bg-green-900/20">
           <CardContent className="pt-6 flex flex-col items-center text-center space-y-4">
             <CheckCircle2 className="w-12 h-12 text-green-600 dark:text-green-400" />
             <div>
               <h2 className="text-xl font-semibold text-foreground">Recording submitted</h2>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-muted-foreground mt-1">
                 Your teacher will listen to your recording and grade it soon.
               </p>
             </div>
@@ -257,7 +257,7 @@ export default function AssignmentRecordPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-6 space-y-6">
+    <div className="max-w-2xl mx-auto @2xl:p-6 space-y-6">
       <Button variant="outline" onClick={() => navigate(`/homework/${id}`)}>
         <ArrowLeft className="w-4 h-4 mr-2" />
         Back to Assignment
@@ -358,7 +358,7 @@ export default function AssignmentRecordPage() {
         </CardContent>
       </Card>
 
-      <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+      <p className="text-sm text-muted-foreground text-center">
         You can re-record as many times as you like before submitting. Once submitted, your teacher
         will grade your recording — you can check back on the{' '}
         <Link to={`/homework/${id}`} className="underline">

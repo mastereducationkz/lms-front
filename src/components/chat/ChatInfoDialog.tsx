@@ -51,7 +51,7 @@ export function ChatInfoDialog({
             <AvatarFallback className="text-xl">{getInitials(name)}</AvatarFallback>
           </Avatar>
           <p className="mt-3 text-lg font-semibold">{name}</p>
-          {role && <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{role}</p>}
+          {role && <p className="text-sm text-muted-foreground capitalize">{role}</p>}
         </div>
 
         <Button
@@ -64,13 +64,13 @@ export function ChatInfoDialog({
         </Button>
 
         <div className="mt-2">
-          <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">
+          <p className="text-sm font-semibold text-gray-700 dark:text-foreground mb-2">
             Shared media &amp; files
           </p>
           {loading ? (
-            <p className="text-sm text-gray-400 py-4 text-center">Loading…</p>
+            <p className="text-sm text-gray-400 dark:text-muted-foreground py-4 text-center">Loading…</p>
           ) : media.length === 0 ? (
-            <p className="text-sm text-gray-400 py-4 text-center">No shared media yet</p>
+            <p className="text-sm text-gray-400 dark:text-muted-foreground py-4 text-center">No shared media yet</p>
           ) : (
             <SharedMediaList media={media} />
           )}

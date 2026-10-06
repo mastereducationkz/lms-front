@@ -9,7 +9,7 @@
  * `?try=h18` (from «Try it on» on an achievement card) opens the builder already wearing it.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Shuffle, RotateCcw, Check, Lock, Undo2 } from 'lucide-react';
+import { Shuffle, RotateCcw, Check, Lock, Undo2, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
@@ -129,9 +129,9 @@ export default function OrcaBuilder() {
   const shuffle = () => pick(randomMascot(makeRng(Date.now() ^ Math.floor(Math.random() * 1e9))));
 
   return (
-    <div id={ORCA_SECTION_ID} ref={sectionRef} className="bg-white dark:bg-card rounded-2xl shadow-card p-6 max-w-2xl scroll-mt-24">
+    <div id={ORCA_SECTION_ID} ref={sectionRef} className="bg-card rounded-2xl shadow-card p-6 max-w-2xl scroll-mt-24">
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Your orca</h2>
+        <h2 className="text-lg font-semibold text-foreground">Your orca</h2>
         <p className="text-sm text-muted-foreground">
           Dress up your study buddy. It shows next to your name across the LMS.
         </p>
@@ -143,11 +143,11 @@ export default function OrcaBuilder() {
             <Orca config={config} size={160} className={`drop-shadow-md ${tryingOn ? 'ring-4 ring-amber-300/70 rounded-full' : ''}`} title="Your orca" />
             {tryingOn && (
               <span className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-amber-400 px-2.5 py-0.5 text-[11px] font-semibold text-amber-950 shadow">
-                Trying on 👀
+                <Eye className="mr-1 inline h-3 w-3 align-[-2px]" aria-hidden />Trying on
               </span>
             )}
           </div>
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 h-5">
+          <p className="text-sm font-medium text-gray-700 dark:text-foreground h-5">
             {tryingOn ? block.partName : presetName ?? (saved ? 'Your own look' : 'Custom look')}
           </p>
           <div className="flex gap-2">
@@ -166,7 +166,7 @@ export default function OrcaBuilder() {
           )}
           {block && (
             <div className="w-full rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-900/20 p-3 text-xs" role="status">
-              {block.howTo && <p className="text-gray-800 dark:text-gray-200">{block.howTo}</p>}
+              {block.howTo && <p className="text-foreground">{block.howTo}</p>}
               {block.progress && block.progress.target > 0 && (
                 <div className="mt-2 flex items-center gap-2">
                   <div className="h-2 flex-1 rounded-full bg-amber-100 dark:bg-amber-950 overflow-hidden">
@@ -175,7 +175,7 @@ export default function OrcaBuilder() {
                       style={{ width: `${Math.min(100, Math.round((block.progress.current / Math.max(1, block.progress.target)) * 100))}%` }}
                     />
                   </div>
-                  <span className="font-medium tabular-nums text-gray-700 dark:text-gray-300">
+                  <span className="font-medium tabular-nums text-gray-700 dark:text-foreground">
                     {Math.min(block.progress.current, block.progress.target)} / {block.progress.target}
                   </span>
                 </div>
@@ -187,7 +187,7 @@ export default function OrcaBuilder() {
               )}
               <Link
                 to={block.achievementKey ? `/achievements#${block.achievementKey}` : '/achievements'}
-                className="mt-2 inline-block font-medium text-blue-600 hover:underline"
+                className="mt-2 inline-block font-medium text-brand hover:underline"
               >
                 How to earn it →
               </Link>
@@ -221,8 +221,8 @@ export default function OrcaBuilder() {
                 onClick={() => setTab(t.key)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                   tab === t.key
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 dark:bg-secondary text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-secondary/70'
+                    ? 'bg-brand-solid text-brand-solid-foreground dark:bg-brand-surface dark:text-brand-subtle-foreground dark:shadow-[inset_0_0_0_1px_hsl(var(--brand-border))]'
+                    : 'bg-muted text-gray-700 dark:text-foreground hover:bg-gray-200 dark:hover:bg-secondary/70'
                 }`}
               >
                 {t.label}
@@ -234,7 +234,7 @@ export default function OrcaBuilder() {
       </div>
 
       <div className="mt-6">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">Ready-made looks</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-2">Ready-made looks</h3>
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
           {PRESETS.map((p) => {
             const active = serializeMascot(p.config) === current;
@@ -247,11 +247,11 @@ export default function OrcaBuilder() {
                 aria-pressed={active}
                 onClick={() => pick(p.config)}
                 className={`shrink-0 flex flex-col items-center gap-1 w-16 rounded-xl p-1 ${
-                  active ? 'bg-blue-50 dark:bg-blue-900/30 ring-2 ring-blue-500' : 'hover:bg-gray-50 dark:hover:bg-secondary'
+                  active ? 'bg-brand-surface ring-2 ring-ring' : 'hover:bg-muted'
                 }`}
               >
                 <Orca config={p.config} size={52} title={p.name} />
-                <span className="text-[10px] leading-tight text-center text-gray-600 dark:text-gray-400 line-clamp-2">{p.name}</span>
+                <span className="text-[10px] leading-tight text-center text-muted-foreground line-clamp-2">{p.name}</span>
               </button>
             );
           })}

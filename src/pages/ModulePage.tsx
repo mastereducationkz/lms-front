@@ -84,12 +84,9 @@ export default function ModulePage() {
     }
   };
 
-  const getLessonStatus = (lessonId: string): 'not-started' | 'in-progress' | 'completed' => {
-    const progress = progressByLesson[lessonId];
-    if (!progress) return 'not-started';
-    if (progress.status === 'completed') return 'completed';
-    return 'in-progress';
-  };
+  // `progressByLesson` never existed here, so every module with lessons crashed the page.
+  const getLessonStatus = (lessonId: string): 'not-started' | 'completed' =>
+    lessons.find((l) => String(l.id) === String(lessonId))?.is_completed ? 'completed' : 'not-started';
 
   // Helper function to get lesson type from steps or fallback
   const getLessonType = (lesson: any): string => {
@@ -140,9 +137,9 @@ export default function ModulePage() {
   if (error) {
     return (
       <div className="space-y-8">
-        <div className="bg-red-50 border border-red-200 rounded p-4">
-          <h3 className="font-semibold text-red-800">Error loading module</h3>
-          <p className="text-red-600">{error}</p>
+        <div className="bg-red-50 border border-red-200 rounded p-4 dark:bg-red-950/30 dark:border-red-900">
+          <h3 className="font-semibold text-red-800 dark:text-red-200">Error loading module</h3>
+          <p className="text-red-600 dark:text-red-300">{error}</p>
           <button 
             onClick={loadModuleData}
             className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
@@ -155,7 +152,7 @@ export default function ModulePage() {
   }
 
   if (!module || !course) {
-    return <div className="text-gray-500">Module not found</div>;
+    return <div className="text-muted-foreground">Module not found</div>;
   }
 
   return (
@@ -169,10 +166,10 @@ export default function ModulePage() {
       
       <div>
         <h1 className="text-3xl font-bold">{module.title}</h1>
-        <p className="text-gray-600 mt-1">{module.description}</p>
+        <p className="text-muted-foreground mt-1">{module.description}</p>
         {user?.role === 'student' && (
           <div className="mt-4 card p-5">
-            <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
+            <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
               <span>Module Progress</span>
               <span>{progress}%</span>
             </div>
@@ -184,7 +181,7 @@ export default function ModulePage() {
       <div>
         <h2 className="text-xl font-semibold mb-4">Lessons</h2>
         {lessons.length === 0 ? (
-          <div className="text-center py-12 text-gray-500">
+          <div className="text-center py-12 text-muted-foreground">
             <p>No lessons available</p>
             <p className="text-sm mt-2">This module doesn't have any lessons yet</p>
           </div>
@@ -193,12 +190,12 @@ export default function ModulePage() {
             {lessons.map((lesson, idx) => (
               <div key={lesson.id} className="card p-5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-semibold">
+                  <div className="w-10 h-10 bg-brand-subtle text-brand-subtle-foreground rounded-full flex items-center justify-center font-semibold">
                     {idx + 1}
                   </div>
                   <div>
                     <div className="font-medium text-lg">{lesson.title}</div>
-                    <div className="text-sm text-gray-600 flex items-center gap-3">
+                    <div className="text-sm text-muted-foreground flex items-center gap-3">
                       <span className="inline-flex items-center gap-1">
                         <Play className="h-3.5 w-3.5 opacity-60" aria-hidden="true" />
                         {getLessonType(lesson)}

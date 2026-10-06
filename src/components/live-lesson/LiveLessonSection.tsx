@@ -22,7 +22,7 @@ function Driver({ eventId }: { eventId: number }) {
   const { state, error, now, act } = useLiveLesson({ eventId, api: live, socket });
   const seconds = useCountdown(state, now);
   if (!state) {
-    return error ? <p className="text-sm text-rose-600">{error}</p>
+    return error ? <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>
       : <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
   }
   return (

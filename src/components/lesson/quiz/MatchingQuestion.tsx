@@ -118,7 +118,7 @@ export const MatchingQuestion = ({
 
   // Color palette for matched pairs
   const pairColors = [
-    { bg: 'bg-blue-100 dark:bg-blue-900/20', border: 'border-blue-400 dark:border-blue-500', text: 'text-blue-700 dark:text-blue-400', badge: 'bg-blue-200 dark:bg-blue-800/50' },
+    { bg: 'bg-brand-subtle', border: 'border-blue-400 dark:border-brand', text: 'text-brand-subtle-foreground', badge: 'bg-blue-200 dark:bg-brand-border' },
     { bg: 'bg-green-100 dark:bg-green-900/20', border: 'border-green-400 dark:border-green-500', text: 'text-green-700 dark:text-green-400', badge: 'bg-green-200 dark:bg-green-800/50' },
     { bg: 'bg-purple-100 dark:bg-purple-900/20', border: 'border-purple-400 dark:border-purple-500', text: 'text-purple-700 dark:text-purple-400', badge: 'bg-purple-200 dark:bg-purple-800/50' },
     { bg: 'bg-orange-100 dark:bg-orange-900/20', border: 'border-orange-400 dark:border-orange-500', text: 'text-orange-700 dark:text-orange-400', badge: 'bg-orange-200 dark:bg-orange-800/50' },
@@ -152,7 +152,7 @@ export const MatchingQuestion = ({
             
             let style = '';
             if (status === 'selected') {
-              style = 'border-blue-500 bg-blue-50 ring-2 ring-blue-300 shadow-md dark:border-blue-500 dark:bg-blue-900/20 dark:ring-blue-500';
+              style = 'border-blue-500 bg-brand-surface ring-2 ring-blue-300 shadow-md dark:border-brand dark:ring-brand-border';
             } else if (showResult) {
               style = status === 'correct' 
                 ? 'border-green-500 bg-green-50 dark:border-green-500 dark:bg-green-900/20' 
@@ -180,7 +180,7 @@ export const MatchingQuestion = ({
                     handleLeftClick(leftIdx)
                   }
                 }}
-                className={`p-4 rounded-xl border-2 transition-all cursor-pointer min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${style} ${disabled ? 'cursor-not-allowed opacity-75' : ''}`}
+                className={`p-4 rounded-xl border-2 transition-all cursor-pointer min-h-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${style} ${disabled ? 'cursor-not-allowed opacity-75' : ''}`}
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3 flex-1">
@@ -220,14 +220,14 @@ export const MatchingQuestion = ({
             let style = '';
             if (showResult) {
               style = status === 'correct' 
-                ? 'border-green-500 bg-green-50' 
+                ? 'border-green-500 bg-green-50 dark:bg-green-900/20' 
                 : status === 'incorrect' 
-                  ? 'border-red-500 bg-red-50'
+                  ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
                   : 'border-border bg-card';
             } else if (isMatched && color) {
               style = `${color.border} ${color.bg}`;
             } else if (selectedLeft !== null) {
-              style = 'border-blue-300 bg-blue-50 hover:border-blue-500 cursor-pointer shadow-sm';
+              style = 'border-blue-300 bg-brand-surface hover:border-blue-500 dark:border-brand-border dark:hover:border-brand cursor-pointer shadow-sm';
             } else {
               style = 'border-border bg-card';
             }
@@ -248,7 +248,7 @@ export const MatchingQuestion = ({
                     handleRightClick(originalIdx)
                   }
                 }}
-                className={`p-4 rounded-xl border-2 transition-all min-h-[44px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${style} ${disabled ? 'cursor-not-allowed opacity-75' : ''} ${selectedLeft === null && !isMatched ? 'cursor-default' : 'cursor-pointer'}`}
+                className={`p-4 rounded-xl border-2 transition-all min-h-[44px] focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${style} ${disabled ? 'cursor-not-allowed opacity-75' : ''} ${selectedLeft === null && !isMatched ? 'cursor-default' : 'cursor-pointer'}`}
               >
                 <div className="flex items-center gap-3">
                   <span className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${

@@ -24,12 +24,12 @@ export function CrownsSection() {
   return (
     <section className="space-y-3">
       <Heading icon={<CrownIcon className="h-4 w-4 text-amber-500" aria-hidden />}>Kasatik of the lesson</Heading>
-      <ul className="grid gap-3 md:grid-cols-2">
+      <ul className="grid gap-3 @lg:grid-cols-2">
         {crowns.map((c) => (
           <li key={c.event_id} className="flex items-center gap-3 rounded-2xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/60 dark:bg-amber-950/20 p-4">
-            <span aria-hidden className="text-2xl">👑</span>
+            <CrownIcon className="h-6 w-6 shrink-0 fill-amber-400 text-amber-500" aria-hidden />
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-semibold text-gray-900 dark:text-white">{c.lesson_title || 'Live lesson'}</span>
+              <span className="block truncate text-sm font-semibold text-foreground">{c.lesson_title || 'Live lesson'}</span>
               <span className="block text-xs text-muted-foreground">
                 {c.lesson_date ? DAY.format(new Date(`${c.lesson_date}T00:00:00Z`)) : ''}
               </span>

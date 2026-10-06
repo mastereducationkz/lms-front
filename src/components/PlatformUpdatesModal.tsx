@@ -127,12 +127,12 @@ export default function PlatformUpdatesModal({
                     onClick={() => setSelectedRelease(release)}
                     className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
                       selectedRelease?.version === release.version
-                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                        : 'hover:bg-gray-100 text-gray-700'
+                        ? 'bg-brand-surface text-brand-subtle-foreground border border-brand-border'
+                        : 'hover:bg-muted text-gray-700 dark:text-foreground'
                     }`}
                   >
                     <div className="text-sm font-medium">{release.version}</div>
-                    <div className="text-xs text-gray-500">{release.date}</div>
+                    <div className="text-xs text-muted-foreground">{release.date}</div>
                   </button>
                 ))}
               </div>
@@ -144,27 +144,27 @@ export default function PlatformUpdatesModal({
             {selectedRelease && (
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-lg font-semibold text-foreground">
                     {selectedRelease.title}
                   </h3>
-                  <p className="text-sm text-gray-500">{selectedRelease.date}</p>
+                  <p className="text-sm text-muted-foreground">{selectedRelease.date}</p>
                 </div>
 
                 <div className="space-y-3">
                   {selectedRelease.updates.map((update, index) => (
                     <div
                       key={index}
-                      className="p-3 bg-gray-50 rounded-lg border border-gray-200"
+                      className="p-3 bg-muted rounded-lg border border-border"
                     >
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-gray-900">
+                        <span className="font-medium text-foreground">
                           {update.title}
                         </span>
-                        <span className="text-xs text-gray-500 px-2 py-0.5 bg-gray-100 rounded">
+                        <span className="text-xs text-muted-foreground px-2 py-0.5 bg-muted rounded">
                           {getTypeLabel(update.type)}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm text-muted-foreground">
                         {update.description}
                       </p>
                     </div>
@@ -201,7 +201,7 @@ export function WhatsNewButton({ userRole }: { userRole?: string }) {
         variant="outline"
         size="sm"
         onClick={() => setShowModal(true)}
-        className="font-medium border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900"
+        className="font-medium border-gray-300 dark:border-input hover:border-gray-400 text-gray-700 dark:text-foreground hover:text-foreground"
       >
         What's New
       </Button>

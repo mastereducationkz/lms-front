@@ -32,7 +32,7 @@ function Tile({ label, option, active, isLocked, isReward, onClick }: {
       aria-pressed={active}
       onClick={onClick}
       className={`relative flex flex-col items-center gap-1 rounded-xl p-1.5 transition-colors ${
-        active ? 'bg-blue-50 dark:bg-blue-900/30 ring-2 ring-blue-500' : 'hover:bg-gray-50 dark:hover:bg-secondary'
+        active ? 'bg-brand-surface ring-2 ring-ring' : 'hover:bg-muted'
       }`}
     >
       <span className={isLocked ? 'grayscale opacity-45' : ''}>
@@ -48,7 +48,7 @@ function Tile({ label, option, active, isLocked, isReward, onClick }: {
           <Sparkles className="w-3 h-3" />
         </span>
       )}
-      <span className="text-[10px] leading-tight text-center text-gray-600 dark:text-gray-400 line-clamp-2">{label}</span>
+      <span className="text-[10px] leading-tight text-center text-muted-foreground line-clamp-2">{label}</span>
     </button>
   );
 }
@@ -79,7 +79,7 @@ export default function OrcaPartGrid({ tab, config, locked, onPick }: PartGridPr
       <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">{free.map(tile)}</div>
       {rewards.length > 0 && (
         <>
-          <h4 className="mt-4 mb-2 text-xs font-semibold text-gray-700 dark:text-gray-300 inline-flex items-center gap-1">
+          <h4 className="mt-4 mb-2 text-xs font-semibold text-gray-700 dark:text-foreground inline-flex items-center gap-1">
             <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Earned with achievements
             <span className="font-normal text-muted-foreground">· tap a locked one to try it on</span>
           </h4>

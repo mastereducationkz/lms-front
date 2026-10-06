@@ -15,7 +15,7 @@ export default function SuggestionBar({ waiting, busy, error, onConfirm }: {
         className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-2.5 py-1 font-semibold text-primary-foreground disabled:opacity-40">
         {busy && <Loader2 className="h-3 w-3 animate-spin" />}Confirm suggested ({waiting})
       </button>
-      {error && <p className="w-full text-rose-600">{error}</p>}
+      {error && <p className="w-full text-rose-600 dark:text-rose-400">{error}</p>}
     </div>
   );
 }

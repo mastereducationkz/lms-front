@@ -51,18 +51,18 @@ export default function QuizPage() {
     nav('/quizzes');
   };
 
-  if (!quiz) return <div className="text-gray-500">Loading...</div>;
-  if (left <= 0) return <div className="text-gray-600">No attempts left.</div>;
+  if (!quiz) return <div className="text-muted-foreground">Loading...</div>;
+  if (left <= 0) return <div className="text-muted-foreground">No attempts left.</div>;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">{quiz.title}</h1>
-        <div className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm">Time: {Math.floor(time/60)}:{String(time%60).padStart(2,'0')}</div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="min-w-0 break-words text-3xl font-bold">{quiz.title}</h1>
+        <div className="px-3 py-1.5 rounded-lg bg-gray-900 text-white text-sm dark:bg-secondary dark:text-foreground">Time: {Math.floor(time/60)}:{String(time%60).padStart(2,'0')}</div>
       </div>
       {/* Quiz-level media for audio/PDF quizzes */}
       {(quiz as any).quiz_media_url && (
-        <div className="bg-white rounded-2xl shadow-card p-6 mb-6">
+        <div className="bg-card rounded-2xl shadow-card p-6 mb-6">
           <h3 className="flex items-center gap-2 text-lg font-semibold mb-4">
             {(quiz as any).quiz_media_type === 'audio' ? (
               <><Music className="h-5 w-5" aria-hidden="true" />Audio Material</>
@@ -77,9 +77,9 @@ export default function QuizPage() {
               className="w-full"
             />
           ) : (quiz as any).quiz_media_type === 'pdf' ? (
-            <div className="border rounded-lg p-4 bg-gray-50">
+            <div className="border rounded-lg p-4 bg-muted">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-gray-700">
+                <div className="flex items-center gap-2 text-gray-700 dark:text-foreground">
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
@@ -89,13 +89,13 @@ export default function QuizPage() {
                   href={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + (quiz as any).quiz_media_url} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-brand-solid text-brand-solid-foreground rounded-lg hover:bg-brand-solid-hover text-sm"
                 >
                   Open PDF
                   <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </a>
               </div>
-              <p className="text-sm text-gray-600 mt-2">
+              <p className="text-sm text-muted-foreground mt-2">
                 Reference this document to answer the questions below.
               </p>
             </div>
@@ -105,8 +105,8 @@ export default function QuizPage() {
 
       <form onSubmit={onSubmit} className="space-y-6">
         {quiz.questions.map((q, idx) => (
-          <div key={q.id} className="bg-white rounded-2xl shadow-card p-5">
-            <div className="text-sm text-gray-500">Question {idx+1}</div>
+          <div key={q.id} className="bg-card rounded-2xl shadow-card p-5">
+            <div className="text-sm text-muted-foreground">Question {idx+1}</div>
             <div className="font-medium mb-3">{q.body}</div>
             
             {/* Media attachment for media questions */}
@@ -119,8 +119,8 @@ export default function QuizPage() {
                     className="max-w-full max-h-96 object-contain rounded-lg border shadow-sm"
                   />
                 ) : (q as any).media_type === 'pdf' ? (
-                  <div className="border rounded-lg p-4 bg-gray-50">
-                    <div className="flex items-center gap-2 text-gray-700">
+                  <div className="border rounded-lg p-4 bg-muted">
+                    <div className="flex items-center gap-2 text-gray-700 dark:text-foreground">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                       </svg>
@@ -130,7 +130,7 @@ export default function QuizPage() {
                       href={(q as any).media_url} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 text-sm mt-1 inline-flex items-center gap-1"
+                      className="text-brand hover:text-brand-subtle-foreground text-sm mt-1 inline-flex items-center gap-1"
                     >
                       View PDF
                       <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -156,14 +156,14 @@ export default function QuizPage() {
             )}
             {(q.type === 'short' || (q as any).question_type === 'short_answer') && (
               <input
-                className="mt-1 border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="mt-1 border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="Your answer"
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAnswers(a => ({ ...a, [q.id]: e.target.value }))}
               />
             )}
             {(q as any).question_type === 'text_completion' && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <div className="text-sm text-gray-600 mb-3">Fill in the blanks:</div>
+              <div className="mt-4 p-4 bg-muted rounded-lg">
+                <div className="text-sm text-muted-foreground mb-3">Fill in the blanks:</div>
                 <div className="space-y-2">
                   {(() => {
                     const text = ((q as any).content_text || '').toString();
@@ -182,7 +182,7 @@ export default function QuizPage() {
                             <input
                               key={index}
                               type="text"
-                              className="inline-block mx-1 px-2 py-1 border-b-2 border-blue-500 bg-transparent text-center min-w-[80px] focus:outline-none focus:border-blue-700"
+                              className="inline-block mx-1 px-2 py-1 border-b-2 border-brand bg-transparent text-center min-w-[80px] focus:outline-none focus:border-brand-subtle-foreground"
                               placeholder="____"
                               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                 const currentAnswers = answers[q.id] ? JSON.parse(answers[q.id] as string) : [];
@@ -200,7 +200,7 @@ export default function QuizPage() {
             )}
           </div>
         ))}
-        <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Submit</button>
+        <button className="px-4 py-2 bg-brand-solid hover:bg-brand-solid-hover text-brand-solid-foreground rounded-lg">Submit</button>
       </form>
     </div>
   );

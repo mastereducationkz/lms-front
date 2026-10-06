@@ -205,13 +205,13 @@ export interface TypeStyle {
 export const TYPE_STYLES: Record<EventType, TypeStyle> = {
   class: {
     label: 'Class',
-    dot: 'bg-blue-500 dark:bg-blue-400',
-    time: 'text-blue-600 dark:text-blue-400',
-    strong: 'text-blue-700 dark:text-blue-300',
-    chipBg: 'bg-blue-50 dark:bg-blue-500/10',
-    blockBg: 'bg-blue-50 dark:bg-blue-500/15',
-    blockBorder: 'border-blue-200/70 dark:border-blue-500/25',
-    ring: 'ring-blue-500/15 dark:ring-blue-400/20',
+    dot: 'bg-brand',
+    time: 'text-brand',
+    strong: 'text-brand-subtle-foreground',
+    chipBg: 'bg-brand-surface',
+    blockBg: 'bg-brand-surface',
+    blockBorder: 'border-brand-border/70',
+    ring: 'ring-brand/20',
   },
   weekly_test: {
     label: 'Weekly Test',
@@ -259,7 +259,7 @@ export function typeLabel(type: EventType): string {
  * webinar / assignment, so those special types always read as themselves.
  */
 export const GROUP_PALETTE: TypeStyle[] = [
-  { label: '', dot: 'bg-blue-500 dark:bg-blue-400', time: 'text-blue-600 dark:text-blue-400', strong: 'text-blue-700 dark:text-blue-300', chipBg: 'bg-blue-50 dark:bg-blue-500/10', blockBg: 'bg-blue-50 dark:bg-blue-500/15', blockBorder: 'border-blue-200/70 dark:border-blue-500/25', ring: 'ring-blue-500/15 dark:ring-blue-400/20' },
+  { label: '', dot: 'bg-brand', time: 'text-brand', strong: 'text-brand-subtle-foreground', chipBg: 'bg-brand-surface', blockBg: 'bg-brand-surface', blockBorder: 'border-brand-border/70', ring: 'ring-brand/20' },
   { label: '', dot: 'bg-emerald-500 dark:bg-emerald-400', time: 'text-emerald-600 dark:text-emerald-400', strong: 'text-emerald-700 dark:text-emerald-300', chipBg: 'bg-emerald-50 dark:bg-emerald-500/10', blockBg: 'bg-emerald-50 dark:bg-emerald-500/15', blockBorder: 'border-emerald-200/70 dark:border-emerald-500/25', ring: 'ring-emerald-500/15 dark:ring-emerald-400/20' },
   { label: '', dot: 'bg-cyan-500 dark:bg-cyan-400', time: 'text-cyan-600 dark:text-cyan-400', strong: 'text-cyan-700 dark:text-cyan-300', chipBg: 'bg-cyan-50 dark:bg-cyan-500/10', blockBg: 'bg-cyan-50 dark:bg-cyan-500/15', blockBorder: 'border-cyan-200/70 dark:border-cyan-500/25', ring: 'ring-cyan-500/15 dark:ring-cyan-400/20' },
   { label: '', dot: 'bg-indigo-500 dark:bg-indigo-400', time: 'text-indigo-600 dark:text-indigo-400', strong: 'text-indigo-700 dark:text-indigo-300', chipBg: 'bg-indigo-50 dark:bg-indigo-500/10', blockBg: 'bg-indigo-50 dark:bg-indigo-500/15', blockBorder: 'border-indigo-200/70 dark:border-indigo-500/25', ring: 'ring-indigo-500/15 dark:ring-indigo-400/20' },

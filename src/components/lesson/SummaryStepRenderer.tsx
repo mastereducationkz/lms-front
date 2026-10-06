@@ -63,10 +63,10 @@ const SummaryStepRenderer = ({ lessonId, onLoad }: SummaryStepRendererProps) => 
 
   const getStatusBadge = (percentage: number) => {
     if (percentage >= 70)
-      return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100">Great</Badge>;
+      return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-200 dark:border-emerald-900 dark:hover:bg-emerald-900/40">Great</Badge>;
     if (percentage >= 50)
-      return <Badge className="bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100">Good</Badge>;
-    return <Badge className="bg-red-100 text-red-700 border-red-200 hover:bg-red-100">Needs work</Badge>;
+      return <Badge className="bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200 dark:border-amber-900 dark:hover:bg-amber-900/40">Good</Badge>;
+    return <Badge className="bg-red-100 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-200 dark:border-red-900 dark:hover:bg-red-900/40">Needs work</Badge>;
   };
 
   const getProgressColor = (percentage: number): string => {

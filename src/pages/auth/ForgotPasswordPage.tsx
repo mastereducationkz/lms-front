@@ -36,7 +36,7 @@ export default function ForgotPasswordPage() {
               If an account exists for <strong>{email}</strong>, we've sent a password reset link.
               The link is valid for 1 hour.
             </p>
-            <Link to="/login" className="inline-flex items-center gap-1.5 text-sm text-blue-600 dark:text-blue-400 mt-5 hover:underline">
+            <Link to="/login" className="inline-flex items-center gap-1.5 text-sm text-brand mt-5 hover:underline">
               <ArrowLeft className="w-4 h-4" /> Back to sign in
             </Link>
           </div>

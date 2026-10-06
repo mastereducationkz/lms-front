@@ -400,7 +400,7 @@ export default function LessonRecordings({ kind = 'lesson' }: { kind?: Recording
               aria-pressed={!day && period === p}
               className={cx(
                 'rounded-md px-3 py-1.5 text-[13px] font-medium transition',
-                !day && period === p ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
+                !day && period === p ? 'bg-card text-foreground shadow-sm dark:bg-brand-surface dark:text-brand-subtle-foreground dark:shadow-[inset_0_0_0_1px_hsl(var(--brand-border))]' : 'text-muted-foreground hover:text-foreground',
               )}
             >
               {t.periods[p]}
@@ -454,7 +454,7 @@ export default function LessonRecordings({ kind = 'lesson' }: { kind?: Recording
             ] as const).map(([option, Icon, label]) => (
               <button key={option} type="button" onClick={() => setView(option)} aria-pressed={view === option}
                 className={cx('inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition',
-                  view === option ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}>
+                  view === option ? 'bg-card text-foreground shadow-sm dark:bg-brand-surface dark:text-brand-subtle-foreground dark:shadow-[inset_0_0_0_1px_hsl(var(--brand-border))]' : 'text-muted-foreground hover:text-foreground')}>
                 <Icon className="h-3.5 w-3.5" aria-hidden />
                 <span className="hidden sm:inline">{label}</span>
               </button>
@@ -492,7 +492,7 @@ export default function LessonRecordings({ kind = 'lesson' }: { kind?: Recording
       ) : loading ? (
         <div className="space-y-4" aria-busy="true">
           <Skeleton className="h-6 w-48" />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 @lg:grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="overflow-hidden rounded-2xl border border-border bg-card">
                 <Skeleton className="aspect-video w-full rounded-none" />
@@ -544,7 +544,7 @@ export default function LessonRecordings({ kind = 'lesson' }: { kind?: Recording
                 <span className="text-[15px] font-semibold text-foreground">{dayHeading(day.key, now, locale)}</span>
                 <span className="text-[13px] tabular-nums text-muted-foreground">{day.items.length}</span>
               </h2>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid grid-cols-1 gap-4 @lg:grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-4">
                 {day.items.map((item) => (
                   <RecordingCard key={item.event_id} item={item} locale={locale} onOpen={openItem} />
                 ))}

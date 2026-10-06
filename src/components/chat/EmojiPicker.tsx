@@ -23,13 +23,13 @@ export function EmojiPicker({ open, onOpenChange, onSelect, children, align = 'c
     <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent align={align} className="w-72 p-2">
-        <div className="flex items-center justify-between gap-1 pb-2 mb-2 border-b dark:border-gray-700">
+        <div className="flex items-center justify-between gap-1 pb-2 mb-2 border-b dark:border-border">
           {QUICK_REACTIONS.map((emoji) => (
             <button
               key={emoji}
               type="button"
               onClick={() => pick(emoji)}
-              className="text-2xl leading-none p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-transform hover:scale-125"
+              className="text-2xl leading-none p-1 rounded-full hover:bg-muted transition-transform hover:scale-125"
               aria-label={`React ${emoji}`}
             >
               {emoji}
@@ -39,7 +39,7 @@ export function EmojiPicker({ open, onOpenChange, onSelect, children, align = 'c
         <div className="max-h-56 overflow-y-auto pr-1">
           {EMOJI_GROUPS.map((group) => (
             <div key={group.label} className="mb-2">
-              <p className="text-[11px] font-semibold uppercase text-gray-400 dark:text-gray-500 px-1 mb-1">
+              <p className="text-[11px] font-semibold uppercase text-gray-400 dark:text-muted-foreground px-1 mb-1">
                 {group.label}
               </p>
               <div className="grid grid-cols-8 gap-0.5">
@@ -48,7 +48,7 @@ export function EmojiPicker({ open, onOpenChange, onSelect, children, align = 'c
                     key={emoji}
                     type="button"
                     onClick={() => pick(emoji)}
-                    className="text-xl leading-none p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className="text-xl leading-none p-1 rounded hover:bg-muted"
                     aria-label={`React ${emoji}`}
                   >
                     {emoji}

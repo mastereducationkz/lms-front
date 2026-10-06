@@ -25,11 +25,11 @@ export default function CheckpointsPage() {
   }, []);
 
   if (loading) return <Loader />;
-  if (error) return <p className="p-6 text-red-600">{error}</p>;
+  if (error) return <p className="p-6 text-red-600 dark:text-red-400">{error}</p>;
   if (!enabled) return <p className="p-6 text-muted-foreground">Checkpoints are not enabled for your group yet.</p>;
 
   return (
-    <div className="p-4 md:p-6 space-y-4 max-w-3xl">
+    <div className="@2xl:p-6 space-y-4 max-w-3xl">
       <h1 className="text-2xl font-semibold">SAT Checkpoints</h1>
       <p className="text-sm text-muted-foreground">
         A checkpoint opens as soon as you finish its Verbal and Math units. They’re optional and never hold your course back — just a chance to see how much you’ve learned. Try to take each one within {CHECKPOINT_WINDOW_LABEL} of it opening; after that you can still submit, it’ll just be marked late.
@@ -39,7 +39,7 @@ export default function CheckpointsPage() {
         return (
           <Card key={`${item.group_id}-${item.checkpoint_id}`}>
             <CardContent className="p-5">
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
                   <p className="font-medium flex items-center gap-2">
                     {item.status === 'locked' && !item.skipped ? <Lock className="h-4 w-4" aria-hidden="true" /> : null}
@@ -53,14 +53,14 @@ export default function CheckpointsPage() {
                   )}
                   <p className="text-xs text-muted-foreground">Covers: {coversLabel(item.covers)} · {item.total_questions} questions</p>
                   {item.deadline && item.status !== 'completed' && (
-                    <p className={`text-xs ${item.status === 'overdue' ? 'text-red-600' : 'text-muted-foreground'}`}>
+                    <p className={`text-xs ${item.status === 'overdue' ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
                       Deadline: {formatDeadline(item.deadline)} (Almaty) · {deadlineCountdown(item.deadline)}
                     </p>
                   )}
                   {item.status === 'completed' && (
                     <p className="text-xs text-muted-foreground">
                       Result: {item.correct_answers}/{item.total_questions} ({item.percentage}%) · submitted {formatDeadline(item.submitted_at)}
-                      {item.late && <span className="text-red-600"> · {lateLabel(item)}</span>}
+                      {item.late && <span className="text-red-600 dark:text-red-400"> · {lateLabel(item)}</span>}
                     </p>
                   )}
                   <ul className="mt-2 flex flex-wrap gap-2" aria-label="Required units">

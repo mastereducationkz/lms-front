@@ -28,11 +28,11 @@ const FILL: Record<ProgressTone, string> = {
 };
 
 const BADGE: Record<ProgressTone, string> = {
-  progress: 'bg-sky-100 text-sky-900',
-  warning: 'bg-amber-100 text-amber-900',
-  danger: 'bg-rose-100 text-rose-900',
-  neutral: 'bg-slate-200 text-slate-800',
-  success: 'bg-emerald-100 text-emerald-900',
+  progress: 'bg-sky-100 text-sky-900 dark:bg-sky-950/90 dark:text-sky-200',
+  warning: 'bg-amber-100 text-amber-900 dark:bg-amber-950/90 dark:text-amber-200',
+  danger: 'bg-rose-100 text-rose-900 dark:bg-rose-950/90 dark:text-rose-200',
+  neutral: 'bg-slate-200 text-slate-800 dark:bg-secondary dark:text-foreground',
+  success: 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/90 dark:text-emerald-200',
 };
 
 const HALO: Record<ProgressTone, string> = {

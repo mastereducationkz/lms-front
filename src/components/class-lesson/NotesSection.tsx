@@ -77,7 +77,7 @@ function NoteBlock({ view, kind, note, onSaved }: {
     <div className={cn('rounded-xl border p-3', kind === 'staff' ? 'border-amber-200 bg-amber-50/60 dark:border-amber-900 dark:bg-amber-950/20' : 'border-border')}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-          {kind === 'staff' && <Lock className="h-3.5 w-3.5 text-amber-600" aria-hidden />}
+          {kind === 'staff' && <Lock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" aria-hidden />}
           {ru ? meta.ru : meta.en}
         </h3>
         {note?.at && (

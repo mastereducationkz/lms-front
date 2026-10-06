@@ -141,7 +141,7 @@ export default function EventDetailDialog({ event, open, onOpenChange, user }: P
             <div className={cx(
               'mt-3 w-fit rounded-md border px-2 py-1 text-xs font-semibold',
               badge.tone === 'covering'
-                ? 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                ? 'border-brand-border bg-brand-surface text-brand-subtle-foreground'
                 : 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-300',
             )}>
               {badge.text}

@@ -165,10 +165,10 @@ const QuizRenderer = (props: QuizRendererProps) => {
         const element = document.getElementById(`question-${highlightedQuestionId}`);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          element.classList.add('ring-4', 'ring-blue-500', 'ring-offset-2', 'shadow-2xl', 'transition-all', 'duration-500', 'rounded-xl');
+          element.classList.add('ring-4', 'ring-ring', 'ring-offset-2', 'shadow-2xl', 'transition-all', 'duration-500', 'rounded-xl');
           
           setTimeout(() => {
-            element.classList.remove('ring-4', 'ring-blue-500', 'ring-offset-2', 'shadow-2xl');
+            element.classList.remove('ring-4', 'ring-ring', 'ring-offset-2', 'shadow-2xl');
           }, 5000);
         }
       }, 800);
@@ -624,7 +624,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
             <div className="flex items-center gap-2">
               <Button
                 onClick={autoFillCorrectAnswers}
-                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+                className="px-4 py-2 bg-brand-solid hover:bg-brand-solid-hover text-brand-solid-foreground rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
                 title={isTeacher ? "Show Correct Answers" : "Development only: Auto-fill correct answers"}
               >
                 {isTeacher ? "Show Correct Answers" : "Dev: Fill Answers"}
@@ -849,9 +849,9 @@ const QuizRenderer = (props: QuizRendererProps) => {
                   {/* Result Indicator - Explanation only (removed buggy isCorrect labels) */}
                   {feedChecked && q.explanation && (
                     <div className="mt-4 space-y-3">
-                      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                        <p className="text-sm font-medium text-blue-800 dark:text-blue-400 mb-1">Explanation:</p>
-                        <div className="text-blue-700 dark:text-blue-400 text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.explanation) }} />
+                      <div className="bg-brand-surface border border-brand-border rounded-lg p-4">
+                        <p className="text-sm font-medium text-brand-subtle-foreground mb-1">Explanation:</p>
+                        <div className="text-brand-subtle-foreground dark:text-brand-surface-foreground text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.explanation) }} />
                       </div>
                     </div>
                   )}
@@ -864,7 +864,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                       aria-label={reportedQuestions.has(q.id.toString()) ? 'Already reported' : 'Report an error in this question'}
                       className={`inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] text-xs font-medium rounded-lg transition-colors ${
                         reportedQuestions.has(q.id.toString())
-                          ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                          ? 'bg-muted text-gray-400 dark:text-muted-foreground cursor-not-allowed'
                           : 'text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:text-orange-700 dark:hover:text-orange-400'
                       }`}
                     >
@@ -885,7 +885,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
               onClick={handleCheckAnswersClick}
               disabled={isQuizIncomplete}
               title={isQuizIncomplete ? `Ответьте на все вопросы (${answeredCount}/${answerableQuestions.length})` : undefined}
-              className="px-8 py-3 rounded-lg text-lg font-semibold min-h-[44px] bg-blue-600 hover:bg-blue-700 text-white"
+              className="px-8 py-3 rounded-lg text-lg font-semibold min-h-[44px] bg-brand-solid hover:bg-brand-solid-hover text-brand-solid-foreground"
             >
               Check Answers
             </Button>
@@ -918,7 +918,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
             <div className="mb-4">
               <label htmlFor="report-message" className="block text-sm font-medium text-foreground mb-1">
-                What&apos;s wrong? <span className="text-red-500">*</span>
+                What&apos;s wrong? <span className="text-red-500 dark:text-red-400">*</span>
               </label>
               <textarea
                 id="report-message"
@@ -1101,12 +1101,12 @@ const QuizRenderer = (props: QuizRendererProps) => {
                             title={answered ? `Question ${i + 1} — answered` : `Question ${i + 1} — not answered`}
                             className={`shrink-0 w-9 h-9 rounded-md text-sm font-semibold flex items-center justify-center border transition-colors ${
                               answered
-                                ? 'bg-blue-600 border-blue-600 text-white hover:bg-blue-700'
+                                ? 'bg-brand-solid border-brand text-brand-solid-foreground hover:bg-brand-solid-hover'
                                 : `bg-transparent border-dashed ${
                                     showValidationErrors
-                                      ? 'border-red-500 text-red-500'
+                                      ? 'border-red-500 text-red-500 dark:text-red-400'
                                       : 'border-muted-foreground/50 text-muted-foreground'
-                                  } hover:border-blue-400`
+                                  } hover:border-brand`
                             }`}
                           >
                             {i + 1}
@@ -1120,7 +1120,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                       onClick={handleCheckAnswersClick}
                       disabled={isQuizIncomplete}
                       title={isQuizIncomplete ? `Ответьте на все вопросы (${answeredCount}/${answerableQuestions.length})` : undefined}
-                      className="shrink-0 whitespace-nowrap text-xs sm:text-sm font-medium border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 dark:text-blue-400 dark:border-blue-500"
+                      className="shrink-0 whitespace-nowrap text-xs sm:text-sm font-medium border-brand text-brand hover:bg-brand-surface"
                     >
                       Check Answers
                     </Button>
@@ -1195,24 +1195,24 @@ const QuizRenderer = (props: QuizRendererProps) => {
   const renderQuizTitleScreen = () => {
     // Show beautiful Duolingo-style screen for all modes
     return (
-      <div className="min-h-[500px] relative flex items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 -mx-4 -my-4 p-8 rounded-lg overflow-hidden">
+      <div className="min-h-[500px] relative flex items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 dark:bg-none dark:bg-brand-surface dark:border dark:border-brand-border -mx-4 -my-4 p-8 rounded-lg overflow-hidden">
         <div className="absolute bottom-0 left-0 pointer-events-none z-0" aria-hidden="true">
-          <img src="/logo-half.svg" alt="" className="w-64 h-64 md:w-80 md:h-80 brightness-0 invert" />
+          <img src="/logo-half.svg" alt="" className="w-64 h-64 md:w-80 md:h-80 brightness-0 invert dark:opacity-15" />
         </div>
         <div className="absolute bottom-0 right-0 pointer-events-none z-0" aria-hidden="true">
-          <img src="/logo-half.svg" alt="" className="w-64 h-64 md:w-80 md:h-80 brightness-0 invert scale-x-[-1]" />
+          <img src="/logo-half.svg" alt="" className="w-64 h-64 md:w-80 md:h-80 brightness-0 invert scale-x-[-1] dark:opacity-15" />
         </div>
         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0" aria-hidden="true">
-          <img src="/logo.svg" alt="" className="w-80 h-80 md:w-96 md:h-96 brightness-0 invert" />
+          <img src="/logo.svg" alt="" className="w-80 h-80 md:w-96 md:h-96 brightness-0 invert dark:opacity-15" />
         </div>
 
         <div className="text-center space-y-6 max-w-2xl relative z-10">
           {/* Title */}
           <div className="space-y-3">
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white leading-tight">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white dark:text-brand-surface-foreground leading-tight">
               {quizData?.title || 'Quiz incoming!'}
             </h1>
-            <p className="text-[15px] md:text-[18px] text-blue-100 font-light">
+            <p className="text-[15px] md:text-[18px] text-blue-100 dark:text-muted-foreground font-light">
               it's your time to shine
             </p>
           </div>
@@ -1220,20 +1220,20 @@ const QuizRenderer = (props: QuizRendererProps) => {
           <div className="flex flex-col items-center gap-4">
             <Button
               onClick={startQuiz}
-              className="px-10 py-4 bg-card text-foreground border border-border text-lg font-bold hover:bg-accent relative z-20"
+              className="px-10 py-4 bg-card text-foreground border border-border text-lg font-bold hover:bg-accent dark:bg-brand-solid dark:text-brand-solid-foreground dark:border-transparent dark:hover:bg-brand-solid-hover relative z-20"
             >
               Start Practice
             </Button>
 
-            <div className="inline-flex items-center justify-center gap-2 text-white text-base md:text-lg">
+            <div className="inline-flex flex-wrap items-center justify-center gap-x-2 text-white dark:text-brand-surface-foreground text-base md:text-lg">
               <span className="font-medium">{totalQuestionCount} question{totalQuestionCount !== 1 ? 's' : ''}</span>
-              <span className="text-blue-200">• pass {passingScorePercent}%+</span>
+              <span className="text-blue-200 dark:text-muted-foreground">• pass {passingScorePercent}%+</span>
             </div>
             {(import.meta.env.DEV || isTeacher) && (
               <Button
                 onClick={autoFillCorrectAnswers}
                 variant="ghost"
-                className="text-white hover:bg-white/10 mt-2 flex items-center gap-2"
+                className="text-white dark:text-muted-foreground hover:bg-white/10 mt-2 flex items-center gap-2"
                 title={isTeacher ? "Show Correct Answers" : "Development only: Auto-fill correct answers"}
               >
                 {isTeacher ? <HelpCircle className="w-4 h-4" aria-hidden="true" /> : <Wrench className="w-4 h-4" aria-hidden="true" />} 
@@ -1352,7 +1352,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
           <div className="flex justify-center">
             <Button
               onClick={nextQuestion}
-              className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-lg font-semibold transition-all duration-200"
+              className="px-8 py-3 bg-brand-solid hover:bg-brand-solid-hover text-brand-solid-foreground rounded-lg text-lg font-semibold transition-all duration-200"
             >
               Continue
               <ChevronRight className="w-5 h-5 ml-2" />
@@ -1798,7 +1798,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
           <h1 className="text-3xl font-bold text-foreground">
             Submission Received
           </h1>
-          <div className="p-4 md:p-8 rounded-2xl border dark:border-gray-700 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+          <div className="p-4 md:p-8 rounded-2xl border bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
              <ClipboardList className="mx-auto mb-4 h-12 w-12 text-yellow-700 dark:text-yellow-400" strokeWidth={1.5} aria-hidden="true" />
              <h2 className="text-xl font-bold text-yellow-800 dark:text-yellow-400 mb-2">Pending Teacher Review</h2>
              <p className="text-yellow-700 dark:text-yellow-400">
@@ -1807,7 +1807,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
              </p>
           </div>
           <div className="flex justify-center">
-             <Button onClick={goToNextStep} className="bg-blue-600 hover:bg-blue-700 text-white">
+             <Button onClick={goToNextStep} className="bg-brand-solid hover:bg-brand-solid-hover text-brand-solid-foreground">
                Continue to Next Step
              </Button>
           </div>
@@ -1990,9 +1990,9 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
                     {q.explanation && (
                       <div className="mt-4 space-y-3">
-                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                          <p className="text-sm font-medium text-blue-800 dark:text-blue-400 mb-1">Explanation:</p>
-                          <div className="text-blue-700 dark:text-blue-400 text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.explanation) }} />
+                        <div className="bg-brand-surface border border-brand-border rounded-lg p-4">
+                          <p className="text-sm font-medium text-brand-subtle-foreground mb-1">Explanation:</p>
+                          <div className="text-brand-subtle-foreground dark:text-brand-surface-foreground text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.explanation) }} />
                         </div>
                       </div>
                     )}

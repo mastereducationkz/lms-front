@@ -78,7 +78,7 @@ const NO_REASON = 'none';
 const TONE = {
   mismatch: 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-900',
   timing: 'bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-900',
-  reviewed: 'bg-slate-100 text-slate-600 ring-slate-200 dark:bg-slate-800/60 dark:text-slate-300 dark:ring-slate-700',
+  reviewed: 'bg-muted text-muted-foreground ring-slate-200 dark:ring-border',
 };
 
 function when(iso: string | null | undefined): string | null {

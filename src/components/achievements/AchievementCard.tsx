@@ -22,7 +22,7 @@ export function ProgressBar({ current, target, barClass }: { current: number; ta
   return (
     <div className="flex items-center gap-2">
       <div
-        className="h-2 flex-1 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800"
+        className="h-2 flex-1 overflow-hidden rounded-full bg-muted"
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={target}
@@ -51,12 +51,12 @@ const AchievementCard = forwardRef<HTMLDivElement, AchievementCardProps>(functio
     <div
       ref={ref}
       id={anchor ? a.key : undefined}
-      className={`scroll-mt-24 flex gap-4 rounded-2xl border bg-white dark:bg-card p-4 transition-shadow ${style.card} ${
-        highlighted ? 'ring-2 ring-offset-2 ring-[#2563EB] dark:ring-offset-background' : ''
+      className={`scroll-mt-24 flex gap-4 rounded-2xl border bg-card p-4 transition-shadow ${style.card} ${
+        highlighted ? 'ring-2 ring-offset-2 ring-brand dark:ring-offset-background' : ''
       } ${a.unlocked ? '' : 'opacity-[0.97]'}`}
     >
       {hidden ? (
-        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 text-gray-400">
+        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-muted text-gray-400 dark:text-muted-foreground">
           <HelpCircle className="h-7 w-7" aria-hidden />
         </span>
       ) : (
@@ -68,20 +68,20 @@ const AchievementCard = forwardRef<HTMLDivElement, AchievementCardProps>(functio
             {TIER_LABEL[a.tier] ?? a.tier}
           </span>
           {a.unlocked && a.count > 1 && (
-            <span className="rounded-full bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-[10px] font-semibold text-gray-600 dark:text-gray-300">
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
               ×{a.count}
             </span>
           )}
         </div>
-        <p className={`mt-1 font-semibold ${a.unlocked ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-200'}`}>
+        <p className={`mt-1 font-semibold ${a.unlocked ? 'text-foreground' : 'text-gray-700 dark:text-foreground'}`}>
           {hidden ? '???' : a.title}
         </p>
         <p className="mt-0.5 text-sm text-muted-foreground">
           {hidden ? (a.hint ? `Secret · hint: ${a.hint}` : 'A secret — keep learning to discover it.') : a.unlocked ? a.description || a.how_to : a.how_to || a.description}
         </p>
         {!hidden && reward && (
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {a.unlocked ? 'Reward' : 'Unlocks'}: <span className="font-medium text-gray-700 dark:text-gray-200">{a.rewards.map((r) => r.name).join(' + ')}</span>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {a.unlocked ? 'Reward' : 'Unlocks'}: <span className="font-medium text-gray-700 dark:text-foreground">{a.rewards.map((r) => r.name).join(' + ')}</span>
           </p>
         )}
         {a.unlocked ? (

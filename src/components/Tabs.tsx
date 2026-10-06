@@ -8,15 +8,15 @@ interface TabsProps {
 
 export default function Tabs({ tabs = [], value, onChange, className = "" }: TabsProps) {
   return (
-    <div className={`bg-gray-100 rounded-lg p-1 inline-flex ${className}`}>
+    <div className={`bg-muted rounded-lg p-1 inline-flex ${className}`}>
       {tabs.map((t, i) => (
         <button
           key={t}
           onClick={() => onChange(i)}
           className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
             value === i 
-              ? 'bg-white shadow-sm text-gray-900 border border-gray-200' 
-              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+              ? 'bg-card shadow-sm text-foreground border border-border' 
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
           }`}
         >
           {t}

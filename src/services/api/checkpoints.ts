@@ -220,9 +220,9 @@ export const STATUS_LABEL: Record<CheckpointStatus, string> = {
 };
 
 export const STATUS_CLASS: Record<CheckpointStatus, string> = {
-  locked: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
+  locked: 'bg-muted text-muted-foreground',
   available: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
-  completed: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+  completed: 'bg-brand-subtle text-brand-subtle-foreground',
   overdue: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
   reopened: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
 };

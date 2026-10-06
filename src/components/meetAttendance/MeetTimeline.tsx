@@ -34,14 +34,14 @@ const BAR: Record<RowKind, string> = {
   student: 'bg-emerald-500 dark:bg-emerald-400',
   unknown: 'bg-amber-400 dark:bg-amber-500',
   other: 'bg-sky-500 dark:bg-sky-400',
-  not_tracked: 'bg-slate-300 dark:bg-slate-600',
+  not_tracked: 'bg-slate-300 dark:bg-secondary',
 };
 
 const MARK_CHIP: Record<string, string> = {
   present: 'bg-emerald-500 text-white',
   late: 'bg-amber-400 text-gray-900',
   absent: 'bg-rose-500 text-white',
-  removed: 'bg-slate-300 text-slate-700',
+  removed: 'bg-slate-300 text-slate-700 dark:bg-secondary dark:text-foreground',
 };
 
 function MarkChip({ mark }: { mark: MeetMark | undefined }) {

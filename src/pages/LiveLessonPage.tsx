@@ -59,7 +59,7 @@ function LiveLesson({ eventId, title }: { eventId: number; title: string }) {
   return (
     <div className="mx-auto w-full max-w-xl px-4 pb-16 pt-4">
       <h1 className="mb-3 text-lg font-semibold text-foreground">{state?.lesson.title ?? title}</h1>
-      {error && !state && <p className="text-sm text-rose-600">{error}</p>}
+      {error && !state && <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>}
       {!state ? (
         <div className="flex justify-center py-16"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : state.mode === 'off' ? (

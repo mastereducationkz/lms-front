@@ -39,7 +39,7 @@ export function formatMessageTime(dateString: string) {
 export function DateSeparator({ label }: { label: string }) {
   return (
     <div className="flex justify-center my-3">
-      <span className="rounded-full bg-gray-200 dark:bg-gray-700 px-3 py-0.5 text-[11px] font-medium text-gray-600 dark:text-gray-300">
+      <span className="rounded-full bg-gray-200 dark:bg-secondary px-3 py-0.5 text-[11px] font-medium text-muted-foreground">
         {label}
       </span>
     </div>
@@ -49,9 +49,9 @@ export function DateSeparator({ label }: { label: string }) {
 export function UnreadDivider() {
   return (
     <div className="flex items-center gap-2 my-3" role="separator" aria-label="Unread messages">
-      <span className="h-px flex-1 bg-red-400" />
-      <span className="text-[11px] font-semibold uppercase text-red-500">Unread messages</span>
-      <span className="h-px flex-1 bg-red-400" />
+      <span className="h-px flex-1 bg-red-400 dark:bg-red-900" />
+      <span className="text-[11px] font-semibold uppercase text-red-500 dark:text-red-400">Unread messages</span>
+      <span className="h-px flex-1 bg-red-400 dark:bg-red-900" />
     </div>
   );
 }

@@ -47,7 +47,7 @@ describe('the fun layer renders', () => {
         top: [person(4, 'Алихан Т.')], crowned: person(5, 'Мадина К.') },
     }));
     expect(html).toContain('Kasatik of the lesson');
-    expect(html).toContain('👑');
+    expect(html).toContain('lucide-crown'); // a drawn crown, not the 👑 glyph
     expect(html).toContain('9 🔥');
   });
   it('draws every reaction for a student and for an anonymous plain orca', () => {

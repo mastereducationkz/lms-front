@@ -76,7 +76,7 @@ export default function AgendaView({ events, user, onEventClick }: Props) {
                 {g.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </span>
               {isToday && (
-                <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
+                <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground dark:bg-brand-subtle dark:text-brand-subtle-foreground">
                   Today
                 </span>
               )}

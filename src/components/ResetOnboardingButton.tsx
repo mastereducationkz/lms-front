@@ -26,7 +26,7 @@ export default function ResetOnboardingButton() {
       onClick={handleReset}
       variant="outline"
       size="sm"
-      className="border-yellow-400 text-yellow-700 hover:bg-yellow-50"
+      className="border-yellow-400 text-yellow-700 hover:bg-yellow-50 dark:border-yellow-700 dark:text-yellow-300 dark:hover:bg-yellow-950/30"
     >
       <RotateCcw className="w-4 h-4 mr-2" />
       Reset Onboarding

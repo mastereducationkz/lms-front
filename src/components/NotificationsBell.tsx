@@ -137,7 +137,7 @@ export default function NotificationsBell() {
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="relative w-9 h-9 rounded-lg bg-white dark:bg-card border flex items-center justify-center text-gray-600 dark:text-muted-foreground hover:bg-gray-100 dark:hover:bg-secondary dark:hover:text-foreground transition-colors"
+          className="relative w-9 h-9 rounded-lg bg-card border flex items-center justify-center text-muted-foreground hover:bg-muted dark:hover:text-foreground transition-colors"
           aria-label={t('notifications', locale)}
         >
           <Bell className="w-4 h-4" />

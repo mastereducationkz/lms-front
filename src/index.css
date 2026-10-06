@@ -66,7 +66,7 @@
   }
 
   .dark .rich-text-editor .ql-toolbar {
-    border-color: #374151;
+    border-color: hsl(var(--border));
   }
 
   .rich-text-editor .ql-container {
@@ -77,7 +77,7 @@
   }
 
   .dark .rich-text-editor .ql-container {
-    border-color: #374151;
+    border-color: hsl(var(--border));
   }
 
 /* Стили для математических символов в toolbar */
@@ -89,8 +89,8 @@
 }
 
 .dark .math-toolbar {
-  background-color: #1f2937;
-  border-color: #374151;
+  background-color: hsl(var(--muted));
+  border-color: hsl(var(--border));
 }
 
 /* Стили для LaTeX диалога */
@@ -103,8 +103,8 @@
 }
 
 .dark .latex-dialog .formula-preview {
-  background-color: #1e293b;
-  border-color: #334155;
+  background-color: hsl(var(--muted));
+  border-color: hsl(var(--border));
 }
 
 /* Стили для ошибок LaTeX */
@@ -154,9 +154,9 @@
 }
 
 .dark .ql-latex {
-  background: #1f2937;
-  border-color: #4b5563;
-  color: #d1d5db;
+  background: hsl(var(--muted));
+  border-color: hsl(var(--input));
+  color: hsl(var(--foreground));
 }
 
 .ql-latex:hover {
@@ -165,8 +165,8 @@
 }
 
 .dark .ql-latex:hover {
-  background-color: #374151;
-  border-color: #6b7280;
+  background-color: hsl(var(--border));
+  border-color: hsl(var(--muted-foreground));
 }
 
 .ql-latex svg {
@@ -293,7 +293,7 @@
   }
 
   .dark .custom-scrollbar {
-    scrollbar-color: #4b5563 #1f2937;
+    scrollbar-color: hsl(var(--input)) hsl(var(--muted));
   }
 
   .custom-scrollbar::-webkit-scrollbar {
@@ -306,7 +306,7 @@
   }
 
   .dark .custom-scrollbar::-webkit-scrollbar-track {
-    background: #1f2937;
+    background: hsl(var(--muted));
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
@@ -316,7 +316,7 @@
   }
 
   .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #4b5563;
+    background: hsl(var(--input));
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -324,7 +324,7 @@
   }
 
   .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #6b7280;
+    background: hsl(var(--muted-foreground));
   }
 
   /* Rich Text Editor Styles */
@@ -341,8 +341,8 @@
   }
 
   .dark .rich-text-editor .ql-toolbar {
-    background-color: #1f2937;
-    border-color: #374151;
+    background-color: hsl(var(--muted));
+    border-color: hsl(var(--border));
   }
 
   .rich-text-editor .ql-container {
@@ -354,7 +354,7 @@
   }
 
   .dark .rich-text-editor .ql-container {
-    border-color: #374151;
+    border-color: hsl(var(--border));
   }
 
   .rich-text-editor .ql-editor {
@@ -367,8 +367,8 @@
   }
 
   .dark .rich-text-editor .ql-editor {
-    background-color: #111827;
-    color: #f3f4f6;
+    background-color: hsl(var(--card));
+    color: hsl(var(--foreground));
   }
 
   .rich-text-editor .ql-editor:focus {
@@ -401,8 +401,8 @@
   }
 
   .dark .rich-text-editor .ql-editor blockquote {
-    border-left-color: #374151;
-    color: #9ca3af;
+    border-left-color: hsl(var(--border));
+    color: hsl(var(--muted-foreground));
   }
 
   .rich-text-editor .ql-editor code {
@@ -414,8 +414,8 @@
   }
 
   .dark .rich-text-editor .ql-editor code {
-    background-color: #1f2937;
-    color: #e5e7eb;
+    background-color: hsl(var(--muted));
+    color: hsl(var(--foreground));
   }
 
   .rich-text-editor .ql-editor pre {
@@ -423,7 +423,7 @@
   }
 
   .dark .rich-text-editor .ql-editor pre {
-    background-color: #1f2937;
+    background-color: hsl(var(--muted));
   }
 
   /* Copy Protection Styles */
@@ -489,11 +489,11 @@
   }
 
   .dark .rich-text-editor .ql-editor a {
-    color: #60a5fa;
+    color: hsl(var(--brand));
   }
 
   .dark .rich-text-editor .ql-editor a:hover {
-    color: #93bbfd;
+    color: hsl(var(--brand-subtle-foreground));
   }
 
   .rich-text-editor .ql-editor img {
@@ -523,8 +523,9 @@
        brand-subtle-foreground    #1D4ED8 (blue-700)   #93C5FD    text/icons on brand-subtle or brand-surface
        brand-border               #BFDBFE (blue-200)   #2F456A    borders of brand-surface / brand-subtle panels
 
-     shadcn's --primary stays #0249f9 in light (unchanged); in dark it follows
-     brand-solid, and text-primary follows brand (via --primary-text).
+     shadcn's --primary is the logo blue #2563EB in light (it was #0249F9 until the
+     sweep, owner decision Q24: one blue, not two); in dark it follows brand-solid,
+     and text-primary follows brand (via --primary-text).
      Shadows are tokens too (--shadow-*): Tailwind's values in light, deeper in dark
      where a 5-10% black shadow would vanish. */
   :root {
@@ -534,8 +535,8 @@
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    /* Primary brand: #0249f9 (HSL: 223 98% 49%) */
-    --primary: 223 98% 49%;
+    /* Primary = the logo blue #2563EB, same as brand-solid (#F8FAFC on it: 4.9:1) */
+    --primary: 221.2 83.2% 53.3%;
     --primary-foreground: 210 40% 98%;
     --primary-text: var(--primary);
     --secondary: 0 0% 96.1%;

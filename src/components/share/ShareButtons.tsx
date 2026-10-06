@@ -26,7 +26,7 @@ function ShareEntryButton({ label = 'Share', build, onOpen, className = '' }: {
       type="button"
       variant="ghost"
       size="sm"
-      className={`h-8 gap-1.5 px-2.5 text-[#2563EB] hover:bg-blue-50 hover:text-[#1D4ED8] dark:hover:bg-blue-950/40 ${className}`}
+      className={`h-8 gap-1.5 px-2.5 text-brand hover:bg-brand-surface hover:text-brand-subtle-foreground ${className}`}
       onClick={() => {
         const item = build();
         if (!item) return;

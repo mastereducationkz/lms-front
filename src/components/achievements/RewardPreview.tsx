@@ -32,7 +32,7 @@ export default function RewardPreview({ code, userId, reward, size = 64, locked 
       {reward && !dressed && !locked && (
         <span
           aria-hidden
-          className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center rounded-full bg-[#2563EB] text-white ring-2 ring-white dark:ring-card"
+          className="absolute -bottom-0.5 -right-0.5 flex items-center justify-center rounded-full bg-brand-solid text-brand-solid-foreground ring-2 ring-white dark:ring-card"
           style={{ width: badge, height: badge }}
         >
           <Gift style={{ width: badge * 0.55, height: badge * 0.55 }} />

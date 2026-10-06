@@ -115,7 +115,7 @@ function gotItRight(activity: ActivityView): boolean {
 function Waiting() {
   return (
     <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border p-10 text-center">
-      <Radio className="h-8 w-8 animate-pulse text-emerald-600" aria-hidden />
+      <Radio className="h-8 w-8 animate-pulse text-emerald-600 dark:text-emerald-400" aria-hidden />
       <p className="text-base font-semibold text-foreground">Waiting for the teacher's question</p>
       <p className="text-sm text-muted-foreground">Keep this page open. The question appears here by itself.</p>
     </div>
@@ -143,7 +143,7 @@ function ActivityBody({ activity, lessonId, api, act }: { activity: ActivityView
   const open = activity.status === 'open';
   const { busy, error, send } = useSend(act);
   const answer = (value: unknown, item?: number) => send(() => api.answer(lessonId, activity.id, value, item));
-  const footer = error ? <p className="mt-2 text-sm text-rose-600">{error}</p> : null;
+  const footer = error ? <p className="mt-2 text-sm text-rose-600 dark:text-rose-400">{error}</p> : null;
 
   if (activity.kind === 'poll') {
     const mine = typeof activity.mine === 'number' ? [activity.mine] : [];
@@ -270,7 +270,7 @@ function PopcheckQuestion({ n, item, mine, open, busy, revealed, onSend }: {
       )}
       {sent && !revealed && <div className="mt-2"><Sent text="Sent" /></div>}
       {revealed && sent && (
-        <p className={cn('mt-2 inline-flex items-center gap-1.5 text-sm font-semibold', mine?.correct ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600')}>
+        <p className={cn('mt-2 inline-flex items-center gap-1.5 text-sm font-semibold', mine?.correct ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400')}>
           {mine?.correct ? <CheckCircle2 className="h-4 w-4" aria-hidden /> : <XCircle className="h-4 w-4" aria-hidden />}
           {mine?.correct ? 'Right' : 'Not quite'}
         </p>

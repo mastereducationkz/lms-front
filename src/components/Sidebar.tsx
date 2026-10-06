@@ -373,8 +373,8 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
   };
 
   const wrapperClass = variant === 'desktop'
-    ? `hidden lg:flex ${isCollapsed ? 'w-20 p-2' : 'w-64 p-4 sm:p-5'} h-screen fixed top-0 left-0 bg-white dark:bg-card border-r border-border flex-col transition-all duration-300`
-    : 'flex w-64 h-full bg-white dark:bg-card border-r border-border p-4 sm:p-5 flex-col';
+    ? `hidden lg:flex ${isCollapsed ? 'w-20 p-2' : 'w-64 p-4 sm:p-5'} h-screen fixed top-0 left-0 bg-card border-r border-border flex-col transition-all duration-300`
+    : 'flex w-64 h-full bg-card border-r border-border p-4 sm:p-5 flex-col';
 
   return (
     <aside className={wrapperClass}>
@@ -383,14 +383,14 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
           <img src={logoIco} alt="Master Education" className="w-7 h-7 sm:w-8 sm:h-8 rounded" />
           {!isCollapsed && (
             <div className="ml-3 leading-tight">
-              <div className="text-base sm:text-lg font-semibold text-gray-900 dark:text-foreground -mt-1">Master Education</div>
+              <div className="text-base sm:text-lg font-semibold text-foreground -mt-1">Master Education</div>
             </div>
           )}
         </div>
         {variant === 'desktop' && onToggle && (
           <button 
             onClick={onToggle} 
-            className={`p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-secondary text-gray-500 dark:text-gray-400 transition-colors ${isCollapsed ? '' : 'ml-auto'}`}
+            className={`p-1.5 rounded-lg hover:bg-muted text-muted-foreground transition-colors ${isCollapsed ? '' : 'ml-auto'}`}
           >
             {isCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
           </button>
@@ -431,12 +431,12 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                         <button
                           type="button"
                           onClick={handleCoursesToggle}
-                          className={`w-full flex items-center rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-secondary transition-colors py-2.5 text-sm leading-snug ${isCollapsed ? 'justify-center px-2' : 'px-4'}`}
+                          className={`w-full flex items-center rounded-xl text-gray-700 dark:text-foreground hover:bg-muted transition-colors py-2.5 text-sm leading-snug ${isCollapsed ? 'justify-center px-2' : 'px-4'}`}
                         >
                           <Icon className={`w-5 h-5 shrink-0 opacity-70 ${isCollapsed ? '' : 'mr-3'}`} />
                           {!isCollapsed && (
                             <>
-                              <span className="flex-1 min-w-0 text-gray-800 dark:text-gray-200 text-sm text-left">{label}</span>
+                              <span className="flex-1 min-w-0 text-foreground text-sm text-left">{label}</span>
                               {badge > 0 && (
                                 <span className={`ml-2 text-xs rounded-full px-2 py-0.5 ${badgeToneClass(badgeTone)}`} title={badgeTitle ?? undefined}>{badge}</span>
                               )}
@@ -448,20 +448,25 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                         {isCoursesExpanded && !isCollapsed && (
                           <div className="ml-5 mt-1 space-y-0.5">
                             {isLoadingCourses ? (
-                              <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">{['head_curator', 'curator'].includes(user?.role || '') ? 'Загрузка курсов...' : 'Loading courses...'}</div>
+                              <div className="px-3 py-2 text-sm text-muted-foreground">{['head_curator', 'curator'].includes(user?.role || '') ? 'Загрузка курсов...' : 'Loading courses...'}</div>
                             ) : courses.length === 0 ? (
-                              <div className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">{['head_curator', 'curator'].includes(user?.role || '') ? 'Курсы не найдены' : 'No courses found'}</div>
+                              <div className="px-3 py-2 text-sm text-muted-foreground">{['head_curator', 'curator'].includes(user?.role || '') ? 'Курсы не найдены' : 'No courses found'}</div>
                             ) : (
                               courses.slice(0, 5).map((course) => (
                                 <NavLink
                                   key={course.id}
                                   to={`/course/${course.id}`}
                                   className={({ isActive }) =>
-                                    `flex items-center rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-secondary transition-colors px-3 py-2 text-sm leading-snug ${isActive ? 'bg-brand-surface text-brand-subtle-foreground dark:text-brand-subtle-foreground border-l-2 border-blue-500 dark:border-brand' : ''}`
+                                    `flex items-center rounded-lg hover:bg-muted transition-colors px-3 py-2 text-sm leading-snug ${isActive ? 'nav-link-active text-foreground' : 'text-muted-foreground'}`
                                   }
                                 >
-                                  <div className="w-2 h-2 bg-blue-400 rounded-full mr-3 flex-shrink-0"></div>
-                                  <span className="truncate">{course.title}</span>
+                                  {({ isActive }) => (
+                                    <>
+                                      {/* the dot is this row's icon: like the top-level icons, blue in dark only when active */}
+                                      <div className={`w-2 h-2 bg-blue-400 rounded-full mr-3 flex-shrink-0 ${isActive ? 'dark:bg-brand' : 'dark:bg-muted-foreground'}`}></div>
+                                      <span className="truncate">{course.title}</span>
+                                    </>
+                                  )}
                                 </NavLink>
                               ))
                             )}
@@ -490,13 +495,12 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                         target="_blank"
                         rel="noopener noreferrer"
                         data-tour={dataTour}
-                        className={`flex items-center rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-secondary transition-colors
-                 py-2.5 text-sm leading-snug ${isCollapsed ? 'justify-center px-2' : 'px-4'}`}
+                        className={`flex items-center rounded-xl text-gray-700 dark:text-foreground hover:bg-muted transition-colors py-2.5 text-sm leading-snug ${isCollapsed ? 'justify-center px-2' : 'px-4'}`}
                       >
                         <Icon className={`w-5 h-5 shrink-0 opacity-70 ${isCollapsed ? '' : 'mr-3'}`} />
                         {!isCollapsed && (
                           <>
-                            <span className="flex-1 min-w-0 text-gray-800 dark:text-gray-200 text-sm">{label}</span>
+                            <span className="flex-1 min-w-0 text-foreground text-sm">{label}</span>
                             {badge > 0 && (
                               <span className={`ml-2 text-xs rounded-full px-2 py-0.5 ${badgeToneClass(badgeTone)}`} title={badgeTitle ?? undefined}>{badge}</span>
                             )}
@@ -513,14 +517,13 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                       end={to === '/courses'}
                       data-tour={dataTour}
                       className={({ isActive }) =>
-                        `flex items-center rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-secondary transition-colors
-                 py-2.5 text-sm leading-snug ${isActive ? 'nav-link-active' : ''} ${isCollapsed ? 'justify-center px-2' : 'px-4'}`
+                        `flex items-center rounded-xl text-gray-700 dark:text-foreground hover:bg-muted transition-colors py-2.5 text-sm leading-snug ${isActive ? 'nav-link-active' : ''} ${isCollapsed ? 'justify-center px-2' : 'px-4'}`
                       }
                     >
                       <Icon className={`w-5 h-5 shrink-0 opacity-70 ${isCollapsed ? '' : 'mr-3'}`} />
                       {!isCollapsed && (
                         <>
-                          <span className="flex-1 min-w-0 text-gray-800 dark:text-gray-200 text-sm">{label}</span>
+                          <span className="flex-1 min-w-0 text-foreground text-sm">{label}</span>
                           {comingSoon && (
                             <span className="ml-2 shrink-0 rounded-full bg-brand-surface px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-subtle-foreground">
                               {['head_curator', 'curator'].includes(user?.role || '') ? 'Скоро' : 'Soon'}
@@ -543,7 +546,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
         <div className="relative" data-tour="profile-nav">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-secondary transition-colors`}
+            className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} p-2 rounded-lg hover:bg-muted transition-colors`}
           >
             <div className="flex items-center">
               {(() => {
@@ -564,22 +567,22 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
               })()}
               {!isCollapsed && (
                 <div className="ml-3 text-left">
-                  <div className="text-sm font-medium text-gray-900 dark:text-foreground line-clamp-1">{user?.name || 'User'}</div>
-                  <div className="text-xs text-gray-500 dark:text-muted-foreground">{roleLabel(user?.role)}</div>
+                  <div className="text-sm font-medium text-foreground line-clamp-1">{user?.name || 'User'}</div>
+                  <div className="text-xs text-muted-foreground">{roleLabel(user?.role)}</div>
                 </div>
               )}
             </div>
             {!isCollapsed && (
-              <ChevronDown className={`w-4 h-4 text-gray-400 dark:text-gray-500 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-4 h-4 text-gray-400 dark:text-muted-foreground transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
             )}
           </button>
           
           {isDropdownOpen && (
-            <div className={`absolute bottom-full ${isCollapsed ? 'left-full ml-2 w-48' : 'left-0 right-0 w-full'} mb-2 bg-white dark:bg-popover border border-border rounded-lg shadow-lg py-2 z-50`}>
+            <div className={`absolute bottom-full ${isCollapsed ? 'left-full ml-2 w-48' : 'left-0 right-0 w-full'} mb-2 bg-popover border border-border rounded-lg shadow-lg py-2 z-50`}>
               <NavLink
                 to="/profile"
                 onClick={() => setIsDropdownOpen(false)}
-                className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-secondary transition-colors"
+                className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-foreground hover:bg-muted transition-colors"
               >
                 <UserCheck className="w-4 h-4 mr-3" />
                 {['head_curator', 'curator'].includes(user?.role || '') ? 'Профиль' : 'Profile'}
@@ -587,7 +590,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
               <NavLink
                 to="/settings"
                 onClick={() => setIsDropdownOpen(false)}
-                className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-secondary transition-colors"
+                className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-foreground hover:bg-muted transition-colors"
               >
                 <Settings className="w-4 h-4 mr-3" />
                 {['head_curator', 'curator'].includes(user?.role || '') ? 'Настройки' : 'Settings'}
@@ -622,7 +625,7 @@ export function SidebarMobile({ open, onClose }: SidebarMobileProps) {
   return (
     <div className="lg:hidden fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="absolute top-0 left-0 w-64 h-full bg-white dark:bg-card border-r border-border p-0">
+      <div className="absolute top-0 left-0 w-64 h-full bg-card border-r border-border p-0">
         <Sidebar variant="mobile" />
       </div>
     </div>

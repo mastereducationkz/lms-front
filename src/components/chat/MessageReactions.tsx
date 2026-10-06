@@ -41,19 +41,19 @@ export function MessageReactions({ reactions, currentUserId, onToggle, align = '
               type="button"
               className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs border transition-colors ${
                 g.mine
-                  ? 'bg-blue-100 border-blue-300 dark:bg-blue-900/40 dark:border-blue-700'
-                  : 'bg-gray-100 border-gray-200 dark:bg-gray-800 dark:border-gray-700'
+                  ? 'bg-brand-subtle border-blue-300 dark:border-brand-border'
+                  : 'bg-muted border-border'
               }`}
               aria-label={`${g.count} reacted with ${g.emoji}`}
             >
               <span className="leading-none">{g.emoji}</span>
-              <span className="text-gray-600 dark:text-gray-300">{g.count}</span>
+              <span className="text-muted-foreground">{g.count}</span>
             </button>
           </PopoverTrigger>
           <PopoverContent align={align === 'end' ? 'end' : 'start'} className="w-56 p-2">
-            <div className="flex items-center gap-2 pb-2 mb-2 border-b dark:border-gray-700">
+            <div className="flex items-center gap-2 pb-2 mb-2 border-b dark:border-border">
               <span className="text-lg">{g.emoji}</span>
-              <span className="text-sm text-gray-500 dark:text-gray-400">{g.count}</span>
+              <span className="text-sm text-muted-foreground">{g.count}</span>
             </div>
             <div className="max-h-40 overflow-y-auto space-y-1">
               {g.users.map((u) => (
@@ -69,7 +69,7 @@ export function MessageReactions({ reactions, currentUserId, onToggle, align = '
             <button
               type="button"
               onClick={() => onToggle(g.emoji)}
-              className="w-full mt-2 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+              className="w-full mt-2 text-xs text-brand hover:underline"
             >
               {g.mine ? 'Remove my reaction' : `React with ${g.emoji}`}
             </button>

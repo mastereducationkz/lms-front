@@ -4,7 +4,7 @@
  * Used by the presenter and the student page — never by the Meet panel (keeps its bundle light).
  */
 import { useEffect, useState } from 'react';
-import { Trophy } from 'lucide-react';
+import { Crown, PartyPopper, Trophy } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { addReaction, emptyBubbles, prune, type BubbleState } from '../../lib/liveLesson/reactions';
 import { useLiveEvent } from '../../lib/liveLesson/useLiveEvent';
@@ -151,7 +151,7 @@ export function CrownedOrca({ person, size = 160 }: { person: Person; size?: num
   return (
     <div className="flex flex-col items-center gap-2" style={{ paddingTop: size * 0.34 }}>
       <span className="relative inline-block">
-        <span aria-hidden className="absolute left-1/2 -translate-x-1/2 drop-shadow-lg" style={{ top: -size * 0.32, fontSize: size * 0.42 }}>👑</span>
+        <Crown aria-hidden className="absolute left-1/2 -translate-x-1/2 fill-amber-400 text-amber-500 drop-shadow-lg" style={{ top: -size * 0.32, width: size * 0.42, height: size * 0.42 }} />
         <span className="live-orca-wiggle inline-block rounded-full ring-4 ring-amber-400 shadow-[0_0_40px_rgba(251,191,36,0.55)]">
           <LiveAvatar person={person} size={size} />
         </span>
@@ -176,7 +176,7 @@ export function Recap({ recap, big = false }: { recap: LiveRecap; big?: boolean 
   return (
     <div className={cn('flex flex-col items-center text-center', big ? 'gap-7' : 'gap-5')}>
       <Confetti pieces={big ? 160 : 90} durationMs={big ? 3200 : 2200} />
-      <h2 className={cn('font-bold', big ? 'text-6xl' : 'text-2xl')}>What a lesson! 🎉</h2>
+      <h2 className={cn('inline-flex items-center gap-3 font-bold', big ? 'text-6xl' : 'text-2xl')}>What a lesson! <PartyPopper className={cn('text-amber-500', big ? 'h-14 w-14' : 'h-6 w-6')} aria-hidden /></h2>
       <div className={cn('flex flex-wrap justify-center', big ? 'gap-16' : 'gap-8')}>
         <Stat big={big} value={recap.activities} label="activities" />
         <Stat big={big} value={recap.answers} label="answers" />

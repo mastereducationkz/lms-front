@@ -345,10 +345,10 @@ function LikertScale({
   rightLabel?: string;
 }) {
   return (
-    <div className="space-y-3 p-4 border border-gray-200 dark:border-border rounded-lg bg-gray-50 dark:bg-secondary">
+    <div className="space-y-3 p-4 border border-border rounded-lg bg-muted">
       <Label className="text-sm font-medium block">{label}</Label>
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs text-gray-500 dark:text-gray-400 w-24 text-left">{leftLabel}</span>
+        <span className="text-xs text-muted-foreground w-24 text-left">{leftLabel}</span>
         <div className="flex gap-2 flex-1 justify-center">
           {LIKERT_SCALE.map((option) => (
             <button
@@ -357,17 +357,17 @@ function LikertScale({
               onClick={() => onChange(option.value)}
               className={`w-10 h-10 text-sm rounded-lg border transition-all font-medium ${
                 value === option.value
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white dark:bg-card text-gray-700 dark:text-gray-300 border-gray-300 dark:border-border hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                  ? 'bg-brand-solid text-brand-solid-foreground border-brand'
+                  : 'bg-card text-gray-700 dark:text-foreground border-gray-300 dark:border-border hover:border-blue-400 dark:hover:border-brand hover:bg-brand-surface'
               }`}
             >
               {option.value}
             </button>
           ))}
         </div>
-        <span className="text-xs text-gray-500 dark:text-gray-400 w-24 text-right">{rightLabel}</span>
+        <span className="text-xs text-muted-foreground w-24 text-right">{rightLabel}</span>
       </div>
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <p className="text-sm text-red-500 dark:text-red-400">{error}</p>}
     </div>
   );
 }
@@ -385,7 +385,7 @@ function SavingIndicator({ status }: { status: 'idle' | 'saving' | 'saved' | 'er
 
   return (
     <div
-      className="fixed top-4 right-4 z-50 rounded-md border border-border bg-card px-3 py-1.5 text-sm text-foreground shadow-sm"
+      className="fixed bottom-4 right-4 z-50 rounded-md border border-border bg-card px-3 py-1.5 text-sm text-foreground shadow-sm sm:bottom-auto sm:top-4"
       role="status"
       aria-live="polite"
     >
@@ -1198,7 +1198,7 @@ export default function AssignmentZeroPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-background dark:to-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand"></div>
       </div>
     );
   }
@@ -1208,9 +1208,9 @@ export default function AssignmentZeroPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-100 dark:from-background dark:to-background p-4">
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 text-center">
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-foreground mb-2">Already Completed!</h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <CheckCircle className="w-16 h-16 text-green-500 dark:text-green-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-foreground mb-2">Already Completed!</h2>
+            <p className="text-muted-foreground mb-6">
               You have already submitted Assignment Zero. You can proceed to your dashboard.
             </p>
             <Button onClick={() => navigate('/dashboard')} className="w-full">
@@ -1231,9 +1231,9 @@ export default function AssignmentZeroPage() {
         <div className="mb-6 rounded-2xl border border-slate-200/70 dark:border-border bg-white/80 dark:bg-card/80 backdrop-blur p-5 sm:p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground mb-1">Assignment Zero</h1>
-              <p className="text-base text-gray-600 dark:text-gray-400">Self-Assessment Questionnaire</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+              <h1 className="text-3xl font-bold text-foreground mb-1">Assignment Zero</h1>
+              <p className="text-base text-muted-foreground">Self-Assessment Questionnaire</p>
+              <p className="text-sm text-muted-foreground mt-2">
                 Please be honest when answering questions. This helps us understand your current level.
               </p>
             </div>
@@ -1241,18 +1241,18 @@ export default function AssignmentZeroPage() {
               variant="outline" 
               size="sm" 
               onClick={() => logout()}
-              className="text-gray-600 dark:text-gray-400 hover:text-red-600 hover:border-red-200 transition-colors"
+              className="text-muted-foreground hover:text-red-600 hover:border-red-200 dark:hover:text-red-400 dark:hover:border-red-900 transition-colors"
             >
               Logout
             </Button>
           </div>
-          <div className="mt-5 flex items-center justify-between text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+          <div className="mt-5 flex items-center justify-between text-xs sm:text-sm text-muted-foreground">
             <span>Step {displayStep} of {totalSteps}</span>
             <span>{Math.round((displayStep / Math.max(1, totalSteps)) * 100)}% completed</span>
           </div>
           <div className="mt-2 h-1.5 bg-slate-200 dark:bg-secondary rounded-full">
             <div
-              className="h-full bg-blue-600 rounded-full transition-all duration-300"
+              className="h-full bg-brand-solid rounded-full transition-all duration-300"
               style={{ width: `${(displayStep / Math.max(1, totalSteps)) * 100}%` }}
             />
           </div>
@@ -1270,10 +1270,10 @@ export default function AssignmentZeroPage() {
                   disabled={stepNumber > displayStep}
                   className={`flex-shrink-0 inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium border transition-all ${
                     stepNumber === displayStep
-                      ? 'bg-blue-600 text-white border-blue-600'
+                      ? 'bg-brand-solid text-brand-solid-foreground border-brand dark:bg-brand-surface dark:text-brand-subtle-foreground dark:border-brand-border'
                       : stepNumber < displayStep
                       ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900 cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-950/40'
-                      : 'bg-white dark:bg-card text-gray-500 dark:text-gray-400 border-slate-200 dark:border-border cursor-not-allowed'
+                      : 'bg-card text-muted-foreground border-border cursor-not-allowed'
                   }`}
                   title={step.title}
                 >
@@ -1285,7 +1285,7 @@ export default function AssignmentZeroPage() {
               );
             })}
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-sm text-muted-foreground mt-2">
             Step {displayStep} of {totalSteps}: {DYNAMIC_STEPS[displayStep - 1]?.title}
           </p>
         </div>
@@ -1324,7 +1324,7 @@ export default function AssignmentZeroPage() {
                     onChange={(e) => handleInputChange('full_name', e.target.value)}
                     className={errors.full_name ? 'border-red-500' : ''}
                   />
-                  {errors.full_name && <p className="text-sm text-red-500">{errors.full_name}</p>}
+                  {errors.full_name && <p className="text-sm text-red-500 dark:text-red-400">{errors.full_name}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -1336,7 +1336,7 @@ export default function AssignmentZeroPage() {
                     onChange={(e) => handleInputChange('phone_number', e.target.value)}
                     className={errors.phone_number ? 'border-red-500' : ''}
                   />
-                  {errors.phone_number && <p className="text-sm text-red-500">{errors.phone_number}</p>}
+                  {errors.phone_number && <p className="text-sm text-red-500 dark:text-red-400">{errors.phone_number}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -1349,7 +1349,7 @@ export default function AssignmentZeroPage() {
                     className={errors.parent_phone_number ? 'border-red-500' : ''}
                   />
                   {errors.parent_phone_number && (
-                    <p className="text-sm text-red-500">{errors.parent_phone_number}</p>
+                    <p className="text-sm text-red-500 dark:text-red-400">{errors.parent_phone_number}</p>
                   )}
                 </div>
 
@@ -1362,12 +1362,12 @@ export default function AssignmentZeroPage() {
                     onChange={(e) => handleInputChange('telegram_id', e.target.value)}
                     className={errors.telegram_id ? 'border-red-500' : ''}
                   />
-                  {errors.telegram_id && <p className="text-sm text-red-500">{errors.telegram_id}</p>}
+                  {errors.telegram_id && <p className="text-sm text-red-500 dark:text-red-400">{errors.telegram_id}</p>}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="email">Email *</Label>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-muted-foreground">
                     This email will be used to give you access to the weekly practice tests.
                   </p>
                   <Input
@@ -1378,7 +1378,7 @@ export default function AssignmentZeroPage() {
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     className={errors.email ? 'border-red-500' : ''}
                   />
-                  {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
+                  {errors.email && <p className="text-sm text-red-500 dark:text-red-400">{errors.email}</p>}
                 </div>
               </>
             )}
@@ -1390,7 +1390,7 @@ export default function AssignmentZeroPage() {
                   <>
                     <div className="space-y-2">
                       <Label htmlFor="college_board_email">College Board Account Email *</Label>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-xs text-muted-foreground">
                         Please provide your email with which you have registered your College Board account.
                       </p>
                       <Input
@@ -1402,7 +1402,7 @@ export default function AssignmentZeroPage() {
                         className={errors.college_board_email ? 'border-red-500' : ''}
                       />
                       {errors.college_board_email && (
-                        <p className="text-sm text-red-500">{errors.college_board_email}</p>
+                        <p className="text-sm text-red-500 dark:text-red-400">{errors.college_board_email}</p>
                       )}
                     </div>
 
@@ -1410,12 +1410,12 @@ export default function AssignmentZeroPage() {
                       <Label htmlFor="college_board_password">
                         College Board Account Password{hasCollegeBoardPassword ? '' : ' *'}
                       </Label>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-xs text-muted-foreground">
                         Your email and password will be used by your teacher to check if you have correctly
                         registered for SAT.
                       </p>
                       {hasCollegeBoardPassword && (
-                        <p className="text-xs text-blue-600 dark:text-blue-400">
+                        <p className="text-xs text-brand">
                           Password saved — leave this field blank to keep it unchanged.
                         </p>
                       )}
@@ -1428,7 +1428,7 @@ export default function AssignmentZeroPage() {
                         className={errors.college_board_password ? 'border-red-500' : ''}
                       />
                       {errors.college_board_password && (
-                        <p className="text-sm text-red-500">{errors.college_board_password}</p>
+                        <p className="text-sm text-red-500 dark:text-red-400">{errors.college_board_password}</p>
                       )}
                     </div>
                   </>
@@ -1443,7 +1443,7 @@ export default function AssignmentZeroPage() {
                     onChange={(e) => handleInputChange('birthday_date', e.target.value)}
                     className={errors.birthday_date ? 'border-red-500' : ''}
                   />
-                  {errors.birthday_date && <p className="text-sm text-red-500">{errors.birthday_date}</p>}
+                  {errors.birthday_date && <p className="text-sm text-red-500 dark:text-red-400">{errors.birthday_date}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -1455,7 +1455,7 @@ export default function AssignmentZeroPage() {
                     onChange={(e) => handleInputChange('city', e.target.value)}
                     className={errors.city ? 'border-red-500' : ''}
                   />
-                  {errors.city && <p className="text-sm text-red-500">{errors.city}</p>}
+                  {errors.city && <p className="text-sm text-red-500 dark:text-red-400">{errors.city}</p>}
                 </div>
               </>
             )}
@@ -1480,7 +1480,7 @@ export default function AssignmentZeroPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {errors.school_type && <p className="text-sm text-red-500">{errors.school_type}</p>}
+                  {errors.school_type && <p className="text-sm text-red-500 dark:text-red-400">{errors.school_type}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -1492,7 +1492,7 @@ export default function AssignmentZeroPage() {
                     onChange={(e) => handleInputChange('group_name', e.target.value)}
                     className={errors.group_name ? 'border-red-500' : ''}
                   />
-                  {errors.group_name && <p className="text-sm text-red-500">{errors.group_name}</p>}
+                  {errors.group_name && <p className="text-sm text-red-500 dark:text-red-400">{errors.group_name}</p>}
                 </div>
 
                 {/* SAT-specific questions - only show if user is in SAT group */}
@@ -1515,7 +1515,7 @@ export default function AssignmentZeroPage() {
                           ))}
                         </SelectContent>
                       </Select>
-                      {errors.sat_target_date && <p className="text-sm text-red-500">{errors.sat_target_date}</p>}
+                      {errors.sat_target_date && <p className="text-sm text-red-500 dark:text-red-400">{errors.sat_target_date}</p>}
                     </div>
 
                     <div className="flex items-center space-x-2">
@@ -1532,7 +1532,7 @@ export default function AssignmentZeroPage() {
                     </div>
 
                     {formData.has_passed_sat_before && (
-                      <div className="space-y-4 p-4 bg-gray-50 dark:bg-secondary rounded-lg border dark:border-border">
+                      <div className="space-y-4 p-4 bg-muted rounded-lg border dark:border-border">
                         <Label className="font-medium">What was your score and on which exam?</Label>
                         
                         {/* Month and Year Selection */}
@@ -1605,7 +1605,7 @@ export default function AssignmentZeroPage() {
 
                         {/* Show total score if both are entered */}
                         {formData.previous_sat_verbal && formData.previous_sat_math && (
-                          <div className="text-sm text-gray-600 dark:text-gray-400 bg-white dark:bg-card p-2 rounded border dark:border-border">
+                          <div className="text-sm text-muted-foreground bg-card p-2 rounded border dark:border-border">
                             Total Score: <span className="font-semibold">{Number(formData.previous_sat_verbal) + Number(formData.previous_sat_math)}</span>
                           </div>
                         )}
@@ -1754,7 +1754,7 @@ export default function AssignmentZeroPage() {
                   <Label htmlFor="recent_practice_test_score">
                     What was your score on recent practice tests? *
                   </Label>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-muted-foreground">
                     For example: "I passed Bluebook Practice Test 5 on October 23rd and got 1200 (Verbal
                     500, Math 700)"
                   </p>
@@ -1766,7 +1766,7 @@ export default function AssignmentZeroPage() {
                     className={errors.recent_practice_test_score ? 'border-red-500' : ''}
                   />
                   {errors.recent_practice_test_score && (
-                    <p className="text-sm text-red-500">{errors.recent_practice_test_score}</p>
+                    <p className="text-sm text-red-500 dark:text-red-400">{errors.recent_practice_test_score}</p>
                   )}
                 </div>
 
@@ -1776,7 +1776,7 @@ export default function AssignmentZeroPage() {
                   </Label>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <Label htmlFor="bluebook_verbal" className="text-sm text-gray-600 dark:text-gray-400">Verbal Score</Label>
+                      <Label htmlFor="bluebook_verbal" className="text-sm text-muted-foreground">Verbal Score</Label>
                       <Input
                         id="bluebook_verbal"
                         type="number"
@@ -1790,7 +1790,7 @@ export default function AssignmentZeroPage() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="bluebook_math" className="text-sm text-gray-600 dark:text-gray-400">Math Score</Label>
+                      <Label htmlFor="bluebook_math" className="text-sm text-muted-foreground">Math Score</Label>
                       <Input
                         id="bluebook_math"
                         type="number"
@@ -1805,13 +1805,13 @@ export default function AssignmentZeroPage() {
                     </div>
                   </div>
                   {(errors.bluebook_verbal || errors.bluebook_math) && (
-                    <p className="text-sm text-red-500">Both Verbal and Math scores are required</p>
+                    <p className="text-sm text-red-500 dark:text-red-400">Both Verbal and Math scores are required</p>
                   )}
                 </div>
 
                 <div className="space-y-2">
                   <Label>Upload a screenshot with your results of Bluebook Practice Test 5 *</Label>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-muted-foreground">
                     Max 10 MB. Supported formats: JPEG, PNG, GIF, WEBP
                   </p>
 
@@ -1836,7 +1836,7 @@ export default function AssignmentZeroPage() {
                       className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
                         errors.screenshot_url
                           ? 'border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20'
-                          : 'border-gray-300 dark:border-border hover:border-blue-400 dark:hover:border-blue-500'
+                          : 'border-gray-300 dark:border-border hover:border-blue-400 dark:hover:border-brand'
                       }`}
                     >
                       <input
@@ -1853,20 +1853,20 @@ export default function AssignmentZeroPage() {
                       >
                         {uploadingFile ? (
                           <>
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                            <span className="text-gray-600 dark:text-gray-400">Uploading...</span>
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
+                            <span className="text-muted-foreground">Uploading...</span>
                           </>
                         ) : (
                           <>
-                            <Upload className="w-8 h-8 text-gray-400" />
-                            <span className="text-gray-600 dark:text-gray-400">Click to upload screenshot</span>
+                            <Upload className="w-8 h-8 text-gray-400 dark:text-muted-foreground" />
+                            <span className="text-muted-foreground">Click to upload screenshot</span>
                           </>
                         )}
                       </label>
                     </div>
                   )}
                   {errors.screenshot_url && (
-                    <p className="text-sm text-red-500">{errors.screenshot_url}</p>
+                    <p className="text-sm text-red-500 dark:text-red-400">{errors.screenshot_url}</p>
                   )}
                 </div>
               </>
@@ -1936,8 +1936,8 @@ export default function AssignmentZeroPage() {
             {/* Step: Math Topics */}
             {currentStepId === 'sat_math' && (
               <>
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
-                  <p className="text-sm text-blue-800 dark:text-blue-300">
+                <div className="bg-brand-surface border border-brand-border rounded-lg p-4 mb-4">
+                  <p className="text-sm text-brand-subtle-foreground">
                     <strong>Instructions:</strong> Select all the math topics that you feel you need
                     to work on or improve.
                   </p>
@@ -1956,7 +1956,7 @@ export default function AssignmentZeroPage() {
                     </div>
                   ))}
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+                <p className="text-sm text-muted-foreground mt-4">
                   Selected: {formData.math_topics.length} topic(s)
                 </p>
               </>
@@ -2044,8 +2044,8 @@ export default function AssignmentZeroPage() {
             {/* IELTS Weak Topics */}
             {currentStepId === 'ielts_topics' && (
               <>
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
-                  <p className="text-sm text-blue-800 dark:text-blue-300">
+                <div className="bg-brand-surface border border-brand-border rounded-lg p-4 mb-4">
+                  <p className="text-sm text-brand-subtle-foreground">
                     <strong>Instructions:</strong> Select all the IELTS topics and question types that you feel you need
                     to work on or improve.
                   </p>
@@ -2064,7 +2064,7 @@ export default function AssignmentZeroPage() {
                     </div>
                   ))}
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+                <p className="text-sm text-muted-foreground mt-4">
                   Selected: {formData.ielts_weak_topics.length} topic(s)
                 </p>
               </>
@@ -2075,7 +2075,7 @@ export default function AssignmentZeroPage() {
               <>
                 <div className="space-y-2">
                   <Label htmlFor="additional_comments">Additional Comments (Optional)</Label>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-muted-foreground">
                     Is there anything else you'd like us to know? Any specific questions, concerns, or
                     areas you'd like help with?
                   </p>

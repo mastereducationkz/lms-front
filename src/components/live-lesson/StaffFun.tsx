@@ -5,7 +5,7 @@
  * recap. Kept light for the Meet panel: emoji and lazy orcas only, no reaction art, no confetti.
  */
 import { useEffect, useState, type ReactNode } from 'react';
-import { Crown, Hand, Pause, PartyPopper, Play } from 'lucide-react';
+import { Crown, Frown, Hand, Pause, PartyPopper, Play } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { LiveApi } from '../../lib/liveLesson/api';
 import { lostShowing } from '../../lib/liveLesson/reactions';
@@ -71,7 +71,7 @@ export default function StaffFun({ state, api, act, socket, renderStar }: Props)
       <div className={cn('flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-opacity duration-700',
         lostNow ? 'bg-amber-50 text-amber-900 opacity-100 dark:bg-amber-950/40 dark:text-amber-100' : 'opacity-0 h-0 overflow-hidden p-0')}
         aria-live="polite">
-        <span className="text-lg">😕</span><b>{lostNow}</b> lost right now <span className="text-xs opacity-70">(anonymous)</span>
+        <Frown className="h-5 w-5 shrink-0" aria-hidden /><b>{lostNow}</b> lost right now <span className="text-xs opacity-70">(anonymous)</span>
       </div>
 
       <HandQueue state={state} onCall={(userId) => run(() => api.callHand(id, userId))} />
@@ -140,7 +140,7 @@ function CrownBlock({ state, api, run, renderStar }: {
       </div>
       {crowned && (
         <div className="mt-1 flex items-center gap-2 text-sm">
-          <span className="relative"><LiveAvatar person={crowned} size={28} /><span aria-hidden className="absolute -top-2.5 left-1 text-xs">👑</span></span>
+          <span className="relative"><LiveAvatar person={crowned} size={28} /><Crown aria-hidden className="absolute -top-2.5 left-1 h-3.5 w-3.5 fill-amber-400 text-amber-500" /></span>
           <span className="truncate font-semibold">{crowned.name}</span>
         </div>
       )}

@@ -65,7 +65,7 @@ export function ChatMessageBubble({
         type="button"
         onClick={() => onReply(message)}
         disabled={unsent}
-        className="p-1 rounded-full text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:hover:bg-transparent"
+        className="p-1 rounded-full text-gray-400 dark:text-muted-foreground hover:text-gray-700 dark:hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:hover:bg-transparent"
         aria-label="Reply"
         title="Reply"
       >
@@ -80,7 +80,7 @@ export function ChatMessageBubble({
         <button
           type="button"
           disabled={unsent}
-          className="p-1 rounded-full text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:hover:bg-transparent"
+          className="p-1 rounded-full text-gray-400 dark:text-muted-foreground hover:text-gray-700 dark:hover:text-foreground hover:bg-muted disabled:opacity-40 disabled:hover:bg-transparent"
           aria-label="React"
           title="React"
         >
@@ -93,7 +93,7 @@ export function ChatMessageBubble({
   const bubble = (
     <div
       className={`px-3 py-2 rounded-xl text-sm ${
-        isMine ? 'bg-blue-600 text-white' : 'bg-white dark:bg-card border dark:border-gray-700 shadow-sm'
+        isMine ? 'bg-brand-solid text-brand-solid-foreground' : 'bg-card border dark:border-border shadow-sm'
       } ${isPending ? 'opacity-70' : ''} ${isFailed ? 'ring-1 ring-red-500' : ''}`}
     >
       {message.reply_preview && (
@@ -103,13 +103,13 @@ export function ChatMessageBubble({
           className={`block w-full text-left mb-1 rounded-md px-2 py-1 border-l-2 ${
             isMine
               ? 'bg-blue-500/40 border-white/70'
-              : 'bg-gray-100 dark:bg-gray-800 border-blue-500'
+              : 'bg-muted border-brand'
           }`}
         >
-          <span className={`block text-[11px] font-semibold ${isMine ? 'text-blue-50' : 'text-blue-600 dark:text-blue-400'}`}>
+          <span className={`block text-[11px] font-semibold ${isMine ? 'text-blue-50' : 'text-brand'}`}>
             {message.reply_preview.sender_name || 'Message'}
           </span>
-          <span className={`block text-xs truncate ${isMine ? 'text-blue-50/90' : 'text-gray-600 dark:text-gray-300'}`}>
+          <span className={`block text-xs truncate ${isMine ? 'text-blue-50/90' : 'text-muted-foreground'}`}>
             {message.reply_preview.content || (message.reply_preview.file_url ? <><Paperclip className="inline h-3 w-3 mr-1 align-[-2px]" aria-hidden="true" />Attachment</> : '')}
           </span>
         </button>
@@ -119,7 +119,7 @@ export function ChatMessageBubble({
       <div className="flex items-start gap-2">
         <span className="flex-1 whitespace-pre-wrap break-words">{message.content}</span>
         <span className={`text-[10px] whitespace-nowrap mt-auto flex items-center gap-0.5 ${
-          isMine ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400'
+          isMine ? 'text-blue-100' : 'text-muted-foreground'
         }`}>
           {formatTime(message.created_at)}
           {isPending && <span>· sending…</span>}

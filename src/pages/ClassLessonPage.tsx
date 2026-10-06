@@ -128,7 +128,7 @@ export default function ClassLessonPage() {
     switch (key) {
       case 'live':
         return (
-          <SectionCard key={key} id="live" title={t('Сейчас в уроке', 'In the room now')} icon={<Radio className="h-4 w-4 text-emerald-600" aria-hidden />}>
+          <SectionCard key={key} id="live" title={t('Сейчас в уроке', 'In the room now')} icon={<Radio className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden />}>
             <LiveRoom view={view} />
           </SectionCard>
         );
@@ -140,7 +140,7 @@ export default function ClassLessonPage() {
         );
       case 'me':
         return (
-          <SectionCard key={key} id="me" title={t('Моя отметка', 'My mark')} icon={<Star className="h-4 w-4 text-yellow-500" aria-hidden />}>
+          <SectionCard key={key} id="me" title={t('Моя отметка', 'My mark')} icon={<Star className="h-4 w-4 text-yellow-500 dark:text-yellow-400" aria-hidden />}>
             <MyMark view={view} />
           </SectionCard>
         );

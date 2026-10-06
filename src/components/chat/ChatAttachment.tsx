@@ -43,7 +43,7 @@ export function ChatAttachment({ fileUrl }: { fileUrl: string }) {
         <button
           type="button"
           onClick={() => setLightboxOpen(true)}
-          className="block mb-1 rounded-lg overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="block mb-1 rounded-lg overflow-hidden focus:outline-none focus:ring-2 focus:ring-ring"
           aria-label={`Open image ${fileName}`}
         >
           <img

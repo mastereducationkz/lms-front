@@ -153,10 +153,10 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'easy': return 'bg-green-100 text-green-800';
-      case 'normal': return 'bg-blue-100 text-blue-800';
-      case 'hard': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'easy': return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200';
+      case 'normal': return 'bg-brand-subtle text-brand-subtle-foreground';
+      case 'hard': return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200';
+      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -309,7 +309,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
             <Button 
               onClick={handleIncorrect}
               variant="outline"
-              className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
             >
               <XCircle className="w-4 h-4" />
               Incorrect
@@ -359,12 +359,12 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
 
       {/* Completion Status */}
       {cards.length > 0 && completedCards.size === cards.length && (
-        <div className="text-center py-4 bg-green-50 rounded-lg border border-green-200">
-          <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
-          <h3 className="text-lg font-semibold text-green-800">Great job!</h3>
-          <p className="text-green-600">You've completed all flashcards in this set.</p>
+        <div className="text-center py-4 bg-green-50 rounded-lg border border-green-200 dark:bg-green-950/30 dark:border-green-900">
+          <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
+          <h3 className="text-lg font-semibold text-green-800 dark:text-green-200">Great job!</h3>
+          <p className="text-green-600 dark:text-green-300">You've completed all flashcards in this set.</p>
           {incorrectCards.size > 0 && (
-            <p className="text-sm text-green-600 mt-1">
+            <p className="text-sm text-green-600 dark:text-green-300 mt-1">
               Review the {incorrectCards.size} cards you found challenging.
             </p>
           )}
