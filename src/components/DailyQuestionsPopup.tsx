@@ -507,9 +507,9 @@ function DailyQuestionsPopupInner({
           {/* Progress indicator */}
           {allQuestions.length > 0 && !completed && (
             <div className="flex items-center gap-2 mt-4">
-              <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div className="flex-1 h-1.5 bg-gray-200 dark:bg-secondary rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-blue-600 transition-all duration-300"
+                  className="h-full bg-brand-solid transition-all duration-300"
                   style={{ width: `${((currentIndex + 1) / allQuestions.length) * 100}%` }}
                 />
               </div>
@@ -604,7 +604,7 @@ function DailyQuestionsPopupInner({
                           key={letter}
                           className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
                             isSelected 
-                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30' 
+                              ? 'border-blue-500 bg-blue-50 dark:border-brand dark:bg-brand-surface' 
                               : 'border-border hover:border-gray-300 hover:bg-muted/60 dark:hover:border-gray-600'
                           }`}
                         >
@@ -676,7 +676,7 @@ function DailyQuestionsPopupInner({
                   onClick={handleComplete}
                   disabled={completing}
                   size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
+                  className="bg-brand-solid hover:bg-brand-solid-hover text-brand-solid-foreground"
                 >
                   {completing ? 'Saving...' : 'Complete'}
                 </Button>
@@ -731,7 +731,7 @@ function DailyQuestionsPopupInner({
                     !wasAnswered ? 'bg-muted/60 border-border' : isCorrect ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-900/50' : 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900/50'
                   }`}>
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      !wasAnswered ? 'bg-gray-200' : isCorrect ? 'bg-green-500' : 'bg-red-500'
+                      !wasAnswered ? 'bg-gray-200 dark:bg-secondary' : isCorrect ? 'bg-green-500' : 'bg-red-500'
                     }`}>
                       {wasAnswered ? (
                         isCorrect ? <Check className="h-3.5 w-3.5 text-white" /> : <X className="h-3.5 w-3.5 text-white" />
@@ -754,7 +754,7 @@ function DailyQuestionsPopupInner({
                       )}
                     </div>
                     <span className={`text-xs font-medium px-2 py-0.5 rounded ${
-                      q.section === 'math' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
+                      q.section === 'math' ? 'bg-brand-subtle text-brand-subtle-foreground' : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
                     }`}>
                       {q.section === 'math' ? 'Math' : 'Verbal'}
                     </span>
@@ -776,7 +776,7 @@ function DailyQuestionsPopupInner({
         {completed && !showResults && (
           <div className="p-8 text-center">
             <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
-              <Check className="h-6 w-6 text-green-600" />
+              <Check className="h-6 w-6 text-green-600 dark:text-green-400" />
             </div>
             <h3 className="text-lg font-semibold text-foreground mb-1">Great job!</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">Daily questions completed</p>

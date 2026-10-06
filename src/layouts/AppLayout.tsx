@@ -144,7 +144,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </div>
         )}
         <Topbar onOpenSidebar={() => setMobileOpen(true)} />
-        <div className="p-4 sm:p-6 lg:p-8">
+        {/* A size container: pages lay out by the width they get (@md:, @3xl: ...), not by the
+            viewport - at 1100px the sidebar leaves ~780px, which lg: grids mistake for desktop. */}
+        <div className="@container p-4 sm:p-6 lg:p-8">
           {children}
         </div>
       </main>

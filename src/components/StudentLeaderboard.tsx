@@ -176,7 +176,7 @@ export default function StudentLeaderboard() {
                 disabled={myGroups.length === 0}
                 className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
                   scope === 'group' 
-                    ? 'bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm' 
+                    ? 'bg-white dark:bg-brand-surface text-gray-900 dark:text-brand-subtle-foreground shadow-sm dark:shadow-[inset_0_0_0_1px_hsl(var(--brand-border))]' 
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 } ${myGroups.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
@@ -186,7 +186,7 @@ export default function StudentLeaderboard() {
                 onClick={() => setScope('all')}
                 className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
                   scope === 'all' 
-                    ? 'bg-white dark:bg-card text-gray-900 dark:text-foreground shadow-sm' 
+                    ? 'bg-white dark:bg-brand-surface text-gray-900 dark:text-brand-subtle-foreground shadow-sm dark:shadow-[inset_0_0_0_1px_hsl(var(--brand-border))]' 
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >

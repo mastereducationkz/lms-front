@@ -383,7 +383,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
           <img src={logoIco} alt="Master Education" className="w-7 h-7 sm:w-8 sm:h-8 rounded" />
           {!isCollapsed && (
             <div className="ml-3 leading-tight">
-              <div className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white -mt-1">Master Education</div>
+              <div className="text-base sm:text-lg font-semibold text-gray-900 dark:text-foreground -mt-1">Master Education</div>
             </div>
           )}
         </div>
@@ -414,13 +414,13 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
             <div key={section.category} className={sectionIndex > 0 ? 'mt-3.5' : ''}>
               {!isCollapsed && section.category !== 'primary' && (
                 <div className="px-4 lg:px-4 mb-1.5 pt-0.5">
-                  <span className="text-[10px] font-semibold tracking-[0.12em] text-gray-400 dark:text-gray-500 uppercase">
+                  <span className="text-[10px] font-semibold tracking-[0.12em] text-gray-400 dark:text-muted-foreground uppercase">
                     {section.label}
                   </span>
                 </div>
               )}
               {isCollapsed && sectionIndex > 0 && (
-                <div className="mx-2 my-2 h-px bg-gray-200 dark:bg-gray-700 shrink-0" aria-hidden />
+                <div className="mx-2 my-2 h-px bg-gray-200 dark:bg-border shrink-0" aria-hidden />
               )}
               <div className="flex flex-col gap-1">
                 {section.items.map(([to, label, Icon, badge, , dataTour, , comingSoon, badgeTone, badgeTitle]) => {
@@ -457,7 +457,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                                   key={course.id}
                                   to={`/course/${course.id}`}
                                   className={({ isActive }) =>
-                                    `flex items-center rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-secondary transition-colors px-3 py-2 text-sm leading-snug ${isActive ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border-l-2 border-blue-500' : ''}`
+                                    `flex items-center rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-secondary transition-colors px-3 py-2 text-sm leading-snug ${isActive ? 'bg-brand-surface text-brand-subtle-foreground dark:text-brand-subtle-foreground border-l-2 border-blue-500 dark:border-brand' : ''}`
                                   }
                                 >
                                   <div className="w-2 h-2 bg-blue-400 rounded-full mr-3 flex-shrink-0"></div>
@@ -468,7 +468,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                             {courses.length > 5 && (
                               <NavLink
                                 to="/courses"
-                                className="flex items-center rounded-lg text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors px-3 py-2 text-sm font-medium"
+                                className="flex items-center rounded-lg text-brand hover:bg-brand-surface transition-colors px-3 py-2 text-sm font-medium"
                               >
                                 <span>{['head_curator', 'curator'].includes(user?.role || '') ? `Все курсы (${courses.length})` : `View all courses (${courses.length})`}</span>
                               </NavLink>
@@ -522,7 +522,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                         <>
                           <span className="flex-1 min-w-0 text-gray-800 dark:text-gray-200 text-sm">{label}</span>
                           {comingSoon && (
-                            <span className="ml-2 shrink-0 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                            <span className="ml-2 shrink-0 rounded-full bg-brand-surface px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-subtle-foreground">
                               {['head_curator', 'curator'].includes(user?.role || '') ? 'Скоро' : 'Soon'}
                             </span>
                           )}
@@ -539,7 +539,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
           ))}
       </nav>
       
-      <div className="mt-auto pt-4 border-t dark:border-border">
+      <div className="mt-auto pt-4 border-t">
         <div className="relative" data-tour="profile-nav">
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -564,8 +564,8 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
               })()}
               {!isCollapsed && (
                 <div className="ml-3 text-left">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">{user?.name || 'User'}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">{roleLabel(user?.role)}</div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-foreground line-clamp-1">{user?.name || 'User'}</div>
+                  <div className="text-xs text-gray-500 dark:text-muted-foreground">{roleLabel(user?.role)}</div>
                 </div>
               )}
             </div>
@@ -575,7 +575,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
           </button>
           
           {isDropdownOpen && (
-            <div className={`absolute bottom-full ${isCollapsed ? 'left-full ml-2 w-48' : 'left-0 right-0 w-full'} mb-2 bg-white dark:bg-card border border-border rounded-lg shadow-lg py-2 z-50`}>
+            <div className={`absolute bottom-full ${isCollapsed ? 'left-full ml-2 w-48' : 'left-0 right-0 w-full'} mb-2 bg-white dark:bg-popover border border-border rounded-lg shadow-lg py-2 z-50`}>
               <NavLink
                 to="/profile"
                 onClick={() => setIsDropdownOpen(false)}
@@ -592,7 +592,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                 <Settings className="w-4 h-4 mr-3" />
                 {['head_curator', 'curator'].includes(user?.role || '') ? 'Настройки' : 'Settings'}
               </NavLink>
-              <div className="border-t dark:border-gray-700 my-1"></div>
+              <div className="border-t my-1"></div>
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"

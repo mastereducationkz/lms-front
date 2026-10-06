@@ -52,7 +52,7 @@ export function TrackPlatformLinks() {
       >
         Your programs
       </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 @xl:grid-cols-2 @5xl:grid-cols-3 gap-4 sm:gap-6">
         {links.map((link) => (
           <Card key={link.track} className="h-fit">
             <CardContent className="p-5 flex items-center gap-4">

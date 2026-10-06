@@ -17,17 +17,17 @@ export default {
   			]
   		},
   		colors: {
+  			// Semantic brand blue (values + roles: the token table in src/index.css).
   			brand: {
-  				'50': '#eef4ff',
-  				'100': '#dbe8ff',
-  				'200': '#b7d1ff',
-  				'300': '#93baff',
-  				'400': '#6fa3ff',
-  				'500': '#4b8cff',
-  				'600': '#2f6fe6',
-  				'700': '#2356b4',
-  				'800': '#1b428a',
-  				'900': '#142f61'
+  				DEFAULT: 'hsl(var(--brand) / <alpha-value>)',
+  				solid: 'hsl(var(--brand-solid) / <alpha-value>)',
+  				'solid-hover': 'hsl(var(--brand-solid-hover) / <alpha-value>)',
+  				'solid-foreground': 'hsl(var(--brand-solid-foreground) / <alpha-value>)',
+  				surface: 'hsl(var(--brand-surface) / <alpha-value>)',
+  				'surface-foreground': 'hsl(var(--brand-surface-foreground) / <alpha-value>)',
+  				subtle: 'hsl(var(--brand-subtle) / <alpha-value>)',
+  				'subtle-foreground': 'hsl(var(--brand-subtle-foreground) / <alpha-value>)',
+  				border: 'hsl(var(--brand-border) / <alpha-value>)'
   			},
   			background: 'hsl(var(--background) / <alpha-value>)',
   			foreground: 'hsl(var(--foreground) / <alpha-value>)',
@@ -70,8 +70,21 @@ export default {
   				'5': 'hsl(var(--chart-5))'
   			}
   		},
+  		// Theme-aware: light values are Tailwind's own, dark ones are deeper (src/index.css).
   		boxShadow: {
-  			card: '0 8px 24px rgba(16, 24, 40, 0.08)'
+  			sm: 'var(--shadow-sm)',
+  			DEFAULT: 'var(--shadow)',
+  			md: 'var(--shadow-md)',
+  			lg: 'var(--shadow-lg)',
+  			xl: 'var(--shadow-xl)',
+  			'2xl': 'var(--shadow-2xl)',
+  			card: 'var(--shadow-card)'
+  		},
+  		// text-primary reads as brand blue in dark mode; bg-primary stays the button fill.
+  		textColor: {
+  			primary: {
+  				DEFAULT: 'hsl(var(--primary-text) / <alpha-value>)'
+  			}
   		},
   		borderRadius: {
   			xl: '16px',
@@ -117,5 +130,7 @@ export default {
   plugins: [
     require("tailwindcss-animate"),
     require("@tailwindcss/typography"),
+    // @container / @lg: etc. - layouts follow the width they are given, not the viewport
+    require("@tailwindcss/container-queries"),
   ],
 } 
