@@ -118,3 +118,79 @@
     height: 14px;
   }
 }
+
+/* The pill is a button that opens the stars breakdown: same look, plus a pointer and a
+   visible keyboard focus ring. */
+button.points-item {
+  font-family: inherit;
+  line-height: inherit;
+  cursor: pointer;
+}
+
+button.points-item:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+button.points-item[data-state='open'] {
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+/* Stars breakdown (popover / bottom sheet). One tone per source, shared by its bar and its
+   "how to earn" icon: the brand blue plus four category hues, lifted a step in dark so a
+   thin bar still reads on the popover surface. */
+.stars-breakdown {
+  --stars-homework: var(--brand);
+  --stars-grades: 262 83% 58%;          /* violet-600 */
+  --stars-course_quiz: 175 84% 32%;     /* teal-600 */
+  --stars-daily_questions: 32 95% 44%;  /* amber-600 */
+  --stars-teacher_bonus: 347 77% 50%;   /* rose-600 */
+  --stars-other: var(--muted-foreground);
+}
+
+.dark .stars-breakdown {
+  --stars-grades: 255 92% 76%;          /* violet-400 */
+  --stars-course_quiz: 172 66% 50%;     /* teal-400 */
+  --stars-daily_questions: 43 96% 56%;  /* amber-400 */
+  --stars-teacher_bonus: 351 95% 71%;   /* rose-400 */
+}
+
+.stars-breakdown [data-tone='homework'] { --tone: var(--stars-homework); }
+.stars-breakdown [data-tone='grades'] { --tone: var(--stars-grades); }
+.stars-breakdown [data-tone='course_quiz'] { --tone: var(--stars-course_quiz); }
+.stars-breakdown [data-tone='daily_questions'] { --tone: var(--stars-daily_questions); }
+.stars-breakdown [data-tone='teacher_bonus'] { --tone: var(--stars-teacher_bonus); }
+.stars-breakdown [data-tone='other'] { --tone: var(--stars-other); }
+
+.stars-track {
+  background: hsl(var(--foreground) / 0.07);
+}
+
+.stars-fill {
+  background: hsl(var(--tone));
+}
+
+.stars-rule-icon {
+  background: hsl(var(--tone) / 0.12);
+  color: hsl(var(--tone));
+}
+
+.dark .stars-rule-icon {
+  background: hsl(var(--tone) / 0.16);
+}
+
+/* The total's star: the pill's amber, on a soft amber tile. */
+.stars-tile {
+  background: #fef3c7;
+  color: #f59e0b;
+}
+
+.dark .stars-tile {
+  background: rgba(245, 158, 11, 0.14);
+  color: #fbbf24;
+}
+
+/* The sheet's close button sits in the header's top-right corner. */
+.stars-sheet .stars-header {
+  padding-right: 2.5rem;
+}
