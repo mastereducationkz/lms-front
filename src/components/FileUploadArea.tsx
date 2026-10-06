@@ -116,18 +116,18 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
   const getFileIcon = (fileType: string) => {
     switch (fileType.toLowerCase()) {
       case 'pdf':
-        return <FileText className="w-5 h-5 text-red-500" />;
+        return <FileText className="w-5 h-5 text-red-500 dark:text-red-400" />;
       case 'jpg':
       case 'jpeg':
       case 'png':
       case 'gif':
       case 'webp':
-        return <Image className="w-5 h-5 text-blue-500" />;
+        return <Image className="w-5 h-5 text-brand" />;
       case 'zip':
       case 'rar':
-        return <Archive className="w-5 h-5 text-yellow-500" />;
+        return <Archive className="w-5 h-5 text-yellow-500 dark:text-yellow-400" />;
       default:
-        return <File className="w-5 h-5 text-gray-500" />;
+        return <File className="w-5 h-5 text-muted-foreground" />;
     }
   };
 
@@ -145,10 +145,10 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
       <div
         className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-blue-400 ${
           isDragOver
-            ? 'border-blue-400 bg-blue-50'
+            ? 'border-brand bg-brand-surface'
             : disabled
-            ? 'border-gray-200 bg-gray-50'
-            : 'border-gray-300 hover:border-gray-400'
+            ? 'border-border bg-muted'
+            : 'border-input hover:border-input'
         }`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
@@ -168,13 +168,13 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
         />
 
         <div className="space-y-2">
-          <Upload className={`w-8 h-8 mx-auto ${disabled ? 'text-gray-400' : 'text-gray-500'}`} />
+          <Upload className={`w-8 h-8 mx-auto ${disabled ? 'text-muted-foreground' : 'text-muted-foreground'}`} />
           <div>
-            <p className={`text-sm ${disabled ? 'text-gray-400' : 'text-gray-600'}`}>
+            <p className={`text-sm ${disabled ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
               {isUploading ? 'Uploading...' : 'Drag and drop files here, or'}
             </p>
             {!disabled && !isUploading && (
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Click here and press Ctrl+V to paste an image
               </p>
             )}
@@ -189,7 +189,7 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
               Choose Files
             </Button>
           </div>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted-foreground">
             Max {maxFileSize}MB • {allowedTypes.join(', ').toUpperCase()}
           </p>
         </div>
@@ -198,7 +198,7 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
       {/* Uploaded Files List */}
       {attachments.length > 0 && (
         <div className="space-y-4">
-          <h4 className="text-sm font-medium text-gray-900">Attached Files</h4>
+          <h4 className="text-sm font-medium text-foreground">Attached Files</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {attachments.map((attachment) => (
               <div key={attachment.id} className="relative">
@@ -217,7 +217,7 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
                         variant="ghost"
                         size="sm"
                         onClick={() => onFileDelete(attachment.id)}
-                        className="absolute top-2 right-2 text-red-600 hover:text-red-800 bg-white/90 hover:bg-white p-1 rounded-full shadow-sm"
+                        className="absolute top-2 right-2 text-red-600 hover:text-red-800 bg-card/90 hover:bg-card p-1 rounded-full shadow-sm dark:text-red-400 dark:hover:text-red-300"
                       >
                         <Trash2 className="w-3 h-3" />
                       </Button>
@@ -225,14 +225,14 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
                   </div>
                 ) : (
                   // Regular file display
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border">
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg border">
                     <div className="flex items-center space-x-3">
                       {getFileIcon(attachment.file_type)}
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <p className="text-sm font-medium text-foreground truncate">
                           {attachment.filename}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           {formatFileSize(attachment.file_size)} • {attachment.file_type.toUpperCase()}
                         </p>
                       </div>
@@ -243,13 +243,13 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
                           href={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${attachment.file_url}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sm text-blue-600 hover:text-blue-800"
+                          className="text-sm text-brand hover:text-brand"
                         >
                           Download
                         </a>
                       )}
                       {tempMode && (
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-muted-foreground">
                           Ready to upload
                         </span>
                       )}
@@ -259,7 +259,7 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
                           variant="ghost"
                           size="sm"
                           onClick={() => onFileDelete(tempMode ? attachment.filename : attachment.id)}
-                          className="text-red-600 hover:text-red-800 p-1"
+                          className="text-red-600 hover:text-red-800 p-1 dark:text-red-400 dark:hover:text-red-300"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>

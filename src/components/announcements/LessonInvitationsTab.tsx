@@ -20,7 +20,7 @@ const LAST_STYLES: Record<string, string> = {
   sent: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
   failed: 'bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300',
   skipped: 'bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-300',
-  pending: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+  pending: 'bg-muted text-foreground/80',
 };
 
 function when(iso: string | null): string {
@@ -279,7 +279,7 @@ export function LessonInvitationsTab() {
                         <Badge variant="secondary"
                                className={row.status === 'not_started'
                                  ? 'bg-sky-100 font-normal text-sky-800 dark:bg-sky-900/30 dark:text-sky-300'
-                                 : 'bg-slate-100 font-normal text-slate-600 dark:bg-slate-800 dark:text-slate-300'}
+                                 : 'bg-muted font-normal text-muted-foreground'}
                                title={row.status === 'not_started'
                                  ? 'Switched on, nobody enrolled yet — invitations start once it has students'
                                  : 'No invitations: the group is not running'}>

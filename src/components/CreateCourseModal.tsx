@@ -138,12 +138,12 @@ export default function CreateCourseModal({ open, onClose, onCreated }: CreateCo
                 const f = e.dataTransfer.files && e.dataTransfer.files[0];
                 applyFile(f || null);
               }}
-              className={`relative w-64 h-64 mx-auto border-2 border-dashed rounded-xl overflow-hidden flex items-center justify-center cursor-pointer transition ${dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50 hover:border-gray-400'}`}
+              className={`relative w-64 h-64 mx-auto border-2 border-dashed rounded-xl overflow-hidden flex items-center justify-center cursor-pointer transition ${dragActive ? 'border-brand bg-brand-surface' : 'border-input bg-muted hover:border-input'}`}
             >
               {thumbnailPreview ? (
                 <img src={thumbnailPreview} alt="Preview" className="absolute inset-0 w-full h-full object-cover" />
               ) : (
-                <div className="text-center text-gray-500 text-sm">
+                <div className="text-center text-muted-foreground text-sm">
                   <div className="font-medium">Click to upload</div>
                   <div className="text-xs">or drag & drop image here</div>
                 </div>
@@ -176,7 +176,7 @@ export default function CreateCourseModal({ open, onClose, onCreated }: CreateCo
               placeholder="Course title"
               className="w-full"
             />
-            <div className="text-xs text-gray-500 mt-1">{remaining} characters left</div>
+            <div className="text-xs text-muted-foreground mt-1">{remaining} characters left</div>
           </div>
 
           {/* 3) Description */}
@@ -200,7 +200,7 @@ export default function CreateCourseModal({ open, onClose, onCreated }: CreateCo
               placeholder="react, javascript, frontend"
               className="w-full"
             />
-            <p className="text-xs text-gray-500 mt-1">Tags are for future filtering (optional)</p>
+            <p className="text-xs text-muted-foreground mt-1">Tags are for future filtering (optional)</p>
           </div>
 
           {isAdmin && (
@@ -234,7 +234,7 @@ export default function CreateCourseModal({ open, onClose, onCreated }: CreateCo
               }}
               onContinue={() => {}}
             />
-            <div className="text-xs text-gray-500">This course will be created as a draft. You can add modules and lessons next.</div>
+            <div className="text-xs text-muted-foreground">This course will be created as a draft. You can add modules and lessons next.</div>
           </div>
         )}
         <DialogFooter className="mt-4">

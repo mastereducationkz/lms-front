@@ -134,22 +134,22 @@ export default function VideoLessonEditor({
       {(videoUrlRu || videoUrlEn) && (
         <div>
           <div className="mb-2 flex items-center justify-between gap-2">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-foreground/80">
               Video Preview
             </label>
             {videoUrlRu && videoUrlEn && (
-              <div className="flex items-center gap-1 rounded-md border border-gray-200 p-1">
+              <div className="flex items-center gap-1 rounded-md border border-border p-1">
                 <button
                   type="button"
                   onClick={() => setPreviewLanguage('ru')}
-                  className={`px-2 py-1 text-xs rounded ${previewLanguage === 'ru' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                  className={`px-2 py-1 text-xs rounded ${previewLanguage === 'ru' ? 'bg-brand-solid text-white' : 'text-muted-foreground hover:bg-muted'}`}
                 >
                   RU
                 </button>
                 <button
                   type="button"
                   onClick={() => setPreviewLanguage('en')}
-                  className={`px-2 py-1 text-xs rounded ${previewLanguage === 'en' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+                  className={`px-2 py-1 text-xs rounded ${previewLanguage === 'en' ? 'bg-brand-solid text-white' : 'text-muted-foreground hover:bg-muted'}`}
                 >
                   EN
                 </button>
@@ -166,7 +166,7 @@ export default function VideoLessonEditor({
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-foreground/80 mb-2">
           Video URL (YouTube, RU)
         </label>
         <div className="flex items-center space-x-2 mb-4">
@@ -200,21 +200,21 @@ export default function VideoLessonEditor({
           />
           <button
             onClick={onClearUrlRu}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
+            className="px-4 py-2 border border-input rounded-lg text-muted-foreground hover:bg-muted"
           >
             Clear
           </button>
         </div>
         {videoError && (
-          <p className="text-sm text-red-600 mt-1">{videoError}</p>
+          <p className="text-sm text-red-600 mt-1 dark:text-red-400">{videoError}</p>
         )}
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           Paste a YouTube video URL in Russian
         </p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-foreground/80 mb-2">
           Video URL (YouTube, EN)
         </label>
         <div className="flex gap-2 p-1">
@@ -228,18 +228,18 @@ export default function VideoLessonEditor({
           <button
             type="button"
             onClick={onClearUrlEn}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50"
+            className="px-4 py-2 border border-input rounded-lg text-muted-foreground hover:bg-muted"
           >
             Clear
           </button>
         </div>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           Paste a YouTube video URL in English
         </p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-foreground/80 mb-2">
           Video Lesson Content
         </label>
         <RichTextEditor
@@ -247,13 +247,13 @@ export default function VideoLessonEditor({
           onChange={onContentChange}
           placeholder="Add description, notes, or additional content for this video lesson..."
         />
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           Add text content to accompany the video (optional)
         </p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-medium text-foreground/80 mb-2">
           File Attachments
         </label>
         <FileUploadArea

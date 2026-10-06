@@ -229,7 +229,7 @@ export default function FlashcardEditor({ flashcardSet, setFlashcardSet }: Flash
       {/* Flashcards */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium text-gray-900">Flashcards</h3>
+          <h3 className="text-lg font-medium text-foreground">Flashcards</h3>
           <div className="flex gap-2">
             <Dialog open={showBulkUploadModal} onOpenChange={setShowBulkUploadModal}>
               <DialogTrigger asChild>
@@ -245,10 +245,10 @@ export default function FlashcardEditor({ flashcardSet, setFlashcardSet }: Flash
                 <div className="space-y-4">
                   <div>
                     <Label>Format</Label>
-                    <div className="text-sm text-gray-600 mb-2">
+                    <div className="text-sm text-muted-foreground mb-2">
                       Enter pairs of lines: first line is the front (question), second line is the back (answer).
                     </div>
-                    <pre className="bg-gray-100 p-3 rounded text-xs">
+                    <pre className="bg-muted p-3 rounded text-xs">
 {`'tis
 it is
 'twas
@@ -271,9 +271,9 @@ over`}
                   </div>
 
                   {bulkUploadErrors.length > 0 && (
-                    <div className="bg-red-50 border border-red-200 rounded p-3">
-                      <h4 className="text-sm font-medium text-red-800 mb-2">Errors:</h4>
-                      <ul className="list-disc list-inside text-sm text-red-700 space-y-1">
+                    <div className="bg-red-50 border border-red-200 rounded p-3 dark:bg-red-950/40 dark:border-red-800/60">
+                      <h4 className="text-sm font-medium text-red-800 mb-2 dark:text-red-300">Errors:</h4>
+                      <ul className="list-disc list-inside text-sm text-red-700 space-y-1 dark:text-red-300">
                         {bulkUploadErrors.map((error, i) => (
                           <li key={i}>{error}</li>
                         ))}
@@ -369,7 +369,7 @@ over`}
                           </Button>
                         </div>
                       ) : (
-                        <div className="border-2 border-dashed border-gray-300 rounded p-3 text-center">
+                        <div className="border-2 border-dashed border-input rounded p-3 text-center">
                           <input
                             type="file"
                             accept="image/*"
@@ -381,8 +381,8 @@ over`}
                             id={`front-image-${card.id}`}
                           />
                           <label htmlFor={`front-image-${card.id}`} className="cursor-pointer">
-                            <ImageIcon className="w-6 h-6 mx-auto mb-1 text-gray-400" />
-                            <div className="text-xs text-gray-500">
+                            <ImageIcon className="w-6 h-6 mx-auto mb-1 text-muted-foreground" />
+                            <div className="text-xs text-muted-foreground">
                               {isUploadingImage ? 'Uploading...' : 'Add image'}
                             </div>
                           </label>
@@ -420,7 +420,7 @@ over`}
                           </Button>
                         </div>
                       ) : (
-                        <div className="border-2 border-dashed border-gray-300 rounded p-3 text-center">
+                        <div className="border-2 border-dashed border-input rounded p-3 text-center">
                           <input
                             type="file"
                             accept="image/*"
@@ -432,8 +432,8 @@ over`}
                             id={`back-image-${card.id}`}
                           />
                           <label htmlFor={`back-image-${card.id}`} className="cursor-pointer">
-                            <ImageIcon className="w-6 h-6 mx-auto mb-1 text-gray-400" />
-                            <div className="text-xs text-gray-500">
+                            <ImageIcon className="w-6 h-6 mx-auto mb-1 text-muted-foreground" />
+                            <div className="text-xs text-muted-foreground">
                               {isUploadingImage ? 'Uploading...' : 'Add image'}
                             </div>
                           </label>
@@ -452,7 +452,7 @@ over`}
                         {tag}
                         <button
                           onClick={() => removeTag(card.id, tag)}
-                          className="ml-1 hover:text-red-600"
+                          className="ml-1 hover:text-red-600 dark:hover:text-red-400"
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -480,7 +480,7 @@ over`}
 
         {flashcardSet.cards.length === 0 && (
           <Card>
-            <CardContent className="text-center py-8 text-gray-500">
+            <CardContent className="text-center py-8 text-muted-foreground">
               <p>No flashcards added yet. Click "Add Card" to get started.</p>
             </CardContent>
           </Card>

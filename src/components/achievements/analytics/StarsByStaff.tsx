@@ -18,11 +18,11 @@ export default function StarsByStaff({ stars, lang, limit }: { stars: Achievemen
             <th className="pb-2 text-right font-medium">{tr(lang, 'Всего', 'Total')}</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100 dark:divide-border">
+        <tbody className="divide-y divide-border">
           {rows.map((s) => (
             <tr key={s.user_id}>
               <td className="py-2 pr-3">
-                <p className="font-medium text-gray-900 dark:text-white">{s.name}</p>
+                <p className="font-medium text-foreground">{s.name}</p>
                 <p className="text-xs text-muted-foreground">{staffRoleLabel(s.role, lang)}</p>
               </td>
               {s.per_week.map((n, i) => (
@@ -32,11 +32,11 @@ export default function StarsByStaff({ stars, lang, limit }: { stars: Achievemen
                       ⭐{n > 1 ? `×${n}` : ''}
                     </span>
                   ) : (
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-gray-200 dark:bg-gray-700" aria-label="0" />
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-border" aria-label="0" />
                   )}
                 </td>
               ))}
-              <td className={`py-2 text-right font-semibold tabular-nums ${s.total ? 'text-gray-900 dark:text-white' : 'text-muted-foreground'}`}>{s.total}</td>
+              <td className={`py-2 text-right font-semibold tabular-nums ${s.total ? 'text-foreground' : 'text-muted-foreground'}`}>{s.total}</td>
             </tr>
           ))}
         </tbody>

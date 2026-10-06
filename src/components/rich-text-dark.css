@@ -1,0 +1,116 @@
+/* Dark-mode skin for the Quill editor (RichTextEditor) and the LaTeX dialog helpers.
+   Dark rules only: light mode keeps the rules in index.css. Values come from the theme tokens
+   (hsl(var(--x))), so they follow the palette. The doubled class lifts specificity above the
+   older `.dark .rich-text-editor ...` hex rules in index.css, whatever the load order. */
+.dark .rich-text-editor .ql-toolbar.ql-toolbar {
+  background-color: hsl(var(--muted));
+  border-color: hsl(var(--border));
+}
+.dark .rich-text-editor .ql-container.ql-container {
+  border-color: hsl(var(--border));
+}
+.dark .rich-text-editor .ql-editor.ql-editor {
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+}
+.dark .rich-text-editor .ql-editor.ql-blank::before {
+  color: hsl(var(--muted-foreground));
+}
+.dark .rich-text-editor .ql-editor:focus {
+  box-shadow: 0 0 0 3px hsl(var(--brand) / 0.18);
+}
+
+.dark .rich-text-editor .ql-editor blockquote {
+  border-left-color: hsl(var(--border));
+  color: hsl(var(--muted-foreground));
+}
+.dark .rich-text-editor .ql-editor code,
+.dark .rich-text-editor .ql-editor pre {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--foreground));
+}
+.dark .rich-text-editor .ql-editor a {
+  color: hsl(var(--brand));
+}
+
+/* Toolbar glyphs (Quill paints them with fixed #444) */
+.dark .rich-text-editor .ql-snow .ql-stroke,
+.dark .rich-text-editor .ql-snow.ql-toolbar .ql-stroke {
+  stroke: hsl(var(--muted-foreground));
+}
+.dark .rich-text-editor .ql-snow .ql-fill,
+.dark .rich-text-editor .ql-snow .ql-stroke.ql-fill {
+  fill: hsl(var(--muted-foreground));
+}
+.dark .rich-text-editor .ql-snow .ql-picker,
+.dark .rich-text-editor .ql-snow .ql-picker-label {
+  color: hsl(var(--muted-foreground));
+}
+.dark .rich-text-editor .ql-snow.ql-toolbar button:hover .ql-stroke,
+.dark .rich-text-editor .ql-snow.ql-toolbar button.ql-active .ql-stroke,
+.dark .rich-text-editor .ql-snow.ql-toolbar .ql-picker-label:hover .ql-stroke,
+.dark .rich-text-editor .ql-snow.ql-toolbar .ql-picker-label.ql-active .ql-stroke,
+.dark .rich-text-editor .ql-snow.ql-toolbar .ql-picker-item:hover .ql-stroke,
+.dark .rich-text-editor .ql-snow.ql-toolbar .ql-picker-item.ql-selected .ql-stroke {
+  stroke: hsl(var(--brand));
+}
+.dark .rich-text-editor .ql-snow.ql-toolbar button:hover .ql-fill,
+.dark .rich-text-editor .ql-snow.ql-toolbar button.ql-active .ql-fill,
+.dark .rich-text-editor .ql-snow.ql-toolbar .ql-picker-label:hover .ql-fill,
+.dark .rich-text-editor .ql-snow.ql-toolbar .ql-picker-label.ql-active .ql-fill {
+  fill: hsl(var(--brand));
+}
+.dark .rich-text-editor .ql-snow.ql-toolbar button:hover,
+.dark .rich-text-editor .ql-snow.ql-toolbar button.ql-active,
+.dark .rich-text-editor .ql-snow.ql-toolbar .ql-picker-label:hover,
+.dark .rich-text-editor .ql-snow.ql-toolbar .ql-picker-label.ql-active,
+.dark .rich-text-editor .ql-snow.ql-toolbar .ql-picker-item:hover,
+.dark .rich-text-editor .ql-snow.ql-toolbar .ql-picker-item.ql-selected {
+  color: hsl(var(--brand));
+}
+
+/* Dropdowns (headings, colours, alignment) and the link tooltip are appended inside the editor root. */
+.dark .rich-text-editor .ql-snow .ql-picker-options,
+.dark .ql-snow .ql-tooltip {
+  background-color: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  border-color: hsl(var(--border));
+  box-shadow: var(--shadow-md);
+}
+.dark .ql-snow .ql-tooltip input[type='text'] {
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--input));
+}
+.dark .ql-snow .ql-tooltip a.ql-action::after,
+.dark .ql-snow .ql-tooltip a.ql-remove::before,
+.dark .ql-snow .ql-tooltip a {
+  color: hsl(var(--brand));
+}
+.dark .rich-text-editor .ql-snow .ql-picker.ql-expanded .ql-picker-label {
+  border-color: hsl(var(--border));
+}
+.dark .rich-text-editor .ql-snow .ql-picker.ql-expanded .ql-picker-options {
+  border-color: hsl(var(--border));
+}
+
+/* LaTeX toolbar button and dialog helpers from index.css */
+.dark .math-toolbar {
+  background-color: hsl(var(--muted));
+  border-color: hsl(var(--border));
+}
+.dark .latex-dialog .formula-preview {
+  background-color: hsl(var(--muted));
+  border-color: hsl(var(--border));
+}
+.dark .rich-text-editor .ql-latex.ql-latex,
+.dark .ql-latex.ql-latex {
+  background: hsl(var(--card));
+  border-color: hsl(var(--input));
+  color: hsl(var(--muted-foreground));
+}
+.dark .ql-latex.ql-latex:hover {
+  background-color: hsl(var(--muted));
+  border-color: hsl(var(--brand-border));
+  color: hsl(var(--brand));
+}

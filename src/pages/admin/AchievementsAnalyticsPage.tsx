@@ -52,11 +52,11 @@ export default function AchievementsAnalyticsPage() {
     <div className="mx-auto max-w-7xl space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-sm">
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-solid text-brand-solid-foreground shadow-sm">
             <Trophy className="h-5 w-5" />
           </span>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{tr(lang, 'Достижения', 'Achievements')}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{tr(lang, 'Достижения', 'Achievements')}</h1>
             <p className="text-sm text-muted-foreground">
               {tr(lang, 'Как ученики зарабатывают награды для своего Касатика', 'How students earn rewards for their Kasatik')}
             </p>
@@ -66,16 +66,16 @@ export default function AchievementsAnalyticsPage() {
           <select
             value={groupId ?? ''}
             onChange={(e) => setGroupId(e.target.value ? Number(e.target.value) : null)}
-            className="h-9 max-w-[260px] rounded-lg border border-gray-200 dark:border-border bg-white dark:bg-card px-3 text-sm"
+            className="h-9 max-w-[260px] rounded-lg border border-border dark:border-border bg-card dark:bg-card px-3 text-sm"
             aria-label={tr(lang, 'Группа', 'Group')}
           >
             <option value="">{tr(lang, 'Все группы', 'All groups')}</option>
             {(data?.scope.groups ?? []).map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
-          <div className="flex rounded-lg border border-gray-200 dark:border-border p-0.5">
+          <div className="flex rounded-lg border border-border dark:border-border p-0.5">
             {WEEK_OPTIONS.map((w) => (
               <button key={w} type="button" onClick={() => setWeeks(w)}
-                className={`rounded-md px-2.5 py-1 text-xs font-medium ${weeks === w ? 'bg-[#2563EB] text-white' : 'text-muted-foreground hover:text-foreground'}`}>
+                className={`rounded-md px-2.5 py-1 text-xs font-medium ${weeks === w ? 'bg-brand-solid text-white' : 'text-muted-foreground hover:text-foreground'}`}>
                 {w} {tr(lang, 'нед.', 'wk')}
               </button>
             ))}
@@ -91,7 +91,7 @@ export default function AchievementsAnalyticsPage() {
           <div className={`grid grid-cols-2 gap-3 lg:grid-cols-5 transition-opacity ${loading ? 'opacity-60' : ''}`}>
             <StatCard label={tr(lang, 'Активные ученики', 'Active students')} value={s.active_students} />
             <StatCard label={tr(lang, 'Есть хотя бы одно', 'Earned at least one')} value={formatPct(s.students_with_any_pct)}
-              hint={`${s.students_with_any} ${tr(lang, 'учеников', 'students')}`} accent="text-[#2563EB]" />
+              hint={`${s.students_with_any} ${tr(lang, 'учеников', 'students')}`} accent="text-brand" />
             <StatCard label={tr(lang, 'В среднем на ученика', 'Average per student')} value={s.avg_per_student}
               hint={`${tr(lang, 'из', 'of')} ${s.achievements_total}`} />
             <StatCard label={tr(lang, 'Получено за 7 дней', 'Unlocked in 7 days')} value={s.last_7_days}

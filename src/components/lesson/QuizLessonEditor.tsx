@@ -76,11 +76,11 @@ export default function QuizLessonEditor({
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
           // Add a more prominent and persistent highlight
-          element.classList.add('ring-4', 'ring-blue-500', 'ring-offset-2', 'shadow-2xl', 'scale-[1.01]', 'transition-all', 'duration-500');
+          element.classList.add('ring-4', 'ring-brand', 'ring-offset-2', 'shadow-2xl', 'scale-[1.01]', 'transition-all', 'duration-500');
           
           // Keep highlight for longer to ensure user sees it
           setTimeout(() => {
-            element.classList.remove('ring-4', 'ring-blue-500', 'ring-offset-2', 'shadow-2xl', 'scale-[1.01]');
+            element.classList.remove('ring-4', 'ring-brand', 'ring-offset-2', 'shadow-2xl', 'scale-[1.01]');
           }, 5000);
         }
       }, 800);
@@ -934,36 +934,36 @@ export default function QuizLessonEditor({
         <Label>Quiz Type</Label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div
-            className={`p-3 border-2 rounded-lg cursor-pointer transition-colors ${quizType === 'regular' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+            className={`p-3 border-2 rounded-lg cursor-pointer transition-colors ${quizType === 'regular' ? 'border-brand bg-brand-surface' : 'border-border hover:border-input'
               }`}
             onClick={() => setQuizType('regular')}
           >
             <div className="font-medium">Regular Quiz</div>
-            <div className="text-sm text-gray-600">Standard questions</div>
+            <div className="text-sm text-muted-foreground">Standard questions</div>
           </div>
           <div
-            className={`p-3 border-2 rounded-lg cursor-pointer transition-colors ${quizType === 'text_based' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+            className={`p-3 border-2 rounded-lg cursor-pointer transition-colors ${quizType === 'text_based' ? 'border-brand bg-brand-surface' : 'border-border hover:border-input'
               }`}
             onClick={() => setQuizType('text_based')}
           >
             <div className="font-medium">Text Based</div>
-            <div className="text-sm text-gray-600">Questions with text passage</div>
+            <div className="text-sm text-muted-foreground">Questions with text passage</div>
           </div>
           <div
-            className={`p-3 border-2 rounded-lg cursor-pointer transition-colors ${quizType === 'audio' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+            className={`p-3 border-2 rounded-lg cursor-pointer transition-colors ${quizType === 'audio' ? 'border-brand bg-brand-surface' : 'border-border hover:border-input'
               }`}
             onClick={() => setQuizType('audio')}
           >
             <div className="font-medium">Audio Quiz</div>
-            <div className="text-sm text-gray-600">Audio-based questions</div>
+            <div className="text-sm text-muted-foreground">Audio-based questions</div>
           </div>
           <div
-            className={`p-3 border-2 rounded-lg cursor-pointer transition-colors ${quizType === 'pdf' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+            className={`p-3 border-2 rounded-lg cursor-pointer transition-colors ${quizType === 'pdf' ? 'border-brand bg-brand-surface' : 'border-border hover:border-input'
               }`}
             onClick={() => setQuizType('pdf')}
           >
             <div className="font-medium">Document Quiz</div>
-            <div className="text-sm text-gray-600">PDF or image based</div>
+            <div className="text-sm text-muted-foreground">PDF or image based</div>
           </div>
         </div>
       </div>
@@ -980,7 +980,7 @@ export default function QuizLessonEditor({
             }}
             placeholder="Enter the reading passage or text that students will read before answering questions..."
           />
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Students will read this passage before answering the quiz questions
           </p>
         </div>
@@ -991,7 +991,7 @@ export default function QuizLessonEditor({
         <div className="space-y-3">
           <Label>{quizType === 'audio' ? 'Audio File' : 'Document (PDF or Image)'}</Label>
           <div
-            className="space-y-3 outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded-lg"
+            className="space-y-3 outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg"
             onPaste={quizType === 'pdf' ? handleQuizMediaPaste : undefined}
             tabIndex={quizType === 'pdf' ? 0 : -1}
             role={quizType === 'pdf' ? 'button' : undefined}
@@ -1010,12 +1010,12 @@ export default function QuizLessonEditor({
                     </>
                   ) : isImageMediaUrl(quizMediaUrl) ? (
                     <>
-                      <Image className="w-5 h-5 text-blue-600" />
+                      <Image className="w-5 h-5 text-brand" />
                       <span className="font-medium">Image uploaded</span>
                     </>
                   ) : (
                     <>
-                      <FileText className="w-5 h-5 text-red-600" />
+                      <FileText className="w-5 h-5 text-red-600 dark:text-red-400" />
                       <span className="font-medium">PDF uploaded</span>
                     </>
                   )}
@@ -1041,16 +1041,16 @@ export default function QuizLessonEditor({
               )}
 
               {quizType === 'pdf' && isImageMediaUrl(quizMediaUrl) && (
-                <div className="relative bg-gray-50 border rounded-lg overflow-hidden">
-                  <div className="aspect-[4/3] relative flex items-center justify-center bg-gray-100">
+                <div className="relative bg-muted border rounded-lg overflow-hidden">
+                  <div className="aspect-[4/3] relative flex items-center justify-center bg-muted">
                     <img
                       src={backendUrl + quizMediaUrl}
                       alt="Quiz reference"
                       className="max-w-full max-h-full object-contain"
                     />
                   </div>
-                  <div className="p-2 bg-white border-t">
-                    <p className="text-xs font-medium text-gray-900 truncate">
+                  <div className="p-2 bg-card border-t">
+                    <p className="text-xs font-medium text-foreground truncate">
                       {getMediaFilename(quizMediaUrl)}
                     </p>
                   </div>
@@ -1067,14 +1067,14 @@ export default function QuizLessonEditor({
               )}
 
               {quizType === 'pdf' && (
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   Click this area and press Ctrl+V to replace with a pasted image
                 </p>
               )}
             </div>
           ) : (
             <div
-              className="text-center border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-400 transition-colors"
+              className="text-center border-2 border-dashed border-input rounded-lg p-6 hover:border-brand transition-colors"
               onDrop={async (e) => {
                 e.preventDefault();
                 const file = e.dataTransfer.files?.[0];
@@ -1092,15 +1092,15 @@ export default function QuizLessonEditor({
               onDragOver={(e) => e.preventDefault()}
               onDragEnter={(e) => e.preventDefault()}
             >
-              <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-              <div className="text-sm text-gray-600 mb-2">
+              <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+              <div className="text-sm text-muted-foreground mb-2">
                 {quizType === 'audio'
                   ? 'Drag & drop or click to upload audio file (MP3, WAV, etc.)'
                   : 'Drag & drop or click to upload PDF or image (JPG, PNG, etc.)'
                 }
               </div>
               {quizType === 'pdf' && (
-                <div className="text-xs text-gray-500 mb-3">
+                <div className="text-xs text-muted-foreground mb-3">
                   Or click here and press Ctrl+V to paste an image
                 </div>
               )}
@@ -1137,16 +1137,16 @@ export default function QuizLessonEditor({
             <div
               className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
                 audioPlaybackMode === 'flexible' 
-                  ? 'border-blue-500 bg-blue-50' 
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-brand bg-brand-surface' 
+                  : 'border-border hover:border-input'
               }`}
               onClick={() => setAudioPlaybackMode('flexible')}
             >
               <div className="flex items-center gap-2 mb-2">
-                <Headphones className="h-5 w-5 text-gray-700" aria-hidden="true" />
+                <Headphones className="h-5 w-5 text-foreground/80" aria-hidden="true" />
                 <span className="font-medium">Свободный режим</span>
               </div>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Студент может перематывать, ставить на паузу и переслушивать аудио без ограничений. 
                 Подходит для практики и обучения.
               </p>
@@ -1154,16 +1154,16 @@ export default function QuizLessonEditor({
             <div
               className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
                 audioPlaybackMode === 'strict' 
-                  ? 'border-blue-500 bg-blue-50' 
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-brand bg-brand-surface' 
+                  : 'border-border hover:border-input'
               }`}
               onClick={() => setAudioPlaybackMode('strict')}
             >
               <div className="flex items-center gap-2 mb-2">
-                <Lock className="h-5 w-5 text-gray-700" aria-hidden="true" />
+                <Lock className="h-5 w-5 text-foreground/80" aria-hidden="true" />
                 <span className="font-medium">Экзаменационный режим</span>
               </div>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 Студент не может перематывать аудио. Доступно только 2 повтора. 
                 Подходит для экзаменов и тестирования.
               </p>
@@ -1190,10 +1190,10 @@ export default function QuizLessonEditor({
           <div className="grid grid-cols-2 gap-3">
             <div
               className={`p-3 border-2 rounded-lg transition-colors ${quizType === 'pdf'
-                ? 'opacity-50 cursor-not-allowed border-gray-200 bg-gray-100'
+                ? 'opacity-50 cursor-not-allowed border-border bg-muted'
                 : `cursor-pointer ${quizDisplayMode === 'one_by_one'
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'border-brand bg-brand-surface'
+                  : 'border-border hover:border-input'
                 }`
                 }`}
               onClick={() => {
@@ -1203,31 +1203,31 @@ export default function QuizLessonEditor({
               }}
             >
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-blue-500 rounded-full flex items-center justify-center">
-                  {quizDisplayMode === 'one_by_one' && <div className="w-2 h-2 bg-blue-500 rounded-full"></div>}
+                <div className="w-4 h-4 border-2 border-brand rounded-full flex items-center justify-center">
+                  {quizDisplayMode === 'one_by_one' && <div className="w-2 h-2 bg-brand-solid rounded-full"></div>}
                 </div>
                 <div>
                   <div className="font-medium text-sm">One by One</div>
-                  <div className="text-xs text-gray-500">Show questions sequentially</div>
-                  {quizType === 'pdf' || quizType === 'audio' && <div className="text-xs text-gray-400">(Not available for PDF and Audio quizzes)</div>}
+                  <div className="text-xs text-muted-foreground">Show questions sequentially</div>
+                  {quizType === 'pdf' || quizType === 'audio' && <div className="text-xs text-muted-foreground">(Not available for PDF and Audio quizzes)</div>}
                 </div>
               </div>
             </div>
 
             <div
               className={`p-3 border-2 rounded-lg cursor-pointer transition-colors ${quizDisplayMode === 'all_at_once'
-                ? 'border-blue-500 bg-blue-50'
-                : 'border-gray-200 hover:border-gray-300'
+                ? 'border-brand bg-brand-surface'
+                : 'border-border hover:border-input'
                 }`}
               onClick={() => setQuizDisplayMode('all_at_once')}
             >
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-blue-500 rounded-full flex items-center justify-center">
-                  {quizDisplayMode === 'all_at_once' && <div className="w-2 h-2 bg-blue-500 rounded-full"></div>}
+                <div className="w-4 h-4 border-2 border-brand rounded-full flex items-center justify-center">
+                  {quizDisplayMode === 'all_at_once' && <div className="w-2 h-2 bg-brand-solid rounded-full"></div>}
                 </div>
                 <div>
                   <div className="font-medium text-sm">All at Once</div>
-                  <div className="text-xs text-gray-500">Show all questions together</div>
+                  <div className="text-xs text-muted-foreground">Show all questions together</div>
                 </div>
               </div>
             </div>
@@ -1238,7 +1238,7 @@ export default function QuizLessonEditor({
       {/* Questions */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium text-gray-900">Questions ({quizQuestions.length})</h3>
+          <h3 className="text-lg font-medium text-foreground">Questions ({quizQuestions.length})</h3>
           <div className="flex gap-2">
             <Button onClick={() => setShowBulkUploadModal(true)} variant="outline">Bulk Upload</Button>
             <Button onClick={() => setShowSatImageModal(true)} variant="outline">Analyze SAT Image</Button>
@@ -1252,16 +1252,16 @@ export default function QuizLessonEditor({
             const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
             
             return (
-              <div key={q.id} id={`question-${q.id}`} className={`rounded-lg border bg-white overflow-hidden ${!validation.isValid ? 'border-red-300' : 'border-gray-200'}`}>
+              <div key={q.id} id={`question-${q.id}`} className={`rounded-lg border bg-card overflow-hidden ${!validation.isValid ? 'border-red-300 dark:border-red-800' : 'border-border'}`}>
                 {/* Header */}
-                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b">
+                <div className="flex items-center justify-between px-4 py-3 bg-muted border-b">
                   <div className="flex items-center gap-3">
                     {/* Reorder buttons */}
                     <div className="flex flex-col gap-0.5">
                       <button
                         onClick={() => moveQuestionUp(idx)}
                         disabled={idx === 0}
-                        className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        className="p-1 rounded hover:bg-border disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                         title="Move up"
                       >
                         <ChevronUp className="w-4 h-4" />
@@ -1269,7 +1269,7 @@ export default function QuizLessonEditor({
                       <button
                         onClick={() => moveQuestionDown(idx)}
                         disabled={idx === quizQuestions.length - 1}
-                        className="p-1 rounded hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        className="p-1 rounded hover:bg-border disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                         title="Move down"
                       >
                         <ChevronDown className="w-4 h-4" />
@@ -1277,10 +1277,10 @@ export default function QuizLessonEditor({
                     </div>
                     
                     <div className="flex items-center gap-2">
-                      <span className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold">
+                      <span className="w-8 h-8 rounded-full bg-brand-solid text-white flex items-center justify-center text-sm font-bold">
                         {idx + 1}
                       </span>
-                      <span className="text-sm font-medium text-gray-600">
+                      <span className="text-sm font-medium text-muted-foreground">
                         {q.question_type === 'single_choice' ? 'Single Choice' :
                           q.question_type === 'multiple_choice' ? 'Multiple Choice' :
                             q.question_type === 'short_answer' ? 'Short Answer' :
@@ -1293,9 +1293,9 @@ export default function QuizLessonEditor({
                                           q.question_type === 'matching' ? 'Matching' :
                                           q.question_type}
                       </span>
-                      {q.difficulty && <span className="ml-2 text-[10px] uppercase text-gray-500">{q.difficulty}</span>}
+                      {q.difficulty && <span className="ml-2 text-[10px] uppercase text-muted-foreground">{q.difficulty}</span>}
                       {!validation.isValid && (
-                        <span className="text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded">
+                        <span className="text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded dark:text-red-400 dark:bg-red-950/40">
                           {validation.errors[0]}
                         </span>
                       )}
@@ -1324,10 +1324,10 @@ export default function QuizLessonEditor({
                           className="max-w-full max-h-64 object-contain rounded-lg"
                         />
                       ) : (
-                        <div className="text-gray-400 italic">No image uploaded</div>
+                        <div className="text-muted-foreground italic">No image uploaded</div>
                       )}
                       {q.question_text && (
-                        <p className="text-sm text-gray-600 mt-2">{q.question_text}</p>
+                        <p className="text-sm text-muted-foreground mt-2">{q.question_text}</p>
                       )}
                     </div>
                   )}
@@ -1344,7 +1344,7 @@ export default function QuizLessonEditor({
                               className="max-w-full max-h-48 object-contain rounded-lg"
                             />
                           ) : (
-                            <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-100 px-3 py-2 rounded">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-2 rounded">
                               <FileText className="w-4 h-4" />
                               PDF attached
                             </div>
@@ -1352,7 +1352,7 @@ export default function QuizLessonEditor({
                         </div>
                       )}
                       <div 
-                        className="text-gray-900"
+                        className="text-foreground"
                         dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.question_text || '') }}
                       />
                       {q.question_type === 'media_question' && q.options && q.options.length > 0 && (
@@ -1361,15 +1361,15 @@ export default function QuizLessonEditor({
                             <div
                               key={opt.id || optIdx}
                               className={`flex items-center gap-2 p-2 rounded border ${
-                                q.correct_answer === optIdx ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200'
+                                q.correct_answer === optIdx ? 'bg-green-50 border-green-300 dark:bg-green-950/40 dark:border-green-800' : 'bg-muted border-border'
                               }`}
                             >
-                              <span className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">
+                              <span className="w-6 h-6 rounded-full bg-border flex items-center justify-center text-xs font-medium">
                                 {String.fromCharCode(65 + optIdx)}
                               </span>
-                              <span className="flex-1">{opt.text ? <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex(opt.text) }} /> : <span className="text-gray-400 italic">Empty option</span>}</span>
+                              <span className="flex-1">{opt.text ? <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex(opt.text) }} /> : <span className="text-muted-foreground italic">Empty option</span>}</span>
                               {q.correct_answer === optIdx && (
-                                <CheckCircle className="w-4 h-4 text-green-600" />
+                                <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                               )}
                             </div>
                           ))}
@@ -1382,7 +1382,7 @@ export default function QuizLessonEditor({
                   {(q.question_type === 'single_choice' || q.question_type === 'multiple_choice') && (
                     <div className="space-y-3">
                       <div 
-                        className="text-gray-900 font-medium"
+                        className="text-foreground font-medium"
                         dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.question_text || '') }}
                       />
                       {q.options && q.options.length > 0 && (
@@ -1395,15 +1395,15 @@ export default function QuizLessonEditor({
                               <div
                                 key={opt.id || optIdx}
                                 className={`flex items-center gap-2 p-2 rounded border ${
-                                  isCorrect ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200'
+                                  isCorrect ? 'bg-green-50 border-green-300 dark:bg-green-950/40 dark:border-green-800' : 'bg-muted border-border'
                                 }`}
                               >
-                                <span className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs font-medium">
+                                <span className="w-6 h-6 rounded-full bg-border flex items-center justify-center text-xs font-medium">
                                   {String.fromCharCode(65 + optIdx)}
                                 </span>
-                                <span className="flex-1">{opt.text ? <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex(opt.text) }} /> : <span className="text-gray-400 italic">Empty option</span>}</span>
+                                <span className="flex-1">{opt.text ? <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex(opt.text) }} /> : <span className="text-muted-foreground italic">Empty option</span>}</span>
                                 {isCorrect && (
-                                  <CheckCircle className="w-4 h-4 text-green-600" />
+                                  <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                                 )}
                               </div>
                             );
@@ -1417,12 +1417,12 @@ export default function QuizLessonEditor({
                   {q.question_type === 'short_answer' && (
                     <div className="space-y-3">
                       <div 
-                        className="text-gray-900 font-medium"
+                        className="text-foreground font-medium"
                         dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.question_text || '') }}
                       />
                       <div className="text-sm">
-                        <span className="text-gray-500">Correct answer:</span>{' '}
-                        <span className="font-medium text-green-700">{q.correct_answer || 'Not set'}</span>
+                        <span className="text-muted-foreground">Correct answer:</span>{' '}
+                        <span className="font-medium text-green-700 dark:text-green-300">{q.correct_answer || 'Not set'}</span>
                       </div>
                     </div>
                   )}
@@ -1432,17 +1432,17 @@ export default function QuizLessonEditor({
                     <div className="space-y-3">
                       {q.question_text && (
                         <div 
-                          className="text-gray-900 font-medium"
+                          className="text-foreground font-medium"
                           dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.question_text) }}
                         />
                       )}
-                      <div className="bg-gray-50 p-3 rounded border text-sm">
+                      <div className="bg-muted p-3 rounded border text-sm">
                         <div 
                           dangerouslySetInnerHTML={{ 
                             __html: renderTextWithLatex(
                               (q.content_text || '').replace(
                                 /\[\[([^\]]+)\]\]/g, 
-                                '<span class="px-2 py-0.5 bg-green-100 text-green-800 rounded border border-green-300 font-medium">$1</span>'
+                                '<span class="px-2 py-0.5 bg-green-100 text-green-800 rounded border border-green-300 font-medium">$1</span> dark:bg-green-900/40 dark:text-green-300 dark:border-green-800'
                               )
                             )
                           }}
@@ -1455,10 +1455,10 @@ export default function QuizLessonEditor({
                   {q.question_type === 'long_text' && (
                     <div className="space-y-3">
                       <div 
-                        className="text-gray-900 font-medium"
+                        className="text-foreground font-medium"
                         dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.question_text || '') }}
                       />
-                      <div className="text-sm text-gray-500 italic">
+                      <div className="text-sm text-muted-foreground italic">
                         Long text response expected
                       </div>
                     </div>
@@ -1468,21 +1468,21 @@ export default function QuizLessonEditor({
                   {q.question_type === 'matching' && q.matching_pairs && (
                     <div className="space-y-3">
                       <div 
-                        className="text-gray-900 font-medium"
+                        className="text-foreground font-medium"
                         dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.question_text || 'Match the following:') }}
                       />
                       <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-2">
                           {q.matching_pairs.map((pair, pairIdx) => (
-                            <div key={pairIdx} className="p-2 bg-blue-50 rounded border border-blue-200 text-sm">
-                              {pair.left || <span className="text-gray-400 italic">Empty</span>}
+                            <div key={pairIdx} className="p-2 bg-brand-surface rounded border border-brand-border text-sm">
+                              {pair.left || <span className="text-muted-foreground italic">Empty</span>}
                             </div>
                           ))}
                         </div>
                         <div className="space-y-2">
                           {q.matching_pairs.map((pair, pairIdx) => (
-                            <div key={pairIdx} className="p-2 bg-green-50 rounded border border-green-200 text-sm">
-                              {pair.right || <span className="text-gray-400 italic">Empty</span>}
+                            <div key={pairIdx} className="p-2 bg-green-50 rounded border border-green-200 text-sm dark:bg-green-950/40 dark:border-green-800/60">
+                              {pair.right || <span className="text-muted-foreground italic">Empty</span>}
                             </div>
                           ))}
                         </div>
@@ -1497,7 +1497,7 @@ export default function QuizLessonEditor({
 
         {quizQuestions.length === 0 && (
           <Card>
-            <CardContent className="text-center py-8 text-gray-500">
+            <CardContent className="text-center py-8 text-muted-foreground">
               <p>No questions added yet. Click "Add Question" to get started.</p>
             </CardContent>
           </Card>
@@ -1510,7 +1510,7 @@ export default function QuizLessonEditor({
           <div className="absolute inset-0 bg-black/50" />
           <div className="relative z-[1001] flex items-center justify-center min-h-screen">
             <div
-              className="bg-white rounded-lg w-full max-w-6xl max-h-[90vh] overflow-y-auto p-6 space-y-4 shadow-xl"
+              className="bg-card rounded-lg w-full max-w-6xl max-h-[90vh] overflow-y-auto p-6 space-y-4 shadow-xl"
               onKeyDown={(e) => e.stopPropagation()}
               onKeyUp={(e) => e.stopPropagation()}
               onKeyPress={(e) => e.stopPropagation()}
@@ -1525,28 +1525,28 @@ export default function QuizLessonEditor({
                       variant="outline"
                       size="sm"
                       onClick={() => setShowPreviewModal(true)}
-                      className="text-green-600 hover:text-green-700"
+                      className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
                     >
                       Preview
                     </Button>
-                    <div className="text-xs text-gray-500 mt-1">⌘+O</div>
+                    <div className="text-xs text-muted-foreground mt-1">⌘+O</div>
                   </div>
                   <div className="flex flex-col items-center">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setShowHelpModal(true)}
-                      className="text-blue-600 hover:text-blue-700"
+                      className="text-brand hover:text-brand"
                     >
                       Help
                     </Button>
-                    <div className="text-xs text-gray-500 mt-1">⌘+H</div>
+                    <div className="text-xs text-muted-foreground mt-1">⌘+H</div>
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center gap-2 mb-2">
-                <label className="text-xs text-gray-600 dark:text-gray-300">Difficulty (SAT checkpoints)</label>
+                <label className="text-xs text-muted-foreground">Difficulty (SAT checkpoints)</label>
                 <select
                   className="h-8 rounded border bg-transparent px-2 text-xs"
                   value={draftQuestion.difficulty || ''}
@@ -1636,7 +1636,7 @@ export default function QuizLessonEditor({
                             className="min-h-[200px]"
                           />
                           {(draftQuestion.content_text || '').trim() && (
-                            <div className="text-xs text-gray-600 dark:text-gray-300 p-2 bg-gray-50 dark:bg-gray-800 rounded border dark:border-gray-700 max-h-32 overflow-y-auto">
+                            <div className="text-xs text-muted-foreground p-2 bg-muted rounded border dark:border-gray-700 max-h-32 overflow-y-auto">
                               Preview: <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex((draftQuestion.content_text || '').replace(/\[\[(.*?)\]\]/g, '<b>[$1]</b>')) }} />
                             </div>
                           )}
@@ -1650,7 +1650,7 @@ export default function QuizLessonEditor({
                             className="min-h-[200px]"
                           />
                           {(draftQuestion.explanation || '').trim() && (
-                            <div className="text-xs text-gray-600 dark:text-gray-300 p-2 bg-gray-50 dark:bg-gray-800 rounded border dark:border-gray-700 max-h-32 overflow-y-auto">
+                            <div className="text-xs text-muted-foreground p-2 bg-muted rounded border dark:border-gray-700 max-h-32 overflow-y-auto">
                               Preview: <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(draftQuestion.explanation || '') }} />
                             </div>
                           )}
@@ -1826,7 +1826,7 @@ export default function QuizLessonEditor({
                         </p>
                       )}
                       <div
-                        className="border-2 border-dashed border-gray-300 rounded-lg p-4 outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                        className="border-2 border-dashed border-input rounded-lg p-4 outline-none focus-visible:ring-2 focus-visible:ring-brand"
                         onPaste={handleQuestionMediaPaste}
                         onDrop={async (e) => {
                           e.preventDefault();
@@ -1845,15 +1845,15 @@ export default function QuizLessonEditor({
                           <div className="space-y-2">
                             <div className="flex items-center gap-2">
                               {draftQuestion.media_type === 'pdf' ? (
-                                <FileText className="w-5 h-5 text-red-600" />
+                                <FileText className="w-5 h-5 text-red-600 dark:text-red-400" />
                               ) : (
-                                <Image className="w-5 h-5 text-blue-600" />
+                                <Image className="w-5 h-5 text-brand" />
                               )}
                               <span className="text-sm font-medium">Media attached</span>
                             </div>
                             {draftQuestion.media_type === 'image' && (
-                              <div className="relative bg-gray-50 border rounded-lg overflow-hidden">
-                                <div className="aspect-[4/3] relative flex items-center justify-center bg-gray-100">
+                              <div className="relative bg-muted border rounded-lg overflow-hidden">
+                                <div className="aspect-[4/3] relative flex items-center justify-center bg-muted">
                                   <img
                                     src={backendUrl + draftQuestion.media_url}
                                     alt="Question media"
@@ -1870,7 +1870,7 @@ export default function QuizLessonEditor({
                                 showFullPreview={false}
                               />
                             )}
-                            <p className="text-xs text-gray-500">
+                            <p className="text-xs text-muted-foreground">
                               Click this area and press Ctrl+V to replace with a pasted image
                             </p>
                             <Button
@@ -1883,11 +1883,11 @@ export default function QuizLessonEditor({
                           </div>
                         ) : (
                           <div className="text-center p-2">
-                            <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                            <div className="text-sm text-gray-600 mb-2">
+                            <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                            <div className="text-sm text-muted-foreground mb-2">
                               Drag & drop or click to upload PDF or image
                             </div>
-                            <div className="text-xs text-gray-500 mb-3">
+                            <div className="text-xs text-muted-foreground mb-3">
                               Or click this area and press Ctrl+V to paste an image
                             </div>
                             <input
@@ -1956,7 +1956,7 @@ export default function QuizLessonEditor({
                                       }}
                                       className="shrink-0"
                                     >
-                                      <Trash2 className="w-4 h-4 text-red-500" />
+                                      <Trash2 className="w-4 h-4 text-red-500 dark:text-red-400" />
                                     </Button>
                                   )}
                                 </div>
@@ -1977,7 +1977,7 @@ export default function QuizLessonEditor({
                             </div>
                           );
                         })()}
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           Students can enter any of these variations to get the answer correct (case-insensitive).
                         </p>
                       </div>
@@ -1987,14 +1987,14 @@ export default function QuizLessonEditor({
                   {draftQuestion.question_type === 'text_completion' && (
                     <div className="space-y-2">
                       <Label>Gap Answers</Label>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         Add gaps in the Passage above using [[answer]] format. Example: "The capital of France is [[Paris]]."
                       </p>
 
                       {/* Preview with detected gaps */}
                       {draftQuestion.content_text && (
                         <div className="space-y-2">
-                          <div className="p-3 bg-gray-50 border rounded-md text-sm">
+                          <div className="p-3 bg-muted border rounded-md text-sm">
                             <div className="font-medium mb-2">Detected Gaps:</div>
                             {(() => {
                               const text = (draftQuestion.content_text || '').toString();
@@ -2005,11 +2005,11 @@ export default function QuizLessonEditor({
                                 gaps.push(match);
                               }
                               if (gaps.length === 0) {
-                                return <div className="text-gray-500">No gaps detected. Use [[answer]] format in the Passage above.</div>;
+                                return <div className="text-muted-foreground">No gaps detected. Use [[answer]] format in the Passage above.</div>;
                               }
                               return gaps.map((gap, index) => (
                                 <div key={index} className="flex items-center gap-2 mb-2">
-                                  <span className="text-gray-600">Gap {index + 1}:</span>
+                                  <span className="text-muted-foreground">Gap {index + 1}:</span>
                                   <Input
                                     value={gap[1] || ''}
                                     onChange={(e) => {
@@ -2070,7 +2070,7 @@ export default function QuizLessonEditor({
                           onChange={(e) => applyDraftUpdate({ show_numbering: e.target.checked })}
                           className="w-4 h-4 cursor-pointer accent-blue-600"
                         />
-                        <label htmlFor="show-numbering" className="text-sm text-gray-700 cursor-pointer">
+                        <label htmlFor="show-numbering" className="text-sm text-foreground/80 cursor-pointer">
                           Show numbering (e.g., "1. [input] 2. [input]")
                         </label>
                       </div>
@@ -2107,7 +2107,7 @@ export default function QuizLessonEditor({
                           />
                         </div>
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         Keywords help with automatic grading. Students' answers will be checked for these terms.
                       </div>
                     </div>
@@ -2121,7 +2121,7 @@ export default function QuizLessonEditor({
                         <div className="flex items-center justify-between">
                           <Label>Options ({draftQuestion.options?.length || 0})</Label>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500">Click option image area + Ctrl+V to paste</span>
+                            <span className="text-xs text-muted-foreground">Click option image area + Ctrl+V to paste</span>
                             <Button
                               type="button"
                               variant="outline"
@@ -2148,7 +2148,7 @@ export default function QuizLessonEditor({
                           {(draftQuestion.options || []).map((opt, idx) => (
                             <div 
                               key={opt.id} 
-                              className="p-3 border rounded-lg bg-white space-y-2"
+                              className="p-3 border rounded-lg bg-card space-y-2"
                               onDrop={async (e) => {
                                 e.preventDefault();
                                 const file = e.dataTransfer.files?.[0];
@@ -2180,7 +2180,7 @@ export default function QuizLessonEditor({
                                     className="w-4 h-4"
                                   />
                                 )}
-                                <span className="font-bold text-gray-600 w-6">{opt.letter || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[idx] || `${idx + 1}`}.</span>
+                                <span className="font-bold text-muted-foreground w-6">{opt.letter || 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[idx] || `${idx + 1}`}.</span>
                                 <Input
                                   value={opt.text}
                                   onChange={(e) => updateDraftOptionText(idx, e.target.value)}
@@ -2206,7 +2206,7 @@ export default function QuizLessonEditor({
                                       }
                                       applyDraftUpdate({ options, correct_answer: newCorrect });
                                     }}
-                                    className="text-red-500 hover:text-red-700 p-1"
+                                    className="text-red-500 hover:text-red-700 p-1 dark:text-red-400 dark:hover:text-red-300"
                                     title="Remove option"
                                   >
                                     <Trash2 className="w-4 h-4" />
@@ -2218,7 +2218,7 @@ export default function QuizLessonEditor({
                               <div className="ml-10">
                                 {opt.image_url ? (
                                   <div
-                                    className="relative inline-block outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded"
+                                    className="relative inline-block outline-none focus-visible:ring-2 focus-visible:ring-brand rounded"
                                     tabIndex={0}
                                     role="button"
                                     aria-label={`Option ${idx + 1} image. Click and press Ctrl+V to replace.`}
@@ -2247,7 +2247,7 @@ export default function QuizLessonEditor({
                                   </div>
                                 ) : (
                                   <span
-                                    className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 border border-dashed border-blue-300 rounded px-2 py-1 hover:bg-blue-50 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-blue-400 cursor-pointer"
+                                    className="inline-flex items-center gap-1 text-xs text-brand hover:text-brand border border-dashed border-brand-border rounded px-2 py-1 hover:bg-brand-surface transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
                                     tabIndex={0}
                                     role="button"
                                     aria-label={`Add image for option ${idx + 1}. Click and press Ctrl+V to paste.`}
@@ -2306,12 +2306,12 @@ export default function QuizLessonEditor({
                         placeholder=","
                         className="w-24"
                       />
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         Character to separate correct answer from distractors (default: comma)
                       </p>
 
                       <Label className="mt-4">Gaps preview</Label>
-                      <div className="p-3 bg-gray-50 border border-gray-200 rounded-md text-sm">
+                      <div className="p-3 bg-muted border border-border rounded-md text-sm">
                         {(() => {
                           const text = (draftQuestion.content_text || '').toString();
                           const separator = draftQuestion.gap_separator || ',';
@@ -2371,18 +2371,18 @@ export default function QuizLessonEditor({
                                 const others = tokens.filter((_, idx) => idx !== correctIndex).filter(o => o && o.trim());
 
                                 return (
-                                  <div key={i} className="flex items-start gap-2 pb-2 border-b border-gray-200 last:border-0">
-                                    <span className="text-gray-600 font-medium min-w-[3rem]">#{i + 1}:</span>
+                                  <div key={i} className="flex items-start gap-2 pb-2 border-b border-border last:border-0">
+                                    <span className="text-muted-foreground font-medium min-w-[3rem]">#{i + 1}:</span>
                                     <div className="flex-1">
-                                      <div className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded font-semibold text-sm">
+                                      <div className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded font-semibold text-sm dark:bg-green-900/40 dark:text-green-300">
                                         <Check className="h-3.5 w-3.5" aria-hidden="true" />
                                         {correct || '(empty)'}
                                       </div>
                                       {others.length > 0 && (
                                         <div className="mt-1.5 flex flex-wrap gap-1">
-                                          <span className="text-xs text-gray-500 mr-1">Others:</span>
+                                          <span className="text-xs text-muted-foreground mr-1">Others:</span>
                                           {others.map((o, idx) => (
-                                            <span key={idx} className="inline-flex items-center px-1.5 py-0.5 bg-gray-200 text-gray-700 rounded text-xs">
+                                            <span key={idx} className="inline-flex items-center px-1.5 py-0.5 bg-border text-foreground/80 rounded text-xs">
                                               {o}
                                             </span>
                                           ))}
@@ -2418,13 +2418,13 @@ export default function QuizLessonEditor({
                           + Add Pair
                         </Button>
                       </div>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         Create pairs that students will need to match. The right side will be shuffled.
                       </p>
                       <div className="space-y-2">
                         {(draftQuestion.matching_pairs || []).map((pair, idx) => (
-                          <div key={idx} className="flex items-center gap-2 p-3 border rounded-lg bg-white">
-                            <span className="font-bold text-gray-500 w-6">{idx + 1}.</span>
+                          <div key={idx} className="flex items-center gap-2 p-3 border rounded-lg bg-card">
+                            <span className="font-bold text-muted-foreground w-6">{idx + 1}.</span>
                             <Input
                               value={pair.left}
                               onChange={(e) => {
@@ -2435,7 +2435,7 @@ export default function QuizLessonEditor({
                               placeholder="Left side (e.g., Term)"
                               className="flex-1"
                             />
-                            <ArrowLeftRight className="h-4 w-4 shrink-0 text-gray-500" aria-label="matches" />
+                            <ArrowLeftRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="matches" />
                             <Input
                               value={pair.right}
                               onChange={(e) => {
@@ -2454,7 +2454,7 @@ export default function QuizLessonEditor({
                                   pairs.splice(idx, 1);
                                   applyDraftUpdate({ matching_pairs: pairs });
                                 }}
-                                className="text-red-500 hover:text-red-700 p-1"
+                                className="text-red-500 hover:text-red-700 p-1 dark:text-red-400 dark:hover:text-red-300"
                                 title="Remove pair"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -2464,7 +2464,7 @@ export default function QuizLessonEditor({
                         ))}
                       </div>
                       {(!draftQuestion.matching_pairs || draftQuestion.matching_pairs.length === 0) && (
-                        <div className="text-center py-4 text-gray-500">
+                        <div className="text-center py-4 text-muted-foreground">
                           <p>No pairs yet. Click "+ Add Pair" to start.</p>
                         </div>
                       )}
@@ -2475,7 +2475,7 @@ export default function QuizLessonEditor({
 
               <div className="flex justify-end gap-3 pt-2">
                 <Button variant="outline" onClick={() => { setShowQuestionModal(false); setDraftQuestion(null); setEditingQuestionIndex(null); }}>Cancel</Button>
-                <Button onClick={saveDraftQuestion} className="bg-blue-600 hover:bg-blue-700">
+                <Button onClick={saveDraftQuestion} className="bg-brand-solid hover:bg-brand-solid-hover">
                   {editingQuestionIndex !== null ? 'Update Question' : 'Save Question'}
                 </Button>
               </div>
@@ -2491,7 +2491,7 @@ export default function QuizLessonEditor({
           <div className="absolute inset-0 bg-black/50" />
           <div className="relative z-[1001] flex items-center justify-center min-h-screen p-4">
             <div
-              className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 space-y-4 shadow-xl"
+              className="bg-card rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 space-y-4 shadow-xl"
               tabIndex={0}
             >
               <div className="flex items-center justify-between">
@@ -2504,13 +2504,13 @@ export default function QuizLessonEditor({
               </div>
 
               <div className="space-y-4">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Paste your questions in the format below. Supports any number of options (A-Z). Mark correct answers with <strong>+</strong> at the end. For multiple correct answers, mark each with +.
                 </p>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
-                  <div className="font-medium text-blue-900 mb-2">MCQ Format (any number of options):</div>
-                  <pre className="text-xs text-gray-700 whitespace-pre-wrap bg-white p-2 rounded border">
+                <div className="bg-brand-surface border border-brand-border rounded-lg p-4 text-sm">
+                  <div className="font-medium text-brand mb-2">MCQ Format (any number of options):</div>
+                  <pre className="text-xs text-foreground/80 whitespace-pre-wrap bg-card p-2 rounded border">
 {`1. What is the capital of France?
 A) London
 B) Paris +
@@ -2524,14 +2524,14 @@ C) Blue +
 D) Green
 E) Yellow +`}</pre>
 
-                  <div className="font-medium text-blue-900 mb-2 mt-4">Matching Format:</div>
-                  <pre className="text-xs text-gray-700 whitespace-pre-wrap bg-white p-2 rounded border">
+                  <div className="font-medium text-brand mb-2 mt-4">Matching Format:</div>
+                  <pre className="text-xs text-foreground/80 whitespace-pre-wrap bg-card p-2 rounded border">
 {`3. MATCHING: Match the countries with capitals
 France = Paris
 Germany = Berlin
 Spain = Madrid
 Italy = Rome`}</pre>
-                  <p className="text-xs text-blue-700 mt-2">
+                  <p className="text-xs text-brand mt-2">
                     <strong>Tip:</strong> Use "MATCHING:" prefix for matching questions. Pairs are separated by "=" sign.
                   </p>
                 </div>
@@ -2542,16 +2542,16 @@ Italy = Rome`}</pre>
                     value={bulkUploadText}
                     onChange={(e) => setBulkUploadText(e.target.value)}
                     placeholder="Paste your questions here..."
-                    className="w-full h-96 p-3 border rounded-lg font-mono text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full h-96 p-3 border rounded-lg font-mono text-sm resize-none focus:ring-2 focus:ring-brand focus:border-brand"
                   />
                 </div>
 
                 {bulkUploadErrors.length > 0 && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <div className="font-medium text-red-900 mb-2">Errors:</div>
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 dark:bg-red-950/40 dark:border-red-800/60">
+                    <div className="font-medium text-red-900 mb-2 dark:text-red-300">Errors:</div>
                     <ul className="list-disc list-inside space-y-1">
                       {bulkUploadErrors.map((error, index) => (
-                        <li key={index} className="text-sm text-red-700">{error}</li>
+                        <li key={index} className="text-sm text-red-700 dark:text-red-300">{error}</li>
                       ))}
                     </ul>
                   </div>
@@ -2571,7 +2571,7 @@ Italy = Rome`}</pre>
                   <Button
                     onClick={handleBulkUpload}
                     disabled={!bulkUploadText.trim()}
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className="bg-brand-solid hover:bg-brand-solid-hover"
                   >
                     Import Questions
                   </Button>
@@ -2589,7 +2589,7 @@ Italy = Rome`}</pre>
           <div className="absolute inset-0 bg-black/50" />
           <div className="relative z-[1001] flex items-center justify-center min-h-screen">
             <div
-              className="bg-white rounded-lg w-full max-w-md p-6 space-y-4 shadow-xl"
+              className="bg-card rounded-lg w-full max-w-md p-6 space-y-4 shadow-xl"
               tabIndex={0}
             >
               <div className="flex items-center justify-between">
@@ -2598,7 +2598,7 @@ Italy = Rome`}</pre>
               </div>
 
               <div className="space-y-4">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Upload a PDF document or Image of a test (e.g., SAT) to automatically extract questions, options, and correct answers using AI.
                 </p>
 
@@ -2606,21 +2606,21 @@ Italy = Rome`}</pre>
                   <button
                     type="button"
                     onClick={() => setAnalyzeMode('sat')}
-                    className={`flex-1 px-3 py-2 rounded-md text-sm font-semibold border ${analyzeMode === 'sat' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300'}`}
+                    className={`flex-1 px-3 py-2 rounded-md text-sm font-semibold border ${analyzeMode === 'sat' ? 'bg-brand-solid text-white border-brand' : 'bg-card text-foreground/80 border-input'}`}
                   >
                     SAT (Gemini)
                   </button>
                   <button
                     type="button"
                     onClick={() => setAnalyzeMode('nuet')}
-                    className={`flex-1 px-3 py-2 rounded-md text-sm font-semibold border ${analyzeMode === 'nuet' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300'}`}
+                    className={`flex-1 px-3 py-2 rounded-md text-sm font-semibold border ${analyzeMode === 'nuet' ? 'bg-brand-solid text-white border-brand' : 'bg-card text-foreground/80 border-input'}`}
                   >
                     NUET (ChatGPT)
                   </button>
                 </div>
 
                 <div
-                  className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+                  className="border-2 border-dashed border-input rounded-lg p-6 text-center transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand"
                   onDrop={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -2632,7 +2632,7 @@ Italy = Rome`}</pre>
                   onDragOver={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    e.currentTarget.classList.add('border-blue-500', 'bg-blue-50');
+                    e.currentTarget.classList.add('border-brand', 'bg-brand-surface');
                   }}
                   onDragEnter={(e) => {
                     e.preventDefault();
@@ -2641,7 +2641,7 @@ Italy = Rome`}</pre>
                   onDragLeave={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    e.currentTarget.classList.remove('border-blue-500', 'bg-blue-50');
+                    e.currentTarget.classList.remove('border-brand', 'bg-brand-surface');
                   }}
                   onPaste={handleSatImagePaste}
                   tabIndex={0}
@@ -2658,14 +2658,14 @@ Italy = Rome`}</pre>
                   />
                   <label htmlFor="sat-image-upload" className="cursor-pointer">
                     <div className="space-y-2">
-                      <FileText className="mx-auto h-10 w-10 text-gray-500" strokeWidth={1.5} aria-hidden="true" />
+                      <FileText className="mx-auto h-10 w-10 text-muted-foreground" strokeWidth={1.5} aria-hidden="true" />
                       <div className="text-sm font-medium">
                         {isAnalyzingImage ? 'Analyzing...' : 'Click to upload or drag & drop'}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         Supports PDF, PNG, JPG, JPEG, GIF, WEBP
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         Or click here and press Ctrl+V to paste an image
                       </div>
                     </div>
@@ -2673,19 +2673,19 @@ Italy = Rome`}</pre>
                 </div>
 
                 {uploadedFile && (
-                  <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg dark:bg-green-950/40 dark:border-green-800/60">
                     <div className="flex items-center gap-2">
-                      <FileText className="h-6 w-6 shrink-0 text-green-700" aria-hidden="true" />
+                      <FileText className="h-6 w-6 shrink-0 text-green-700 dark:text-green-300" aria-hidden="true" />
                       <div>
-                        <div className="text-sm font-medium text-green-900">{uploadedFile.name}</div>
-                        <div className="text-xs text-green-700">{(uploadedFile.size / 1024).toFixed(1)} KB</div>
+                        <div className="text-sm font-medium text-green-900 dark:text-green-300">{uploadedFile.name}</div>
+                        <div className="text-xs text-green-700 dark:text-green-300">{(uploadedFile.size / 1024).toFixed(1)} KB</div>
                       </div>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => setUploadedFile(null)}
-                      className="text-red-600 hover:text-red-700"
+                      className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                     >
                       Remove
                     </Button>
@@ -2699,10 +2699,10 @@ Italy = Rome`}</pre>
                     value={correctAnswersText}
                     onChange={(e) => setCorrectAnswersText(e.target.value)}
                     placeholder="Enter correct answers (e.g., 1.A 2.B 3.C 4.D or A,B,C,D)"
-                    className="w-full h-24 p-3 border rounded-lg font-mono text-sm resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full h-24 p-3 border rounded-lg font-mono text-sm resize-none focus:ring-2 focus:ring-brand focus:border-brand"
                     disabled={isAnalyzingImage}
                   />
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     If provided, these answers will be used instead of AI-detected answers.
                   </p>
                 </div>
@@ -2710,7 +2710,7 @@ Italy = Rome`}</pre>
                 <Button
                   onClick={handleAnalyzeClick}
                   disabled={!uploadedFile || isAnalyzingImage}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  className="w-full bg-brand-solid hover:bg-brand-solid-hover text-white"
                   size="lg"
                 >
                   {isAnalyzingImage ? (
@@ -2724,7 +2724,7 @@ Italy = Rome`}</pre>
                 {isAnalyzingImage && (
                   <div className="flex flex-col items-center py-4 gap-2">
                     <ThinkingLoader state={analyzeStage} size={64} label={`Analyzing file with ${analyzeMode === 'nuet' ? 'ChatGPT' : 'Gemini'} AI`} />
-                    <p className="text-sm text-gray-600">Analyzing file with {analyzeMode === 'nuet' ? 'ChatGPT' : 'Gemini'} AI... This may take a minute.</p>
+                    <p className="text-sm text-muted-foreground">Analyzing file with {analyzeMode === 'nuet' ? 'ChatGPT' : 'Gemini'} AI... This may take a minute.</p>
                   </div>
                 )}
               </div>
@@ -2739,26 +2739,26 @@ Italy = Rome`}</pre>
         <div className="fixed inset-0 z-[1000]">
           <div className="absolute inset-0 bg-black/50" />
           <div className="relative z-[1001] flex items-center justify-center min-h-screen p-4">
-            <div className="bg-white rounded-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 space-y-6 shadow-xl">
+            <div className="bg-card rounded-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 space-y-6 shadow-xl">
               <div className="flex items-center justify-between border-b pb-4">
-                <h3 className="text-xl font-semibold text-gray-900">Question Preview</h3>
+                <h3 className="text-xl font-semibold text-foreground">Question Preview</h3>
                 <div className="text-center">
                   <Button variant="outline" size="sm" onClick={() => setShowPreviewModal(false)}>Close</Button>
-                  <div className="text-xs text-gray-500 mt-1">Esc</div>
+                  <div className="text-xs text-muted-foreground mt-1">Esc</div>
                 </div>
               </div>
 
               <div className="space-y-6">
                 {/* Passage/Content */}
                 {draftQuestion.content_text && (
-                  <div className="bg-gray-50 p-4 rounded-lg border">
-                    <div className="text-gray-800 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(draftQuestion.content_text) }} />
+                  <div className="bg-muted p-4 rounded-lg border">
+                    <div className="text-foreground prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(draftQuestion.content_text) }} />
                   </div>
                 )}
 
                 {/* Media for Media Questions */}
                 {draftQuestion.question_type === 'media_question' && draftQuestion.media_url && (
-                  <div className="flex items-center justify-center bg-gray-50 p-4 rounded-lg border">
+                  <div className="flex items-center justify-center bg-muted p-4 rounded-lg border">
                     {draftQuestion.media_type === 'image' ? (
                       <img
                         src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + draftQuestion.media_url}
@@ -2767,13 +2767,13 @@ Italy = Rome`}</pre>
                       />
                     ) : draftQuestion.media_type === 'pdf' ? (
                       <div className="text-center">
-                        <FileText className="w-12 h-12 mx-auto text-blue-600 mb-2" />
-                        <div className="font-medium text-gray-700">PDF Document</div>
+                        <FileText className="w-12 h-12 mx-auto text-brand mb-2" />
+                        <div className="font-medium text-foreground/80">PDF Document</div>
                         <a
                           href={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + draftQuestion.media_url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
+                          className="inline-flex items-center gap-1 text-brand hover:text-brand text-sm"
                         >
                           View PDF
                           <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -2785,10 +2785,10 @@ Italy = Rome`}</pre>
 
                 {/* Question Text */}
                 <div className="space-y-3">
-                  <div className="text-lg font-semibold text-gray-900">
+                  <div className="text-lg font-semibold text-foreground">
                     <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex(draftQuestion.question_text) }} />
                   </div>
-                  <div className="text-sm text-gray-500">Points: {draftQuestion.points}</div>
+                  <div className="text-sm text-muted-foreground">Points: {draftQuestion.points}</div>
                 </div>
 
                 {/* Answer Options based on question type */}
@@ -2803,8 +2803,8 @@ Italy = Rome`}</pre>
                         <label
                           key={opt.id || idx}
                           className={`flex items-start gap-3 p-4 rounded-lg border-2 transition-colors ${isCorrect
-                            ? 'border-green-500 bg-green-50'
-                            : 'border-gray-200 bg-white hover:border-gray-300'
+                            ? 'border-green-500 bg-green-50 dark:bg-green-950/40'
+                            : 'border-border bg-card hover:border-input'
                             }`}
                         >
                           <input
@@ -2817,7 +2817,7 @@ Italy = Rome`}</pre>
                           <div className="flex-1">
                             <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex(opt.text) }} />
                             {isCorrect && (
-                              <span className="ml-2 inline-flex items-center gap-0.5 text-xs font-medium text-green-700"><Check className="h-3.5 w-3.5" aria-hidden="true" />Correct</span>
+                              <span className="ml-2 inline-flex items-center gap-0.5 text-xs font-medium text-green-700 dark:text-green-300"><Check className="h-3.5 w-3.5" aria-hidden="true" />Correct</span>
                             )}
                           </div>
                         </label>
@@ -2833,17 +2833,17 @@ Italy = Rome`}</pre>
                       type="text"
                       placeholder="Student's answer will be typed here..."
                       disabled
-                      className="bg-gray-50"
+                      className="bg-muted"
                     />
-                    <div className="text-sm text-gray-600 bg-green-50 border border-green-200 rounded p-3">
-                      <span className="font-medium text-green-700">Correct answer:</span> {draftQuestion.correct_answer}
+                    <div className="text-sm text-muted-foreground bg-green-50 border border-green-200 rounded p-3 dark:bg-green-950/40 dark:border-green-800/60">
+                      <span className="font-medium text-green-700 dark:text-green-300">Correct answer:</span> {draftQuestion.correct_answer}
                     </div>
                   </div>
                 )}
 
                 {/* Fill in the Blank */}
                 {draftQuestion.question_type === 'fill_blank' && (
-                  <div className="p-4 rounded-lg border bg-gray-50">
+                  <div className="p-4 rounded-lg border bg-muted">
                     <FillInBlankRenderer
                       text={(draftQuestion.content_text || '').toString()}
                       separator={draftQuestion.gap_separator || ','}
@@ -2855,7 +2855,7 @@ Italy = Rome`}</pre>
                 {/* Text Completion */}
                 {draftQuestion.question_type === 'text_completion' && (
                   <div className="space-y-3">
-                    <div className="p-4 rounded-lg border bg-gray-50">
+                    <div className="p-4 rounded-lg border bg-muted">
                       <TextCompletionRenderer
                         text={(draftQuestion.content_text || '').toString()}
                         disabled={true}
@@ -2874,17 +2874,17 @@ Italy = Rome`}</pre>
                       rows={6}
                       placeholder="Student's long answer will be typed here..."
                       disabled
-                      className="w-full px-3 py-2 border rounded-lg bg-gray-50 resize-none"
+                      className="w-full px-3 py-2 border rounded-lg bg-muted resize-none"
                     />
                     {(draftQuestion.expected_length || draftQuestion.keywords) && (
-                      <div className="text-sm bg-blue-50 border border-blue-200 rounded p-3 space-y-1">
+                      <div className="text-sm bg-brand-surface border border-brand-border rounded p-3 space-y-1">
                         {draftQuestion.expected_length && (
-                          <div className="text-gray-700">
+                          <div className="text-foreground/80">
                             <span className="font-medium">Expected length:</span> ~{draftQuestion.expected_length} characters
                           </div>
                         )}
                         {draftQuestion.keywords && draftQuestion.keywords.length > 0 && (
-                          <div className="text-gray-700">
+                          <div className="text-foreground/80">
                             <span className="font-medium">Keywords to include:</span> {draftQuestion.keywords.join(', ')}
                           </div>
                         )}
@@ -2896,20 +2896,20 @@ Italy = Rome`}</pre>
                 {/* Matching Question Preview */}
                 {draftQuestion.question_type === 'matching' && (
                   <div className="space-y-3">
-                    <div className="text-sm font-medium text-gray-700">Matching Pairs:</div>
+                    <div className="text-sm font-medium text-foreground/80">Matching Pairs:</div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <div className="text-xs font-medium text-gray-500 uppercase">Left Side</div>
+                        <div className="text-xs font-medium text-muted-foreground uppercase">Left Side</div>
                         {draftQuestion.matching_pairs?.map((pair, idx) => (
-                          <div key={idx} className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                            <span className="font-medium text-blue-900">{idx + 1}.</span> {pair.left}
+                          <div key={idx} className="p-3 bg-brand-surface border border-brand-border rounded-lg">
+                            <span className="font-medium text-brand">{idx + 1}.</span> {pair.left}
                           </div>
                         ))}
                       </div>
                       <div className="space-y-2">
-                        <div className="text-xs font-medium text-gray-500 uppercase">Right Side (shuffled for students)</div>
+                        <div className="text-xs font-medium text-muted-foreground uppercase">Right Side (shuffled for students)</div>
                         {draftQuestion.matching_pairs?.map((pair, idx) => (
-                          <div key={idx} className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                          <div key={idx} className="p-3 bg-green-50 border border-green-200 rounded-lg dark:bg-green-950/40 dark:border-green-800/60">
                             {pair.right}
                           </div>
                         ))}
@@ -2920,9 +2920,9 @@ Italy = Rome`}</pre>
 
                 {/* Explanation */}
                 {draftQuestion.explanation && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="text-sm font-medium text-blue-900 mb-2">Explanation:</div>
-                    <div className="text-gray-800 prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(draftQuestion.explanation) }} />
+                  <div className="bg-brand-surface border border-brand-border rounded-lg p-4">
+                    <div className="text-sm font-medium text-brand mb-2">Explanation:</div>
+                    <div className="text-foreground prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(draftQuestion.explanation) }} />
                   </div>
                 )}
               </div>
@@ -2938,7 +2938,7 @@ Italy = Rome`}</pre>
           <div className="absolute inset-0 bg-black/50" />
           <div className="relative z-[1001] flex items-center justify-center min-h-screen">
             <div
-              className="bg-white rounded-lg w-full max-w-2xl max-h-[80vh] overflow-y-auto p-6 space-y-4 shadow-xl"
+              className="bg-card rounded-lg w-full max-w-2xl max-h-[80vh] overflow-y-auto p-6 space-y-4 shadow-xl"
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Formatting Help</h3>
@@ -2947,71 +2947,71 @@ Italy = Rome`}</pre>
 
               <div className="space-y-4">
                 <div className="space-y-3">
-                  <h4 className="font-medium text-gray-900">Text Formatting in Input Fields</h4>
-                  <p className="text-sm text-gray-600">
+                  <h4 className="font-medium text-foreground">Text Formatting in Input Fields</h4>
+                  <p className="text-sm text-muted-foreground">
                     You can use simple markdown formatting in Question Text and Options fields:
                   </p>
 
                   <div className="space-y-2">
-                    <div className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-                      <code className="text-sm font-mono bg-white px-2 py-1 rounded border">_text_</code>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-gray-500" aria-label="renders as" />
+                    <div className="flex items-center gap-3 p-2 bg-muted rounded">
+                      <code className="text-sm font-mono bg-card px-2 py-1 rounded border">_text_</code>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="renders as" />
                       <em className="text-sm">italic text</em>
                     </div>
 
-                    <div className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-                      <code className="text-sm font-mono bg-white px-2 py-1 rounded border">**text**</code>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-gray-500" aria-label="renders as" />
+                    <div className="flex items-center gap-3 p-2 bg-muted rounded">
+                      <code className="text-sm font-mono bg-card px-2 py-1 rounded border">**text**</code>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="renders as" />
                       <strong className="text-sm">bold text</strong>
                     </div>
 
-                    <div className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-                      <code className="text-sm font-mono bg-white px-2 py-1 rounded border">__text__</code>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-gray-500" aria-label="renders as" />
+                    <div className="flex items-center gap-3 p-2 bg-muted rounded">
+                      <code className="text-sm font-mono bg-card px-2 py-1 rounded border">__text__</code>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="renders as" />
                       <u className="text-sm">underlined text</u>
                     </div>
 
-                    <div className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-                      <code className="text-sm font-mono bg-white px-2 py-1 rounded border">~~text~~</code>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-gray-500" aria-label="renders as" />
+                    <div className="flex items-center gap-3 p-2 bg-muted rounded">
+                      <code className="text-sm font-mono bg-card px-2 py-1 rounded border">~~text~~</code>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="renders as" />
                       <del className="text-sm">strikethrough text</del>
                     </div>
 
-                    <div className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-                      <code className="text-sm font-mono bg-white px-2 py-1 rounded border">`text`</code>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-gray-500" aria-label="renders as" />
-                      <code className="text-sm bg-gray-200 px-1 rounded">code text</code>
+                    <div className="flex items-center gap-3 p-2 bg-muted rounded">
+                      <code className="text-sm font-mono bg-card px-2 py-1 rounded border">`text`</code>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="renders as" />
+                      <code className="text-sm bg-border px-1 rounded">code text</code>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  <h4 className="font-medium text-gray-900">LaTeX Formulas</h4>
-                  <p className="text-sm text-gray-600">
+                  <h4 className="font-medium text-foreground">LaTeX Formulas</h4>
+                  <p className="text-sm text-muted-foreground">
                     For mathematical expressions, use LaTeX syntax:
                   </p>
 
                   <div className="space-y-2">
-                    <div className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-                      <code className="text-sm font-mono bg-white px-2 py-1 rounded border">$x^2$</code>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-gray-500" aria-label="renders as" />
+                    <div className="flex items-center gap-3 p-2 bg-muted rounded">
+                      <code className="text-sm font-mono bg-card px-2 py-1 rounded border">$x^2$</code>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="renders as" />
                       <span className="text-sm">x² (inline formula)</span>
                     </div>
 
-                    <div className="flex items-center gap-3 p-2 bg-gray-50 rounded">
-                      <code className="text-sm font-mono bg-white px-2 py-1 rounded border">$$\frac{"{a}"}{"{b}"}$$</code>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-gray-500" aria-label="renders as" />
+                    <div className="flex items-center gap-3 p-2 bg-muted rounded">
+                      <code className="text-sm font-mono bg-card px-2 py-1 rounded border">$$\frac{"{a}"}{"{b}"}$$</code>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="renders as" />
                       <span className="text-sm">a/b (block formula)</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  <h4 className="font-medium text-gray-900">Rich Text Editor</h4>
-                  <p className="text-sm text-gray-600">
+                  <h4 className="font-medium text-foreground">Rich Text Editor</h4>
+                  <p className="text-sm text-muted-foreground">
                     For Passage and Explanation fields, use the rich text editor with full formatting toolbar including:
                   </p>
-                  <ul className="text-sm text-gray-600 list-disc list-inside space-y-1">
+                  <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
                     <li>Bold, italic, underline, strikethrough</li>
                     <li>Colors and background colors</li>
                     <li>Lists (ordered and bullet)</li>
@@ -3021,24 +3021,24 @@ Italy = Rome`}</pre>
                 </div>
 
                 <div className="space-y-3">
-                  <h4 className="font-medium text-gray-900">Fill in the Blank Questions</h4>
-                  <p className="text-sm text-gray-600">
+                  <h4 className="font-medium text-foreground">Fill in the Blank Questions</h4>
+                  <p className="text-sm text-muted-foreground">
                     For fill-in-the-blank questions, use double brackets in the passage:
                   </p>
-                  <div className="p-3 bg-blue-50 rounded border space-y-2">
+                  <div className="p-3 bg-brand-surface rounded border space-y-2">
                     <div>
-                      <div className="text-xs font-medium text-gray-700 mb-1">Default (comma separator):</div>
+                      <div className="text-xs font-medium text-foreground/80 mb-1">Default (comma separator):</div>
                       <code className="text-sm font-mono">
                         The sky is [[blue, azure, cyan]] and the grass is [[green, emerald]].
                       </code>
                     </div>
                     <div>
-                      <div className="text-xs font-medium text-gray-700 mb-1">Custom separator (e.g., slash):</div>
+                      <div className="text-xs font-medium text-foreground/80 mb-1">Custom separator (e.g., slash):</div>
                       <code className="text-sm font-mono">
                         The capital is [[Paris / Lyon / Marseille]] and the river is [[Seine / Loire]].
                       </code>
                     </div>
-                    <p className="text-xs text-gray-600 mt-2">
+                    <p className="text-xs text-muted-foreground mt-2">
                       First option is correct, others are distractors. You can customize the separator character in the question settings.
                     </p>
                   </div>

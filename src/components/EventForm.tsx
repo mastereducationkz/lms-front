@@ -295,10 +295,10 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
     <div className="max-w-4xl mx-auto p-4 sm:p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-foreground">
+          <h1 className="text-2xl font-bold text-foreground dark:text-foreground">
             {event ? 'Edit Event' : 'Create Event'}
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-muted-foreground">
             {event ? 'Make changes to the event' : 'Fill in information about the new event'}
           </p>
         </div>
@@ -390,15 +390,15 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
 
         {/* Lesson Linking (Optional for Class events) */}
         {formData.event_type === 'class' && (
-          <Card className="border-blue-100 dark:border-blue-800 bg-blue-50/20 dark:bg-blue-900/10">
+          <Card className="border-brand-border bg-brand-surface/20">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-blue-800 dark:text-blue-400">
+              <CardTitle className="flex items-center gap-2 text-brand">
                 <BookOpen className="w-5 h-5" />
                 Link to Course Lesson (Optional)
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="text-sm text-blue-600 dark:text-blue-400 mb-2">
+              <p className="text-sm text-brand mb-2">
                 If this lesson corresponds to a specific item in your course catalog, you can link it here.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -655,7 +655,7 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
             {/* Courses Selection */}
             <div className="space-y-2">
               <Label className="text-base font-semibold">Courses</Label>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Assign to all students enrolled in these courses</p>
+              <p className="text-sm text-muted-foreground mb-2">Assign to all students enrolled in these courses</p>
               {courses.map(course => (
                 <div key={course.id} className="flex items-center space-x-2">
                   <Checkbox
@@ -666,13 +666,13 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
                   <Label htmlFor={`course-${course.id}`} className="flex items-center gap-2 cursor-pointer">
                     {course.title}
                     {course.teacher_name && (
-                      <span className="text-xs text-gray-500">({course.teacher_name})</span>
+                      <span className="text-xs text-muted-foreground">({course.teacher_name})</span>
                     )}
                   </Label>
                 </div>
               ))}
               {courses.length === 0 && (
-                <p className="text-gray-500 text-sm">No courses found</p>
+                <p className="text-muted-foreground text-sm">No courses found</p>
               )}
             </div>
             <div className="border-t dark:border-border pt-2"></div>
@@ -680,7 +680,7 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
             {/* Groups Selection */}
             <div className="space-y-1">
               <Label className="text-base font-semibold">Groups</Label>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Assign to specific student groups</p>
+              <p className="text-sm text-muted-foreground mb-2">Assign to specific student groups</p>
               {groups.map(group => (
                 <div key={group.id} className="flex items-center space-x-2">
                   <Checkbox
@@ -697,7 +697,7 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
                 </div>
               ))}
               {groups.length === 0 && (
-                <p className="text-gray-500 text-sm">No groups found</p>
+                <p className="text-muted-foreground text-sm">No groups found</p>
               )}
             </div>
 

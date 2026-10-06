@@ -112,9 +112,9 @@ interface ReportDetail {
 
 const statusConfig = {
   pending: { label: 'Pending', icon: Clock, color: 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30' },
-  reviewed: { label: 'Reviewed', icon: Eye, color: 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30' },
+  reviewed: { label: 'Reviewed', icon: Eye, color: 'text-brand bg-brand-subtle' },
   resolved: { label: 'Resolved', icon: CheckCircle, color: 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30' },
-  dismissed: { label: 'Dismissed', icon: XCircle, color: 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-700' },
+  dismissed: { label: 'Dismissed', icon: XCircle, color: 'text-muted-foreground bg-muted' },
 };
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
@@ -359,16 +359,16 @@ export default function QuestionReportsPage() {
   };
 
   const renderQuestionPreview = (question: any, stepImageUrl?: string | null) => {
-    if (!question) return <p className="text-gray-500">Question data not available</p>;
+    if (!question) return <p className="text-muted-foreground">Question data not available</p>;
 
     return (
       <div className="space-y-4">
         {/* Step Image (SAT passage image) */}
         {stepImageUrl && (
-          <div className="border rounded-lg overflow-hidden bg-gray-50 dark:bg-secondary dark:border-border">
-            <div className="p-2 bg-gray-100 border-b flex items-center gap-2 dark:bg-secondary dark:border-border">
-              <ImageIcon className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Passage Image</span>
+          <div className="border rounded-lg overflow-hidden bg-muted dark:bg-secondary dark:border-border">
+            <div className="p-2 bg-muted border-b flex items-center gap-2 dark:bg-secondary dark:border-border">
+              <ImageIcon className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground/80">Passage Image</span>
             </div>
             <img 
               src={`${BACKEND_URL}${stepImageUrl}`} 
@@ -391,27 +391,27 @@ export default function QuestionReportsPage() {
 
         {/* Passage Text */}
         {question.passage && (
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <h5 className="font-medium text-blue-800 mb-2">Passage</h5>
-            <div className="text-sm text-blue-900 prose prose-sm max-w-none"
+          <div className="p-4 bg-brand-surface border border-brand-border rounded-lg">
+            <h5 className="font-medium text-brand mb-2">Passage</h5>
+            <div className="text-sm text-brand prose prose-sm max-w-none"
               dangerouslySetInnerHTML={{ __html: question.passage }}
             />
           </div>
         )}
 
         {/* Question Text */}
-        <div className="p-4 bg-white border rounded-lg">
-          <h5 className="font-medium text-gray-700 mb-2">Question</h5>
+        <div className="p-4 bg-card border rounded-lg">
+          <h5 className="font-medium text-foreground/80 mb-2">Question</h5>
           <div 
-            className="text-gray-900"
+            className="text-foreground"
             dangerouslySetInnerHTML={{ __html: renderTextWithLatex(question.question_text || 'No question text') }}
           />
         </div>
 
         {/* Question Type */}
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500">Type:</span>
-          <span className="px-2 py-1 bg-gray-100 rounded text-sm font-medium">
+          <span className="text-sm text-muted-foreground">Type:</span>
+          <span className="px-2 py-1 bg-muted rounded text-sm font-medium">
             {question.question_type || 'Unknown'}
           </span>
         </div>
@@ -419,7 +419,7 @@ export default function QuestionReportsPage() {
         {/* Options */}
         {question.options && question.options.length > 0 && (
           <div className="space-y-2">
-            <h5 className="font-medium text-gray-700">Options</h5>
+            <h5 className="font-medium text-foreground/80">Options</h5>
             <div className="space-y-1">
               {question.options.map((opt: any, idx: number) => {
                 const optText = typeof opt === 'string' ? opt : opt.text;
@@ -432,13 +432,13 @@ export default function QuestionReportsPage() {
                     key={idx}
                     className={`p-2 rounded border ${
                       isCorrect 
-                        ? 'bg-green-50 border-green-300 text-green-800' 
-                        : 'bg-gray-50 border-gray-200'
+                        ? 'bg-green-50 border-green-300 text-green-800 dark:bg-green-950/40 dark:border-green-800 dark:text-green-300' 
+                        : 'bg-muted border-border'
                     }`}
                   >
                     <span className="font-medium mr-2">{String.fromCharCode(65 + idx)}.</span>
                     <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex(optText) }} />
-                    {isCorrect && <CheckCircle className="w-4 h-4 inline ml-2 text-green-600" />}
+                    {isCorrect && <CheckCircle className="w-4 h-4 inline ml-2 text-green-600 dark:text-green-400" />}
                   </div>
                 );
               })}
@@ -448,9 +448,9 @@ export default function QuestionReportsPage() {
 
         {/* Correct Answer */}
         {question.correct_answer && !question.options?.length && (
-          <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-            <h5 className="font-medium text-green-800 mb-1">Correct Answer</h5>
-            <div className="text-green-900">
+          <div className="p-3 bg-green-50 border border-green-200 rounded-lg dark:bg-green-950/40 dark:border-green-800/60">
+            <h5 className="font-medium text-green-800 mb-1 dark:text-green-300">Correct Answer</h5>
+            <div className="text-green-900 dark:text-green-300">
               {typeof question.correct_answer === 'object' 
                 ? JSON.stringify(question.correct_answer) 
                 : String(question.correct_answer)}
@@ -460,10 +460,10 @@ export default function QuestionReportsPage() {
 
         {/* Explanation */}
         {question.explanation && (
-          <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
-            <h5 className="font-medium text-purple-800 mb-1">Explanation</h5>
+          <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg dark:bg-purple-950/40 dark:border-purple-800/60">
+            <h5 className="font-medium text-purple-800 mb-1 dark:text-purple-300">Explanation</h5>
             <div 
-              className="text-purple-900 text-sm"
+              className="text-purple-900 text-sm dark:text-purple-300"
               dangerouslySetInnerHTML={{ __html: renderTextWithLatex(question.explanation) }}
             />
           </div>
@@ -477,8 +477,8 @@ export default function QuestionReportsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-foreground">Question Error Reports</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Review and manage student-reported question errors</p>
+          <h1 className="text-2xl font-bold text-foreground dark:text-foreground">Question Error Reports</h1>
+          <p className="text-muted-foreground mt-1">Review and manage student-reported question errors</p>
         </div>
         <Button onClick={() => fetchReports()} variant="outline" className="gap-2">
           <RefreshCw className="w-4 h-4" />
@@ -494,7 +494,7 @@ export default function QuestionReportsPage() {
           return (
             <Card 
               key={status} 
-              className={`cursor-pointer transition-all ${statusFilter === status ? 'ring-2 ring-blue-500' : ''}`}
+              className={`cursor-pointer transition-all ${statusFilter === status ? 'ring-2 ring-brand' : ''}`}
               onClick={() => setStatusFilter(statusFilter === status ? '' : status)}
             >
               <CardContent className="p-4 flex items-center gap-3">
@@ -503,7 +503,7 @@ export default function QuestionReportsPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{count}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{config.label}</p>
+                  <p className="text-sm text-muted-foreground">{config.label}</p>
                 </div>
               </CardContent>
             </Card>
@@ -513,7 +513,7 @@ export default function QuestionReportsPage() {
 
       {/* Filter */}
       <div className="flex items-center gap-4 mb-4">
-        <Filter className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+        <Filter className="w-5 h-5 text-muted-foreground" />
         <select 
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
@@ -540,13 +540,13 @@ export default function QuestionReportsPage() {
         <div className="space-y-3">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
             </div>
           ) : visibleReports.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center">
-                <AlertTriangle className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-400">No reports found</p>
+                <AlertTriangle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No reports found</p>
               </CardContent>
             </Card>
           ) : (
@@ -558,7 +558,7 @@ export default function QuestionReportsPage() {
                 <Card 
                   key={report.id}
                   className={`cursor-pointer hover:shadow-md transition-all ${
-                    selectedReport?.report.id === report.id ? 'ring-2 ring-blue-500' : ''
+                    selectedReport?.report.id === report.id ? 'ring-2 ring-brand' : ''
                   }`}
                   onClick={() => openReportDetail(report.id)}
                 >
@@ -569,7 +569,7 @@ export default function QuestionReportsPage() {
                           <StatusIcon className="w-3 h-3 inline mr-1" />
                           {statusInfo.label}
                         </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">#{report.id}</span>
+                        <span className="text-xs text-muted-foreground">#{report.id}</span>
                         {(sameQuestionCounts.get(reportGroupKey(report)) ?? 1) > 1 && (
                           <span
                             className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-indigo-50 text-indigo-800 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-200 dark:border-indigo-800"
@@ -581,10 +581,10 @@ export default function QuestionReportsPage() {
                         )}
                         <TriageChip triage={report.triage} />
                       </div>
-                      <ChevronRight className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
                     </div>
                     
-                    <p className="text-sm text-gray-900 dark:text-foreground line-clamp-2 mb-2">{report.message}</p>
+                    <p className="text-sm text-foreground dark:text-foreground line-clamp-2 mb-2">{report.message}</p>
                     
                     {report.suggested_answer && (
                       <p className="flex items-start gap-1 text-xs text-orange-700 dark:text-orange-400 mb-2">
@@ -593,13 +593,13 @@ export default function QuestionReportsPage() {
                       </p>
                     )}
                     
-                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
                       <span>{report.user_name}</span>
                       <span>{formatDate(report.created_at)}</span>
                     </div>
                     
                     {report.course_info && (
-                      <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                      <div className="mt-2 text-xs text-muted-foreground">
                         <BookOpen className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />
                         {report.course_info.title} → {report.course_info.lesson_title}
                         {report.step_info?.step_number && ` (Step ${report.step_info.step_number})`}
@@ -614,7 +614,7 @@ export default function QuestionReportsPage() {
                           href={`/course/${report.course_info.id}/lesson/${report.course_info.lesson_id}/edit?step=${report.step_info.step_number}&questionId=${report.question_id}`}
                           target="_blank"
                           rel="noopener noreferrer" 
-                          className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                          className="text-xs text-brand hover:underline flex items-center gap-1"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <Edit3 className="w-3 h-3" /> Edit Step
@@ -624,7 +624,7 @@ export default function QuestionReportsPage() {
                           href={`/course/${report.course_info.id}/lesson/${report.course_info.lesson_id}?step=${report.step_info.step_number}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-green-600 hover:underline flex items-center gap-1"
+                          className="text-xs text-green-600 hover:underline flex items-center gap-1 dark:text-green-400"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <ExternalLink className="w-3 h-3" /> View Question
@@ -643,12 +643,12 @@ export default function QuestionReportsPage() {
           {detailLoading ? (
             <Card>
               <CardContent className="p-8 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
               </CardContent>
             </Card>
           ) : selectedReport ? (
             <Card className="overflow-hidden">
-              <CardHeader className="sticky top-0 z-10 bg-gray-50 border-b dark:bg-secondary dark:border-border">
+              <CardHeader className="sticky top-0 z-10 bg-muted border-b dark:bg-secondary dark:border-border">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">Report Details</CardTitle>
                   <Button 
@@ -694,7 +694,7 @@ export default function QuestionReportsPage() {
 
                 {selectedReport.sibling_reports && selectedReport.sibling_reports.length > 0 && (
                   <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <h4 className="text-sm font-medium text-foreground/80 flex items-center gap-2">
                       <Layers className="w-4 h-4 shrink-0" />
                       Other reports for this question (synced with your status)
                     </h4>
@@ -704,16 +704,16 @@ export default function QuestionReportsPage() {
                         return (
                           <div
                             key={s.id}
-                            className="border rounded-lg p-3 text-sm bg-slate-50 dark:bg-secondary/50 border-slate-200 dark:border-border"
+                            className="border rounded-lg p-3 text-sm bg-muted dark:bg-secondary/50 border-border dark:border-border"
                           >
                             <div className="flex items-center justify-between gap-2 mb-1">
-                              <span className="font-medium text-gray-900 dark:text-foreground">Report #{s.id}</span>
+                              <span className="font-medium text-foreground dark:text-foreground">Report #{s.id}</span>
                               <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${sInfo.color}`}>
                                 {sInfo.label}
                               </span>
                             </div>
-                            <p className="text-gray-700 dark:text-gray-300 line-clamp-4">{s.message}</p>
-                            <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-2 text-xs text-gray-500 dark:text-gray-400">
+                            <p className="text-foreground/80 line-clamp-4">{s.message}</p>
+                            <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-2 text-xs text-muted-foreground">
                               <span>{s.user_name}</span>
                               {s.created_at && <span>{formatDate(s.created_at)}</span>}
                             </div>
@@ -730,17 +730,17 @@ export default function QuestionReportsPage() {
                 )}
 
                 {/* Report Info */}
-                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <h4 className="font-medium text-yellow-800 mb-2 flex items-center gap-2">
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg dark:bg-yellow-950/40 dark:border-yellow-800/60">
+                  <h4 className="font-medium text-yellow-800 mb-2 flex items-center gap-2 dark:text-yellow-300">
                     <AlertTriangle className="w-4 h-4" />
                     Reported Issue
                   </h4>
-                  <p className="text-yellow-900">{selectedReport.report.message}</p>
+                  <p className="text-yellow-900 dark:text-yellow-300">{selectedReport.report.message}</p>
                   
                   {selectedReport.report.suggested_answer && (
-                    <div className="mt-3 p-2 bg-orange-100 rounded">
-                      <p className="text-sm font-medium text-orange-800">Suggested Answer:</p>
-                      <p className="text-orange-900">{selectedReport.report.suggested_answer}</p>
+                    <div className="mt-3 p-2 bg-orange-100 rounded dark:bg-orange-900/40">
+                      <p className="text-sm font-medium text-orange-800 dark:text-orange-300">Suggested Answer:</p>
+                      <p className="text-orange-900 dark:text-orange-300">{selectedReport.report.suggested_answer}</p>
                     </div>
                   )}
                 </div>
@@ -748,20 +748,20 @@ export default function QuestionReportsPage() {
                 {/* Reporter Info */}
                 {selectedReport.user && (
                   <div className="text-sm">
-                    <span className="text-gray-500">Reported by:</span>
+                    <span className="text-muted-foreground">Reported by:</span>
                     <span className="ml-2 font-medium">{selectedReport.user.name}</span>
-                    <span className="text-gray-400 ml-1">({selectedReport.user.email})</span>
+                    <span className="text-muted-foreground ml-1">({selectedReport.user.email})</span>
                   </div>
                 )}
 
                 {/* Course Info */}
                 {selectedReport.course_info && (
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm">
-                    <p className="font-medium text-blue-800">Location</p>
-                    <p className="text-blue-900">
+                  <div className="p-3 bg-brand-surface border border-brand-border rounded-lg text-sm">
+                    <p className="font-medium text-brand">Location</p>
+                    <p className="text-brand">
                       {selectedReport.course_info.course_title} → {selectedReport.course_info.module_title} → {selectedReport.course_info.lesson_title}
                     </p>
-                    <p className="text-blue-600 mt-1">
+                    <p className="text-brand mt-1">
                       Question {selectedReport.question_index + 1} of {selectedReport.total_questions}
                       {selectedReport.step?.step_number && ` (Step ${selectedReport.step.step_number})`}
                     </p>
@@ -773,7 +773,7 @@ export default function QuestionReportsPage() {
                             href={`/course/${selectedReport.course_info.course_id}/lesson/${selectedReport.course_info.lesson_id}?step=${selectedReport.step.step_number}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-green-600 hover:underline bg-white px-2 py-1 rounded border border-green-200"
+                            className="inline-flex items-center gap-1 text-green-600 hover:underline bg-card px-2 py-1 rounded border border-green-200 dark:text-green-400 dark:border-green-800/60"
                           >
                             <ExternalLink className="w-3 h-3" /> View Question
                           </a>
@@ -782,7 +782,7 @@ export default function QuestionReportsPage() {
                             href={`/course/${selectedReport.course_info.course_id}/lesson/${selectedReport.course_info.lesson_id}/edit?step=${selectedReport.step.step_number}&questionId=${selectedReport.report.question_id}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-blue-600 hover:underline bg-white px-2 py-1 rounded border border-blue-200"
+                            className="inline-flex items-center gap-1 text-brand hover:underline bg-card px-2 py-1 rounded border border-brand-border"
                           >
                             <Edit3 className="w-3 h-3" /> Edit Step
                           </a>
@@ -796,7 +796,7 @@ export default function QuestionReportsPage() {
                 {/* Question Preview */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium text-gray-700">Question Preview</h4>
+                    <h4 className="font-medium text-foreground/80">Question Preview</h4>
                     {selectedReport.question_data && canFixQuestions && (
                       <Button 
                         size="sm" 
@@ -818,8 +818,8 @@ export default function QuestionReportsPage() {
           ) : (
             <Card>
               <CardContent className="p-8 text-center">
-                <Eye className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-400">Select a report to view details</p>
+                <Eye className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">Select a report to view details</p>
               </CardContent>
             </Card>
           )}
@@ -834,8 +834,8 @@ export default function QuestionReportsPage() {
             onClick={() => setShowEditModal(false)}
           />
           <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 pointer-events-none">
-            <div className="bg-white dark:bg-card rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto pointer-events-auto">
-              <div className="sticky top-0 bg-white dark:bg-card border-b dark:border-border p-4 flex items-center justify-between">
+            <div className="bg-card dark:bg-card rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto pointer-events-auto">
+              <div className="sticky top-0 bg-card dark:bg-card border-b dark:border-border p-4 flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Edit Question</h3>
                 <Button variant="ghost" size="icon" onClick={() => setShowEditModal(false)}>
                   <X className="w-5 h-5" />
@@ -845,20 +845,20 @@ export default function QuestionReportsPage() {
               <div className="p-6 space-y-4">
                 {/* Question Text */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">
                     Question Text
                   </label>
                   <textarea
                     value={editQuestionText}
                     onChange={(e) => setEditQuestionText(e.target.value)}
-                    className="w-full h-24 p-3 border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-secondary dark:border-border dark:text-foreground"
+                    className="w-full h-24 p-3 border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-brand dark:bg-secondary dark:border-border dark:text-foreground"
                   />
                 </div>
 
                 {/* Options (if applicable) */}
                 {editOptions.length > 0 && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-sm font-medium text-foreground/80 mb-2">
                       Options
                     </label>
                     <div className="space-y-2">
@@ -883,7 +883,7 @@ export default function QuestionReportsPage() {
                                 }
                                 setEditOptions(newOptions);
                               }}
-                              className="flex-1 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-secondary dark:border-border dark:text-foreground"
+                              className="flex-1 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-brand dark:bg-secondary dark:border-border dark:text-foreground"
                             />
                             {isMulti ? (
                               <input
@@ -914,7 +914,7 @@ export default function QuestionReportsPage() {
                         );
                       })}
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       {selectedReport.question_data.question_type === 'multiple_choice'
                         ? 'Check all correct answers'
                         : 'Select the correct answer (stored as option index for the quiz player)'}
@@ -925,28 +925,28 @@ export default function QuestionReportsPage() {
                 {/* Correct Answer (for non-choice questions) */}
                 {editOptions.length === 0 && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-foreground/80 mb-1">
                       Correct Answer
                     </label>
                     <input
                       type="text"
                       value={typeof editCorrectAnswer === 'string' ? editCorrectAnswer : JSON.stringify(editCorrectAnswer)}
                       onChange={(e) => setEditCorrectAnswer(e.target.value)}
-                      className="w-full p-3 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-secondary dark:border-border dark:text-foreground"
+                      className="w-full p-3 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand dark:bg-secondary dark:border-border dark:text-foreground"
                     />
                   </div>
                 )}
 
                 {/* Explanation */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-foreground/80 mb-1">
                     Explanation
                   </label>
                   <textarea
                     value={editExplanation}
                     onChange={(e) => setEditExplanation(e.target.value)}
                     placeholder="Add an explanation for why this is the correct answer..."
-                    className="w-full h-20 p-3 border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-secondary dark:border-border dark:text-foreground"
+                    className="w-full h-20 p-3 border rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-brand dark:bg-secondary dark:border-border dark:text-foreground"
                   />
                 </div>
 
@@ -958,7 +958,7 @@ export default function QuestionReportsPage() {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="mt-2 text-orange-600"
+                      className="mt-2 text-orange-600 dark:text-orange-400"
                       onClick={() => {
                         const sug = (selectedReport.report.suggested_answer || '').trim()
                         if (!sug) return
@@ -986,7 +986,7 @@ export default function QuestionReportsPage() {
                 )}
               </div>
 
-              <div className="sticky bottom-0 bg-white dark:bg-card border-t dark:border-border p-4 flex justify-end gap-3">
+              <div className="sticky bottom-0 bg-card dark:bg-card border-t dark:border-border p-4 flex justify-end gap-3">
                 <Button variant="outline" onClick={() => setShowEditModal(false)}>
                   Cancel
                 </Button>

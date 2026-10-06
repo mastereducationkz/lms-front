@@ -178,16 +178,16 @@ export default function EventManagement() {
 
   const getEventTypeColor = (eventType: EventType) => {
     const withDark: Record<EventType, string> = {
-      class: 'bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+      class: 'bg-brand-subtle text-brand-subtle-foreground border-brand-border',
       weekly_test: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800',
       webinar: 'bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-400 border-red-200 dark:border-red-800',
       assignment: 'bg-orange-100 dark:bg-orange-900/30 text-orange-900 dark:text-orange-400 border-orange-200 dark:border-orange-800',
     };
-    return withDark[eventType] || 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-600';
+    return withDark[eventType] || 'bg-muted text-foreground border-border';
   };
 
   if (loading) {
-    return <Loader size="xl" animation="spin" color="#2563eb" />;
+    return <Loader size="xl" animation="spin" color="hsl(var(--brand))" />;
   }
 
   return (
@@ -195,8 +195,8 @@ export default function EventManagement() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-foreground">Event Management</h1>
-          <p className="text-gray-600 dark:text-gray-400">Create and manage group schedules</p>
+          <h1 className="text-2xl font-bold text-foreground dark:text-foreground">Event Management</h1>
+          <p className="text-muted-foreground">Create and manage group schedules</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
           {selectedEventIds.length > 0 && (
@@ -221,11 +221,11 @@ export default function EventManagement() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-card rounded-lg border dark:border-border p-4">
+      <div className="bg-card dark:bg-card rounded-lg border dark:border-border p-4">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               placeholder="Search events..."
               value={searchTerm}
@@ -276,15 +276,15 @@ export default function EventManagement() {
           </Select>
 
           {/* Lessons Toggle */}
-          <div className="flex items-center gap-2 px-2 border dark:border-border rounded-md bg-gray-50 dark:bg-secondary h-10">
+          <div className="flex items-center gap-2 px-2 border dark:border-border rounded-md bg-muted dark:bg-secondary h-10">
             <input
               type="checkbox"
               id="show-lessons"
               checked={showLessons}
               onChange={(e) => setShowLessons(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+              className="w-4 h-4 rounded border-input text-brand focus:ring-brand cursor-pointer"
             />
-            <label htmlFor="show-lessons" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer whitespace-nowrap">
+            <label htmlFor="show-lessons" className="text-sm font-medium text-foreground/80 cursor-pointer whitespace-nowrap">
               Show Lessons
             </label>
           </div>
@@ -292,12 +292,12 @@ export default function EventManagement() {
       </div>
 
       {/* Events List */}
-      <div className="bg-white dark:bg-card rounded-lg border dark:border-border">
+      <div className="bg-card dark:bg-card rounded-lg border dark:border-border">
         {filteredEvents.length === 0 ? (
           <div className="p-8 text-center">
-            <Calendar className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-foreground mb-2">No Events Found</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-foreground dark:text-foreground mb-2">No Events Found</h3>
+            <p className="text-muted-foreground mb-4">
               {searchTerm || selectedEventType !== 'all' || dateFilter !== 'all' 
                 ? 'Try adjusting your search filters'
                 : 'Create your first event to get started'
@@ -311,43 +311,43 @@ export default function EventManagement() {
             )}
           </div>
         ) : (
-          <div className="divide-y divide-gray-200 dark:divide-border">
+          <div className="divide-y divide-border dark:divide-border">
             {/* Table Header with Select All */}
-            <div className="p-4 bg-gray-50 dark:bg-secondary border-b dark:border-border flex items-center gap-4">
+            <div className="p-4 bg-muted dark:bg-secondary border-b dark:border-border flex items-center gap-4">
               <input
                 type="checkbox"
                 checked={selectedEventIds.length === filteredEvents.length && filteredEvents.length > 0}
                 onChange={toggleSelectAll}
-                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                className="w-4 h-4 rounded border-input text-brand focus:ring-brand cursor-pointer"
               />
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <span className="text-sm font-medium text-muted-foreground">
                 {selectedEventIds.length > 0 
                   ? `${selectedEventIds.length} items selected` 
                   : `Select all events (${filteredEvents.length})`}
               </span>
             </div>
             {filteredEvents.map(event => (
-              <div key={event.id} className="p-6 hover:bg-gray-50 dark:hover:bg-secondary transition-colors flex items-start gap-4">
+              <div key={event.id} className="p-6 hover:bg-muted dark:hover:bg-secondary transition-colors flex items-start gap-4">
                 <div className="pt-1">
                   <input
                     type="checkbox"
                     checked={selectedEventIds.includes(event.id)}
                     onChange={() => toggleSelectEvent(event.id)}
-                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    className="w-4 h-4 rounded border-input text-brand focus:ring-brand cursor-pointer"
                   />
                 </div>
                 <div className="flex-1 min-w-0 flex items-start justify-between">
                   <div className="flex-1 min-w-0">
                     {/* Event Header */}
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-foreground truncate">
+                      <h3 className="text-lg font-semibold text-foreground dark:text-foreground truncate">
                         {event.title}
                       </h3>
                       <Badge className={`${getEventTypeColor(event.event_type)} border`}>
                         {EVENT_TYPE_LABELS[event.event_type]}
                       </Badge>
                       {event.is_recurring && (
-                        <Badge variant="outline" className="text-blue-600 border-blue-200">
+                        <Badge variant="outline" className="text-brand border-brand-border">
                           Recurring
                         </Badge>
                       )}
@@ -357,14 +357,14 @@ export default function EventManagement() {
                         </Badge>
                       )}
                       {isAssignmentDeadline(event.id) && (
-                        <Badge variant="outline" className="text-orange-600 border-orange-200">
+                        <Badge variant="outline" className="text-orange-600 border-orange-200 dark:text-orange-400 dark:border-orange-800/60">
                           Deadline
                         </Badge>
                       )}
                     </div>
 
                     {/* Event Details */}
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-3">
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-3">
                       <div className="flex items-center gap-1">
                         <Clock className="w-4 h-4" />
                         {formatDateTime(event.start_datetime)} - {formatDateTime(event.end_datetime)}
@@ -386,7 +386,7 @@ export default function EventManagement() {
 
                       {event.teacher_name && (
                         <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4 text-blue-500" />
+                          <Users className="w-4 h-4 text-brand" />
                           <span className="font-medium">Teacher: {event.teacher_name}</span>
                         </div>
                       )}
@@ -401,13 +401,13 @@ export default function EventManagement() {
 
                     {/* Event Description */}
                     {event.description && (
-                      <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2 mb-2">
+                      <p className="text-muted-foreground text-sm line-clamp-2 mb-2">
                         {event.description}
                       </p>
                     )}
 
                     {/* Event Meta */}
-                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <span>Created by: {event.creator_name || 'Unknown'}</span>
                       <span>•</span>
                       <span>{new Date(event.created_at).toLocaleDateString('en-US')}</span>
@@ -444,7 +444,7 @@ export default function EventManagement() {
                           Participants
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          className="text-red-600"
+                          className="text-red-600 dark:text-red-400"
                           onClick={() => handleDeleteEvent(event.id)}
                           disabled={isVirtualEvent(event.id)}
                         >
@@ -463,34 +463,34 @@ export default function EventManagement() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-card rounded-lg border dark:border-border p-4">
+        <div className="bg-card dark:bg-card rounded-lg border dark:border-border p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Events</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-foreground">{events.length}</p>
+              <p className="text-sm font-medium text-muted-foreground">Total Events</p>
+              <p className="text-2xl font-bold text-foreground dark:text-foreground">{events.length}</p>
             </div>
-            <Calendar className="w-8 h-8 text-blue-600" />
+            <Calendar className="w-8 h-8 text-brand" />
           </div>
         </div>
 
-        <div className="bg-white dark:bg-card rounded-lg border dark:border-border p-4">
+        <div className="bg-card dark:bg-card rounded-lg border dark:border-border p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Classes</p>
-              <p className="text-2xl font-bold text-blue-600">
+              <p className="text-sm font-medium text-muted-foreground">Classes</p>
+              <p className="text-2xl font-bold text-brand">
                 {events.filter(e => e.event_type === 'class').length}
               </p>
             </div>
-            <div className="w-8 h-8 rounded bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-              <span className="text-blue-600 font-bold text-sm">C</span>
+            <div className="w-8 h-8 rounded bg-brand-subtle flex items-center justify-center">
+              <span className="text-brand font-bold text-sm">C</span>
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-card rounded-lg border dark:border-border p-4">
+        <div className="bg-card dark:bg-card rounded-lg border dark:border-border p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tests</p>
+              <p className="text-sm font-medium text-muted-foreground">Tests</p>
               <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                 {events.filter(e => e.event_type === 'weekly_test').length}
               </p>
@@ -501,10 +501,10 @@ export default function EventManagement() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-card rounded-lg border dark:border-border p-4">
+        <div className="bg-card dark:bg-card rounded-lg border dark:border-border p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Webinars</p>
+              <p className="text-sm font-medium text-muted-foreground">Webinars</p>
               <p className="text-2xl font-bold text-red-600 dark:text-red-400">
                 {events.filter(e => e.event_type === 'webinar').length}
               </p>
