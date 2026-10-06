@@ -15,10 +15,10 @@ import MaterialsCard from './MaterialsCard';
 const POLL_MS = 60_000;
 
 const STATUS: Record<LessonStatus, { ru: string; en: string; tone: string }> = {
-  upcoming: { ru: 'Скоро', en: 'Upcoming', tone: 'bg-sky-100 text-sky-800' },
-  live: { ru: 'Идёт сейчас', en: 'Live now', tone: 'bg-emerald-100 text-emerald-800' },
-  finished: { ru: 'Прошёл', en: 'Finished', tone: 'bg-slate-100 text-slate-600' },
-  cancelled: { ru: 'Отменён', en: 'Cancelled', tone: 'bg-rose-100 text-rose-800' },
+  upcoming: { ru: 'Скоро', en: 'Upcoming', tone: 'bg-sky-100 dark:bg-sky-500/20 text-sky-800 dark:text-sky-300' },
+  live: { ru: 'Идёт сейчас', en: 'Live now', tone: 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300' },
+  finished: { ru: 'Прошёл', en: 'Finished', tone: 'bg-muted text-muted-foreground' },
+  cancelled: { ru: 'Отменён', en: 'Cancelled', tone: 'bg-rose-100 dark:bg-rose-500/20 text-rose-800 dark:text-rose-300' },
 };
 
 export default function LessonPanel({ lessonId, onBack, onSessionLost }: {
@@ -59,14 +59,14 @@ export default function LessonPanel({ lessonId, onBack, onSessionLost }: {
 
   if (error) {
     return (
-      <div className="py-12 text-center text-sm text-slate-700">
+      <div className="py-12 text-center text-sm text-foreground">
         <p>{error}</p>
         <OpenInLms id={lessonId} label="Open in the LMS" />
       </div>
     );
   }
   if (!view) {
-    return <div className="flex justify-center py-16"><Loader2 className="h-5 w-5 animate-spin text-slate-400" /></div>;
+    return <div className="flex justify-center py-16"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
   }
 
   const ru = view.viewer.locale === 'ru';
@@ -79,50 +79,50 @@ export default function LessonPanel({ lessonId, onBack, onSessionLost }: {
     <div className="space-y-3">
       <header>
         {onBack && (
-          <button type="button" onClick={onBack} className="mb-1 inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-800">
+          <button type="button" onClick={onBack} className="mb-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-3 w-3" aria-hidden />{t('Назад', 'Back')}
           </button>
         )}
         <div className="flex items-start justify-between gap-2">
-          <h1 className="min-w-0 text-[15px] font-semibold leading-snug text-slate-900">{view.title}</h1>
+          <h1 className="min-w-0 text-[15px] font-semibold leading-snug text-foreground">{view.title}</h1>
           <span className={`flex-none rounded-full px-2 py-0.5 text-[11px] font-semibold ${status.tone}`}>
             {view.status === 'live' && <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500 align-middle" />}
             {ru ? status.ru : status.en}
           </span>
         </div>
-        <p className="mt-0.5 text-xs text-slate-600">{lessonWhen(view.start, view.end, view.viewer.locale)}</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">{lessonWhen(view.start, view.end, view.viewer.locale)}</p>
         {view.groups.length > 0 && (
-          <p className="mt-0.5 truncate text-xs text-slate-500">
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">
             {view.groups.map((g) => (g.lesson_number ? `${g.name} · ${t('урок', 'lesson')} ${g.lesson_number}` : g.name)).join(', ')}
           </p>
         )}
-        {view.topic && <p className="mt-1 text-xs text-slate-700">{view.topic}</p>}
+        {view.topic && <p className="mt-1 text-xs text-foreground">{view.topic}</p>}
         <OpenInLms id={view.id} label={t('Открыть урок в LMS', 'Open lesson in LMS')} />
       </header>
 
       {view.live_lesson?.can_drive && (
-        <Card title={t('Живой урок', 'Live lesson')} icon={<MessageSquareText className="h-4 w-4 text-blue-600" />}>
+        <Card title={t('Живой урок', 'Live lesson')} icon={<MessageSquareText className="h-4 w-4 text-brand" />}>
           <LiveCard lessonId={view.id} onSessionLost={() => lost.current()} />
         </Card>
       )}
 
       {view.live && (
-        <Card title={t('Сейчас в уроке', 'In the room')} icon={<Radio className="h-4 w-4 text-emerald-600" />}>
+        <Card title={t('Сейчас в уроке', 'In the room')} icon={<Radio className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />}>
           <LiveRoom view={view} />
         </Card>
       )}
 
       {view.register && view.status !== 'cancelled' && (
-        <Card title={t('Баллы за урок', 'Activity scores')} icon={<Star className="h-4 w-4 text-yellow-500" />}>
+        <Card title={t('Баллы за урок', 'Activity scores')} icon={<Star className="h-4 w-4 text-yellow-500 dark:text-yellow-400" />}>
           <ScoresCard view={view} onSaved={() => void load(true)} />
         </Card>
       )}
 
-      <Card title={t('Заметки', 'Notes')} icon={<NotebookPen className="h-4 w-4 text-slate-500" />}>
+      <Card title={t('Заметки', 'Notes')} icon={<NotebookPen className="h-4 w-4 text-muted-foreground" />}>
         <NotesCard view={view} onSaved={onNoteSaved} />
       </Card>
 
-      <Card title={t('Материалы', 'Materials')} icon={<Paperclip className="h-4 w-4 text-slate-500" />}>
+      <Card title={t('Материалы', 'Materials')} icon={<Paperclip className="h-4 w-4 text-muted-foreground" />}>
         <MaterialsCard eventId={view.id} locale={view.viewer.locale} />
       </Card>
     </div>
@@ -131,8 +131,8 @@ export default function LessonPanel({ lessonId, onBack, onSessionLost }: {
 
 function Card({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
   return (
-    <section aria-label={title} className="rounded-xl border border-slate-200 bg-white p-3">
-      <h2 className="mb-2 flex items-center gap-1.5 text-[13px] font-semibold text-slate-900">{icon}{title}</h2>
+    <section aria-label={title} className="rounded-xl border border-border bg-card p-3">
+      <h2 className="mb-2 flex items-center gap-1.5 text-[13px] font-semibold text-foreground">{icon}{title}</h2>
       {children}
     </section>
   );
@@ -144,7 +144,7 @@ function OpenInLms({ id, label }: { id: number; label: string }) {
       href={lessonUrl(id)}
       target="_blank"
       rel="noopener noreferrer"
-      className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-50"
+      className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs font-semibold text-brand-subtle-foreground transition hover:bg-brand-subtle"
     >
       {label}<ExternalLink className="h-3 w-3" aria-hidden />
     </a>

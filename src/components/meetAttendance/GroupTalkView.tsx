@@ -154,7 +154,7 @@ export function GroupTalkView({ groups, periodDays, groupId, onGroupChange, talk
 
       {data && data.lessons.length > 0 && (
         <>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid grid-cols-1 gap-3 @lg:grid-cols-2 @2xl:grid-cols-3 @5xl:grid-cols-5">
             <SplitCard
               className="sm:col-span-2"
               teacherSeconds={data.totals.teacher_seconds}

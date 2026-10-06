@@ -41,7 +41,7 @@ export function MeetVerdictBadge({ verdict, locale, className, register }: { ver
       title={title}
       aria-label={title}
       className={cn(
-        'pointer-events-auto absolute bottom-0 left-0 inline-flex items-center gap-px rounded-tr bg-white/90 px-1 text-[9px] font-semibold leading-3 dark:bg-card/90',
+        'pointer-events-auto absolute bottom-0 left-0 inline-flex items-center gap-px rounded-tr bg-card/90 px-1 text-[9px] font-semibold leading-3',
         TONE[key],
         byMeet && 'font-extrabold underline decoration-dotted underline-offset-2',
         className,

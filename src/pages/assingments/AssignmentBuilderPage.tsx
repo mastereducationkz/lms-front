@@ -585,7 +585,7 @@ export default function AssignmentBuilderPage() {
         <CardContent className="space-y-4">
           <div>
             <h4 className="font-medium">{formData.title || 'Untitled Homework'}</h4>
-            <p className="text-gray-600 dark:text-gray-400">{formData.description || 'No description'}</p>
+            <p className="text-muted-foreground">{formData.description || 'No description'}</p>
           </div>
           {renderAssignmentTypeEditor()}
         </CardContent>
@@ -601,7 +601,7 @@ export default function AssignmentBuilderPage() {
           <h1 className="text-3xl font-bold flex items-center text-foreground">
             {isEditing ? 'Edit Homework' : copyFromId ? 'Copy Homework' : 'Create Homework'}
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-muted-foreground  mt-1">
             {isEditing ? 'Update existing homework' : 'Create a new homework for your students'}
           </p>
         </div>
@@ -633,9 +633,9 @@ export default function AssignmentBuilderPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 @3xl:grid-cols-3 gap-6">
           {/* Main Form */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="@3xl:col-span-2 space-y-6">
             {/* Basic Information */}
             <Card>
               <CardHeader>
@@ -686,7 +686,7 @@ export default function AssignmentBuilderPage() {
                     </SelectContent>
                   </Select>
                   {formData.assignment_type === 'audio' && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <p className="text-xs text-muted-foreground  mt-1">
                       Students record a voice message and submit it for you to listen to and grade.
                     </p>
                   )}
@@ -723,13 +723,13 @@ export default function AssignmentBuilderPage() {
                     Groups *
                   </Label>
                   {groupsLoading ? (
-                    <div className="text-sm text-gray-500 dark:text-gray-400">Loading groups...</div>
+                    <div className="text-sm text-muted-foreground">Loading groups...</div>
                   ) : groups.length === 0 ? (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    <p className="text-sm text-muted-foreground  mt-1">
                       No groups found. Please create a group first.
                     </p>
                   ) : (
-                    <div className="space-y-2 border dark:border-border rounded-md p-4 max-h-60 overflow-y-auto bg-white dark:bg-card">
+                    <div className="space-y-2 border dark:border-border rounded-md p-4 max-h-60 overflow-y-auto bg-card">
                       {groups.map(group => (
                         <div key={group.id} className="flex items-center space-x-2">
                           <Checkbox 
@@ -741,13 +741,13 @@ export default function AssignmentBuilderPage() {
                             htmlFor={`group-${group.id}`}
                             className="text-sm font-normal cursor-pointer"
                           >
-                            {group.name} <span className="text-xs text-gray-500 dark:text-gray-400">({group.student_count || 0} students)</span>
+                            {group.name} <span className="text-xs text-muted-foreground">({group.student_count || 0} students)</span>
                           </Label>
                         </div>
                       ))}
                     </div>
                   )}
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                  <div className="text-xs text-muted-foreground  mt-2">
                     Selected: {formData.group_ids?.length || 0} groups
                   </div>
                 </div>
@@ -793,7 +793,7 @@ export default function AssignmentBuilderPage() {
                     <Input type="number" min="1" value={formData.max_attempts}
                       onChange={(e) => handleInputChange('max_attempts', Math.max(1, parseInt(e.target.value) || 1))} />
                   )}
-                  <p className="text-xs text-gray-500">Teachers can reopen a completed homework after its deadline. All attempts remain in history.</p>
+                  <p className="text-xs text-muted-foreground">Teachers can reopen a completed homework after its deadline. All attempts remain in history.</p>
                 </div>
 
                 {/* Late Penalty Settings */}
@@ -811,7 +811,7 @@ export default function AssignmentBuilderPage() {
                   
                   {formData.late_penalty_enabled && (
                     <div className="pl-6">
-                      <Label htmlFor="penalty-multiplier" className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">
+                      <Label htmlFor="penalty-multiplier" className="text-xs text-muted-foreground  mb-1 block">
                         Score Multiplier (e.g. 0.6 means 60% of score)
                       </Label>
                       <Input
@@ -842,9 +842,9 @@ export default function AssignmentBuilderPage() {
                               const hasExistingLink = isEditing && !selectedEventId && (existingLessonNumber || groupDueDate);
 
                               return (
-                                  <div key={groupId} className="p-3 border rounded-lg bg-white dark:bg-card dark:border-border space-y-4">
+                                  <div key={groupId} className="p-3 border rounded-lg bg-card dark:border-border space-y-4">
                                       <div className="flex items-center justify-between">
-                                          <span className="text-xs font-bold text-gray-900 dark:text-foreground" title={group?.name}>
+                                          <span className="text-xs font-bold text-foreground" title={group?.name}>
                                             {group?.name}
                                           </span>
                                       </div>
@@ -857,7 +857,7 @@ export default function AssignmentBuilderPage() {
                                                     handleEventMappingChange(groupId, parseInt(value));
                                                 }}
                                             >
-                                              <SelectTrigger className="w-full bg-gray-50 dark:bg-secondary border-gray-200 dark:border-border h-9 text-xs">
+                                              <SelectTrigger className="w-full bg-muted dark:bg-secondary border-border h-9 text-xs">
                                                 <SelectValue placeholder="Pick a class..." />
                                               </SelectTrigger>
                                               <SelectContent>
@@ -882,7 +882,7 @@ export default function AssignmentBuilderPage() {
                                             </Select>
 
                                             {hasExistingLink && (
-                                              <p className="text-[11px] text-gray-500 dark:text-muted-foreground pl-0.5">
+                                              <p className="text-[11px] text-muted-foreground pl-0.5">
                                                 Currently linked{existingLessonNumber ? ` to Lesson ${existingLessonNumber}` : ''}
                                                 {groupDueDate ? ` · due ${formatInKZ(groupDueDate, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })} (KZ)` : ''}.
                                                 Pick a class above only if you want to change it.
@@ -890,8 +890,8 @@ export default function AssignmentBuilderPage() {
                                             )}
 
                                             {Number(selectedEventId) > 0 && (
-                                              <div className="pl-2 pt-1.5 space-y-1.5 border-l-2 border-blue-500">
-                                                <Label className="text-[10px] text-blue-600 dark:text-blue-400 uppercase font-bold tracking-tight">Set Group Deadline (Optional)</Label>
+                                              <div className="pl-2 pt-1.5 space-y-1.5 border-l-2 border-brand">
+                                                <Label className="text-[10px] text-brand  uppercase font-bold tracking-tight">Set Group Deadline (Optional)</Label>
                                                 <DateTimePicker
                                                     date={groupDueDate ? parseAsUTC(groupDueDate) : undefined}
                                                     setDate={(date) => handleGroupDueDateChange(groupId, date ? date.toISOString() : '')}
@@ -967,7 +967,7 @@ function AudioAssignmentEditor({
           placeholder="What should the student talk about? E.g. 'Describe your weekend in 1-2 minutes.'"
         />
       </div>
-      <p className="text-sm text-gray-500 dark:text-gray-400">
+      <p className="text-sm text-muted-foreground">
         Students will record a voice message answering this prompt on a dedicated recording page.
         No answer options or file types are needed — you grade the recording directly.
       </p>
@@ -1070,16 +1070,16 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
         <div className="space-y-2">
           {content.teacher_file_url ? (
             // Display existing uploaded file
-            <div className="flex items-center justify-between p-3 border rounded-lg bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+            <div className="flex items-center justify-between p-3 border rounded-lg bg-brand-surface  border-brand-border">
               <div className="flex items-center space-x-2 flex-1">
-                <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <FileText className="w-4 h-4 text-brand" />
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium text-blue-900 dark:text-blue-300">{content.teacher_file_name || 'Reference File'}</span>
+                  <span className="text-sm font-medium text-brand-surface-foreground">{content.teacher_file_name || 'Reference File'}</span>
                   <a 
                     href={content.teacher_file_url} 
                     target="_blank" 
                     rel="noopener noreferrer" 
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    className="text-xs text-brand  hover:underline"
                   >
                     View/Download File
                   </a>
@@ -1103,11 +1103,11 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
               </Button>
             </div>
           ) : teacherFile ? (
-            <div className="flex items-center justify-between p-3 border dark:border-border rounded-lg bg-gray-50 dark:bg-secondary">
+            <div className="flex items-center justify-between p-3 border dark:border-border rounded-lg bg-muted dark:bg-secondary">
               <div className="flex items-center space-x-2">
-                <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <FileText className="w-4 h-4 text-brand" />
                 <span className="text-sm font-medium text-foreground">{teacherFileName}</span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
+                <span className="text-xs text-muted-foreground">
                   ({(teacherFile.size / 1024 / 1024).toFixed(2)} MB)
                 </span>
               </div>
@@ -1122,7 +1122,7 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
               </Button>
             </div>
           ) : (
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+            <div className="border-2 border-dashed border-border  rounded-lg p-6 text-center">
               <input
                 type="file"
                 id={uniqueId}
@@ -1132,12 +1132,12 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
               />
               <label htmlFor={uniqueId} className="cursor-pointer">
                 <div className="flex flex-col items-center space-y-2">
-                  <FileText className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                  <FileText className="w-8 h-8 text-muted-foreground" />
                   <div>
-                    <span className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
+                    <span className="text-sm font-medium text-brand  hover:text-brand">
                       Click to upload teacher's file
                     </span>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <p className="text-xs text-muted-foreground  mt-1">
                       Supported: {fileTypes.map(type => type.label).join(', ')}
                     </p>
                   </div>
@@ -1180,7 +1180,7 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
         <div className="flex items-center justify-between mb-3">
           <div>
             <Label className="text-sm font-semibold">Answer Fields (Optional)</Label>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <p className="text-xs text-muted-foreground  mt-0.5">
               Add fields for students to enter answers. System will auto-check correctness.
             </p>
           </div>
@@ -1205,7 +1205,7 @@ function FileUploadEditor({ content, onContentChange, onCorrectAnswersChange }: 
         {(content.answer_fields || []).length > 0 && (
           <div className="space-y-3">
             {(content.answer_fields || []).map((field: any, index: number) => (
-              <div key={field.id} className="flex items-start gap-2 p-3 bg-gray-50 dark:bg-secondary rounded-lg border dark:border-border">
+              <div key={field.id} className="flex items-start gap-2 p-3 bg-muted dark:bg-secondary rounded-lg border dark:border-border">
                 <div className="flex-1 space-y-2">
                   <Input
                     placeholder="Field label (e.g., Problem 1)"

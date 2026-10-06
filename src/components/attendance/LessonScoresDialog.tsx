@@ -94,7 +94,7 @@ export default function LessonScoresDialog({ open, onOpenChange, eventId, start,
       <DialogContent className="flex max-h-[90vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
         <DialogHeader className="space-y-1 border-b border-border px-5 py-4">
           <DialogTitle className="flex items-center gap-2 text-base">
-            <Star className="h-4 w-4 text-yellow-500" aria-hidden />
+            <Star className="h-4 w-4 text-yellow-500 dark:text-yellow-400" aria-hidden />
             {t('Баллы за урок', 'Activity scores')}
           </DialogTitle>
           {title && <p className="truncate text-xs text-muted-foreground">{title}</p>}

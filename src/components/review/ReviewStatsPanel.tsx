@@ -16,10 +16,10 @@ interface Props {
   gapIndex: number
 }
 
-const STAT_LABEL = 'text-sm font-medium text-gray-500 dark:text-gray-400'
-const STAT_VALUE = 'text-3xl font-bold text-gray-900 dark:text-foreground tabular-nums'
-const SECTION_HEADING = 'text-sm font-semibold text-gray-700 dark:text-gray-200'
-const CHIP = 'rounded-full border border-gray-200 dark:border-border bg-gray-50 dark:bg-secondary px-2 py-0.5 text-xs text-gray-700 dark:text-gray-300'
+const STAT_LABEL = 'text-sm font-medium text-muted-foreground'
+const STAT_VALUE = 'text-3xl font-bold text-foreground tabular-nums'
+const SECTION_HEADING = 'text-sm font-semibold text-foreground'
+const CHIP = 'rounded-full border border-border bg-muted dark:bg-secondary px-2 py-0.5 text-xs text-foreground'
 
 const NameList: React.FC<{ title: string; names: string[]; className: string }> = ({
   title, names, className,
@@ -40,7 +40,7 @@ const NameList: React.FC<{ title: string; names: string[]; className: string }> 
 export const ReviewStatsPanel: React.FC<Props> = ({ stat, revealed, showNames, gapIndex }) => {
   if (!stat) {
     return (
-      <Card><CardContent className="p-4 text-sm text-gray-500 dark:text-gray-400">{EN.noData}</CardContent></Card>
+      <Card><CardContent className="p-4 text-sm text-muted-foreground">{EN.noData}</CardContent></Card>
     )
   }
 
@@ -85,7 +85,7 @@ export const ReviewStatsPanel: React.FC<Props> = ({ stat, revealed, showNames, g
         </div>
 
         {!stat.graded && (
-          <p className="rounded-md border border-gray-200 dark:border-border bg-gray-50 dark:bg-secondary px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400">
+          <p className="rounded-md border border-border bg-muted dark:bg-secondary px-3 py-1.5 text-xs text-muted-foreground">
             {EN.notGraded}
           </p>
         )}
@@ -107,7 +107,7 @@ export const ReviewStatsPanel: React.FC<Props> = ({ stat, revealed, showNames, g
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
               <p className={SECTION_HEADING}>{EN.gapBreakdown}</p>
-              <span className="text-xs text-gray-500 dark:text-gray-400">
+              <span className="text-xs text-muted-foreground">
                 {format(EN.gapAnsweredOf, { answered: gapStat.answered, participants: gapStat.participants })}
               </span>
             </div>
@@ -143,12 +143,12 @@ export const ReviewStatsPanel: React.FC<Props> = ({ stat, revealed, showNames, g
             caught this for percentCorrect above but cleared this block on the mistaken belief
             it shared the same (per-gap) `revealed` as the bars above it (#F1). */}
         {wholeRevealed && showNames && stat.graded && (
-          <div className="space-y-3 border-t border-gray-200 dark:border-border pt-4">
+          <div className="space-y-3 border-t border-border pt-4">
             <p className={SECTION_HEADING}>{EN.whoAnswered}</p>
             <NameList title={EN.correct} names={stat.names.correct} className="text-emerald-600 dark:text-emerald-400" />
             <NameList title={EN.partial} names={stat.names.partial} className="text-amber-600 dark:text-amber-400" />
             <NameList title={EN.incorrect} names={stat.names.incorrect} className="text-rose-600 dark:text-rose-400" />
-            <NameList title={EN.noAnswer} names={stat.names.unanswered} className="text-gray-500 dark:text-gray-400" />
+            <NameList title={EN.noAnswer} names={stat.names.unanswered} className="text-muted-foreground" />
           </div>
         )}
       </CardContent>

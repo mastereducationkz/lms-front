@@ -54,7 +54,7 @@ const TEXT = {
 const SHADE: Record<TalkRole, string[]> = {
   teacher: ['', 'bg-violet-500/15 dark:bg-violet-400/20', 'bg-violet-500/30 dark:bg-violet-400/35', 'bg-violet-500/50 dark:bg-violet-400/50', 'bg-violet-500/75 dark:bg-violet-400/75', 'bg-violet-600 dark:bg-violet-400'],
   student: ['', 'bg-emerald-500/15 dark:bg-emerald-400/20', 'bg-emerald-500/30 dark:bg-emerald-400/35', 'bg-emerald-500/50 dark:bg-emerald-400/50', 'bg-emerald-500/75 dark:bg-emerald-400/75', 'bg-emerald-600 dark:bg-emerald-400'],
-  unknown: ['', 'bg-amber-400/20 dark:bg-amber-400/20', 'bg-amber-400/35 dark:bg-amber-400/35', 'bg-amber-400/55 dark:bg-amber-400/50', 'bg-amber-500/80 dark:bg-amber-400/75', 'bg-amber-600 dark:bg-amber-400'],
+  unknown: ['', 'bg-amber-400/20', 'bg-amber-400/35', 'bg-amber-400/55 dark:bg-amber-400/50', 'bg-amber-500/80 dark:bg-amber-400/75', 'bg-amber-600 dark:bg-amber-400'],
   other: ['', 'bg-sky-500/15 dark:bg-sky-400/20', 'bg-sky-500/30 dark:bg-sky-400/35', 'bg-sky-500/50 dark:bg-sky-400/50', 'bg-sky-500/75 dark:bg-sky-400/75', 'bg-sky-600 dark:bg-sky-400'],
 };
 
@@ -187,7 +187,7 @@ export function TalkGrid({ talk, locale, focus, onPick, playhead, plays = false,
                   shade > 0 && !dense && <span className="hidden sm:inline">{blockTime(seconds)}</span>,
                   seconds > 0 ? t.said(person.name, range(i), blockTime(seconds)) : t.quiet(person.name, range(i)),
                   cn(shade > 0 ? SHADE[person.role][shade] : 'bg-muted/30',
-                    shade >= 4 ? 'text-white dark:text-gray-950' : INK[person.role]));
+                    shade >= 4 ? 'text-white dark:text-muted-foreground' : INK[person.role]));
               })}
               <span className="pl-2 text-right text-xs tabular-nums">
                 <span className="font-semibold text-foreground">{formatDuration(person.seconds, locale)}</span>

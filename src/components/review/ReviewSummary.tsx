@@ -13,10 +13,10 @@ interface Props {
   onExit: () => void
 }
 
-const STAT_LABEL = 'text-sm font-medium text-gray-500 dark:text-gray-400'
-const STAT_VALUE = 'text-3xl font-bold text-gray-900 dark:text-foreground tabular-nums'
-const SECTION_HEADING = 'text-sm font-semibold text-gray-700 dark:text-gray-200'
-const CHIP = 'rounded-full border border-gray-200 dark:border-border bg-gray-50 dark:bg-secondary px-2 py-0.5 text-xs text-gray-700 dark:text-gray-300'
+const STAT_LABEL = 'text-sm font-medium text-muted-foreground'
+const STAT_VALUE = 'text-3xl font-bold text-foreground tabular-nums'
+const SECTION_HEADING = 'text-sm font-semibold text-foreground'
+const CHIP = 'rounded-full border border-border bg-muted dark:bg-secondary px-2 py-0.5 text-xs text-foreground'
 
 const Stat: React.FC<{ label: string; value: string }> = ({ label, value }) => (
   <div>
@@ -30,12 +30,12 @@ const ScoreList: React.FC<{ title: string; students: StudentScore[]; showNames: 
 }) => (
   <Card>
     <CardHeader className="pb-3"><CardTitle className={SECTION_HEADING}>{title}</CardTitle></CardHeader>
-    <CardContent className="divide-y divide-gray-100 dark:divide-border">
-      {students.length === 0 && <p className="text-sm text-gray-500 dark:text-gray-400">{EN.noData}</p>}
+    <CardContent className="divide-y divide-border">
+      {students.length === 0 && <p className="text-sm text-muted-foreground">{EN.noData}</p>}
       {students.map((student) => (
-        <div key={student.studentId} className="flex justify-between py-1.5 text-sm text-gray-700 dark:text-gray-300 first:pt-0 last:pb-0">
+        <div key={student.studentId} className="flex justify-between py-1.5 text-sm text-foreground  first:pt-0 last:pb-0">
           <span>{showNames ? student.fullName : EN.anonymousStudent}</span>
-          <span className="tabular-nums text-gray-500 dark:text-gray-400">
+          <span className="tabular-nums text-muted-foreground">
             {student.correct}/{student.total} · {student.percent}%
           </span>
         </div>
@@ -46,7 +46,7 @@ const ScoreList: React.FC<{ title: string; students: StudentScore[]; showNames: 
 
 export const ReviewSummary: React.FC<Props> = ({ summary, namesVisible, onRestart, onExit }) => {
   if (!summary) {
-    return <p className="text-sm text-gray-500 dark:text-gray-400">{EN.noData}</p>
+    return <p className="text-sm text-muted-foreground">{EN.noData}</p>
   }
 
   const pct = (value: number | null) => (value === null ? '—' : `${value}%`)
@@ -55,7 +55,7 @@ export const ReviewSummary: React.FC<Props> = ({ summary, namesVisible, onRestar
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div className="flex items-center gap-2">
-        <h1 className="flex-1 text-2xl font-bold text-gray-900 dark:text-foreground">{EN.summaryTitle}</h1>
+        <h1 className="flex-1 text-2xl font-bold text-foreground">{EN.summaryTitle}</h1>
         <Button variant="outline" onClick={onRestart}>{EN.restart}</Button>
         <Button variant="ghost" onClick={onExit}>{EN.exit}</Button>
       </div>
@@ -80,11 +80,11 @@ export const ReviewSummary: React.FC<Props> = ({ summary, namesVisible, onRestar
         <CardContent className="space-y-2">
           {summary.distribution.map((bucket) => (
             <div key={bucket.label} className="flex items-center gap-3 text-sm">
-              <span className="w-20 shrink-0 text-gray-500 dark:text-gray-400">{bucket.label}</span>
+              <span className="w-20 shrink-0 text-muted-foreground">{bucket.label}</span>
               <div className="h-3 flex-1 overflow-hidden rounded-full bg-muted">
                 <div className="h-full bg-primary/60" style={{ width: `${(bucket.count / maxBucket) * 100}%` }} />
               </div>
-              <span className="w-6 shrink-0 text-right tabular-nums text-gray-700 dark:text-gray-300">{bucket.count}</span>
+              <span className="w-6 shrink-0 text-right tabular-nums text-foreground">{bucket.count}</span>
             </div>
           ))}
         </CardContent>
@@ -100,16 +100,16 @@ export const ReviewSummary: React.FC<Props> = ({ summary, namesVisible, onRestar
 
       <Card>
         <CardHeader className="pb-3"><CardTitle className={SECTION_HEADING}>{EN.summaryHardest}</CardTitle></CardHeader>
-        <CardContent className="divide-y divide-gray-100 dark:divide-border">
-          {summary.hardest.length === 0 && <p className="text-sm text-gray-500 dark:text-gray-400">{EN.noData}</p>}
+        <CardContent className="divide-y divide-border">
+          {summary.hardest.length === 0 && <p className="text-sm text-muted-foreground">{EN.noData}</p>}
           {/* key is the composite (step, question) identity, not questionId alone: the same
               raw id can legitimately appear twice here when it names questions from two
               different steps of the same unit (see questionKey's doc comment). */}
           {summary.hardest.map((question) => (
-            <div key={question.key} className="flex gap-3 py-2 text-sm text-gray-700 dark:text-gray-300 first:pt-0 last:pb-0">
-              <span className="w-8 shrink-0 font-semibold text-gray-900 dark:text-foreground">{question.index + 1}</span>
+            <div key={question.key} className="flex gap-3 py-2 text-sm text-foreground  first:pt-0 last:pb-0">
+              <span className="w-8 shrink-0 font-semibold text-foreground">{question.index + 1}</span>
               <span className="flex-1 line-clamp-2">{question.questionText || '—'}</span>
-              <span className="shrink-0 tabular-nums text-gray-500 dark:text-gray-400">
+              <span className="shrink-0 tabular-nums text-muted-foreground">
                 {question.correct}/{question.answered} · {question.percentCorrect}%
               </span>
             </div>
@@ -121,7 +121,7 @@ export const ReviewSummary: React.FC<Props> = ({ summary, namesVisible, onRestar
         <CardHeader className="pb-3"><CardTitle className={SECTION_HEADING}>{EN.summaryNotSubmitted}</CardTitle></CardHeader>
         <CardContent>
           {summary.notSubmitted.length === 0
-            ? <p className="text-sm text-gray-500 dark:text-gray-400">—</p>
+            ? <p className="text-sm text-muted-foreground">—</p>
             : namesVisible
               ? (
                 <div className="flex flex-wrap gap-1.5">
@@ -133,7 +133,7 @@ export const ReviewSummary: React.FC<Props> = ({ summary, namesVisible, onRestar
                 </div>
               )
               : (
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   {format(EN.notSubmittedCount, { count: summary.notSubmitted.length })}
                 </p>
               )}

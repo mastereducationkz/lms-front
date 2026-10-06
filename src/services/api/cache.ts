@@ -101,9 +101,12 @@ const INVALIDATION_RULES: Array<{ mutation: RegExp; invalidatePrefixes: string[]
   { mutation: /^\/modules(\/|$)/, invalidatePrefixes: ['/courses', '/modules', '/progress'] },
   { mutation: /^\/lessons(\/|$)/, invalidatePrefixes: ['/courses', '/lessons', '/progress'] },
   { mutation: /^\/steps(\/|$)/, invalidatePrefixes: ['/courses', '/lessons', '/progress'] },
-  { mutation: /^\/assignments(\/|$)/, invalidatePrefixes: ['/assignments', '/dashboard', '/progress', '/analytics'] },
+  // Handing in and grading homework award stars (the header pill's /gamification reads).
+  { mutation: /^\/assignments(\/|$)/, invalidatePrefixes: ['/assignments', '/dashboard', '/progress', '/analytics', '/gamification'] },
   { mutation: /^\/assignment-zero(\/|$)/, invalidatePrefixes: ['/assignment-zero', '/dashboard'] },
-  { mutation: /^\/progress(\/|$)/, invalidatePrefixes: ['/progress', '/dashboard', '/analytics', '/courses'] },
+  // Passing a course quiz (progress/quiz-attempt*) awards stars.
+  { mutation: /^\/progress(\/|$)/, invalidatePrefixes: ['/progress', '/dashboard', '/analytics', '/courses', '/gamification'] },
+  { mutation: /^\/daily-questions(\/|$)/, invalidatePrefixes: ['/gamification'] },
   { mutation: /^\/quizzes(\/|$)/, invalidatePrefixes: ['/quizzes', '/progress', '/analytics'] },
   { mutation: /^\/events(\/|$)/, invalidatePrefixes: ['/events', '/dashboard'] },
   { mutation: /^\/users(\/|$)/, invalidatePrefixes: ['/users', '/groups', '/admin'] },

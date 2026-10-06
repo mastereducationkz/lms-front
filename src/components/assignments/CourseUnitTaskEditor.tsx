@@ -152,7 +152,7 @@ export default function CourseUnitTaskEditor({ content, onContentChange }: Cours
                 className={`text-xs px-2 py-1 rounded-md transition-colors ${
                   showAssignedOnly 
                     ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50' 
-                    : 'bg-gray-100 dark:bg-secondary text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-muted'
+                    : 'bg-muted dark:bg-secondary text-muted-foreground hover:bg-gray-200 dark:hover:bg-secondary'
                 }`}
               >
                 {showAssignedOnly ? 'Show all' : `${notAssignedCount} not assigned yet`}
@@ -167,17 +167,17 @@ export default function CourseUnitTaskEditor({ content, onContentChange }: Cours
                 <ClipboardCheck className="w-3.5 h-3.5" />
                 {assignedCount} already assigned
               </span>
-              <span className="text-gray-400 dark:text-gray-600">•</span>
-              <span className="text-gray-500 dark:text-gray-400">
+              <span className="text-muted-foreground">•</span>
+              <span className="text-muted-foreground">
                 {notAssignedCount} not assigned
               </span>
             </div>
           )}
 
           {loading ? (
-            <div className="text-sm text-gray-500 dark:text-gray-400">Loading lessons...</div>
+            <div className="text-sm text-muted-foreground">Loading lessons...</div>
           ) : lessons.length === 0 ? (
-            <div className="text-sm text-gray-500 dark:text-gray-400">No lessons found in this course</div>
+            <div className="text-sm text-muted-foreground">No lessons found in this course</div>
           ) : (
             <div className="border dark:border-border rounded-lg divide-y dark:divide-border max-h-80 overflow-y-auto">
               {lessons
@@ -190,32 +190,32 @@ export default function CourseUnitTaskEditor({ content, onContentChange }: Cours
                   <div
                     key={lesson.id}
                     onClick={() => toggleLesson(lesson.id)}
-                    className={`p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-secondary transition-colors ${
-                      selectedLessonIds.includes(lesson.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                    className={`p-3 cursor-pointer hover:bg-muted dark:hover:bg-secondary transition-colors ${
+                      selectedLessonIds.includes(lesson.id) ? 'bg-brand-surface' : ''
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
                         <div className={`w-5 h-5 border-2 rounded flex items-center justify-center ${
                           selectedLessonIds.includes(lesson.id)
-                            ? 'bg-blue-600 border-blue-600'
-                            : 'border-gray-300 dark:border-gray-600'
+                            ? 'bg-brand-solid border-brand'
+                            : 'border-border'
                         }`}>
                           {selectedLessonIds.includes(lesson.id) && (
                             <CheckCircle className="w-4 h-4 text-white" />
                           )}
                         </div>
-                        <BookOpen className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                        <BookOpen className="w-4 h-4 text-muted-foreground" />
                         <div>
                           <div className="font-medium text-sm text-foreground">{lesson.title}</div>
                           {lesson.description && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{lesson.description}</div>
+                            <div className="text-xs text-muted-foreground  line-clamp-1">{lesson.description}</div>
                           )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         {lesson.duration_minutes > 0 && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400">{lesson.duration_minutes} min</span>
+                          <span className="text-xs text-muted-foreground">{lesson.duration_minutes} min</span>
                         )}
                         {isAssigned && (
                           <span className="inline-flex items-center gap-1 text-xs bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-full px-2 py-0.5 whitespace-nowrap">
@@ -245,7 +245,7 @@ export default function CourseUnitTaskEditor({ content, onContentChange }: Cours
             </div>
           )}
           {selectedLessonIds.length > 0 && (
-            <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            <div className="mt-2 text-sm text-muted-foreground">
               Selected: {selectedLessonIds.length} lesson{selectedLessonIds.length !== 1 ? 's' : ''}
             </div>
           )}

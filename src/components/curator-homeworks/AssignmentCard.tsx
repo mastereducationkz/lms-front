@@ -44,7 +44,7 @@ export const AssignmentCard: React.FC<AssignmentCardProps> = ({
           ) : (
             <ChevronRight className="w-4 h-4" />
           )}
-          <FileText className="w-4 h-4 text-blue-500" />
+          <FileText className="w-4 h-4 text-brand" />
           <div className="text-left">
             <div className="font-medium">{assignment.title}</div>
             <div className="text-sm text-muted-foreground">{assignment.course_title}</div>

@@ -74,6 +74,7 @@
     "autoprefixer": "^10.4.13",
     "globby": "^14.0.2",
     "html-minifier-terser": "^7.2.0",
+    "jsdom": "^26.1.0",
     "postcss": "^8.4.21",
     "sharp": "^0.34.5",
     "strip-comments": "^2.0.1",

@@ -547,7 +547,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                         {req.status === 'pending' && (
                           <div className="flex flex-col gap-2 items-end">
                             {req.request_type === 'cancel' && (
-                              <fieldset className="w-[260px] space-y-1.5 text-left">
+                              <fieldset className="w-full min-w-[200px] max-w-[260px] space-y-1.5 text-left">
                                 <legend className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
                                   Решение по уроку
                                 </legend>

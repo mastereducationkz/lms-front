@@ -67,21 +67,21 @@ export default function App() {
   const lessonId = phase.kind !== 'ready' ? null : chosen ?? (phase.choice.kind === 'lesson' ? phase.choice.id : null);
 
   return (
-    <div className="flex min-h-screen flex-col bg-white text-slate-900">
+    <div className="flex min-h-screen flex-col bg-card text-foreground">
       {source?.kind === 'preview' && (
-        <div className="bg-amber-50 px-3 py-1.5 text-center text-[11px] font-medium text-amber-800">
+        <div className="bg-amber-50 dark:bg-amber-500/15 px-3 py-1.5 text-center text-[11px] font-medium text-amber-800 dark:text-amber-300">
           Preview — outside Meet · {source.meetingCode}
         </div>
       )}
       <main className="flex-1 px-3 pb-4 pt-3">
-        {phase.kind === 'connecting' && <Centered><Loader2 className="h-5 w-5 animate-spin text-slate-400" /><span>Connecting to Meet…</span></Centered>}
+        {phase.kind === 'connecting' && <Centered><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /><span>Connecting to Meet…</span></Centered>}
         {phase.kind === 'nowhere' && <Nowhere source={phase.source} />}
         {phase.kind === 'signin' && meetingCode && <SignIn meetingCode={meetingCode} onSignedIn={() => void find()} />}
-        {phase.kind === 'finding' && <Centered><Loader2 className="h-5 w-5 animate-spin text-slate-400" /><span>Finding this Meet's lesson…</span></Centered>}
+        {phase.kind === 'finding' && <Centered><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /><span>Finding this Meet's lesson…</span></Centered>}
         {phase.kind === 'error' && (
           <Centered>
-            <p className="text-sm text-slate-700">{phase.message}</p>
-            <button type="button" onClick={() => void find()} className="mt-2 rounded-full border border-slate-300 px-4 py-1.5 text-sm font-medium hover:bg-slate-50">Try again</button>
+            <p className="text-sm text-foreground">{phase.message}</p>
+            <button type="button" onClick={() => void find()} className="mt-2 rounded-full border border-border px-4 py-1.5 text-sm font-medium hover:bg-muted">Try again</button>
           </Centered>
         )}
         {lessonId != null ? (
@@ -95,8 +95,8 @@ export default function App() {
         ) : null}
       </main>
       {(phase.kind === 'ready' || phase.kind === 'error') && (
-        <footer className="border-t border-slate-100 px-3 py-2 text-right">
-          <button type="button" onClick={signOut} className="inline-flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-800">
+        <footer className="border-t border-border px-3 py-2 text-right">
+          <button type="button" onClick={signOut} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground">
             <LogOut className="h-3 w-3" aria-hidden />Sign out of the panel
           </button>
         </footer>
@@ -106,18 +106,18 @@ export default function App() {
 }
 
 function Centered({ children }: { children: ReactNode }) {
-  return <div className="flex flex-col items-center justify-center gap-2 py-16 text-center text-sm text-slate-600">{children}</div>;
+  return <div className="flex flex-col items-center justify-center gap-2 py-16 text-center text-sm text-muted-foreground">{children}</div>;
 }
 
 function Nowhere({ source }: { source: MeetingSource }) {
   return (
     <Centered>
-      <MonitorPlay className="h-8 w-8 text-slate-400" aria-hidden />
-      <p className="text-base font-semibold text-slate-900">Open this panel from Google Meet</p>
-      <p className="max-w-[18rem] text-sm text-slate-600">
+      <MonitorPlay className="h-8 w-8 text-muted-foreground" aria-hidden />
+      <p className="text-base font-semibold text-foreground">Open this panel from Google Meet</p>
+      <p className="max-w-[18rem] text-sm text-muted-foreground">
         In a lesson's Meet, click <b>Activities</b> → <b>Master LMS</b>. The panel shows that lesson: who is in the room, scores, notes and materials.
       </p>
-      {source.kind === 'unavailable' && <p className="mt-2 text-[11px] text-slate-400">{source.reason}</p>}
+      {source.kind === 'unavailable' && <p className="mt-2 text-[11px] text-muted-foreground">{source.reason}</p>}
     </Centered>
   );
 }

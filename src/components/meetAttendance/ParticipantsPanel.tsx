@@ -127,7 +127,7 @@ function Flag({ flag, locale }: { flag: MeetFlag; locale: Locale }) {
       <span className={cn(
         'inline-flex max-w-full items-center gap-1 rounded px-1.5 py-px text-[11px] font-medium leading-4 ring-1 ring-inset',
         flag.review
-          ? 'bg-muted text-muted-foreground ring-slate-200 dark:ring-border'
+          ? 'bg-muted text-muted-foreground ring-border'
           : isMismatch(flag.code)
             ? 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:ring-rose-900'
             : 'bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:ring-amber-900',

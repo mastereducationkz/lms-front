@@ -14,12 +14,12 @@ interface Props {
 }
 
 const MAX_ROWS = 8
-const CHIP = 'rounded-full border border-gray-200 dark:border-border bg-gray-50 dark:bg-secondary px-2 py-0.5 text-xs text-gray-500 dark:text-gray-400'
+const CHIP = 'rounded-full border border-border bg-muted dark:bg-secondary px-2 py-0.5 text-xs text-muted-foreground'
 
 // Neutral before reveal — visible spread, no verdict — exactly like ReviewOptionBars'
 // barClass. Only once revealed does a row turn green/red.
 function markClass(isCorrect: boolean, revealed: boolean): string {
-  if (!revealed) return 'border-gray-300 text-gray-500 dark:border-border dark:text-gray-400'
+  if (!revealed) return 'border-border text-muted-foreground'
   return isCorrect
     ? 'border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300'
     : 'border-rose-500 bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-300'
@@ -33,7 +33,7 @@ function markGlyph(isCorrect: boolean, revealed: boolean): React.ReactNode {
 
 export const ReviewGapBars: React.FC<Props> = ({ gap, revealed, showNames }) => {
   if (!gap) {
-    return <p className="text-sm text-gray-500 dark:text-gray-400">{EN.noData}</p>
+    return <p className="text-sm text-muted-foreground">{EN.noData}</p>
   }
 
   const rows = gap.options.slice(0, MAX_ROWS)
@@ -50,9 +50,9 @@ export const ReviewGapBars: React.FC<Props> = ({ gap, revealed, showNames }) => 
             >
               {markGlyph(option.isCorrect, revealed)}
             </span>
-            <span className="w-6 shrink-0 tabular-nums text-gray-500 dark:text-gray-400">{option.count}</span>
-            <span className="flex-1 break-words text-gray-700 dark:text-gray-300">{option.text}</span>
-            <span className="shrink-0 tabular-nums text-xs text-gray-500 dark:text-gray-400">{option.percent}%</span>
+            <span className="w-6 shrink-0 tabular-nums text-muted-foreground">{option.count}</span>
+            <span className="flex-1 break-words text-foreground">{option.text}</span>
+            <span className="shrink-0 tabular-nums text-xs text-muted-foreground">{option.percent}%</span>
           </div>
           {revealed && showNames && option.names.length > 0 && (
             <div className="flex flex-wrap gap-1.5 pl-7">
@@ -65,17 +65,17 @@ export const ReviewGapBars: React.FC<Props> = ({ gap, revealed, showNames }) => 
       ))}
 
       {hidden > 0 && (
-        <p className="pl-7 text-xs text-gray-500 dark:text-gray-400">{EN.otherAnswers}: {hidden}</p>
+        <p className="pl-7 text-xs text-muted-foreground">{EN.otherAnswers}: {hidden}</p>
       )}
 
       {gap.unanswered > 0 && (
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-sm">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-gray-300 dark:border-border text-xs font-bold text-gray-400 dark:text-gray-500" aria-hidden="true">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border text-xs font-bold text-muted-foreground" aria-hidden="true">
               —
             </span>
-            <span className="w-6 shrink-0 tabular-nums text-gray-500 dark:text-gray-400">{gap.unanswered}</span>
-            <span className="flex-1 text-gray-500 dark:text-gray-400">{EN.gapNoAnswer}</span>
+            <span className="w-6 shrink-0 tabular-nums text-muted-foreground">{gap.unanswered}</span>
+            <span className="flex-1 text-muted-foreground">{EN.gapNoAnswer}</span>
           </div>
           {revealed && showNames && gap.names.unanswered.length > 0 && (
             <div className="flex flex-wrap gap-1.5 pl-7">

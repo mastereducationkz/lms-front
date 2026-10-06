@@ -3,14 +3,15 @@
  * each student's own orca, the answer race lane, the closing recap and «Kasatik of the lesson».
  * Used by the presenter and the student page — never by the Meet panel (keeps its bundle light).
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Crown, PartyPopper, Trophy } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { addReaction, emptyBubbles, prune, type BubbleState } from '../../lib/liveLesson/reactions';
 import { useLiveEvent } from '../../lib/liveLesson/useLiveEvent';
 import type { LiveSocket } from '../../lib/liveLesson/useLiveLesson';
 import type { LiveRecap, Person, ReactionEvent } from '../../lib/liveLesson/types';
-import ReactionOrca, { REACTION_EMOJI } from '../mascot/ReactionOrca';
+import ReactionOrca from '../mascot/ReactionOrca';
+import { ReactionGlyph } from './reactionIcons';
 import Confetti from '../achievements/Confetti';
 import { LiveAvatar, reducedMotion } from './orcas';
 
@@ -61,7 +62,7 @@ function BubbleFace({ bubble, size }: { bubble: BubbleState['bubbles'][number]; 
       {bubble.count > 1 && (
         <span className={cn('absolute -right-2 -top-1 rounded-full bg-primary px-1.5 py-0.5 font-bold text-primary-foreground shadow',
           size >= 56 ? 'text-sm' : 'text-[10px]')}>
-          {REACTION_EMOJI[bubble.kind]}×{bubble.count}
+          <ReactionGlyph kind={bubble.kind} className="h-3 w-3" />×{bubble.count}
         </span>
       )}
     </div>
@@ -151,7 +152,7 @@ export function CrownedOrca({ person, size = 160 }: { person: Person; size?: num
   return (
     <div className="flex flex-col items-center gap-2" style={{ paddingTop: size * 0.34 }}>
       <span className="relative inline-block">
-        <Crown aria-hidden className="absolute left-1/2 -translate-x-1/2 fill-amber-400 text-amber-500 drop-shadow-lg" style={{ top: -size * 0.32, width: size * 0.42, height: size * 0.42 }} />
+        <Crown aria-hidden className="absolute left-1/2 -translate-x-1/2 text-amber-400 drop-shadow-lg" style={{ top: -size * 0.32, width: size * 0.42, height: size * 0.42 }} />
         <span className="live-orca-wiggle inline-block rounded-full ring-4 ring-amber-400 shadow-[0_0_40px_rgba(251,191,36,0.55)]">
           <LiveAvatar person={person} size={size} />
         </span>
@@ -161,7 +162,7 @@ export function CrownedOrca({ person, size = 160 }: { person: Person; size?: num
   );
 }
 
-function Stat({ value, label, big }: { value: string | number; label: string; big?: boolean }) {
+function Stat({ value, label, big }: { value: ReactNode; label: string; big?: boolean }) {
   return (
     <div className="flex flex-col items-center">
       <span className={cn('font-bold tabular-nums', big ? 'text-6xl' : 'text-3xl')}>{value}</span>
@@ -176,11 +177,11 @@ export function Recap({ recap, big = false }: { recap: LiveRecap; big?: boolean 
   return (
     <div className={cn('flex flex-col items-center text-center', big ? 'gap-7' : 'gap-5')}>
       <Confetti pieces={big ? 160 : 90} durationMs={big ? 3200 : 2200} />
-      <h2 className={cn('inline-flex items-center gap-3 font-bold', big ? 'text-6xl' : 'text-2xl')}>What a lesson! <PartyPopper className={cn('text-amber-500', big ? 'h-14 w-14' : 'h-6 w-6')} aria-hidden /></h2>
+      <h2 className={cn('font-bold', big ? 'text-6xl' : 'text-2xl')}><span className="inline-flex items-center gap-3">What a lesson!<PartyPopper className={big ? 'h-14 w-14' : 'h-6 w-6'} aria-hidden /></span></h2>
       <div className={cn('flex flex-wrap justify-center', big ? 'gap-16' : 'gap-8')}>
         <Stat big={big} value={recap.activities} label="activities" />
         <Stat big={big} value={recap.answers} label="answers" />
-        <Stat big={big} value={energy.total ? `${energy.total}${energy.top ? ` ${REACTION_EMOJI[energy.top]}` : ''}` : 0} label="reactions" />
+        <Stat big={big} value={<>{energy.total || 0}{energy.total && energy.top ? <> <ReactionGlyph kind={energy.top} className={big ? 'h-10 w-10' : 'h-5 w-5'} /></> : null}</>} label="reactions" />
       </div>
       {recap.crowned && (
         <div className="flex flex-col items-center gap-3">

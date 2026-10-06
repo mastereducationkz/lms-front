@@ -34,8 +34,8 @@ const TONE_CLASS: Record<string, string> = {
   made_up: 'bg-teal-100 text-teal-900 dark:bg-teal-950/50 dark:text-teal-300',
   early: 'bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-300',
   miss: 'bg-red-100 text-red-900 dark:bg-red-950/50 dark:text-red-300',
-  unmeasurable: 'text-gray-300 dark:text-gray-600',
-  clear: 'text-gray-300 dark:text-gray-700',
+  unmeasurable: 'text-gray-300 dark:text-muted-foreground',
+  clear: 'text-gray-300 dark:text-muted-foreground',
   none: '',
 };
 
@@ -114,7 +114,7 @@ export default function TeacherDisciplinePage() {
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">Teacher discipline</h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Lateness and missed lessons from the Meet record · 200 ₸ a minute · since 16.09.2026
           </p>
         </div>
@@ -125,7 +125,7 @@ export default function TeacherDisciplinePage() {
           </Button>
           <span className="min-w-[13rem] text-center text-sm font-medium">
             {register?.period.label || '—'}
-            {register?.period.closed && <Lock className="ml-1 inline h-3.5 w-3.5 text-gray-500" />}
+            {register?.period.closed && <Lock className="ml-1 inline h-3.5 w-3.5 text-muted-foreground" />}
           </span>
           <Button variant="outline" size="sm" disabled={index <= 0}
                   onClick={() => setPeriodKey(periods[index - 1]?.key)} aria-label="Later period">
@@ -151,10 +151,10 @@ export default function TeacherDisciplinePage() {
       )}
 
       {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">{error}</p>}
-      {loading && <Loader2 className="h-5 w-5 animate-spin text-gray-400" />}
+      {loading && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
 
       {register && !loading && register.teachers.length === 0 && (
-        <p className="rounded-md border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500 dark:border-gray-700">
+        <p className="rounded-md border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
           {program
             ? `No ${program} lessons in this period yet.`
             : 'Nothing in this period yet. The register starts on 16.09.2026, when the rule took effect.'}
@@ -162,15 +162,15 @@ export default function TeacherDisciplinePage() {
       )}
 
       {register && !loading && register.teachers.length > 0 && (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="overflow-x-auto rounded-lg border border-border">
           <table className="min-w-full border-collapse text-sm">
             <thead>
-              <tr className="bg-gray-50 dark:bg-gray-800/60">
-                <th className="sticky left-0 z-10 bg-gray-50 px-3 py-2 text-left font-medium dark:bg-gray-800/60">Teacher</th>
+              <tr className="bg-muted">
+                <th className="sticky left-0 z-10 bg-muted px-3 py-2 text-left font-medium">Teacher</th>
                 {register.days.map((day) => {
                   const head = dayHead(day);
                   return (
-                    <th key={day} className="px-1 py-2 text-center text-xs font-medium text-gray-500">
+                    <th key={day} className="px-1 py-2 text-center text-xs font-medium text-muted-foreground">
                       <div>{head.day}</div>
                       <div className="text-[10px] uppercase">{head.weekday}</div>
                     </th>
@@ -183,10 +183,10 @@ export default function TeacherDisciplinePage() {
             </thead>
             <tbody>
               {register.teachers.map((row) => (
-                <tr key={row.teacher_id} className="border-t border-gray-100 dark:border-gray-800">
-                  <td className="sticky left-0 z-10 bg-white px-3 py-1.5 dark:bg-gray-900">
+                <tr key={row.teacher_id} className="border-t border-border">
+                  <td className="sticky left-0 z-10 bg-card px-3 py-1.5">
                     <span className="font-medium">{row.name}</span>
-                    <span className="ml-2 text-xs text-gray-400">{row.program}</span>
+                    <span className="ml-2 text-xs text-muted-foreground">{row.program}</span>
                   </td>
                   {register.days.map((day) => {
                     const cell = (row.days[day] || {
@@ -205,7 +205,7 @@ export default function TeacherDisciplinePage() {
                           onClick={() => setOpenDay({ teacherId: row.teacher_id, name: row.name, day })}
                           className={cn('min-w-[2.2rem] rounded px-1 py-0.5 text-xs',
                             TONE_CLASS[cellTone(cell)],
-                            cell.lessons ? 'hover:ring-1 hover:ring-gray-300' : 'cursor-default')}
+                            cell.lessons ? 'hover:ring-1 hover:ring-border' : 'cursor-default')}
                         >
                           {mark === 'miss' ? (
                             <X className="mx-auto h-3.5 w-3.5" strokeWidth={2.5} aria-label="Missed" />
@@ -229,8 +229,8 @@ export default function TeacherDisciplinePage() {
                   </td>
                 </tr>
               ))}
-              <tr className="border-t-2 border-gray-200 bg-gray-50 font-medium dark:border-gray-700 dark:bg-gray-800/60">
-                <td className="sticky left-0 z-10 bg-gray-50 px-3 py-2 dark:bg-gray-800/60">Total</td>
+              <tr className="border-t-2 border-border bg-muted font-medium">
+                <td className="sticky left-0 z-10 bg-muted px-3 py-2">Total</td>
                 <td colSpan={register.days.length} />
                 <td className="px-3 py-2 text-right">{register.totals.late_minutes || '—'}</td>
                 <td className="px-3 py-2 text-right">{register.totals.misses || '—'}</td>
@@ -242,7 +242,7 @@ export default function TeacherDisciplinePage() {
       )}
 
       {register?.totals.unmeasurable ? (
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted-foreground">
           {register.totals.unmeasurable} of {register.totals.lessons} lessons had no LMS Meet room, so the
           LMS could not judge them. They are marked «·», never as on time.
         </p>

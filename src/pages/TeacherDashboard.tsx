@@ -906,13 +906,13 @@ export default function TeacherDashboard() {
     return (
       <div className="space-y-6 p-6">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="h-8 bg-gray-200 dark:bg-secondary rounded w-48"></div>
+          <div className="grid grid-cols-1 @3xl:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map(i => (
-              <div key={i} className="h-24 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+              <div key={i} className="h-24 bg-gray-200 dark:bg-secondary rounded-xl"></div>
             ))}
           </div>
-          <div className="h-96 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+          <div className="h-96 bg-gray-200 dark:bg-secondary rounded-xl"></div>
         </div>
       </div>
     );
@@ -953,13 +953,13 @@ export default function TeacherDashboard() {
 
   return (
     <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-foreground">Dashboard</h1>
+      <div className="flex flex-col @lg:flex-row @lg:items-center @lg:justify-between gap-3">
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Dashboard</h1>
         <div className="flex flex-wrap gap-2">
           {user?.role === 'admin' && (
             <Button
               onClick={() => navigate('/admin/courses')}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-brand-solid hover:bg-brand-solid-hover text-white"
             >
               <BookOpen className="w-4 h-4 mr-2" />
               Manage Courses
@@ -980,7 +980,7 @@ export default function TeacherDashboard() {
               <Button
                 onClick={() => setIsWeeklyAwardsOpen(true)}
                 variant="outline"
-                className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-secondary"
+                className="border-border text-foreground hover:bg-muted dark:hover:bg-secondary"
               >
                 <Trophy className="h-4 w-4" aria-hidden="true" />
                 Weekly Awards
@@ -988,7 +988,7 @@ export default function TeacherDashboard() {
               <Button
                 onClick={() => navigate('/manual-unlocks')}
                 variant="outline"
-                className="border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                className="border-brand-border  text-brand-subtle-foreground  hover:bg-brand-subtle"
               >
                 <Unlock className="w-4 h-4 mr-2" />
                 Manual Unlocks
@@ -1002,15 +1002,15 @@ export default function TeacherDashboard() {
       <TodayLessons role={user?.role} workspaceEmail={(user as { workspace_email?: string | null } | null)?.workspace_email} />
 
       {/* Key Stats - Student Dynamics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 @lg:grid-cols-2 @3xl:grid-cols-4 gap-4">
         {/* Pending Reviews - Action Required */}
-        <Card className="shadow-sm border border-gray-200 dark:border-border">
+        <Card className="shadow-sm border border-border">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Pending Reviews</span>
+              <span className="text-sm font-medium text-muted-foreground">Pending Reviews</span>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-gray-900 dark:text-foreground">{stats?.pending_submissions || 0}</span>
+              <span className="text-3xl font-bold text-foreground">{stats?.pending_submissions || 0}</span>
               {(stats?.total_submissions ?? 0) > 0 && (
                 <span className="text-sm text-muted-foreground">
                   / {stats?.total_submissions}
@@ -1024,19 +1024,19 @@ export default function TeacherDashboard() {
         </Card>
 
         {/* Activity Rate */}
-        <Card className="shadow-sm border border-gray-200 dark:border-border">
+        <Card className="shadow-sm border border-border">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Active This Week</span>
+              <span className="text-sm font-medium text-muted-foreground">Active This Week</span>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-gray-900 dark:text-foreground">{stats?.active_students || 0}</span>
+              <span className="text-3xl font-bold text-foreground">{stats?.active_students || 0}</span>
               <span className="text-sm text-muted-foreground">
                 / {stats?.total_students || 0}
               </span>
             </div>
             {(stats?.total_students ?? 0) > 0 && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              <p className="text-xs text-muted-foreground  mt-2">
                 {Math.round(((stats?.active_students || 0) / (stats?.total_students || 1)) * 100)}% engagement
               </p>
             )}
@@ -1044,32 +1044,32 @@ export default function TeacherDashboard() {
         </Card>
 
         {/* Average Score */}
-        <Card className="shadow-sm border border-gray-200 dark:border-border">
+        <Card className="shadow-sm border border-border">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Score</span>
+              <span className="text-sm font-medium text-muted-foreground">Avg Score</span>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-gray-900 dark:text-foreground">{stats?.avg_student_score || 0}</span>
+              <span className="text-3xl font-bold text-foreground">{stats?.avg_student_score || 0}</span>
               <span className="text-sm text-muted-foreground">pts</span>
             </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+            <p className="text-xs text-muted-foreground  mt-2">
               From {stats?.graded_submissions || 0} graded
             </p>
           </CardContent>
         </Card>
 
         {/* Overall Progress */}
-        <Card className="shadow-sm border border-gray-200 dark:border-border">
+        <Card className="shadow-sm border border-border">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Avg Progress</span>
+              <span className="text-sm font-medium text-muted-foreground">Avg Progress</span>
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-bold text-gray-900 dark:text-foreground">{stats?.avg_student_progress || 0}%</span>
+              <span className="text-3xl font-bold text-foreground">{stats?.avg_student_progress || 0}%</span>
             </div>
             <div className="mt-2">
-              <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div className="h-1.5 bg-muted  rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-purple-500 rounded-full transition-all"
                   style={{ width: `${stats?.avg_student_progress || 0}%` }}
@@ -1082,14 +1082,14 @@ export default function TeacherDashboard() {
 
       {/* Today's homework coverage — same Card/table style as the widgets below */}
       {todayHw && todayHw.total_groups > 0 && (
-        <Card className="shadow-sm border border-gray-200 dark:border-border">
-          <CardHeader className="px-6 py-4 border-b border-gray-100 dark:border-border bg-white dark:bg-card rounded-t-xl">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <Card className="shadow-sm border border-border">
+          <CardHeader className="px-6 py-4 border-b border-border bg-card rounded-t-xl">
+            <div className="flex flex-col @lg:flex-row @lg:items-center justify-between gap-2">
               <div>
-                <CardTitle className="text-lg font-bold text-gray-900 dark:text-foreground">Today's Homework</CardTitle>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Groups you assigned homework to today</p>
+                <CardTitle className="text-lg font-bold text-foreground">Today's Homework</CardTitle>
+                <p className="text-sm text-muted-foreground">Groups you assigned homework to today</p>
               </div>
-              <span className="text-sm text-gray-500 dark:text-gray-400">
+              <span className="text-sm text-muted-foreground">
                 Assigned {todayHw.assigned_count}/{todayHw.total_groups}
                 {todayHw.missing_count > 0 && (
                   <span className="text-rose-600 dark:text-rose-400"> · missing: {todayHw.missing_count}</span>
@@ -1100,12 +1100,12 @@ export default function TeacherDashboard() {
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
-                <thead className="bg-gray-50/80 dark:bg-secondary/50 text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-border">
+                <thead className="bg-muted/80 dark:bg-secondary/50 text-muted-foreground border-b border-border">
                   <tr>
                     <th className="text-left px-6 py-3 font-semibold">Group</th>
                     <th className="text-left px-6 py-3 font-semibold">Homework</th>
                     <th
-                      className="text-left px-6 py-3 font-semibold cursor-pointer select-none hover:text-gray-900 dark:hover:text-foreground"
+                      className="text-left px-6 py-3 font-semibold cursor-pointer select-none hover:text-foreground"
                       onClick={() => setHwSortDir((d) => (d === 'desc' ? 'asc' : 'desc'))}
                       title="Sort by last assigned date"
                       aria-sort={hwSortDir === 'desc' ? 'descending' : 'ascending'}
@@ -1131,9 +1131,9 @@ export default function TeacherDashboard() {
                     <tr
                       key={g.group_id}
                       onClick={() => navigate(`/homework/new/group/${g.group_id}`)}
-                      className="border-b border-gray-100 dark:border-border last:border-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-secondary/40 transition-colors"
+                      className="border-b border-border last:border-0 cursor-pointer hover:bg-muted dark:hover:bg-secondary/40 transition-colors"
                     >
-                      <td className="px-6 py-3 font-medium text-gray-900 dark:text-foreground whitespace-nowrap">{g.group_name}</td>
+                      <td className="px-6 py-3 font-medium text-foreground whitespace-nowrap">{g.group_name}</td>
                       <td className="px-6 py-3">
                         {g.has_homework_today ? (
                           <span className="text-emerald-600 dark:text-emerald-400">{g.assignments.map((a) => a.title).join(', ')}</span>
@@ -1141,7 +1141,7 @@ export default function TeacherDashboard() {
                           <span className="text-rose-500 dark:text-rose-400">Not assigned today</span>
                         )}
                       </td>
-                      <td className="px-6 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                      <td className="px-6 py-3 text-muted-foreground  whitespace-nowrap">
                         {g.last_assigned_at
                           ? new Date(g.last_assigned_at).toLocaleDateString(undefined, {
                               month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
@@ -1159,12 +1159,12 @@ export default function TeacherDashboard() {
 
       {/* Attendance Required — table, under Today's Homework */}
       {stats?.missing_attendance_reminders && stats.missing_attendance_reminders.length > 0 && (
-        <Card className="shadow-sm border border-gray-200 dark:border-border">
-          <CardHeader className="px-6 py-4 border-b border-gray-100 dark:border-border bg-white dark:bg-card rounded-t-xl">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <Card className="shadow-sm border border-border">
+          <CardHeader className="px-6 py-4 border-b border-border bg-card rounded-t-xl">
+            <div className="flex flex-col @lg:flex-row @lg:items-center justify-between gap-2">
               <div>
-                <CardTitle className="text-lg font-bold text-gray-900 dark:text-foreground">Attendance Required</CardTitle>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Classes that ended without attendance recorded</p>
+                <CardTitle className="text-lg font-bold text-foreground">Attendance Required</CardTitle>
+                <p className="text-sm text-muted-foreground">Classes that ended without attendance recorded</p>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-sm text-rose-600 dark:text-rose-400">
@@ -1179,7 +1179,7 @@ export default function TeacherDashboard() {
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
-                <thead className="bg-gray-50/80 dark:bg-secondary/50 text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-border">
+                <thead className="bg-muted/80 dark:bg-secondary/50 text-muted-foreground border-b border-border">
                   <tr>
                     <th className="text-left px-6 py-3 font-semibold">Group</th>
                     <th className="text-left px-6 py-3 font-semibold">Lessons missing</th>
@@ -1195,11 +1195,11 @@ export default function TeacherDashboard() {
                       onClick={() => navigate(g.count === 1 && g.oldestEventId
                         ? lessonPath(g.oldestEventId, 'register')
                         : g.group_id > 0 ? `/attendance?group=${g.group_id}${g.oldest ? `&date=${g.oldest.slice(0, 10)}` : ''}` : '/attendance')}
-                      className="border-b border-gray-100 dark:border-border last:border-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-secondary/40 transition-colors"
+                      className="border-b border-border last:border-0 cursor-pointer hover:bg-muted dark:hover:bg-secondary/40 transition-colors"
                     >
-                      <td className="px-6 py-3 font-medium text-gray-900 dark:text-foreground">{g.group_name}</td>
+                      <td className="px-6 py-3 font-medium text-foreground">{g.group_name}</td>
                       <td className="px-6 py-3 text-rose-600 dark:text-rose-400 font-semibold">{g.count}</td>
-                      <td className="px-6 py-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                      <td className="px-6 py-3 text-muted-foreground  whitespace-nowrap">
                         {g.oldest && g.oldestEventId ? (
                           <Link to={lessonPath(g.oldestEventId, 'register')} onClick={(e) => e.stopPropagation()} className="hover:text-primary hover:underline" title="Open lesson">
                             {new Date(g.oldest).toLocaleDateString()}
@@ -1217,17 +1217,17 @@ export default function TeacherDashboard() {
       )}
 
       {/* Unified Submissions Table */}
-      <Card className="shadow-sm border border-gray-200 dark:border-border">
-        <CardHeader className="px-6 py-4 border-b border-gray-100 dark:border-border bg-white dark:bg-card rounded-t-xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <Card className="shadow-sm border border-border">
+        <CardHeader className="px-6 py-4 border-b border-border bg-card rounded-t-xl">
+          <div className="flex flex-col @lg:flex-row @lg:items-center justify-between gap-4">
             <div className="flex items-center space-x-2">
               <div>
-                <CardTitle className="text-lg font-bold text-gray-900 dark:text-foreground">Submissions</CardTitle>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Manage student assignments and grading</p>
+                <CardTitle className="text-lg font-bold text-foreground">Submissions</CardTitle>
+                <p className="text-sm text-muted-foreground">Manage student assignments and grading</p>
               </div>
             </div>
 
-            <div className="flex w-full sm:w-auto flex-col sm:flex-row sm:items-center gap-2">
+            <div className="flex w-full @lg:w-auto flex-col @lg:flex-row @lg:items-center gap-2">
               <Button
                 onClick={handleOpenAutoGradeDialog}
                 disabled={isAutoGrading}
@@ -1237,8 +1237,8 @@ export default function TeacherDashboard() {
                 {isAutoGrading ? 'Auto-grading...' : 'Auto-grade HW'}
               </Button>
 
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
-                <TabsList className="grid w-full grid-cols-3 sm:w-[300px]">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full @lg:w-auto">
+                <TabsList className="grid w-full grid-cols-3 @lg:w-[300px]">
                   <TabsTrigger value="pending">Pending</TabsTrigger>
                   <TabsTrigger value="graded">Graded</TabsTrigger>
                   <TabsTrigger value="all">All</TabsTrigger>
@@ -1249,10 +1249,10 @@ export default function TeacherDashboard() {
         </CardHeader>
         <CardContent className="p-0">
           {filteredSubmissions.length === 0 ? (
-            <div className="p-12 text-center bg-gray-50/50 dark:bg-secondary/50">
-              <CheckCircle className="w-12 h-12 text-gray-300 dark:text-gray-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-foreground mb-1">No submissions found</h3>
-              <p className="text-gray-500 dark:text-gray-400">
+            <div className="p-12 text-center bg-muted/50 dark:bg-secondary/50">
+              <CheckCircle className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-1">No submissions found</h3>
+              <p className="text-muted-foreground">
                 {activeTab === 'pending' 
                   ? "You're all caught up! No pending reviews." 
                   : "No submissions match the current filter."}
@@ -1261,7 +1261,7 @@ export default function TeacherDashboard() {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
-                <thead className="bg-gray-50/80 dark:bg-secondary/50 text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-border">
+                <thead className="bg-muted/80 dark:bg-secondary/50 text-muted-foreground border-b border-border">
                   <tr>
                     <th className="text-left px-6 py-3 font-semibold">Student</th>
                     <th className="text-left px-6 py-3 font-semibold">Type</th>
@@ -1272,17 +1272,17 @@ export default function TeacherDashboard() {
                     <th className="text-right px-6 py-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-border">
+                <tbody className="divide-y divide-border">
                   {filteredSubmissions.map((submission) => (
-                    <tr key={submission.id} className="hover:bg-gray-50/80 dark:hover:bg-secondary/30 transition-colors">
+                    <tr key={submission.id} className="hover:bg-muted/80 dark:hover:bg-secondary/30 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center">
-                          <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center mr-3 text-gray-600 dark:text-gray-300 font-medium text-xs">
+                          <div className="w-8 h-8 rounded-full bg-muted  flex items-center justify-center mr-3 text-muted-foreground  font-medium text-xs">
                             {submission.student_name?.charAt(0) || '?'}
                           </div>
                           <div>
-                            <div className="font-medium text-gray-900 dark:text-foreground">{submission.student_name || 'Unknown'}</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">{submission.student_email}</div>
+                            <div className="font-medium text-foreground">{submission.student_name || 'Unknown'}</div>
+                            <div className="text-xs text-muted-foreground">{submission.student_email}</div>
                           </div>
                         </div>
                       </td>
@@ -1291,13 +1291,13 @@ export default function TeacherDashboard() {
                           variant="outline"
                           className={submission.type === 'quiz' 
                             ? "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800" 
-                            : "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800"}
+                            : "bg-brand-surface  text-brand-subtle-foreground  border-brand-border"}
                         >
                           {submission.type === 'quiz' ? 'Quiz' : 'Homework'}
                         </Badge>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="font-medium text-gray-900 dark:text-foreground">{submission.assignment_title}</div>
+                        <div className="font-medium text-foreground">{submission.assignment_title}</div>
                       </td>
                       <td className="px-6 py-4">
                         <Badge 
@@ -1309,7 +1309,7 @@ export default function TeacherDashboard() {
                           {submission.is_graded ? 'Graded' : 'Needs Grading'}
                         </Badge>
                       </td>
-                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
+                      <td className="px-6 py-4 text-muted-foreground">
                         <div className="flex items-center">
                           <Clock className="w-3 h-3 mr-1.5 text-muted-foreground" />
                           {new Date(submission.submitted_at).toLocaleDateString(undefined, {
@@ -1350,7 +1350,7 @@ export default function TeacherDashboard() {
                             <>
                               <Button
                                 size="sm"
-                                className="bg-purple-600 hover:bg-purple-700"
+                                className="bg-purple-600 hover:bg-purple-700 dark:bg-purple-600/70 dark:hover:bg-purple-600/85"
                                 onClick={() => handleGradeQuizClick(submission)}
                               >
                                 <ClipboardCheck className="w-4 h-4 mr-1" />
@@ -1359,7 +1359,7 @@ export default function TeacherDashboard() {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+                                className="text-muted-foreground hover:text-red-600 dark:hover:text-red-400"
                                 onClick={() => handleDeleteQuizAttempt(submission.quiz_attempt_id)}
                                 title="Allow Resubmission"
                               >
@@ -1371,7 +1371,7 @@ export default function TeacherDashboard() {
                               <Button
                                 size="sm"
                                 variant={submission.is_graded ? "ghost" : "default"}
-                                className={submission.is_graded ? "text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20" : "bg-blue-600 hover:bg-blue-700"}
+                                className={submission.is_graded ? "text-brand  hover:text-brand  hover:bg-brand-subtle" : "bg-brand-solid hover:bg-brand-solid-hover"}
                                 onClick={() => handleGradeSubmission(submission)}
                               >
                                 {submission.is_graded ? <Eye className="w-4 h-4 mr-1" /> : <ClipboardCheck className="w-4 h-4 mr-1" />}
@@ -1381,7 +1381,7 @@ export default function TeacherDashboard() {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                                  className="text-muted-foreground  hover:text-foreground"
                                   onClick={() => handleAllowResubmission(submission.id)}
                                 >
                                   Resubmit
@@ -1401,27 +1401,27 @@ export default function TeacherDashboard() {
       </Card>
 
       {/* Students Progress Table */}
-      <Card className="shadow-sm border border-gray-200 dark:border-border">
-        <CardHeader className="px-6 py-4 border-b border-gray-100 dark:border-border bg-white dark:bg-card rounded-t-xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <CardTitle className="text-lg font-bold text-gray-900 dark:text-foreground">Student Progress</CardTitle>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Overview of all students across your courses</p>
+      <Card className="shadow-sm border border-border">
+        <CardHeader className="px-6 py-4 border-b border-border bg-card rounded-t-xl">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="min-w-0">
+              <CardTitle className="text-lg font-bold text-foreground">Student Progress</CardTitle>
+              <p className="text-sm text-muted-foreground">Overview of all students across your courses</p>
             </div>
             
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 min-w-0">
               <input
                 type="text"
                 value={studentSearch}
                 onChange={(e) => setStudentSearch(e.target.value)}
                 placeholder="Search student…"
-                className="w-full sm:w-56 px-3 py-2 text-sm bg-white dark:bg-card border border-gray-200 dark:border-border rounded-lg outline-none focus:border-blue-400"
+                className="w-full @lg:w-56 min-w-0 px-3 py-2 text-sm bg-card border border-border rounded-lg outline-none focus:border-brand"
               />
             {uniqueGroups.length > 0 && (
-              <div className="flex items-center space-x-2">
-                <Filter className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+              <div className="flex min-w-0 flex-1 @lg:flex-none items-center gap-2">
+                <Filter className="w-4 h-4 shrink-0 text-muted-foreground" />
                 <Select value={activeGroup} onValueChange={setActiveGroup}>
-                  <SelectTrigger className="w-[200px] bg-white dark:bg-card border-gray-200 dark:border-border">
+                  <SelectTrigger className="w-full @lg:w-[200px] bg-card border-border">
                     <SelectValue placeholder="All Students" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1435,21 +1435,21 @@ export default function TeacherDashboard() {
                 </Select>
               </div>
             )}
-              <label className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap cursor-pointer select-none">
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground  whitespace-nowrap cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={showArchivedGroups}
                   onChange={(e) => setShowArchivedGroups(e.target.checked)}
-                  className="rounded border-gray-300 dark:border-border"
+                  className="rounded border-border"
                 />
                 Archived groups
               </label>
-              <label className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap cursor-pointer select-none">
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground  whitespace-nowrap cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={showInactiveStudents}
                   onChange={(e) => setShowInactiveStudents(e.target.checked)}
-                  className="rounded border-gray-300 dark:border-border"
+                  className="rounded border-border"
                 />
                 Deactivated students
               </label>
@@ -1458,10 +1458,10 @@ export default function TeacherDashboard() {
         </CardHeader>
         <CardContent className={`p-0 transition-opacity ${studentsLoading ? 'opacity-50 pointer-events-none' : ''}`}>
           {filteredStudents.length === 0 ? (
-            <div className="p-12 text-center bg-gray-50/50 dark:bg-secondary/50">
-              <Users className="w-12 h-12 text-gray-300 dark:text-gray-500 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-foreground mb-1">No students found</h3>
-              <p className="text-gray-500 dark:text-gray-400">
+            <div className="p-12 text-center bg-muted/50 dark:bg-secondary/50">
+              <Users className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-1">No students found</h3>
+              <p className="text-muted-foreground">
                 {showArchivedGroups
                   ? 'Try adjusting the group filter.'
                   : 'Try adjusting the group filter, or turn on “Archived groups” to see finished cohorts.'}
@@ -1470,7 +1470,7 @@ export default function TeacherDashboard() {
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
-                <thead className="bg-gray-50/80 dark:bg-secondary/50 text-gray-600 dark:text-gray-300 border-b border-gray-100 dark:border-border">
+                <thead className="bg-muted/80 dark:bg-secondary/50 text-muted-foreground border-b border-border">
                   <tr>
                     <th className="text-left px-6 py-3 font-semibold">Student</th>
                     <th className="text-left px-6 py-3 font-semibold">Group</th>
@@ -1480,11 +1480,11 @@ export default function TeacherDashboard() {
                     <th className="text-left px-6 py-3 font-semibold">Last Activity</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-border">
+                <tbody className="divide-y divide-border">
                   {paginatedStudents.map((student, index) => (
                     <tr
                       key={`${student.student_id}-${student.course_id}-${index}`}
-                      className="hover:bg-gray-50/80 dark:hover:bg-secondary/30 transition-colors cursor-pointer"
+                      className="hover:bg-muted/80 dark:hover:bg-secondary/30 transition-colors cursor-pointer"
                       title="Open student analytics"
                       onClick={() => navigate(
                         `/analytics/student/${student.student_id}${student.course_id ? `?course_id=${student.course_id}` : ''}`
@@ -1504,7 +1504,7 @@ export default function TeacherDashboard() {
                             </div>
                           )}
                           <div>
-                            <div className="font-medium text-gray-900 dark:text-foreground">
+                            <div className="font-medium text-foreground">
                               {student.student_name}
                               {student.is_inactive && (
                                 <span className="ml-1.5 text-[10px] font-normal text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded px-1 py-px align-middle">
@@ -1512,18 +1512,18 @@ export default function TeacherDashboard() {
                                 </span>
                               )}
                             </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">{student.student_email}</div>
+                            <div className="text-xs text-muted-foreground">{student.student_email}</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         {student.group_name ? (
                           <div className="flex items-center gap-1">
-                            <Badge variant="outline" className="bg-gray-50 dark:bg-secondary inline-flex items-center whitespace-nowrap">
+                            <Badge variant="outline" className="bg-muted dark:bg-secondary inline-flex items-center whitespace-nowrap">
                               {student.group_name.split("-")[0]}
                             </Badge>
                             {student.group_is_archived && (
-                              <Badge variant="outline" className="text-[10px] text-muted-foreground border-gray-300 dark:border-border whitespace-nowrap">
+                              <Badge variant="outline" className="text-[10px] text-muted-foreground border-border whitespace-nowrap">
                                 Archived
                               </Badge>
                             )}
@@ -1533,17 +1533,17 @@ export default function TeacherDashboard() {
                         )}
                       </td>
                       <td className="px-6 py-4">
-                        <div className="font-medium text-gray-900 dark:text-foreground">{student.course_title}</div>
+                        <div className="font-medium text-foreground">{student.course_title}</div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="space-y-1">
-                          <div className="text-sm font-medium text-gray-900 dark:text-foreground truncate max-w-[150px]" title={student.current_lesson_title}>
+                          <div className="text-sm font-medium text-foreground truncate max-w-[150px]" title={student.current_lesson_title}>
                             {student.current_lesson_title}
                           </div>
                           {student.current_lesson_id && (
                             <div className="flex items-center space-x-2">
                               <Progress value={student.lesson_progress} className="w-16 h-2" />
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                              <span className="text-xs text-muted-foreground">
                                 {student.lesson_progress}%
                               </span>
                             </div>
@@ -1555,7 +1555,7 @@ export default function TeacherDashboard() {
                           <div className="flex-1 mr-3">
                             <Progress value={student.overall_progress} className="h-2.5 w-24" />
                           </div>
-                          <div className="text-sm font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap">
+                          <div className="text-sm font-medium text-foreground  whitespace-nowrap">
                             <span>{student.overall_progress}%</span>
                           </div>
                         </div>
@@ -1566,7 +1566,7 @@ export default function TeacherDashboard() {
                           checkpoints={student.checkpoints}
                         />
                       </td>
-                      <td className="px-6 py-4 text-gray-600 dark:text-gray-300">
+                      <td className="px-6 py-4 text-muted-foreground">
                         {student.last_activity 
                           ? new Date(student.last_activity).toLocaleDateString(undefined, {
                             month: 'short', day: 'numeric'
@@ -1583,8 +1583,8 @@ export default function TeacherDashboard() {
           
           {/* Pagination Controls */}
           {filteredStudents.length > studentsPerPage && (
-            <div className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 border-t border-gray-200 dark:border-border bg-gray-50 dark:bg-secondary rounded-b-xl">
-              <div className="text-sm text-gray-500 dark:text-gray-400">
+            <div className="flex flex-col gap-3 px-4 py-4 @lg:flex-row @lg:items-center @lg:justify-between @lg:px-6 border-t border-border bg-muted dark:bg-secondary rounded-b-xl">
+              <div className="text-sm text-muted-foreground">
                 Showing {((studentPage - 1) * studentsPerPage) + 1} to {Math.min(studentPage * studentsPerPage, filteredStudents.length)} of {filteredStudents.length} students
               </div>
               <div className="flex items-center gap-2">
@@ -1596,7 +1596,7 @@ export default function TeacherDashboard() {
                 >
                   Previous
                 </Button>
-                <span className="text-sm text-gray-600 dark:text-gray-300 px-2">
+                <span className="text-sm text-muted-foreground  px-2">
                   Page {studentPage} of {totalStudentPages}
                 </span>
                 <Button
@@ -1622,29 +1622,29 @@ export default function TeacherDashboard() {
           
           {selectedQuizAttempt && (
             <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-4 text-sm bg-gray-50 dark:bg-secondary p-4 rounded-lg">
+              <div className="grid grid-cols-2 gap-4 text-sm bg-muted dark:bg-secondary p-4 rounded-lg">
                 <div>
-                  <span className="font-semibold text-gray-500 dark:text-gray-400">Student:</span>
-                  <p className="text-gray-900 dark:text-foreground">{selectedQuizAttempt.student_name}</p>
+                  <span className="font-semibold text-muted-foreground">Student:</span>
+                  <p className="text-foreground">{selectedQuizAttempt.student_name}</p>
                 </div>
                 <div>
-                  <span className="font-semibold text-gray-500 dark:text-gray-400">Quiz:</span>
-                  <p className="text-gray-900 dark:text-foreground">{selectedQuizAttempt.assignment_title}</p>
+                  <span className="font-semibold text-muted-foreground">Quiz:</span>
+                  <p className="text-foreground">{selectedQuizAttempt.assignment_title}</p>
                 </div>
                 <div>
-                  <span className="font-semibold text-gray-500 dark:text-gray-400">Lesson:</span>
-                  <p className="text-gray-900 dark:text-foreground">{selectedQuizAttempt.lesson_title}</p>
+                  <span className="font-semibold text-muted-foreground">Lesson:</span>
+                  <p className="text-foreground">{selectedQuizAttempt.lesson_title}</p>
                 </div>
                 <div>
-                  <span className="font-semibold text-gray-500 dark:text-gray-400">Course:</span>
-                  <p className="text-gray-900 dark:text-foreground">{selectedQuizAttempt.course_title}</p>
+                  <span className="font-semibold text-muted-foreground">Course:</span>
+                  <p className="text-foreground">{selectedQuizAttempt.course_title}</p>
                 </div>
               </div>
 
               {/* Quiz Reference Material */}
               {selectedQuizAttempt.quiz_media_url && (
-                <div className="mb-6 bg-gray-50 dark:bg-secondary p-4 rounded-lg border border-gray-200 dark:border-border">
-                  <h4 className="font-semibold mb-3 text-gray-900 dark:text-foreground flex items-center">
+                <div className="mb-6 bg-muted dark:bg-secondary p-4 rounded-lg border border-border">
+                  <h4 className="font-semibold mb-3 text-foreground flex items-center">
                     <BookOpen className="w-4 h-4 mr-2" />
                     Reference Material
                   </h4>
@@ -1653,7 +1653,7 @@ export default function TeacherDashboard() {
                     <div className="aspect-[16/9] w-full">
                        <iframe 
                          src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + selectedQuizAttempt.quiz_media_url} 
-                         className="w-full h-full rounded border border-gray-200 dark:border-border bg-white dark:bg-card"
+                         className="w-full h-full rounded border border-border bg-card"
                          title="Reference PDF"
                        />
                        <div className="mt-2 text-right">
@@ -1661,7 +1661,7 @@ export default function TeacherDashboard() {
                            href={selectedQuizAttempt.quiz_media_url} 
                            target="_blank" 
                            rel="noreferrer"
-                           className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                           className="text-sm text-brand  hover:underline"
                          >
                            Open PDF in new tab
                          </a>
@@ -1678,7 +1678,7 @@ export default function TeacherDashboard() {
                   ) : (
                     // Default/Text fallback
                     <div 
-                      className="prose prose-sm dark:prose-invert max-w-none text-gray-800 dark:text-gray-200"
+                      className="prose prose-sm dark:prose-invert max-w-none text-foreground"
                       dangerouslySetInnerHTML={{ __html: selectedQuizAttempt.quiz_media_url }}
                     />
                   )}
@@ -1686,20 +1686,20 @@ export default function TeacherDashboard() {
               )}
 
               <div>
-                <h3 className="font-semibold mb-3 text-gray-900 dark:text-foreground">Quiz Answers</h3>
+                <h3 className="font-semibold mb-3 text-foreground">Quiz Answers</h3>
                 {selectedQuizAttempt.quiz_answers?.length > 0 ? (
                   <div className="space-y-6">
                     {selectedQuizAttempt.quiz_answers.map((item: any, idx: number) => (
                       <div key={idx} className={`border rounded-lg overflow-hidden ${
                         item.question_type !== 'long_text' 
                           ? (item.is_correct ? 'border-green-200 dark:border-green-800' : 'border-red-200 dark:border-red-800')
-                          : 'border-gray-200 dark:border-border'
+                          : 'border-border'
                       }`}>
                         {/* Header with Type and Status */}
-                        <div className="p-3 bg-gray-50 dark:bg-secondary border-b border-gray-200 dark:border-border flex items-center justify-between">
-                          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Question {idx + 1}</span>
+                        <div className="p-3 bg-muted dark:bg-secondary border-b border-border flex items-center justify-between">
+                          <span className="text-xs font-semibold text-muted-foreground">Question {idx + 1}</span>
                           <div className="flex gap-2">
-                             <span className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 capitalize">
+                             <span className="text-xs px-2 py-1 rounded bg-gray-200 dark:bg-secondary text-foreground capitalize">
                                {item.question_type?.replace('_', ' ') || 'Question'}
                              </span>
                              {item.question_type !== 'long_text' && (
@@ -1714,28 +1714,28 @@ export default function TeacherDashboard() {
 
                         {/* Passage (if exists) */}
                         {item.content_text && (
-                          <div className="p-4 border-b border-gray-200 dark:border-border">
-                            <p className="text-[14px] font-semibold text-gray-800 dark:text-gray-200 mb-1">Passage</p>
+                          <div className="p-4 border-b border-border">
+                            <p className="text-[14px] font-semibold text-foreground  mb-1">Passage</p>
                             <div 
-                              className="text-gray-800 dark:text-gray-200 prose prose-sm max-w-none text-[14px]"
+                              className="text-foreground  prose prose-sm max-w-none text-[14px]"
                               dangerouslySetInnerHTML={{ __html: item.content_text }}
                             />
                           </div>
                         )}
                         
                         {/* Question Text */}
-                        <div className="p-4 bg-white dark:bg-card border-b border-gray-200 dark:border-border">
-                          <p className="text-gray-900 dark:text-foreground font-medium">{item.question_text}</p>
+                        <div className="p-4 bg-card border-b border-border">
+                          <p className="text-foreground font-medium">{item.question_text}</p>
                         </div>
 
                         {/* Answer Section */}
-                        <div className="p-4 bg-gray-50 dark:bg-secondary">
+                        <div className="p-4 bg-muted dark:bg-secondary">
                           <div className="grid gap-4">
                             <div>
-                               <p className="text-[12px] font-semibold text-blue-600 dark:text-blue-400 mb-1">{selectedQuizAttempt?.student_name}'s Answer</p>
-                               <div className={`text-gray-800 dark:text-gray-200 whitespace-pre-wrap p-3 rounded border ${
+                               <p className="text-[12px] font-semibold text-brand  mb-1">{selectedQuizAttempt?.student_name}'s Answer</p>
+                               <div className={`text-foreground  whitespace-pre-wrap p-3 rounded border ${
                                  item.question_type === 'long_text' 
-                                   ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-800' 
+                                   ? 'bg-brand-surface  border-brand-border' 
                                    : (item.is_correct ? 'bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800')
                                }`}>
                                  {item.student_answer || <span className="text-muted-foreground italic">No answer provided</span>}
@@ -1746,7 +1746,7 @@ export default function TeacherDashboard() {
                             {item.question_type !== 'long_text' && !item.is_correct && (
                                <div>
                                   <p className="text-[12px] font-semibold text-green-600 dark:text-green-400 uppercase mb-1">Correct Answer</p>
-                                  <div className="text-gray-800 dark:text-gray-200 p-3 rounded border border-green-100 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
+                                  <div className="text-foreground p-3 rounded border border-green-100 dark:border-green-800 bg-green-50 dark:bg-green-900/20">
                                     {item.correct_answer || 'N/A'}
                                   </div>
                                </div>
@@ -1757,7 +1757,7 @@ export default function TeacherDashboard() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500 dark:text-gray-400">No answers found</p>
+                  <p className="text-muted-foreground">No answers found</p>
                 )}
               </div>
 
@@ -1808,7 +1808,7 @@ export default function TeacherDashboard() {
 
           <DialogFooter>
             <Button variant="outline" onClick={handleCloseQuizGradeModal}>Cancel</Button>
-            <Button className="bg-purple-600 hover:bg-purple-700" onClick={handleSubmitQuizGrade}>Submit Grade</Button>
+            <Button className="bg-purple-600 hover:bg-purple-700 dark:bg-purple-600/70 dark:hover:bg-purple-600/85" onClick={handleSubmitQuizGrade}>Submit Grade</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1852,13 +1852,13 @@ export default function TeacherDashboard() {
                 <div className="space-y-3">
                   {selectedSubmission?.file_url && (
                     <div className="flex items-center p-3 bg-muted/40 rounded-lg border border-border">
-                      <FileText className="w-5 h-5 text-blue-500 dark:text-blue-400 mr-3 shrink-0" />
+                      <FileText className="w-5 h-5 text-brand  mr-3 shrink-0" />
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-sm truncate">{selectedSubmission.submitted_file_name || 'Attached File'}</div>
                       </div>
                       <SubmissionFileDownloadLink
                         fileUrl={selectedSubmission.file_url}
-                        className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium flex items-center shrink-0 ml-3"
+                        className="text-brand  hover:underline text-sm font-medium flex items-center shrink-0 ml-3"
                       />
                     </div>
                   )}
@@ -2087,7 +2087,7 @@ export default function TeacherDashboard() {
 
           {salaryResult && (
             <div className="space-y-3">
-              <div className="text-sm text-gray-600 dark:text-gray-300">
+              <div className="text-sm text-muted-foreground">
                 Уроков: <span className="font-semibold">{salaryResult.total_lessons}</span> ·{' '}
                 {(salaryResult.fines_tenge ?? 0) > 0 ? 'Начислено' : 'Итого'}:{' '}
                 <span className="font-semibold">{salaryResult.total_amount_tenge.toLocaleString()} тг</span>
@@ -2125,7 +2125,7 @@ export default function TeacherDashboard() {
                       .join(' · ') || 'по решению завуча'}
                     {' · '}200 ₸ за полную минуту
                   </div>
-                  <div className="mt-2 font-semibold text-gray-900 dark:text-gray-100">
+                  <div className="mt-2 font-semibold text-foreground">
                     К выплате: {(salaryResult.net_amount_tenge ?? salaryResult.total_amount_tenge).toLocaleString()} тг
                   </div>
                 </div>
@@ -2136,7 +2136,7 @@ export default function TeacherDashboard() {
                   Ещё {salaryResult.fines_unpriced} нарушение(я) ждёт решения завуча — сумма по ним пока не назначена.
                 </p>
               )}
-              <div className="rounded-md border border-gray-200 dark:border-border bg-muted/40 p-3 text-sm space-y-1">
+              <div className="rounded-md border border-border bg-muted/40 p-3 text-sm space-y-1">
                 <div>
                   Индивидуальный урок — {salaryResult.individual_rate} ₸/час
                   {salaryResult.group_band ? ` (${salaryResult.group_band})` : ''}
@@ -2198,20 +2198,20 @@ export default function TeacherDashboard() {
             </div>
 
             {isAutoGradePreviewLoading ? (
-              <div className="text-sm text-gray-500 dark:text-gray-400">Loading eligible homework...</div>
+              <div className="text-sm text-muted-foreground">Loading eligible homework...</div>
             ) : autoGradePreview.length === 0 ? (
-              <div className="text-sm text-gray-500 dark:text-gray-400">
+              <div className="text-sm text-muted-foreground">
                 No eligible pending homework found for auto-grading.
               </div>
             ) : (
               <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-900 dark:text-foreground">
+                <p className="text-sm font-medium text-foreground">
                   Eligible submissions: {autoGradePreview.length}
                 </p>
-                <div className="rounded-md border border-gray-200 dark:border-border overflow-hidden">
+                <div className="rounded-md border border-border overflow-hidden">
                   <div className="max-h-72 overflow-y-auto">
                     <table className="min-w-full text-sm">
-                      <thead className="bg-gray-50 dark:bg-secondary/50 border-b border-gray-200 dark:border-border">
+                      <thead className="bg-muted dark:bg-secondary/50 border-b border-border">
                         <tr>
                           <th className="text-left px-3 py-2 font-medium">Homework</th>
                           <th className="text-left px-3 py-2 font-medium">Student</th>
@@ -2219,12 +2219,12 @@ export default function TeacherDashboard() {
                           <th className="text-left px-3 py-2 font-medium">Score</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-border">
+                      <tbody className="divide-y divide-border">
                         {autoGradePreview.map((item) => (
                           <tr key={item.submission_id}>
-                            <td className="px-3 py-2 text-gray-900 dark:text-foreground">{item.assignment_title}</td>
-                            <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{item.student_name}</td>
-                            <td className="px-3 py-2 text-gray-600 dark:text-gray-400">
+                            <td className="px-3 py-2 text-foreground">{item.assignment_title}</td>
+                            <td className="px-3 py-2 text-foreground">{item.student_name}</td>
+                            <td className="px-3 py-2 text-muted-foreground">
                               {new Date(item.submitted_at).toLocaleString()}
                             </td>
                             <td className="px-3 py-2 text-emerald-700 dark:text-emerald-400 font-medium">

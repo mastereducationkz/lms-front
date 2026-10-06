@@ -41,7 +41,7 @@ const PIPE_ANSWER_TYPES = new Set(['short_answer', 'media_open_question'])
  *  The verdict a student got still comes from gradeQuestion -- this only decides styling. */
 const normalizeChoice = (v: unknown): string => (v ?? '').toString().trim().toLowerCase()
 
-const BADGE = 'rounded-md border border-gray-200 dark:border-border px-2 py-0.5 text-xs font-medium text-gray-500 dark:text-gray-400'
+const BADGE = 'rounded-md border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground'
 
 function escapeGapText(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -53,7 +53,7 @@ const GAP_CURRENT_CLASS =
   'rounded px-1.5 py-0.5 mx-0.5 border-2 border-dashed border-amber-500 dark:border-amber-400 bg-amber-50 text-amber-900 dark:bg-amber-500/10 dark:text-amber-100 font-semibold'
 const GAP_CURRENT_REVEALED_CLASS =
   'rounded px-1.5 py-0.5 mx-0.5 border-2 border-emerald-500 dark:border-emerald-400 bg-emerald-50 text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-100 font-semibold'
-const GAP_UPCOMING_CLASS = 'text-gray-400 dark:text-gray-500'
+const GAP_UPCOMING_CLASS = 'text-muted-foreground'
 
 // scoring.ts's getExpectedAnswers locates tokens with `/\[\[(.*?)\]\]/g` — no `[\s\S]`, so a
 // token whose contents span a newline is invisible to it (see reviewStats.ts's GAP_TOKEN_SOURCE
@@ -132,7 +132,7 @@ export const ReviewQuestionView: React.FC<Props> = ({
   question, stat, revealed, statsVisible, gapIndex, onPrevGap, onNextGap,
 }) => {
   if (!question) {
-    return <Card><CardContent className="p-6 text-sm text-gray-500 dark:text-gray-400">{EN.noData}</CardContent></Card>
+    return <Card><CardContent className="p-6 text-sm text-muted-foreground">{EN.noData}</CardContent></Card>
   }
 
   const isGap = isGapType(question.question_type)
@@ -240,7 +240,7 @@ export const ReviewQuestionView: React.FC<Props> = ({
         {isGap
           ? gapSource && (
               <div
-                className="rounded-lg border-l-4 border-gray-300 dark:border-border bg-gray-50 dark:bg-secondary p-4 text-base leading-relaxed text-gray-700 dark:text-gray-300"
+                className="rounded-lg border-l-4 border-border bg-muted dark:bg-secondary p-4 text-base leading-relaxed text-foreground"
                 dangerouslySetInnerHTML={{
                   __html: renderTextWithLatex(gapStep!.html),
                 }}
@@ -248,7 +248,7 @@ export const ReviewQuestionView: React.FC<Props> = ({
             )
           : passage && (
               <div
-                className="rounded-lg border-l-4 border-gray-300 dark:border-border bg-gray-50 dark:bg-secondary p-4 text-base leading-relaxed text-gray-700 dark:text-gray-300"
+                className="rounded-lg border-l-4 border-border bg-muted dark:bg-secondary p-4 text-base leading-relaxed text-foreground"
                 dangerouslySetInnerHTML={{ __html: renderTextWithLatex(displayText(question.question_type, passage)) }}
               />
             )}
@@ -259,8 +259,8 @@ export const ReviewQuestionView: React.FC<Props> = ({
             passage only ever marks up 1 of those 2 is a broken affordance the class would
             notice even though nothing leaks. */}
         {isGap && gapSlotTotal > 0 && (
-          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 dark:border-border bg-gray-50 dark:bg-secondary px-3 py-2 text-sm">
-            <span className="font-semibold text-gray-900 dark:text-foreground">
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-muted dark:bg-secondary px-3 py-2 text-sm">
+            <span className="font-semibold text-foreground">
               {format(EN.gapOf, { n: gapIndex + 1, total: gapSlotTotal })}
             </span>
             <div className="flex-1" />
@@ -294,7 +294,7 @@ export const ReviewQuestionView: React.FC<Props> = ({
             one is the key stays gated on reveal, like everywhere else. */}
         {isGap && gapChoices && gapChoices.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="font-medium text-gray-500 dark:text-gray-400">{EN.gapChoices}:</span>
+            <span className="font-medium text-muted-foreground">{EN.gapChoices}:</span>
             {gapChoices.map((choice, i) => {
               const isKey = revealed && normalizeChoice(choice) === normalizeChoice(gapExpected[gapIndex])
               return (
@@ -303,7 +303,7 @@ export const ReviewQuestionView: React.FC<Props> = ({
                   className={`rounded-full border px-2.5 py-0.5 ${
                     isKey
                       ? 'border-emerald-500 bg-emerald-50 font-semibold text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300'
-                      : 'border-gray-200 bg-white text-gray-700 dark:border-border dark:bg-card dark:text-gray-300'
+                      : 'border-border bg-card text-foreground'
                   }`}
                 >
                   {choice}
@@ -325,7 +325,7 @@ export const ReviewQuestionView: React.FC<Props> = ({
             match that, not displayText's isGapType gate. */}
         {!gapInHeadingOnly && (
           <h2
-            className="text-2xl font-semibold leading-snug text-gray-900 dark:text-foreground"
+            className="text-2xl font-semibold leading-snug text-foreground"
             dangerouslySetInnerHTML={{ __html: renderTextWithLatex(blankHeading(question.question_text)) }}
           />
         )}
@@ -343,15 +343,15 @@ export const ReviewQuestionView: React.FC<Props> = ({
                   className={`flex items-center gap-3 rounded-lg border-2 p-3 ${
                     correct
                       ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
-                      : 'border-gray-200 dark:border-border'
+                      : 'border-border'
                   }`}
                 >
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-gray-300 dark:border-border text-sm font-bold text-gray-700 dark:text-gray-200">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-border text-sm font-bold text-foreground">
                     {letter}
                   </span>
                   <div className="min-w-0 flex-1">
                     <span
-                      className="block text-sm text-gray-700 dark:text-gray-300"
+                      className="block text-sm text-foreground"
                       dangerouslySetInnerHTML={{ __html: renderTextWithLatex(String(option?.text ?? '')) }}
                     />
                     {/* An option can be a picture (ChoiceQuestion.tsx draws option.image_url under its text). */}
@@ -359,12 +359,12 @@ export const ReviewQuestionView: React.FC<Props> = ({
                       <img
                         src={imageUrl}
                         alt={format(EN.optionImage, { letter })}
-                        className="mt-2 max-h-60 rounded border border-gray-200 dark:border-border object-contain"
+                        className="mt-2 max-h-60 rounded border border-border object-contain"
                       />
                     )}
                   </div>
                   {statsVisible && (
-                    <span className="shrink-0 text-sm tabular-nums text-gray-500 dark:text-gray-400">{count}</span>
+                    <span className="shrink-0 text-sm tabular-nums text-muted-foreground">{count}</span>
                   )}
                 </div>
               )
@@ -373,8 +373,8 @@ export const ReviewQuestionView: React.FC<Props> = ({
         )}
 
         {revealed && options.length === 0 && revealAnswers.length > 0 && (
-          <p className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-gray-700 dark:text-gray-300">
-            <span className="font-semibold text-gray-900 dark:text-foreground">{EN.correctAnswer}: </span>
+          <p className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-foreground">
+            <span className="font-semibold text-foreground">{EN.correctAnswer}: </span>
             {revealAnswers.join(', ')}
           </p>
         )}
@@ -392,8 +392,8 @@ export const ReviewQuestionView: React.FC<Props> = ({
             (#F2). The next `revealed &&` added to this file should stop and ask which meaning
             it needs — this file has both. */}
         {wholeQuestionRevealed(isGap, gapIndex, gapTotal, revealed) && question.explanation && (
-          <div className="rounded-lg border border-gray-200 dark:border-border bg-gray-50 dark:bg-secondary p-3 text-sm text-gray-700 dark:text-gray-300">
-            <span className="font-semibold text-gray-900 dark:text-foreground">{EN.explanation}: </span>
+          <div className="rounded-lg border border-border bg-muted dark:bg-secondary p-3 text-sm text-foreground">
+            <span className="font-semibold text-foreground">{EN.explanation}: </span>
             <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex(String(question.explanation)) }} />
           </div>
         )}
