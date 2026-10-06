@@ -62,7 +62,7 @@ export function GiveBonusModal({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-yellow-500" />
+            <Trophy className="w-5 h-5 text-yellow-500 dark:text-yellow-400" />
             Award Bonus Points
           </DialogTitle>
           <DialogDescription>
@@ -74,7 +74,7 @@ export function GiveBonusModal({
           <div className="space-y-2">
             <Label htmlFor="amount">Points Amount (1-50)</Label>
             <div className="relative">
-              <Star className="absolute left-3 top-2.5 h-4 w-4 text-yellow-500" />
+              <Star className="absolute left-3 top-2.5 h-4 w-4 text-yellow-500 dark:text-yellow-400" />
               <Input
                 id="amount"
                 type="number"
@@ -101,7 +101,7 @@ export function GiveBonusModal({
           </div>
 
           {error && (
-            <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+            <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/15 p-2 rounded">
               {error}
             </div>
           )}

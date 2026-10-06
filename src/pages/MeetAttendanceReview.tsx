@@ -239,7 +239,7 @@ export default function MeetAttendanceReview() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-5 px-3 py-5 sm:px-6 sm:py-8">
+    <div className="mx-auto w-full max-w-7xl space-y-5 px-3 py-5 @lg:px-6 sm:py-8">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
@@ -368,7 +368,7 @@ export default function MeetAttendanceReview() {
             title="Flags someone has already answered, with their reasons"
             className={cn('inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[13px] font-medium transition',
               showReviewed
-                ? 'border-slate-400 bg-slate-100 text-slate-800 dark:border-slate-500 dark:bg-slate-800 dark:text-slate-100'
+                ? 'border-slate-400 bg-muted text-foreground dark:border-border'
                 : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground')}
           >
             <CheckCheck className="h-3.5 w-3.5" aria-hidden />
@@ -376,7 +376,7 @@ export default function MeetAttendanceReview() {
             <span className="tabular-nums opacity-70">{reviewedTotal}</span>
           </button>
         )}
-        <div className="relative w-full sm:w-64">
+        <div className="relative w-full @lg:w-64">
           <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             id="meet-attendance-search"

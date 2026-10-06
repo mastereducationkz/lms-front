@@ -47,13 +47,13 @@ export default function ClosePeriodDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <dl className="space-y-1 rounded-md bg-gray-50 p-3 text-sm dark:bg-gray-800/60">
+        <dl className="space-y-1 rounded-md bg-muted p-3 text-sm">
           <div className="flex justify-between">
-            <dt className="text-gray-600 dark:text-gray-400">Fines</dt>
+            <dt className="text-muted-foreground">Fines</dt>
             <dd className="font-medium tabular-nums">{money(fine)}</dd>
           </div>
           <div className="flex justify-between">
-            <dt className="text-gray-600 dark:text-gray-400">Teachers</dt>
+            <dt className="text-muted-foreground">Teachers</dt>
             <dd className="font-medium tabular-nums">{teachers}</dd>
           </div>
         </dl>

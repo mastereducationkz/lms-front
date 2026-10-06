@@ -103,7 +103,7 @@ export default function TextTaskEditor({ content, onContentChange }: TextTaskEdi
             onChange={(e) => setKeywords(e.target.value)}
             placeholder="keyword1, keyword2, keyword3"
           />
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Comma-separated keywords to check in the answer</p>
+          <p className="text-xs text-muted-foreground  mt-1">Comma-separated keywords to check in the answer</p>
         </div>
       </div>
 
@@ -112,7 +112,7 @@ export default function TextTaskEditor({ content, onContentChange }: TextTaskEdi
         <div className="flex items-center justify-between mb-3">
           <div>
             <Label className="text-sm font-semibold">Answer Fields (Auto-Check)</Label>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <p className="text-xs text-muted-foreground  mt-0.5">
               Students will enter answers; system will auto-check them.
             </p>
           </div>
@@ -131,7 +131,7 @@ export default function TextTaskEditor({ content, onContentChange }: TextTaskEdi
           <div className="space-y-2">
             {answerFields.map((field: any, index: number) => (
               <div key={field.id} className="flex items-center gap-2">
-                <span className="text-base font-semibold text-gray-700 dark:text-gray-300 min-w-[24px]">{index + 1}.</span>
+                <span className="text-base font-semibold text-foreground  min-w-[24px]">{index + 1}.</span>
                 <Input
                   type="text"
                   value={field.correct_answer}
@@ -159,9 +159,9 @@ export default function TextTaskEditor({ content, onContentChange }: TextTaskEdi
         )}
 
         {answerFields.length === 0 && (
-          <div className="text-center py-6 bg-gray-50 dark:bg-secondary border border-dashed dark:border-border rounded-lg">
-            <p className="text-sm text-gray-500 dark:text-gray-400">No answer fields added yet</p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Click "Add Field" to create an answer field</p>
+          <div className="text-center py-6 bg-muted dark:bg-secondary border border-dashed dark:border-border rounded-lg">
+            <p className="text-sm text-muted-foreground">No answer fields added yet</p>
+            <p className="text-xs text-muted-foreground  mt-1">Click "Add Field" to create an answer field</p>
           </div>
         )}
       </div>

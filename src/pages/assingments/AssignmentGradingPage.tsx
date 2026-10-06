@@ -252,7 +252,7 @@ export default function AssignmentGradingPage() {
         </CardHeader>
         <CardContent>
           {submissions.length === 0 ? (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+            <div className="text-center py-8 text-muted-foreground">
               No submissions yet.
             </div>
           ) : (
@@ -278,7 +278,7 @@ export default function AssignmentGradingPage() {
                   <div key={submission.id} className="rounded-md border border-border p-3 flex items-center justify-between gap-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-2"><Badge variant={submission.is_current ? 'default' : 'secondary'}>Attempt {submission.attempt_number || 1}{submission.is_current ? ' · Current' : ' · Previous'}</Badge>{submission.is_graded ? <Badge variant={(submission.score || 0) >= (submission.max_score * 0.6) ? 'default' : 'destructive'}>{submission.is_grade_superseded ? 'Superseded score' : 'Score'}: {submission.score || 0}/{submission.max_score}</Badge> : <Badge variant="secondary">Pending Grading</Badge>}</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center mt-2"><Clock className="w-3 h-3 mr-1" />Submitted: {new Date(submission.submitted_at).toLocaleString()}</div>
+                      <div className="text-sm text-muted-foreground  flex items-center mt-2"><Clock className="w-3 h-3 mr-1" />Submitted: {new Date(submission.submitted_at).toLocaleString()}</div>
                       {submission.is_late && <div className="text-sm text-amber-600 dark:text-amber-400 flex items-center mt-1 font-medium"><AlertCircle className="w-3 h-3 mr-1" />Late Submission</div>}
                     </div>
                     {submission.is_current ? <div className="flex items-center gap-2"><Button variant="outline" size="sm" onClick={() => openExtensionModal(submission)}>{studentExtension ? 'Edit Extension' : 'Grant Extension'}</Button>{submission.is_graded && <Button variant="outline" size="sm" onClick={() => openResubmissionModal(submission)}><RotateCcw className="w-4 h-4 mr-1" />Allow another attempt</Button>}<Button onClick={() => openGradingModal(submission)}>{submission.is_graded ? 'Update Grade' : 'Grade'}</Button></div> : <Button variant="outline" onClick={() => openAttemptPreview(submission)}>View attempt</Button>}
@@ -318,8 +318,8 @@ export default function AssignmentGradingPage() {
           
           <div className="space-y-6 my-4">
             {/* Submission Content View */}
-            <div className="rounded-lg border border-border bg-slate-50 dark:bg-secondary p-6 text-slate-900 dark:text-slate-100">
-              <h3 className="mb-4 flex items-center font-semibold text-slate-900 dark:text-slate-100">
+            <div className="rounded-lg border border-border bg-muted dark:bg-secondary p-6 text-foreground">
+              <h3 className="mb-4 flex items-center font-semibold text-foreground">
                 <FileText className="mr-2 h-4 w-4" />
                 Student's Work
               </h3>
@@ -337,7 +337,7 @@ export default function AssignmentGradingPage() {
                     const safeUrl = safeUploadUrl(url);
                     return (
                       <div key={index} className="space-y-2">
-                        <div className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                        <div className="text-xs font-medium text-muted-foreground">
                           Recording from a removed task:
                         </div>
                         {safeUrl ? (
@@ -356,20 +356,20 @@ export default function AssignmentGradingPage() {
               ) : (
                 <div className="space-y-4">
                   {selectedSubmission?.file_url && (
-                    <div className="flex items-center rounded border border-border bg-white p-3 dark:bg-card">
-                      <FileText className="mr-3 h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    <div className="flex items-center rounded border border-border bg-card p-3">
+                      <FileText className="mr-3 h-5 w-5 text-brand" />
                       <div className="flex-1">
-                        <div className="font-medium text-slate-900 dark:text-slate-100">{selectedSubmission.submitted_file_name || 'Attached File'}</div>
+                        <div className="font-medium text-foreground">{selectedSubmission.submitted_file_name || 'Attached File'}</div>
                       </div>
                       <SubmissionFileDownloadLink
                         fileUrl={selectedSubmission.file_url}
-                        className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium flex items-center"
+                        className="text-brand  hover:underline text-sm font-medium flex items-center"
                       />
                     </div>
                   )}
                   
                   {selectedSubmission?.answers?.text && (
-                    <div className="whitespace-pre-wrap rounded border border-border bg-white p-4 text-slate-900 dark:bg-card dark:text-slate-100">
+                    <div className="whitespace-pre-wrap rounded border border-border bg-card p-4 text-foreground">
                       {selectedSubmission.answers.text}
                     </div>
                   )}
@@ -382,9 +382,9 @@ export default function AssignmentGradingPage() {
             </div>
 
             {/* Grading Controls */}
-            {!isViewingPreviousAttempt && <div className="grid grid-cols-1 gap-6 rounded-lg border border-border bg-card p-4 text-card-foreground md:grid-cols-2">
+            {!isViewingPreviousAttempt && <div className="grid grid-cols-1 gap-6 rounded-lg border border-border bg-card p-4 text-card-foreground @xl:grid-cols-2">
               {assignment?.late_penalty_enabled && selectedSubmission?.is_late && (
-                <div className="md:col-span-2 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded text-sm text-amber-800 dark:text-amber-200 flex items-start">
+                <div className="@2xl:col-span-2 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded text-sm text-amber-800 dark:text-amber-200 flex items-start">
                    <AlertCircle className="w-5 h-5 mr-2 text-amber-600 dark:text-amber-400 flex-shrink-0" />
                    <div>
                      <p className="font-semibold">Late Submission Penalty</p>
@@ -412,7 +412,7 @@ export default function AssignmentGradingPage() {
                   placeholder="Enter score"
                 />
               </div>
-              <div className="space-y-2 md:col-span-2">
+              <div className="space-y-2 @2xl:col-span-2">
                 <Label htmlFor="feedback">Feedback</Label>
                 <Textarea
                   id="feedback"

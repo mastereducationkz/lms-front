@@ -130,16 +130,16 @@ export default function PdfTextTaskEditor({ content, onContentChange }: PdfTextT
         <div className="space-y-2">
           {content.teacher_file_url ? (
             // Display existing uploaded file
-            <div className="flex items-center justify-between p-3 border rounded-lg bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+            <div className="flex items-center justify-between p-3 border rounded-lg bg-brand-surface  border-brand-border">
               <div className="flex items-center space-x-2 flex-1">
-                <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <FileText className="w-4 h-4 text-brand" />
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium text-blue-900 dark:text-blue-300">{content.teacher_file_name || 'File'}</span>
+                  <span className="text-sm font-medium text-brand-surface-foreground">{content.teacher_file_name || 'File'}</span>
                   <a 
                     href={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + content.teacher_file_url} 
                     target="_blank" 
                     rel="noopener noreferrer" 
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                    className="text-xs text-brand  hover:underline"
                   >
                     View/Download File
                   </a>
@@ -157,11 +157,11 @@ export default function PdfTextTaskEditor({ content, onContentChange }: PdfTextT
             </div>
           ) : teacherFile ? (
             // Display newly selected file (not yet uploaded)
-            <div className="flex items-center justify-between p-3 border dark:border-border rounded-lg bg-gray-50 dark:bg-secondary">
+            <div className="flex items-center justify-between p-3 border dark:border-border rounded-lg bg-muted dark:bg-secondary">
               <div className="flex items-center space-x-2">
-                <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <FileText className="w-4 h-4 text-brand" />
                 <span className="text-sm font-medium text-foreground">{teacherFileName}</span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
+                <span className="text-xs text-muted-foreground">
                   ({(teacherFile.size / 1024 / 1024).toFixed(2)} MB)
                 </span>
               </div>
@@ -177,7 +177,7 @@ export default function PdfTextTaskEditor({ content, onContentChange }: PdfTextT
             </div>
           ) : (
             // No file selected - show upload area
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+            <div className="border-2 border-dashed border-border  rounded-lg p-6 text-center">
               <input
                 type="file"
                 id={uniqueId}
@@ -187,12 +187,12 @@ export default function PdfTextTaskEditor({ content, onContentChange }: PdfTextT
               />
               <label htmlFor={uniqueId} className="cursor-pointer">
                 <div className="flex flex-col items-center space-y-2">
-                  <FileText className="w-8 h-8 text-gray-400 dark:text-gray-500" />
+                  <FileText className="w-8 h-8 text-muted-foreground" />
                   <div>
-                    <span className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300">
+                    <span className="text-sm font-medium text-brand  hover:text-brand">
                       Click to upload a file
                     </span>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    <p className="text-xs text-muted-foreground  mt-1">
                       Supported: {SUPPORTED_EXTENSIONS_DISPLAY}
                     </p>
                   </div>
@@ -238,7 +238,7 @@ export default function PdfTextTaskEditor({ content, onContentChange }: PdfTextT
           onChange={(e) => setKeywords(e.target.value)}
           placeholder="keyword1, keyword2, keyword3"
         />
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-xs text-muted-foreground  mt-1">
           Comma-separated. These words will be used for auto-grading the student's response.
         </p>
       </div>
@@ -248,7 +248,7 @@ export default function PdfTextTaskEditor({ content, onContentChange }: PdfTextT
         <div className="flex items-center justify-between mb-3">
           <div>
             <Label className="text-sm font-semibold">Answer Fields (Auto-Check)</Label>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <p className="text-xs text-muted-foreground  mt-0.5">
               Students will enter answers; system will auto-check them.
             </p>
           </div>
@@ -267,7 +267,7 @@ export default function PdfTextTaskEditor({ content, onContentChange }: PdfTextT
           <div className="space-y-2">
             {answerFields.map((field: any, index: number) => (
               <div key={field.id} className="flex items-center gap-2">
-                <span className="text-base font-semibold text-gray-700 dark:text-gray-300 min-w-[24px]">{index + 1}.</span>
+                <span className="text-base font-semibold text-foreground  min-w-[24px]">{index + 1}.</span>
                 <Input
                   type="text"
                   value={field.correct_answer}
@@ -295,9 +295,9 @@ export default function PdfTextTaskEditor({ content, onContentChange }: PdfTextT
         )}
 
         {answerFields.length === 0 && (
-          <div className="text-center py-6 bg-gray-50 dark:bg-secondary border border-dashed dark:border-border rounded-lg">
-            <p className="text-sm text-gray-500 dark:text-gray-400">No answer fields added yet</p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Click "Add Field" to create an answer field</p>
+          <div className="text-center py-6 bg-muted dark:bg-secondary border border-dashed dark:border-border rounded-lg">
+            <p className="text-sm text-muted-foreground">No answer fields added yet</p>
+            <p className="text-xs text-muted-foreground  mt-1">Click "Add Field" to create an answer field</p>
           </div>
         )}
       </div>

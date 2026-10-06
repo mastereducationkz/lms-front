@@ -124,7 +124,7 @@ function LinkRow({ link, presenterUrl }: { link: string; presenterUrl: string })
       <div className="mt-2 grid grid-cols-2 gap-1.5">
         <button type="button" onClick={() => void copy()}
           className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-2 py-1.5 text-xs font-semibold hover:bg-muted">
-          {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" aria-hidden /> : <Copy className="h-3.5 w-3.5" aria-hidden />}
+          {copied ? <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden /> : <Copy className="h-3.5 w-3.5" aria-hidden />}
           {copied ? 'Copied' : 'Copy for chat'}
         </button>
         <a href={presenterUrl} target="_blank" rel="noopener noreferrer"

@@ -54,7 +54,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, score, maxScor
   }
   
   return (
-    <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+    <Badge className="bg-muted text-foreground">
       <MinusCircle className="w-3 h-3 mr-1" />
       Не сдано
     </Badge>

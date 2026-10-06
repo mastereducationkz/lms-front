@@ -58,7 +58,7 @@ function Answers({ activity, answers }: { activity: ActivityView; answers: Named
       {[...answers].sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', 'ru')).map((a) => (
         <li key={a.user_id} className="flex items-center justify-between gap-2 px-2 py-1">
           <span className="flex min-w-0 items-center gap-1.5"><LiveAvatar person={a} size={20} /><span className="truncate text-foreground">{a.name}</span></span>
-          <span className={cn('flex-none', a.correct === true && 'text-emerald-700 dark:text-emerald-400', a.correct === false && 'text-rose-600')}>
+          <span className={cn('flex-none', a.correct === true && 'text-emerald-700 dark:text-emerald-400', a.correct === false && 'text-rose-600 dark:text-rose-400')}>
             {optionText(activity, a.value)}
           </span>
         </li>
@@ -153,8 +153,8 @@ function Body({ activity, onHide, names }: { activity: ActivityView; onHide?: (i
                     const cell = a.items?.[String(i)];
                     if (!cell) return <span key={i} className="h-4 w-4 rounded-full border border-border" title="No answer" />;
                     return cell.correct
-                      ? <CheckCircle2 key={i} className="h-4 w-4 text-emerald-600" aria-label="Right" />
-                      : <XCircle key={i} className="h-4 w-4 text-rose-600" aria-label="Wrong" />;
+                      ? <CheckCircle2 key={i} className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-label="Right" />
+                      : <XCircle key={i} className="h-4 w-4 text-rose-600 dark:text-rose-400" aria-label="Wrong" />;
                   })}
                 </span>
               </li>

@@ -69,7 +69,7 @@ function Idle({ link }: { link: string }) {
   const qr = useQr(link, 520);
   return (
     <div className="flex flex-col items-center gap-6 text-center">
-      {qr && <img src={qr} alt={`QR code for ${link}`} className="h-[min(52vh,26rem)] w-auto rounded-2xl bg-white p-3" />}
+      {qr && <img src={qr} alt={`QR code for ${link}`} className="h-[min(52vh,26rem)] w-auto rounded-2xl bg-card p-3" />}
       <p className="text-4xl font-bold tracking-tight">{link.replace(/^https:\/\//, '')}</p>
       <p className="text-2xl text-muted-foreground">Scan or open the link, sign in to the LMS. Waiting for a question</p>
     </div>
@@ -78,7 +78,7 @@ function Idle({ link }: { link: string }) {
 
 function SmallQr({ link }: { link: string }) {
   const qr = useQr(link, 160);
-  return qr ? <img src={qr} alt="" className="h-20 w-20 rounded-lg bg-white p-1" /> : null;
+  return qr ? <img src={qr} alt="" className="h-20 w-20 rounded-lg bg-card p-1" /> : null;
 }
 
 function Answered({ activity }: { activity: ActivityView }) {

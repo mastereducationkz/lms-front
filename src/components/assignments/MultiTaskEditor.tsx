@@ -192,7 +192,7 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
                 placeholder="Enter the prompt the student should answer by recording their voice..."
                 rows={4}
               />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs text-muted-foreground  mt-1">
                 The student records an audio answer in the browser. This task is graded manually.
               </p>
             </div>
@@ -222,7 +222,7 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
                   <option key={n} value={n}>{`Bluebook Test #${n}`}</option>
                 ))}
               </select>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs text-muted-foreground  mt-1">
                 The student uploads the official College Board score report (PDF) for this
                 test. Reading &amp; Writing, Math and the total are read from the report
                 automatically — the student cannot type or edit them, and screenshots are
@@ -258,7 +258,7 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Tasks ({tasks.length})</h3>
-          <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-4">
+          <div className="text-sm text-muted-foreground  flex items-center gap-4">
             <span>
               Required: <span className="font-semibold text-foreground">{tasks.filter(t => !t.is_optional).reduce((sum, t) => sum + t.points, 0)}</span> pts
             </span>
@@ -272,8 +272,8 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
 
         {tasks.length === 0 && (
           <Card className="border-dashed">
-            <CardContent className="pt-6 text-center text-gray-500 dark:text-gray-400">
-              <FileText className="w-12 h-12 mx-auto mb-2 text-gray-400 dark:text-gray-500" />
+            <CardContent className="pt-6 text-center text-muted-foreground">
+              <FileText className="w-12 h-12 mx-auto mb-2 text-muted-foreground" />
               <p>No tasks yet. Add your first task below.</p>
             </CardContent>
           </Card>
@@ -295,12 +295,12 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center space-x-2 flex-1">
-                    <GripVertical className="w-5 h-5 text-gray-400 dark:text-gray-500" />
-                    <Icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                    <GripVertical className="w-5 h-5 text-muted-foreground" />
+                    <Icon className="w-5 h-5 text-brand" />
                     <div className="flex-1">
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Task {index + 1}</span>
-                        <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded">
+                        <span className="text-sm font-medium text-muted-foreground">Task {index + 1}</span>
+                        <span className="text-xs px-2 py-1 bg-brand-subtle  text-brand-subtle-foreground  rounded">
                           {taskTypeInfo?.label}
                         </span>
                         {task.is_optional && (
@@ -335,7 +335,7 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
                           className="w-16 px-2 py-1 text-sm border rounded bg-background dark:bg-card dark:border-border"
                           min="0"
                         />
-                        <span className="text-sm text-gray-600 dark:text-gray-400">pts</span>
+                        <span className="text-sm text-muted-foreground">pts</span>
                       </div>
                       <Button
                         type="button"
@@ -385,7 +385,7 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
                 >
                   <Icon className="w-6 h-6 flex-shrink-0" />
                   <span className="text-sm font-medium break-words w-full">{taskType.label}</span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 break-words w-full">
+                  <span className="text-xs text-muted-foreground  break-words w-full">
                     {courseUnitTaken ? 'Уже добавлен' : taskType.description}
                   </span>
                 </Button>

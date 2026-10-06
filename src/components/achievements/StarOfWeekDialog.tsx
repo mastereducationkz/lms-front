@@ -65,7 +65,7 @@ export function StarOfWeekDialog({ groupId, students, lang, onClose, initialStud
     awardStar({ student_id: studentId, group_id: groupId, reason: reason.trim() })
       .then(() => {
         const name = students.find((s) => s.id === studentId)?.name ?? '';
-        toast(ru ? `⭐ ${name} — звезда недели!` : `⭐ ${name} is this week’s star!`, 'success');
+        toast(ru ? `${name} — звезда недели!` : `${name} is this week’s star!`, 'success');
         onClose();
       })
       .catch((e: Error) => {
@@ -147,7 +147,7 @@ export function StarOfWeekDialog({ groupId, students, lang, onClose, initialStud
                 <ul className="mt-1.5 space-y-1">
                   {stars.this_week.map((s, i) => (
                     <li key={`${s.created_at}-${i}`} className="text-sm text-gray-700 dark:text-gray-200">
-                      ⭐ {s.student_name ?? `#${s.student_id}`} — <span className="text-muted-foreground">{s.awarded_by_name}: «{s.reason}»</span>
+                      <Star className="mr-1 inline h-3.5 w-3.5 -translate-y-px fill-amber-400 text-amber-500" aria-hidden /> {s.student_name ?? `#${s.student_id}`} — <span className="text-muted-foreground">{s.awarded_by_name}: «{s.reason}»</span>
                     </li>
                   ))}
                 </ul>

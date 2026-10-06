@@ -14,8 +14,8 @@ export default function LiveCard({ lessonId, onSessionLost }: { lessonId: number
   });
   const seconds = useCountdown(state, now);
   if (!state) {
-    return error ? <p className="text-xs text-rose-700">{error}</p>
-      : <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin text-slate-400" /></div>;
+    return error ? <p className="text-xs text-rose-700 dark:text-rose-300">{error}</p>
+      : <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>;
   }
   return <LiveControls state={state} api={panelLive} seconds={seconds} act={act} presenterUrl={presenterUrl(lessonId)} socket={socket} />;
 }

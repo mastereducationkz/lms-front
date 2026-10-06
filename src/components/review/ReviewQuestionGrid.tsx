@@ -44,19 +44,19 @@ export const ReviewQuestionGrid: React.FC<Props> = ({
   questions, questionSteps, steps, statsByKey, rosterCount, currentIndex, onJump,
 }) => {
   if (questions.length === 0) {
-    return <p className="text-sm text-gray-500 dark:text-gray-400">{EN.noData}</p>
+    return <p className="text-sm text-muted-foreground">{EN.noData}</p>
   }
 
   return (
     <div className="space-y-4">
-      <p className="text-sm font-semibold text-gray-700 dark:text-gray-200">{EN.questionList}</p>
+      <p className="text-sm font-semibold text-foreground">{EN.questionList}</p>
       {steps.map((step) => (
         <div key={step.stepId} className="space-y-2">
           {/* A single-quiz review carries exactly one step, and repeating its own title as a
               section header above an already-titled grid would be noise, not a locator —
               only a multi-step (whole-unit) deck needs the divider at all. */}
           {steps.length > 1 && (
-            <div className="flex items-center justify-between gap-2 border-t border-gray-200 dark:border-border pt-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+            <div className="flex items-center justify-between gap-2 border-t border-border pt-2 text-xs font-semibold text-muted-foreground">
               <span className="truncate">{step.stepTitle}</span>
               <span className="shrink-0 tabular-nums">
                 {format(EN.worthReviewingSubmittedOf, { submitted: step.submittedCount, total: rosterCount })}
@@ -87,9 +87,9 @@ export const ReviewQuestionGrid: React.FC<Props> = ({
           </div>
         </div>
       ))}
-      <div className="flex flex-wrap gap-3 border-t border-gray-200 dark:border-border pt-3">
+      <div className="flex flex-wrap gap-3 border-t border-border pt-3">
         {LEGEND.map((item) => (
-          <span key={item.label} className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+          <span key={item.label} className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <span className={`h-3 w-3 rounded ${BAND_CLASS[item.band]}`} />
             {item.label}
           </span>

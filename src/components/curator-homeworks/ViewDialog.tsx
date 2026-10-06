@@ -114,17 +114,17 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
 
                   {/* Link for link_task */}
                   {task.task_type === 'link_task' && task.content.url && (
-                    <div className="flex items-center p-2 bg-blue-50 dark:bg-blue-950 rounded border">
-                      <LinkIcon className="w-4 h-4 text-blue-600 mr-2 flex-shrink-0" />
+                    <div className="flex items-center p-2 bg-brand-surface  rounded border">
+                      <LinkIcon className="w-4 h-4 text-brand mr-2 flex-shrink-0" />
                       <a 
                         href={task.content.url} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="text-blue-600 hover:underline text-sm truncate"
+                        className="text-brand hover:underline text-sm truncate"
                       >
                         {task.content.url}
                       </a>
-                      <ExternalLink className="w-3 h-3 text-gray-400 ml-2 flex-shrink-0" />
+                      <ExternalLink className="w-3 h-3 text-muted-foreground ml-2 flex-shrink-0" />
                     </div>
                   )}
 
@@ -154,7 +154,7 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                             )}
                             <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950 rounded border border-green-200 dark:border-green-800">
                               <div className="flex items-center">
-                                <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
+                                <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 mr-2" />
                                 <span className="text-sm font-medium">{taskAnswer.file_name || 'Загруженный файл'}</span>
                               </div>
                               {fileHref && (
@@ -162,7 +162,7 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                                   href={fileHref}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-blue-600 hover:underline text-sm flex items-center"
+                                  className="text-brand hover:underline text-sm flex items-center"
                                 >
                                   <Download className="w-4 h-4 mr-1" />
                                   Скачать
@@ -179,7 +179,7 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                     {/* Link task or course unit completion */}
                     {(task.task_type === 'link_task' || task.task_type === 'course_unit') && (
                       taskAnswer.completed ? (
-                        <div className="flex items-center text-green-600">
+                        <div className="flex items-center text-green-600 dark:text-green-400">
                           <CheckCircle className="w-4 h-4 mr-2" />
                           <span className="text-sm font-medium">Завершено</span>
                         </div>
@@ -216,7 +216,7 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
         {/* File attachment */}
         {hasFile && (
           <div className="flex items-center p-3 bg-muted rounded-lg border">
-            <FileText className="w-5 h-5 text-blue-600 mr-3" />
+            <FileText className="w-5 h-5 text-brand mr-3" />
             <div className="flex-1">
               <div className="font-medium">
                 {submissionDetails.submitted_file_name || 'Прикрепленный файл'}
@@ -227,7 +227,7 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                 href={resolvedFileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:underline text-sm font-medium flex items-center"
+                className="text-brand hover:underline text-sm font-medium flex items-center"
               >
                 <Download className="w-4 h-4 mr-1" />
                 Скачать
@@ -275,13 +275,13 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                       const href = safeUploadUrl(taskAnswer.file_url);
                       return (
                         <div className="flex items-center">
-                          <FileText className="w-4 h-4 text-blue-600 mr-2" />
+                          <FileText className="w-4 h-4 text-brand mr-2" />
                           {href ? (
                             <a
                               href={href}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline text-sm"
+                              className="text-brand hover:underline text-sm"
                             >
                               {taskAnswer.file_name || 'Скачать файл'}
                             </a>
@@ -292,7 +292,7 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                       );
                     })()}
                     {taskAnswer.completed && !taskAnswer.text_response && !taskAnswer.file_url && (
-                      <div className="flex items-center text-green-600">
+                      <div className="flex items-center text-green-600 dark:text-green-400">
                         <CheckCircle className="w-4 h-4 mr-2" />
                         <span className="text-sm">Завершено</span>
                       </div>
@@ -377,7 +377,7 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                 <label className="text-sm font-medium text-muted-foreground mb-2 block">
                   Отзыв преподавателя
                 </label>
-                <p className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="p-3 bg-brand-surface  rounded-lg border border-brand-border">
                   {student.feedback}
                 </p>
               </div>

@@ -54,16 +54,16 @@ const dash = (v: string | null | undefined) => (v && v.trim() ? v : '—');
 const triageTone: Record<string, string> = {
   overdue: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
   due: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
-  pending: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+  pending: 'bg-brand-subtle text-brand-subtle-foreground',
   completed: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300',
-  unscheduled: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
+  unscheduled: 'bg-muted text-muted-foreground',
   // «Не хочет делиться» (owner, 2026-10-02): handled by the curator, not neglect — neutral, not red.
-  declined: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+  declined: 'bg-muted text-foreground',
 };
 
 const chipBase = 'inline-block rounded px-1.5 py-0.5 text-[10px] leading-4 whitespace-nowrap';
 const chipOk = `${chipBase} font-medium bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300`;
-const chipMuted = `${chipBase} bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300`;
+const chipMuted = `${chipBase} bg-muted text-muted-foreground`;
 
 /**
  * Why a row may be used in marketing. The two grounds are shown separately because they
@@ -364,7 +364,7 @@ export default function ExamResultsWorkbenchPage() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+          <div className="grid grid-cols-1 @lg:grid-cols-2 @3xl:grid-cols-4 gap-2">
             {isSat && (
               <div>
                 <label htmlFor="er-cohort" className="text-xs font-medium">

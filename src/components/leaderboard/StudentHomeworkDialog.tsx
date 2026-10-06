@@ -150,15 +150,15 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-hidden flex flex-col p-0">
-          <DialogHeader className="px-5 pt-5 pb-3 border-b border-gray-100 dark:border-border">
+          <DialogHeader className="px-5 pt-5 pb-3 border-b border-border">
             <DialogTitle className="flex items-center gap-2 text-base">
-              <ClipboardList className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <ClipboardList className="w-4 h-4 text-brand" />
               Все домашние задания — {studentName}
             </DialogTitle>
           </DialogHeader>
 
           {showProgramTabs && (
-            <div className="flex items-center gap-1 px-5 pt-2 border-b border-gray-100 dark:border-border overflow-x-auto shrink-0">
+            <div className="flex items-center gap-1 px-5 pt-2 border-b border-border overflow-x-auto shrink-0">
               {(['all' as const, ...programs]).map((p) => {
                 const active = activeProgram === p;
                 const label = p === 'all' ? 'Все' : PROGRAM_LABELS[p];
@@ -173,8 +173,8 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
                     className={cn(
                       'px-3 py-2 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors',
                       active
-                        ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                        : 'border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200',
+                        ? 'border-brand text-brand'
+                        : 'border-transparent text-muted-foreground hover:text-foreground',
                     )}
                   >
                     {label} <span className="text-xs opacity-60">{count}</span>
@@ -196,9 +196,10 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
                 У этого ученика пока нет домашних заданий.
               </div>
             ) : (
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs text-muted-foreground border-b border-gray-100 dark:border-border">
+                  <tr className="text-left text-xs text-muted-foreground border-b border-border">
                     <th className="font-medium pb-2 pr-2">Задание</th>
                     {showGroupColumn && <th className="font-medium pb-2 pr-2">Группа</th>}
                     <th className="font-medium pb-2 pr-2 whitespace-nowrap">Дедлайн</th>
@@ -213,21 +214,21 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
                         key={`${item.assignment_id}-${item.group_id}`}
                         onClick={() => handleRowClick(item)}
                         className={
-                          'border-b border-gray-50 dark:border-border/50 ' +
+                          'border-b border-border/40 ' +
                           (clickable
-                            ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-muted/40 transition-colors'
+                            ? 'cursor-pointer hover:bg-muted dark:hover:bg-muted/40 transition-colors'
                             : 'opacity-70')
                         }
                       >
-                        <td className="py-2.5 pr-2 font-medium text-gray-900 dark:text-foreground">
+                        <td className="py-2.5 pr-2 font-medium text-foreground">
                           {item.title}
                         </td>
                         {showGroupColumn && (
-                          <td className="py-2.5 pr-2 text-gray-500 dark:text-muted-foreground truncate max-w-[160px]" title={item.group_name}>
+                          <td className="py-2.5 pr-2 text-muted-foreground truncate max-w-[160px]" title={item.group_name}>
                             {item.group_name}
                           </td>
                         )}
-                        <td className="py-2.5 pr-2 text-gray-500 dark:text-muted-foreground whitespace-nowrap">
+                        <td className="py-2.5 pr-2 text-muted-foreground whitespace-nowrap">
                           {formatDeadline(item.due_date)}
                         </td>
                         <td className="py-2.5 pl-2 text-right">
@@ -238,6 +239,7 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
                   })}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
         </DialogContent>
