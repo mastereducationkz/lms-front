@@ -151,37 +151,37 @@ export default function ParentReportCard({ studentId, studentName, week, initial
   const suggested = state?.suggested_template;
 
   return (
-    <section className="bg-white border border-gray-200 rounded-xl p-4 space-y-3">
+    <section className="bg-card border border-border rounded-xl p-4 space-y-3 min-w-0">
       <header className="flex items-center justify-between gap-3">
-        <h3 className="text-base font-semibold text-gray-900">{studentName}</h3>
+        <h3 className="text-base font-semibold text-foreground">{studentName}</h3>
         {state?.report && (
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-muted-foreground">
             {state.report.template_auto ? 'шаблон выбран автоматически' : 'шаблон выбран вручную'}
           </span>
         )}
       </header>
 
       {suggested && (
-        <p className="text-xs text-gray-600">{state?.suggested_reason}</p>
+        <p className="text-xs text-muted-foreground">{state?.suggested_reason}</p>
       )}
 
       {state?.prose_degraded && (
-        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+        <p className="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 rounded p-2">
           Текстовые формулировки сгенерировать не удалось — цифры, посещаемость и ДЗ
           проставлены, остальное допишите вручную.
         </p>
       )}
 
       {state?.facts.test_unavailable && (
-        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">
+        <p className="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 rounded p-2">
           Платформа тестов не ответила — блок с результатами теста пропущен.
         </p>
       )}
 
-      <label className="block text-sm text-gray-700">
+      <label className="block text-sm text-foreground">
         Заметка куратора
         <textarea
-          className="mt-1 w-full border border-gray-300 rounded-lg p-2 text-sm"
+          className="mt-1 w-full border border-border bg-background text-foreground placeholder:text-muted-foreground rounded-lg p-2 text-sm"
           rows={2}
           value={note}
           onChange={e => { dirty.current = true; setNote(e.target.value); }}
@@ -190,13 +190,13 @@ export default function ParentReportCard({ studentId, studentName, week, initial
         />
       </label>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Select
           value={template || 'auto'}
           onValueChange={value => setTemplate(value === 'auto' ? '' : value as ParentTemplateKey)}
           disabled={busy}
         >
-          <SelectTrigger className="h-auto min-h-10 flex-1 rounded-lg border-gray-300 py-2 text-left">
+          <SelectTrigger className="h-auto min-h-10 min-w-0 flex-1 basis-48 rounded-lg border-border py-2 text-left">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -212,28 +212,28 @@ export default function ParentReportCard({ studentId, studentName, week, initial
           type="button"
           onClick={generate}
           disabled={busy}
-          className="px-3 py-2 text-sm rounded-lg bg-gray-900 text-white disabled:opacity-50"
+          className="shrink-0 px-3 py-2 text-sm rounded-lg bg-brand-solid hover:bg-brand-solid-hover text-brand-solid-foreground disabled:opacity-50"
         >
           {state?.report ? 'Перегенерировать' : 'Сгенерировать'}
         </button>
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-300">{error}</p>}
 
       {(state?.report || body) && (
         <>
           <textarea
-            className="w-full border border-gray-300 rounded-lg p-3 text-sm font-mono whitespace-pre-wrap"
+            className="w-full border border-border bg-background text-foreground rounded-lg p-3 text-sm font-mono whitespace-pre-wrap"
             rows={14}
             value={body}
             onChange={e => { dirty.current = true; setBody(e.target.value); }}
             disabled={busy}
           />
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={copy}
-              className="px-3 py-2 text-sm rounded-lg border border-gray-300"
+              className="px-3 py-2 text-sm rounded-lg border border-border"
             >
               {copied ? 'Скопировано' : 'Копировать'}
             </button>
@@ -241,7 +241,7 @@ export default function ParentReportCard({ studentId, studentName, week, initial
               type="button"
               onClick={save}
               disabled={busy}
-              className="px-3 py-2 text-sm rounded-lg border border-gray-300 disabled:opacity-50"
+              className="px-3 py-2 text-sm rounded-lg border border-border disabled:opacity-50"
             >
               Сохранить правку
             </button>

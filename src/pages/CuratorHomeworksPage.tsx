@@ -185,7 +185,7 @@ const CuratorHomeworksPage: React.FC = () => {
     });
 
     return (
-      <div className="container mx-auto p-6 space-y-5">
+      <div className="container mx-auto space-y-5">
         <Button variant="ghost" size="sm" onClick={() => setSelectedGroupId(null)} className="gap-2 -ml-2">
           <ArrowLeft className="w-4 h-4" />
           Все группы
@@ -267,8 +267,8 @@ const CuratorHomeworksPage: React.FC = () => {
                         <TableCell className="py-2">
                           <div className="space-y-1 min-w-[150px]">
                             <div className="flex items-center gap-2">
-                              <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                                <div className="h-1.5 rounded-full bg-blue-500" style={{ width: `${rowPct}%` }} />
+                              <div className="flex-1 bg-gray-200 dark:bg-muted rounded-full h-1.5">
+                                <div className="h-1.5 rounded-full bg-brand-solid" style={{ width: `${rowPct}%` }} />
                               </div>
                               <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
                                 {s.submitted}/{s.total_students}
@@ -296,7 +296,7 @@ const CuratorHomeworksPage: React.FC = () => {
 
   // ── Overview: compact group cards sorted by attention ───────────────────────
   return (
-    <div className="container mx-auto p-6 space-y-5">
+    <div className="container mx-auto space-y-5">
       <h1 className="text-2xl font-bold">Домашние задания</h1>
 
       {groups.length === 0 ? (
@@ -318,7 +318,7 @@ const CuratorHomeworksPage: React.FC = () => {
               <span className="text-xs text-muted-foreground">заданий</span>
             </div>
             <div className="flex items-baseline gap-1.5">
-              <span className="text-xl font-bold text-blue-600 dark:text-blue-400 tabular-nums">{rollupRate}%</span>
+              <span className="text-xl font-bold text-brand tabular-nums">{rollupRate}%</span>
               <span className="text-xs text-muted-foreground">сдано</span>
             </div>
             <div className="flex items-baseline gap-1.5">
@@ -364,7 +364,7 @@ const CuratorHomeworksPage: React.FC = () => {
               className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-md border text-sm font-medium transition-colors ${
                 needsAttentionOnly
                   ? 'border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
-                  : 'border-border bg-card text-muted-foreground hover:border-slate-300 dark:hover:border-slate-600'
+                  : 'border-border bg-card text-muted-foreground hover:border-border'
               }`}
             >
               <AlertCircle className="w-4 h-4" />
@@ -389,16 +389,16 @@ const CuratorHomeworksPage: React.FC = () => {
               <p>{needsAttentionOnly ? 'Все группы в порядке' : 'Ничего не найдено'}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 @6xl:grid-cols-4 gap-4">
               {overviewGroups.map((g) => {
                 const pct = Math.round(g.rate * 100);
-                const barColor = pct >= 90 ? 'bg-green-500' : pct >= 60 ? 'bg-blue-500' : 'bg-red-500';
+                const barColor = pct >= 90 ? 'bg-green-500' : pct >= 60 ? 'bg-brand-solid' : 'bg-red-500';
                 const empty = g.assignmentsCount === 0;
                 return (
                   <button
                     key={g.id}
                     onClick={() => openGroup(g.id)}
-                    className="bg-card rounded-lg border p-4 text-left hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-md transition-all"
+                    className="bg-card rounded-lg border p-4 text-left hover:border-brand hover:shadow-md transition-all"
                   >
                     <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                       <Users className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -418,7 +418,7 @@ const CuratorHomeworksPage: React.FC = () => {
                     ) : (
                       <>
                         <div className="flex items-center gap-2 mb-1">
-                          <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                          <div className="flex-1 bg-gray-200 dark:bg-muted rounded-full h-1.5">
                             <div className={`h-1.5 rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
                           </div>
                           <span className="text-xs font-medium text-muted-foreground tabular-nums whitespace-nowrap">{pct}%</span>

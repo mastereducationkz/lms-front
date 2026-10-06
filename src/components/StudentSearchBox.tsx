@@ -94,7 +94,7 @@ export default function StudentSearchBox({ className = '' }: { className?: strin
           onKeyDown={onKeyDown}
           onFocus={() => { if (results.length > 0) setOpen(true); }}
           placeholder="Найти студента: имя или email…"
-          className="w-full pl-9 pr-3 py-2 text-sm bg-card border border-border rounded-lg outline-none focus:border-brand focus:ring-2 focus:ring-blue-100 placeholder:text-muted-foreground"
+          className="w-full pl-9 pr-3 py-2 text-sm bg-card border border-border rounded-lg outline-none focus:border-brand focus:ring-2 focus:ring-brand-border placeholder:text-muted-foreground"
         />
       </div>
       {open && (

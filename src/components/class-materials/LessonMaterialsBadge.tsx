@@ -37,8 +37,8 @@ export default function LessonMaterialsBadge({ eventId, count, role, t, onOpen }
       type="button"
       className={
         variant === 'count'
-          ? 'absolute top-1 left-1 z-10 flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold text-blue-600 transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20'
-          : 'absolute top-1 left-1 z-10 flex items-center gap-0.5 rounded px-1 py-0.5 text-gray-400 opacity-100 transition-opacity hover:text-blue-500 md:opacity-0 md:group-hover/lesson:opacity-100 dark:text-gray-600'
+          ? 'absolute top-1 left-1 z-10 flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] font-semibold text-brand transition-colors hover:bg-brand-surface'
+          : 'absolute top-1 left-1 z-10 flex items-center gap-0.5 rounded px-1 py-0.5 text-muted-foreground opacity-100 transition-opacity hover:text-brand md:opacity-0 md:group-hover/lesson:opacity-100'
       }
       title={label}
       aria-label={label}

@@ -104,38 +104,38 @@ function formatDate(iso: string | null) {
 
 function attendanceStatusBadge(status: string) {
   const map: Record<string, { label: string; cls: string }> = {
-    attended: { label: 'Был', cls: 'bg-green-100 text-green-700' },
-    late: { label: 'Опоздал', cls: 'bg-yellow-100 text-yellow-700' },
-    missed: { label: 'Пропустил', cls: 'bg-red-100 text-red-600' },
-    absent: { label: 'Отсутствовал', cls: 'bg-gray-100 text-gray-500' },
-    registered: { label: 'Зарегистрирован', cls: 'bg-blue-100 text-blue-600' },
+    attended: { label: 'Был', cls: 'bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300' },
+    late: { label: 'Опоздал', cls: 'bg-yellow-100 dark:bg-yellow-500/15 text-yellow-700 dark:text-yellow-300' },
+    missed: { label: 'Пропустил', cls: 'bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-300' },
+    absent: { label: 'Отсутствовал', cls: 'bg-muted text-muted-foreground' },
+    registered: { label: 'Зарегистрирован', cls: 'bg-brand-subtle text-brand' },
   };
-  const { label, cls } = map[status] ?? { label: status, cls: 'bg-gray-100 text-gray-500' };
+  const { label, cls } = map[status] ?? { label: status, cls: 'bg-muted text-muted-foreground' };
   return <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cls}`}>{label}</span>;
 }
 
 function scoreColor(score: number | null, max: number) {
-  if (score === null) return 'text-gray-400';
+  if (score === null) return 'text-muted-foreground';
   const pct = max > 0 ? score / max : 0;
-  if (pct >= 0.8) return 'text-green-700';
-  if (pct >= 0.5) return 'text-yellow-700';
-  return 'text-red-600';
+  if (pct >= 0.8) return 'text-green-700 dark:text-green-300';
+  if (pct >= 0.5) return 'text-yellow-700 dark:text-yellow-300';
+  return 'text-red-600 dark:text-red-300';
 }
 
 function lmsStatusDot(status: string) {
   if (status === 'completed') return <span className="w-2 h-2 rounded-full bg-green-500 inline-block" />;
-  if (status === 'in_progress') return <span className="w-2 h-2 rounded-full bg-blue-400 inline-block" />;
-  return <span className="w-2 h-2 rounded-full bg-gray-300 inline-block" />;
+  if (status === 'in_progress') return <span className="w-2 h-2 rounded-full bg-brand inline-block" />;
+  return <span className="w-2 h-2 rounded-full bg-muted-foreground/30 inline-block" />;
 }
 
 function ScoreBar({ value, pct }: { value: number; pct: number }) {
-  const color = pct >= 80 ? 'bg-green-500' : pct >= 40 ? 'bg-blue-500' : 'bg-gray-300';
+  const color = pct >= 80 ? 'bg-green-500' : pct >= 40 ? 'bg-brand-solid' : 'bg-muted-foreground/30';
   return (
     <div className="flex items-center gap-2">
-      <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+      <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.min(value, 100)}%` }} />
       </div>
-      <span className="text-sm text-gray-600">{pct}%</span>
+      <span className="text-sm text-muted-foreground">{pct}%</span>
     </div>
   );
 }
@@ -161,11 +161,11 @@ export default function StudentProfilePage() {
 
   if (loading) {
     return (
-      <div className="p-6 max-w-[1000px] mx-auto">
+      <div className="max-w-[1000px] mx-auto">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 w-48 bg-gray-100 rounded" />
-          <div className="h-32 bg-gray-100 rounded-xl" />
-          <div className="h-64 bg-gray-100 rounded-xl" />
+          <div className="h-8 w-48 bg-muted rounded" />
+          <div className="h-32 bg-muted rounded-xl" />
+          <div className="h-64 bg-muted rounded-xl" />
         </div>
       </div>
     );
@@ -173,7 +173,7 @@ export default function StudentProfilePage() {
 
   if (error || !profile) {
     return (
-      <div className="p-6 max-w-[1000px] mx-auto text-center">
+      <div className="max-w-[1000px] mx-auto text-center">
         <p className="text-red-500">{error ?? 'Студент не найден'}</p>
         <Button variant="outline" size="sm" className="mt-3" onClick={() => navigate(-1)}>Назад</Button>
       </div>
@@ -190,43 +190,43 @@ export default function StudentProfilePage() {
   ] as const;
 
   return (
-    <div className="p-4 md:p-6 max-w-[1000px] mx-auto space-y-5">
+    <div className="max-w-[1000px] mx-auto space-y-5">
       {/* Back */}
-      <button onClick={() => navigate(-1)} className="text-sm text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-colors flex items-center gap-1">
+      <button onClick={() => navigate(-1)} className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         Назад к журналу
       </button>
 
       {/* Student card */}
-      <div className="flex items-start gap-4 p-5 bg-white border border-gray-200 rounded-xl">
+      <div className="flex items-start gap-4 p-5 bg-card border border-border rounded-xl">
         <UserAvatar userId={student.id} name={student.name} avatarUrl={student.avatar_url} mascot={student.mascot} isStudent size={56} />
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-semibold text-gray-900">{student.name}</h1>
-          <p className="text-sm text-gray-400">{student.email}</p>
+          <h1 className="text-lg font-semibold text-foreground">{student.name}</h1>
+          <p className="text-sm text-muted-foreground">{student.email}</p>
           <div className="flex flex-wrap gap-1.5 mt-2">
             {groups.map(g => (
-              <Badge key={g.id} className="bg-gray-100 text-gray-600 border-gray-200 text-xs font-normal">{g.name}</Badge>
+              <Badge key={g.id} className="bg-muted text-muted-foreground border-border text-xs font-normal">{g.name}</Badge>
             ))}
           </div>
         </div>
-        <div className="flex flex-col items-end gap-1 text-right text-xs text-gray-400">
+        <div className="flex flex-col items-end gap-1 text-right text-xs text-muted-foreground">
           <Button size="sm" className="mb-1" onClick={() => navigate(`/curator/students/${student.id}/report`)}>
             Отчёт об успеваемости
           </Button>
-          <span>Стрик: <span className="font-medium text-gray-700">{student.daily_streak} дн.</span></span>
-          <span>Последняя активность: <span className="font-medium text-gray-700">{formatDate(student.last_activity_date)}</span></span>
-          <span>Зарегистрирован: <span className="font-medium text-gray-700">{formatDate(student.created_at)}</span></span>
+          <span>Стрик: <span className="font-medium text-foreground">{student.daily_streak} дн.</span></span>
+          <span>Последняя активность: <span className="font-medium text-foreground">{formatDate(student.last_activity_date)}</span></span>
+          <span>Зарегистрирован: <span className="font-medium text-foreground">{formatDate(student.created_at)}</span></span>
         </div>
       </div>
 
       {/* Quick stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 @xl:grid-cols-4 gap-3">
         {[
           {
             label: 'Посещаемость',
             value: attendance.rate !== null ? `${attendance.rate}%` : '—',
             sub: `${attendance.attended} из ${attendance.total}`,
-            color: attendance.rate !== null && attendance.rate >= 80 ? 'text-green-700' : attendance.rate !== null && attendance.rate >= 60 ? 'text-yellow-700' : 'text-red-600',
+            color: attendance.rate !== null && attendance.rate >= 80 ? 'text-green-700 dark:text-green-300' : attendance.rate !== null && attendance.rate >= 60 ? 'text-yellow-700 dark:text-yellow-300' : 'text-red-600 dark:text-red-300',
           },
           {
             label: 'LMS прогресс',
@@ -235,25 +235,25 @@ export default function StudentProfilePage() {
               lessonsLabel(lms_progress.lessons_done, lms_progress.lessons_total) || `${lms_progress.courses.length} курс(а)`,
               checkpointLabel(lms_progress.checkpoints),
             ].filter(Boolean).join(' · '),
-            color: 'text-blue-700',
+            color: 'text-brand-subtle-foreground',
           },
           {
             label: 'Домашних работ',
             value: String(homework.submitted),
             sub: homework.avg_score !== null ? `Ср. балл: ${homework.avg_score}` : 'Нет оценок',
-            color: 'text-gray-800',
+            color: 'text-foreground',
           },
           {
             label: 'Assignment Zero',
             value: student.assignment_zero_completed ? 'Сдано' : az ? 'Черновик' : 'Не начато',
             sub: az ? (az.sat_target_date ? `SAT: ${az.sat_target_date}` : az.ielts_target_date ? `IELTS: ${az.ielts_target_date}` : '') : '',
-            color: student.assignment_zero_completed ? 'text-green-700' : az ? 'text-yellow-700' : 'text-gray-400',
+            color: student.assignment_zero_completed ? 'text-green-700 dark:text-green-300' : az ? 'text-yellow-700 dark:text-yellow-300' : 'text-muted-foreground',
           },
         ].map(stat => (
-          <div key={stat.label} className="p-4 bg-white border border-gray-200 rounded-xl">
-            <p className="text-xs text-gray-400 mb-1">{stat.label}</p>
+          <div key={stat.label} className="p-4 bg-card border border-border rounded-xl">
+            <p className="text-xs text-muted-foreground mb-1">{stat.label}</p>
             <p className={`text-xl font-semibold ${stat.color}`}>{stat.value}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{stat.sub}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{stat.sub}</p>
           </div>
         ))}
       </div>
@@ -262,15 +262,15 @@ export default function StudentProfilePage() {
       <StudentAchievementsSection studentId={student.id} />
 
       {/* Tabs */}
-      <div className="flex gap-0 border-b border-gray-200">
+      <div className="flex gap-0 border-b border-border">
         {tabs.map(tab => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
               activeTab === tab.id
-                ? 'border-gray-900 text-gray-900'
-                : 'border-transparent text-gray-400 hover:text-gray-700'
+                ? 'border-foreground text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             }`}
           >
             {tab.label}
@@ -282,14 +282,14 @@ export default function StudentProfilePage() {
       {activeTab === 'overview' && (
         <div className="space-y-4">
           {!az ? (
-            <div className="p-8 text-center text-sm text-gray-400 bg-white border border-gray-200 rounded-xl">
+            <div className="p-8 text-center text-sm text-muted-foreground bg-card border border-border rounded-xl">
               Assignment Zero не заполнено
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid @2xl:grid-cols-2 gap-4">
               {/* Personal info */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">Личные данные</h3>
+              <div className="bg-card border border-border rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-foreground mb-3">Личные данные</h3>
                 <dl className="space-y-2 text-sm">
                   {[
                     ['Полное имя', az.full_name],
@@ -300,8 +300,8 @@ export default function StudentProfilePage() {
                     ['College Board account', az.college_board_email],
                   ].filter(([, v]) => v).map(([label, value]) => (
                     <div key={label as string} className="flex gap-2">
-                      <dt className="text-gray-400 w-32 shrink-0">{label}</dt>
-                      <dd className="text-gray-800 font-medium break-all">{value as string}</dd>
+                      <dt className="text-muted-foreground w-32 shrink-0">{label}</dt>
+                      <dd className="text-foreground font-medium break-all">{value as string}</dd>
                     </div>
                   ))}
                   {/* This dl otherwise omits rows for falsy fields, so a stored-but-
@@ -313,8 +313,8 @@ export default function StudentProfilePage() {
                     CAN_REVEAL_DEFAULT,
                   ) !== 'hidden_no_access' && (
                     <div className="flex gap-2">
-                      <dt className="text-gray-400 w-32 shrink-0">College Board password</dt>
-                      <dd className="text-gray-800 font-medium break-all">
+                      <dt className="text-muted-foreground w-32 shrink-0">College Board password</dt>
+                      <dd className="text-foreground font-medium break-all">
                         <CollegeBoardPasswordReveal
                           userId={student.id}
                           hasPassword={!!az.has_college_board_password}
@@ -332,16 +332,16 @@ export default function StudentProfilePage() {
                     ['Группа', az.group_name],
                   ].filter(([, v]) => v).map(([label, value]) => (
                     <div key={label as string} className="flex gap-2">
-                      <dt className="text-gray-400 w-32 shrink-0">{label}</dt>
-                      <dd className="text-gray-800 font-medium break-all">{value as string}</dd>
+                      <dt className="text-muted-foreground w-32 shrink-0">{label}</dt>
+                      <dd className="text-foreground font-medium break-all">{value as string}</dd>
                     </div>
                   ))}
                 </dl>
               </div>
 
               {/* SAT / IELTS */}
-              <div className="bg-white border border-gray-200 rounded-xl p-4">
-                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+              <div className="bg-card border border-border rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-foreground mb-3">
                   {az.sat_target_date ? 'SAT информация' : 'IELTS информация'}
                 </h3>
                 {az.sat_target_date ? (
@@ -354,8 +354,8 @@ export default function StudentProfilePage() {
                       ['Bluebook Test 5', az.bluebook_practice_test_5_score],
                     ].filter(([, v]) => v !== null && v !== undefined && v !== '').map(([label, value]) => (
                       <div key={label as string} className="flex gap-2">
-                        <dt className="text-gray-400 w-36 shrink-0">{label}</dt>
-                        <dd className="text-gray-800 font-medium">{String(value)}</dd>
+                        <dt className="text-muted-foreground w-36 shrink-0">{label}</dt>
+                        <dd className="text-foreground font-medium">{String(value)}</dd>
                       </div>
                     ))}
                   </dl>
@@ -368,19 +368,19 @@ export default function StudentProfilePage() {
                       ['Цель', az.ielts_target_score],
                     ].filter(([, v]) => v !== null && v !== undefined && v !== '').map(([label, value]) => (
                       <div key={label as string} className="flex gap-2">
-                        <dt className="text-gray-400 w-36 shrink-0">{label}</dt>
-                        <dd className="text-gray-800 font-medium">{String(value)}</dd>
+                        <dt className="text-muted-foreground w-36 shrink-0">{label}</dt>
+                        <dd className="text-foreground font-medium">{String(value)}</dd>
                       </div>
                     ))}
                   </dl>
                 ) : (
-                  <p className="text-sm text-gray-400">Нет данных</p>
+                  <p className="text-sm text-muted-foreground">Нет данных</p>
                 )}
 
                 {/* Self-assessment scores */}
                 {az.sat_target_date && (
                   <div className="mt-4">
-                    <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Самооценка (1–5)</h4>
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Самооценка (1–5)</h4>
                     <div className="space-y-1">
                       {[
                         ['Пунктуация', az.grammar_punctuation],
@@ -392,13 +392,13 @@ export default function StudentProfilePage() {
                         ['Central Ideas', az.reading_central_ideas],
                       ].filter(([, v]) => v !== null && v !== undefined).map(([label, value]) => (
                         <div key={label as string} className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500 w-36 shrink-0">{label}</span>
+                          <span className="text-xs text-muted-foreground w-36 shrink-0">{label}</span>
                           <div className="flex gap-0.5">
                             {[1, 2, 3, 4, 5].map(n => (
-                              <div key={n} className={`w-3 h-3 rounded-sm ${n <= Number(value) ? 'bg-blue-500' : 'bg-gray-100'}`} />
+                              <div key={n} className={`w-3 h-3 rounded-sm ${n <= Number(value) ? 'bg-brand-solid' : 'bg-muted'}`} />
                             ))}
                           </div>
-                          <span className="text-xs text-gray-500">{value}/5</span>
+                          <span className="text-xs text-muted-foreground">{value}/5</span>
                         </div>
                       ))}
                     </div>
@@ -412,79 +412,79 @@ export default function StudentProfilePage() {
 
       {/* Tab: Attendance */}
       {activeTab === 'attendance' && (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
           {attendance.records.length === 0 ? (
-            <div className="p-8 text-center text-sm text-gray-400">Нет записей посещаемости</div>
+            <div className="p-8 text-center text-sm text-muted-foreground">Нет записей посещаемости</div>
           ) : (
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto"><table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Урок / событие</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Дата</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Статус</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Активность</th>
+                <tr className="bg-gray-50 dark:bg-muted border-b border-border">
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Урок / событие</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Дата</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Статус</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Активность</th>
                 </tr>
               </thead>
               <tbody>
                 {attendance.records.map(r => (
-                  <tr key={r.event_id} className="border-b border-gray-100 last:border-0">
-                    <td className="px-4 py-3 text-gray-800">{r.event_topic ? `${r.event_title} — ${r.event_topic}` : r.event_title}</td>
-                    <td className="px-4 py-3 text-gray-500">{formatDate(r.event_date)}</td>
+                  <tr key={r.event_id} className="border-b border-border last:border-0">
+                    <td className="px-4 py-3 text-foreground">{r.event_topic ? `${r.event_title} — ${r.event_topic}` : r.event_title}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{formatDate(r.event_date)}</td>
                     <td className="px-4 py-3">{attendanceStatusBadge(r.status)}</td>
-                    <td className="px-4 py-3 text-gray-600">
+                    <td className="px-4 py-3 text-muted-foreground">
                       {r.activity_score !== null ? `${r.activity_score}/10` : '—'}
                     </td>
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
       )}
 
       {/* Tab: Homework */}
       {activeTab === 'homework' && (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
           {homework.records.length === 0 ? (
-            <div className="p-8 text-center text-sm text-gray-400">Нет сданных домашних заданий</div>
+            <div className="p-8 text-center text-sm text-muted-foreground">Нет сданных домашних заданий</div>
           ) : (
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto"><table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Задание</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Балл</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Сдано</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Статус</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Обратная связь</th>
+                <tr className="bg-gray-50 dark:bg-muted border-b border-border">
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Задание</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Балл</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Сдано</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Статус</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Обратная связь</th>
                 </tr>
               </thead>
               <tbody>
                 {homework.records.map(r => (
-                  <tr key={r.submission_id} className="border-b border-gray-100 last:border-0">
-                    <td className="px-4 py-3 text-gray-800 font-medium">{r.assignment_title}</td>
+                  <tr key={r.submission_id} className="border-b border-border last:border-0">
+                    <td className="px-4 py-3 text-foreground font-medium">{r.assignment_title}</td>
                     <td className="px-4 py-3">
                       {r.is_graded && r.score !== null ? (
                         <span className={`font-medium ${scoreColor(r.score, r.max_score)}`}>
                           {r.score}/{r.max_score}
                         </span>
                       ) : (
-                        <span className="text-gray-400">Не проверено</span>
+                        <span className="text-muted-foreground">Не проверено</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-gray-500">
+                    <td className="px-4 py-3 text-muted-foreground">
                       {formatDate(r.submitted_at)}
                       {r.is_late && <span className="ml-1 text-xs text-red-500">(опоздание)</span>}
                     </td>
                     <td className="px-4 py-3">
                       {r.is_graded
-                        ? <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Проверено</span>
-                        : <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 font-medium">Ожидание</span>}
+                        ? <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300 font-medium">Проверено</span>
+                        : <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 font-medium">Ожидание</span>}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 max-w-[200px] truncate">{r.feedback ?? '—'}</td>
+                    <td className="px-4 py-3 text-muted-foreground max-w-[200px] truncate">{r.feedback ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
       )}
@@ -493,76 +493,76 @@ export default function StudentProfilePage() {
       {activeTab === 'lms' && (
         <div className="space-y-3">
           {lms_progress.courses.length === 0 ? (
-            <div className="p-8 text-center text-sm text-gray-400 bg-white border border-gray-200 rounded-xl">
+            <div className="p-8 text-center text-sm text-muted-foreground bg-card border border-border rounded-xl">
               Нет данных о прогрессе
             </div>
           ) : (
             lms_progress.courses.map(course => (
-              <div key={course.course_id} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+              <div key={course.course_id} className="bg-card border border-border rounded-xl overflow-hidden">
                 <button
-                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors"
+                  className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/60 transition-colors"
                   onClick={() => course.lessons.length > 0 && setExpandedCourse(expandedCourse === course.course_id ? null : course.course_id)}
                 >
                   <div className="flex items-center gap-3">
                     <div>
-                      <p className="text-sm font-medium text-gray-900 text-left">{course.course_name ?? `Курс ${course.course_id}`}</p>
-                      <p className="text-xs text-gray-400 text-left">
+                      <p className="text-sm font-medium text-foreground text-left">{course.course_name ?? `Курс ${course.course_id}`}</p>
+                      <p className="text-xs text-muted-foreground text-left">
                         {course.total_lessons > 0
                           ? lessonsLabel(course.lessons_done ?? course.completed_lessons, course.lessons_total ?? course.total_lessons)
                           : `Статус: ${course.status === 'completed' ? 'Завершён' : course.status === 'in_progress' ? 'В процессе' : 'Не начат'}`}
                       </p>
                       {checkpointLabel(course.checkpoints) && (
-                        <p className="text-xs text-gray-400 text-left">{checkpointLabel(course.checkpoints)}</p>
+                        <p className="text-xs text-muted-foreground text-left">{checkpointLabel(course.checkpoints)}</p>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <ScoreBar value={course.avg_completion} pct={course.avg_completion} />
                     {course.lessons.length > 0 && (
-                      <span className="text-gray-400 text-xs">{expandedCourse === course.course_id ? '▲' : '▼'}</span>
+                      <span className="text-muted-foreground text-xs">{expandedCourse === course.course_id ? '▲' : '▼'}</span>
                     )}
                   </div>
                 </button>
 
                 {expandedCourse === course.course_id && course.lessons.length > 0 && (
-                  <div className="border-t border-gray-100">
-                    <table className="w-full text-sm">
+                  <div className="border-t border-border">
+                    <div className="overflow-x-auto"><table className="w-full text-sm">
                       <thead>
-                        <tr className="bg-gray-50">
-                          <th className="text-left px-4 py-2 text-xs font-medium text-gray-500">Урок</th>
-                          <th className="text-left px-4 py-2 text-xs font-medium text-gray-500">Статус</th>
-                          <th className="text-left px-4 py-2 text-xs font-medium text-gray-500">Прогресс</th>
-                          <th className="text-left px-4 py-2 text-xs font-medium text-gray-500">Последний доступ</th>
+                        <tr className="bg-gray-50 dark:bg-muted">
+                          <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Урок</th>
+                          <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Статус</th>
+                          <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Прогресс</th>
+                          <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Последний доступ</th>
                         </tr>
                       </thead>
                       <tbody>
                         {course.lessons.map(l => (
-                          <tr key={l.lesson_id} className="border-t border-gray-100">
-                            <td className="px-4 py-2 text-gray-800 flex items-center gap-2">
+                          <tr key={l.lesson_id} className="border-t border-border">
+                            <td className="px-4 py-2 text-foreground flex items-center gap-2">
                               {lmsStatusDot(l.status)}
                               {l.lesson_title ?? `Урок ${l.lesson_id}`}
                             </td>
                             <td className="px-4 py-2">
-                              <span className={`text-xs font-medium ${l.status === 'completed' ? 'text-green-600' : l.status === 'in_progress' ? 'text-blue-600' : 'text-gray-400'}`}>
+                              <span className={`text-xs font-medium ${l.status === 'completed' ? 'text-green-600 dark:text-green-300' : l.status === 'in_progress' ? 'text-brand' : 'text-muted-foreground'}`}>
                                 {l.status === 'completed' ? 'Завершён' : l.status === 'in_progress' ? 'В процессе' : 'Не начат'}
                               </span>
                             </td>
                             <td className="px-4 py-2">
                               <div className="flex items-center gap-2">
-                                <div className="w-16 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
                                   <div
-                                    className={`h-full rounded-full ${l.status === 'completed' ? 'bg-green-500' : 'bg-blue-400'}`}
+                                    className={`h-full rounded-full ${l.status === 'completed' ? 'bg-green-500' : 'bg-brand'}`}
                                     style={{ width: `${l.completion_percentage}%` }}
                                   />
                                 </div>
-                                <span className="text-xs text-gray-500">{l.completion_percentage}%</span>
+                                <span className="text-xs text-muted-foreground">{l.completion_percentage}%</span>
                               </div>
                             </td>
-                            <td className="px-4 py-2 text-gray-500 text-xs">{formatDate(l.last_accessed)}</td>
+                            <td className="px-4 py-2 text-muted-foreground text-xs">{formatDate(l.last_accessed)}</td>
                           </tr>
                         ))}
                       </tbody>
-                    </table>
+                    </table></div>
                   </div>
                 )}
               </div>

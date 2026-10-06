@@ -69,19 +69,19 @@ const fmtTalk = (seconds: number | null | undefined): string => {
 };
 
 const HW_STATUS: Record<ReportHomeworkItem['status'], { label: string; cls: string }> = {
-  graded: { label: 'Проверено', cls: 'bg-green-50 text-green-700 border-green-200' },
-  submitted: { label: 'На проверке', cls: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
-  not_submitted: { label: 'Не сдано', cls: 'bg-red-50 text-red-600 border-red-200' },
+  graded: { label: 'Проверено', cls: 'bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 border-green-200 dark:border-green-500/30' },
+  submitted: { label: 'На проверке', cls: 'bg-yellow-50 dark:bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-500/30' },
+  not_submitted: { label: 'Не сдано', cls: 'bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-300 border-red-200 dark:border-red-500/30' },
 };
 
 // ─── Small building blocks ────────────────────────────────────────────────────
 
 function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
-    <section className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+    <section className="bg-card border border-border rounded-xl p-5 space-y-3">
       <div>
-        <h2 className="text-base font-semibold text-gray-900">{title}</h2>
-        {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+        <h2 className="text-base font-semibold text-foreground">{title}</h2>
+        {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
       </div>
       {children}
     </section>
@@ -90,14 +90,14 @@ function Section({ title, subtitle, children }: { title: string; subtitle?: stri
 
 function FeedbackText({ text }: { text: string }) {
   return (
-    <div className="text-xs text-gray-600 whitespace-pre-wrap bg-gray-50 border border-gray-100 rounded-lg p-3">
+    <div className="text-xs text-muted-foreground whitespace-pre-wrap bg-gray-50 dark:bg-muted border border-border rounded-lg p-3">
       {text}
     </div>
   );
 }
 
 function ExpandChevron({ open }: { open: boolean }) {
-  return <span className="text-gray-400 text-xs select-none">{open ? '▲' : '▼'}</span>;
+  return <span className="text-muted-foreground text-xs select-none">{open ? '▲' : '▼'}</span>;
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -191,9 +191,9 @@ export default function StudentReportPage() {
 
   if (loading) {
     return (
-      <div className="p-6 max-w-[1000px] mx-auto space-y-4">
+      <div className="max-w-[1000px] mx-auto space-y-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-28 bg-gray-100 rounded-xl animate-pulse" />
+          <div key={i} className="h-28 bg-muted rounded-xl animate-pulse" />
         ))}
       </div>
     );
@@ -201,7 +201,7 @@ export default function StudentReportPage() {
 
   if (error || !report) {
     return (
-      <div className="p-6 max-w-[1000px] mx-auto text-center">
+      <div className="max-w-[1000px] mx-auto text-center">
         <p className="text-red-500">{error ?? 'Отчёт не найден'}</p>
         <Button variant="outline" size="sm" className="mt-3" onClick={() => navigate(-1)}>Назад</Button>
       </div>
@@ -217,7 +217,7 @@ export default function StudentReportPage() {
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
+          <tr className="text-left text-xs text-muted-foreground border-b border-border">
             <th className="py-2 pr-3 font-medium">Неделя</th>
             <th className="py-2 pr-3 font-medium">Math</th>
             <th className="py-2 pr-3 font-medium">Verbal</th>
@@ -234,10 +234,10 @@ export default function StudentReportPage() {
               <>
                 <tr
                   key={key}
-                  className={`border-b border-gray-50 ${hasFeedback ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                  className={`border-b border-border/50 ${hasFeedback ? 'cursor-pointer hover:bg-muted/60' : ''}`}
                   onClick={() => hasFeedback && setOpenWeek(openWeek === key ? null : key)}
                 >
-                  <td className="py-2 pr-3 text-gray-900">{w.week_label}</td>
+                  <td className="py-2 pr-3 text-foreground">{w.week_label}</td>
                   <td className="py-2 pr-3">{side(w.math)}</td>
                   <td className="py-2 pr-3">{side(w.verbal)}</td>
                   <td className="py-2 text-right">{hasFeedback && <ExpandChevron open={openWeek === key} />}</td>
@@ -247,13 +247,13 @@ export default function StudentReportPage() {
                     <td colSpan={4} className="py-2 space-y-2">
                       {w.math?.feedback && (
                         <div>
-                          <p className="text-xs font-medium text-gray-700 mb-1">Фидбэк — Math</p>
+                          <p className="text-xs font-medium text-foreground mb-1">Фидбэк — Math</p>
                           <FeedbackText text={w.math.feedback} />
                         </div>
                       )}
                       {w.verbal?.feedback && (
                         <div>
-                          <p className="text-xs font-medium text-gray-700 mb-1">Фидбэк — Verbal</p>
+                          <p className="text-xs font-medium text-foreground mb-1">Фидбэк — Verbal</p>
                           <FeedbackText text={w.verbal.feedback} />
                         </div>
                       )}
@@ -284,20 +284,20 @@ export default function StudentReportPage() {
   };
 
   return (
-    <div className="p-4 md:p-6 max-w-[1000px] mx-auto space-y-5">
-      <button onClick={() => navigate(-1)} className="text-sm text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-colors flex items-center gap-1">
+    <div className="max-w-[1000px] mx-auto space-y-5">
+      <button onClick={() => navigate(-1)} className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         Назад
       </button>
 
       {/* Header */}
-      <div className="flex items-start gap-4 p-5 bg-white border border-gray-200 rounded-xl">
+      <div className="flex items-start gap-4 p-5 bg-card border border-border rounded-xl">
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-semibold text-gray-900">Отчёт об успеваемости — {student.name}</h1>
-          <p className="text-sm text-gray-400">{student.email}</p>
+          <h1 className="text-lg font-semibold text-foreground">Отчёт об успеваемости — {student.name}</h1>
+          <p className="text-sm text-muted-foreground">{student.email}</p>
           <div className="flex flex-wrap gap-1.5 mt-2">
             {student.groups.map(g => (
-              <Badge key={g.id} className="bg-gray-100 text-gray-600 border-gray-200 text-xs font-normal">
+              <Badge key={g.id} className="bg-muted text-muted-foreground border-border text-xs font-normal">
                 {g.name} · с {fmtDate(g.joined_at)}
               </Badge>
             ))}
@@ -308,23 +308,23 @@ export default function StudentReportPage() {
       </div>
 
       {weekly_tests.errors.length > 0 && (
-        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-700">
+        <div className="p-3 bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 rounded-lg text-xs text-amber-700 dark:text-amber-300">
           Часть данных внешних платформ временно недоступна: {weekly_tests.errors.join('; ')}
         </div>
       )}
 
       {/* Quick stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 @xl:grid-cols-4 gap-3">
         {[
           { label: 'Посещаемость', value: fmtPct(attendance.attendance_pct), sub: `${attendance.attended} из ${attendance.marked_total}` },
           { label: 'Домашние задания', value: `${homework.graded}/${homework.assigned}`, sub: `${homework.earned_score} из ${homework.max_score} баллов` },
           { label: 'Средний квиз', value: fmtPct(avgQuizPct), sub: `${quizzes.reduce((s, c) => s + c.completed_attempts, 0)} попыток` },
           { label: 'Баллы активности', value: String(activity.points_total), sub: `${activity.daily_questions_completed} ежедневных заданий` },
         ].map(s => (
-          <div key={s.label} className="p-4 bg-white border border-gray-200 rounded-xl">
-            <p className="text-xs text-gray-400">{s.label}</p>
-            <p className="text-xl font-semibold text-gray-900 mt-1">{s.value}</p>
-            <p className="text-xs text-gray-400 mt-0.5">{s.sub}</p>
+          <div key={s.label} className="p-4 bg-card border border-border rounded-xl">
+            <p className="text-xs text-muted-foreground">{s.label}</p>
+            <p className="text-xl font-semibold text-foreground mt-1">{s.value}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{s.sub}</p>
           </div>
         ))}
       </div>
@@ -337,7 +337,7 @@ export default function StudentReportPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
+              <tr className="text-left text-xs text-muted-foreground border-b border-border">
                 <th className="py-2 pr-3 font-medium">Задание</th>
                 <th className="py-2 pr-3 font-medium">Срок</th>
                 <th className="py-2 pr-3 font-medium">Балл</th>
@@ -354,10 +354,10 @@ export default function StudentReportPage() {
                   <>
                     <tr
                       key={item.id}
-                      className={`border-b border-gray-50 ${expandable ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                      className={`border-b border-border/50 ${expandable ? 'cursor-pointer hover:bg-muted/60' : ''}`}
                       onClick={() => expandable && setOpenHw(open ? null : item.id)}
                     >
-                      <td className="py-2 pr-3 text-gray-900">{item.title}</td>
+                      <td className="py-2 pr-3 text-foreground">{item.title}</td>
                       <td className="py-2 pr-3 whitespace-nowrap">{fmtDate(item.due_date)}</td>
                       <td className="py-2 pr-3 whitespace-nowrap">
                         {item.score !== null ? `${item.score} из ${item.max_score ?? '—'}` : `— из ${item.max_score ?? '—'}`}
@@ -365,7 +365,7 @@ export default function StudentReportPage() {
                       <td className="py-2 pr-3">
                         <Badge className={`${st.cls} text-xs font-normal`}>{st.label}</Badge>
                         {item.submission?.is_late && (
-                          <Badge className="ml-1 bg-orange-50 text-orange-600 border-orange-200 text-xs font-normal">Позже срока</Badge>
+                          <Badge className="ml-1 bg-orange-50 dark:bg-orange-500/15 text-orange-600 dark:text-orange-300 border-orange-200 dark:border-orange-500/30 text-xs font-normal">Позже срока</Badge>
                         )}
                       </td>
                       <td className="py-2 text-right">{expandable && <ExpandChevron open={open} />}</td>
@@ -373,12 +373,12 @@ export default function StudentReportPage() {
                     {open && item.submission && (
                       <tr key={`${item.id}-detail`}>
                         <td colSpan={5} className="py-2">
-                          <div className="bg-gray-50 border border-gray-100 rounded-lg p-3 text-xs text-gray-600 space-y-1.5">
-                            <p>Сдано: <span className="text-gray-900">{fmtDate(item.submitted_at)}</span>
-                              {item.submission.graded_at && <> · Проверено: <span className="text-gray-900">{fmtDate(item.submission.graded_at)}</span></>}
+                          <div className="bg-gray-50 dark:bg-muted border border-border rounded-lg p-3 text-xs text-muted-foreground space-y-1.5">
+                            <p>Сдано: <span className="text-foreground">{fmtDate(item.submitted_at)}</span>
+                              {item.submission.graded_at && <> · Проверено: <span className="text-foreground">{fmtDate(item.submission.graded_at)}</span></>}
                             </p>
                             {item.submission.feedback && (
-                              <p className="whitespace-pre-wrap">Фидбэк: <span className="text-gray-900">{item.submission.feedback}</span></p>
+                              <p className="whitespace-pre-wrap">Фидбэк: <span className="text-foreground">{item.submission.feedback}</span></p>
                             )}
                             {item.submission.file_url && (() => {
                               const href = fileHref(item.submission.file_url);
@@ -387,18 +387,18 @@ export default function StudentReportPage() {
                                   href={href}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-blue-600 hover:underline"
+                                  className="text-brand hover:underline"
                                   onClick={e => e.stopPropagation()}
                                 >
                                   <Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{item.submission.file_name || 'Файл сабмишена'}
                                 </a>
                               ) : (
-                                <span className="text-gray-500"><Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{item.submission.file_name || 'Файл сабмишена'}</span>
+                                <span className="text-muted-foreground"><Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{item.submission.file_name || 'Файл сабмишена'}</span>
                               );
                             })()}
                             <button
                               type="button"
-                              className="flex items-center gap-1 text-blue-600 hover:underline"
+                              className="flex items-center gap-1 text-brand hover:underline"
                               onClick={e => { e.stopPropagation(); openSubmission(item.submission!.id); }}
                             >
                               Открыть содержимое сабмишена
@@ -434,7 +434,7 @@ export default function StudentReportPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
+                <tr className="text-left text-xs text-muted-foreground border-b border-border">
                   <th className="py-2 pr-3 font-medium">Неделя</th>
                   <th className="py-2 pr-3 font-medium">Listening</th>
                   <th className="py-2 pr-3 font-medium">Reading</th>
@@ -453,10 +453,10 @@ export default function StudentReportPage() {
                     <>
                       <tr
                         key={key}
-                        className={`border-b border-gray-50 ${parts.length ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                        className={`border-b border-border/50 ${parts.length ? 'cursor-pointer hover:bg-muted/60' : ''}`}
                         onClick={() => parts.length && setOpenWeek(open ? null : key)}
                       >
-                        <td className="py-2 pr-3 text-gray-900">{w.week_label}</td>
+                        <td className="py-2 pr-3 text-foreground">{w.week_label}</td>
                         <td className="py-2 pr-3">{fmtBand(w.listening_band)}</td>
                         <td className="py-2 pr-3">{fmtBand(w.reading_band)}</td>
                         <td className="py-2 pr-3">{fmtBand(w.writing_band)}</td>
@@ -469,7 +469,7 @@ export default function StudentReportPage() {
                           <td colSpan={7} className="py-2 space-y-2">
                             {parts.map(p => (
                               <div key={p.label}>
-                                <p className="text-xs font-medium text-gray-700 mb-1">{p.label}</p>
+                                <p className="text-xs font-medium text-foreground mb-1">{p.label}</p>
                                 <FeedbackText text={p.text} />
                               </div>
                             ))}
@@ -491,7 +491,7 @@ export default function StudentReportPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
+                <tr className="text-left text-xs text-muted-foreground border-b border-border">
                   <th className="py-2 pr-3 font-medium">Тест</th>
                   <th className="py-2 pr-3 font-medium">Дата</th>
                   <th className="py-2 pr-3 font-medium">Общий</th>
@@ -501,8 +501,8 @@ export default function StudentReportPage() {
               </thead>
               <tbody>
                 {bluebook.map(b => (
-                  <tr key={`${b.test_number}-${b.taken_at}`} className="border-b border-gray-50">
-                    <td className="py-2 pr-3 text-gray-900">Practice Test {b.test_number}</td>
+                  <tr key={`${b.test_number}-${b.taken_at}`} className="border-b border-border/50">
+                    <td className="py-2 pr-3 text-foreground">Practice Test {b.test_number}</td>
                     <td className="py-2 pr-3">{b.taken_at ? fmtDate(b.taken_at) : 'входной'}</td>
                     <td className="py-2 pr-3 font-medium">{b.total}</td>
                     <td className="py-2 pr-3">{b.verbal}</td>
@@ -513,16 +513,16 @@ export default function StudentReportPage() {
             </table>
           </div>
         ) : (
-          <p className="text-sm text-gray-400">Результатов Bluebook нет.</p>
+          <p className="text-sm text-muted-foreground">Результатов Bluebook нет.</p>
         )}
-        <div className="text-xs text-gray-500 space-y-0.5">
+        <div className="text-xs text-muted-foreground space-y-0.5">
           {exams.results.length > 0 ? exams.results.map(r => (
             <p key={`${r.exam_type}-${r.test_date}`}>
-              Официальный {r.exam_type.toUpperCase()}: <span className="font-medium text-gray-900">{r.total_score}</span> ({fmtDate(r.test_date)}, {r.status})
+              Официальный {r.exam_type.toUpperCase()}: <span className="font-medium text-foreground">{r.total_score}</span> ({fmtDate(r.test_date)}, {r.status})
             </p>
           )) : <p>Официальные результаты экзаменов в LMS не зарегистрированы.</p>}
-          {exams.sat_planned_date && <p>Запланированная дата SAT: <span className="font-medium text-gray-900">{fmtDate(exams.sat_planned_date)}</span></p>}
-          {exams.ielts_planned_date && <p>Запланированная дата IELTS: <span className="font-medium text-gray-900">{fmtDate(exams.ielts_planned_date)}</span></p>}
+          {exams.sat_planned_date && <p>Запланированная дата SAT: <span className="font-medium text-foreground">{fmtDate(exams.sat_planned_date)}</span></p>}
+          {exams.ielts_planned_date && <p>Запланированная дата IELTS: <span className="font-medium text-foreground">{fmtDate(exams.ielts_planned_date)}</span></p>}
         </div>
       </Section>
 
@@ -536,7 +536,7 @@ export default function StudentReportPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
+                <tr className="text-left text-xs text-muted-foreground border-b border-border">
                   <th className="py-2 pr-3 font-medium">Раздел</th>
                   <th className="py-2 pr-3 font-medium">Попыток</th>
                   <th className="py-2 pr-3 font-medium">Средний</th>
@@ -552,10 +552,10 @@ export default function StudentReportPage() {
                     <>
                       <tr
                         key={key}
-                        className="border-b border-gray-50 cursor-pointer hover:bg-gray-50"
+                        className="border-b border-border/50 cursor-pointer hover:bg-muted/60"
                         onClick={() => setOpenQuiz(open ? null : key)}
                       >
-                        <td className="py-2 pr-3 text-gray-900">{section.lesson_title}</td>
+                        <td className="py-2 pr-3 text-foreground">{section.lesson_title}</td>
                         <td className="py-2 pr-3">{section.attempts}</td>
                         <td className="py-2 pr-3">{fmtPct(section.average_pct)}</td>
                         <td className="py-2 pr-3">{fmtPct(section.best_pct)}</td>
@@ -564,7 +564,7 @@ export default function StudentReportPage() {
                       {open && (
                         <tr key={`${key}-detail`}>
                           <td colSpan={5} className="py-2">
-                            <div className="bg-gray-50 border border-gray-100 rounded-lg p-3 text-xs text-gray-600 space-y-1">
+                            <div className="bg-gray-50 dark:bg-muted border border-border rounded-lg p-3 text-xs text-muted-foreground space-y-1">
                               {section.attempt_details.map((a, i) => (
                                 <p key={i}>
                                   {fmtDate(a.completed_at)} — {a.correct}/{a.total_questions} ({fmtPct(a.pct)})
@@ -588,7 +588,7 @@ export default function StudentReportPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
+              <tr className="text-left text-xs text-muted-foreground border-b border-border">
                 <th className="py-2 pr-3 font-medium">Курс</th>
                 <th className="py-2 pr-3 font-medium">Уроки</th>
                 <th className="py-2 pr-3 font-medium">Прогресс</th>
@@ -599,8 +599,8 @@ export default function StudentReportPage() {
             </thead>
             <tbody>
               {courses.map(c => (
-                <tr key={c.course_id} className="border-b border-gray-50">
-                  <td className="py-2 pr-3 text-gray-900">{c.course_title}</td>
+                <tr key={c.course_id} className="border-b border-border/50">
+                  <td className="py-2 pr-3 text-foreground">{c.course_title}</td>
                   <td className="py-2 pr-3">{lessonsLabel(c.lessons_done, c.lessons_total) || '—'}</td>
                   <td className="py-2 pr-3 font-medium">{Math.trunc(c.completion_pct)}%</td>
                   <td className="py-2 pr-3">{checkpointLabel(c.checkpoints).replace('Чекпоинты: ', '') || '—'}</td>
@@ -619,14 +619,14 @@ export default function StudentReportPage() {
         subtitle={`Занятий с отметкой ${attendance.marked_total} · Присутствие ${fmtPct(attendance.attendance_pct)} · Опозданий ${attendance.late} · Пропусков ${attendance.absent}${attendance.absent_excused ? ` (из них по уважительной: ${attendance.absent_excused})` : ''}`}
       >
         {attendance.absences.length > 0 && (
-          <div className="text-xs text-gray-600">
-            <p className="font-medium text-gray-700 mb-1">Пропуски</p>
+          <div className="text-xs text-muted-foreground">
+            <p className="font-medium text-foreground mb-1">Пропуски</p>
             {attendance.absences.map((a, i) => (
               <p key={i}>
                 {fmtDate(a.date)} — {a.title}
                 {a.excused && (
                   <span
-                    className="ml-1.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-700 align-middle"
+                    className="ml-1.5 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-rose-100 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 align-middle"
                     title={'Уважительная причина' + (a.excuse_note ? `: ${a.excuse_note}` : '')}
                   >
                     Ув.
@@ -637,12 +637,12 @@ export default function StudentReportPage() {
           </div>
         )}
         {attendance.lates.length > 0 && (
-          <div className="text-xs text-gray-600">
-            <p className="font-medium text-gray-700 mb-1">Опоздания</p>
+          <div className="text-xs text-muted-foreground">
+            <p className="font-medium text-foreground mb-1">Опоздания</p>
             {attendance.lates.map((a, i) => <p key={i}>{fmtDate(a.date)} — {a.title}</p>)}
           </div>
         )}
-        {attendance.marked_total === 0 && <p className="text-sm text-gray-400">Данных о посещаемости нет.</p>}
+        {attendance.marked_total === 0 && <p className="text-sm text-muted-foreground">Данных о посещаемости нет.</p>}
       </Section>
 
       {/* Talk time in Meet lessons */}
@@ -652,12 +652,12 @@ export default function StudentReportPage() {
           subtitle={`По записи Meet: уроков с данными ${report.talk.totals.lessons} · говорил(а) на ${report.talk.totals.lessons_spoke} · всего ${fmtTalk(report.talk.totals.total_seconds)} · в среднем за урок ${fmtTalk(report.talk.totals.avg_seconds)}${report.talk.totals.questions !== null ? ` · вопросов задал(а) ${report.talk.totals.questions}` : ''}${report.talk.totals.answers != null ? ` · ответил(а) на вопросы преподавателя ${report.talk.totals.answers}` : ''}`}
         >
           {report.talk.lessons.length === 0 ? (
-            <p className="text-sm text-gray-400">Пока нет уроков с данными о речи.</p>
+            <p className="text-sm text-muted-foreground">Пока нет уроков с данными о речи.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
+                  <tr className="text-left text-xs text-muted-foreground border-b border-border">
                     <th className="py-2 pr-3 font-medium">Дата</th>
                     <th className="py-2 pr-3 font-medium">Урок</th>
                     <th className="py-2 pr-3 font-medium">Говорил(а)</th>
@@ -668,19 +668,19 @@ export default function StudentReportPage() {
                 </thead>
                 <tbody>
                   {report.talk.lessons.map(lesson => (
-                    <tr key={lesson.event_id} className="border-b border-gray-50">
+                    <tr key={lesson.event_id} className="border-b border-border/50">
                       <td className="py-2 pr-3 whitespace-nowrap">{fmtDate(lesson.start)}</td>
-                      <td className="py-2 pr-3 text-gray-900">{lesson.group_name ?? lesson.title}</td>
+                      <td className="py-2 pr-3 text-foreground">{lesson.group_name ?? lesson.title}</td>
                       <td className="py-2 pr-3 tabular-nums">
-                        {lesson.in_room ? fmtTalk(lesson.seconds) : <span className="text-gray-400">не был(а)</span>}
+                        {lesson.in_room ? fmtTalk(lesson.seconds) : <span className="text-muted-foreground">не был(а)</span>}
                       </td>
                       <td className="py-2 pr-3">
                         {lesson.in_room ? (
                           <div className="flex items-center gap-2">
-                            <div className="h-1.5 w-20 overflow-hidden rounded-full bg-gray-100" aria-hidden>
+                            <div className="h-1.5 w-20 overflow-hidden rounded-full bg-muted" aria-hidden>
                               <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.round(lesson.share_of_students * 100)}%` }} />
                             </div>
-                            <span className="tabular-nums text-xs text-gray-600">{fmtPct(lesson.share_of_students * 100)}</span>
+                            <span className="tabular-nums text-xs text-muted-foreground">{fmtPct(lesson.share_of_students * 100)}</span>
                           </div>
                         ) : '—'}
                       </td>
@@ -697,10 +697,10 @@ export default function StudentReportPage() {
 
       {/* Activity */}
       <Section title="Дополнительная активность">
-        <div className="text-sm text-gray-600 space-y-1">
-          <p>Выполнено ежедневных заданий: <span className="font-medium text-gray-900">{activity.daily_questions_completed}</span></p>
-          <p>Всего баллов активности: <span className="font-medium text-gray-900">{activity.points_total}</span></p>
-          <div className="text-xs text-gray-500 mt-1">
+        <div className="text-sm text-muted-foreground space-y-1">
+          <p>Выполнено ежедневных заданий: <span className="font-medium text-foreground">{activity.daily_questions_completed}</span></p>
+          <p>Всего баллов активности: <span className="font-medium text-foreground">{activity.points_total}</span></p>
+          <div className="text-xs text-muted-foreground mt-1">
             {Object.entries(activity.points_by_reason).sort((a, b) => b[1] - a[1]).map(([reason, pts]) => (
               <p key={reason}>{{ course_quiz: 'Квизы в курсах', homework: 'Домашние задания', assignment: 'Задания', daily_questions: 'Ежедневные вопросы' }[reason] ?? reason}: {pts}</p>
             ))}
@@ -708,39 +708,39 @@ export default function StudentReportPage() {
         </div>
       </Section>
 
-      <p className="text-xs text-gray-300 text-center pb-4">Отчёт сформирован {fmtDate(report.generated_at)}</p>
+      <p className="text-xs text-muted-foreground/50 text-center pb-4">Отчёт сформирован {fmtDate(report.generated_at)}</p>
 
       {exportOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => !downloading && setExportOpen(false)}>
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-5 space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-card rounded-xl shadow-xl max-w-md w-full p-5 space-y-4" onClick={e => e.stopPropagation()}>
             <div>
-              <h3 className="text-base font-semibold text-gray-900">Экспорт отчёта в PDF</h3>
-              <p className="text-xs text-gray-400 mt-0.5">Выберите разделы, которые войдут в документ.</p>
+              <h3 className="text-base font-semibold text-foreground">Экспорт отчёта в PDF</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">Выберите разделы, которые войдут в документ.</p>
             </div>
             <div className="space-y-2">
               {pdfSections.map(section => (
-                <label key={section.key} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+                <label key={section.key} className="flex items-center gap-2 text-sm text-foreground cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={exportSections[section.key]}
                     onChange={e => setExportSections(prev => ({ ...prev, [section.key]: e.target.checked }))}
-                    className="rounded border-gray-300"
+                    className="rounded border-border"
                   />
                   {section.label}
                 </label>
               ))}
             </div>
-            <div className="border-t border-gray-100 pt-3">
-              <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none">
+            <div className="border-t border-border pt-3">
+              <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer select-none">
                 <input
                   type="checkbox"
                   checked={exportFeedback}
                   onChange={e => setExportFeedback(e.target.checked)}
-                  className="rounded border-gray-300"
+                  className="rounded border-border"
                 />
                 Включить обратную связь по еженедельным тестам
               </label>
-              <p className="text-[11px] text-gray-400 mt-1 ml-6">Подробные разборы заметно увеличивают объём документа.</p>
+              <p className="text-[11px] text-muted-foreground mt-1 ml-6">Подробные разборы заметно увеличивают объём документа.</p>
             </div>
             <div className="flex justify-end gap-2 pt-1">
               <Button variant="outline" size="sm" disabled={downloading} onClick={() => setExportOpen(false)}>
@@ -763,12 +763,12 @@ export default function StudentReportPage() {
           и промах мимо панели стирал бы это молча. Закрытие — только кнопкой. */}
       {parentOpen && report && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
-          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h3 className="text-base font-semibold text-gray-900">Текст для родителей</h3>
+          <div className="bg-card rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h3 className="text-base font-semibold text-foreground">Текст для родителей</h3>
               <button
                 type="button"
-                className="text-gray-500 text-sm"
+                className="text-muted-foreground text-sm"
                 onClick={() => setParentOpen(false)}
               >
                 Закрыть
@@ -776,9 +776,9 @@ export default function StudentReportPage() {
             </div>
             <div className="p-4">
               {parentLoading && (
-                <p className="text-sm text-gray-500">Загружаем данные за неделю…</p>
+                <p className="text-sm text-muted-foreground">Загружаем данные за неделю…</p>
               )}
-              {parentError && <p className="text-sm text-red-600">{parentError}</p>}
+              {parentError && <p className="text-sm text-red-600 dark:text-red-300">{parentError}</p>}
               {!parentLoading && !parentError && (
                 <ParentReportCard
                   studentId={report.student.id}
@@ -806,27 +806,27 @@ function AnswerValue({ value }: { value: unknown }) {
   if (value === null || value === undefined || value === '') return null;
   if (typeof value === 'boolean') {
     return value ? (
-      <p className="flex items-center gap-1 text-sm text-gray-700 dark:text-gray-300"><Check className="h-4 w-4 text-green-600 dark:text-green-400" aria-hidden="true" />Выполнено</p>
+      <p className="flex items-center gap-1 text-sm text-foreground"><Check className="h-4 w-4 text-green-600 dark:text-green-400" aria-hidden="true" />Выполнено</p>
     ) : (
-      <p className="text-sm text-gray-700 dark:text-gray-300">— Не выполнено</p>
+      <p className="text-sm text-foreground">— Не выполнено</p>
     );
   }
   if (typeof value === 'string') {
     if (/^(https?:\/\/|\/)/.test(value) && /\.(png|jpe?g|gif|webp|pdf|mp3|m4a|ogg|wav|webm|docx?|xlsx?)([?#]|$)/i.test(value)) {
       const href = fileHref(value);
       return href ? (
-        <a href={href} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline break-all">
+        <a href={href} target="_blank" rel="noopener noreferrer" className="text-sm text-brand hover:underline break-all">
           <Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{value.split('/').pop()}
         </a>
       ) : (
-        <span className="text-sm text-gray-500 break-all"><Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{value.split('/').pop()}</span>
+        <span className="text-sm text-muted-foreground break-all"><Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{value.split('/').pop()}</span>
       );
     }
-    return <p className="text-sm text-gray-800 whitespace-pre-wrap break-words">{value}</p>;
+    return <p className="text-sm text-foreground whitespace-pre-wrap break-words">{value}</p>;
   }
-  if (typeof value === 'number') return <p className="text-sm text-gray-800">{String(value)}</p>;
+  if (typeof value === 'number') return <p className="text-sm text-foreground">{String(value)}</p>;
   return (
-    <pre className="text-xs text-gray-600 bg-gray-50 border border-gray-100 rounded p-2 overflow-x-auto">
+    <pre className="text-xs text-muted-foreground bg-gray-50 dark:bg-muted border border-border rounded p-2 overflow-x-auto">
       {JSON.stringify(value, null, 2)}
     </pre>
   );
@@ -845,19 +845,19 @@ const ANSWER_FIELD_LABELS: Record<string, string> = {
 
 function TaskAnswer({ answer }: { answer: unknown }) {
   if (answer === null || answer === undefined) {
-    return <p className="text-sm text-gray-400">Ответа нет</p>;
+    return <p className="text-sm text-muted-foreground">Ответа нет</p>;
   }
   if (typeof answer !== 'object' || Array.isArray(answer)) {
     return <AnswerValue value={answer} />;
   }
   const entries = Object.entries(answer as Record<string, unknown>)
     .filter(([, v]) => v !== null && v !== undefined && v !== '');
-  if (entries.length === 0) return <p className="text-sm text-gray-400">Ответа нет</p>;
+  if (entries.length === 0) return <p className="text-sm text-muted-foreground">Ответа нет</p>;
   return (
     <div className="space-y-1.5">
       {entries.map(([key, value]) => (
         <div key={key}>
-          <p className="text-[11px] uppercase tracking-wide text-gray-400">{ANSWER_FIELD_LABELS[key] ?? key}</p>
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{ANSWER_FIELD_LABELS[key] ?? key}</p>
           <AnswerValue value={value} />
         </div>
       ))}
@@ -878,26 +878,26 @@ function SubmissionViewer({ viewer, onClose }: {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={onClose}>
       <div
-        className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-5 space-y-4"
+        className="bg-card rounded-xl shadow-xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-5 space-y-4"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-base font-semibold text-gray-900">
+            <h3 className="text-base font-semibold text-foreground">
               {data?.assignment.title ?? 'Сабмишен'}
             </h3>
             {data && (
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Сдано {fmtDate(data.submission.submitted_at)}
                 {data.submission.is_graded && <> · Оценка: {data.submission.score ?? '—'} из {data.submission.max_score ?? '—'}</>}
                 {data.submission.is_late && <span className="text-orange-500"> · позже срока</span>}
               </p>
             )}
           </div>
-          <button type="button" onClick={onClose} aria-label="Закрыть" className="rounded p-1 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"><X className="h-5 w-5" aria-hidden="true" /></button>
+          <button type="button" onClick={onClose} aria-label="Закрыть" className="rounded p-1 text-muted-foreground hover:text-foreground"><X className="h-5 w-5" aria-hidden="true" /></button>
         </div>
 
-        {viewer.loading && <p className="text-sm text-gray-400">Загружаем…</p>}
+        {viewer.loading && <p className="text-sm text-muted-foreground">Загружаем…</p>}
 
         {data && (
           <>
@@ -908,26 +908,26 @@ function SubmissionViewer({ viewer, onClose }: {
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block text-sm text-blue-600 hover:underline"
+                  className="inline-block text-sm text-brand hover:underline"
                 >
                   <Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{data.submission.file_name || 'Файл сабмишена'}
                 </a>
               ) : (
-                <span className="inline-block text-sm text-gray-500"><Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{data.submission.file_name || 'Файл сабмишена'}</span>
+                <span className="inline-block text-sm text-muted-foreground"><Paperclip className="inline h-3.5 w-3.5 mr-1 align-[-2px]" aria-hidden="true" />{data.submission.file_name || 'Файл сабмишена'}</span>
               );
             })()}
 
             {tasks.length > 0 ? (
               <div className="space-y-3">
                 {tasks.map((task, i) => (
-                  <div key={task.id ?? i} className="border border-gray-100 rounded-lg p-3 space-y-2">
+                  <div key={task.id ?? i} className="border border-border rounded-lg p-3 space-y-2">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-foreground">
                         {i + 1}. {task.title || task.task_type || 'Задание'}
-                        {task.points != null && <span className="ml-1.5 text-xs text-gray-400 font-normal">({task.points} б.)</span>}
+                        {task.points != null && <span className="ml-1.5 text-xs text-muted-foreground font-normal">({task.points} б.)</span>}
                       </p>
                       {task.question && (
-                        <p className="text-xs text-gray-500 whitespace-pre-wrap mt-0.5 line-clamp-4">{task.question}</p>
+                        <p className="text-xs text-muted-foreground whitespace-pre-wrap mt-0.5 line-clamp-4">{task.question}</p>
                       )}
                     </div>
                     <TaskAnswer answer={task.id != null ? answers[task.id] : undefined} />
@@ -939,11 +939,11 @@ function SubmissionViewer({ viewer, onClose }: {
             )}
 
             {unmatched.length > 0 && tasks.length > 0 && (
-              <div className="border border-gray-100 rounded-lg p-3 space-y-2">
-                <p className="text-xs text-gray-400">Прочие данные сабмишена</p>
+              <div className="border border-border rounded-lg p-3 space-y-2">
+                <p className="text-xs text-muted-foreground">Прочие данные сабмишена</p>
                 {unmatched.map(([key, value]) => (
                   <div key={key}>
-                    <p className="text-[11px] uppercase tracking-wide text-gray-400">{key}</p>
+                    <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{key}</p>
                     <AnswerValue value={value} />
                   </div>
                 ))}
@@ -951,9 +951,9 @@ function SubmissionViewer({ viewer, onClose }: {
             )}
 
             {data.submission.feedback && (
-              <div className="bg-gray-50 border border-gray-100 rounded-lg p-3">
-                <p className="text-xs font-medium text-gray-700 mb-1">Фидбэк</p>
-                <p className="text-sm text-gray-700 whitespace-pre-wrap">{data.submission.feedback}</p>
+              <div className="bg-gray-50 dark:bg-muted border border-border rounded-lg p-3">
+                <p className="text-xs font-medium text-foreground mb-1">Фидбэк</p>
+                <p className="text-sm text-foreground whitespace-pre-wrap">{data.submission.feedback}</p>
               </div>
             )}
           </>

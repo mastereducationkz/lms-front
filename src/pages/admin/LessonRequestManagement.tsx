@@ -631,8 +631,8 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                             </div>
                           )}
 
-                          <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-                            <dl className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                          <div className="grid gap-6 @4xl:grid-cols-[1fr_320px]">
+                            <dl className="grid gap-4 @xl:grid-cols-2 @6xl:grid-cols-3">
                               <Fact label="Тип заявки">{typeLabel(req.request_type)}</Fact>
                               <Fact label="Статус">{STATUS_LABELS[req.status] ?? req.status}</Fact>
                               <Fact label="Автор заявки">{req.requester_name}</Fact>

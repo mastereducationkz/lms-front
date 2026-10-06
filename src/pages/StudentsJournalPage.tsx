@@ -48,31 +48,31 @@ interface Group {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function azBadge(status: StudentRow['az_status']) {
-  if (status === 'submitted') return <Badge className="bg-green-100 text-green-700 border-green-200 text-[11px] font-medium">Сдано</Badge>;
-  if (status === 'draft') return <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200 text-[11px] font-medium">Черновик</Badge>;
-  return <Badge className="bg-gray-100 text-gray-500 border-gray-200 text-[11px] font-medium">Не начато</Badge>;
+  if (status === 'submitted') return <Badge className="bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300 border-green-200 dark:border-green-500/30 text-[11px] font-medium">Сдано</Badge>;
+  if (status === 'draft') return <Badge className="bg-yellow-100 dark:bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-500/30 text-[11px] font-medium">Черновик</Badge>;
+  return <Badge className="bg-muted text-muted-foreground border-border text-[11px] font-medium">Не начато</Badge>;
 }
 
 function attendanceBadge(rate: number | null, attended: number, total: number) {
-  if (total === 0) return <span className="text-gray-400 text-sm">—</span>;
+  if (total === 0) return <span className="text-muted-foreground text-sm">—</span>;
   const pct = rate ?? 0;
-  const color = pct >= 80 ? 'text-green-700' : pct >= 60 ? 'text-yellow-700' : 'text-red-600';
+  const color = pct >= 80 ? 'text-green-700 dark:text-green-300' : pct >= 60 ? 'text-yellow-700 dark:text-yellow-300' : 'text-red-600 dark:text-red-300';
   return (
     <span className={`text-sm font-medium ${color}`}>
-      {attended}/{total} <span className="text-gray-400 font-normal">({pct}%)</span>
+      {attended}/{total} <span className="text-muted-foreground font-normal">({pct}%)</span>
     </span>
   );
 }
 
 function progressBar(value: number | null) {
-  if (value === null) return <span className="text-gray-400 text-sm">—</span>;
-  const color = value >= 80 ? 'bg-green-500' : value >= 40 ? 'bg-blue-500' : 'bg-gray-300';
+  if (value === null) return <span className="text-muted-foreground text-sm">—</span>;
+  const color = value >= 80 ? 'bg-green-500' : value >= 40 ? 'bg-brand-solid' : 'bg-muted-foreground/30';
   return (
     <div className="flex items-center gap-2">
-      <div className="w-20 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+      <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.min(value, 100)}%` }} />
       </div>
-      <span className="text-sm text-gray-600">{value}%</span>
+      <span className="text-sm text-muted-foreground">{value}%</span>
     </div>
   );
 }
@@ -130,14 +130,14 @@ export default function StudentsJournalPage() {
   const totalPages = Math.ceil(total / pageSize);
 
   return (
-    <div className="p-4 md:p-6 max-w-[1440px] mx-auto space-y-4">
+    <div className="max-w-[1440px] mx-auto space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">Журнал студентов</h1>
-          <p className="text-sm text-gray-400 mt-0.5">{total} студентов</p>
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold text-foreground">Журнал студентов</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{total} студентов</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 min-w-0">
           <Input
             placeholder="Поиск по имени или email..."
             value={search}
@@ -155,21 +155,21 @@ export default function StudentsJournalPage() {
               ))}
             </SelectContent>
           </Select>
-          <label className="flex items-center gap-1.5 text-xs text-gray-500 whitespace-nowrap cursor-pointer select-none">
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap cursor-pointer select-none">
             <input
               type="checkbox"
               checked={showArchived}
               onChange={e => setShowArchived(e.target.checked)}
-              className="rounded border-gray-300"
+              className="rounded border-border"
             />
             Архивные группы
           </label>
-          <label className="flex items-center gap-1.5 text-xs text-gray-500 whitespace-nowrap cursor-pointer select-none">
+          <label className="flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap cursor-pointer select-none">
             <input
               type="checkbox"
               checked={showInactive}
               onChange={e => setShowInactive(e.target.checked)}
-              className="rounded border-gray-300"
+              className="rounded border-border"
             />
             Деактивированные
           </label>
@@ -177,33 +177,34 @@ export default function StudentsJournalPage() {
       </div>
 
       {/* Table */}
-      <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+      <div className="border border-border rounded-xl overflow-hidden bg-card">
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Студент</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Группа</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Посещаемость</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">LMS</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Домашки</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Assignment Zero</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wide">Активность</th>
+            <tr className="bg-gray-50 dark:bg-muted border-b border-border">
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Студент</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Группа</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Посещаемость</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">LMS</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Домашки</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Assignment Zero</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Активность</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               Array.from({ length: 8 }).map((_, i) => (
-                <tr key={i} className="border-b border-gray-100">
+                <tr key={i} className="border-b border-border">
                   {Array.from({ length: 7 }).map((_, j) => (
                     <td key={j} className="px-4 py-3">
-                      <div className="h-4 bg-gray-100 rounded animate-pulse" style={{ width: `${60 + Math.random() * 30}%` }} />
+                      <div className="h-4 bg-muted rounded animate-pulse" style={{ width: `${60 + Math.random() * 30}%` }} />
                     </td>
                   ))}
                 </tr>
               ))
             ) : students.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-16 text-center text-sm text-gray-400">
+                <td colSpan={7} className="px-4 py-16 text-center text-sm text-muted-foreground">
                   {search || selectedGroup !== 'all' ? 'Студенты не найдены' : 'Нет студентов'}
                 </td>
               </tr>
@@ -212,24 +213,24 @@ export default function StudentsJournalPage() {
                 <tr
                   key={s.id}
                   onClick={() => navigate(`/curator/students/${s.id}`)}
-                  className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
+                  className="border-b border-border hover:bg-muted/60 cursor-pointer transition-colors"
                 >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <UserAvatar userId={s.id} name={s.name} avatarUrl={s.avatar_url} mascot={s.mascot} isStudent size={28} />
                       <div>
-                        <p className="font-medium text-gray-900 text-sm leading-tight">
+                        <p className="font-medium text-foreground text-sm leading-tight">
                           {s.name}
                           {s.is_inactive && (
-                            <span className="ml-1.5 text-[10px] font-normal text-red-500 bg-red-50 border border-red-200 rounded px-1 py-px align-middle">деактивирован</span>
+                            <span className="ml-1.5 text-[10px] font-normal text-red-500 bg-red-50 dark:bg-red-500/15 border border-red-200 dark:border-red-500/30 rounded px-1 py-px align-middle">деактивирован</span>
                           )}
                         </p>
-                        <p className="text-xs text-gray-400">{s.email}</p>
+                        <p className="text-xs text-muted-foreground">{s.email}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className="text-sm text-gray-700">{s.group_name}</span>
+                    <span className="text-sm text-foreground">{s.group_name}</span>
                   </td>
                   <td className="px-4 py-3">
                     {attendanceBadge(s.attendance_rate, s.attendance_attended, s.attendance_total)}
@@ -245,16 +246,16 @@ export default function StudentsJournalPage() {
                   </td>
                   <td className="px-4 py-3">
                     {s.hw_submitted > 0 ? (
-                      <span className="text-sm text-gray-700">
+                      <span className="text-sm text-foreground">
                         {s.hw_submitted} сдано{s.hw_avg_score !== null ? ` · ${s.hw_avg_score} б.` : ''}
                       </span>
                     ) : (
-                      <span className="text-gray-400 text-sm">—</span>
+                      <span className="text-muted-foreground text-sm">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3">{azBadge(s.az_status)}</td>
                   <td className="px-4 py-3">
-                    <span className="text-sm text-gray-500">{formatDate(s.last_activity)}</span>
+                    <span className="text-sm text-muted-foreground">{formatDate(s.last_activity)}</span>
                   </td>
                 </tr>
               ))
@@ -262,10 +263,11 @@ export default function StudentsJournalPage() {
           </tbody>
         </table>
       </div>
+      </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm text-gray-500">
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>Показано {page * pageSize + 1}–{Math.min((page + 1) * pageSize, total)} из {total}</span>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Назад</Button>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { chartColors, chartTick, chartTooltipStyle } from '../lib/chartTheme';
 import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiClient from '../services/api';
@@ -244,10 +245,10 @@ export default function HeadTeacherDashboardPage() {
   };
 
   const getSortIcon = (field: SortField) => {
-    if (sortField !== field) return <ArrowUpDown className="h-4 w-4 text-slate-400" />;
-    if (sortDirection === 'desc') return <ArrowDown className="h-4 w-4 text-slate-700" />;
-    if (sortDirection === 'asc') return <ArrowUp className="h-4 w-4 text-slate-700" />;
-    return <ArrowUpDown className="h-4 w-4 text-slate-400" />;
+    if (sortField !== field) return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
+    if (sortDirection === 'desc') return <ArrowDown className="h-4 w-4 text-foreground" />;
+    if (sortDirection === 'asc') return <ArrowUp className="h-4 w-4 text-foreground" />;
+    return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
   };
 
   // Filter by name, then sort
@@ -290,7 +291,7 @@ export default function HeadTeacherDashboardPage() {
     return (
       <div className="p-8 space-y-6">
         <Skeleton className="h-8 w-64" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 @2xl:grid-cols-2 @4xl:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-32 rounded-xl" />)}
         </div>
         <Skeleton className="h-96 rounded-xl" />
@@ -307,25 +308,25 @@ export default function HeadTeacherDashboardPage() {
     .slice(0, 10);
 
   return (
-    <div className="p-4 md:p-8 space-y-8 max-w-[1600px] mx-auto">
+    <div className="space-y-8 max-w-[1600px] mx-auto">
       <StudentSearchBox className="max-w-md" />
       {/* Header & Controls */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Head Teacher Dashboard</h1>
-          <p className="text-slate-500 mt-1">Overview of teacher performance and course activity</p>
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+        <div className="min-w-0">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Head Teacher Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Overview of teacher performance and course activity</p>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center bg-white dark:bg-card dark:border-border p-2 rounded-xl border shadow-sm">
+        <div className="flex flex-wrap items-center gap-2 max-w-full bg-card p-2 rounded-xl border shadow-sm">
           <input
             type="text"
             value={teacherSearch}
             onChange={(e) => setTeacherSearch(e.target.value)}
             placeholder="Search teacher…"
-            className="w-full sm:w-52 px-3 py-2 text-sm bg-transparent border border-slate-200 dark:border-border rounded-lg outline-none focus:border-blue-400"
+            className="w-52 max-w-full min-w-0 px-3 py-2 text-sm bg-transparent border border-border rounded-lg outline-none focus:border-brand"
           />
           <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
-            <SelectTrigger className="w-[240px] border-0 bg-transparent font-medium focus:ring-0">
+            <SelectTrigger className="w-[240px] max-w-full border-0 bg-transparent font-medium focus:ring-0">
               <SelectValue placeholder="Select a course" />
             </SelectTrigger>
             <SelectContent>
@@ -337,7 +338,7 @@ export default function HeadTeacherDashboardPage() {
             </SelectContent>
           </Select>
           
-          <div className="h-8 w-px bg-slate-200 dark:bg-border hidden sm:block" />
+          <div className="h-8 w-px bg-border hidden @6xl:block" />
 
           <Popover>
             <PopoverTrigger asChild>
@@ -345,11 +346,11 @@ export default function HeadTeacherDashboardPage() {
                 id="date"
                 variant={"ghost"}
                 className={cn(
-                  "w-[260px] justify-start text-left font-normal hover:bg-slate-50",
+                  "w-[260px] max-w-full justify-start text-left font-normal hover:bg-muted/60",
                   !dateRange && "text-muted-foreground"
                 )}
               >
-                <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
+                <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
                 {dateRange?.from ? (
                   dateRange.to ? (
                     <>
@@ -405,7 +406,7 @@ export default function HeadTeacherDashboardPage() {
         return (
           <Card className="border shadow-sm">
             <CardHeader className="pb-3">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 @xl:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle className="text-base flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-amber-500" />
@@ -509,37 +510,37 @@ export default function HeadTeacherDashboardPage() {
       })()}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 @2xl:grid-cols-2 @4xl:grid-cols-4 gap-4">
         <Card className="border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Teachers</CardTitle>
-            <Users className="h-4 w-4 text-slate-400" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Teachers</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900 dark:text-foreground">{totalTeachers}</div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Active in this course</p>
+            <div className="text-2xl font-bold text-foreground dark:text-foreground">{totalTeachers}</div>
+            <p className="text-xs text-muted-foreground mt-1">Active in this course</p>
           </CardContent>
         </Card>
 
         <Card className="border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Students</CardTitle>
-            <Users className="h-4 w-4 text-slate-400" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Total Students</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-slate-900 dark:text-foreground">{totalStudents}</div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Across all groups</p>
+            <div className="text-2xl font-bold text-foreground dark:text-foreground">{totalStudents}</div>
+            <p className="text-xs text-muted-foreground mt-1">Across all groups</p>
           </CardContent>
         </Card>
 
         <Card className="border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">Grading Actions</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Grading Actions</CardTitle>
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{totalHomeworksChecked}</div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            <div className="text-2xl font-bold text-green-600 dark:text-green-300">{totalHomeworksChecked}</div>
+            <p className="text-xs text-muted-foreground mt-1">
               out of {teachersData?.teachers.reduce((sum, t) => sum + t.total_submissions_count, 0) || 0} submission attempts
             </p>
           </CardContent>
@@ -547,20 +548,20 @@ export default function HeadTeacherDashboardPage() {
 
         <Card className="border shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-slate-500 dark:text-slate-400">Feedbacks Given</CardTitle>
-            <BarChart3 className="h-4 w-4 text-blue-500" />
+            <CardTitle className="text-sm font-medium text-muted-foreground">Feedbacks Given</CardTitle>
+            <BarChart3 className="h-4 w-4 text-brand" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{totalFeedbacks}</div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Written comments</p>
+            <div className="text-2xl font-bold text-brand">{totalFeedbacks}</div>
+            <p className="text-xs text-muted-foreground mt-1">Written comments</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Analytics Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 @4xl:grid-cols-3 gap-6">
         {/* Activity Timeline */}
-        <Card className="lg:col-span-2 border shadow-sm">
+        <Card className="@4xl:col-span-2 border shadow-sm">
           <CardHeader>
             <CardTitle>Grading Activity</CardTitle>
             <CardDescription>Daily volume of graded assignments across the course</CardDescription>
@@ -569,41 +570,41 @@ export default function HeadTeacherDashboardPage() {
             <div className="h-[300px] w-full">
               {loadingTeachers ? (
                 <div className="w-full h-full flex items-center justify-center">
-                   <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+                   <div className="animate-spin h-8 w-8 border-4 border-brand border-t-transparent rounded-full" />
                 </div>
               ) : activityData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={activityData}>
                     <defs>
                       <linearGradient id="colorGraded" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        <stop offset="5%" stopColor={chartColors.brand} stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor={chartColors.brand} stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartColors.grid} />
                     <XAxis 
                       dataKey="date" 
                       tickFormatter={(val) => format(new Date(val), 'MMM dd')}
-                      tick={{ fontSize: 12, fill: '#64748b' }} 
+                      tick={chartTick(12)} 
                       axisLine={false}
                       tickLine={false}
                       minTickGap={30}
                     />
                     <YAxis 
                        allowDecimals={false}
-                       tick={{ fontSize: 12, fill: '#64748b' }} 
+                       tick={chartTick(12)} 
                        axisLine={false}
                        tickLine={false}
                     />
                     <RechartsTooltip 
-                       contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                       contentStyle={chartTooltipStyle}
                        labelFormatter={(label) => format(new Date(label), 'PPP')}
                     />
                     <Area 
                       type="monotone" 
                       dataKey="submissions_graded"
                       name="Graded"
-                      stroke="#3b82f6" 
+                      stroke={chartColors.brand} 
                       strokeWidth={2}
                       fillOpacity={1} 
                       fill="url(#colorGraded)" 
@@ -611,7 +612,7 @@ export default function HeadTeacherDashboardPage() {
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
                   <BarChart3 className="h-8 w-8 mb-2 opacity-50" />
                   <p>No activity data for this period</p>
                 </div>
@@ -630,31 +631,31 @@ export default function HeadTeacherDashboardPage() {
             <div className="h-[300px] w-full">
               {loadingTeachers ? (
                  <div className="w-full h-full flex items-center justify-center">
-                   <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+                   <div className="animate-spin h-8 w-8 border-4 border-brand border-t-transparent rounded-full" />
                 </div>
               ) : topTeachers.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={topTeachers} layout="vertical" margin={{ left: 0, right: 30 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={chartColors.grid} />
                     <XAxis type="number" hide />
                     <YAxis 
                       dataKey="teacher_name" 
                       type="category" 
                       width={100} 
-                      tick={{ fontSize: 11, fill: '#64748b' }} 
+                      tick={chartTick(11)} 
                       axisLine={false}
                       tickLine={false}
                       tickFormatter={(val) => val.split(' ')[0]} // Show first name only to save space
                     />
                     <RechartsTooltip
-                       cursor={{ fill: '#f8fafc' }}
-                       contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                       cursor={{ fill: chartColors.cursor }}
+                       contentStyle={chartTooltipStyle}
                     />
-                    <Bar dataKey="checked_homeworks_count" name="Checked" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} />
+                    <Bar dataKey="checked_homeworks_count" name="Checked" fill={chartColors.brand} radius={[0, 4, 4, 0]} barSize={20} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                <div className="h-full flex flex-col items-center justify-center text-muted-foreground">
                    <Users className="h-8 w-8 mb-2 opacity-50" />
                    <p>No teacher data available</p>
                 </div>
@@ -673,94 +674,94 @@ export default function HeadTeacherDashboardPage() {
         <CardContent className="p-0">
           {loadingTeachers ? (
             <div className="p-12 flex justify-center">
-               <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+               <div className="animate-spin h-8 w-8 border-4 border-brand border-t-transparent rounded-full" />
             </div>
           ) : teachersData?.teachers.length === 0 ? (
-            <div className="p-12 text-center text-slate-400 bg-slate-50/50 dark:bg-secondary/20">
+            <div className="p-12 text-center text-muted-foreground bg-slate-50/50 dark:bg-muted/40 dark:bg-secondary/20">
               No teachers found
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-slate-50/80 dark:bg-secondary/50 hover:bg-slate-50/80 dark:hover:bg-secondary/50">
-                    <TableHead className="font-bold text-slate-900 dark:text-foreground">
+                  <TableRow className="bg-slate-50/80 dark:bg-muted/40 dark:bg-secondary/50 hover:bg-muted/60">
+                    <TableHead className="font-bold text-foreground dark:text-foreground">
                       <button 
                         onClick={() => handleSort('teacher_name')} 
-                        className="flex items-center gap-1 hover:text-blue-600 transition-colors"
+                        className="flex items-center gap-1 hover:text-brand transition-colors"
                       >
                         Teacher {getSortIcon('teacher_name')}
                       </button>
                     </TableHead>
-                    <TableHead className="text-center font-bold text-slate-900 dark:text-foreground">
+                    <TableHead className="text-center font-bold text-foreground dark:text-foreground">
                       <button 
                         onClick={() => handleSort('groups_count')} 
-                        className="flex items-center gap-1 mx-auto hover:text-blue-600 transition-colors"
+                        className="flex items-center gap-1 mx-auto hover:text-brand transition-colors"
                       >
                         Groups {getSortIcon('groups_count')}
                       </button>
                     </TableHead>
-                    <TableHead className="text-center font-bold text-slate-900 dark:text-foreground">
+                    <TableHead className="text-center font-bold text-foreground dark:text-foreground">
                       <button 
                         onClick={() => handleSort('students_count')} 
-                        className="flex items-center gap-1 mx-auto hover:text-blue-600 transition-colors"
+                        className="flex items-center gap-1 mx-auto hover:text-brand transition-colors"
                       >
                         Students {getSortIcon('students_count')}
                       </button>
                     </TableHead>
-                    <TableHead className="text-center font-bold text-slate-900 dark:text-foreground">
+                    <TableHead className="text-center font-bold text-foreground dark:text-foreground">
                       <button 
                         onClick={() => handleSort('checked_homeworks_count')} 
-                        className="flex items-center gap-1 mx-auto hover:text-blue-600 transition-colors"
+                        className="flex items-center gap-1 mx-auto hover:text-brand transition-colors"
                       >
                         Grading Actions {getSortIcon('checked_homeworks_count')}
                       </button>
                     </TableHead>
-                    <TableHead className="text-center font-bold text-slate-900 dark:text-foreground">
+                    <TableHead className="text-center font-bold text-foreground dark:text-foreground">
                       <button 
                         onClick={() => handleSort('feedbacks_given_count')} 
-                        className="flex items-center gap-1 mx-auto hover:text-blue-600 transition-colors"
+                        className="flex items-center gap-1 mx-auto hover:text-brand transition-colors"
                       >
                         Feedbacks {getSortIcon('feedbacks_given_count')}
                       </button>
                     </TableHead>
-                    <TableHead className="text-center font-bold text-slate-900 dark:text-foreground">
+                    <TableHead className="text-center font-bold text-foreground dark:text-foreground">
                       <button 
                         onClick={() => handleSort('missed_attendance_count')} 
-                        className="flex items-center gap-1 mx-auto hover:text-blue-600 transition-colors"
+                        className="flex items-center gap-1 mx-auto hover:text-brand transition-colors"
                       >
                         Missed Att. {getSortIcon('missed_attendance_count')}
                       </button>
                     </TableHead>
-                    <TableHead className="text-center font-bold text-slate-900 dark:text-foreground">Activity Trend</TableHead>
-                    <TableHead className="text-right font-bold text-slate-900 dark:text-foreground">Action</TableHead>
+                    <TableHead className="text-center font-bold text-foreground dark:text-foreground">Activity Trend</TableHead>
+                    <TableHead className="text-right font-bold text-foreground dark:text-foreground">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {sortedTeachers.map((teacher) => (
                     <TableRow 
                       key={teacher.teacher_id} 
-                      className="hover:bg-slate-50/50 dark:hover:bg-secondary/30 transition-colors group cursor-pointer"
+                      className="hover:bg-muted/60 transition-colors group cursor-pointer"
                       onClick={(e) => handleTeacherRowClick(e, selectedCourseId, teacher.teacher_id)}
                       onAuxClick={(e) => handleTeacherRowAuxClick(e, selectedCourseId, teacher.teacher_id)}
                     >
                        <TableCell>
                         <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9 border border-slate-200 dark:border-border">
-                            <AvatarFallback className="bg-white dark:bg-secondary text-slate-700 dark:text-slate-300 font-medium">
+                          <Avatar className="h-9 w-9 border border-border">
+                            <AvatarFallback className="bg-card dark:bg-secondary text-foreground font-medium">
                               {teacher.teacher_name.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <span className="font-semibold text-slate-900 dark:text-foreground block">{teacher.teacher_name}</span>
-                            <span className="text-xs text-slate-500 dark:text-slate-400">{teacher.email}</span>
+                            <span className="font-semibold text-foreground dark:text-foreground block">{teacher.teacher_name}</span>
+                            <span className="text-xs text-muted-foreground">{teacher.email}</span>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-center font-medium text-slate-600 dark:text-slate-400">
+                      <TableCell className="text-center font-medium text-muted-foreground">
                         {teacher.groups_count}
                       </TableCell>
-                      <TableCell className="text-center font-medium text-slate-600 dark:text-slate-400">
+                      <TableCell className="text-center font-medium text-muted-foreground">
                         {teacher.students_count}
                       </TableCell>
                       <TableCell className="text-center">
@@ -768,7 +769,7 @@ export default function HeadTeacherDashboardPage() {
                           <Badge variant="secondary" className="bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/50 border-green-200 dark:border-green-800">
                             {teacher.checked_homeworks_count} / {teacher.total_submissions_count}
                           </Badge>
-                          <span className="text-xs text-slate-500 dark:text-slate-400">
+                          <span className="text-xs text-muted-foreground">
                             {teacher.total_submissions_count > 0 
                               ? `${Math.round((teacher.checked_homeworks_count / teacher.total_submissions_count) * 100)}%`
                               : '0%'}
@@ -776,7 +777,7 @@ export default function HeadTeacherDashboardPage() {
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
-                         <Badge variant="secondary" className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 border-blue-200 dark:border-blue-800">
+                         <Badge variant="secondary" className="bg-brand-surface text-brand-subtle-foreground hover:bg-brand-subtle border-brand-border">
                            {teacher.feedbacks_given_count}
                          </Badge>
                       </TableCell>
@@ -786,23 +787,23 @@ export default function HeadTeacherDashboardPage() {
                             {teacher.missed_attendance_count}
                           </Badge>
                         ) : (
-                          <Badge variant="secondary" className="bg-slate-50 dark:bg-slate-700 text-slate-500 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-600 border-slate-200 dark:border-slate-600">
+                          <Badge variant="secondary" className="bg-slate-50 dark:bg-muted text-muted-foreground hover:bg-muted border-border">
                             0
                           </Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-center">
-                         <div className="flex items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                           <span className={teacher.homeworks_checked_last_7_days > 0 ? "text-emerald-600 font-medium" : ""}>
+                         <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                           <span className={teacher.homeworks_checked_last_7_days > 0 ? "text-emerald-600 dark:text-emerald-300 font-medium" : ""}>
                              {teacher.homeworks_checked_last_7_days} (7d)
                            </span>
-                           <span className="text-slate-300 dark:text-slate-400">|</span>
+                           <span className="text-muted-foreground/50">|</span>
                            <span>{teacher.homeworks_checked_last_30_days} (30d)</span>
                          </div>
                       </TableCell>
                       <TableCell className="text-right">
                          <div className="flex justify-end">
-                           <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 group-hover:text-blue-600">
+                           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground group-hover:text-brand">
                              <ArrowRight className="h-4 w-4" />
                            </Button>
                          </div>

@@ -9,7 +9,7 @@ const TONE: Record<string, string> = {
   present: 'text-emerald-700 dark:text-emerald-300',
   late: 'text-amber-700 dark:text-amber-300',
   absent: 'text-rose-700 dark:text-rose-300',
-  unknown: 'text-gray-500 dark:text-gray-400',
+  unknown: 'text-muted-foreground',
 };
 
 /** Drawn marks, not ✓/✗ glyphs; «unknown» stays a «?» character. */

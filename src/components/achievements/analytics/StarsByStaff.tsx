@@ -1,4 +1,5 @@
 /** Stars of the Week given per teacher and curator, per week (S3): shows who uses it. */
+import { Star } from 'lucide-react';
 import type { AchievementsAnalytics } from '@/services/api/achievementsAnalytics';
 import { staffRoleLabel, tr, weekLabel, type Lang } from '@/lib/achievementsAnalytics';
 import { Empty } from './parts';
@@ -28,8 +29,8 @@ export default function StarsByStaff({ stars, lang, limit }: { stars: Achievemen
               {s.per_week.map((n, i) => (
                 <td key={stars.weeks[i] ?? i} className="py-2 text-center">
                   {n > 0 ? (
-                    <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-amber-100 px-1.5 text-xs font-semibold text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
-                      ⭐{n > 1 ? `×${n}` : ''}
+                    <span className="inline-flex h-6 min-w-6 items-center justify-center gap-0.5 rounded-full bg-amber-100 px-1.5 text-xs font-semibold text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
+                      <Star className="h-3 w-3 fill-current" aria-hidden />{n > 1 ? `×${n}` : ''}
                     </span>
                   ) : (
                     <span className="inline-block h-1.5 w-1.5 rounded-full bg-border" aria-label="0" />
