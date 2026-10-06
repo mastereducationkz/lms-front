@@ -21,7 +21,7 @@ export default function TryOnButton({ rewards, className = '' }: { rewards: Achi
     <button
       type="button"
       onClick={go}
-      className={`inline-flex items-center gap-1 rounded-full border border-[#2563EB]/30 bg-[#2563EB]/5 px-2.5 py-1 text-xs font-medium text-[#2563EB] hover:bg-[#2563EB]/10 dark:text-blue-300 dark:border-blue-400/30 ${className}`}
+      className={`inline-flex items-center gap-1 rounded-full border border-brand/30 bg-brand/5 px-2.5 py-1 text-xs font-medium text-brand hover:bg-brand/10 ${className}`}
       aria-label={`Try on ${rewards.map((r) => r.name).join(' and ')}`}
     >
       <Shirt className="h-3.5 w-3.5" aria-hidden /> Try it on

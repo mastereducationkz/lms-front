@@ -76,12 +76,12 @@ function SpotlightBody({ userId, onCustomize, onLater }: { userId: string; onCus
     <div className="flex gap-3">
       <Orca config={seedMascot(userId)} size={56} className="rounded-full shrink-0" title="Your Kasatik" />
       <div className="min-w-0">
-        <p className="font-semibold text-gray-900 dark:text-white">Meet your Kasatik!</p>
+        <p className="font-semibold text-brand-surface-foreground">Meet your Kasatik!</p>
         <p className="mt-1 text-sm text-muted-foreground">
           Your study buddy is ready — dress it up with outfits, props and Master merch.
         </p>
         <div className="mt-3 flex gap-2">
-          <Button type="button" size="sm" className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white" onClick={onCustomize}>
+          <Button type="button" size="sm" className="bg-brand-solid hover:bg-brand-solid-hover text-brand-solid-foreground" onClick={onCustomize}>
             Customize
           </Button>
           <Button type="button" size="sm" variant="ghost" onClick={onLater}>
@@ -102,8 +102,8 @@ export function KasatikCoachmark({ children, sideOffset = 24 }: { children: Reac
     <Popover open>
       <PopoverAnchor asChild>
         <span className="relative inline-flex shrink-0 rounded-full">
-          <span aria-hidden className="pointer-events-none absolute -inset-1 rounded-full ring-2 ring-[#2563EB] opacity-60 animate-ping" />
-          <span aria-hidden className="pointer-events-none absolute -inset-1 rounded-full ring-2 ring-[#2563EB]" />
+          <span aria-hidden className="pointer-events-none absolute -inset-1 rounded-full ring-2 ring-brand opacity-60 animate-ping" />
+          <span aria-hidden className="pointer-events-none absolute -inset-1 rounded-full ring-2 ring-brand" />
           {children}
         </span>
       </PopoverAnchor>
@@ -111,7 +111,7 @@ export function KasatikCoachmark({ children, sideOffset = 24 }: { children: Reac
         side="right"
         align="end"
         sideOffset={sideOffset}
-        className="w-80 rounded-2xl border-blue-100 dark:border-blue-900 shadow-lg"
+        className="w-80 rounded-2xl border-blue-100 dark:border-brand-border shadow-lg"
         role="dialog"
         aria-label="Meet your Kasatik"
         onOpenAutoFocus={(e) => e.preventDefault()}
@@ -138,7 +138,7 @@ export function KasatikSpotlightCard({ className = '' }: { className?: string })
       onKeyDown={(e) => {
         if (e.key === 'Escape') later();
       }}
-      className={`lg:hidden rounded-2xl border border-blue-100 dark:border-blue-900 bg-blue-50/70 dark:bg-blue-950/30 p-4 ${className}`}
+      className={`lg:hidden rounded-2xl border border-blue-100 dark:border-brand-border bg-blue-50/70 dark:bg-brand-surface p-4 ${className}`}
     >
       <SpotlightBody userId={String(userId)} onCustomize={customize} onLater={later} />
     </section>

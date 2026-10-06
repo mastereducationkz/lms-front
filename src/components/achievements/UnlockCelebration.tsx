@@ -155,13 +155,13 @@ export default function UnlockCelebration() {
       <Confetti />
       <Dialog open onOpenChange={(o) => { if (!o) close(false); }}>
         <DialogContent className="max-w-md overflow-hidden rounded-3xl border-0 p-0">
-          <div className="relative bg-gradient-to-br from-[#2563EB] via-[#1D4ED8] to-[#1E3A8A] px-6 pb-6 pt-8 text-center text-white">
+          <div className="relative bg-gradient-to-br from-[#2563EB] via-[#1D4ED8] to-[#1E3A8A] px-6 pb-6 pt-8 text-center text-white dark:from-brand-subtle dark:via-brand-surface dark:to-brand-surface dark:text-brand-surface-foreground">
             <div aria-hidden className="pointer-events-none absolute -left-8 -top-8 h-32 w-32 rounded-full bg-white/10" />
             <div className="relative mx-auto w-fit rounded-full bg-white/15 p-2 ring-4 ring-white/25">
               <RewardPreview code={user.mascot} userId={user.id} reward={pick?.reward} size={128} />
             </div>
-            <DialogTitle className="relative mt-4 text-2xl font-bold text-white">{celebrationTitle(items.length)}</DialogTitle>
-            <DialogDescription className="relative mt-1 text-sm text-blue-100">
+            <DialogTitle className="relative mt-4 text-2xl font-bold text-white dark:text-brand-surface-foreground">{celebrationTitle(items.length)}</DialogTitle>
+            <DialogDescription className="relative mt-1 text-sm text-blue-100 dark:text-brand-subtle-foreground">
               {pick ? `Your Kasatik has something new to wear: the ${pick.reward.name}.` : 'Look what you’ve earned.'}
             </DialogDescription>
           </div>
@@ -185,7 +185,7 @@ export default function UnlockCelebration() {
             {wearable && (
               <Button
                 type="button"
-                className="flex-1 bg-[#2563EB] text-white hover:bg-[#1D4ED8]"
+                className="flex-1 bg-brand-solid text-brand-solid-foreground hover:bg-brand-solid-hover"
                 disabled={saving}
                 onClick={() => close(true)}
               >

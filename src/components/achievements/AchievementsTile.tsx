@@ -43,7 +43,7 @@ export function AchievementsTile() {
             See all
           </button>
         </div>
-        <div className="mt-3 grid gap-4 sm:grid-cols-2">
+        <div className="mt-3 grid gap-4 @lg:grid-cols-2">
           {next && (
             <div className="flex flex-col items-start gap-1.5">
               <button

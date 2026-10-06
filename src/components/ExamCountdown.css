@@ -19,7 +19,9 @@
   color: #fff;
 }
 
-@media (min-width: 640px) {
+/* The dashboard banner is a size container: tiles shrink once it is 32rem wide (the
+   full clock shows), not when the viewport is - a 780px page is not a phone. */
+@container (min-width: 32rem) {
   .fc {
     --w: 3.1rem;
     --h: 4.5rem;
@@ -98,6 +100,18 @@
   to {
     transform: rotateX(0deg);
   }
+}
+
+/* Dark: tiles take the banner's dark tint (--fc-tile-dark), a fainter edge and
+   off-white digits, so the clock reads as part of the surface, not a bright block. */
+.dark .fc {
+  color: hsl(var(--brand-surface-foreground));
+  --seam: rgba(0, 0, 0, 0.45);
+}
+
+.dark .fc__half {
+  background: var(--fc-tile-dark, var(--fc-tile, #141824));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 @media (prefers-reduced-motion: reduce) {

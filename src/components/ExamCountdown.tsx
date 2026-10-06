@@ -105,7 +105,7 @@ function TimeGroup({ value, label, minDigits = 2 }: { value: number; label: stri
 /** Colon separator between countdown units (aligned with the tile row). */
 function UnitSeparator() {
   return (
-    <span className="flex h-[4.75rem] sm:h-[4.5rem] items-center text-4xl font-bold text-white/35">:</span>
+    <span className="flex h-[4.75rem] @lg:h-[4.5rem] items-center text-4xl font-bold text-white/35">:</span>
   );
 }
 
@@ -120,7 +120,7 @@ function UnitSeparator() {
  * "Set/Change date" saves the planned test date via PATCH /assignment-zero/planned-date,
  * the same field curators read to follow up on results on time.
  */
-export default function ExamCountdown({ tileColor }: { tileColor?: string }) {
+export default function ExamCountdown({ tileColor, tileColorDark }: { tileColor?: string; tileColorDark?: string }) {
   const navigate = useNavigate();
   const [data, setData] = useState<ExamCountdownData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -217,12 +217,13 @@ export default function ExamCountdown({ tileColor }: { tileColor?: string }) {
 
   return (
     <>
-      <div className="flex w-full flex-col items-center gap-2 sm:w-auto">
+      <div className="flex w-full flex-col items-center gap-2 @lg:w-auto">
         <ExamPanel
           kind={primary}
           info={data.exams[primary]}
           now={now}
           tileColor={tileColor}
+          tileColorDark={tileColorDark}
           onEdit={() => openModal(primary)}
         />
 
@@ -283,8 +284,8 @@ export default function ExamCountdown({ tileColor }: { tileColor?: string }) {
                           onClick={() => setDateValue(iso)}
                           className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
                             isSelected
-                              ? "border-blue-600 bg-blue-600 text-white"
-                              : "border-border hover:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950"
+                              ? "border-brand-solid bg-brand-solid text-brand-solid-foreground"
+                              : "border-border hover:border-blue-400 hover:bg-brand-surface"
                           }`}
                         >
                           {formatDate(iso)}
@@ -334,6 +335,7 @@ function ExamPanel({
   info,
   now,
   tileColor,
+  tileColorDark,
   onEdit,
   className,
 }: {
@@ -341,6 +343,7 @@ function ExamPanel({
   info?: { target_date: string | null; days_left: number | null; source: string | null; can_edit: boolean };
   now: number;
   tileColor?: string;
+  tileColorDark?: string;
   onEdit: () => void;
   className?: string;
 }) {
@@ -357,8 +360,8 @@ function ExamPanel({
 
   return (
     <div
-      className={`w-full text-center sm:w-auto ${className ?? ""}`}
-      style={tileColor ? ({ "--fc-tile": tileColor } as CSSProperties) : undefined}
+      className={`w-full text-center @lg:w-auto ${className ?? ""}`}
+      style={{ "--fc-tile": tileColor, "--fc-tile-dark": tileColorDark } as CSSProperties}
     >
       <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white/70">
         {examLabel}
@@ -366,12 +369,12 @@ function ExamPanel({
 
       {hasCountdown ? (
         <>
-          <div className="flex items-start justify-center gap-1.5 sm:gap-2">
+          <div className="flex items-start justify-center gap-1.5 @lg:gap-2">
             <TimeGroup value={dd} label="days" />
             <UnitSeparator />
             <TimeGroup value={hh} label="hrs" />
-            {/* minutes & seconds only from sm up; phones show days : hrs */}
-            <div className="hidden items-start gap-1.5 sm:flex sm:gap-2">
+            {/* minutes & seconds only once the banner is @lg wide; phones show days : hrs */}
+            <div className="hidden items-start gap-1.5 @lg:flex @lg:gap-2">
               <UnitSeparator />
               <TimeGroup value={mm} label="min" />
               <UnitSeparator />
@@ -384,7 +387,7 @@ function ExamPanel({
           <button
             type="button"
             onClick={onEdit}
-            className="mt-1 inline-flex items-center gap-1 text-[11px] text-sky-300 underline-offset-2 hover:text-sky-200 hover:underline"
+            className="mt-1 inline-flex items-center gap-1 text-[11px] text-sky-300 underline-offset-2 hover:text-sky-200 hover:underline dark:text-brand dark:hover:text-brand-subtle-foreground"
           >
             Change date
           </button>
@@ -396,7 +399,7 @@ function ExamPanel({
           <button
             type="button"
             onClick={onEdit}
-            className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-sky-300 underline-offset-2 hover:text-sky-200 hover:underline"
+            className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-sky-300 underline-offset-2 hover:text-sky-200 hover:underline dark:text-brand dark:hover:text-brand-subtle-foreground"
           >
             Change date
           </button>
@@ -409,7 +412,7 @@ function ExamPanel({
           <div className="mt-0.5 text-[11px] text-white/60">Add it to see your countdown</div>
           <Button
             size="sm"
-            className="mt-2 h-7 bg-sky-500 px-3 text-xs text-white hover:bg-sky-400"
+            className="mt-2 h-7 bg-sky-500 px-3 text-xs text-white hover:bg-sky-400 dark:bg-brand-solid dark:text-brand-solid-foreground dark:hover:bg-brand-solid-hover"
             onClick={onEdit}
           >
             Set date
@@ -471,7 +474,7 @@ function SecondaryExam({
       <button
         type="button"
         onClick={onEdit}
-        className="ml-0.5 text-sky-300 underline-offset-2 hover:text-sky-200 hover:underline"
+        className="ml-0.5 text-sky-300 underline-offset-2 hover:text-sky-200 hover:underline dark:text-brand dark:hover:text-brand-subtle-foreground"
       >
         {days != null ? "Change" : "Set date"}
       </button>

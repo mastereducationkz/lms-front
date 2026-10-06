@@ -53,6 +53,38 @@
   color: #6d28d9;
 }
 
+/* Dark: the same amber/violet meaning, lifted so it reads on a dark bar
+   (the light #b45309 text was ~3:1 there). */
+.dark .points-item {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: hsl(var(--foreground));
+}
+
+.dark .points-item:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.dark .points-item:first-child {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fcd34d;
+}
+
+.dark .points-item:first-child .points-icon {
+  color: #fbbf24;
+}
+
+.dark .points-item.rank {
+  background: rgba(139, 92, 246, 0.14);
+  border-color: rgba(139, 92, 246, 0.32);
+  color: #c4b5fd;
+}
+
+.dark .points-item.rank .points-icon.trophy {
+  color: #a78bfa;
+}
+
 /* Trophy pulse for top 3 */
 @keyframes trophy-pulse {
   0%, 100% { transform: scale(1); }

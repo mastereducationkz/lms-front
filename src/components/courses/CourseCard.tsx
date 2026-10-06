@@ -19,7 +19,7 @@ interface ProgramTheme {
 }
 
 const THEMES: Record<ProgramKey, ProgramTheme> = {
-  sat: { gradient: 'from-[#1E3A8A] via-[#1D4ED8] to-[#3B82F6]', bar: 'bg-blue-600', icon: GraduationCap },
+  sat: { gradient: 'from-[#1E3A8A] via-[#1D4ED8] to-[#3B82F6]', bar: 'bg-brand-solid', icon: GraduationCap },
   ielts: { gradient: 'from-[#7F1D1D] via-[#B91C1C] to-[#E11D48]', bar: 'bg-red-600', icon: Globe2 },
   nuet: { gradient: 'from-[#064E3B] via-[#047857] to-[#10B981]', bar: 'bg-emerald-600', icon: Brain },
   english: { gradient: 'from-[#4C1D95] via-[#6D28D9] to-[#8B5CF6]', bar: 'bg-violet-600', icon: Languages },
@@ -61,7 +61,10 @@ function CourseCover({ title, coverUrl, onClick }: { title: string; coverUrl?: s
         </>
       ) : (
         <>
-          <div aria-hidden className="absolute inset-0 bg-[radial-gradient(120%_90%_at_0%_0%,rgba(255,255,255,0.20),transparent_55%)]" />
+          {/* Dark: a veil of the page colour turns the bright programme gradient into a
+              tinted dark surface (same hue, no glare); uploaded banners are left alone. */}
+          <div aria-hidden className="absolute inset-0 hidden bg-background/55 dark:block" />
+          <div aria-hidden className="absolute inset-0 bg-[radial-gradient(120%_90%_at_0%_0%,rgba(255,255,255,0.20),transparent_55%)] dark:opacity-50" />
           <svg aria-hidden viewBox="0 0 100 100" className="absolute right-4 top-1/2 h-32 w-32 -translate-y-1/2 transition-transform duration-500 group-hover:rotate-[8deg]">
             <MasterMark x={50} y={50} size={96} color="#FFFFFF" opacity={0.13} />
           </svg>
@@ -119,7 +122,7 @@ export default function CourseCard({
               {lessons && ` · ${lessons}`}
             </p>
             <div
-              className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800"
+              className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-secondary"
               role="progressbar"
               aria-valuenow={pct}
               aria-valuemin={0}

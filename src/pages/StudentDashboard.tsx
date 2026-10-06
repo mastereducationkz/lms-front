@@ -8,8 +8,7 @@ import { Badge } from "../components/ui/badge";
 import { Checkbox } from "../components/ui/checkbox";
 import { Input } from "../components/ui/input";
 import type { DashboardStats, StudentProgressOverview, Assignment, Event, AssignmentSubmission } from "../types";
-import { Clock, BookOpen, LineChart, CheckCircle, Target, Calendar, FileText, AlertCircle, Video, GraduationCap, MessageCircle, ArrowRight, Check } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
+import { Clock, BookOpen, LineChart, CheckCircle, Target, Calendar, FileText, AlertCircle, Video, GraduationCap, MessageCircle, ArrowRight } from "lucide-react";
 import { TrackPlatformLinks } from "../components/dashboard/TrackPlatformLinks";
 import { WeeklyTestCountdown } from "../components/dashboard/WeeklyTestCountdown";
 import { CheckpointsCard } from "../components/dashboard/CheckpointsCard";
@@ -17,20 +16,6 @@ import CourseCard from "../components/courses/CourseCard";
 import { mediaUrl } from "../lib/mediaUrl";
 import { TargetsTile } from "../components/dashboard/TargetsTile";
 
-// Dashboard hero background presets (all dark so white text + the flip board stay legible).
-// `tile` is an opaque, banner-tinted color for the flip-clock digits (must be
-// opaque so the folding flap hides the digit behind it without ghosting).
-const HERO_THEMES: { key: string; label: string; css: string; tile: string }[] = [
-  { key: "blue", label: "Blue", css: "linear-gradient(to right, #3b6ff0, #6366f1)", tile: "#2c3488" },
-  { key: "teal", label: "Teal", css: "linear-gradient(to bottom, #0d9488, #0f766e)", tile: "#0a4a44" },
-  { key: "emerald", label: "Emerald", css: "linear-gradient(to bottom, #059669, #047857)", tile: "#0a4733" },
-  { key: "violet", label: "Violet", css: "linear-gradient(to bottom, #7c3aed, #6d28d9)", tile: "#3f2280" },
-  { key: "slate", label: "Slate", css: "linear-gradient(to bottom, #334155, #0f172a)", tile: "#111a2b" },
-  { key: "midnight", label: "Midnight", css: "linear-gradient(to bottom, #1e3a8a, #0f1a3f)", tile: "#152a60" },
-  { key: "indigo", label: "Indigo", css: "linear-gradient(to bottom, #312e81, #1e1b4b)", tile: "#221f56" },
-  { key: "plum", label: "Plum", css: "linear-gradient(to bottom, #9f1239, #4c0519)", tile: "#4a0f26" },
-  { key: "graphite", label: "Graphite", css: "linear-gradient(to bottom, #1f2937, #030712)", tile: "#141a24" },
-];
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
@@ -38,7 +23,7 @@ import apiClient from "../services/api";
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import StudentLeaderboard from "../components/StudentLeaderboard";
 import DailyQuestionsPopup from '../components/DailyQuestionsPopup';
-import ExamCountdown from "../components/ExamCountdown";
+import DashboardHero from "../components/dashboard/DashboardHero";
 import SampleBadge from "../components/trial/SampleBadge";
 import { TRIAL_SAMPLE_SESSIONS, TRIAL_SAMPLE_TASKS } from "../data/trialSampleData";
 import { lessonPath } from '../lib/lessonLinks';
@@ -60,57 +45,6 @@ export default function StudentDashboard({
 }: StudentDashboardProps) {
   const navigate = useNavigate();
   const { user } = useAuth();
-
-  // Student-chosen hero banner color (persisted per user in localStorage).
-  const heroThemeKey = `dashboard_hero_theme_${user?.id ?? "me"}`;
-  const [heroTheme, setHeroTheme] = useState<string>(() => {
-    try {
-      return localStorage.getItem(heroThemeKey) || "blue";
-    } catch {
-      return "blue";
-    }
-  });
-  const activeHeroTheme = HERO_THEMES.find((t) => t.key === heroTheme) ?? HERO_THEMES[0];
-  const heroThemeCss = activeHeroTheme.css;
-  const applyHeroTheme = (key: string) => {
-    setHeroTheme(key);
-    try {
-      localStorage.setItem(heroThemeKey, key);
-    } catch {
-      /* ignore storage errors */
-    }
-  };
-  const bannerColorPicker = (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label="Change banner color"
-          title="Banner color"
-          className="h-5 w-5 rounded-full ring-2 ring-white/60 transition hover:ring-white"
-          style={{ background: heroThemeCss }}
-        />
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-auto p-3">
-        <p className="mb-2 text-xs font-medium text-muted-foreground">Banner color</p>
-        <div className="grid grid-cols-4 gap-2">
-          {HERO_THEMES.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => applyHeroTheme(t.key)}
-              title={t.label}
-              aria-label={t.label}
-              className={`h-8 w-8 rounded-full ring-2 ring-offset-2 ring-offset-background transition ${
-                heroTheme === t.key ? "ring-foreground" : "ring-transparent hover:ring-border"
-              }`}
-              style={{ background: t.css }}
-            />
-          ))}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
 
   const [progressData, setProgressData] = useState<StudentProgressOverview | null>(null);
   const [isLoadingProgress, setIsLoadingProgress] = useState(true);
@@ -394,8 +328,8 @@ export default function StudentDashboard({
   const overallProgress = progressData?.overall_completion_percentage ?? stats?.overall_progress ?? 0;
 
   const getProgressColor = (percentage: number) => {
-    if (percentage >= 80) return 'text-green-600';
-    if (percentage >= 50) return 'text-yellow-600';
+    if (percentage >= 80) return 'text-green-600 dark:text-green-400';
+    if (percentage >= 50) return 'text-yellow-600 dark:text-yellow-400';
     return 'text-red-600 dark:text-red-400';
   };
 
@@ -406,7 +340,7 @@ export default function StudentDashboard({
       if (submission.is_graded) {
         return { status: 'graded', color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400', icon: CheckCircle };
       } else {
-        return { status: 'submitted', color: 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300', icon: FileText };
+        return { status: 'submitted', color: 'bg-brand-subtle text-blue-800 dark:text-brand-subtle-foreground', icon: FileText };
       }
     }
     
@@ -433,7 +367,7 @@ export default function StudentDashboard({
 
   const getEventColor = (eventType: string) => {
     switch (eventType) {
-      case 'class': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
+      case 'class': return 'bg-brand-subtle text-blue-800 dark:text-brand-subtle-foreground';
       case 'webinar': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400';
       case 'weekly_test': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
@@ -472,7 +406,7 @@ export default function StudentDashboard({
     if (due.getTime() - now.getTime() < 24 * 60 * 60 * 1000) {
       return { icon: Clock, label: `Due ${formatDateTime(dueDate)}`, color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' };
     }
-    return { icon: Calendar, label: `Due ${formatDate(dueDate)}`, color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' };
+    return { icon: Calendar, label: `Due ${formatDate(dueDate)}`, color: 'bg-brand-subtle text-blue-800 dark:text-brand-subtle-foreground' };
   };
 
   // Get current and relevant assignments (due soon, overdue, or recent)
@@ -797,44 +731,14 @@ export default function StudentDashboard({
         </Card>
       )}
 
-      <Card className="relative border-0 text-white overflow-hidden" style={{ background: heroThemeCss }} data-tour="dashboard-overview">
-        <div className="absolute right-4 top-4 z-10">{bannerColorPicker}</div>
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        {/* basis + min-width keep the greeting readable: with flex-1 alone a wide
-            countdown starved this column and wrapped the heading one word per line. */}
-        <div className="min-w-0 flex-1 lg:basis-[22rem] lg:min-w-[18rem]">
-        {/* pr-12 keeps the greeting clear of the banner-colour dot in the top-right corner */}
-        <CardHeader className="p-5 pr-12 sm:p-6 sm:pr-14">
-          <CardTitle className="text-2xl sm:text-3xl">Welcome back, {firstName}!</CardTitle>
-          <CardDescription className="text-white/80 text-sm sm:text-base">
-            Continue your learning journey with Master Education
-          </CardDescription>
-        </CardHeader>
-        <CardFooter className="p-5 sm:p-6 pt-0">
-          <div className="flex flex-wrap gap-3">
-            <Button onClick={onGoToAllCourses} variant="secondary">
-              Go to courses
-            </Button>
-            <Button 
-              onClick={() => setShowDailyQuestions(true)}
-              // disabled={dailyQuestionsCompleted} // Allow viewing results
-              variant={"outline"}
-              className={`flex items-center gap-2 text-black dark:text-white`}            >
-              {dailyQuestionsCompleted 
-                ? dailyQuestionsScore 
-                  ? `Result: ${dailyQuestionsScore.score}/${dailyQuestionsScore.total}` 
-                  : 'Tasks completed' 
-                : 'Daily questions'}
-              {dailyQuestionsCompleted && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-label="done" />}
-            </Button>
-          </div>
-        </CardFooter>
-        </div>
-        <div className="px-5 pb-5 lg:py-4 lg:pr-14 lg:pl-0 flex justify-center lg:justify-end shrink-0">
-          <ExamCountdown tileColor={activeHeroTheme.tile} />
-        </div>
-        </div>
-      </Card>
+      <DashboardHero
+        userId={user?.id}
+        firstName={firstName}
+        dailyQuestionsCompleted={dailyQuestionsCompleted}
+        dailyQuestionsScore={dailyQuestionsScore}
+        onGoToAllCourses={onGoToAllCourses}
+        onOpenDailyQuestions={() => setShowDailyQuestions(true)}
+      />
 
       {/* Links to the dedicated SAT / NUET / IELTS platforms, driven by the student's
           live group memberships. Renders nothing when no track applies. */}
@@ -851,17 +755,18 @@ export default function StudentDashboard({
 
       <TrackPlatformLinks />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-2" data-tour="dashboard-stats">
+      {/* By the page's own width: 1 column, then 2 (progress spans both), then 3. */}
+      <div className="grid grid-cols-1 @lg:grid-cols-2 @4xl:grid-cols-3 gap-4 sm:gap-6 mt-2" data-tour="dashboard-stats">
         <Card className="h-fit">
           <CardContent className="p-6 flex items-center gap-4">
-            <div className="rounded-md bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 p-3">
+            <div className="rounded-md bg-brand-subtle text-brand-subtle-foreground p-3">
               <BookOpen className="h-6 w-6" />
             </div>
             <div>
               <div className="text-3xl font-bold">{coursesCount}</div>
               <div className="text-muted-foreground text-sm">My courses</div>
               {progressData && (
-                <div className="text-xs text-green-600 mt-1">
+                <div className="text-xs text-green-600 dark:text-green-400 mt-1">
                   {progressData.completed_lessons}/{progressData.total_lessons} lessons completed
                 </div>
               )}
@@ -878,7 +783,7 @@ export default function StudentDashboard({
               <div className="text-3xl font-bold">{totalStudyHours}h</div>
               <div className="text-muted-foreground text-sm">Study time</div>
               {progressData && (
-                <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                <div className="text-xs text-brand mt-1">
                   {progressData.total_time_spent_minutes} minutes total
                 </div>
               )}
@@ -886,16 +791,17 @@ export default function StudentDashboard({
           </CardContent>
         </Card>
 
-        <Card className="h-fit">
+        {/* Its own container: in a narrow third the ring carries the meaning and the icon steps aside. */}
+        <Card className="@container h-fit @lg:col-span-2 @4xl:col-span-1">
           <CardContent className="p-6 flex items-center gap-4">
-            <div className="rounded-md bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 p-3">
+            <div className="hidden @[20rem]:block rounded-md bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 p-3">
               <LineChart className="h-6 w-6" />
             </div>
             <div className="flex-1">
               <div className="text-3xl font-bold">{overallProgress}%</div>
               <div className="text-muted-foreground text-sm">Progress Overview</div>
               {progressData && (
-                <div className="text-xs text-emerald-600 mt-1">
+                <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
                   {progressData.completed_steps}/{progressData.total_steps} steps completed
                 </div>
               )}
@@ -929,14 +835,15 @@ export default function StudentDashboard({
 
       </div>
 
-      <div className={`grid grid-cols-1 gap-6 mt-4 ${hideRestrictedSidePanels ? "" : "lg:grid-cols-3"}`}>
+      {/* Two equal columns from @2xl, the 1/3 + 2/3 split only once a third is still roomy (@6xl). */}
+      <div className={`grid grid-cols-1 gap-6 mt-4 ${hideRestrictedSidePanels ? "" : "@2xl:grid-cols-2 @6xl:grid-cols-3"}`}>
         {!hideRestrictedSidePanels && (
-          <div className="lg:col-span-1 space-y-6">
+          <div className="min-w-0 space-y-6">
             <StudentLeaderboard />
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
+                <CardTitle className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
                   <div className="flex items-center gap-2">
                     Todo list
                     {user?.is_trial &&
@@ -1085,7 +992,7 @@ export default function StudentDashboard({
                           {progressData.group_teachers.map(teacher => (
                             <div key={teacher.id} className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-secondary">
                               <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 flex items-center justify-center font-medium">
+                                <div className="w-10 h-10 rounded-full bg-brand-subtle text-brand-subtle-foreground flex items-center justify-center font-medium">
                                   {teacher.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)}
                                 </div>
                                 <div>
@@ -1124,7 +1031,7 @@ export default function StudentDashboard({
                         {uniqueTeachers.map(teacher => (
                           <div key={teacher.id} className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-gray-50 dark:hover:bg-secondary">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 flex items-center justify-center font-medium">
+                              <div className="w-10 h-10 rounded-full bg-brand-subtle text-brand-subtle-foreground flex items-center justify-center font-medium">
                                 {teacher.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                               </div>
                               <div>
@@ -1161,20 +1068,21 @@ export default function StudentDashboard({
         )}
 
         {/* Right Column - Main Content */}
-        <div className={hideRestrictedSidePanels ? "" : "lg:col-span-2"}>
+        {/* Its own container: the course grid counts columns from this column's width. */}
+        <div className={`@container min-w-0 ${hideRestrictedSidePanels ? "" : "@6xl:col-span-2"}`}>
           <Tabs defaultValue="courses" className="w-full">
             {!isSpecialGroupStudent && (
               <TabsList className="grid w-full grid-cols-2 h-12 bg-gray-100 dark:bg-secondary">
                 <TabsTrigger 
                   value="courses" 
-                  className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:shadow-none"
+                  className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"
                 >
                   <BookOpen className="h-4 w-4" />
                   Courses
                 </TabsTrigger>
                 <TabsTrigger 
                   value="activity" 
-                  className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm dark:data-[state=active]:bg-card dark:data-[state=active]:shadow-none"
+                  className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"
                 >
                   <LineChart className="h-4 w-4" />
                   Activity
@@ -1195,7 +1103,7 @@ export default function StudentDashboard({
           ) : progressData?.courses && progressData.courses.length > 0 ? (
             <div className="space-y-6" data-tour="recent-courses">
               {/* Course Progress Details */}
-              <div className={`${isSpecialGroupStudent ? "grid grid-cols-1 justify-items-start gap-4 sm:gap-6" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"}`}>
+              <div className={`${isSpecialGroupStudent ? "grid grid-cols-1 justify-items-start gap-4 sm:gap-6" : "grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 gap-4 sm:gap-6"}`}>
                 {progressData.courses.map((course) => (
                   <CourseCard
                     key={course.course_id}
@@ -1258,8 +1166,9 @@ export default function StudentDashboard({
                         <TableHead>Course</TableHead>
                         <TableHead>Progress</TableHead>
                         <TableHead>Lessons</TableHead>
-                        <TableHead>Steps</TableHead>
-                        <TableHead>Time</TableHead>
+                        {/* Steps and time only once the column can hold them without a sideways scroll. */}
+                        <TableHead className="hidden @lg:table-cell">Steps</TableHead>
+                        <TableHead className="hidden @lg:table-cell">Time</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1282,13 +1191,13 @@ export default function StudentDashboard({
                               {course.completed_lessons}/{course.total_lessons}
                             </span>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden @lg:table-cell">
                             <span className="text-sm">
                               {course.completed_steps}/{course.total_steps}
                             </span>
                           </TableCell>
-                          <TableCell>
-                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                          <TableCell className="hidden @lg:table-cell">
+                            <span className="text-sm text-gray-600 dark:text-muted-foreground">
                               {course.time_spent_minutes} min
                             </span>
                           </TableCell>

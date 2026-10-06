@@ -197,10 +197,10 @@ const StreakIcon: React.FC = () => {
       
       {/* Calendar Popover */}
       {showCalendar && (
-        <div className="absolute top-full right-0 mt-2 bg-white dark:bg-card rounded-lg shadow-xl border border-gray-200 dark:border-border p-4 z-50 w-72">
+        <div className="absolute top-full right-0 mt-2 bg-white dark:bg-popover rounded-lg shadow-xl border border-gray-200 dark:border-border p-4 z-50 w-72">
           <div className="text-center mb-3">
             <h3 className="font-semibold text-gray-900 dark:text-foreground">{monthName}</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{getTooltipText()}</p>
+            <p className="text-sm text-gray-600 dark:text-muted-foreground mt-1">{getTooltipText()}</p>
             {typeof streakData.longest_streak === 'number' && streakData.longest_streak > 0 && (
               <p className="text-xs font-medium text-orange-600 dark:text-orange-400 mt-1">
                 Best streak: {streakData.longest_streak} day{streakData.longest_streak === 1 ? '' : 's'}
@@ -229,7 +229,7 @@ const StreakIcon: React.FC = () => {
               let dayClasses = "aspect-square flex items-center justify-center text-sm rounded-md transition-colors ";
               
               if (day.isToday) {
-                dayClasses += "ring-2 ring-blue-500 font-bold ";
+                dayClasses += "ring-2 ring-blue-500 dark:ring-brand font-bold ";
               }
               
               if (day.isActive) {
@@ -255,7 +255,7 @@ const StreakIcon: React.FC = () => {
               <span className="text-gray-600 dark:text-gray-400">Active days</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded ring-2 ring-blue-500"></div>
+              <div className="w-4 h-4 rounded ring-2 ring-blue-500 dark:ring-brand"></div>
               <span className="text-gray-600 dark:text-gray-400">Today</span>
             </div>
           </div>
