@@ -69,7 +69,7 @@ function BubbleFace({ bubble, size }: { bubble: BubbleState['bubbles'][number]; 
   );
 }
 
-/** Reactions rising in their own lanes; identical ones within a second merge into «🔥×7». */
+/** Reactions rising in their own lanes; identical ones within a second merge into «fire ×7». */
 export function ReactionLayer({ socket, eventId, size = 64, placement = 'presenter' }: {
   socket?: LiveSocket | null; eventId: number; size?: number; placement?: 'presenter' | 'inline';
 }) {

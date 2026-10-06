@@ -199,7 +199,7 @@ export default function AssignmentPage() {
       if (files.length > 0) {
         for (let i = 0; i < files.length; i++) {
             const fileToUpload = files[i];
-            console.log(`🚀 Submitting file ${i+1}/${files.length}: ${fileToUpload.name}, Size: ${(fileToUpload.size / 1024 / 1024).toFixed(2)} MB`);
+            console.log(`Submitting file ${i+1}/${files.length}: ${fileToUpload.name}, Size: ${(fileToUpload.size / 1024 / 1024).toFixed(2)} MB`);
             const result = await apiClient.uploadSubmissionFile(id, fileToUpload);
             
             uploadedFiles.push({

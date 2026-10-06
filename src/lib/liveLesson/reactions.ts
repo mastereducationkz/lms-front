@@ -1,6 +1,6 @@
 /**
  * The reactions' screen logic (owner, 2026-10-04): identical reactions within a second merge into
- * one «🔥×7» bubble, at most MAX_BUBBLES float at once and the rest tick a counter, and the
+ * one «fire ×7» bubble, at most MAX_BUBBLES float at once and the rest tick a counter, and the
  * «I'm lost» signal fades after a minute. Pure, so it is tested without a screen.
  */
 import type { Person, ReactionEvent, ReactionKind } from './types';

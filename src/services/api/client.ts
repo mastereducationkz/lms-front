@@ -65,7 +65,7 @@ class TokenManager {
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
       localStorage.removeItem('current_user');
-      console.info('🔄 Токены перенесены из localStorage в cookies');
+      console.info('Токены перенесены из localStorage в cookies');
     }
   }
 

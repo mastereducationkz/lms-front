@@ -66,7 +66,7 @@
   }
 
   .dark .rich-text-editor .ql-toolbar {
-    border-color: hsl(var(--border));
+    border-color: #374151;
   }
 
   .rich-text-editor .ql-container {
@@ -77,7 +77,7 @@
   }
 
   .dark .rich-text-editor .ql-container {
-    border-color: hsl(var(--border));
+    border-color: #374151;
   }
 
 /* Стили для математических символов в toolbar */
@@ -89,8 +89,8 @@
 }
 
 .dark .math-toolbar {
-  background-color: hsl(var(--muted));
-  border-color: hsl(var(--border));
+  background-color: #1f2937;
+  border-color: #374151;
 }
 
 /* Стили для LaTeX диалога */
@@ -103,8 +103,8 @@
 }
 
 .dark .latex-dialog .formula-preview {
-  background-color: hsl(var(--muted));
-  border-color: hsl(var(--border));
+  background-color: #1e293b;
+  border-color: #334155;
 }
 
 /* Стили для ошибок LaTeX */
@@ -154,9 +154,9 @@
 }
 
 .dark .ql-latex {
-  background: hsl(var(--muted));
-  border-color: hsl(var(--input));
-  color: hsl(var(--foreground));
+  background: #1f2937;
+  border-color: #4b5563;
+  color: #d1d5db;
 }
 
 .ql-latex:hover {
@@ -165,8 +165,8 @@
 }
 
 .dark .ql-latex:hover {
-  background-color: hsl(var(--border));
-  border-color: hsl(var(--muted-foreground));
+  background-color: #374151;
+  border-color: #6b7280;
 }
 
 .ql-latex svg {
@@ -341,8 +341,8 @@
   }
 
   .dark .rich-text-editor .ql-toolbar {
-    background-color: hsl(var(--muted));
-    border-color: hsl(var(--border));
+    background-color: #1f2937;
+    border-color: #374151;
   }
 
   .rich-text-editor .ql-container {
@@ -354,7 +354,7 @@
   }
 
   .dark .rich-text-editor .ql-container {
-    border-color: hsl(var(--border));
+    border-color: #374151;
   }
 
   .rich-text-editor .ql-editor {
@@ -367,8 +367,8 @@
   }
 
   .dark .rich-text-editor .ql-editor {
-    background-color: hsl(var(--card));
-    color: hsl(var(--foreground));
+    background-color: #111827;
+    color: #f3f4f6;
   }
 
   .rich-text-editor .ql-editor:focus {
@@ -401,8 +401,8 @@
   }
 
   .dark .rich-text-editor .ql-editor blockquote {
-    border-left-color: hsl(var(--border));
-    color: hsl(var(--muted-foreground));
+    border-left-color: #374151;
+    color: #9ca3af;
   }
 
   .rich-text-editor .ql-editor code {
@@ -414,8 +414,8 @@
   }
 
   .dark .rich-text-editor .ql-editor code {
-    background-color: hsl(var(--muted));
-    color: hsl(var(--foreground));
+    background-color: #1f2937;
+    color: #e5e7eb;
   }
 
   .rich-text-editor .ql-editor pre {
@@ -423,7 +423,7 @@
   }
 
   .dark .rich-text-editor .ql-editor pre {
-    background-color: hsl(var(--muted));
+    background-color: #1f2937;
   }
 
   /* Copy Protection Styles */
@@ -489,11 +489,11 @@
   }
 
   .dark .rich-text-editor .ql-editor a {
-    color: hsl(var(--brand));
+    color: #60a5fa;
   }
 
   .dark .rich-text-editor .ql-editor a:hover {
-    color: hsl(var(--brand-subtle-foreground));
+    color: #93bbfd;
   }
 
   .rich-text-editor .ql-editor img {

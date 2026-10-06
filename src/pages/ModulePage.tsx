@@ -49,10 +49,10 @@ export default function ModulePage() {
         return isMatch;
       });
       
-      console.log('🎯 Target module found:', targetModule);
+      console.log('Target module found:', targetModule);
       
       if (!targetModule) {
-        console.error('❌ Module not found. Available modules:', modules.map(m => ({ id: m.id, title: m.title })));
+        console.error('Module not found. Available modules:', modules.map(m => ({ id: m.id, title: m.title })));
         setError(`Module not found. Available modules: ${modules.map(m => m.title).join(', ')}`);
         return;
       }
@@ -61,7 +61,7 @@ export default function ModulePage() {
 
       // Load lessons for this module
       const moduleLessons = await apiClient.getModuleLessons(courseId, parseInt(moduleId));
-      console.log('📖 Module lessons:', moduleLessons);
+      console.log('Module lessons:', moduleLessons);
       setLessons(moduleLessons);
 
       // Module progress (for students) comes from the backend's one completion rule

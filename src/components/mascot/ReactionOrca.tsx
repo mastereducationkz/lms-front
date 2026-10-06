@@ -15,10 +15,7 @@ export type ReactionKind = (typeof REACTION_KINDS)[number];
 export const REACTION_LABEL: Record<ReactionKind, string> = {
   love: 'Love', laugh: 'Haha', fire: 'Fire', clap: 'Bravo', mindblown: 'Mind blown', splash: 'Splash',
 };
-/** For «🔥×7» bubbles and counters. */
-export const REACTION_EMOJI: Record<ReactionKind, string> = {
-  love: '😍', laugh: '😂', fire: '🔥', clap: '👏', mindblown: '🤯', splash: '🌊',
-};
+// Bubbles and counters draw a reaction with ReactionGlyph (live-lesson/reactionIcons): icons, not emoji.
 
 /** expression indices in config EXPRESSIONS: 0 happy, 3 star-eyes, 4 determined, 7 laughing. */
 const FACE: Record<ReactionKind, number> = { love: 0, laugh: 7, fire: 4, clap: 7, mindblown: 3, splash: 0 };

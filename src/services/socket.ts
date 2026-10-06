@@ -72,19 +72,19 @@ export function connectSocket(): Socket {
 
   // Add connection event listeners for debugging
   socket.on('connect', () => {
-    console.log('🔗 Socket.IO connected:', socket?.id);
+    console.log('Socket.IO connected:', socket?.id);
   });
 
   socket.on('disconnect', (reason) => {
-    console.log('🔌 Socket.IO disconnected:', reason);
+    console.log('Socket.IO disconnected:', reason);
   });
 
   socket.on('connect_error', (error) => {
-    console.error('❌ Socket.IO connection error:', error);
+    console.error('Socket.IO connection error:', error);
   });
 
   socket.on('reconnect', (attemptNumber) => {
-    console.log('🔄 Socket.IO reconnected after', attemptNumber, 'attempts');
+    console.log('Socket.IO reconnected after', attemptNumber, 'attempts');
   });
 
   socket.on('reconnect_attempt', (attemptNumber) => {
@@ -92,15 +92,15 @@ export function connectSocket(): Socket {
     const freshToken = getAccessTokenFromCookie();
     (socket as any).auth = freshToken ? { token: freshToken } : undefined;
     lastToken = freshToken;
-    console.log('🔄 Socket.IO reconnection attempt:', attemptNumber);
+    console.log('Socket.IO reconnection attempt:', attemptNumber);
   });
 
   socket.on('reconnect_error', (error) => {
-    console.error('❌ Socket.IO reconnection error:', error);
+    console.error('Socket.IO reconnection error:', error);
   });
 
   socket.on('reconnect_failed', () => {
-    console.error('❌ Socket.IO reconnection failed');
+    console.error('Socket.IO reconnection failed');
   });
 
   return socket;

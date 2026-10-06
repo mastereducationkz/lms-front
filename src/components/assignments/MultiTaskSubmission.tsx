@@ -685,7 +685,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
           fileToUpload = await compressImage(fileToUpload);
         }
 
-        console.log(`🚀 Uploading file: ${fileToUpload.name}, Size: ${(fileToUpload.size / 1024 / 1024).toFixed(2)} MB`);
+        console.log(`Uploading file: ${fileToUpload.name}, Size: ${(fileToUpload.size / 1024 / 1024).toFixed(2)} MB`);
         
         // Upload file using existing API
         const response = await apiClient.uploadTeacherFile(fileToUpload);

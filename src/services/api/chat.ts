@@ -22,7 +22,7 @@ export async function fetchThreads() {
 
 export async function fetchMessages(partnerId: string): Promise<any[]> {
   try {
-    console.log('🌐 API: Fetching messages for partner:', partnerId);
+    console.log('API: Fetching messages for partner:', partnerId);
     const response = await api.get('/messages/', {
       params: { with_user_id: partnerId }
     });
@@ -38,7 +38,7 @@ export async function sendMessage(
   content: string,
   replyToMessageId?: number | null,
 ): Promise<any> {
-  console.log('🌐 API: Sending message to user:', toUserId);
+  console.log('API: Sending message to user:', toUserId);
   try {
     const response = await api.post('/messages/', {
       to_user_id: parseInt(toUserId),
@@ -115,7 +115,7 @@ export async function getAvailableContacts(roleFilter?: string) {
     const response = await api.get('/messages/available-contacts', { params });
     return response.data.available_contacts || [];
   } catch (error) {
-    console.error('❌ API: Failed to load available contacts:', error);
+    console.error('API: Failed to load available contacts:', error);
     return [];
   }
 }

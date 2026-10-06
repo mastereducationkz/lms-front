@@ -292,13 +292,13 @@ export default function ChatPage() {
 
   const loadAvailableContacts = async () => {
      try {
-       console.log('🔍 Loading available contacts...');
-       console.log('👤 Current user:', currentUser);
+       console.log('Loading available contacts...');
+       console.log('Current user:', currentUser);
        const contacts = await getAvailableContacts();
-       console.log('📞 Available contacts:', contacts);
+       console.log('Available contacts:', contacts);
        setAvailableContacts(contacts);
      } catch (error) {
-       console.error('❌ Failed to load contacts:', error);
+       console.error('Failed to load contacts:', error);
      }
    };
 

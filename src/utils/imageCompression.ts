@@ -22,8 +22,8 @@ export async function compressImage(file: File, options: CompressionOptions = {}
   };
 
   try {
-    console.log(`🖼️ [Compression] Starting compression for ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
-    console.log(`🖼️ [Compression] Options:`, defaultOptions);
+    console.log(`[Compression] Starting compression for ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+    console.log(`[Compression] Options:`, defaultOptions);
     
     let compressedBlob: Blob;
     
@@ -31,7 +31,7 @@ export async function compressImage(file: File, options: CompressionOptions = {}
       compressedBlob = await imageCompression(file, defaultOptions);
     } catch (workerError) {
       if (defaultOptions.useWebWorker) {
-        console.warn('🖼️ [Compression] Web worker failed, retrying without web worker...', workerError);
+        console.warn('[Compression] Web worker failed, retrying without web worker...', workerError);
         compressedBlob = await imageCompression(file, { ...defaultOptions, useWebWorker: false });
       } else {
         throw workerError;
@@ -41,7 +41,7 @@ export async function compressImage(file: File, options: CompressionOptions = {}
     // browser-image-compression returns a File if possible, or a Blob.
     // If it's a larger or same size result, we prefer the original.
     if (compressedBlob.size >= file.size) {
-      console.log('🖼️ [Compression] Compressed file is larger or same size. Keeping original.');
+      console.log('[Compression] Compressed file is larger or same size. Keeping original.');
       return file;
     }
 
@@ -55,7 +55,7 @@ export async function compressImage(file: File, options: CompressionOptions = {}
     const compressedSizeMB = (compressedFile.size / 1024 / 1024).toFixed(2);
     const reductionPercent = ((1 - compressedFile.size / file.size) * 100).toFixed(1);
 
-    console.group('🖼️ [Compression] Success');
+    console.group('[Compression] Success');
     console.log(`Original: ${originalSizeMB} MB`);
     console.log(`Compressed: ${compressedSizeMB} MB`);
     console.log(`Reduction: ${reductionPercent}%`);
@@ -63,7 +63,7 @@ export async function compressImage(file: File, options: CompressionOptions = {}
 
     return compressedFile;
   } catch (error) {
-    console.error('🖼️ [Compression] Failed:', error);
+    console.error('[Compression] Failed:', error);
     // Return original file as fallback to not block the user
     return file;
   }
