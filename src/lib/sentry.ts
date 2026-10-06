@@ -27,6 +27,10 @@ import type { Breadcrumb, BreadcrumbHint, ErrorEvent, EventHint, RequestEventDat
 // this is erased entirely at build time and adds nothing to the lazy chunk (see sentryClient.ts's
 // own comment on why VALUE imports here matter and type imports don't).
 import type { QueryParams, SpanJSON, TransactionEvent } from '@sentry/core';
+import { EXTENSION_URL_RE, asAxiosError, axiosFingerprint, axiosReports, exceptionValues, ignoredBy } from './sentryFilters';
+
+// The noise rules moved to sentryFilters.ts; re-exported for the callers and tests that import them here.
+export { ignoredBy, isIgnoredEvent } from './sentryFilters';
 
 type SentrySdk = typeof import('./sentryClient');
 
@@ -313,75 +317,6 @@ export function scrubText<T>(text: T): T {
   return (wasTruncated ? scrubbed + TRUNCATION_MARKER : scrubbed) as T;
 }
 
-// Browser noise that is never our bug, or is already handled:
-// - ResizeObserver: a benign spec warning some browsers surface as an error.
-// - Chunk loads after a deploy: src/services/pwa.ts reloads the tab onto the new build. When
-//   its once-per-30-s guard (or the OIDC callback route) skips the reload, src/lib/lazyRoute.ts
-//   throws this ChunkLoadError instead of letting React.lazy crash on an undefined module.
-// - "Missing refresh token": the session ended; the client sends the user to log in.
-// - Network failures and aborted requests: the user's connection, not the app. Server faults
-//   are reported by the backend's own Sentry project.
-const IGNORED_MESSAGES: RegExp[] = [
-  /ResizeObserver loop/i,
-  /Failed to fetch dynamically imported module/i,
-  /error loading dynamically imported module/i,
-  /Importing a module script failed/i,
-  /Unable to preload CSS/i,
-  /Loading (CSS )?chunk [\w-]+ failed/i,
-  /Expected the result of a dynamic import/i,
-  /^Missing refresh token$/,
-  /^Network Error$/i,
-  /^(Request aborted|canceled)$/i,
-  /^Load failed$/i,
-  /^Failed to fetch$/i,
-];
-const IGNORED_TYPES = new Set(['AbortError', 'CanceledError', 'ChunkLoadError', 'AxiosError']);
-const EXTENSION_URL_RE = /^(chrome|moz|safari(-web)?|ms-browser)-extension:\/\/|^webkit-masked-url:/i;
-// Telegram's in-app browser injects a WebView JS bridge; calling a bridge method the host app
-// doesn't support throws this exact message. It's never our code, but unlike the minified
-// noise above it reads like a real sentence, so the bare-1-4-letter check below doesn't catch
-// it — it needs its own rule, still gated on the frames not being ours (see isIgnoredEvent).
-const SENTRY_CHUNK_RE = /\/assets\/sentryClient-/;
-const POSTEVENT_BRIDGE_RE = /^Error invoking postEvent:/;
-
-function exceptionValues(event: ErrorEvent) {
-  return event.exception?.values ?? [];
-}
-
-/** True when the event is noise we deliberately never report. */
-export function isIgnoredEvent(event: ErrorEvent, hint?: EventHint): boolean {
-  const original = hint?.originalException as { name?: string; isAxiosError?: boolean; message?: string } | undefined;
-  if (original && typeof original === 'object') {
-    if (original.isAxiosError) return true;
-    if (original.name && IGNORED_TYPES.has(original.name)) return true;
-  }
-  const values = exceptionValues(event);
-  const texts = [event.message ?? '', ...values.map((v) => v.value ?? '')];
-  if (values.some((v) => v.type && IGNORED_TYPES.has(v.type))) return true;
-  if (texts.some((t) => IGNORED_MESSAGES.some((re) => re.test(t)))) return true;
-  // Every script of ours is served from /assets/. A stack with no frame there was thrown by
-  // something injected into the page: an extension, or the Telegram/Instagram in-app browser
-  // many students open links in (the SAT front learned this one: sentryEventFilter.js).
-  const frames = values.flatMap((v) => v.stacktrace?.frames ?? []);
-  // The Sentry chunk (sentryClient-<hash>.js) is served from /assets/ too, and its
-  // browserapierrors wrapper sits on the stack of every error thrown from a setTimeout/
-  // addEventListener callback — including the injected Telegram bridge's (LMS-FRONT-3, whose
-  // whole stack was that wrapper plus `<anonymous>`). It's Sentry's frame, not ours.
-  const hasOurFrame = frames.some((f) => /\/assets\//.test(f.filename ?? '') && !SENTRY_CHUNK_RE.test(f.filename ?? ''));
-  if (frames.length > 0 && !hasOurFrame) return true;
-  if (frames.length > 0 && frames.every((f) => EXTENSION_URL_RE.test(f.filename ?? ''))) return true;
-  // No stack and a bare 1-4 letter "message" (`Error: Ea`): minified injected code, not ours.
-  if (frames.length === 0 && values.some((v) => /^[A-Za-z]{1,4}$/.test(v.value ?? ''))) return true;
-  // Telegram's postEvent bridge (see POSTEVENT_BRIDGE_RE above): only when it's not already
-  // caught above by having a stack with no frame in our bundle (frames.length === 0 is the
-  // uncaught case — the observed report had no stack at all). A real error with this exact
-  // text thrown from OUR code (a frame under /assets/) must still report.
-  if (!hasOurFrame && texts.some((t) => POSTEVENT_BRIDGE_RE.test(t))) return true;
-  // A cross-origin script error carries no information at all.
-  if (!values.length && /^Script error\.?$/i.test(event.message ?? '')) return true;
-  return false;
-}
-
 function scrubBreadcrumbInPlace(crumb: Breadcrumb): void {
   if (crumb.message) crumb.message = scrubText(crumb.message);
   const data = crumb.data;
@@ -458,8 +393,25 @@ function scrubSpanInPlace(span: { description?: string; data?: Record<string, un
   scrubDataValuesInPlace(span.data);
 }
 
+// The share of noise still sent (level info, tagged dropped_by), so what the rules throw away
+// can be measured: about 36 events a week at the 2026-10 volumes (3 588 dropped in 7 days).
+const DROPPED_SAMPLE_RATE = 0.01;
+
 export function beforeSend(event: ErrorEvent, hint: EventHint): ErrorEvent | null {
-  if (isIgnoredEvent(event, hint)) return null;
+  const rule = ignoredBy(event, hint);
+  const axiosError = asAxiosError(hint?.originalException);
+  if (rule) {
+    if (Math.random() >= DROPPED_SAMPLE_RATE) return null;
+    event.level = 'info';
+    event.tags = { ...event.tags, dropped_by: rule };
+    event.fingerprint = ['dropped', rule];
+  } else if (axiosError) {
+    // scrubUrl first: the route is cut down from a URL with every token already masked.
+    const fingerprint = axiosFingerprint(axiosError, scrubUrl(String(axiosError.config?.url ?? '')));
+    if (axiosReports.admit(fingerprint, axiosError.response?.status) !== 'send') return null;
+    event.level = 'warning';
+    event.fingerprint = fingerprint;
+  }
   event.request = scrubRequestInPlace(event.request, false);
   if (event.transaction) event.transaction = scrubUrl(event.transaction);
   if (event.message) event.message = scrubText(event.message);
@@ -593,7 +545,8 @@ export function buildSentryInitOptions(): Parameters<SentrySdk['init']>[0] {
     // are registered anyway, scrubbing the same way, so turning tracing on later is safe by
     // default rather than something that has to remember to add scrubbing at the same time.
     maxBreadcrumbs: 50,
-    ignoreErrors: IGNORED_MESSAGES,
+    // No `ignoreErrors`: IGNORED_MESSAGES are applied in beforeSend, where a 1% sample of what
+    // they drop is still sent. As an SDK option they dropped silently, before beforeSend ran.
     denyUrls: [EXTENSION_URL_RE],
     beforeSend,
     beforeBreadcrumb,

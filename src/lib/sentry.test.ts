@@ -398,7 +398,6 @@ describe('noise is never reported', () => {
     ['Error', 'Unable to preload CSS for /assets/x.css'],
     ['CanceledError', 'canceled'],
     ['AbortError', 'The user aborted a request.'],
-    ['AxiosError', 'Request failed with status code 403'],
     ['Error', 'Network Error'],
     ['TypeError', 'lazy: Expected the result of a dynamic import() call. Instead received: undefined'],
     ['Error', 'Missing refresh token'],
@@ -486,9 +485,10 @@ describe('noise is never reported', () => {
     });
   });
 
-  it('drops any axios error by the original exception', () => {
-    const ev = errorEvent('Error', 'Request failed with status code 500');
-    expect(isIgnoredEvent(ev, { originalException: { isAxiosError: true } })).toBe(true);
+  it('no longer drops an axios error for being one: the axios rules decide (sentryFilters.test.ts)', () => {
+    const ev = errorEvent('AxiosError', 'Request failed with status code 500');
+    expect(isIgnoredEvent(ev, { originalException: { isAxiosError: true, response: { status: 500 } } })).toBe(false);
+    expect(isIgnoredEvent(ev, { originalException: { isAxiosError: true, code: 'ERR_CANCELED' } })).toBe(true);
   });
 
   it('keeps a real bug', () => {
