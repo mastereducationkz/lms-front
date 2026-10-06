@@ -15,9 +15,9 @@ interface Props {
   actions: ReviewSessionActions
 }
 
-const FIELD_LABEL = 'text-sm font-medium text-gray-500 dark:text-gray-400'
-const STAT_LABEL = 'text-sm font-medium text-gray-500 dark:text-gray-400'
-const STAT_VALUE = 'text-3xl font-bold text-gray-900 dark:text-foreground tabular-nums'
+const FIELD_LABEL = 'text-sm font-medium text-muted-foreground'
+const STAT_LABEL = 'text-sm font-medium text-muted-foreground'
+const STAT_VALUE = 'text-3xl font-bold text-foreground tabular-nums'
 
 // How many rows the "Worth reviewing" list shows before collapsing the rest into a "+N
 // more" line -- a 40-unit course flattens into a lot of quizzes, and this screen is a
@@ -105,12 +105,12 @@ export const ReviewLauncher: React.FC<Props> = ({ state, actions }) => {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <Card className="shadow-sm border border-gray-200 dark:border-border">
-        <CardHeader className="px-6 py-4 border-b border-gray-100 dark:border-border bg-white dark:bg-card rounded-t-xl">
+      <Card className="shadow-sm border border-border">
+        <CardHeader className="px-6 py-4 border-b border-border bg-card rounded-t-xl">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <CardTitle className="text-lg font-bold text-gray-900 dark:text-foreground">{EN.pageTitle}</CardTitle>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{EN.subtitle}</p>
+              <CardTitle className="text-lg font-bold text-foreground">{EN.pageTitle}</CardTitle>
+              <p className="text-sm text-muted-foreground">{EN.subtitle}</p>
             </div>
 
             {quiz && (
@@ -123,7 +123,7 @@ export const ReviewLauncher: React.FC<Props> = ({ state, actions }) => {
                   <p className={STAT_LABEL}>{EN.submitted}</p>
                   <div className="flex items-baseline gap-1">
                     <span className={STAT_VALUE}>{quiz.submitted_count}</span>
-                    <span className="text-sm text-gray-400 dark:text-gray-500">/{state.rosterCount}</span>
+                    <span className="text-sm text-muted-foreground">/{state.rosterCount}</span>
                   </div>
                 </div>
               </div>
@@ -216,7 +216,7 @@ export const ReviewLauncher: React.FC<Props> = ({ state, actions }) => {
               the old condition printed "no unit quizzes yet" beside the error banner — telling
               the teacher something false about their course at the moment we in fact know nothing. */}
           {state.selectedGroupId && state.units.length === 0 && state.status === 'ready' && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">{EN.noQuizzes}</p>
+            <p className="text-sm text-muted-foreground">{EN.noQuizzes}</p>
           )}
 
           {quiz && quiz.submitted_count === 0 && (
@@ -241,20 +241,20 @@ export const ReviewLauncher: React.FC<Props> = ({ state, actions }) => {
           `units` is stale/empty too, and this list must not claim "nothing taken yet"
           while we in fact don't know. */}
       {state.selectedCourseId && state.selectedGroupId && state.status === 'ready' && (
-        <Card className="mt-6 shadow-sm border border-gray-200 dark:border-border">
-          <CardHeader className="px-6 py-4 border-b border-gray-100 dark:border-border">
-            <CardTitle className="text-base font-semibold text-gray-900 dark:text-foreground">
+        <Card className="mt-6 shadow-sm border border-border">
+          <CardHeader className="px-6 py-4 border-b border-border">
+            <CardTitle className="text-base font-semibold text-foreground">
               {EN.worthReviewingTitle}
             </CardTitle>
             {sortedQuizzes.length > 0 && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">{EN.worthReviewingSubtitle}</p>
+              <p className="text-sm text-muted-foreground">{EN.worthReviewingSubtitle}</p>
             )}
           </CardHeader>
-          <CardContent className="divide-y divide-gray-100 dark:divide-border px-6 py-2">
+          <CardContent className="divide-y divide-border px-6 py-2">
             {takenQuizzes.length === 0 ? (
-              <p className="py-2 text-sm text-gray-500 dark:text-gray-400">{EN.worthReviewingEmpty}</p>
+              <p className="py-2 text-sm text-muted-foreground">{EN.worthReviewingEmpty}</p>
             ) : !hasAverages ? (
-              <p className="py-2 text-sm text-gray-500 dark:text-gray-400">{EN.worthReviewingNoAverages}</p>
+              <p className="py-2 text-sm text-muted-foreground">{EN.worthReviewingNoAverages}</p>
             ) : (
               <>
                 {visibleQuizzes.map((row) => (
@@ -262,24 +262,24 @@ export const ReviewLauncher: React.FC<Props> = ({ state, actions }) => {
                     key={`${row.lessonId}-${row.stepId}`}
                     type="button"
                     onClick={() => actions.startQuiz(row.lessonId, row.stepId)}
-                    className="flex w-full items-center justify-between gap-4 rounded-sm py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 first:pt-0 last:pb-0 hover:text-gray-900 dark:hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-background"
+                    className="flex w-full items-center justify-between gap-4 rounded-sm py-2.5 text-left text-sm text-foreground first:pt-0 last:pb-0 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-background"
                   >
-                    <span className="truncate font-medium text-gray-900 dark:text-foreground">
+                    <span className="truncate font-medium text-foreground">
                       {row.unitTitle} · {row.quizTitle}
                     </span>
-                    <span className="flex shrink-0 items-center gap-3 tabular-nums text-gray-500 dark:text-gray-400">
+                    <span className="flex shrink-0 items-center gap-3 tabular-nums text-muted-foreground">
                       <span>{format(EN.worthReviewingSubmittedOf, { submitted: row.submittedCount, total: state.rosterCount })}</span>
                       <span>
                         {row.averagePercent !== null
                           ? format(EN.worthReviewingAvgOf, { percent: Math.round(row.averagePercent) })
                           : '—'}
                       </span>
-                      <ChevronRight className="h-4 w-4 shrink-0 text-gray-400 dark:text-gray-500" aria-hidden="true" />
+                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                     </span>
                   </button>
                 ))}
                 {hiddenCount > 0 && (
-                  <p className="pt-2.5 text-sm text-gray-500 dark:text-gray-400">
+                  <p className="pt-2.5 text-sm text-muted-foreground">
                     {format(EN.worthReviewingMore, { count: hiddenCount })}
                   </p>
                 )}

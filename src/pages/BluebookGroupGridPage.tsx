@@ -36,7 +36,7 @@ const trendMeta = (trend: string | null | undefined) => {
     case 'down':
       return { Icon: ArrowDown, cls: 'bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-300', label: 'declined' };
     case 'same':
-      return { Icon: ArrowRight, cls: 'bg-blue-50 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300', label: 'unchanged' };
+      return { Icon: ArrowRight, cls: 'bg-brand-surface text-brand-subtle-foreground', label: 'unchanged' };
     default:
       return { Icon: null, cls: '', label: '' };
   }
@@ -211,7 +211,7 @@ export default function BluebookGroupGridPage() {
 
       {/* ---- group statistics ---- */}
       {!loading && !error && grid && stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+        <div className="grid grid-cols-2 @lg:grid-cols-3 @4xl:grid-cols-6 gap-2">
           <Stat label="Students" value={String(stats.student_count)}
                 hint={stats.students_with_no_results ? `${stats.students_with_no_results} with no results` : 'all have results'} />
           <Stat label="Tests assigned" value={`${stats.tests_assigned} / ${stats.tests_available}`} />
@@ -243,7 +243,7 @@ export default function BluebookGroupGridPage() {
                   <TableRow>
                     <TableHead
                       rowSpan={2} scope="col"
-                      className={`w-44 md:w-64 sticky left-0 ${Z_STICKY_CORNER} bg-background border-r align-bottom`}
+                      className={`w-44 @2xl:w-64 sticky left-0 ${Z_STICKY_CORNER} bg-background border-r align-bottom`}
                     >
                       Student
                     </TableHead>

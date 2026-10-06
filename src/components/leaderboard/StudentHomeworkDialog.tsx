@@ -196,6 +196,7 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
                 У этого ученика пока нет домашних заданий.
               </div>
             ) : (
+              <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs text-muted-foreground border-b border-border">
@@ -238,6 +239,7 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
                   })}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
         </DialogContent>

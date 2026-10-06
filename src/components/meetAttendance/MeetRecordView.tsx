@@ -232,7 +232,7 @@ export function MeetRecordView({ record, busyId, onConfirm, onConfirmMany, compa
             onClick={onApplyVerdicts}
             disabled={applying}
             title="Writes these marks into the journal. Students who already have a mark are left alone."
-            className="inline-flex items-center gap-1.5 rounded-md border border-sky-300 bg-white px-2.5 py-1 font-medium text-sky-900 transition hover:bg-sky-100 disabled:opacity-60 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-100 dark:hover:bg-sky-900"
+            className="inline-flex items-center gap-1.5 rounded-md border border-sky-300 bg-card px-2.5 py-1 font-medium text-sky-900 transition hover:bg-sky-100 disabled:opacity-60 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-100 dark:hover:bg-sky-900"
           >
             {applying && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
             Apply Meet&apos;s verdicts ({applicable.length})

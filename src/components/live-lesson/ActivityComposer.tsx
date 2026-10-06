@@ -154,7 +154,7 @@ function PopcheckForm({ lessonId, api, start, busy }: Props) {
       <div className="space-y-2">
         <p className="text-xs text-muted-foreground">3 auto-checked questions from the course units of this lesson's homework. You see them first.</p>
         <StartButton busy={loading} label="Prepare pop-check" onClick={() => void load()} />
-        {error && <p className="text-xs text-rose-600">{error}</p>}
+        {error && <p className="text-xs text-rose-600 dark:text-rose-400">{error}</p>}
       </div>
     );
   }
@@ -179,7 +179,7 @@ function PopcheckForm({ lessonId, api, start, busy }: Props) {
           )}
         </div>
       ))}
-      {error && <p className="text-xs text-rose-600">{error}</p>}
+      {error && <p className="text-xs text-rose-600 dark:text-rose-400">{error}</p>}
       <StartButton busy={busy} label="Start pop-check (3 min timer)"
         onClick={() => void start({ kind: 'popcheck', refs: preview.items.map((i) => i.ref), timer_seconds: 180 }).then((ok) => { if (ok) setPreview(null); })} />
     </div>
@@ -201,7 +201,7 @@ function MistakeForm({ lessonId, api, start, busy }: Props) {
       <div className="space-y-2">
         <p className="text-xs text-muted-foreground">The question your group got wrong most often in this homework's course units, asked again as a poll.</p>
         <StartButton busy={loading} label="Find the mistake" onClick={() => void load()} />
-        {error && <p className="text-xs text-rose-600">{error}</p>}
+        {error && <p className="text-xs text-rose-600 dark:text-rose-400">{error}</p>}
       </div>
     );
   }
@@ -210,7 +210,7 @@ function MistakeForm({ lessonId, api, start, busy }: Props) {
   return (
     <div className="space-y-2">
       <Source fallback={preview.fallback} start={preview.source_start} />
-      <p className={cn('text-sm font-semibold', poll.stats.share_wrong >= 0.5 ? 'text-rose-600' : 'text-amber-700 dark:text-amber-400')}>
+      <p className={cn('text-sm font-semibold', poll.stats.share_wrong >= 0.5 ? 'text-rose-600 dark:text-rose-400' : 'text-amber-700 dark:text-amber-400')}>
         {Math.round(poll.stats.share_wrong * 100)}% got it wrong ({poll.stats.wrong} of {poll.stats.answered})
       </p>
       <div className="rounded-lg border border-border p-2 text-sm">

@@ -75,7 +75,7 @@ export function MyMark({ view }: { view: LessonView }) {
       <div>
         <p className="text-xs text-muted-foreground">{t('Балл за активность', 'Activity score')}</p>
         <p className="flex items-center gap-1 text-lg font-semibold text-foreground">
-          <Star className="h-4 w-4 text-yellow-500" aria-hidden />
+          <Star className="h-4 w-4 text-yellow-500 dark:text-yellow-400" aria-hidden />
           {me.activity_score != null ? `${me.activity_score}/10` : '—'}
         </p>
       </div>

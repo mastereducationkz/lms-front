@@ -302,17 +302,17 @@ export default function TeacherClassPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-foreground flex items-center">
-            <GraduationCap className="w-8 h-8 mr-3 text-blue-600 dark:text-blue-400" />
+          <h1 className="text-3xl font-bold text-foreground flex items-center">
+            <GraduationCap className="w-8 h-8 mr-3 text-brand" />
             My Class
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage and monitor your students</p>
+          <p className="text-muted-foreground  mt-1">Manage and monitor your students</p>
         </div>
         <div className="flex items-center gap-3">
           <Button
             onClick={() => setIsWeeklyAwardsOpen(true)}
             variant="outline"
-            className="border-gray-300 dark:border-border text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-secondary"
+            className="border-border text-foreground hover:bg-muted dark:hover:bg-secondary"
           >
             <Trophy className="h-4 w-4" aria-hidden="true" />
             Weekly Awards
@@ -327,58 +327,58 @@ export default function TeacherClassPage() {
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border border-gray-200 dark:border-border">
+      <div className="grid grid-cols-1 @3xl:grid-cols-4 gap-4">
+        <Card className="border border-border">
           <CardContent className="p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <div className="p-2 bg-brand-subtle  rounded-lg">
+                <Users className="w-6 h-6 text-brand" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Groups</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-foreground">{visibleGroups.length}</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Groups</p>
+                <p className="text-2xl font-bold text-foreground">{visibleGroups.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border border-gray-200 dark:border-border">
+        <Card className="border border-border">
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
                 <UserIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Students</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-foreground">{totalStudents}</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Students</p>
+                <p className="text-2xl font-bold text-foreground">{totalStudents}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border border-gray-200 dark:border-border">
+        <Card className="border border-border">
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
                 <BookOpen className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Students</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-foreground">{totalActiveStudents}</p>
+                <p className="text-sm font-medium text-muted-foreground">Active Students</p>
+                <p className="text-2xl font-bold text-foreground">{totalActiveStudents}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border border-gray-200 dark:border-border">
+        <Card className="border border-border">
           <CardContent className="p-6">
             <div className="flex items-center">
               <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
                 <TrendingUp className="w-6 h-6 text-orange-600 dark:text-orange-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Progress</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-foreground">{overallAverageProgress}%</p>
+                <p className="text-sm font-medium text-muted-foreground">Avg Progress</p>
+                <p className="text-2xl font-bold text-foreground">{overallAverageProgress}%</p>
               </div>
             </div>
           </CardContent>
@@ -386,28 +386,28 @@ export default function TeacherClassPage() {
       </div>
 
       {/* Search */}
-      <Card className="border border-gray-200 dark:border-border">
+      <Card className="border border-border">
         <CardContent className="p-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-gray-500" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               type="text"
               placeholder="Search groups or students..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-white dark:bg-card"
+              className="pl-10 bg-card"
             />
           </div>
           {archivedCount > 0 && (
-            <label className="mt-3 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 cursor-pointer select-none w-fit">
+            <label className="mt-3 flex items-center gap-2 text-sm text-muted-foreground  cursor-pointer select-none w-fit">
               <input
                 type="checkbox"
                 checked={showArchived}
                 onChange={(e) => setShowArchived(e.target.checked)}
-                className="rounded border-gray-300"
+                className="rounded border-border"
               />
               Show archived groups ({archivedCount})
-              {archivedLoading && <Loader2 className="w-4 h-4 animate-spin text-blue-600 dark:text-blue-400" />}
+              {archivedLoading && <Loader2 className="w-4 h-4 animate-spin text-brand" />}
             </label>
           )}
         </CardContent>
@@ -416,7 +416,7 @@ export default function TeacherClassPage() {
       {/* Groups and Students */}
       {isLoading ? (
         <div className="text-center py-12">
-          <Loader size="lg" animation="spin" color="#2563eb" />
+          <Loader size="lg" animation="spin" color="hsl(var(--brand))" />
         </div>
       ) : error ? (
         <div className="text-center py-12">
@@ -434,9 +434,9 @@ export default function TeacherClassPage() {
         </div>
       ) : filteredGroups.length === 0 ? (
         <div className="text-center py-12">
-          <GraduationCap className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-foreground mb-2">No groups found</h3>
-          <p className="text-gray-600 dark:text-gray-400">
+          <GraduationCap className="w-12 h-12 text-muted-foreground  mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-foreground mb-2">No groups found</h3>
+          <p className="text-muted-foreground">
             {searchQuery
               ? 'No groups or students match your search.'
               : !showArchived && archivedCount > 0
@@ -447,7 +447,7 @@ export default function TeacherClassPage() {
       ) : (
         <div className="space-y-4">
           {filteredGroups.map((group) => (
-            <Card key={group.id} className="border border-gray-200 dark:border-border">
+            <Card key={group.id} className="border border-border">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -464,18 +464,18 @@ export default function TeacherClassPage() {
                       )}
                     </Button>
                     <div>
-                      <CardTitle className="text-lg text-gray-900 dark:text-foreground flex items-center gap-2">
+                      <CardTitle className="text-lg text-foreground flex items-center gap-2">
                         {group.name}
                         {group.is_active === false && (
-                          <Badge variant="outline" className="text-xs font-normal text-gray-500 border-gray-300">Archived</Badge>
+                          <Badge variant="outline" className="text-xs font-normal text-muted-foreground border-border">Archived</Badge>
                         )}
                       </CardTitle>
                       {group.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{group.description}</p>
+                        <p className="text-sm text-muted-foreground  mt-1">{group.description}</p>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Users className="w-4 h-4" />
                       {group.total_students} students
@@ -490,13 +490,13 @@ export default function TeacherClassPage() {
               
               {group.is_expanded && (
                 <CardContent>
-                  <div className="flex border-b border-gray-200 dark:border-border mb-4">
+                  <div className="flex border-b border-border mb-4">
                     <button
                       onClick={() => handleTabChange(group.id, 'general')}
                       className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
                         (activeTab[group.id] || 'general') === 'general'
-                          ? 'border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                          ? 'border-brand  text-brand'
+                          : 'border-transparent text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       General Progress
@@ -505,8 +505,8 @@ export default function TeacherClassPage() {
                       onClick={() => handleTabChange(group.id, 'weekly')}
                       className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 ${
                         activeTab[group.id] === 'weekly'
-                          ? 'border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                          ? 'border-brand  text-brand'
+                          : 'border-transparent text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       Weekly Activity
@@ -515,50 +515,50 @@ export default function TeacherClassPage() {
 
                   {(activeTab[group.id] || 'general') === 'general' ? (
                     group.students.length === 0 ? (
-                      <p className="text-gray-500 dark:text-gray-400 text-center py-4">No students in this group</p>
+                      <p className="text-muted-foreground  text-center py-4">No students in this group</p>
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full">
-                          <thead className="bg-gray-50 dark:bg-secondary border-b border-gray-200 dark:border-border">
+                          <thead className="bg-muted dark:bg-secondary border-b border-border">
                             <tr>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground  uppercase tracking-wider">
                                 Student
                               </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground  uppercase tracking-wider">
                                 Overall Progress
                               </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground  uppercase tracking-wider">
                                 Lessons
                               </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground  uppercase tracking-wider">
                                 Steps
                               </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground  uppercase tracking-wider">
                                 Time Spent
                               </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground  uppercase tracking-wider">
                                 Status
                               </th>
                             </tr>
                           </thead>
-                          <tbody className="bg-white dark:bg-card divide-y divide-gray-200 dark:divide-border">
+                          <tbody className="bg-card divide-y divide-border">
                             {group.students.map((student) => {
                               const stats = studentStats[student.id];
                               return (
-                                <tr key={student.id} className="hover:bg-gray-50 dark:hover:bg-secondary">
+                                <tr key={student.id} className="hover:bg-muted dark:hover:bg-secondary">
                                   <td className="px-4 py-4 whitespace-nowrap">
                                     <div>
                                       <button
                                         type="button"
                                         onClick={() => navigate(`/analytics/student/${student.id}`)}
-                                        className="text-sm font-medium text-gray-900 dark:text-foreground hover:text-blue-600 dark:hover:text-blue-400 hover:underline text-left"
+                                        className="text-sm font-medium text-foreground hover:text-brand hover:underline text-left"
                                         title="Open student analytics"
                                       >
                                         {student.name || student.full_name}
                                       </button>
-                                      <div className="text-sm text-gray-500 dark:text-gray-400">{student.email}</div>
+                                      <div className="text-sm text-muted-foreground">{student.email}</div>
                                       {student.student_id && (
-                                        <div className="text-xs text-gray-400 dark:text-gray-500">ID: {student.student_id}</div>
+                                        <div className="text-xs text-muted-foreground">ID: {student.student_id}</div>
                                       )}
                                     </div>
                                   </td>
@@ -568,16 +568,16 @@ export default function TeacherClassPage() {
                                         value={stats?.overall_completion_percentage || 0} 
                                         className="w-20 h-2"
                                       />
-                                      <span className="text-sm font-medium text-gray-900 dark:text-foreground">
+                                      <span className="text-sm font-medium text-foreground">
                                         {stats?.overall_completion_percentage ?? 0}%
                                       </span>
                                     </div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                    <div className="text-xs text-muted-foreground  mt-1">
                                       {stats?.total_courses || 0} courses
                                     </div>
                                   </td>
                                   <td className="px-4 py-4 whitespace-nowrap">
-                                    <div className="text-sm text-gray-900 dark:text-foreground">
+                                    <div className="text-sm text-foreground">
                                       {stats?.completed_lessons || 0}/{stats?.total_lessons || 0}
                                     </div>
                                     {/* One number per student (the Progress column); here only the
@@ -585,17 +585,17 @@ export default function TeacherClassPage() {
                                     <CompletionMeta checkpoints={stats?.checkpoints} />
                                   </td>
                                   <td className="px-4 py-4 whitespace-nowrap">
-                                    <div className="text-sm text-gray-900 dark:text-foreground">
+                                    <div className="text-sm text-foreground">
                                       {stats?.completed_steps || 0}/{stats?.total_steps || 0}
                                     </div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">required steps</div>
+                                    <div className="text-xs text-muted-foreground">required steps</div>
                                   </td>
                                   <td className="px-4 py-4 whitespace-nowrap">
-                                    <div className="flex items-center gap-1 text-sm text-gray-900 dark:text-foreground">
-                                      <Clock className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                                    <div className="flex items-center gap-1 text-sm text-foreground">
+                                      <Clock className="w-4 h-4 text-muted-foreground" />
                                       {stats?.total_time_spent_minutes || 0} min
                                     </div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                                    <div className="text-xs text-muted-foreground">
                                       {stats?.total_time_spent_minutes ? Math.floor(stats.total_time_spent_minutes / 60) : 0}h {stats?.total_time_spent_minutes ? stats.total_time_spent_minutes % 60 : 0}m
                                     </div>
                                   </td>
@@ -616,38 +616,38 @@ export default function TeacherClassPage() {
                     <div className="space-y-4">
                       {Object.keys(isWeeklyLoading).includes(group.id.toString()) && isWeeklyLoading[group.id] ? (
                         <div className="flex justify-center py-8">
-                          <Loader2 className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400" />
+                          <Loader2 className="w-8 h-8 animate-spin text-brand" />
                         </div>
                       ) : (!groupWeeklyLeaderboard[group.id] || groupWeeklyLeaderboard[group.id].length === 0) ? (
-                        <div className="text-center py-8 bg-gray-50 dark:bg-secondary rounded-lg">
-                          <TrendingUp className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                          <p className="text-gray-500 dark:text-gray-400">No activity recorded for this week yet.</p>
+                        <div className="text-center py-8 bg-muted dark:bg-secondary rounded-lg">
+                          <TrendingUp className="w-12 h-12 text-muted-foreground/50 mx-auto mb-2" />
+                          <p className="text-muted-foreground">No activity recorded for this week yet.</p>
                         </div>
                       ) : (
                         <>
                           {/* Clean Table Layout */}
-                          <div className="overflow-hidden border border-gray-100 dark:border-border rounded-lg">
+                          <div className="overflow-hidden border border-border rounded-lg">
                             <table className="w-full">
-                              <thead className="bg-gray-50/50 dark:bg-secondary border-b border-gray-100 dark:border-border">
+                              <thead className="bg-muted/50 dark:bg-secondary border-b border-border">
                                 <tr>
-                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider w-16">Rank</th>
-                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Student</th>
-                                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Weekly Points</th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground  uppercase tracking-wider w-16">Rank</th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground  uppercase tracking-wider">Student</th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground  uppercase tracking-wider">Weekly Points</th>
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-gray-100 dark:divide-border">
+                              <tbody className="divide-y divide-border">
                                 {groupWeeklyLeaderboard[group.id].map((student, index) => (
-                                  <tr key={student.user_id} className="hover:bg-gray-50 dark:hover:bg-secondary transition-colors">
+                                  <tr key={student.user_id} className="hover:bg-muted dark:hover:bg-secondary transition-colors">
                                     <td className="px-4 py-3 px-6">
-                                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-50 dark:bg-secondary border border-gray-100 dark:border-border font-medium text-sm text-gray-600 dark:text-gray-400">
+                                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-muted dark:bg-secondary border border-border font-medium text-sm text-muted-foreground">
                                         {index < 3 ? <RankMedal rank={index + 1} /> : index + 1}
                                       </div>
                                     </td>
                                     <td className="px-4 py-3">
-                                      <span className="font-medium text-gray-900 dark:text-foreground">{student.user_name}</span>
+                                      <span className="font-medium text-foreground">{student.user_name}</span>
                                     </td>
                                     <td className="px-4 py-3">
-                                      <span className="font-medium text-gray-700 dark:text-gray-300">{student.points}</span>
+                                      <span className="font-medium text-foreground">{student.points}</span>
                                     </td>
                                   </tr>
                                 ))}
@@ -657,11 +657,11 @@ export default function TeacherClassPage() {
                         </>
                       )}
                       
-                      <div className="bg-gray-50 dark:bg-secondary p-4 rounded-lg flex items-start gap-3 border border-gray-200 dark:border-border">
-                        <Target className="w-5 h-5 text-gray-600 dark:text-gray-400 mt-0.5" />
+                      <div className="bg-muted dark:bg-secondary p-4 rounded-lg flex items-start gap-3 border border-border">
+                        <Target className="w-5 h-5 text-muted-foreground  mt-0.5" />
                         <div>
-                          <p className="text-sm font-medium text-gray-900 dark:text-foreground">Weekly Award Tip</p>
-                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                          <p className="text-sm font-medium text-foreground">Weekly Award Tip</p>
+                          <p className="text-xs text-muted-foreground  mt-1">
                             This view shows students ranked by points earned since last Monday. 
                             You can reward top performers with extra bonus points to boost motivation!
                           </p>

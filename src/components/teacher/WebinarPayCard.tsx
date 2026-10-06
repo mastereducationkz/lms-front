@@ -35,9 +35,9 @@ export function WebinarPayCard({ webinars }: { webinars?: WebinarPay | null }) {
   if (!webinars || (webinars.count === 0 && webinars.unpaid.length === 0)) return null
   const flagged = webinars.items.filter((i) => i.evidence !== 'meet')
   return (
-    <div className="rounded-md border border-gray-200 p-3 text-sm dark:border-border">
+    <div className="rounded-md border border-border p-3 text-sm">
       {webinars.count > 0 && (
-        <div className="text-gray-900 dark:text-gray-100">
+        <div className="text-foreground">
           Вебинары и office hours: <span className="font-semibold">{webinars.count}</span> · {hours(webinars.minutes)} ч ·{' '}
           <span className="font-semibold">{webinars.amount.toLocaleString()} тг</span>
           <span className="ml-1 text-xs text-muted-foreground">
@@ -62,7 +62,7 @@ export function WebinarPayCard({ webinars }: { webinars?: WebinarPay | null }) {
       )}
       {webinars.unpaid.length > 0 && (
         <div className="mt-2 text-xs">
-          <div className="font-medium text-gray-700 dark:text-gray-300">Вне расчёта:</div>
+          <div className="font-medium text-foreground">Вне расчёта:</div>
           <ul className="space-y-0.5 text-muted-foreground">
             {webinars.unpaid.map((i) => (
               <li key={i.event_id}>

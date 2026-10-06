@@ -3,7 +3,7 @@ import { cn } from '../../lib/utils';
 
 const TONE = [
   'text-yellow-600 dark:text-yellow-400',
-  'text-slate-500 dark:text-slate-300',
+  'text-muted-foreground',
   'text-orange-700 dark:text-orange-400',
 ];
 const LABEL = ['1st place', '2nd place', '3rd place'];

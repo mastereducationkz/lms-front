@@ -23,7 +23,7 @@ export function noteKinds(view: Pick<LessonView, 'status' | 'viewer'>): NoteKind
 export default function NotesCard({ view, onSaved }: { view: LessonView; onSaved: (kind: NoteKind, note: LessonNote | null) => void }) {
   const kinds = noteKinds(view).filter((k) => view.viewer.can_edit_notes || view.notes[k]);
   const ru = view.viewer.locale === 'ru';
-  if (kinds.length === 0) return <p className="text-xs text-slate-500">{ru ? 'Заметок пока нет.' : 'No notes yet.'}</p>;
+  if (kinds.length === 0) return <p className="text-xs text-muted-foreground">{ru ? 'Заметок пока нет.' : 'No notes yet.'}</p>;
   return (
     <div className="space-y-2.5">
       {kinds.map((kind) => <Note key={kind} view={view} kind={kind} note={view.notes[kind] ?? null} onSaved={onSaved} />)}
@@ -60,13 +60,13 @@ function Note({ view, kind, note, onSaved }: {
   };
 
   return (
-    <div className={cn('rounded-lg border p-2.5', kind === 'staff' ? 'border-amber-200 bg-amber-50/60' : 'border-slate-200')}>
+    <div className={cn('rounded-lg border p-2.5', kind === 'staff' ? 'border-amber-200 dark:border-amber-500/30 bg-amber-50/60 dark:bg-amber-500/15' : 'border-border')}>
       <div className="flex items-baseline justify-between gap-2">
-        <h3 className="flex items-center gap-1 text-xs font-semibold text-slate-900">
-          {kind === 'staff' && <Lock className="h-3 w-3 text-amber-600" aria-hidden />}
+        <h3 className="flex items-center gap-1 text-xs font-semibold text-foreground">
+          {kind === 'staff' && <Lock className="h-3 w-3 text-amber-600 dark:text-amber-400" aria-hidden />}
           {ru ? meta.ru : meta.en}
         </h3>
-        {note?.at && <span className="truncate text-[10px] text-slate-500">{note.by ? `${note.by} · ` : ''}{stampKz(note.at, view.viewer.locale)}</span>}
+        {note?.at && <span className="truncate text-[10px] text-muted-foreground">{note.by ? `${note.by} · ` : ''}{stampKz(note.at, view.viewer.locale)}</span>}
       </div>
       {editable ? (
         <>
@@ -76,17 +76,17 @@ function Note({ view, kind, note, onSaved }: {
             rows={draft.length > 200 ? 5 : 3}
             placeholder={`${t('Напишите…', 'Write…')} ${ru ? meta.hintRu : meta.hintEn}`}
             aria-label={ru ? meta.ru : meta.en}
-            className="mt-1.5 w-full resize-y rounded-md border border-slate-200 bg-white px-2 py-1.5 text-[13px] text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="mt-1.5 w-full resize-y rounded-md border border-border bg-card px-2 py-1.5 text-[13px] text-foreground focus:outline-none focus:ring-2 focus:ring-brand"
           />
           <div className="mt-1 flex items-center justify-between gap-2">
-            <span className={cn('text-[10px] tabular-nums', over ? 'font-semibold text-rose-600' : 'text-slate-400')}>{draft.length}/{NOTE_LIMIT}</span>
+            <span className={cn('text-[10px] tabular-nums', over ? 'font-semibold text-rose-600 dark:text-rose-400' : 'text-muted-foreground')}>{draft.length}/{NOTE_LIMIT}</span>
             <span className="flex items-center gap-2">
-              {message && <span className={cn('text-[11px]', message.ok ? 'text-emerald-700' : 'text-rose-700')}>{message.text}</span>}
+              {message && <span className={cn('text-[11px]', message.ok ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300')}>{message.text}</span>}
               <button
                 type="button"
                 onClick={() => void save()}
                 disabled={!dirty || saving || over}
-                className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+                className="inline-flex items-center gap-1 rounded-full bg-brand-solid px-3 py-1 text-xs font-semibold text-white transition hover:bg-brand-solid-hover disabled:cursor-not-allowed disabled:opacity-40"
               >
                 {saving && <Loader2 className="h-3 w-3 animate-spin" />}
                 {t('Сохранить', 'Save')}
@@ -95,7 +95,7 @@ function Note({ view, kind, note, onSaved }: {
           </div>
         </>
       ) : (
-        <p className="mt-1 whitespace-pre-wrap break-words text-[13px] text-slate-800">{note?.text}</p>
+        <p className="mt-1 whitespace-pre-wrap break-words text-[13px] text-foreground">{note?.text}</p>
       )}
     </div>
   );

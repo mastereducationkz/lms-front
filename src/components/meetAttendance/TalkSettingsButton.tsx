@@ -34,7 +34,7 @@ function Toggle({ id, checked, disabled, busy, onChange, label, hint }: {
           disabled && 'opacity-60',
         )}
       >
-        <span className={cn('inline-block h-4 w-4 rounded-full bg-white shadow transition', checked ? 'translate-x-[18px]' : 'translate-x-0.5')} />
+        <span className={cn('inline-block h-4 w-4 rounded-full bg-card shadow transition', checked ? 'translate-x-[18px]' : 'translate-x-0.5')} />
         {busy && <Loader2 className="absolute -right-5 h-3.5 w-3.5 animate-spin text-muted-foreground" aria-hidden />}
       </button>
       <label htmlFor={id} className="min-w-0">
@@ -114,7 +114,7 @@ export function TalkSettingsButton({ role, onChanged }: Props) {
         >
           <MessagesSquare className="h-4 w-4 text-muted-foreground" aria-hidden />
           Talk time
-          <span className={cn('h-2 w-2 rounded-full', settings === null ? 'bg-muted-foreground/30' : on ? 'bg-emerald-500' : 'bg-slate-400')}
+          <span className={cn('h-2 w-2 rounded-full', settings === null ? 'bg-muted-foreground/30' : on ? 'bg-emerald-500' : 'bg-slate-400 dark:bg-muted-foreground/40')}
             aria-label={settings === null ? undefined : on ? 'on' : 'off'} />
         </button>
       </PopoverTrigger>
