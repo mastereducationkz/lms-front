@@ -15,6 +15,49 @@ export async function getGamificationStatus(): Promise<{
   }
 }
 
+/** One bar in the stars breakdown: a source's net stars (grade reversals are folded into grades). */
+export interface StarSource {
+  key: 'homework' | 'grades' | 'course_quiz' | 'daily_questions' | 'teacher_bonus' | 'other';
+  label: string;
+  stars: number;
+}
+
+/** How a source pays, from the same constants the backend awards with. */
+export interface StarRule {
+  key: Exclude<StarSource['key'], 'other'>;
+  label: string;
+  min: number;
+  max: number;
+  note: string;
+}
+
+export interface StarStreak {
+  days: number;
+  multiplier: number;
+  next_multiplier: number;
+  next_at_days: number;
+  starts_at_days: number;
+  start_multiplier: number;
+  step: number;
+  step_days: number;
+}
+
+export interface StarsBreakdown {
+  /** users.activity_points, the lifetime total the header pill shows. */
+  total: number;
+  sources: StarSource[];
+  /** Stars the ledger does not explain (drift); null when the bars add up to the total. */
+  earlier: number | null;
+  rules: StarRule[];
+  streak: StarStreak;
+}
+
+/** The signed-in student's stars by source (students only). Cached like every /gamification read. */
+export async function getStarsBreakdown(): Promise<StarsBreakdown> {
+  const response = await api.get('/gamification/breakdown');
+  return response.data;
+}
+
 export async function getBonusAllowance(groupId?: number): Promise<{ limit: number; given: number; remaining: number }> {
   try {
     const url = groupId
