@@ -114,4 +114,8 @@ export const shell = {
   'shell.chat.unread': 'Unread messages',
 
   'shell.errors.platformAccountFailed': 'Couldn’t create the platform account',
+
+  'shell.accessDenied.title': 'Access Denied',
+  'shell.accessDenied.body': 'You don’t have permission to access this page.',
+  'shell.accessDenied.back': 'Go Back',
 } as const satisfies MessageTable;

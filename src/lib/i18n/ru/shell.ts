@@ -114,4 +114,8 @@ export const shell: RuTable<typeof en> = {
   'shell.chat.unread': 'Непрочитанные сообщения',
 
   'shell.errors.platformAccountFailed': 'Не удалось создать аккаунт на платформе',
+
+  'shell.accessDenied.title': 'Нет доступа',
+  'shell.accessDenied.body': 'У вас нет прав на эту страницу.',
+  'shell.accessDenied.back': 'Назад',
 };
