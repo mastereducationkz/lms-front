@@ -22,6 +22,7 @@ import FlashcardViewer from '../components/lesson/FlashcardViewer';
 import QuizRenderer from '../components/lesson/QuizRenderer';
 import SummaryStepRenderer from '../components/lesson/SummaryStepRenderer';
 import TextLookupPopover from '../components/lesson/TextLookupPopover';
+import { lookupAllowed } from '../components/lesson/lookup/selection';
 import { toast } from '../components/Toast';
 import { getAnswerKey, scoreQuiz } from '../components/lesson/quiz/scoring';
 import { isQuizScorePassing, resolveQuizPassingScorePercent } from '../utils/quizPassingScore';
@@ -1947,7 +1948,7 @@ export default function LessonPage() {
           return (
             <div ref={textContentRef} className="relative">
               {/* Text Lookup Popover */}
-              <TextLookupPopover containerRef={textContentRef} />
+              <TextLookupPopover containerRef={textContentRef} enabled={lookupAllowed('text', lesson?.kind)} />
               
               {/* Special "Read explanation" text above everything */}
               {currentStep.content_text && currentStep.content_text.includes("Read the explanation and make notes.") && (
@@ -2000,7 +2001,7 @@ export default function LessonPage() {
           return (
             <div ref={textContentRef} className="space-y-4 relative">
               {/* Text Lookup Popover */}
-              <TextLookupPopover containerRef={textContentRef} />
+              <TextLookupPopover containerRef={textContentRef} enabled={lookupAllowed('video_text', lesson?.kind)} />
   
               {/* Special "Watch explanations" text above video */}
               {currentStep.content_text && currentStep.content_text.includes("Watch the explanations for the previous questions") && (
@@ -2095,7 +2096,7 @@ export default function LessonPage() {
 
           return (
             <div ref={textContentRef} className="relative">
-              <TextLookupPopover containerRef={textContentRef} />
+              {/* No Look Up here: in a quiz it would hand out answers (lookupAllowed). */}
               <QuizRenderer
                 singleAttempt={checkpointRetakeBlocked}
                 continueAction={

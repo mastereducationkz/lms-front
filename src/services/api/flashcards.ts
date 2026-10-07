@@ -49,33 +49,17 @@ export async function checkIsFavorite(stepId: number, flashcardId: string): Prom
   }
 }
 
-export async function lookupWord(text: string, contextSentence?: string): Promise<{
-  word: string;
-  phonetic: string | null;
-  part_of_speech: string | null;
-  definition_en: string;
-  translation_ru: string;
-  synonyms: string[];
-  usage_example: string | null;
-  etymology: string | null;
-}> {
-  try {
-    const response = await api.post('/ai-tools/lookup', {
-      text,
-      context_sentence: contextSentence
-    });
-    return response.data;
-  } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to lookup word');
-  }
-}
-
+/** Saves a Look Up answer: `kind: 'word'` is a vocabulary card, `'phrase'` a phrase card whose
+ * back is the translation and whose hard words ride along as glosses. */
 export async function quickCreateFlashcard(data: {
+  kind?: 'word' | 'phrase';
   word: string;
   translation: string;
   definition?: string;
   context?: string;
   phonetic?: string;
+  lang?: 'ru' | 'kk';
+  glosses?: Array<{ term: string; meaning: string; note: string }>;
 }): Promise<{ success: boolean; message: string; flashcard_id: string; favorite_id: number }> {
   try {
     const response = await api.post('/flashcards/quick_create', data);
@@ -94,6 +78,9 @@ export async function getVocabularyCards(): Promise<{
     definition: string | null;
     context: string | null;
     phonetic: string | null;
+    kind: 'word' | 'phrase';
+    lang: 'ru' | 'kk' | null;
+    glosses: Array<{ term: string; meaning: string; note: string }>;
     created_at: string | null;
   }>;
   count: number;

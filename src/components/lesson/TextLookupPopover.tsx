@@ -1,323 +1,234 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { lookupWord, quickCreateFlashcard } from '../../services/api';
+/**
+ * Look Up in lesson text (owner's rules, 2026-10-07): select a word or a sentence and the card
+ * opens by itself once the selection has settled. On touch screens, where selecting opens the OS
+ * menu, a small «Look up» chip waits for a tap instead. The card follows the selection while the
+ * lesson scrolls, flips and shifts to stay on screen, closes on Escape, a click elsewhere or the
+ * close button, and aborts its request whenever it closes or the selection changes.
+ */
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { autoUpdate, flip, hide, offset, shift, size, useFloating } from '@floating-ui/react-dom';
+import { Search } from 'lucide-react';
+import { viewportClamp } from '../guide/useAnchoredCard';
+import { EDGE } from '../../lib/guide/geometry';
 import { useSettings } from '../../contexts/SettingsContext';
-import { Button } from '../ui/button';
-import { Card } from '../ui/card';
-import { Loader2, X, Plus, Check, Search } from 'lucide-react';
-import ThinkingLoader from '../ThinkingLoader';
+import { quickCreateFlashcard } from '../../services/api';
+import type { LookupLang, LookupMode } from '../../services/api/lookup';
+import { LookupCard, type SaveState } from './lookup/LookupCard';
+import { useLookupLang } from './lookup/lookupLang';
+import { cleanSelection, selectionKind } from './lookup/selection';
+import { useLookupStream } from './lookup/useLookupStream';
+import { useSelectionSettle, type SettledSelection } from './lookup/useSelectionSettle';
 
-interface LookupResult {
-  word: string;
-  phonetic: string | null;
-  part_of_speech: string | null;
-  definition_en: string;
-  translation_ru: string;
-  synonyms: string[];
-  usage_example: string | null;
-  etymology: string | null;
+interface Target extends SettledSelection {
+  kind: 'word' | 'phrase' | 'too_long';
+  cleaned: string;
+  /** False while the touch chip waits for a tap. */
+  armed: boolean;
 }
 
 interface TextLookupPopoverProps {
   containerRef: React.RefObject<HTMLElement>;
+  /** Off for quiz questions and checkpoints (lookupAllowed in ./lookup/selection). */
+  enabled?: boolean;
 }
 
-export const TextLookupPopover: React.FC<TextLookupPopoverProps> = ({ containerRef }) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<LookupResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [selectedText, setSelectedText] = useState('');
-  const [contextSentence, setContextSentence] = useState<string | undefined>();
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const popoverRef = useRef<HTMLDivElement>(null);
+const sameRange = (a: Range, b: Range) =>
+  a.compareBoundaryPoints(Range.START_TO_START, b) === 0 && a.compareBoundaryPoints(Range.END_TO_END, b) === 0;
+
+export const TextLookupPopover: React.FC<TextLookupPopoverProps> = ({ containerRef, enabled = true }) => {
   const { isLookUpEnabled } = useSettings();
+  const active = enabled && isLookUpEnabled;
+  const [lang, setLang] = useLookupLang();
+  const { state, start, reset } = useLookupStream();
+  const [target, setTarget] = useState<Target | null>(null);
+  const [save, setSave] = useState<SaveState>('idle');
+  const floatingEl = useRef<HTMLDivElement | null>(null);
+  const returnFocus = useRef<HTMLElement | null>(null);
+  const targetRef = useRef<Target | null>(null);
+  targetRef.current = target;
+  const labelId = useId();
 
-  const handleLookup = useCallback(async (text: string, context?: string) => {
-    setIsLoading(true);
-    setError(null);
-    setResult(null);
-    setSaveSuccess(false);
-    
-    try {
-      const lookupResult = await lookupWord(text, context);
-      setResult(lookupResult);
-    } catch (err: any) {
-      setError(err.message || 'Failed to lookup word');
-    } finally {
-      setIsLoading(false);
+  const reference = useMemo(
+    () =>
+      target && {
+        getBoundingClientRect: () => target.range.getBoundingClientRect(),
+        getClientRects: () => target.range.getClientRects(),
+        contextElement: containerRef.current ?? undefined,
+      },
+    [target, containerRef],
+  );
+
+  const { refs, floatingStyles, middlewareData } = useFloating({
+    strategy: 'fixed',
+    placement: 'bottom',
+    elements: { reference },
+    whileElementsMounted: autoUpdate,
+    middleware: [
+      offset(10),
+      flip({ padding: EDGE }),
+      shift({ padding: EDGE }),
+      size({
+        padding: EDGE,
+        apply({ availableHeight, elements }) {
+          elements.floating.style.maxHeight = `${Math.max(160, Math.floor(availableHeight))}px`;
+        },
+      }),
+      hide({ strategy: 'referenceHidden' }),
+      // The tour's last word: whatever the rest decided, the card ends up fully on screen.
+      viewportClamp(),
+    ],
+  });
+
+  const run = useCallback(
+    (next: Target, language: LookupLang) => {
+      setSave('idle');
+      start({ text: next.cleaned, context: next.context, lang: language, mode: next.kind as LookupMode });
+    },
+    [start],
+  );
+
+  const close = useCallback(() => {
+    reset();
+    setTarget(null);
+    if (returnFocus.current && floatingEl.current?.contains(document.activeElement)) {
+      returnFocus.current.focus({ preventScroll: true });
     }
-  }, []);
+    returnFocus.current = null;
+  }, [reset]);
 
-  const handleSaveToFlashcards = async () => {
-    if (!result) return;
-    
-    setIsSaving(true);
-    try {
-      await quickCreateFlashcard({
-        word: result.word,
-        translation: result.translation_ru,
-        definition: result.definition_en,
-        context: contextSentence,
-        phonetic: result.phonetic || undefined
-      });
-      setSaveSuccess(true);
-    } catch (err: any) {
-      setError(err.message || 'Failed to save flashcard');
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const onSettle = useCallback(
+    (selection: SettledSelection | null) => {
+      const current = targetRef.current;
+      if (!selection) {
+        if (current && !current.armed) close(); // the chip goes with its selection
+        return;
+      }
+      const kind = selectionKind(selection.text);
+      if (kind === 'empty') return;
+      if (current && current.text === selection.text && sameRange(current.range, selection.range)) return;
+      const next: Target = { ...selection, kind, cleaned: cleanSelection(selection.text), armed: !selection.touch || kind === 'too_long' };
+      setTarget(next);
+      if (kind === 'too_long' || !next.armed) {
+        reset();
+        return;
+      }
+      run(next, lang);
+    },
+    [close, reset, run, lang],
+  );
 
-  const handleClose = useCallback(() => {
-    setIsVisible(false);
-    setResult(null);
-    setError(null);
-    setSelectedText('');
-    setSaveSuccess(false);
-    window.getSelection()?.removeAllRanges();
-  }, []);
+  useSelectionSettle(containerRef, [floatingEl], active, onSettle);
 
-  const getContextSentence = (selection: Selection): string | undefined => {
-    const anchorNode = selection.anchorNode;
-    if (!anchorNode?.parentElement) return undefined;
-    
-    const text = anchorNode.textContent || '';
-    const selectedStr = selection.toString();
-    const idx = text.indexOf(selectedStr);
-    
-    if (idx === -1) return undefined;
-    
-    const start = Math.max(0, idx - 30);
-    const end = Math.min(text.length, idx + selectedStr.length + 30);
-    
-    return text.substring(start, end).trim();
-  };
-
+  // A click anywhere but the card closes it; Escape too; Tab steps into it without having
+  // taken focus (or the selection) when it opened.
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const handleMouseUp = () => {
-      setTimeout(() => {
-        const selection = window.getSelection();
-        const text = selection?.toString().trim();
-        
-        if (text && text.length > 0 && text.length <= 100) {
-          const anchorNode = selection?.anchorNode;
-          if (!anchorNode || !container.contains(anchorNode)) return;
-          
-          // Don't trigger lookup if selection is inside the popover itself
-          if (popoverRef.current && popoverRef.current.contains(anchorNode)) return;
-          
-          const context = selection ? getContextSentence(selection) : undefined;
-          setContextSentence(context);
-          setSelectedText(text);
-          
-          const rect = selection!.getRangeAt(0).getBoundingClientRect();
-          const containerRect = container.getBoundingClientRect();
-          
-          setPosition({
-            x: rect.left - containerRect.left + rect.width / 2,
-            y: rect.bottom - containerRect.top + 8
-          });
-          
-          setIsVisible(true);
-          setResult(null);
-          setError(null);
-          setSaveSuccess(false);
-        }
-      }, 10);
+    if (!target) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!floatingEl.current?.contains(event.target as Node)) close();
     };
-
-    container.addEventListener('mouseup', handleMouseUp);
-    
-    const handleClickOutside = (e: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
-        handleClose();
+    const onKeyDown = (event: KeyboardEvent) => {
+      const card = floatingEl.current;
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        close();
+      } else if (event.key === 'Tab' && !event.shiftKey && card && !card.contains(document.activeElement)) {
+        const first = card.querySelector<HTMLElement>('button:not([disabled])');
+        if (first) {
+          event.preventDefault();
+          returnFocus.current = document.activeElement as HTMLElement | null;
+          first.focus();
+        }
       }
     };
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    
+    document.addEventListener('pointerdown', onPointerDown, true);
+    document.addEventListener('keydown', onKeyDown);
     return () => {
-      container.removeEventListener('mouseup', handleMouseUp);
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('pointerdown', onPointerDown, true);
+      document.removeEventListener('keydown', onKeyDown);
     };
-  }, [containerRef, handleClose]);
+  }, [target, close]);
 
-  if (!isVisible || !isLookUpEnabled) return null;
+  useEffect(() => {
+    if (!active && targetRef.current) close();
+  }, [active, close]);
 
-  return (
-    <div 
-      ref={popoverRef}
-      className="absolute z-50 -translate-x-1/2"
-      style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`
+  const chooseLang = (next: LookupLang) => {
+    setLang(next);
+    if (target?.armed && target.kind !== 'too_long') run(target, next);
+  };
+
+  const onSave = async () => {
+    const result = state.result;
+    if (!target || !result) return;
+    setSave('saving');
+    try {
+      if (result.mode === 'word') {
+        await quickCreateFlashcard({
+          kind: 'word', word: result.headword || target.cleaned, translation: result.translation ?? '',
+          definition: result.definition ?? undefined, context: target.context, lang: state.lang,
+        });
+      } else {
+        await quickCreateFlashcard({
+          kind: 'phrase', word: target.cleaned, translation: result.translation, glosses: result.glosses, lang: state.lang,
+        });
+      }
+      setSave('saved');
+    } catch {
+      setSave('failed');
+    }
+  };
+
+  if (!active || !target) return null;
+
+  const hidden = Boolean(middlewareData.hide?.referenceHidden);
+  return createPortal(
+    <div
+      ref={(node) => {
+        floatingEl.current = node;
+        refs.setFloating(node);
       }}
+      style={{ ...floatingStyles, visibility: hidden ? 'hidden' : undefined }}
+      className="z-50 flex"
     >
-      <Card className="bg-white/60 backdrop-blur-xl border border-gray-200/40 shadow-lg shadow-black/10 overflow-hidden max-w-[380px] dark:bg-popover/90 dark:border-border">
-        {/* Initial toolbar - before lookup */}
-        {!result && !error && (
-          <div className="group flex items-center gap-1 px-1 py-1 min-w-max">
-            <div className="grid grid-cols-1 grid-rows-1 items-center flex-grow">
-              <div 
-                className={`col-start-1 row-start-1 flex items-center justify-center transition-opacity duration-200 ${isLoading ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-              >
-                <ThinkingLoader state="searching" size={20} label={`Looking up "${selectedText}"…`} />
-              </div>
-              
-              {/* Button Container */}
-              <button 
-                className={`col-start-1 row-start-1 flex items-center text-[13px] text-muted-foreground hover:text-foreground hover:bg-gray-100/50 dark:hover:bg-foreground/10 px-1.5 py-1 rounded-md transition-all duration-300 font-medium text-left ${isLoading ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
-                onClick={() => handleLookup(selectedText, contextSentence)}
-              >
-                {/* Icon - always visible but subtle */}
-                <Search className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100 transition-opacity" />
-                
-                {/* Text - hidden initially, visible when group (toolbar) is hovered */}
-                <span className="max-w-0 overflow-hidden group-hover:max-w-[240px] transition-all duration-300 ease-in-out whitespace-nowrap opacity-0 group-hover:opacity-100 group-hover:ml-2">
-                  Look Up "{selectedText}"
-                </span>
-              </button>
-            </div>
-            
-            {!isLoading && (
-              <button 
-                onClick={handleClose}
-                className="p-1 text-gray-400 dark:text-muted-foreground hover:text-gray-600 hover:bg-gray-100/50 dark:hover:text-foreground dark:hover:bg-foreground/10 rounded-md transition-colors shrink-0"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Error */}
-        {error && (
-          <div className="p-4 text-center">
-            <p className="text-sm text-red-500 dark:text-red-400 mb-2">{error}</p>
-            <Button size="sm" variant="ghost" onClick={handleClose} className="text-xs">
-              Close
-            </Button>
-          </div>
-        )}
-
-        {/* Results */}
-        {result && (
-          <div>
-            {/* Header */}
-            <div className="px-4 pt-4 pb-3 border-b border-border">
-              <div className="flex items-start justify-between">
-                <div className="flex flex-wrap items-baseline gap-2">
-                  <span className="text-xl font-semibold text-foreground tracking-tight">
-                    {result.word}
-                  </span>
-                  {result.phonetic && (
-                    <span className="text-sm text-gray-400 dark:text-muted-foreground">
-                      {result.phonetic}
-                    </span>
-                  )}
-                  {result.part_of_speech && (
-                    <span className="text-xs text-brand bg-brand-surface px-1.5 py-0.5 rounded">
-                      {result.part_of_speech}
-                    </span>
-                  )}
-                </div>
-                <button 
-                  onClick={handleClose}
-                  className="p-1 -mr-1 text-gray-400 dark:text-muted-foreground hover:text-gray-600 dark:hover:text-foreground transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            
-            {/* Content */}
-            <div className="px-4 py-3 space-y-3 max-h-[280px] overflow-y-auto">
-              {/* Definition */}
-              <div>
-                <p className="text-[13px] leading-relaxed text-gray-700 dark:text-foreground">
-                  {result.definition_en}
-                </p>
-              </div>
-              
-              {/* Translation */}
-              <div className="pt-2 border-t border-border">
-                <span className="text-xs font-medium text-gray-400 dark:text-muted-foreground uppercase tracking-wide">
-                  Перевод
-                </span>
-                <p className="mt-1 text-[13px] text-muted-foreground">
-                  {result.translation_ru}
-                </p>
-              </div>
-              
-              {/* Synonyms */}
-              {result.synonyms.length > 0 && (
-                <div className="pt-2 border-t border-border">
-                  <span className="text-xs font-medium text-gray-400 dark:text-muted-foreground uppercase tracking-wide">
-                    Synonyms
-                  </span>
-                  <div className="mt-1.5 flex flex-wrap gap-1.5">
-                    {result.synonyms.slice(0, 5).map((syn, i) => (
-                      <span 
-                        key={i} 
-                        className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-md"
-                      >
-                        {syn}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Example */}
-              {result.usage_example && (
-                <div className="pt-2 border-t border-border">
-                  <span className="text-xs font-medium text-gray-400 dark:text-muted-foreground uppercase tracking-wide">
-                    Example
-                  </span>
-                  <p className="mt-1 text-[13px] text-muted-foreground italic">
-                    "{result.usage_example}"
-                  </p>
-                </div>
-              )}
-            </div>
-            
-            {/* Footer */}
-            <div className="px-4 py-3 bg-gray-50/50 dark:bg-muted/50 border-t border-border">
-              {saveSuccess ? (
-                <div className="flex items-center justify-center gap-1.5 text-green-600 dark:text-green-400">
-                  <Check className="w-4 h-4" />
-                  <span className="text-sm font-medium">Added to vocabulary</span>
-                </div>
-              ) : (
-                <Button 
-                  size="sm"
-                  onClick={handleSaveToFlashcards}
-                  disabled={isSaving}
-                  className="w-full h-8 text-xs font-medium bg-gray-900 hover:bg-gray-800 dark:bg-foreground dark:text-background dark:hover:bg-foreground/90"
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-3 h-3 mr-1.5" />
-                      Add to Flashcards
-                    </>
-                  )}
-                </Button>
-              )}
-            </div>
-          </div>
-        )}
-      </Card>
-    </div>
+      {target.armed ? (
+        <div
+          role="dialog"
+          aria-modal="false"
+          aria-labelledby={labelId}
+          data-lookup-card={target.kind}
+          className="flex max-h-[inherit] w-[min(22rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95 duration-150 motion-reduce:animate-none"
+        >
+          <LookupCard
+            kind={target.kind}
+            selection={target.cleaned}
+            state={state}
+            lang={lang}
+            labelId={labelId}
+            save={save}
+            onLang={chooseLang}
+            onClose={close}
+            onRetry={() => run(target, lang)}
+            onSave={onSave}
+          />
+        </div>
+      ) : (
+        <button
+          type="button"
+          data-lookup-chip
+          onClick={() => {
+            const armed = { ...target, armed: true };
+            setTarget(armed);
+            run(armed, lang);
+          }}
+          className="relative inline-flex h-10 items-center gap-2 rounded-full border border-border bg-popover px-4 text-sm font-medium text-popover-foreground shadow-lg after:absolute after:-inset-1.5 after:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring animate-in fade-in-0 zoom-in-95 duration-150 motion-reduce:animate-none"
+        >
+          <Search className="h-4 w-4 text-brand" aria-hidden />
+          Look up
+        </button>
+      )}
+    </div>,
+    document.body,
   );
 };
 
