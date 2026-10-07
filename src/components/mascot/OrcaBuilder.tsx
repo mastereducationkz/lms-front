@@ -128,7 +128,7 @@ export default function OrcaBuilder() {
   const shuffle = () => pick(randomMascot(makeRng(Date.now() ^ Math.floor(Math.random() * 1e9))));
 
   return (
-    <div id={ORCA_SECTION_ID} ref={sectionRef} className="bg-card rounded-2xl shadow-card p-6 max-w-2xl scroll-mt-24">
+    <div id={ORCA_SECTION_ID} ref={sectionRef} className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 scroll-mt-24">
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-foreground">Your orca</h2>
         <p className="text-sm text-muted-foreground">

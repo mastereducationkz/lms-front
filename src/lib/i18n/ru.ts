@@ -24,6 +24,7 @@ import { workspace } from './ru/workspace';
 import { announcements } from './ru/announcements';
 import { serverErrors } from './ru/serverErrors';
 import { pwa } from './ru/pwa';
+import { profile } from './ru/profile';
 
 export const RU_NAMESPACES = {
   common,
@@ -50,6 +51,7 @@ export const RU_NAMESPACES = {
   announcements,
   serverErrors,
   pwa,
+  profile,
 } as const;
 
 export const ru: Readonly<Record<string, Message>> = {
@@ -77,4 +79,5 @@ export const ru: Readonly<Record<string, Message>> = {
   ...announcements,
   ...serverErrors,
   ...pwa,
+  ...profile,
 };

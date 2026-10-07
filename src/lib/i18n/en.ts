@@ -26,6 +26,7 @@ import { workspace } from './en/workspace';
 import { announcements } from './en/announcements';
 import { serverErrors } from './en/serverErrors';
 import { pwa } from './en/pwa';
+import { profile } from './en/profile';
 
 export const EN_NAMESPACES = {
   common,
@@ -52,6 +53,7 @@ export const EN_NAMESPACES = {
   announcements,
   serverErrors,
   pwa,
+  profile,
 } as const;
 
 export const en = {
@@ -79,6 +81,7 @@ export const en = {
   ...announcements,
   ...serverErrors,
   ...pwa,
+  ...profile,
 } as const;
 
 export type MessageKey = keyof typeof en;

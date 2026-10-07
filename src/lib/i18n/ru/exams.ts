@@ -82,4 +82,18 @@ export const exams: RuTable<typeof en> = {
   'exams.errors.openFileFailed': 'Не удалось открыть файл.',
 
   'exams.testimonial.quote': 'Отзыв',
+
+  'exams.date.title': 'Дата экзамена {exam}',
+  'exams.date.satHint': 'SAT проходит в официальные даты. Выберите дату, на которую вы зарегистрированы.',
+  'exams.date.ieltsHint': 'IELTS проводят много раз в месяц. Укажите дату, на которую вы зарегистрированы.',
+  'exams.date.needsAssignmentZero': 'Сначала заполните Assignment Zero — там настраиваются данные об экзамене.',
+  'exams.date.goToAssignmentZero': 'Перейти к Assignment Zero',
+  'exams.date.official': 'Официальные даты SAT',
+  'exams.date.other': 'Или укажите другую дату',
+  'exams.date.label': 'Дата экзамена',
+  'exams.date.curatorNote': 'По этой дате куратор вовремя спросит о результатах.',
+  'exams.date.choose': 'Выберите дату.',
+  'exams.date.failed': 'Не удалось сохранить. Попробуйте ещё раз.',
+  'exams.date.saving': 'Сохраняем…',
+  'exams.date.save': 'Сохранить дату',
 };
