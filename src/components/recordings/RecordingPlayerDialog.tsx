@@ -4,7 +4,9 @@ import { ArrowUpRight, CalendarDays, Clock, Link2, Loader2, RotateCcw, Timer, Us
 import { toast } from 'sonner';
 import HlsVideoPlayer from '../HlsVideoPlayer';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../ui/dialog';
-import { getLessonRecording, retryRecording, restoreRecording, type LessonRecording } from '../../services/api/recordings';
+import {
+  getLessonRecording, retryRecording, restoreRecording, type LessonRecording, type LessonRecordingStatus,
+} from '../../services/api/recordings';
 import RemoveRecordingDialog from './RemoveRecordingDialog';
 import { canRemoveRecording, removalNotice } from '../../lib/recordingRemoval';
 import { pollInterval, progressFor } from '../../lib/recordingProgress';
@@ -19,6 +21,8 @@ import { useRecordingViewTracker } from './useRecordingViewTracker';
 import { useAuth } from '../../contexts/AuthContext';
 import { lessonPath } from '../../lib/lessonLinks';
 import { cn } from '../../lib/utils';
+import type { MessageKey } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
 import {
   almatyDayKey, dayHeading, formatDurationWords, recordingHeading, timeRange, watchLinkPath, type Locale,
 } from '../../lib/recordings';
@@ -44,44 +48,14 @@ interface Props {
   locale?: Locale;
 }
 
-const TEXT = {
-  en: {
-    loading: 'Loading the recording…',
-    pending: 'This recording is still being processed. It will appear here shortly.',
-    failed: 'This recording could not be processed.',
-    removed: 'This recording is no longer available.',
-    missing: 'There is no recording for this lesson.',
-    waiting: 'The recording appears here once Google Meet has finished it.',
-    error: 'The recording could not be loaded. Please try again.',
-    copy: 'Copy link',
-    copied: 'Link copied',
-    copyFailed: 'Could not copy the link',
-    nowReady: 'The recording is ready',
-    retryFailed: 'Could not try the recording again',
-    remove: 'Remove',
-    restore: 'Restore',
-    restoreFailed: 'Could not restore the recording',
-    openLesson: 'Open lesson',
-  },
-  ru: {
-    loading: 'Загружаем запись…',
-    pending: 'Запись ещё обрабатывается и скоро появится здесь.',
-    failed: 'Не удалось обработать эту запись.',
-    removed: 'Эта запись больше недоступна.',
-    missing: 'Для этого урока нет записи.',
-    waiting: 'Запись появится здесь, когда Google Meet её закончит.',
-    error: 'Не удалось загрузить запись. Попробуйте ещё раз.',
-    copy: 'Скопировать ссылку',
-    copied: 'Ссылка скопирована',
-    copyFailed: 'Не удалось скопировать ссылку',
-    nowReady: 'Запись готова',
-    retryFailed: 'Не удалось запустить запись снова',
-    remove: 'Удалить',
-    restore: 'Вернуть',
-    restoreFailed: 'Не удалось вернуть запись',
-    openLesson: 'Открыть урок',
-  },
-} as const;
+/** What the player says instead of a video, by the recording's status. */
+const STATUS_MESSAGE: Record<Exclude<LessonRecordingStatus, 'ready'>, MessageKey> = {
+  pending: 'recordings.player.pending',
+  failed: 'recordings.player.failed',
+  removed: 'recordings.player.removed',
+  missing: 'recordings.player.missing',
+  waiting: 'recordings.player.waiting',
+};
 
 /**
  * One lesson recording, large. Shared by the calendar's day list and the Recordings library.
@@ -120,7 +94,7 @@ function useWideScreen(): boolean {
 }
 
 export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale = 'en' }: Props) {
-  const t = TEXT[locale];
+  const t = useT();
   const { user } = useAuth();
   const [recording, setRecording] = useState<LessonRecording | null>(null);
   const [failedToLoad, setFailedToLoad] = useState(false);
@@ -190,9 +164,9 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
   const lastStatus = useRef<string | null>(null);
   useEffect(() => {
     const status = recording?.status ?? null;
-    if (lastStatus.current && lastStatus.current !== 'ready' && status === 'ready') toast.success(t.nowReady);
+    if (lastStatus.current && lastStatus.current !== 'ready' && status === 'ready') toast.success(t('recordings.player.nowReady'));
     lastStatus.current = status;
-  }, [recording?.status, t.nowReady]);
+  }, [recording?.status, t]);
 
   // The class beside the video, for staff. A 404 (not this viewer's lesson) shows nothing.
   useEffect(() => {
@@ -231,18 +205,18 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
     const link = `${window.location.origin}${watchLinkPath(meta.eventType, meta.eventId)}`;
     try {
       await navigator.clipboard.writeText(link);
-      toast.success(t.copied);
+      toast.success(t('recordings.player.copied'));
     } catch {
-      toast.error(t.copyFailed);
+      toast.error(t('recordings.player.copyFailed'));
     }
   };
 
   // A recording on its way shows where it is; one retired by retention or never made says so plainly.
   const showsProgress = !failedToLoad && live !== null && live.stage !== 'removed';
   const message = failedToLoad
-    ? t.error
+    ? t('recordings.player.error')
     : recording && recording.status !== 'ready'
-      ? t[recording.status]
+      ? t(STATUS_MESSAGE[recording.status])
       : null;
 
   const retry = async () => {
@@ -258,7 +232,7 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
       if (entry.status === 'ready') setRecording(await getLessonRecording(eventId)); // needs its signed link
     } catch (e) {
       setRecording(before);
-      toast.error(e instanceof Error ? e.message : t.retryFailed);
+      toast.error(e instanceof Error ? e.message : t('recordings.player.retryFailed'));
     } finally {
       setRetrying(false);
     }
@@ -323,7 +297,7 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
               ) : (
                 <>
                   <Loader2 className="h-7 w-7 animate-spin text-white/60" aria-hidden />
-                  <p>{t.loading}</p>
+                  <p>{t('recordings.player.loading')}</p>
                 </>
               )}
             </div>
@@ -374,7 +348,7 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
                 className="inline-flex flex-none items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-[13px] font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
-                {t.openLesson}
+                {t('recordings.player.openLesson')}
               </Link>
             )}
             <button
@@ -383,7 +357,7 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
               className="inline-flex flex-none items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-[13px] font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <Link2 className="h-3.5 w-3.5" aria-hidden />
-              {t.copy}
+              {t('recordings.player.copy')}
             </button>
             {canRemove && eventId != null && recording?.status !== 'removed' && (
               <button
@@ -392,7 +366,7 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
                 className="inline-flex flex-none items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-[13px] font-medium text-red-600 transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:text-red-400"
               >
                 <VideoOff className="h-3.5 w-3.5" aria-hidden />
-                {t.remove}
+                {t('recordings.player.remove')}
               </button>
             )}
             {canRemove && eventId != null && recording?.status === 'removed' && (
@@ -403,13 +377,13 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
                     await restoreRecording(eventId);
                     setRecording(await getLessonRecording(eventId));
                   } catch (e) {
-                    toast.error(e instanceof Error ? e.message : t.restoreFailed);
+                    toast.error(e instanceof Error ? e.message : t('recordings.player.restoreFailed'));
                   }
                 }}
                 className="inline-flex flex-none items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-[13px] font-medium text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <RotateCcw className="h-3.5 w-3.5" aria-hidden />
-                {t.restore}
+                {t('recordings.player.restore')}
               </button>
             )}
           </div>
@@ -443,7 +417,6 @@ export default function RecordingPlayerDialog({ meta, open, onOpenChange, locale
             eventId={eventId}
             open={removeOpen}
             onOpenChange={setRemoveOpen}
-            locale={locale}
             onRemoved={async () => {
               try {
                 setRecording(await getLessonRecording(eventId));

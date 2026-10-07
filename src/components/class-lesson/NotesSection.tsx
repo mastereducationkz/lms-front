@@ -3,21 +3,14 @@ import { Loader2, Lock } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { toast } from '../Toast';
 import { NOTE_LIMIT, stampKz } from '../../lib/classLessonPage';
+import type { MessageKey } from '../../lib/i18n';
+import { useLocale, useT } from '../../lib/i18n/react';
 import { saveLessonNote, type LessonNote, type LessonView, type NoteKind } from '../../services/api/classLessons';
 
-const KINDS: Record<NoteKind, { ru: string; en: string; hintRu: string; hintEn: string }> = {
-  plan: {
-    ru: 'План урока', en: 'Lesson plan',
-    hintRu: 'Что будем проходить и что подготовить. Ученики видят.', hintEn: 'What the lesson covers and what to prepare. Students see it.',
-  },
-  summary: {
-    ru: 'Итоги урока', en: 'Lesson recap',
-    hintRu: 'Что прошли и что повторить. Ученики видят.', hintEn: 'What was covered and what to review. Students see it.',
-  },
-  staff: {
-    ru: 'Заметка для команды', en: 'Note for the team',
-    hintRu: 'Поведение, проблемы, договорённости. Видят только сотрудники.', hintEn: 'Behaviour, issues, agreements. Staff only.',
-  },
+const KINDS: Record<NoteKind, { label: MessageKey; hint: MessageKey }> = {
+  plan: { label: 'classLesson.notes.plan', hint: 'classLesson.notes.planHint' },
+  summary: { label: 'classLesson.notes.summary', hint: 'classLesson.notes.summaryHint' },
+  staff: { label: 'classLesson.notes.staff', hint: 'classLesson.notes.staffHint' },
 };
 
 /** The notes in the order the lesson's state calls for: the plan before it, the recap after it. */
@@ -33,10 +26,10 @@ function kindsFor(view: LessonView): NoteKind[] {
  * team note never leaves the staff. Plain text, links kept as written, 3000 characters.
  */
 export default function NotesSection({ view, onSaved }: { view: LessonView; onSaved: (kind: NoteKind, note: LessonNote | null) => void }) {
+  const t = useT();
   const kinds = kindsFor(view).filter((k) => view.viewer.can_edit_notes || view.notes[k]);
-  const ru = view.viewer.locale === 'ru';
   if (kinds.length === 0) {
-    return <p className="text-sm text-muted-foreground">{ru ? 'Заметок пока нет.' : 'No notes yet.'}</p>;
+    return <p className="text-sm text-muted-foreground">{t('classLesson.notes.none')}</p>;
   }
   return (
     <div className="space-y-4">
@@ -50,8 +43,8 @@ export default function NotesSection({ view, onSaved }: { view: LessonView; onSa
 function NoteBlock({ view, kind, note, onSaved }: {
   view: LessonView; kind: NoteKind; note: LessonNote | null; onSaved: (kind: NoteKind, note: LessonNote | null) => void;
 }) {
-  const ru = view.viewer.locale === 'ru';
-  const t = (r: string, e: string) => (ru ? r : e);
+  const t = useT();
+  const locale = useLocale();
   const meta = KINDS[kind];
   const [draft, setDraft] = useState(note?.text ?? '');
   const [saving, setSaving] = useState(false);
@@ -65,9 +58,9 @@ function NoteBlock({ view, kind, note, onSaved }: {
     try {
       const saved = await saveLessonNote(view.id, kind, draft.trim());
       onSaved(kind, saved);
-      toast(saved ? t('Заметка сохранена', 'Note saved') : t('Заметка удалена', 'Note cleared'), 'success');
+      toast(saved ? t('classLesson.notes.saved') : t('classLesson.notes.cleared'), 'success');
     } catch (e) {
-      toast((e as Error).message || t('Не удалось сохранить', 'Could not save'), 'error');
+      toast((e as Error).message || t('classLesson.saveFailed'), 'error');
     } finally {
       setSaving(false);
     }
@@ -78,24 +71,24 @@ function NoteBlock({ view, kind, note, onSaved }: {
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
           {kind === 'staff' && <Lock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" aria-hidden />}
-          {ru ? meta.ru : meta.en}
+          {t(meta.label)}
         </h3>
         {note?.at && (
           <span className="text-[11px] text-muted-foreground">
-            {note.by ? `${note.by} · ` : ''}{stampKz(note.at, view.viewer.locale)}
+            {note.by ? `${note.by} · ` : ''}{stampKz(note.at, locale)}
           </span>
         )}
       </div>
       {editable ? (
         <>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">{ru ? meta.hintRu : meta.hintEn}</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">{t(meta.hint)}</p>
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             rows={draft.length > 240 ? 6 : 3}
             className="mt-2 w-full resize-y rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            placeholder={t('Напишите…', 'Write…')}
-            aria-label={ru ? meta.ru : meta.en}
+            placeholder={t('classLesson.notes.placeholder')}
+            aria-label={t(meta.label)}
           />
           <div className="mt-1.5 flex items-center justify-between gap-2">
             <span className={cn('text-[11px] tabular-nums', over ? 'font-semibold text-rose-600 dark:text-rose-400' : 'text-muted-foreground')}>
@@ -108,7 +101,7 @@ function NoteBlock({ view, kind, note, onSaved }: {
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              {t('Сохранить', 'Save')}
+              {t('common.save')}
             </button>
           </div>
         </>

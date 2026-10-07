@@ -4,13 +4,9 @@ import type { RecordingLibraryItem } from '../../services/api/recordings';
 import { formatClock, recordingHeading, timeRange, type Locale } from '../../lib/recordings';
 import { badgeText, overallPercent, progressFor, stageTitle } from '../../lib/recordingProgress';
 import { viewsHint, viewsLine } from '../../lib/recordingViews';
+import { useT } from '../../lib/i18n/react';
 import { cx } from '../calendar/calendarUtils';
 import { ProgressBar, RecordingCardStage, RecordingStageBadge } from './RecordingProgress';
-
-const TEXT = {
-  en: { ready: 'Ready', watch: 'Watch', substitution: (name: string) => `Substitution · regular teacher: ${name}` },
-  ru: { ready: 'Готова', watch: 'Смотреть', substitution: (name: string) => `Замена · основной учитель: ${name}` },
-} as const;
 
 // How long a card that has just become watchable says so, before it looks like every other card.
 const JUST_READY_MS = 4_000;
@@ -37,7 +33,7 @@ interface Props {
  * retrying or failed — and it updates in place while the library is open.
  */
 export default function RecordingCard({ item, locale, onOpen, substitutionFor }: Props) {
-  const t = TEXT[locale];
+  const t = useT();
   const [posterBroken, setPosterBroken] = useState(false);
   const [posterLoaded, setPosterLoaded] = useState(false);
   const { name, lesson } = recordingHeading(item, locale);
@@ -123,7 +119,7 @@ export default function RecordingCard({ item, locale, onOpen, substitutionFor }:
         {justReady && (
           <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-md bg-emerald-100 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-900 shadow-sm dark:bg-emerald-950/90 dark:text-emerald-200 animate-in fade-in zoom-in-95">
             <Check className="h-3 w-3" strokeWidth={3} aria-hidden />
-            {t.ready}
+            {t('recordings.card.justReady')}
           </span>
         )}
 
@@ -151,7 +147,7 @@ export default function RecordingCard({ item, locale, onOpen, substitutionFor }:
           </span>
         )}
         {substitutionFor && (
-          <span className="mt-0.5 line-clamp-1 text-[12px] text-muted-foreground">{t.substitution(substitutionFor)}</span>
+          <span className="mt-0.5 line-clamp-1 text-[12px] text-muted-foreground">{t('recordings.folders.substitution', { name: substitutionFor })}</span>
         )}
         {views && (
           <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[12.5px] tabular-nums text-muted-foreground" title={viewsHint(locale)}>

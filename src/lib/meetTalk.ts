@@ -1,4 +1,5 @@
 import { APP_TIMEZONE } from './datetime';
+import { activeLocale, formatDate, t, type Locale } from './i18n';
 import { clock } from './meetAttendance';
 import type { MeetLessonSummary } from '../services/api/meetAttendance';
 import type {
@@ -17,19 +18,16 @@ import type {
   TranscriptLine,
 } from '../services/api/meetTalk';
 
-export type TalkLocale = 'en' | 'ru';
-
 const pad = (n: number) => String(n).padStart(2, '0');
 
 /** "45 s", "12 min", "1 h 05 min" (ru: «45 с», «12 мин», «1 ч 05 мин»). */
-export function formatDuration(seconds: number | null | undefined, locale: TalkLocale = 'en'): string {
+export function formatDuration(seconds: number | null | undefined, locale: Locale = activeLocale()): string {
   if (seconds == null || !Number.isFinite(seconds)) return '—';
   const s = Math.max(0, Math.round(seconds));
-  const [sec, min, hr] = locale === 'ru' ? ['с', 'мин', 'ч'] : ['s', 'min', 'h'];
-  if (s < 60) return `${s} ${sec}`;
+  if (s < 60) return t('meet.duration.seconds', { seconds: s }, locale);
   const m = Math.round(s / 60);
-  if (m < 60) return `${m} ${min}`;
-  return `${Math.floor(m / 60)} ${hr} ${pad(m % 60)} ${min}`;
+  if (m < 60) return t('meet.duration.minutes', { minutes: m }, locale);
+  return t('meet.duration.hours', { hours: Math.floor(m / 60), minutes: pad(m % 60) }, locale);
 }
 
 /** A transcript stamp: "7:05", "1:02:09"; before the lesson start, "-0:45". */
@@ -60,12 +58,15 @@ export function percent(share: number | null | undefined): string {
  * Lower case, and «ё» read as «е» — character by character, so every index in the folded text
  * is the same index in the original (a whole-string toLowerCase can change the length).
  */
+const YO = 0x451; // «ё»
+const YE = String.fromCodePoint(0x435); // «е»
+
 function fold(text: string): string {
   let out = '';
   for (const ch of text) {
     const lower = ch.toLowerCase();
     const one = lower.length === ch.length ? lower : ch;
-    out += one === 'ё' ? 'е' : one;
+    out += one.codePointAt(0) === YO ? YE : one;
   }
   return out;
 }
@@ -274,19 +275,12 @@ export function silentCount(item: Pick<MeetLessonSummary, 'talk'>): number {
 }
 
 /** "Teacher 72% · students 28% · 3 didn't speak" — the lesson card's one line. */
-export function talkSummaryLine(talk: Pick<TalkRecord, 'teacher_share' | 'students_share' | 'silent_students'>, locale: TalkLocale = 'en'): string {
+export function talkSummaryLine(talk: Pick<TalkRecord, 'teacher_share' | 'students_share' | 'silent_students'>, locale: Locale = activeLocale()): string {
   const silent = talk.silent_students?.length ?? 0;
-  if (locale === 'ru') {
-    return [
-      `Преподаватель ${percent(talk.teacher_share)}`,
-      `ученики ${percent(talk.students_share)}`,
-      silent ? `${silent} не ${silent === 1 ? 'говорил' : 'говорили'}` : null,
-    ].filter(Boolean).join(' · ');
-  }
   return [
-    `Teacher ${percent(talk.teacher_share)}`,
-    `students ${percent(talk.students_share)}`,
-    silent ? `${silent} didn’t speak` : null,
+    t('meet.talk.teacherShare', { share: percent(talk.teacher_share) }, locale),
+    t('meet.talk.studentsShare', { share: percent(talk.students_share) }, locale),
+    silent ? t('meet.talk.silentCount', { count: silent }, locale) : null,
   ].filter(Boolean).join(' · ');
 }
 
@@ -305,10 +299,10 @@ export function talkSecondsIndex(items: Pick<MeetLessonSummary, 'event_id' | 'ta
 }
 
 /** The journal's hover line for one student in one lesson, or null when there is no talk time. */
-export function spokeNote(seconds: number | undefined, locale: TalkLocale): string | null {
+export function spokeNote(seconds: number | undefined, locale: Locale = activeLocale()): string | null {
   if (seconds === undefined) return null;
-  if (seconds <= 0) return locale === 'ru' ? 'В Meet не говорил' : 'Didn’t speak in Meet';
-  return locale === 'ru' ? `Говорил ${formatDuration(seconds, 'ru')} в Meet` : `Spoke ${formatDuration(seconds)} in Meet`;
+  if (seconds <= 0) return t('meet.talk.didntSpeakInMeet', undefined, locale);
+  return t('meet.talk.spokeInMeet', { duration: formatDuration(seconds, locale) }, locale);
 }
 
 /** The average teacher share over the lessons that have talk time, or null when none do. */
@@ -359,12 +353,13 @@ export function answeredShare(q: Pick<TalkQuestions, 'teacher_questions' | 'answ
 /** "43 asked · 49% answered" (ru: «43 вопроса · 49% с ответом»); "—" without a transcript. */
 export function questionsLine(
   q: Pick<TalkQuestions, 'teacher_questions' | 'answered'> | null | undefined,
-  locale: TalkLocale = 'en',
+  locale: Locale = activeLocale(),
 ): string {
   if (!q) return '—';
   const share = answeredShare(q);
-  if (locale === 'ru') return `${q.teacher_questions} вопр.${share == null ? '' : ` · ${percent(share)} с ответом`}`;
-  return `${q.teacher_questions} asked${share == null ? '' : ` · ${percent(share)} answered`}`;
+  return share == null
+    ? t('meet.talk.questionsAsked', { count: q.teacher_questions }, locale)
+    : t('meet.talk.questionsAnswered', { count: q.teacher_questions, share: percent(share) }, locale);
 }
 
 /** Per lesson with a transcript, one decimal: 4.3. Null without transcripts. */
@@ -375,23 +370,16 @@ export function perLesson(count: number | null | undefined, lessons: number | nu
 
 // ── a student's lessons: what each one was ───────────────────────────────────────────────
 
-const STATE_WORDS: Record<TalkLocale, Record<StudentLessonState, string>> = {
-  en: { spoke: 'spoke', silent: 'silent — in the room, never spoke', present: 'in the room briefly, didn’t speak', absent: 'not in the room' },
-  ru: { spoke: 'говорил', silent: 'молчал — был в комнате, не сказал ни слова', present: 'заходил ненадолго, не говорил', absent: 'не был в комнате' },
-};
-
-function markDate(iso: string, locale: TalkLocale): string {
-  const day = new Date(iso).toLocaleDateString(locale === 'ru' ? 'ru-RU' : 'en-GB', {
-    weekday: 'short', day: 'numeric', month: 'short', timeZone: APP_TIMEZONE,
-  });
-  return `${day} ${clock(iso)}`;
+function markDate(iso: string, locale: Locale): string {
+  return `${formatDate(iso, { weekday: 'short', day: 'numeric', month: 'short' }, locale)} ${clock(iso)}`;
 }
 
 /** A lesson bar's tooltip: "Fri 11 Sep 20:00 · spoke 12 min", "… · silent — in the room, never spoke". */
-export function lessonMarkLabel(mark: StudentLessonMark, locale: TalkLocale = 'en'): string {
-  const what = mark.state === 'spoke'
-    ? `${STATE_WORDS[locale].spoke} ${formatDuration(mark.seconds, locale)}`
-    : STATE_WORDS[locale][mark.state];
+export function lessonMarkLabel(mark: StudentLessonMark, locale: Locale = activeLocale()): string {
+  const what = mark.state === 'spoke' ? t('meet.talk.lessonSpoke', { duration: formatDuration(mark.seconds, locale) }, locale)
+    : mark.state === 'silent' ? t('meet.talk.lessonSilent', undefined, locale)
+      : mark.state === 'present' ? t('meet.talk.lessonPresent', undefined, locale)
+        : t('meet.talk.lessonAbsent', undefined, locale);
   return `${markDate(mark.start, locale)} · ${what}`;
 }
 
@@ -434,17 +422,16 @@ export function lessonBarSize(count: number, space = 200): { width: number; gap:
 }
 
 /** "spoke in 8 of 10" — lessons they said something in, of this group's lessons with talk time. */
-export function spokeInText(marks: StudentLessonMark[], locale: TalkLocale = 'en'): string {
+export function spokeInText(marks: StudentLessonMark[], locale: Locale = activeLocale()): string {
   const spoke = marks.filter((m) => m.state === 'spoke').length;
-  return locale === 'ru' ? `говорил на ${spoke} из ${marks.length}` : `spoke in ${spoke} of ${marks.length}`;
+  return t('meet.talk.spokeIn', { spoke, total: marks.length }, locale);
 }
 
 /** One line for the sparkline's row: in the room, spoke, silent, absent. */
-export function marksSummary(marks: StudentLessonMark[]): string {
+export function marksSummary(marks: StudentLessonMark[], locale: Locale = activeLocale()): string {
   const count = (state: StudentLessonState) => marks.filter((m) => m.state === state).length;
-  const inRoom = marks.length - count('absent');
-  return `In the room for ${inRoom} of ${marks.length} · spoke in ${count('spoke')} · silent in ${count('silent')}`
-    + (count('absent') ? ` · absent from ${count('absent')}` : '');
+  const params = { inRoom: marks.length - count('absent'), total: marks.length, spoke: count('spoke'), silent: count('silent'), absent: count('absent') };
+  return t(params.absent ? 'meet.talk.marksSummaryAbsent' : 'meet.talk.marksSummary', params, locale);
 }
 
 // ── the group's table ────────────────────────────────────────────────────────────────────

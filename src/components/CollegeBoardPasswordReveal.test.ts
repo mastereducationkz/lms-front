@@ -10,8 +10,15 @@ vi.mock('../services/api', () => ({
   default: { revealCollegeBoardPassword: vi.fn().mockResolvedValue('super-secret-value') },
 }));
 vi.mock('sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+// useLocale() reads AuthContext, whose module pulls the OIDC client in (localStorage again). No
+// provider here, so the hook falls back to activeLocale() — which the language test sets.
+vi.mock('../contexts/AuthContext', async () => {
+  const { createContext } = await import('react');
+  return { default: createContext(undefined) };
+});
 
 import apiClient from '../services/api';
+import { setActiveLocale } from '../lib/i18n';
 import { CollegeBoardPasswordReveal } from './CollegeBoardPasswordReveal';
 
 describe('CollegeBoardPasswordReveal', () => {
@@ -80,11 +87,19 @@ describe('CollegeBoardPasswordReveal', () => {
     expect(hidden).toBe('');
   });
 
-  it('renders the Russian label by default', () => {
-    const html = renderToStaticMarkup(
-      createElement(CollegeBoardPasswordReveal, { userId: 1, hasPassword: true, defaultCanReveal: true }),
+  it("speaks the viewer's language unless a page pins it", () => {
+    const render = (lang?: 'ru' | 'en') => renderToStaticMarkup(
+      createElement(CollegeBoardPasswordReveal, { userId: 1, hasPassword: true, defaultCanReveal: true, lang }),
     );
 
-    expect(html).toContain('Показать');
+    setActiveLocale('ru');
+    try {
+      expect(render()).toContain('Показать');
+      expect(render('en')).toContain('Show');
+    } finally {
+      setActiveLocale('en');
+    }
+    expect(render()).toContain('Show');
+    expect(render('ru')).toContain('Показать');
   });
 });

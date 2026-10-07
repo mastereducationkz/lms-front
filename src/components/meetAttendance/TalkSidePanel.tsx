@@ -1,23 +1,21 @@
 import { useMemo, useState } from 'react';
 import { MessagesSquare } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { talkSummaryLine, type TalkLocale } from '../../lib/meetTalk';
+import { talkSummaryLine } from '../../lib/meetTalk';
+import { t, type Locale } from '../../lib/i18n';
+import { useLocale } from '../../lib/i18n/react';
 import { blockSeekTarget, lessonAt, recordingAt } from '../../lib/transcriptFollow';
 import type { TalkRecord } from '../../services/api/meetTalk';
-import { Headline, Insights, Notes, Section, SplitBar, talkText } from './TalkPanel';
+import { Headline, Insights, Notes, Section, SplitBar } from './TalkPanel';
 import { TalkStrips } from './TalkStrips';
 import { TalkTranscript } from './TalkTranscript';
-
-const TEXT = {
-  en: { title: 'Talk time', transcript: 'Transcript', who: 'Who spoke' },
-  ru: { title: 'Время речи', transcript: 'Расшифровка', who: 'Кто говорил' },
-} as const;
 
 type Tab = 'transcript' | 'who';
 
 interface Props {
   talk: TalkRecord;
-  locale: TalkLocale;
+  /** The signed-in user's by default; the CRM watch page, read by accountants, passes 'ru'. */
+  locale?: Locale;
   /** The video's time in recording seconds; null before it has any. */
   playhead: number | null;
   /** Plays the video from a moment of the recording. */
@@ -38,9 +36,10 @@ interface Props {
  * transcript following the video, or who spoke when — minute by minute, under full names, with the
  * video's position running through it. Clicking a minute plays the video from it.
  */
-export function TalkSidePanel({ talk, locale, playhead, onSeek, showErrors = false, layout, variant = 'staff', className }: Props) {
-  const t = TEXT[locale];
-  const pieces = talkText(locale);
+export function TalkSidePanel({ talk, locale: forced, playhead, onSeek, showErrors = false, layout, variant = 'staff', className }: Props) {
+  const userLocale = useLocale();
+  const locale = forced ?? userLocale;
+  const title = t('meet.talkCard.title', undefined, locale);
   const staff = variant === 'staff';
   const readable = staff && talk.transcript?.state === 'ready';
   const [tab, setTab] = useState<Tab>(readable ? 'transcript' : 'who');
@@ -61,24 +60,24 @@ export function TalkSidePanel({ talk, locale, playhead, onSeek, showErrors = fal
 
   const who = (
     <div role={staff ? 'tabpanel' : undefined} className={cn('flex flex-col gap-5 px-4 py-4', side && 'min-h-0 flex-1 overflow-y-auto')}>
-      <Headline talk={talk} t={pieces} locale={locale} columns={2} />
-      <Section title={pieces.timeline}>
+      <Headline talk={talk} locale={locale} columns={2} />
+      <Section title={t('meet.talkPanel.timeline', undefined, locale)}>
         <TalkStrips talk={talk} locale={locale} playhead={lessonAt(playhead, offset)} onSeek={seekMinute} />
-        <Notes talk={talk} t={pieces} />
+        <Notes talk={talk} locale={locale} />
       </Section>
-      {staff && <Insights talk={talk} t={pieces} columns={2} />}
+      {staff && <Insights talk={talk} locale={locale} columns={2} />}
     </div>
   );
 
   return (
     <section
-      aria-label={t.title}
+      aria-label={title}
       className={cn('flex min-h-0 flex-col bg-background', side ? 'h-full' : 'rounded-xl border border-border bg-card', className)}
     >
       <div className={cn('flex flex-col gap-2 border-b border-border px-4 pb-3 pt-4', side && staff && 'pr-12')}>
         <div className="flex items-center gap-2">
           <MessagesSquare className="h-4 w-4 flex-none text-muted-foreground" aria-hidden />
-          <h2 className="text-sm font-semibold text-foreground">{t.title}</h2>
+          <h2 className="text-sm font-semibold text-foreground">{title}</h2>
         </div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <SplitBar teacher={talk.teacher_share} students={talk.students_share} className="w-24 flex-none" />
@@ -88,8 +87,8 @@ export function TalkSidePanel({ talk, locale, playhead, onSeek, showErrors = fal
 
       {staff ? (
         <>
-          <div role="tablist" aria-label={t.title} className="flex gap-1 border-b border-border px-3">
-            {([['transcript', t.transcript], ['who', t.who]] as const).map(([key, label]) => (
+          <div role="tablist" aria-label={title} className="flex gap-1 border-b border-border px-3">
+            {([['transcript', t('meet.transcript.title', undefined, locale)], ['who', t('meet.talkPanel.whoSpoke', undefined, locale)]] as const).map(([key, label]) => (
               <button
                 key={key}
                 type="button"

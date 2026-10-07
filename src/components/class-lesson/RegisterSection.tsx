@@ -14,19 +14,21 @@ import type { StudentRegister } from '../../services/api/meetRegister';
 import type { LessonView, RegisterStudent, UiMark } from '../../services/api/classLessons';
 import type { AttendanceRecord } from '../../types';
 import { useScoreSuggestions } from '../../lib/liveLesson/useSuggestions';
+import type { MessageKey } from '../../lib/i18n';
+import { useLocale, useT } from '../../lib/i18n/react';
 import { live } from '../../services/api/liveLesson';
 import SuggestionBar from '../live-lesson/SuggestionBar';
 
-const MARKS: { key: UiMark; ru: string; en: string; tone: string }[] = [
-  { key: 'attended', ru: 'Был', en: 'Present', tone: 'bg-emerald-600 text-white border-emerald-600' },
-  { key: 'late', ru: 'Опоздал', en: 'Late', tone: 'bg-amber-500 text-white border-amber-500' },
-  { key: 'missed', ru: 'Не был', en: 'Absent', tone: 'bg-rose-600 text-white border-rose-600' },
+const MARKS: { key: UiMark; tone: string }[] = [
+  { key: 'attended', tone: 'bg-emerald-600 text-white border-emerald-600' },
+  { key: 'late', tone: 'bg-amber-500 text-white border-amber-500' },
+  { key: 'missed', tone: 'bg-rose-600 text-white border-rose-600' },
 ];
 const SCORES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-const LABEL: Record<string, [string, string]> = {
-  attended: ['Был', 'Present'], late: ['Опоздал', 'Late'], missed: ['Не был', 'Absent'],
-  registered: ['Не отмечено', 'Not marked'], cancelled: ['Отменён', 'Cancelled'], removed: ['Снят с урока', 'Taken off'],
+const LABEL: Record<string, MessageKey> = {
+  attended: 'classLesson.mark.attended', late: 'classLesson.mark.late', missed: 'classLesson.mark.missed',
+  registered: 'classLesson.mark.registered', cancelled: 'classLesson.mark.cancelled', removed: 'classLesson.mark.removed',
 };
 
 interface Props {
@@ -44,8 +46,8 @@ interface Props {
  * absence. Curators read.
  */
 export default function RegisterSection({ view, groupId, onSaved }: Props) {
-  const ru = view.viewer.locale === 'ru';
-  const t = (r: string, e: string) => (ru ? r : e);
+  const t = useT();
+  const locale = useLocale();
   const register = view.register;
   const [status, setStatus] = useState<Map<number, UiMark>>(new Map());
   const [score, setScore] = useState<Map<number, number>>(new Map());
@@ -101,7 +103,7 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
       student_id: s.user_id, student_name: s.name,
       lessons: { [lessonKey]: { attendance_status: current(s), event_id: view.id } },
     }));
-    const pending = overridesToAsk(journal, changedIds, meetIndex, known, () => t('этот урок', 'this lesson'));
+    const pending = overridesToAsk(journal, changedIds, meetIndex, known, () => t('classLesson.register.thisLesson'));
     if (pending.length > 0) {
       try {
         const record = await getMeetRecord(view.id);
@@ -119,10 +121,10 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
         await updateEventAttendance(view.id, { attendance });
       }
       if (changes.scores.length) await saveActivityScores(view.id, changes.scores);
-      toast(t('Сохранено', 'Saved'), 'success');
+      toast(t('classLesson.saved'), 'success');
       onSaved();
     } catch (e) {
-      toast((e as Error).message || t('Не удалось сохранить', 'Could not save'), 'error');
+      toast((e as Error).message || t('classLesson.saveFailed'), 'error');
     } finally {
       setSaving(false);
     }
@@ -131,7 +133,7 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-muted-foreground">{summaryLine(summary, view.viewer.locale)}</p>
+        <p className="text-xs text-muted-foreground">{summaryLine(summary, locale)}</p>
         {(canMark || canScore) && (
           <button
             type="button"
@@ -140,7 +142,7 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-            {t('Сохранить', 'Save')}{dirty ? ` (${changes.marks.length + changes.scores.length})` : ''}
+            {t('common.save')}{dirty ? ` (${changes.marks.length + changes.scores.length})` : ''}
           </button>
         )}
       </div>
@@ -150,12 +152,11 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
       )}
       {register.mode === 'live' && register.meet_decided && (
         <p className="mb-3 rounded-lg bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
-          {t('Посещаемость отметил Meet. Если он ошибся — поменяйте отметку, при сохранении спросим причину.',
-            'Meet took this register. If it got someone wrong, change the mark — you will be asked why when saving.')}
+          {t('classLesson.register.meetDecided')}
         </p>
       )}
       {students.length === 0 ? (
-        <p className="py-4 text-center text-sm text-muted-foreground">{t('В группе нет учеников.', 'No students in this group.')}</p>
+        <p className="py-4 text-center text-sm text-muted-foreground">{t('classLesson.register.noStudents')}</p>
       ) : (
         <ul className="divide-y divide-border">
           {students.map((s) => {
@@ -165,7 +166,7 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
             const value = currentScore(s);
             const suggested = value == null ? suggestions.byUser.get(s.user_id) : undefined;
             const meetTitle = s.meet
-              ? [verdictHint({ held_back: Boolean(s.meet.held_back) }, view.viewer.locale), registerNote(s.meet.register ?? undefined, view.viewer.locale)].filter(Boolean).join('\n')
+              ? [verdictHint({ held_back: Boolean(s.meet.held_back) }, locale), registerNote(s.meet.register ?? undefined, locale)].filter(Boolean).join('\n')
               : '';
             const changed = status.has(s.user_id) || score.has(s.user_id);
             return (
@@ -173,21 +174,21 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                   <div className="min-w-0 flex-1 basis-40">
                     <div className="flex items-center gap-1.5 truncate text-sm font-medium text-foreground">
-                      {changed && <span className="h-1.5 w-1.5 flex-none rounded-full bg-primary" aria-label={t('Изменено', 'Changed')} />}
+                      {changed && <span className="h-1.5 w-1.5 flex-none rounded-full bg-primary" aria-label={t('classLesson.register.changed')} />}
                       <span className="truncate">{s.name}</span>
                     </div>
                     <div className="flex flex-wrap items-center gap-x-2 text-[11px] text-muted-foreground">
-                      {suggested?.reason && <span title={suggested.reason}>{t('Предложено', 'Suggested')} {suggested.suggested}: {suggested.reason}</span>}
-                      {s.state === 'frozen' && <span>{t('Заморозка', 'Frozen')}</span>}
-                      {s.state === 'no_access' && <span>{t('Нет доступа', 'No access')}</span>}
-                      {s.excused && <span className="rounded bg-sky-100 px-1 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200" title={s.excuse_note ?? undefined}>{t('Уважительная', 'Excused')}{s.excuse_note ? `: ${s.excuse_note}` : ''}</span>}
+                      {suggested?.reason && <span title={suggested.reason}>{t('classLesson.register.suggested', { score: suggested.suggested ?? '', reason: suggested.reason })}</span>}
+                      {s.state === 'frozen' && <span>{t('classLesson.register.frozen')}</span>}
+                      {s.state === 'no_access' && <span>{t('classLesson.register.noAccess')}</span>}
+                      {s.excused && <span className="rounded bg-sky-100 px-1 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200" title={s.excuse_note ?? undefined}>{s.excuse_note ? t('classLesson.register.excusedWithNote', { note: s.excuse_note }) : t('classLesson.register.excused')}</span>}
                       {s.meet && (
                         <span title={meetTitle || undefined}>
-                          Meet: {verdictText({ verdict: s.meet.verdict as never, minutes: s.meet.minutes ?? 0, required: s.meet.required ?? 0, late_minutes: s.meet.late_minutes ?? 0 }, view.viewer.locale)}
+                          Meet: {verdictText({ verdict: s.meet.verdict as never, minutes: s.meet.minutes ?? 0, required: s.meet.required ?? 0, late_minutes: s.meet.late_minutes ?? 0 }, locale)}
                           {s.meet.register?.state === 'override' && s.meet.register.override?.reason_label ? (
                             <>
                               {' · '}
-                              <Pencil className="inline h-3 w-3 align-[-1px]" aria-label={t('Изменено вручную', 'Changed by hand')} />{' '}
+                              <Pencil className="inline h-3 w-3 align-[-1px]" aria-label={t('classLesson.register.changedByHand')} />{' '}
                               {s.meet.register.override.reason_label}
                             </>
                           ) : null}
@@ -206,13 +207,13 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
                           onClick={() => setMark(s, m.key)}
                           className={cn('px-2.5 py-1.5 text-xs font-semibold transition', mark === m.key ? m.tone : 'bg-card text-foreground hover:bg-muted')}
                         >
-                          {ru ? m.ru : m.en}
+                          {t(LABEL[m.key])}
                         </button>
                       ))}
                     </div>
                   ) : (
                     <span className="flex-none rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-foreground">
-                      {ru ? LABEL[mark]?.[0] ?? mark : LABEL[mark]?.[1] ?? mark}
+                      {LABEL[mark] ? t(LABEL[mark]) : mark}
                     </span>
                   )}
                   <button
@@ -226,15 +227,15 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
                       scoring ? 'hover:bg-yellow-100 dark:hover:bg-yellow-900/30' : 'cursor-default',
                       scoring && value == null && (mark === 'attended' || mark === 'late') && 'border-amber-400 text-amber-700 dark:text-amber-300',
                     )}
-                    title={t('Балл за активность', 'Activity score')}
-                    aria-label={t('Балл за активность', 'Activity score')}
+                    title={t('classLesson.activityScore')}
+                    aria-label={t('classLesson.activityScore')}
                   >
                     <Star className="h-3.5 w-3.5" aria-hidden />
                     {value ?? suggested?.suggested ?? '—'}
                   </button>
                 </div>
                 {picking === s.user_id && scoring && (
-                  <div className="mt-2 flex flex-wrap gap-1" role="radiogroup" aria-label={t('Балл за активность', 'Activity score')}>
+                  <div className="mt-2 flex flex-wrap gap-1" role="radiogroup" aria-label={t('classLesson.activityScore')}>
                     {SCORES.map((n) => (
                       <button
                         key={n}
@@ -258,7 +259,6 @@ export default function RegisterSection({ view, groupId, onSaved }: Props) {
         open={ask !== null}
         items={ask ?? []}
         options={options}
-        en={!ru}
         onCancel={() => setAsk(null)}
         onConfirm={(given) => {
           const merged = new Map(reasons);

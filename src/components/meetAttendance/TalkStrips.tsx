@@ -6,32 +6,9 @@ import {
   minuteShade,
   percent,
   talkGrid,
-  type TalkLocale,
 } from '../../lib/meetTalk';
+import { t, type Locale } from '../../lib/i18n';
 import type { TalkPerson, TalkRecord, TalkRole } from '../../services/api/meetTalk';
-
-const TEXT = {
-  en: {
-    everyone: 'Whole class', notThisClass: 'not in this class',
-    legend: 'Each strip is the lesson minute by minute; darker = more speech.',
-    classLegend: 'Whole class: teacher at the bottom, students on top, empty = silence.',
-    play: 'Click a minute to play it.',
-    minute: (at: string, seconds: number) => (seconds > 0 ? `${at} · spoke ${formatDuration(seconds)}` : `${at} · said nothing`),
-    classMinute: (at: string, t: number, s: number) => `${at} · teacher ${formatDuration(t)}, students ${formatDuration(s)}`,
-    asked: (n: number) => `asked ${n}`, answered: (n: number) => `answered ${n}`,
-    now: 'now',
-  },
-  ru: {
-    everyone: 'Весь класс', notThisClass: 'не из этой группы',
-    legend: 'Каждая полоса — урок по минутам; чем темнее, тем больше человек говорил.',
-    classLegend: 'Весь класс: снизу преподаватель, сверху ученики, пусто — тишина.',
-    play: 'Нажмите на минуту, чтобы включить запись с неё.',
-    minute: (at: string, seconds: number) => (seconds > 0 ? `${at} · говорил ${formatDuration(seconds, 'ru')}` : `${at} · ничего не сказал`),
-    classMinute: (at: string, t: number, s: number) => `${at} · преподаватель ${formatDuration(t, 'ru')}, ученики ${formatDuration(s, 'ru')}`,
-    asked: (n: number) => `спросил ${n}`, answered: (n: number) => `ответил ${n}`,
-    now: 'сейчас',
-  },
-} as const;
 
 // Three shades per role for a minute: a few words, a sentence or two, most of the minute.
 // Written out whole so Tailwind keeps every class.
@@ -48,7 +25,7 @@ const DOT: Record<TalkRole, string> = {
 
 interface Props {
   talk: TalkRecord;
-  locale: TalkLocale;
+  locale: Locale;
   /** Where the video is, in lesson seconds; null or undefined draws no playhead. */
   playhead?: number | null;
   /** When given, clicking a minute plays it: lesson seconds of that minute's start, and whose strip it was (null: the class). */
@@ -62,7 +39,7 @@ interface Props {
  * runs through every strip; clicking a minute plays it.
  */
 export function TalkStrips({ talk, locale, playhead, onSeek, className }: Props) {
-  const t = TEXT[locale];
+  const classLegend = t('meet.strips.classLegend', undefined, locale);
   const grid = useMemo(() => talkGrid(talk, 60), [talk]);
   const n = grid.columns.length;
   const from = grid.columns[0]?.from ?? 0;
@@ -97,23 +74,25 @@ export function TalkStrips({ talk, locale, playhead, onSeek, className }: Props)
           <span className={cn('absolute -top-0.5 rounded bg-rose-500 px-1 text-[9px] font-semibold uppercase leading-4 text-white',
             now < 6 ? 'translate-x-0' : now > 94 ? '-translate-x-full' : '-translate-x-1/2')}
             style={{ left: `${now}%` }}>
-            {t.now}
+            {t('meet.strips.now', undefined, locale)}
           </span>
         )}
       </div>
 
       <div>
         <div className="mb-1 flex items-baseline justify-between gap-2">
-          <span className="text-[13px] font-semibold text-foreground">{t.everyone}</span>
+          <span className="text-[13px] font-semibold text-foreground">{t('meet.grid.everyone', undefined, locale)}</span>
           <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
             {percent(talk.teacher_share)} / {percent(talk.students_share)}
           </span>
         </div>
-        <div className="relative flex h-7 items-end gap-px rounded-sm bg-muted/40" role="img" aria-label={t.classLegend}>
+        <div className="relative flex h-7 items-end gap-px rounded-sm bg-muted/40" role="img" aria-label={classLegend}>
           {grid.teacher.map((teacher, i) => {
             const students = grid.students[i];
             return (
-              <span key={i} title={t.classMinute(grid.columns[i].label, teacher, students)}
+              <span key={i} title={t('meet.strips.classMinute', {
+                at: grid.columns[i].label, teacher: formatDuration(teacher, locale), students: formatDuration(students, locale),
+              }, locale)}
                 onClick={onSeek ? () => seek(i, null) : undefined}
                 className={cn('flex h-full min-w-0 flex-1 flex-col justify-end', onSeek && 'cursor-pointer hover:bg-foreground/5')}>
                 <span className="bg-emerald-500 dark:bg-emerald-400" style={{ height: `${(students / peak) * 100}%` }} />
@@ -134,7 +113,9 @@ export function TalkStrips({ talk, locale, playhead, onSeek, className }: Props)
               {cells.map((seconds, i) => {
                 const shade = minuteShade(seconds);
                 return (
-                  <span key={i} title={t.minute(grid.columns[i].label, seconds)}
+                  <span key={i} title={seconds > 0
+                    ? t('meet.strips.spoke', { at: grid.columns[i].label, duration: formatDuration(seconds, locale) }, locale)
+                    : t('meet.strips.quiet', { at: grid.columns[i].label }, locale)}
                     onClick={onSeek ? () => seek(i, person.key) : undefined}
                     className={cn('h-full min-w-0 flex-1 first:rounded-l-sm last:rounded-r-sm', shade ? SHADE[person.role][shade] : '',
                       onSeek && 'cursor-pointer hover:outline hover:outline-1 hover:outline-foreground/40')} />
@@ -148,23 +129,22 @@ export function TalkStrips({ talk, locale, playhead, onSeek, className }: Props)
 
       <div className="flex flex-col gap-0.5 text-[11px] text-muted-foreground">
         <span className="inline-flex flex-wrap items-center gap-1">
-          {t.legend}
+          {t('meet.strips.legend', undefined, locale)}
           <span className="ml-1 inline-flex items-center gap-0.5" aria-hidden>
             {[1, 2, 3].map((s) => <span key={s} className={cn('h-2.5 w-3 rounded-[2px]', SHADE.student[s])} />)}
           </span>
         </span>
-        <span>{t.classLegend}</span>
-        {onSeek && <span>{t.play}</span>}
+        <span>{classLegend}</span>
+        {onSeek && <span>{t('meet.strips.play', undefined, locale)}</span>}
       </div>
     </div>
   );
 }
 
-function PersonLine({ person, locale }: { person: TalkPerson; locale: TalkLocale }) {
-  const t = TEXT[locale];
+function PersonLine({ person, locale }: { person: TalkPerson; locale: Locale }) {
   const extra = [
-    person.questions != null ? t.asked(person.questions) : null,
-    person.answers != null ? t.answered(person.answers) : null,
+    person.questions != null ? t('meet.strips.asked', { count: person.questions }, locale) : null,
+    person.answers != null ? t('meet.strips.answered', { count: person.answers }, locale) : null,
   ].filter(Boolean).join(' · ');
   return (
     <div className="flex items-baseline justify-between gap-3">
@@ -172,7 +152,7 @@ function PersonLine({ person, locale }: { person: TalkPerson; locale: TalkLocale
         <span className={cn('relative top-[-1px] h-2 w-2 flex-none rounded-full', DOT[person.role])} aria-hidden />
         <span className={cn('break-words text-[13px] leading-snug text-foreground', person.role === 'teacher' ? 'font-semibold' : 'font-medium')}>
           {person.name}
-          {person.role === 'other' && <span className="font-normal text-muted-foreground"> · {t.notThisClass}</span>}
+          {person.role === 'other' && <span className="font-normal text-muted-foreground"> · {t('meet.strips.notThisClass', undefined, locale)}</span>}
         </span>
       </span>
       <span className="shrink-0 text-right text-xs tabular-nums">

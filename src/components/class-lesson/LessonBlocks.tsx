@@ -2,14 +2,22 @@ import { Link, useNavigate } from 'react-router-dom';
 import { CheckCircle2, ClipboardList, Plus, Star, UserX } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { clockKz, stampKz } from '../../lib/classLessonPage';
+import { t as translate, type Locale, type MessageKey, type Params } from '../../lib/i18n';
 import type { LessonHomework, LessonView } from '../../services/api/classLessons';
 
-type T = (ru: string, en: string) => string;
-const tFor = (view: LessonView): T => (ru, en) => (view.viewer.locale === 'ru' ? ru : en);
+/*
+ * These blocks take the viewer's `locale` as a prop rather than calling useT(): the Google Meet
+ * side panel renders LiveRoom too, and it is a separate entry with no AuthProvider (and must not
+ * pull the main app's providers into its bundle).
+ */
+type T = (key: MessageKey, params?: Params) => string;
+const tFor = (locale: Locale): T => (key, params) => translate(key, params, locale);
+
+interface BlockProps { view: LessonView; locale: Locale }
 
 /** The room right now (staff, while the lesson runs), refreshed by the page every minute. */
-export function LiveRoom({ view }: { view: LessonView }) {
-  const t = tFor(view);
+export function LiveRoom({ view, locale }: BlockProps) {
+  const t = tFor(locale);
   const live = view.live;
   if (!live) return null;
   const full = live.expected > 0 && live.in_room >= live.expected;
@@ -17,19 +25,19 @@ export function LiveRoom({ view }: { view: LessonView }) {
     <div>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <p className="text-2xl font-bold tabular-nums text-foreground">
-          {live.in_room}<span className="text-base font-medium text-muted-foreground"> {t('из', 'of')} {live.expected}</span>
+          {live.in_room}<span className="text-base font-medium text-muted-foreground"> {t('classLesson.live.ofExpected', { expected: live.expected })}</span>
         </p>
-        <p className="text-sm text-muted-foreground">{t('учеников в комнате', 'students in the room')}</p>
+        <p className="text-sm text-muted-foreground">{t('classLesson.live.studentsInRoom')}</p>
         {!live.teacher_in && (
           <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
-            {t('Преподавателя нет в комнате', 'The teacher is not in the room')}
+            {t('classLesson.live.teacherAbsent')}
           </span>
         )}
       </div>
       {live.missing.length > 0 ? (
         <div className="mt-3">
           <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-rose-700 dark:text-rose-300">
-            <UserX className="h-3.5 w-3.5" aria-hidden />{t('Не зашли', 'Not in the room')}
+            <UserX className="h-3.5 w-3.5" aria-hidden />{t('classLesson.live.missing')}
           </p>
           <ul className="flex flex-wrap gap-1.5">
             {live.missing.map((m) => (
@@ -38,42 +46,42 @@ export function LiveRoom({ view }: { view: LessonView }) {
           </ul>
         </div>
       ) : full ? (
-        <p className="mt-2 flex items-center gap-1.5 text-sm text-emerald-700 dark:text-emerald-300"><CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />{t('Все в комнате', 'Everyone is in')}</p>
+        <p className="mt-2 flex items-center gap-1.5 text-sm text-emerald-700 dark:text-emerald-300"><CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden="true" />{t('classLesson.live.everyoneIn')}</p>
       ) : null}
       <p className="mt-3 text-[11px] text-muted-foreground">
-        {live.unknown > 0 && `${t('Неопознанных аккаунтов', 'Unconfirmed accounts')}: ${live.unknown} · `}
-        {live.updated_at ? `${t('Обновлено в', 'Updated at')} ${clockKz(live.updated_at, view.viewer.locale)}` : t('Ждём данные из Meet…', 'Waiting for Meet…')}
+        {live.unknown > 0 && `${t('classLesson.live.unconfirmed', { count: live.unknown })} · `}
+        {live.updated_at ? t('classLesson.live.updatedAt', { time: clockKz(live.updated_at, locale) }) : t('classLesson.live.waiting')}
       </p>
     </div>
   );
 }
 
-const MY_MARK: Record<string, [string, string, string]> = {
-  attended: ['Был', 'Present', 'text-emerald-700 dark:text-emerald-300'],
-  late: ['Опоздал', 'Late', 'text-amber-700 dark:text-amber-300'],
-  missed: ['Не был', 'Absent', 'text-rose-700 dark:text-rose-300'],
-  registered: ['Ещё не отмечено', 'Not marked yet', 'text-muted-foreground'],
-  cancelled: ['Урок отменён', 'Lesson cancelled', 'text-muted-foreground'],
-  removed: ['Снят с урока', 'Taken off the lesson', 'text-muted-foreground'],
+const MY_MARK: Record<string, [MessageKey, string]> = {
+  attended: ['classLesson.mark.attended', 'text-emerald-700 dark:text-emerald-300'],
+  late: ['classLesson.mark.late', 'text-amber-700 dark:text-amber-300'],
+  missed: ['classLesson.mark.missed', 'text-rose-700 dark:text-rose-300'],
+  registered: ['classLesson.myMark.registered', 'text-muted-foreground'],
+  cancelled: ['classLesson.myMark.cancelled', 'text-muted-foreground'],
+  removed: ['classLesson.myMark.removed', 'text-muted-foreground'],
 };
 
 /** A student's own mark and балл за активность — never a classmate's. */
-export function MyMark({ view }: { view: LessonView }) {
-  const t = tFor(view);
+export function MyMark({ view, locale }: BlockProps) {
+  const t = tFor(locale);
   const me = view.me;
   if (!me) return null;
-  const [ruLabel, enLabel, tone] = MY_MARK[me.status] ?? MY_MARK.registered;
+  const [label, tone] = MY_MARK[me.status] ?? MY_MARK.registered;
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
       <div>
-        <p className="text-xs text-muted-foreground">{t('Посещаемость', 'Attendance')}</p>
+        <p className="text-xs text-muted-foreground">{t('classLesson.section.register')}</p>
         <p className={cn('text-lg font-semibold', tone)}>
-          {view.viewer.locale === 'ru' ? ruLabel : enLabel}
-          {me.excused && <span className="ml-1.5 text-sm font-normal text-muted-foreground">({t('уважительная', 'excused')})</span>}
+          {t(label)}
+          {me.excused && <span className="ml-1.5 text-sm font-normal text-muted-foreground">({t('classLesson.myMark.excused')})</span>}
         </p>
       </div>
       <div>
-        <p className="text-xs text-muted-foreground">{t('Балл за активность', 'Activity score')}</p>
+        <p className="text-xs text-muted-foreground">{t('classLesson.activityScore')}</p>
         <p className="flex items-center gap-1 text-lg font-semibold text-foreground">
           <Star className="h-4 w-4 text-yellow-500 dark:text-yellow-400" aria-hidden />
           {me.activity_score != null ? `${me.activity_score}/10` : '—'}
@@ -83,23 +91,22 @@ export function MyMark({ view }: { view: LessonView }) {
   );
 }
 
-const HW_STATUS: Record<string, [string, string, string]> = {
-  not_submitted: ['Не сдано', 'Not submitted', 'bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200'],
-  submitted: ['Сдано, ждёт проверки', 'Submitted, awaiting grading', 'bg-sky-50 text-sky-800 dark:bg-sky-950/40 dark:text-sky-200'],
-  graded: ['Проверено', 'Graded', 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200'],
+const HW_STATUS: Record<string, [MessageKey, string]> = {
+  not_submitted: ['classLesson.homework.notSubmitted', 'bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-200'],
+  submitted: ['classLesson.homework.submitted', 'bg-sky-50 text-sky-800 dark:bg-sky-950/40 dark:text-sky-200'],
+  graded: ['classLesson.homework.graded', 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200'],
 };
 
 /** This lesson's homework: staff see how many handed in, a student sees their own status. */
-export function HomeworkList({ view }: { view: LessonView }) {
-  const t = tFor(view);
-  const ru = view.viewer.locale === 'ru';
+export function HomeworkList({ view, locale }: BlockProps) {
+  const t = tFor(locale);
   return (
     <div>
       {view.homework.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('К этому уроку домашнего задания нет.', 'No homework for this lesson.')}</p>
+        <p className="text-sm text-muted-foreground">{t('classLesson.homework.none')}</p>
       ) : (
         <ul className="divide-y divide-border">
-          {view.homework.map((hw) => <HomeworkRow key={hw.id} hw={hw} view={view} ru={ru} t={t} />)}
+          {view.homework.map((hw) => <HomeworkRow key={hw.id} hw={hw} locale={locale} t={t} />)}
         </ul>
       )}
       {view.homework_new_url && (
@@ -108,14 +115,14 @@ export function HomeworkList({ view }: { view: LessonView }) {
           className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-muted"
         >
           <Plus className="h-3.5 w-3.5" aria-hidden />
-          {t('Задать ДЗ к уроку', 'Assign homework')}
+          {t('classLesson.homework.assign')}
         </Link>
       )}
     </div>
   );
 }
 
-function HomeworkRow({ hw, view, ru, t }: { hw: LessonHomework; view: LessonView; ru: boolean; t: T }) {
+function HomeworkRow({ hw, locale, t }: { hw: LessonHomework; locale: Locale; t: T }) {
   const status = hw.my ? HW_STATUS[hw.my.status] : null;
   return (
     <li className="flex flex-wrap items-center justify-between gap-2 py-2.5">
@@ -124,14 +131,14 @@ function HomeworkRow({ hw, view, ru, t }: { hw: LessonHomework; view: LessonView
           <ClipboardList className="h-4 w-4 flex-none text-muted-foreground" aria-hidden />
           <span className="truncate">{hw.title}</span>
         </Link>
-        {hw.due && <p className="text-[11px] text-muted-foreground">{t('Срок', 'Due')}: {stampKz(hw.due, view.viewer.locale)}</p>}
+        {hw.due && <p className="text-[11px] text-muted-foreground">{t('classLesson.homework.due', { when: stampKz(hw.due, locale) })}</p>}
       </div>
       {hw.submitted != null && hw.total != null && (
-        <span className="text-xs tabular-nums text-muted-foreground">{t('Сдали', 'Handed in')} {hw.submitted}/{hw.total}</span>
+        <span className="text-xs tabular-nums text-muted-foreground">{t('classLesson.homework.handedIn', { submitted: hw.submitted, total: hw.total })}</span>
       )}
       {status && hw.my && (
-        <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', status[2])}>
-          {ru ? status[0] : status[1]}
+        <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium', status[1])}>
+          {t(status[0])}
           {hw.my.status === 'graded' && hw.my.score != null ? ` · ${hw.my.score}${hw.my.max_score != null ? `/${hw.my.max_score}` : ''}` : ''}
         </span>
       )}
@@ -139,19 +146,19 @@ function HomeworkRow({ hw, view, ru, t }: { hw: LessonHomework; view: LessonView
   );
 }
 
-const REQUEST_TYPE: Record<string, [string, string]> = {
-  substitution: ['Замена', 'Substitute'], reschedule: ['Перенос', 'Reschedule'], cancel: ['Отмена урока', 'Cancel lesson'],
+const REQUEST_TYPE: Record<string, MessageKey> = {
+  substitution: 'classLesson.request.substitution', reschedule: 'classLesson.request.reschedule', cancel: 'classLesson.request.cancel',
 };
-const REQUEST_STATUS: Record<string, [string, string]> = {
-  pending: ['на рассмотрении', 'pending'], pending_approval: ['ждёт одобрения', 'awaiting approval'],
-  confirmed: ['подтверждена', 'confirmed'], approved: ['одобрена', 'approved'], rejected: ['отклонена', 'rejected'],
-  declined: ['отклонена', 'declined'], cancelled: ['отозвана', 'withdrawn'],
+const REQUEST_STATUS: Record<string, MessageKey> = {
+  pending: 'classLesson.request.pending', pending_approval: 'classLesson.request.pendingApproval',
+  confirmed: 'classLesson.request.confirmed', approved: 'classLesson.request.approved', rejected: 'classLesson.request.rejected',
+  declined: 'classLesson.request.declined', cancelled: 'classLesson.request.withdrawn',
 };
 
 /** Requests about this lesson (substitute, reschedule, cancel) and, for its teacher, new ones. */
-export function RequestsBlock({ view }: { view: LessonView }) {
-  const t = tFor(view);
-  const ru = view.viewer.locale === 'ru';
+export function RequestsBlock({ view, locale }: BlockProps) {
+  const t = tFor(locale);
+  const label = (table: Record<string, MessageKey>, value: string) => (table[value] ? t(table[value]) : value);
   const navigate = useNavigate();
   const pendingType = new Set(view.requests.filter((r) => r.status.startsWith('pending')).map((r) => r.type));
   return (
@@ -160,17 +167,17 @@ export function RequestsBlock({ view }: { view: LessonView }) {
         <ul className="mb-3 divide-y divide-border">
           {view.requests.map((r) => (
             <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
-              <span className="font-medium text-foreground">{ru ? REQUEST_TYPE[r.type]?.[0] ?? r.type : REQUEST_TYPE[r.type]?.[1] ?? r.type}</span>
+              <span className="font-medium text-foreground">{label(REQUEST_TYPE, r.type)}</span>
               <span className="text-xs text-muted-foreground">
-                {ru ? REQUEST_STATUS[r.status]?.[0] ?? r.status : REQUEST_STATUS[r.status]?.[1] ?? r.status}
+                {label(REQUEST_STATUS, r.status)}
                 {r.requester ? ` · ${r.requester}` : ''}
-                {r.created_at ? ` · ${stampKz(r.created_at, view.viewer.locale)}` : ''}
+                {r.created_at ? ` · ${stampKz(r.created_at, locale)}` : ''}
               </span>
             </li>
           ))}
         </ul>
       ) : (
-        !view.request_new_url && <p className="text-sm text-muted-foreground">{t('Заявок по этому уроку нет.', 'No requests for this lesson.')}</p>
+        !view.request_new_url && <p className="text-sm text-muted-foreground">{t('classLesson.request.none')}</p>
       )}
       {view.request_new_url && (
         <div className="flex flex-wrap gap-2">
@@ -185,7 +192,7 @@ export function RequestsBlock({ view }: { view: LessonView }) {
                 type === 'cancel' ? 'text-rose-600 dark:text-rose-400' : 'text-foreground',
               )}
             >
-              {ru ? REQUEST_TYPE[type][0] : REQUEST_TYPE[type][1]}
+              {t(REQUEST_TYPE[type])}
             </button>
           ))}
         </div>

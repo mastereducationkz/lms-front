@@ -3,8 +3,9 @@ import { useParams } from 'react-router-dom';
 import { Clock, Loader2, Users, Video } from 'lucide-react';
 import HlsVideoPlayer from '../components/HlsVideoPlayer';
 import logoIco from '../assets/masteredlogo-ico.ico';
-import { APP_TIMEZONE } from '../lib/datetime';
 import { formatClock } from '../lib/recordings';
+import { formatDate, formatTime } from '../lib/i18n';
+import { useLocale, useT } from '../lib/i18n/react';
 import { ParticipantsPanel } from '../components/meetAttendance/ParticipantsPanel';
 import { TalkSidePanel } from '../components/meetAttendance/TalkSidePanel';
 import { useVideoClock } from '../components/recordings/useVideoClock';
@@ -36,10 +37,6 @@ type State =
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
-function almaty(iso: string | null, options: Intl.DateTimeFormatOptions): string {
-  return iso ? new Date(iso).toLocaleString('ru-RU', { ...options, timeZone: APP_TIMEZONE }) : '';
-}
-
 /**
  * One lesson's recording, opened from the CRM with a watch link — no LMS account, no login.
  *
@@ -52,6 +49,10 @@ function almaty(iso: string | null, options: Intl.DateTimeFormatOptions): string
  */
 export default function WatchRecordingPage() {
   const { token = '' } = useParams();
+  // Anyone with the link may open it, signed in or not: a signed-in reader gets their language,
+  // a visitor English.
+  const locale = useLocale();
+  const t = useT();
   const [state, setState] = useState<State>({ kind: 'loading' });
   const playerBox = useRef<HTMLDivElement>(null);
   const data = state.kind === 'ready' ? state.data : null;
@@ -77,8 +78,10 @@ export default function WatchRecordingPage() {
   }, [token]);
 
   useEffect(() => {
-    document.title = state.kind === 'ready' ? `Запись урока — ${state.data.title}` : 'Запись урока | Master Education';
-  }, [state]);
+    document.title = state.kind === 'ready'
+      ? t('recordings.watch.pageTitleWith', { title: state.data.title })
+      : t('recordings.watch.pageTitle');
+  }, [state, t]);
 
   const video = data && (
     <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
@@ -96,11 +99,14 @@ export default function WatchRecordingPage() {
           {data.start && (
             <span className="inline-flex items-center gap-1.5">
               <Clock className="h-4 w-4" aria-hidden />
-              {almaty(data.start, { weekday: 'long', day: 'numeric', month: 'long' })},{' '}
-              {almaty(data.start, { hour: '2-digit', minute: '2-digit' })}–{almaty(data.end, { hour: '2-digit', minute: '2-digit' })} (Алматы)
+              {t('recordings.watch.when', {
+                date: formatDate(data.start, { weekday: 'long', day: 'numeric', month: 'long' }, locale),
+                start: formatTime(data.start, undefined, locale),
+                end: formatTime(data.end, undefined, locale),
+              })}
             </span>
           )}
-          {data.teacher && <span>Преподаватель: {data.teacher}</span>}
+          {data.teacher && <span>{t('recordings.watch.teacher', { name: data.teacher })}</span>}
           {data.groups.length > 0 && (
             <span className="inline-flex items-center gap-1.5">
               <Users className="h-4 w-4" aria-hidden />{data.groups.join(', ')}
@@ -113,8 +119,7 @@ export default function WatchRecordingPage() {
           )}
         </div>
         <p className="pt-1 text-xs text-muted-foreground">
-          Ссылка действует до {almaty(data.expires_at, { hour: '2-digit', minute: '2-digit' })} (Алматы).
-          Чтобы посмотреть позже, откройте запись заново из CRM.
+          {t('recordings.watch.linkValid', { time: formatTime(data.expires_at, undefined, locale) })}
         </p>
       </div>
     </article>
@@ -126,27 +131,23 @@ export default function WatchRecordingPage() {
         <div className="mb-5 flex items-center gap-2.5">
           <img src={logoIco} alt="" className="h-7 w-7 rounded" />
           <span className="text-sm font-semibold text-foreground">Master Education</span>
-          <span className="text-sm text-muted-foreground">· Запись урока</span>
+          <span className="text-sm text-muted-foreground">· {t('recordings.watch.brand')}</span>
         </div>
 
         {state.kind === 'loading' && (
           <div className="flex items-center gap-2 rounded-2xl border border-border bg-card px-6 py-16 text-sm text-muted-foreground shadow-sm">
-            <Loader2 className="h-4 w-4 animate-spin" /> Открываем запись…
+            <Loader2 className="h-4 w-4 animate-spin" /> {t('recordings.watch.opening')}
           </div>
         )}
 
         {state.kind === 'expired' && (
-          <Notice title="Ссылка устарела">
-            Ссылка на запись действует три часа. Откройте запись заново из CRM — появится новая ссылка.
-          </Notice>
+          <Notice title={t('recordings.watch.expiredTitle')}>{t('recordings.watch.expiredBody')}</Notice>
         )}
         {state.kind === 'missing' && (
-          <Notice title="Запись не найдена">
-            Ссылка неверная, или запись этого урока больше недоступна. Откройте её заново из CRM.
-          </Notice>
+          <Notice title={t('recordings.watch.missingTitle')}>{t('recordings.watch.missingBody')}</Notice>
         )}
         {state.kind === 'error' && (
-          <Notice title="Не удалось открыть запись">Проверьте соединение и обновите страницу.</Notice>
+          <Notice title={t('recordings.watch.errorTitle')}>{t('recordings.watch.errorBody')}</Notice>
         )}
 
         {data && (
@@ -159,7 +160,7 @@ export default function WatchRecordingPage() {
               <aside className="min-w-0 lg:sticky lg:top-4 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:h-[calc(100vh-2rem)]">
                 <TalkSidePanel
                   talk={talk}
-                  locale="ru"
+                  locale={locale}
                   variant="public"
                   playhead={time}
                   onSeek={seek}
@@ -170,7 +171,7 @@ export default function WatchRecordingPage() {
             )}
             {data.participants && (
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-                <ParticipantsPanel view={data.participants} locale="ru" defaultOpen className="shadow-sm" />
+                <ParticipantsPanel view={data.participants} locale={locale} defaultOpen className="shadow-sm" />
               </div>
             )}
           </div>

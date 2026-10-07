@@ -17,7 +17,9 @@ import { getEventDetails } from '../services/api/events';
 import {
   listRecordings, type RecordingFacets, type RecordingLibraryItem, type RecordingPeriod, type RecordingsKind,
 } from '../services/api/recordings';
-import { dayHeading, groupByDay, parseWatchParam, recordingsLocale, type Locale } from '../lib/recordings';
+import { dayHeading, groupByDay, parseWatchParam } from '../lib/recordings';
+import type { MessageKey } from '../lib/i18n';
+import { useLocale, useT } from '../lib/i18n/react';
 import { summaryHint, summaryLine, type RecordingViewSummary } from '../lib/recordingViews';
 import { getRecordingViewSummary } from '../services/api/recordingViews';
 
@@ -25,117 +27,43 @@ const PAGE_SIZE = 24;
 type StatusFilter = 'all' | 'ready' | 'pending' | 'failed';
 type RecordingView = 'gallery' | 'folders';
 
-function plural(n: number, locale: Locale, [one, few, many]: [string, string, string]): string {
-  if (locale === 'en') return `${n} ${n === 1 ? one : few}`;
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  const form = mod10 === 1 && mod100 !== 11 ? one
-    : mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14) ? few
-      : many;
-  return `${n} ${form}`;
-}
+/** What the lesson and webinar pages say differently; everything else they share. */
+const KIND_COPY = {
+  lesson: {
+    title: 'recordings.library.title',
+    scopeStudent: 'recordings.library.scopeStudent',
+    scopeTeacher: 'recordings.library.scopeTeacher',
+    scopeCurator: 'recordings.library.scopeCurator',
+    scopeAll: 'recordings.library.scopeAll',
+    search: 'recordings.library.search',
+    emptyBody: 'recordings.library.emptyBody',
+    noMatchBody: 'recordings.library.noMatchBody',
+    recording: 'recordings.library.recording',
+  },
+  webinar: {
+    title: 'recordings.webinars.title',
+    scopeStudent: 'recordings.webinars.scopeStudent',
+    scopeTeacher: 'recordings.webinars.scopeTeacher',
+    scopeCurator: 'recordings.webinars.scopeCurator',
+    scopeAll: 'recordings.webinars.scopeAll',
+    search: 'recordings.webinars.search',
+    emptyBody: 'recordings.webinars.emptyBody',
+    noMatchBody: 'recordings.webinars.noMatchBody',
+    recording: 'recordings.webinars.recording',
+  },
+} as const satisfies Record<RecordingsKind, Record<string, MessageKey>>;
 
-const TEXT = {
-  en: {
-    title: 'Lesson recordings',
-    recordings: ['recording', 'recordings', 'recordings'] as [string, string, string],
-    scope: {
-      student: 'Recordings of your group’s lessons.',
-      teacher: 'Recordings of the lessons you teach.',
-      curator: 'Recordings of your groups’ lessons.',
-      all: 'Every lesson recording in the school.',
-    },
-    search: 'Search by group or lesson',
-    clearSearch: 'Clear search',
-    periods: { all: 'All time', '30d': 'Last 30 days', '7d': 'Last 7 days' } as Record<RecordingPeriod, string>,
-    allGroups: 'All groups',
-    allTeachers: 'All teachers',
-    searchGroups: 'Search groups…',
-    noGroup: 'No group matches',
-    searchTeachers: 'Search teachers…',
-    noTeacher: 'No teacher matches',
-    allCourses: 'All courses',
-    searchCourses: 'Search courses…',
-    noCourse: 'No course matches',
-    groupState: { finished: 'Finished', archived: 'Archived' },
-    views: { gallery: 'Gallery', folders: 'Folders' },
-    statuses: { all: 'Any status', ready: 'Ready to watch', pending: 'Processing', failed: 'Failed' } as Record<StatusFilter, string>,
-    clear: 'Clear filters',
-    emptyTitle: 'No recordings yet',
-    emptyBody: 'Recordings appear here shortly after a lesson ends. You can also open any past lesson from the calendar.',
-    openCalendar: 'Open the calendar',
-    noMatchTitle: 'No recordings match these filters',
-    noMatchBody: 'Try another date, period, group or search.',
-    error: 'The recordings could not be loaded.',
-    retry: 'Try again',
-    more: 'Show more',
-    recording: 'Lesson recording',
-  },
-  ru: {
-    title: 'Записи уроков',
-    recordings: ['запись', 'записи', 'записей'] as [string, string, string],
-    scope: {
-      student: 'Записи уроков вашей группы.',
-      teacher: 'Записи ваших уроков.',
-      curator: 'Записи уроков ваших групп.',
-      all: 'Все записи уроков школы.',
-    },
-    search: 'Поиск по группе или уроку',
-    clearSearch: 'Очистить поиск',
-    periods: { all: 'Всё время', '30d': 'Последние 30 дней', '7d': 'Последние 7 дней' } as Record<RecordingPeriod, string>,
-    allGroups: 'Все группы',
-    allTeachers: 'Все учителя',
-    searchGroups: 'Поиск групп…',
-    noGroup: 'Группы не найдены',
-    searchTeachers: 'Поиск учителей…',
-    noTeacher: 'Учителя не найдены',
-    allCourses: 'Все курсы',
-    searchCourses: 'Поиск курсов…',
-    noCourse: 'Курсы не найдены',
-    groupState: { finished: 'Завершена', archived: 'Архивная' },
-    views: { gallery: 'Галерея', folders: 'Папки' },
-    statuses: { all: 'Любой статус', ready: 'Готовы к просмотру', pending: 'Обрабатываются', failed: 'С ошибкой' } as Record<StatusFilter, string>,
-    clear: 'Сбросить фильтры',
-    emptyTitle: 'Записей пока нет',
-    emptyBody: 'Записи появляются здесь вскоре после окончания урока. Любой прошедший урок можно открыть и из календаря.',
-    openCalendar: 'Открыть календарь',
-    noMatchTitle: 'Нет записей по этим фильтрам',
-    noMatchBody: 'Попробуйте другую дату, период, группу или запрос.',
-    error: 'Не удалось загрузить записи.',
-    retry: 'Повторить',
-    more: 'Показать ещё',
-    recording: 'Запись урока',
-  },
+const PERIOD_LABEL: Record<RecordingPeriod, MessageKey> = {
+  all: 'recordings.library.periodAll',
+  '30d': 'recordings.library.period30d',
+  '7d': 'recordings.library.period7d',
 };
 
-/** What the webinar page says differently; everything else it shares with the lessons page. */
-const WEBINAR_TEXT = {
-  en: {
-    title: 'Webinar recordings',
-    scope: {
-      student: 'Recordings of webinars for your groups and courses.',
-      teacher: 'Recordings of the webinars you ran.',
-      curator: 'Recordings of webinars for your groups and their courses.',
-      all: 'Every webinar recording in the school.',
-    },
-    search: 'Search by webinar or course',
-    emptyBody: 'Recordings appear here shortly after a webinar ends. You can also open any past webinar from the calendar.',
-    noMatchBody: 'Try another date, period, course or search.',
-    recording: 'Webinar recording',
-  },
-  ru: {
-    title: 'Записи вебинаров',
-    scope: {
-      student: 'Записи вебинаров ваших групп и курсов.',
-      teacher: 'Записи ваших вебинаров.',
-      curator: 'Записи вебинаров ваших групп и их курсов.',
-      all: 'Все записи вебинаров школы.',
-    },
-    search: 'Поиск по вебинару или курсу',
-    emptyBody: 'Записи появляются здесь вскоре после окончания вебинара. Любой прошедший вебинар можно открыть и из календаря.',
-    noMatchBody: 'Попробуйте другую дату, период, курс или запрос.',
-    recording: 'Запись вебинара',
-  },
+const STATUS_LABEL: Record<StatusFilter, MessageKey> = {
+  all: 'recordings.library.statusAll',
+  ready: 'recordings.library.statusReady',
+  pending: 'recordings.library.statusPending',
+  failed: 'recordings.library.statusFailed',
 };
 
 function toMeta(item: RecordingLibraryItem): RecordingMeta {
@@ -161,8 +89,9 @@ function toMeta(item: RecordingLibraryItem): RecordingMeta {
  */
 export default function LessonRecordings({ kind = 'lesson' }: { kind?: RecordingsKind }) {
   const { user } = useAuth();
-  const locale = recordingsLocale(user?.role);
-  const t = kind === 'webinar' ? { ...TEXT[locale], ...WEBINAR_TEXT[locale] } : TEXT[locale];
+  const locale = useLocale();
+  const t = useT();
+  const copy = KIND_COPY[kind];
   const webinars = kind === 'webinar';
   const role = user?.role ?? '';
   const oversight = ['admin', 'head_curator', 'head_teacher'].includes(role);
@@ -293,11 +222,11 @@ export default function LessonRecordings({ kind = 'lesson' }: { kind?: Recording
         eventType: event.event_type ?? null,
         teacher: event.teacher_name ?? null,
       }))
-      .catch(() => !cancelled && setLinkedMeta({ eventId: watchId, title: t.recording }));
+      .catch(() => !cancelled && setLinkedMeta({ eventId: watchId, title: t(copy.recording) }));
     return () => {
       cancelled = true;
     };
-  }, [watchId, listedItem, loading, t.recording]);
+  }, [watchId, listedItem, loading, t, copy.recording]);
   const playerMeta = listedItem ? toMeta(listedItem) : linkedMeta;
 
   const openItem = useCallback((item: RecordingLibraryItem) => {
@@ -318,29 +247,30 @@ export default function LessonRecordings({ kind = 'lesson' }: { kind?: Recording
 
   const days = useMemo(() => groupByDay(items), [items]);
   const now = new Date();
-  const scope = oversight ? t.scope.all
-    : role === 'teacher' ? t.scope.teacher
-      : role === 'curator' ? t.scope.curator
-        : t.scope.student;
+  const scope = t(oversight ? copy.scopeAll
+    : role === 'teacher' ? copy.scopeTeacher
+      : role === 'curator' ? copy.scopeCurator
+        : copy.scopeStudent);
   const showGroups = !webinars && (facets?.groups.length ?? 0) > 1;
   const showCourses = webinars && (facets?.courses?.length ?? 0) > 1;
   const showTeachers = staff && (facets?.teachers.length ?? 0) > 1;
   const groupOptions = useMemo<SearchableOption[]>(() => [
-    { value: 'all', label: t.allGroups },
+    { value: 'all', label: t('recordings.library.allGroups') },
     ...(facets?.groups.map((group) => ({
       value: String(group.id),
       label: group.name,
-      hint: group.is_over ? t.groupState.finished : group.is_active === false ? t.groupState.archived : undefined,
+      hint: group.is_over ? t('recordings.library.groupFinished')
+        : group.is_active === false ? t('recordings.library.groupArchived') : undefined,
     })) ?? []),
   ], [facets?.groups, t]);
   const teacherOptions = useMemo<SearchableOption[]>(() => [
-    { value: 'all', label: t.allTeachers },
+    { value: 'all', label: t('recordings.library.allTeachers') },
     ...(facets?.teachers.map((teacher) => ({
       value: String(teacher.id), label: teacher.name ?? `#${teacher.id}`,
     })) ?? []),
   ], [facets?.teachers, t]);
   const courseOptions = useMemo<SearchableOption[]>(() => [
-    { value: 'all', label: t.allCourses },
+    { value: 'all', label: t('recordings.library.allCourses') },
     ...(facets?.courses?.map((course) => ({ value: String(course.id), label: course.title })) ?? []),
   ], [facets?.courses, t]);
 
@@ -349,12 +279,12 @@ export default function LessonRecordings({ kind = 'lesson' }: { kind?: Recording
       {/* Header */}
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{t.title}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{t(copy.title)}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {scope}
             {total !== null && !loading && (
               <span className="ml-2 font-medium text-foreground/80">
-                {plural(total, locale, t.recordings)}
+                {t('recordings.library.count', { count: total })}
               </span>
             )}
           </p>
@@ -372,15 +302,15 @@ export default function LessonRecordings({ kind = 'lesson' }: { kind?: Recording
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={t.search}
-            aria-label={t.search}
+            placeholder={t(copy.search)}
+            aria-label={t(copy.search)}
             className="h-10 w-full rounded-xl border border-border bg-card pl-9 pr-9 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-search-cancel-button]:hidden"
           />
           {query && (
             <button
               type="button"
               onClick={() => setQuery('')}
-              aria-label={t.clearSearch}
+              aria-label={t('recordings.library.clearSearch')}
               className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               <X className="h-3.5 w-3.5" />
@@ -391,7 +321,7 @@ export default function LessonRecordings({ kind = 'lesson' }: { kind?: Recording
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2.5 rounded-2xl border border-border bg-card p-2.5 shadow-sm">
-        <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label={t.periods.all}>
+        <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label={t('recordings.library.periodAll')}>
           {(['all', '30d', '7d'] as RecordingPeriod[]).map((p) => (
             <button
               key={p}
@@ -403,7 +333,7 @@ export default function LessonRecordings({ kind = 'lesson' }: { kind?: Recording
                 !day && period === p ? 'bg-card text-foreground shadow-sm dark:bg-brand-surface dark:text-brand-subtle-foreground dark:shadow-[inset_0_0_0_1px_hsl(var(--brand-border))]' : 'text-muted-foreground hover:text-foreground',
               )}
             >
-              {t.periods[p]}
+              {t(PERIOD_LABEL[p])}
             </button>
           ))}
         </div>
@@ -417,40 +347,40 @@ export default function LessonRecordings({ kind = 'lesson' }: { kind?: Recording
 
         {showGroups && (
           <SearchableSelect options={groupOptions} value={groupId} onChange={setGroupId}
-            placeholder={t.allGroups} searchPlaceholder={t.searchGroups} emptyText={t.noGroup}
-            ariaLabel={t.allGroups} className="h-9 w-full text-sm sm:w-[190px]" />
+            placeholder={t('recordings.library.allGroups')} searchPlaceholder={t('recordings.library.searchGroups')}
+            emptyText={t('recordings.library.noGroup')} ariaLabel={t('recordings.library.allGroups')} className="h-9 w-full text-sm sm:w-[190px]" />
         )}
 
         {showCourses && (
           <SearchableSelect options={courseOptions} value={courseId} onChange={setCourseId}
-            placeholder={t.allCourses} searchPlaceholder={t.searchCourses} emptyText={t.noCourse}
-            ariaLabel={t.allCourses} className="h-9 w-full text-sm sm:w-[190px]" />
+            placeholder={t('recordings.library.allCourses')} searchPlaceholder={t('recordings.library.searchCourses')}
+            emptyText={t('recordings.library.noCourse')} ariaLabel={t('recordings.library.allCourses')} className="h-9 w-full text-sm sm:w-[190px]" />
         )}
 
         {showTeachers && (
           <SearchableSelect options={teacherOptions} value={teacherId} onChange={setTeacherId}
-            placeholder={t.allTeachers} searchPlaceholder={t.searchTeachers} emptyText={t.noTeacher}
-            ariaLabel={t.allTeachers} className="h-9 w-full text-sm sm:w-[190px]" />
+            placeholder={t('recordings.library.allTeachers')} searchPlaceholder={t('recordings.library.searchTeachers')}
+            emptyText={t('recordings.library.noTeacher')} ariaLabel={t('recordings.library.allTeachers')} className="h-9 w-full text-sm sm:w-[190px]" />
         )}
 
         {staff && (
           <Select value={status} onValueChange={(v) => setStatus(v as StatusFilter)}>
-            <SelectTrigger className="h-9 w-full sm:w-[170px]" aria-label={t.statuses.all}>
-              <SelectValue placeholder={t.statuses.all} />
+            <SelectTrigger className="h-9 w-full sm:w-[170px]" aria-label={t('recordings.library.statusAll')}>
+              <SelectValue placeholder={t('recordings.library.statusAll')} />
             </SelectTrigger>
             <SelectContent>
               {(['all', 'ready', 'pending', 'failed'] as StatusFilter[]).map((s) => (
-                <SelectItem key={s} value={s}>{t.statuses[s]}</SelectItem>
+                <SelectItem key={s} value={s}>{t(STATUS_LABEL[s])}</SelectItem>
               ))}
             </SelectContent>
           </Select>
         )}
 
         {!webinars && (
-          <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label={t.views.gallery}>
+          <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label={t('recordings.library.viewGallery')}>
             {([
-              ['gallery', LayoutGrid, t.views.gallery],
-              ['folders', Folder, t.views.folders],
+              ['gallery', LayoutGrid, t('recordings.library.viewGallery')],
+              ['folders', Folder, t('recordings.library.viewFolders')],
             ] as const).map(([option, Icon, label]) => (
               <button key={option} type="button" onClick={() => setView(option)} aria-pressed={view === option}
                 className={cx('inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition',
@@ -469,7 +399,7 @@ export default function LessonRecordings({ kind = 'lesson' }: { kind?: Recording
             className="ml-auto inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
           >
             <RotateCcw className="h-3.5 w-3.5" aria-hidden />
-            {t.clear}
+            {t('recordings.library.clear')}
           </button>
         )}
       </div>
@@ -479,14 +409,14 @@ export default function LessonRecordings({ kind = 'lesson' }: { kind?: Recording
         <RecordingFoldersView filters={filters} locale={locale} onOpen={openItem} />
       ) : failed && items.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card px-6 py-14 text-center shadow-sm">
-          <p className="text-sm text-muted-foreground">{t.error}</p>
+          <p className="text-sm text-muted-foreground">{t('recordings.library.error')}</p>
           <button
             type="button"
             onClick={() => setReloadKey((k) => k + 1)}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted"
           >
             <RotateCcw className="h-3.5 w-3.5" aria-hidden />
-            {t.retry}
+            {t('common.retry')}
           </button>
         </div>
       ) : loading ? (
@@ -510,8 +440,8 @@ export default function LessonRecordings({ kind = 'lesson' }: { kind?: Recording
           <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted">
             <Video className="h-6 w-6 text-muted-foreground" aria-hidden />
           </span>
-          <h2 className="mt-4 text-base font-semibold text-foreground">{filtering ? t.noMatchTitle : t.emptyTitle}</h2>
-          <p className="mt-1 max-w-md text-sm text-muted-foreground">{filtering ? t.noMatchBody : t.emptyBody}</p>
+          <h2 className="mt-4 text-base font-semibold text-foreground">{filtering ? t('recordings.library.noMatchTitle') : t('recordings.library.emptyTitle')}</h2>
+          <p className="mt-1 max-w-md text-sm text-muted-foreground">{t(filtering ? copy.noMatchBody : copy.emptyBody)}</p>
           <div className="mt-5">
             {filtering ? (
               <button
@@ -520,7 +450,7 @@ export default function LessonRecordings({ kind = 'lesson' }: { kind?: Recording
                 className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted"
               >
                 <RotateCcw className="h-3.5 w-3.5" aria-hidden />
-                {t.clear}
+                {t('recordings.library.clear')}
               </button>
             ) : (
               <Link
@@ -528,7 +458,7 @@ export default function LessonRecordings({ kind = 'lesson' }: { kind?: Recording
                 className="inline-flex items-center gap-2 rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
               >
                 <CalendarDays className="h-4 w-4" aria-hidden />
-                {t.openCalendar}
+                {t('recordings.library.openCalendar')}
               </Link>
             )}
           </div>
@@ -561,7 +491,7 @@ export default function LessonRecordings({ kind = 'lesson' }: { kind?: Recording
                 className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition hover:bg-muted disabled:opacity-60"
               >
                 {loadingMore && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
-                {t.more}
+                {t('recordings.library.more')}
               </button>
             </div>
           )}

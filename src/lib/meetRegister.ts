@@ -1,3 +1,4 @@
+import { activeLocale, t, type Locale, type MessageKey } from './i18n';
 import type { MeetFlagCode, MeetLessonSummary } from '../services/api/meetAttendance';
 import type { RegisterCounts, StudentRegister } from '../services/api/meetRegister';
 
@@ -63,7 +64,7 @@ export function reasonPayload(reason: OverrideReason | undefined): { override_re
   return reason ? { override_reason_code: reason.code, override_reason_text: reason.text } : {};
 }
 
-/** A reason is complete with a preset — and words, for «Другое». */
+/** A reason is complete with a preset — and words, for «Other». */
 export function reasonComplete(reason: OverrideReason | undefined): boolean {
   if (!reason?.code) return false;
   return reason.code !== 'other' || Boolean(reason.text?.trim());
@@ -83,77 +84,67 @@ export function scoreDue(lessonDecided: boolean, uiStatus: string, activityScore
   return lessonDecided && ATTENDED_UI.has(uiStatus) && activityScore == null;
 }
 
-const SKIP: Record<'ru' | 'en', Record<string, string>> = {
-  ru: {
-    held_back: 'ждёт — в комнате был неподтверждённый аккаунт',
-    lesson_not_proven: 'не отмечено — учителя не было в уроке',
-    nobody_joined: 'не отмечено — никто из учеников не заходил',
-    partial: 'не отмечено — Google передал не все звонки',
-    excused: 'уважительный пропуск, не трогает',
-    cancelled: 'урок отменён',
-    removed: 'ученик снят с урока',
-    frozen: 'заморозка',
-    no_access: 'нет доступа',
-    person_changed_it: 'отметку поставил человек',
-    lesson_moved: 'урок перенесён после отметки',
-  },
-  en: {
-    held_back: 'waiting — an unconfirmed account was in the room',
-    lesson_not_proven: 'not marked — the teacher was not in the lesson',
-    nobody_joined: 'not marked — no student joined',
-    partial: 'not marked — Google has not handed over every call',
-    excused: 'excused absence, left alone',
-    cancelled: 'lesson cancelled',
-    removed: 'student taken off the lesson',
-    frozen: 'frozen',
-    no_access: 'no access',
-    person_changed_it: 'marked by a person',
-    lesson_moved: 'lesson moved after it was marked',
-  },
+const SKIP: Record<string, MessageKey> = {
+  held_back: 'meet.register.skipHeldBack',
+  lesson_not_proven: 'meet.register.skipLessonNotProven',
+  nobody_joined: 'meet.register.skipNobodyJoined',
+  partial: 'meet.register.skipPartial',
+  excused: 'meet.register.skipExcused',
+  cancelled: 'meet.register.skipCancelled',
+  removed: 'meet.register.skipRemoved',
+  frozen: 'meet.register.skipFrozen',
+  no_access: 'meet.register.skipNoAccess',
+  person_changed_it: 'meet.register.skipPersonChangedIt',
+  lesson_moved: 'meet.register.skipLessonMoved',
 };
-const MARK: Record<'ru' | 'en', Record<string, string>> = {
-  ru: { present: 'был', late: 'опоздал', absent: 'не был' },
-  en: { present: 'present', late: 'late', absent: 'absent' },
+const MARK: Record<string, MessageKey> = {
+  present: 'meet.register.markPresent',
+  late: 'meet.register.markLate',
+  absent: 'meet.register.markAbsent',
 };
 
 /** Hover lines: what Meet did with this student's mark, and a person's change after it. */
-export function registerNote(reg: StudentRegister | undefined, locale: 'ru' | 'en'): string | null {
+export function registerNote(reg: StudentRegister | undefined, locale: Locale = activeLocale()): string | null {
   if (!reg) return null;
-  const ru = locale === 'ru';
-  const word = (s: string | null) => (s ? MARK[locale][s] ?? s : '—');
+  const word = (s: string | null) => (s ? (MARK[s] ? t(MARK[s], undefined, locale) : s) : '—');
   const minutes = reg.minutes != null && reg.required != null
-    ? (ru ? ` · ${reg.minutes} мин (нужно ${reg.required})` : ` · ${reg.minutes} min (${reg.required} needed)`) : '';
+    ? ` · ${t('meet.register.minutes', { minutes: reg.minutes, required: reg.required }, locale)}` : '';
   const late = reg.verdict === 'late' && reg.late_minutes
-    ? (ru ? ` · опоздание ${reg.late_minutes} мин` : ` · ${reg.late_minutes} min late`) : '';
+    ? ` · ${t('meet.register.lateBy', { minutes: reg.late_minutes }, locale)}` : '';
   let line: string;
   switch (reg.state) {
-    case 'written': line = `${ru ? 'Meet отметил' : 'Marked by Meet'}: ${word(reg.status)}${minutes}${late}`; break;
-    case 'kept': line = `${ru ? 'Meet согласен с отметкой' : 'Meet agrees with this mark'}${minutes}`; break;
-    case 'would_write': line = `${ru ? 'Meet отметил бы' : 'Meet would mark'}: ${word(reg.verdict)}${minutes}${late}`; break;
-    case 'would_keep': line = `${ru ? 'Meet оставил бы отметку' : 'Meet would keep this mark'}${minutes}`; break;
+    case 'written': line = `${t('meet.register.written', { mark: word(reg.status) }, locale)}${minutes}${late}`; break;
+    case 'kept': line = `${t('meet.register.kept', undefined, locale)}${minutes}`; break;
+    case 'would_write': line = `${t('meet.register.wouldWrite', { mark: word(reg.verdict) }, locale)}${minutes}${late}`; break;
+    case 'would_keep': line = `${t('meet.register.wouldKeep', undefined, locale)}${minutes}`; break;
     case 'override': line = `Meet: ${word(reg.verdict)}${minutes}${late}`; break;
-    case 'held': case 'skipped': line = `Meet: ${SKIP[locale][reg.skip_reason ?? ''] ?? reg.skip_reason ?? ''}`; break;
-    case 'reverted': line = `Meet: ${ru ? 'отметка Meet отменена (откат)' : 'its mark was undone'}`; break;
+    case 'held': case 'skipped': {
+      const skip = SKIP[reg.skip_reason ?? ''];
+      line = `Meet: ${skip ? t(skip, undefined, locale) : reg.skip_reason ?? ''}`;
+      break;
+    }
+    case 'reverted': line = `Meet: ${t('meet.register.reverted', undefined, locale)}`; break;
     default: return null;
   }
   const o = reg.override;
   if (reg.state !== 'override' || !o) return line;
-  const why = o.reason_code === 'other' && o.text ? o.text : o.reason_label ?? o.text ?? (ru ? 'без причины' : 'no reason given');
-  const who = o.via === 'external' ? (ru ? 'вне LMS' : 'outside the LMS') : o.by;
+  const why = o.reason_code === 'other' && o.text ? o.text : o.reason_label ?? o.text ?? t('meet.register.noReason', undefined, locale);
+  const who = o.via === 'external' ? t('meet.register.outsideLms', undefined, locale) : o.by;
   // Meet's verdict is already the line above this one (the verdict chip's own note), so only the change.
-  return `${ru ? 'Изменено' : 'Changed'}: ${word(o.status)} — ${why}${who ? ` (${who})` : ''}`;
+  return who
+    ? t('meet.register.changedBy', { mark: word(o.status), why, who }, locale)
+    : t('meet.register.changed', { mark: word(o.status), why }, locale);
 }
 
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-
 /** The register report's one-line total (the Meet page's panel header). */
-export function registerSummary(total: RegisterCounts, live: boolean): string {
-  const lessons = plural(total.lessons, 'lesson', 'lessons');
-  const marks = plural(total.writes, 'mark', 'marks');
-  const students = plural(total.held, 'student', 'students');
+export function registerSummary(total: RegisterCounts, live: boolean, locale: Locale = activeLocale()): string {
+  const say = (key: MessageKey, count: number) => t(key, { count }, locale);
   const missed = total.scores_missed ?? 0;
-  return live
-    ? `${lessons} · Meet wrote ${marks} · ${students} waited for a teacher · ${total.overrides} changed after Meet`
-      + (missed ? ` · ${plural(missed, 'lesson', 'lessons')} without activity scores` : '')
-    : `${lessons} · Meet would write ${marks} · ${total.changes} would contradict the teacher (present ↔ absent) · ${students} would wait for a teacher`;
+  const parts = live
+    ? [say('common.lessons', total.lessons), say('meet.registerSummary.wrote', total.writes),
+      say('meet.registerSummary.waited', total.held), say('meet.registerSummary.changed', total.overrides),
+      missed ? say('meet.registerSummary.noScores', missed) : null]
+    : [say('common.lessons', total.lessons), say('meet.registerSummary.wouldWrite', total.writes),
+      say('meet.registerSummary.wouldContradict', total.changes), say('meet.registerSummary.wouldWait', total.held)];
+  return parts.filter(Boolean).join(' · ');
 }

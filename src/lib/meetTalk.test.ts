@@ -412,3 +412,24 @@ describe('a student\'s lessons as a sparkline', () => {
     expect(fits(48)).toBeLessThanOrEqual(200);
   });
 });
+
+describe('talk time in Russian', () => {
+  it('says durations, plurals and dates the Russian way', () => {
+    expect(formatDuration(45, 'ru')).toBe('45 с');
+    expect(formatDuration(3600 + 5 * 60, 'ru')).toBe('1 ч 05 мин');
+    const silent = (n: number) => talkSummaryLine({ teacher_share: 0.5, students_share: 0.5,
+      silent_students: Array.from({ length: n }, (_, i) => ({ user_id: i, name: String(i) })) }, 'ru');
+    expect(silent(1)).toBe('Преподаватель 50% · ученики 50% · 1 не говорил');
+    expect(silent(3)).toBe('Преподаватель 50% · ученики 50% · 3 не говорили');
+    expect(lessonMarkLabel({ event_id: 1, start: '2026-09-08T14:00:00Z', state: 'spoke', seconds: 720 }, 'ru'))
+      .toMatch(/^вт, 8 сент\.? 19:00 · говорил 12 мин$/);
+    expect(marksSummary([{ event_id: 1, start: '2026-09-08T14:00:00Z', state: 'absent', seconds: 0 }], 'ru'))
+      .toBe('В комнате на 0 из 1 · говорил на 0 · молчал на 0 · не был на 1');
+  });
+
+  it('reads «ё» as «е» in a transcript search', () => {
+    const line = { at: 0, end: 1, lesson_at: 0, speaker_key: 'a', speaker_label: 'Алёна', role: 'student', text: 'Всё понятно' } as TranscriptLine;
+    expect(searchTranscript([line], 'все')[0].ranges).toEqual([[0, 3]]);
+    expect(searchTranscript([line], 'алена')).toHaveLength(1);
+  });
+});

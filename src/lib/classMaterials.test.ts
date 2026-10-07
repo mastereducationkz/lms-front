@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { MAX_UPLOAD_BYTES } from './uploadFailure';
 import {
-  bellPollDelayMs, COPY, copyResultToast, type CopyKey, errorMessage, fileExt, formatSize,
+  bellPollDelayMs, COPY_KEYS, copyResultToast, type CopyKey, errorMessage, fileExt, formatSize,
   homeworkLinkLabel, isGoogleShareLink, isOfficeExt, lessonHeading, materialsBadgeVariant,
-  openedCount, pendingAfterClass, plural, preCheckFile, relativeTime, suggestTopic, t,
+  openedCount, pendingAfterClass, preCheckFile, relativeTime, suggestTopic, t,
   topicInputValue, uploadErrorReason, validateLinkUrl,
 } from './classMaterials';
 
@@ -125,27 +125,24 @@ describe('suggestTopic', () => {
   });
 });
 
-describe('plural', () => {
-  const RU: [string, string, string] = ['материал', 'материала', 'материалов'];
-  const EN: [string, string] = ['material', 'materials'];
-
+describe('item count', () => {
   it('picks the Russian form by the standard 1/2-4/5+ rule', () => {
-    expect(plural(1, 'ru', RU, EN)).toBe('1 материал');
-    expect(plural(2, 'ru', RU, EN)).toBe('2 материала');
-    expect(plural(5, 'ru', RU, EN)).toBe('5 материалов');
-    expect(plural(11, 'ru', RU, EN)).toBe('11 материалов');
-    expect(plural(21, 'ru', RU, EN)).toBe('21 материал');
+    expect(t('itemCount', 'ru', { count: 1 })).toBe('1 материал');
+    expect(t('itemCount', 'ru', { count: 2 })).toBe('2 материала');
+    expect(t('itemCount', 'ru', { count: 5 })).toBe('5 материалов');
+    expect(t('itemCount', 'ru', { count: 11 })).toBe('11 материалов');
+    expect(t('itemCount', 'ru', { count: 21 })).toBe('21 материал');
   });
 
   it('uses the English singular only for exactly 1', () => {
-    expect(plural(1, 'en', RU, EN)).toBe('1 material');
-    expect(plural(2, 'en', RU, EN)).toBe('2 materials');
+    expect(t('itemCount', 'en', { count: 1 })).toBe('1 item');
+    expect(t('itemCount', 'en', { count: 2 })).toBe('2 items');
   });
 });
 
-describe('t / COPY', () => {
+describe('t / COPY_KEYS', () => {
   it('has a non-empty ru and en string for every key', () => {
-    (Object.keys(COPY) as CopyKey[]).forEach((key) => {
+    (Object.keys(COPY_KEYS) as CopyKey[]).forEach((key) => {
       expect(t(key, 'ru').trim().length).toBeGreaterThan(0);
       expect(t(key, 'en').trim().length).toBeGreaterThan(0);
     });
@@ -153,8 +150,9 @@ describe('t / COPY', () => {
 });
 
 describe('errorMessage', () => {
-  it('resolves a known error code from COPY', () => {
+  it('resolves a known error code', () => {
     expect(errorMessage('too_large', 'ru')).toBe('Файл больше 50 МБ');
+    expect(errorMessage('too_large', 'en')).toBe('File is larger than 50 MB');
   });
 
   it('falls back to somethingWrong for an unknown code', () => {
@@ -208,6 +206,10 @@ describe('pendingAfterClass', () => {
 
   it('says «Ещё 3 материала откроются после урока» for three', () => {
     expect(pendingAfterClass(3, 'ru')).toBe('Ещё 3 материала откроются после урока');
+  });
+
+  it('says «Ещё 5 материалов откроются после урока» for five', () => {
+    expect(pendingAfterClass(5, 'ru')).toBe('Ещё 5 материалов откроются после урока');
   });
 
   it('reads in English', () => {

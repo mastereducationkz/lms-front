@@ -4,9 +4,9 @@ import { ArrowUpRight, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { clock } from '../../lib/meetAttendance';
-import { APP_TIMEZONE } from '../../lib/datetime';
 import { lessonPath } from '../../lib/lessonLinks';
-import { recordingsLocale } from '../../lib/recordings';
+import { formatDate } from '../../lib/i18n';
+import { useLocale, useT } from '../../lib/i18n/react';
 import { useAuth } from '../../contexts/AuthContext';
 import RecordingPlayerDialog from '../recordings/RecordingPlayerDialog';
 import { useRecordingStatuses } from '../recordings/useRecordingStatuses';
@@ -25,16 +25,14 @@ interface Props {
   initialTab?: MeetDialogTab;
 }
 
-function dateLabel(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: APP_TIMEZONE });
-}
-
 /**
  * The full record of one lesson, wide enough for the timeline — with account chips to correct
  * mistakes — and, beside it, who spoke and for how long.
  */
 export default function MeetAttendanceDialog({ eventId, open, onOpenChange, initialTab = 'attendance' }: Props) {
   const { user } = useAuth();
+  const locale = useLocale();
+  const t = useT();
   const isAdmin = user?.role === 'admin';
   const [tab, setTab] = useState<MeetDialogTab>(initialTab);
   useEffect(() => { if (open) setTab(initialTab); }, [open, eventId, initialTab]);
@@ -49,7 +47,7 @@ export default function MeetAttendanceDialog({ eventId, open, onOpenChange, init
   const showTalk = tab === 'talk' || (talk !== null && (talk.state !== 'off' || isAdmin));
   const start = record?.start ?? talk?.start;
   const end = record?.end ?? talk?.end;
-  const title = record?.title ?? talk?.title ?? 'Lesson';
+  const title = record?.title ?? talk?.title ?? t('meet.dialog.lesson');
   // The lesson's recording, asked for on its own: this dialog also opens from the calendar, where no
   // list has said anything about it. The player takes the dialog's place and gives it back on close.
   const recording = useRecordingStatuses(eventId == null ? [] : [eventId], open)[String(eventId)];
@@ -60,25 +58,27 @@ export default function MeetAttendanceDialog({ eventId, open, onOpenChange, init
     <Dialog open={open && !watching} onOpenChange={onOpenChange}>
       <DialogContent className="flex max-h-[90vh] w-[calc(100vw-2rem)] max-w-4xl flex-col gap-0 overflow-hidden p-0">
         <DialogHeader className="flex-none space-y-1 border-b border-border px-6 pb-3 pt-4 text-left">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Lesson in Meet</div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{t('meet.dialog.eyebrow')}</div>
           <DialogTitle className="text-lg font-bold leading-snug">{title}</DialogTitle>
           <DialogDescription>
-            {start && end ? `${dateLabel(start)} · ${clock(start)}–${clock(end)} (Almaty)` : ' '}
+            {start && end
+              ? t('meet.dialog.when', { date: formatDate(start, { weekday: 'short', day: 'numeric', month: 'short' }, locale), from: clock(start), to: clock(end) })
+              : ' '}
           </DialogDescription>
           {lessonHref && pathname !== lessonHref && (
             <Link to={lessonHref} className="inline-flex w-fit items-center gap-1 text-xs font-semibold text-primary hover:underline">
-              Open lesson <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+              {t('meet.dialog.openLesson')} <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
             </Link>
           )}
           {recording?.status === 'ready' && (
-            <WatchRecordingButton label="Watch recording" durationSeconds={recording.duration_seconds}
+            <WatchRecordingButton label={t('meet.dialog.watchRecording')} durationSeconds={recording.duration_seconds}
               onWatch={() => setWatching(true)} className="w-fit" />
           )}
           {showTalk && (
             <Tabs value={tab} onValueChange={(v) => setTab(v as MeetDialogTab)} className="pt-2">
               <TabsList className="h-9">
-                <TabsTrigger value="attendance" className="text-[13px]">Attendance</TabsTrigger>
-                <TabsTrigger value="talk" className="text-[13px]">Talk time</TabsTrigger>
+                <TabsTrigger value="attendance" className="text-[13px]">{t('meet.dialog.attendance')}</TabsTrigger>
+                <TabsTrigger value="talk" className="text-[13px]">{t('meet.talkCard.title')}</TabsTrigger>
               </TabsList>
             </Tabs>
           )}
@@ -88,12 +88,12 @@ export default function MeetAttendanceDialog({ eventId, open, onOpenChange, init
             <>
               {loading && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Loading who joined…
+                  <Loader2 className="h-4 w-4 animate-spin" /> {t('meet.dialog.loadingRecord')}
                 </div>
               )}
-              {failed && <p className="text-sm text-rose-600 dark:text-rose-400">Couldn&apos;t load the record. Try again in a moment.</p>}
+              {failed && <p className="text-sm text-rose-600 dark:text-rose-400">{t('meet.dialog.recordFailed')}</p>}
               {!loading && !failed && record === null && eventId != null && (
-                <p className="text-sm text-muted-foreground">This lesson&apos;s record isn&apos;t available to you.</p>
+                <p className="text-sm text-muted-foreground">{t('meet.dialog.recordUnavailable')}</p>
               )}
               {!loading && record?.state === 'waiting' && record.waiting ? (
                 <MeetWaitingProgress waiting={record.waiting} sync={record.sync} />
@@ -109,12 +109,12 @@ export default function MeetAttendanceDialog({ eventId, open, onOpenChange, init
             <>
               {talkLoading && (
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Loading talk time…
+                  <Loader2 className="h-4 w-4 animate-spin" /> {t('meet.dialog.loadingTalk')}
                 </div>
               )}
-              {talkFailed && <p className="text-sm text-rose-600 dark:text-rose-400">Couldn&apos;t load the talk time. Try again in a moment.</p>}
+              {talkFailed && <p className="text-sm text-rose-600 dark:text-rose-400">{t('meet.dialog.talkFailed')}</p>}
               {!talkLoading && !talkFailed && talk === null && eventId != null && (
-                <p className="text-sm text-muted-foreground">This lesson&apos;s talk time isn&apos;t available to you.</p>
+                <p className="text-sm text-muted-foreground">{t('meet.dialog.talkUnavailable')}</p>
               )}
               {talk && <TalkPanel talk={talk} variant="full" showErrors={isAdmin} />}
             </>
@@ -128,7 +128,7 @@ export default function MeetAttendanceDialog({ eventId, open, onOpenChange, init
         : null}
       open={watching}
       onOpenChange={(next) => { if (!next) setWatching(false); }}
-      locale={recordingsLocale(user?.role)}
+      locale={locale}
     />
   </>);
 }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Loader2, Star } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { registerChanges, scoreEditable } from '../../lib/classLessonPage';
+import { t, type MessageKey } from '../../lib/i18n';
 import type { LessonView, RegisterStudent } from '../../services/api/classLessons';
 import { SessionLost } from '../api';
 import { lessons } from '../lessons';
@@ -10,13 +11,13 @@ import { useScoreSuggestions } from '../../lib/liveLesson/useSuggestions';
 import SuggestionBar from '../../components/live-lesson/SuggestionBar';
 
 const SCORES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-const MARK: Record<string, [string, string, string]> = {
-  attended: ['Был', 'Present', 'text-emerald-700 dark:text-emerald-300'],
-  late: ['Опоздал', 'Late', 'text-amber-700 dark:text-amber-300'],
-  missed: ['Не был', 'Absent', 'text-rose-700 dark:text-rose-300'],
-  registered: ['Не отмечено', 'Not marked', 'text-muted-foreground'],
-  cancelled: ['Отменён', 'Cancelled', 'text-muted-foreground'],
-  removed: ['Снят с урока', 'Taken off', 'text-muted-foreground'],
+const MARK: Record<string, [MessageKey, string]> = {
+  attended: ['classLesson.mark.attended', 'text-emerald-700 dark:text-emerald-300'],
+  late: ['classLesson.mark.late', 'text-amber-700 dark:text-amber-300'],
+  missed: ['classLesson.mark.missed', 'text-rose-700 dark:text-rose-300'],
+  registered: ['classLesson.mark.registered', 'text-muted-foreground'],
+  cancelled: ['classLesson.mark.cancelled', 'text-muted-foreground'],
+  removed: ['classLesson.mark.removed', 'text-muted-foreground'],
 };
 
 /**
@@ -25,8 +26,6 @@ const MARK: Record<string, [string, string, string]> = {
  * Marks are shown, not edited: Meet takes the register.
  */
 export default function ScoresCard({ view, onSaved }: { view: LessonView; onSaved: () => void }) {
-  const ru = view.viewer.locale === 'ru';
-  const t = (r: string, e: string) => (ru ? r : e);
   const [score, setScore] = useState<Map<number, number>>(new Map());
   const [picking, setPicking] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
@@ -58,25 +57,25 @@ export default function ScoresCard({ view, onSaved }: { view: LessonView; onSave
     setMessage(null);
     try {
       await lessons.saveScores(view.id, changes.scores);
-      setMessage({ ok: true, text: t('Сохранено', 'Saved') });
+      setMessage({ ok: true, text: t('classLesson.saved') });
       onSaved();
     } catch (e) {
-      setMessage({ ok: false, text: e instanceof SessionLost ? t('Войдите снова', 'Sign in again') : (e as Error).message || t('Не удалось сохранить', 'Could not save') });
+      setMessage({ ok: false, text: e instanceof SessionLost ? t('classLesson.panel.signInAgain') : (e as Error).message || t('classLesson.saveFailed') });
     } finally {
       setSaving(false);
     }
   };
 
   if (students.length === 0) {
-    return <p className="text-xs text-muted-foreground">{t('В группе нет учеников.', 'No students in this group.')}</p>;
+    return <p className="text-xs text-muted-foreground">{t('classLesson.register.noStudents')}</p>;
   }
   return (
     <div>
       {!canScore && (
         <p className="mb-2 text-[11px] text-muted-foreground">
           {view.status === 'upcoming'
-            ? t('Баллы ставятся с начала урока.', 'Scores open when the lesson starts.')
-            : t('Баллы ставит педагог, который ведёт урок.', 'Scores are given by the teacher of the lesson.')}
+            ? t('classLesson.panel.scoresFromStart')
+            : t('classLesson.panel.scoresByTeacher')}
         </p>
       )}
       {canScore && (
@@ -94,15 +93,15 @@ export default function ScoresCard({ view, onSaved }: { view: LessonView; onSave
               <div className="flex items-center gap-2">
                 <div className="min-w-0 flex-1">
                   <p className="flex items-center gap-1 truncate text-[13px] text-foreground">
-                    {score.has(s.user_id) && <span className="h-1.5 w-1.5 flex-none rounded-full bg-brand-solid" aria-label={t('Изменено', 'Changed')} />}
+                    {score.has(s.user_id) && <span className="h-1.5 w-1.5 flex-none rounded-full bg-brand-solid" aria-label={t('classLesson.register.changed')} />}
                     <span className="truncate">{s.name}</span>
                   </p>
-                  <p className={cn('text-[11px]', mark[2])}>
-                    {ru ? mark[0] : mark[1]}
-                    {s.state === 'frozen' && ` · ${t('Заморозка', 'Frozen')}`}
-                    {s.state === 'no_access' && ` · ${t('Нет доступа', 'No access')}`}
+                  <p className={cn('text-[11px]', mark[1])}>
+                    {t(mark[0])}
+                    {s.state === 'frozen' && ` · ${t('classLesson.register.frozen')}`}
+                    {s.state === 'no_access' && ` · ${t('classLesson.register.noAccess')}`}
                   </p>
-                  {suggested?.reason && <p className="truncate text-[11px] text-muted-foreground" title={suggested.reason}>{t('Предложено', 'Suggested')}: {suggested.reason}</p>}
+                  {suggested?.reason && <p className="truncate text-[11px] text-muted-foreground" title={suggested.reason}>{t('classLesson.panel.suggestedReason', { reason: suggested.reason })}</p>}
                 </div>
                 <button
                   type="button"
@@ -114,13 +113,13 @@ export default function ScoresCard({ view, onSaved }: { view: LessonView; onSave
                       : suggested ? 'border-dashed border-yellow-400 bg-yellow-50 dark:bg-yellow-500/15 text-muted-foreground' : 'border-border text-muted-foreground',
                     editable ? 'hover:bg-yellow-100 dark:hover:bg-yellow-500/20' : 'cursor-default',
                   )}
-                  aria-label={`${t('Балл за активность', 'Activity score')}: ${s.name}`}
+                  aria-label={t('classLesson.panel.scoreFor', { name: s.name })}
                 >
                   <Star className="h-3 w-3" aria-hidden />{value ?? suggested?.suggested ?? '—'}
                 </button>
               </div>
               {picking === s.user_id && editable && (
-                <div className="mt-1.5 grid grid-cols-6 gap-1" role="radiogroup" aria-label={t('Балл за активность', 'Activity score')}>
+                <div className="mt-1.5 grid grid-cols-6 gap-1" role="radiogroup" aria-label={t('classLesson.activityScore')}>
                   {SCORES.map((n) => (
                     <button
                       key={n}
@@ -149,7 +148,7 @@ export default function ScoresCard({ view, onSaved }: { view: LessonView; onSave
             className="inline-flex items-center gap-1.5 rounded-full bg-brand-solid px-3 py-1 text-xs font-semibold text-white transition hover:bg-brand-solid-hover disabled:cursor-not-allowed disabled:opacity-40"
           >
             {saving && <Loader2 className="h-3 w-3 animate-spin" />}
-            {t('Сохранить', 'Save')}{changes.scores.length ? ` (${changes.scores.length})` : ''}
+            {t('common.save')}{changes.scores.length ? ` (${changes.scores.length})` : ''}
           </button>
         </div>
       )}

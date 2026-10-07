@@ -7,7 +7,7 @@
 import type { Event } from '../types';
 import type { RecordingStatusEntry } from '../services/api/recordings';
 import { badgeText, pollInterval, progressFor } from './recordingProgress';
-import type { Locale } from './recordings';
+import { activeLocale, t, type Locale, type MessageKey } from './i18n';
 
 /** Who sees a recording that is not watchable yet — as in the library, students see only finished ones. */
 const STAFF = new Set(['admin', 'head_curator', 'head_teacher', 'teacher', 'curator']);
@@ -27,21 +27,12 @@ export interface RecordingMarkInfo {
   label: string;
 }
 
-const MARK_TEXT: Record<Locale, Record<RecordingMarkKind, string>> = {
-  en: {
-    ready: 'Recorded',
-    processing: 'Recording is being prepared',
-    waiting: 'Waiting for the recording',
-    failed: 'Recording could not be processed',
-    removed: 'Recording no longer available',
-  },
-  ru: {
-    ready: 'Есть запись',
-    processing: 'Запись готовится',
-    waiting: 'Ждём запись',
-    failed: 'Запись не обработалась',
-    removed: 'Запись больше недоступна',
-  },
+const MARK_TEXT: Record<RecordingMarkKind, MessageKey> = {
+  ready: 'recordings.mark.ready',
+  processing: 'recordings.mark.processing',
+  waiting: 'recordings.mark.waiting',
+  failed: 'recordings.mark.failed',
+  removed: 'recordings.mark.removed',
 };
 
 /**
@@ -52,17 +43,17 @@ export function recordingMark(
   event: Event,
   role: string | null | undefined,
   live?: RecordingStatusEntry | null,
-  locale: Locale = 'en',
+  locale: Locale = activeLocale(),
 ): RecordingMarkInfo | null {
   if (event.event_type !== 'class') return null;
   const staff = seesRecordingProgress(role);
   const status = live && staff ? live.status : event.recording?.status;
   if (!status || status === 'missing') return null;
-  if (status === 'ready') return { kind: 'ready', label: MARK_TEXT[locale].ready };
+  if (status === 'ready') return { kind: 'ready', label: t(MARK_TEXT.ready, undefined, locale) };
   if (!staff) return null;
   const kind: RecordingMarkKind = status === 'pending' ? 'processing' : status === 'waiting' ? 'waiting' : status;
   const progress = live?.progress ? progressFor(status, live.progress) : null;
-  return { kind, label: progress ? badgeText(progress, locale) : MARK_TEXT[locale][kind] };
+  return { kind, label: progress ? badgeText(progress, locale) : t(MARK_TEXT[kind], undefined, locale) };
 }
 
 /**

@@ -5,9 +5,9 @@ import { RecordingStatusCard } from '../recordings/RecordingProgress';
 import { useRecordingViewTracker } from '../recordings/useRecordingViewTracker';
 import { getLessonRecording, type LessonRecording } from '../../services/api/recordings';
 import type { Event } from '../../types';
-import { formatClock, recordingsLocale } from '../../lib/recordings';
+import { formatClock } from '../../lib/recordings';
+import { useLocale, useT } from '../../lib/i18n/react';
 import { pollInterval, progressFor } from '../../lib/recordingProgress';
-import { useAuth } from '../../contexts/AuthContext';
 
 interface Props {
   event: Event;
@@ -42,7 +42,8 @@ function hasFinished(event: Event): boolean {
  * anyone who merely clicked a lesson to check its time.
  */
 export default function LessonRecordingSection({ event }: Props) {
-  const { user } = useAuth();
+  const locale = useLocale();
+  const t = useT();
   const [recording, setRecording] = useState<LessonRecording | null>(null);
   const [loading, setLoading] = useState(false);
   const [watching, setWatching] = useState(false);
@@ -102,7 +103,7 @@ export default function LessonRecordingSection({ event }: Props) {
     return (
       <div className="mt-4 flex items-center gap-2.5 border-t border-border pt-4 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 flex-none animate-spin" />
-        <span>Checking for a recording…</span>
+        <span>{t('recordings.section.checking')}</span>
       </div>
     );
   }
@@ -112,7 +113,7 @@ export default function LessonRecordingSection({ event }: Props) {
   if (progress) {
     return (
       <div className="mt-4 border-t border-border pt-4">
-        <RecordingStatusCard progress={progress} locale={recordingsLocale(user?.role)} />
+        <RecordingStatusCard progress={progress} locale={locale} />
       </div>
     );
   }
@@ -122,7 +123,7 @@ export default function LessonRecordingSection({ event }: Props) {
       <div className="mt-4 border-t border-border pt-4">
         <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
           <Video className="h-4 w-4 flex-none text-muted-foreground/70" />
-          <span>The recording of this lesson is not available.</span>
+          <span>{t('recordings.section.unavailable')}</span>
         </div>
       </div>
     );
@@ -142,7 +143,7 @@ export default function LessonRecordingSection({ event }: Props) {
         <button
           type="button"
           onClick={() => setWatching(true)}
-          aria-label={`Watch the recording${clock ? `, ${clock}` : ''}`}
+          aria-label={clock ? t('recordings.section.watchWithLength', { length: clock }) : t('recordings.section.watch')}
           className="group relative block aspect-video w-full overflow-hidden rounded-lg bg-muted text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {poster ? (
@@ -158,7 +159,7 @@ export default function LessonRecordingSection({ event }: Props) {
               <Play className="ml-0.5 h-5 w-5 fill-slate-900 text-slate-900" />
             </span>
           </span>
-          <span className="absolute bottom-2.5 left-3 text-[13px] font-semibold text-white drop-shadow">Watch the recording</span>
+          <span className="absolute bottom-2.5 left-3 text-[13px] font-semibold text-white drop-shadow">{t('recordings.section.watch')}</span>
           {clock && (
             <span className="absolute bottom-2.5 right-3 rounded bg-black/70 px-1.5 py-0.5 text-[11px] font-semibold tabular-nums text-white">
               {clock}

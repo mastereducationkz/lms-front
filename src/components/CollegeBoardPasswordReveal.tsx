@@ -4,6 +4,8 @@ import { Copy, Eye, EyeOff, RotateCw } from 'lucide-react';
 import apiClient from '../services/api';
 import { cn } from '../lib/utils';
 import { collegeBoardPasswordDisplay } from '../lib/assignmentZeroCollegeBoard';
+import { t as translate, type Locale } from '../lib/i18n';
+import { useLocale } from '../lib/i18n/react';
 
 const HIDE_AFTER_MS = 60_000;
 
@@ -13,34 +15,19 @@ type RevealState =
   | { status: 'revealed'; value: string }
   | { status: 'error'; kind: 'forbidden' | 'not_found' | 'network' };
 
-const COPY = {
-  ru: {
-    show: 'Показать',
-    dash: '—',
-    copy: 'Скопировать',
-    copied: 'Пароль скопирован',
-    copyFailed: 'Не удалось скопировать',
-    hide: 'Скрыть',
-    forbidden: 'Нет доступа',
-    notFound: 'Пароль не указан',
-    network: 'Ошибка сети',
-    retry: 'Повторить',
-    loading: 'Загрузка…',
-  },
-  en: {
-    show: 'Show',
-    dash: '—',
-    copy: 'Copy',
-    copied: 'Password copied',
-    copyFailed: 'Failed to copy',
-    hide: 'Hide',
-    forbidden: 'Access denied',
-    notFound: 'No password set',
-    network: 'Network error',
-    retry: 'Retry',
-    loading: 'Loading…',
-  },
-} as const;
+const copyFor = (locale: Locale) => ({
+  show: translate('materials.collegeBoardPassword.show', undefined, locale),
+  dash: '—',
+  copy: translate('common.copy', undefined, locale),
+  copied: translate('materials.collegeBoardPassword.copied', undefined, locale),
+  copyFailed: translate('materials.collegeBoardPassword.copyFailed', undefined, locale),
+  hide: translate('materials.collegeBoardPassword.hide', undefined, locale),
+  forbidden: translate('materials.collegeBoardPassword.forbidden', undefined, locale),
+  notFound: translate('materials.collegeBoardPassword.notFound', undefined, locale),
+  network: translate('materials.collegeBoardPassword.network', undefined, locale),
+  retry: translate('materials.action.retry', undefined, locale),
+  loading: translate('common.loading', undefined, locale),
+});
 
 /**
  * Reveal-on-click for a student's College Board password (G9 a′, 2026-09-26).
@@ -64,20 +51,23 @@ const COPY = {
  * `collegeBoardPasswordDisplay` in `lib/assignmentZeroCollegeBoard` for the
  * three-way decision and `defaultCanReveal`'s role when the server omits the
  * flag.
+ *
+ * Speaks the viewer's language; `lang` pins it for a page that is in one language for everyone
+ * (the Russian student card).
  */
 export function CollegeBoardPasswordReveal({
   userId,
   hasPassword,
   canReveal,
   defaultCanReveal,
-  lang = 'ru',
+  lang,
   className,
 }: {
   userId: number;
   hasPassword: boolean;
   canReveal?: boolean;
   defaultCanReveal: boolean;
-  lang?: 'ru' | 'en';
+  lang?: Locale;
   className?: string;
 }) {
   const [state, setState] = useState<RevealState>({ status: 'hidden' });
@@ -86,7 +76,8 @@ export function CollegeBoardPasswordReveal({
   // (navigated away while the POST was in flight) must not call setState and
   // must not resurrect the plaintext into a state React will never render.
   const mountedRef = useRef(true);
-  const t = COPY[lang];
+  const viewerLocale = useLocale();
+  const t = copyFor(lang ?? viewerLocale);
 
   const clearHideTimer = () => {
     if (hideTimer.current) {

@@ -1,4 +1,5 @@
 import { APP_TIMEZONE } from './datetime';
+import { activeLocale, LOCALES, t, type Locale, type MessageKey } from './i18n';
 import { formatDurationWords } from './recordings';
 import type { LessonRecordingStatus } from '../services/api/recordings';
 import type {
@@ -100,20 +101,22 @@ export function flagTone(code: MeetFlagCode): FlagTone {
   return isMismatch(code) ? 'mismatch' : 'timing';
 }
 
-/** A flag in words, the way the lesson card and the review list both say it. */
-export function flagText(flag: MeetFlag): string {
-  const m = flag.minutes ?? 0;
-  switch (flag.code) {
-    case 'late': return `Late ${m} min`;
-    case 'left_early': return `Left ${m} min early`;
-    case 'marked_present_not_joined': return 'Marked present, never joined';
-    case 'marked_present_too_short': return `Marked present, in the lesson ${m} of ${flag.required ?? '?'} min`;
-    case 'marked_absent_was_in_room': return `Marked absent, in the lesson ${m} min`;
-    case 'teacher_late': return `Started ${m} min late`;
-    case 'ended_early': return `Ended ${m} min early`;
-    case 'teacher_not_joined': return 'Teacher never joined';
-    default: return flag.code;
-  }
+const FLAG_TEXT: Record<MeetFlagCode, MessageKey> = {
+  late: 'meet.flag.late',
+  left_early: 'meet.flag.leftEarly',
+  marked_present_not_joined: 'meet.flag.markedPresentNotJoined',
+  marked_present_too_short: 'meet.flag.markedPresentTooShort',
+  marked_absent_was_in_room: 'meet.flag.markedAbsentWasInRoom',
+  teacher_late: 'meet.flag.teacherLate',
+  ended_early: 'meet.flag.endedEarly',
+  teacher_not_joined: 'meet.flag.teacherNotJoined',
+};
+
+/** A flag in words, the way the lesson card, the review list and the accountants' pages all say it. */
+export function flagText(flag: MeetFlag, locale: Locale = activeLocale()): string {
+  const key = FLAG_TEXT[flag.code];
+  if (!key) return flag.code;
+  return t(key, { minutes: flag.minutes ?? 0, required: flag.required ?? '?' }, locale);
 }
 
 // ── reviewing a flag (owner, 2026-09-11) ─────────────────────────────────────────────────
@@ -123,7 +126,6 @@ const RECORD_READERS = new Set(['admin', 'head_curator', 'head_teacher', 'teache
 const TEACHER_FLAG_REVIEWERS = new Set(['admin', 'head_curator', 'head_teacher']);
 // The journal's own rule: curators read marks but never write them.
 const MARKERS = new Set(['admin', 'head_curator', 'head_teacher', 'teacher']);
-const OTHER_LABEL = 'Другое';
 
 export const isTeacherFlag = (code: MeetFlagCode) => TEACHER_FLAGS.has(code);
 
@@ -145,24 +147,15 @@ export function canFixMark(role: string | undefined, code: MeetFlagCode): boolea
 
 // ── Meet's verdict (owner, 2026-09-16) ───────────────────────────────────────────────────
 
-type VerdictLocale = 'en' | 'ru';
-
-const VERDICT_WORD: Record<VerdictLocale, Record<NonNullable<MeetVerdict['verdict']>, string>> = {
-  en: { present: 'Present', late: 'Late', absent: 'Absent' },
-  ru: { present: 'Был', late: 'Опоздал', absent: 'Не был' },
-};
-
 type VerdictFields = Pick<MeetVerdict, 'verdict' | 'minutes' | 'required' | 'late_minutes'> & Partial<Pick<MeetVerdict, 'provisional'>>;
 
-function verdictWords(value: NonNullable<MeetVerdict['verdict']>, v: VerdictFields, locale: VerdictLocale): string {
-  const ru = locale === 'ru';
-  const word = VERDICT_WORD[locale][value];
-  if (value === 'late') return ru ? `${word} на ${v.late_minutes} мин` : `${word} ${v.late_minutes} min`;
+function verdictWords(value: NonNullable<MeetVerdict['verdict']>, v: VerdictFields, locale: Locale): string {
+  if (value === 'late') return t('meet.verdict.late', { minutes: v.late_minutes }, locale);
   if (value === 'absent') {
-    if (v.minutes <= 0) return ru ? `${word} на уроке` : `${word} · not in the lesson`;
-    return ru ? `${word}: ${v.minutes} из ${v.required} мин` : `${word} · ${v.minutes} of ${v.required} min`;
+    if (v.minutes <= 0) return t('meet.verdict.notInLesson', undefined, locale);
+    return t('meet.verdict.absentFor', { minutes: v.minutes, required: v.required }, locale);
   }
-  return word;
+  return markLabel(value, locale);
 }
 
 /**
@@ -170,18 +163,16 @@ function verdictWords(value: NonNullable<MeetVerdict['verdict']>, v: VerdictFiel
  * verdict on the confirmed accounts with a «?» ("Late 9 min?"): a bare «not known yet» beside the
  * student's own confirmed account read as if that account were the unconfirmed one (2026-09-17).
  */
-export function verdictText(v: VerdictFields, locale: VerdictLocale = 'en'): string {
+export function verdictText(v: VerdictFields, locale: Locale = activeLocale()): string {
   if (v.verdict) return verdictWords(v.verdict, v, locale);
   if (v.provisional) return `${verdictWords(v.provisional, v, locale)}?`;
-  return locale === 'ru' ? 'Пока неизвестно' : 'Not known yet';
+  return t('meet.verdict.unknown', undefined, locale);
 }
 
 /** Why a held-back verdict may still change — for the hover; null when it is final. */
-export function verdictHint(v: Pick<MeetVerdict, 'held_back'>, locale: VerdictLocale = 'en'): string | null {
+export function verdictHint(v: Pick<MeetVerdict, 'held_back'>, locale: Locale = activeLocale()): string | null {
   if (!v.held_back) return null;
-  return locale === 'ru'
-    ? 'В комнате был ещё один неподтверждённый аккаунт. Если это тот же ученик с другого устройства (или преподаватель), вердикт может измениться — подтвердите аккаунт в «Who is this?».'
-    : 'Someone else in the room isn’t confirmed yet. If it’s this student on another device (or the teacher), this can change — name them under «Who is this?».';
+  return t('meet.verdict.heldBackHint', undefined, locale);
 }
 
 /** The mark and the verdict say different things — about attending, or only present versus late. */
@@ -191,26 +182,25 @@ export function verdictDiffers(mark: MeetMark | undefined, v: Pick<MeetVerdict, 
 }
 
 /** The rules in one line, for the pages' legends; null from a server without verdicts. */
-export function rulesText(rules: MeetVerdictRules | undefined, locale: VerdictLocale = 'en'): string | null {
+export function rulesText(rules: MeetVerdictRules | undefined, locale: Locale = activeLocale()): string | null {
   if (!rules) return null;
   const share = Math.round(rules.present_share * 100);
   const hour = Math.floor(60 * rules.present_share);
-  return locale === 'ru'
-    ? `Вердикт Meet: опоздание — позже ${rules.late_after_minutes} мин, «не был» — меньше ${share}% урока (${hour} из 60 мин); время — от прихода до ухода преподавателя.`
-    : `Meet’s verdict: late after ${rules.late_after_minutes} min, absent under ${share}% of the lesson (${hour} of 60 min), timed from when the teacher came to when the teacher left.`;
+  return t('meet.verdict.rules', { lateAfter: rules.late_after_minutes, share, hour }, locale);
 }
 
 /** "Meet: 12 present · 2 late · 1 absent · 3 not marked" for a list row; null without verdicts. */
-export function verdictLine(summary: MeetVerdictSummary | null | undefined): string | null {
+export function verdictLine(summary: MeetVerdictSummary | null | undefined, locale: Locale = activeLocale()): string | null {
   if (!summary) return null;
+  const count = (key: MessageKey, n: number) => (n ? t(key, { count: n }, locale) : null);
   const parts = [
-    summary.present && `${summary.present} present`,
-    summary.late && `${summary.late} late`,
-    summary.absent && `${summary.absent} absent`,
-    summary.held_back && `${summary.held_back} not known yet`,
+    count('meet.count.present', summary.present),
+    count('meet.count.late', summary.late),
+    count('meet.count.absent', summary.absent),
+    count('meet.count.notKnown', summary.held_back),
   ].filter(Boolean);
   if (!parts.length) return null;
-  const unmarked = summary.unmarked ? ` · ${summary.unmarked} not marked` : '';
+  const unmarked = summary.unmarked ? ` · ${t('meet.count.notMarked', { count: summary.unmarked }, locale)}` : '';
   return `Meet: ${parts.join(' · ')}${unmarked}`;
 }
 
@@ -221,33 +211,49 @@ export function verdictIndex(items: Pick<MeetLessonSummary, 'event_id' | 'verdic
   return index;
 }
 
-/** The reason in words: the preset, the comment, or — for «Другое» — just what was written. */
+/** The «Other» preset: its label says nothing, so only what was written for it is shown. */
+const isOtherLabel = (label: string | null | undefined) => LOCALES.some((l) => label === t('meet.reason.other', undefined, l));
+
+/** The reason in words: the preset, the comment, or — for «Other» — just what was written. */
 export function reasonText(review: MeetFlagReview | null | undefined): string | null {
   if (!review) return null;
-  const label = review.reason_code === 'other' || review.reason_label === OTHER_LABEL ? null : review.reason_label;
+  const label = review.reason_code === 'other' || isOtherLabel(review.reason_label) ? null : review.reason_label;
   return [label, review.text?.trim()].filter(Boolean).join(' — ') || null;
 }
 
-export const MARK_LABEL: Record<Exclude<MeetMark, null>, string> = {
-  present: 'Present',
-  late: 'Late',
-  absent: 'Absent',
-  removed: 'Removed',
+const MARK_KEY: Record<Exclude<MeetMark, null>, MessageKey> = {
+  present: 'meet.mark.present',
+  late: 'meet.mark.late',
+  absent: 'meet.mark.absent',
+  removed: 'meet.mark.removed',
+};
+
+/** A journal mark in words: "Present", «Был». */
+export function markLabel(mark: Exclude<MeetMark, null>, locale: Locale = activeLocale()): string {
+  return t(MARK_KEY[mark], undefined, locale);
+}
+
+/** The marks in the signed-in user's language, for code that reads them as a table. */
+export const MARK_LABEL: Readonly<Record<Exclude<MeetMark, null>, string>> = {
+  get present() { return markLabel('present'); },
+  get late() { return markLabel('late'); },
+  get absent() { return markLabel('absent'); },
+  get removed() { return markLabel('removed'); },
 };
 
 /** The review list's one-line reading of a lesson, most serious first; answered flags last. */
-export function lessonHeadline(item: Pick<MeetLessonSummary, 'mismatches' | 'unknown' | 'flags'>): string {
+export function lessonHeadline(item: Pick<MeetLessonSummary, 'mismatches' | 'unknown' | 'flags'>, locale: Locale = activeLocale()): string {
   const open = item.flags.filter((f) => !f.review);
   const parts: string[] = [];
   const disagree = open.filter((f) => isMismatch(f.code) && !isTeacherFlag(f.code)).length;
-  if (disagree) parts.push(`${disagree} mark${disagree === 1 ? '' : 's'} disagree`);
-  open.filter((f) => isTeacherFlag(f.code)).forEach((f) => parts.push(flagText(f)));
+  if (disagree) parts.push(t('meet.headline.disagree', { count: disagree }, locale));
+  open.filter((f) => isTeacherFlag(f.code)).forEach((f) => parts.push(flagText(f, locale)));
   const late = open.filter((f) => f.code === 'late').length;
-  if (late) parts.push(`${late} late`);
-  if (item.unknown) parts.push(`${item.unknown} to confirm`);
+  if (late) parts.push(t('meet.count.late', { count: late }, locale));
+  if (item.unknown) parts.push(t('meet.headline.toConfirm', { count: item.unknown }, locale));
   const reviewed = item.flags.length - open.length;
-  if (reviewed) parts.push(`${reviewed} reviewed`);
-  return parts.length ? parts.join(' · ') : 'All clear';
+  if (reviewed) parts.push(t('meet.headline.reviewed', { count: reviewed }, locale));
+  return parts.length ? parts.join(' · ') : t('meet.headline.allClear', undefined, locale);
 }
 
 /**
@@ -280,19 +286,25 @@ export type IssueKey =
   | 'silent_students'
   | 'overrides';
 
-/** The issues a head can filter by, in the order they matter for a report. */
-export const ISSUES: { key: IssueKey; label: string; hint: string }[] = [
-  { key: 'teacher_late', label: 'Teacher late', hint: 'The teacher joined more than 2 min after the start' },
-  { key: 'ended_early', label: 'Ended early', hint: 'The teacher left more than 5 min before the end' },
-  { key: 'teacher_not_joined', label: 'Teacher never joined', hint: 'No confirmed account of the teacher was in the room' },
-  { key: 'marks_disagree', label: 'Marks disagree', hint: 'Marked present but in under 75% of the lesson (or never joined), or marked absent but in for 75% or more' },
-  { key: 'students_late', label: 'Students late', hint: 'A student joined more than 5 min after the lesson began (the teacher’s start, when later)' },
-  { key: 'left_early', label: 'Students left early', hint: 'A student left more than 10 min before the lesson ended (the teacher’s end, when earlier)' },
-  { key: 'not_marked', label: 'Not marked', hint: 'Students the teacher hasn’t marked yet; Meet’s verdict can be applied in the lesson' },
-  { key: 'overrides', label: 'Changed after Meet', hint: 'A person changed a mark Meet had decided (with or without a reason)' },
-  { key: 'to_confirm', label: 'To confirm', hint: 'Google accounts nobody has named yet' },
+const issue = (key: IssueKey, label: MessageKey, hint: MessageKey) => ({
+  key,
+  get label() { return t(label); },
+  get hint() { return t(hint); },
+});
+
+/** The issues a head can filter by, in the order they matter for a report — in the signed-in user's language. */
+export const ISSUES: readonly { readonly key: IssueKey; readonly label: string; readonly hint: string }[] = [
+  issue('teacher_late', 'meet.issue.teacherLate', 'meet.issue.teacherLateHint'),
+  issue('ended_early', 'meet.issue.endedEarly', 'meet.issue.endedEarlyHint'),
+  issue('teacher_not_joined', 'meet.issue.teacherNotJoined', 'meet.issue.teacherNotJoinedHint'),
+  issue('marks_disagree', 'meet.issue.marksDisagree', 'meet.issue.marksDisagreeHint'),
+  issue('students_late', 'meet.issue.studentsLate', 'meet.issue.studentsLateHint'),
+  issue('left_early', 'meet.issue.leftEarly', 'meet.issue.leftEarlyHint'),
+  issue('not_marked', 'meet.issue.notMarked', 'meet.issue.notMarkedHint'),
+  issue('overrides', 'meet.issue.overrides', 'meet.issue.overridesHint'),
+  issue('to_confirm', 'meet.issue.toConfirm', 'meet.issue.toConfirmHint'),
   // A filter for reports only: a quiet test lesson is normal, so it never asks for attention.
-  { key: 'silent_students', label: 'Silent students', hint: 'A student was in the room and never spoke (talk time)' },
+  issue('silent_students', 'meet.issue.silentStudents', 'meet.issue.silentStudentsHint'),
 ];
 
 type Reportable = Pick<MeetLessonSummary, 'flags' | 'unknown' | 'mismatches'> & Partial<Pick<MeetLessonSummary, 'talk' | 'verdict_summary' | 'verdicts'>>;
@@ -404,10 +416,13 @@ function almatyDate(iso: string): string {
 
 const csvCell = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
 
-/** A flag for the spreadsheet: what happened and, once reviewed, the answer. */
+/**
+ * A flag for the spreadsheet: what happened and, once reviewed, the answer. The spreadsheet is
+ * English whoever downloads it — its columns are data people build formulas on.
+ */
 function flagCell(flag: MeetFlag): string {
-  if (!flag.review) return flagText(flag);
-  return `${flagText(flag)}; reviewed: ${reasonText(flag.review) ?? 'no reason given'}`;
+  if (!flag.review) return flagText(flag, 'en');
+  return `${flagText(flag, 'en')}; reviewed: ${reasonText(flag.review) ?? 'no reason given'}`;
 }
 
 const who = (item: MeetLessonSummary, ...codes: MeetFlagCode[]) =>
@@ -540,27 +555,4 @@ export function toParticipantsView(record: MeetRecord): ParticipantsView {
 export function classOrder(rows: ParticipantRow[]): ParticipantRow[] {
   const byName = (a: ParticipantRow, b: ParticipantRow) => a.name.localeCompare(b.name, 'ru', { sensitivity: 'base' });
   return [...rows.filter((r) => r.first_join).sort(byName), ...rows.filter((r) => !r.first_join).sort(byName)];
-}
-
-export const MARK_LABEL_RU: Record<Exclude<MeetMark, null>, string> = {
-  present: 'Был',
-  late: 'Опоздал',
-  absent: 'Не был',
-  removed: 'Снят с урока',
-};
-
-/** A flag in Russian, for pages read by accountants and curators. */
-export function flagTextRu(flag: MeetFlag): string {
-  const m = flag.minutes ?? 0;
-  switch (flag.code) {
-    case 'late': return `Опоздал на ${m} мин`;
-    case 'left_early': return `Ушёл на ${m} мин раньше`;
-    case 'marked_present_not_joined': return 'Отмечен, но не заходил';
-    case 'marked_present_too_short': return `Отмечен, но на уроке ${m} из ${flag.required ?? '?'} мин`;
-    case 'marked_absent_was_in_room': return `Отмечен «не был», но был на уроке ${m} мин`;
-    case 'teacher_late': return `Начал на ${m} мин позже`;
-    case 'ended_early': return `Закончил на ${m} мин раньше`;
-    case 'teacher_not_joined': return 'Преподаватель не заходил';
-    default: return flag.code;
-  }
 }
