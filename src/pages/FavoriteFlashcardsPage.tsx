@@ -4,12 +4,13 @@ import { getFavoriteFlashcards, removeFavoriteFlashcard } from '../services/api'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Heart, Trash2, BookOpen, Eye, EyeOff, Play, XCircle, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, BookOpen, Play, XCircle, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from '../components/Toast';
 import Loader from '../components/Loader';
-import type { FavoriteFlashcard, FlashcardItem } from '../types';
+import type { FavoriteFlashcard } from '../types';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 import FavoriteStepsList from '../components/favorites/FavoriteStepsList';
+import FlipFlashcard, { DifficultyBadge, LookupDetails, type SavedFlashcard } from '../components/favorites/FlipFlashcard';
 
 export default function FavoriteFlashcardsPage() {
   const [favorites, setFavorites] = useState<FavoriteFlashcard[]>([]);
@@ -61,21 +62,12 @@ export default function FavoriteFlashcardsPage() {
     setFlippedCards(newFlipped);
   };
 
-  const parseFlashcardData = (dataStr: string): FlashcardItem | null => {
+  const parseFlashcardData = (dataStr: string): SavedFlashcard | null => {
     try {
       return JSON.parse(dataStr);
     } catch (error) {
       console.error('Failed to parse flashcard data:', error);
       return null;
-    }
-  };
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'easy': return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-200';
-      case 'normal': return 'bg-brand-subtle text-brand-subtle-foreground';
-      case 'hard': return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200';
-      default: return 'bg-muted text-foreground';
     }
   };
 
@@ -173,9 +165,7 @@ export default function FavoriteFlashcardsPage() {
           onClick={!practiceFlipped ? handlePracticeFlip : undefined}
         >
           <CardContent className="p-12 flex flex-col justify-center items-center text-center">
-            <Badge className={`${getDifficultyColor(flashcard.difficulty)} mb-6`}>
-              {flashcard.difficulty}
-            </Badge>
+            <DifficultyBadge difficulty={flashcard.difficulty} className="mb-6" />
 
             {!practiceFlipped ? (
               // Question Side
@@ -210,9 +200,10 @@ export default function FavoriteFlashcardsPage() {
                     className="max-w-full max-h-48 object-contain rounded mb-6 mx-auto"
                   />
                 )}
-                <div className="text-3xl font-bold text-foreground mb-8 text-center">
+                <div className="text-3xl font-bold text-foreground text-center">
                   {flashcard.back_text}
                 </div>
+                <LookupDetails card={flashcard} clamp={false} className="max-w-xl text-left" />
                 
                 {/* Rating Buttons */}
                 <div className="flex gap-4 justify-center mt-8" onClick={(e) => e.stopPropagation()}>
@@ -333,91 +324,14 @@ export default function FavoriteFlashcardsPage() {
             const flashcard = parseFlashcardData(favorite.flashcard_data);
             if (!flashcard) return null;
 
-            const isFlipped = flippedCards.has(favorite.id);
-
             return (
-              <div key={favorite.id} className="relative">
-                <Card 
-                  className="h-64 cursor-pointer hover:shadow-xl transition-all duration-300 relative group"
-                  onClick={() => toggleFlip(favorite.id)}
-                >
-                  {/* Delete Button */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => handleRemoveFavorite(favorite.id, e)}
-                    className="absolute top-3 right-3 z-10 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-
-                  {/* Difficulty Badge */}
-                  <div className="absolute top-3 left-3 z-10">
-                    <Badge className={`${getDifficultyColor(flashcard.difficulty)} text-xs font-semibold`}>
-                      {flashcard.difficulty}
-                    </Badge>
-                  </div>
-
-                  {/* Card Content */}
-                  <CardContent className="p-8 flex flex-col justify-center items-center text-center h-full">
-                    {!isFlipped ? (
-                      // Front of card
-                      <div className="space-y-3 w-full flex flex-col justify-center flex-1">
-                        <div className="text-xs text-gray-400 dark:text-muted-foreground uppercase tracking-wider flex items-center justify-center gap-2 mb-2">
-                          <Eye className="h-3 w-3" />
-                          Question
-                        </div>
-                        {flashcard.front_image_url && (
-                          <img 
-                            src={flashcard.front_image_url} 
-                            alt="Front" 
-                            className="max-w-full max-h-24 object-contain rounded mb-2 mx-auto"
-                          />
-                        )}
-                        <div className="text-xl font-semibold text-foreground line-clamp-3 px-2">
-                          {flashcard.front_text}
-                        </div>
-                        <div className="text-xs text-gray-400 dark:text-muted-foreground mt-auto">Click to reveal</div>
-                      </div>
-                    ) : (
-                      // Back of card
-                      <div className="space-y-3 w-full flex flex-col justify-center flex-1">
-                        <div className="text-xs text-gray-400 dark:text-muted-foreground uppercase tracking-wider flex items-center justify-center gap-2 mb-2">
-                          <EyeOff className="h-3 w-3" />
-                          Answer
-                        </div>
-                        {flashcard.back_image_url && (
-                          <img 
-                            src={flashcard.back_image_url} 
-                            alt="Back" 
-                            className="max-w-full max-h-24 object-contain rounded mb-2 mx-auto"
-                          />
-                        )}
-                        <div className="text-xl font-semibold text-foreground line-clamp-3 px-2">
-                          {flashcard.back_text}
-                        </div>
-                        <div className="text-xs text-gray-400 dark:text-muted-foreground mt-auto">Click to flip back</div>
-                      </div>
-                    )}
-
-                    {/* Tags */}
-                    {flashcard.tags && flashcard.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 justify-center mt-3">
-                        {flashcard.tags.slice(0, 2).map((tag) => (
-                          <Badge key={tag} variant="outline" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                        {flashcard.tags.length > 2 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{flashcard.tags.length - 2}
-                          </Badge>
-                        )}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
+              <FlipFlashcard
+                key={favorite.id}
+                card={flashcard}
+                flipped={flippedCards.has(favorite.id)}
+                onFlip={() => toggleFlip(favorite.id)}
+                onRemove={(e) => handleRemoveFavorite(favorite.id, e)}
+              />
             );
           })}
         </div>

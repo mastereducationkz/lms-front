@@ -7,7 +7,7 @@ import CourseCard from '../components/courses/CourseCard';
 import Skeleton from '../components/Skeleton.tsx';
 import apiClient from "../services/api";
 import type { Course } from '../types';
-import { Target, CheckCircle, Play, Eye, Search, Users } from 'lucide-react';
+import { CheckCircle, Play, Eye, Search, Users } from 'lucide-react';
 import { Input } from '../components/ui/input';
 import { mediaUrl } from '../lib/mediaUrl';
 import {
@@ -212,8 +212,9 @@ export default function CoursesPage() {
                 ? (course.progress === 100 ? 'Course completed' : 'Continue learning')
                 : (ru ? 'Открыть курс' : 'View course')}
               actionIcon={user?.role === 'student'
-                ? (course.progress === 100 ? <CheckCircle className="w-4 h-4 mr-2" /> : <Target className="w-4 h-4 mr-2" />)
+                ? (course.progress === 100 ? <CheckCircle className="w-4 h-4 mr-2" /> : undefined)
                 : <Play className="w-4 h-4 mr-2" />}
+              actionArrow={user?.role === 'student' && course.progress !== 100}
               actionVariant={user?.role === 'student' && course.progress === 100 ? 'outline' : 'default'}
               onOpen={() => navigate(`/course/${course.id}`)}
             />

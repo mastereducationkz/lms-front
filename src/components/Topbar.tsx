@@ -76,10 +76,17 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
       </div>
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         {/* <WhatsNewButton userRole={user?.role} /> */}
-        {user?.role === 'student' && <PointsDisplay />}
-
+        {/* A student's progress (stars, streak) sits together, apart from the app controls. */}
+        {user?.role === 'student' && (
+          <>
+            <div className="flex items-center gap-2">
+              <PointsDisplay />
+              <StreakIcon />
+            </div>
+            <span aria-hidden className="hidden h-6 w-px bg-border sm:block" />
+          </>
+        )}
         {user?.role !== 'parent' && <NotificationsBell />}
-        <StreakIcon />
         <ThemeMenu />
         <button className="lg:hidden w-10 h-10 rounded-lg bg-card border flex items-center justify-center text-gray-700 dark:text-foreground" onClick={onOpenSidebar} aria-label="Open menu" data-tour="mobile-menu"><Menu className="w-5 h-5" aria-hidden="true" /></button>
       </div>

@@ -1,39 +1,47 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import { DailyStreakInfo } from '../types';
 import { getDailyStreak } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { ShineBorder } from './magicui/shine-border';
-import { Flame, HeartCrack, Target, TriangleAlert, type LucideIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import './StreakIcon.css';
+
+type FlameState = 'lit' | 'flicker' | 'out';
+
+/**
+ * The streak's flame. With a count it perches on the square's top-right corner: lively while
+ * the streak is active, burning low and slow while it is at risk, static grey once it is out.
+ * With no count (streak 0) it stands unlit in the middle of the square. prefers-reduced-motion
+ * keeps it still. Two layers (body + core) flicker on their own clocks; whole-element
+ * transforms keep the animation on the compositor.
+ */
+function StreakFlame({ state, solo }: { state: FlameState; solo: boolean }) {
+  return (
+    <span aria-hidden="true" className={`streak-flame streak-flame--${state}${solo ? ' streak-flame--solo' : ''}`}>
+      <svg viewBox="0 0 24 24" className="streak-flame__body">
+        <path d="M12 1.6c.6 3.1 2.8 5 4.7 7 1.9 2 2.9 4.2 2.9 6.6 0 4.2-3.4 7.4-7.6 7.4s-7.6-3.2-7.6-7.4c0-2.5 1.1-4.5 2.8-5.8.1 1.7.8 2.9 1.9 3.5-.2-4 1-8 2.9-11.3z" />
+      </svg>
+      {!solo && (
+        <svg viewBox="0 0 24 24" className="streak-flame__core">
+          <path d="M12.3 11.4c.6 2 2.3 3.2 2.9 5.2.7 2.3-.6 4.6-3.2 4.6-2.4 0-3.6-1.7-3.3-3.6.2-1.3 1.1-2.2 1.8-2.9.3.8.7 1.3 1.2 1.5-.2-1.7 0-3.3.6-4.8z" />
+        </svg>
+      )}
+    </span>
+  );
+}
 
 const StreakIcon: React.FC = () => {
   const { user } = useAuth();
   const [streakData, setStreakData] = useState<DailyStreakInfo | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
-  const popoverRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
 
   useEffect(() => {
     if (user?.role === 'student') {
       loadStreakData();
     }
   }, [user]);
-
-  // Close calendar when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
-        setShowCalendar(false);
-      }
-    };
-
-    if (showCalendar) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showCalendar]);
 
   const loadStreakData = async () => {
     try {
@@ -77,16 +85,14 @@ const StreakIcon: React.FC = () => {
     }
   };
 
-  const getStreakIcon = (): LucideIcon => {
+  const getFlameState = (): FlameState => {
     switch (streakData?.streak_status) {
       case 'active':
-        return Flame;
+        return 'lit';
       case 'at_risk':
-        return TriangleAlert;
-      case 'broken':
-        return HeartCrack;
+        return 'flicker';
       default:
-        return Target;
+        return 'out';
     }
   };
 
@@ -176,30 +182,40 @@ const StreakIcon: React.FC = () => {
   }
 
   const { days, monthName } = generateCalendarDays();
-  const StatusIcon = getStreakIcon();
+  const flame = getFlameState();
+  const hasCount = streakData.daily_streak > 0;
 
   return (
-    <div className="relative" ref={popoverRef} data-tour="streak-display">
-      <button
-        type="button"
-        className={`relative overflow-hidden w-10 h-10 rounded-lg flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105 ${getStreakColor()}`}
-        onClick={() => setShowCalendar(!showCalendar)}
-        aria-label={getTooltipText()}
-        aria-expanded={showCalendar}
-      >
-        <ShineBorder shineColor={getShineColor()} />
-        {streakData.daily_streak > 0 ? (
-          <span className="relative z-10 text-2xl font-bold">{streakData.daily_streak}</span>
-        ) : (
-          <StatusIcon className="relative z-10 h-5 w-5" aria-hidden="true" />
-        )}
-      </button>
-      
-      {/* Calendar Popover */}
-      {showCalendar && (
-        <div className="absolute top-full right-0 mt-2 bg-popover rounded-lg shadow-xl border border-border p-4 z-50 w-72">
+    <div className="relative" data-tour="streak-display">
+      <Popover open={showCalendar} onOpenChange={setShowCalendar}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className={`relative overflow-hidden w-10 h-10 rounded-lg flex items-center justify-center cursor-pointer transition-all duration-200 hover:scale-105 motion-reduce:hover:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${getStreakColor()}`}
+            aria-label={getTooltipText()}
+          >
+            <ShineBorder shineColor={getShineColor()} className="motion-reduce:!animate-none" />
+            {hasCount ? (
+              <span className="relative z-10 text-2xl font-bold tabular-nums">{streakData.daily_streak}</span>
+            ) : (
+              <StreakFlame state={flame} solo />
+            )}
+          </button>
+        </PopoverTrigger>
+        {hasCount && <StreakFlame state={flame} solo={false} />}
+
+        {/* Portalled to <body> (Radix): the Topbar's sticky z-10 layer no longer caps it, so later
+            z-10 blocks and the countdown's 3D flip tiles can't paint over the calendar, and
+            collision padding keeps it on screen at every width. */}
+        <PopoverContent
+          align="end"
+          sideOffset={8}
+          collisionPadding={8}
+          aria-labelledby={titleId}
+          className="w-[min(18rem,calc(100vw-1rem))] rounded-lg p-4 shadow-xl"
+        >
           <div className="text-center mb-3">
-            <h3 className="font-semibold text-foreground">{monthName}</h3>
+            <h3 id={titleId} className="font-semibold text-foreground">{monthName}</h3>
             <p className="text-sm text-muted-foreground mt-1">{getTooltipText()}</p>
             {typeof streakData.longest_streak === 'number' && streakData.longest_streak > 0 && (
               <p className="text-xs font-medium text-orange-600 dark:text-orange-400 mt-1">
@@ -259,8 +275,8 @@ const StreakIcon: React.FC = () => {
               <span className="text-muted-foreground">Today</span>
             </div>
           </div>
-        </div>
-      )}
+        </PopoverContent>
+      </Popover>
     </div>
   );
 };
