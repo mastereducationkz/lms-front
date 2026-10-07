@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { CalendarPlus, Copy, Loader2, RefreshCw } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { CalendarPlus, Info, Loader2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '../ui/button';
 import {
@@ -12,14 +12,19 @@ import {
 import {
   getCalendarSubscriptions, rotatePersonalFeed, type CalendarSubscriptions,
 } from '../../services/api/calendarFeeds';
-import { canAddToGoogle, sortGroupCalendars, webcalUrl } from '../../lib/calendarFeeds';
+import { sortGroupCalendars, webcalUrl } from '../../lib/calendarFeeds';
+import { inAppBrowser } from '../../lib/calendarApps';
+import type { PlatformEnv } from '../../lib/pwaPlatform';
+import AddToCalendar from './AddToCalendar';
 import { useT } from '../../lib/i18n/react';
 import '@/lib/i18n/catalogs/calendar';
 
 /**
- * «Подписаться» on the Calendar page: add a group's calendar to Google (a real Google Calendar
- * the LMS keeps in sync, so changes show up at once), or subscribe from Apple Calendar / Outlook
- * with the ICS link, or take a personal feed of all one's own lessons and deadlines.
+ * «Подписаться» on the Calendar page (and Settings → Calendar): each group calendar and the
+ * personal feed of one's own lessons and deadlines, with a one-tap button for the device's
+ * calendar app (owner, 2026-10-07; lib/calendarApps), the other apps in a menu, and "Copy link".
+ * A group's real Google Calendar (kept in sync, so changes show at once) is the Google option
+ * where the LMS has made one.
  */
 export default function SubscribeDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const [data, setData] = useState<CalendarSubscriptions | null>(null);
@@ -28,6 +33,12 @@ export default function SubscribeDialog({ open, onOpenChange }: { open: boolean;
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
   const t = useT();
+  const env = useMemo<PlatformEnv>(() => ({
+    userAgent: navigator.userAgent,
+    maxTouchPoints: navigator.maxTouchPoints,
+    telegramWebview: 'TelegramWebviewProxy' in window,
+  }), []);
+  const inApp = inAppBrowser(env);
 
   useEffect(() => {
     if (!open) return;
@@ -41,8 +52,9 @@ export default function SubscribeDialog({ open, onOpenChange }: { open: boolean;
     return () => { cancelled = true; };
   }, [open]);
 
-  const copy = (url: string) => {
-    navigator.clipboard.writeText(webcalUrl(url)).then(
+  // Copies the subscribe (webcal) form of an https feed, as before; never builds one from http.
+  const copy = (icsUrl: string) => {
+    navigator.clipboard.writeText(webcalUrl(icsUrl) ?? icsUrl).then(
       () => toast.success(t('calendar.subscribe.copied'), { description: t('calendar.subscribe.copiedHint') }),
       () => toast.error(t('calendar.subscribe.copyFailed')),
     );
@@ -90,27 +102,23 @@ export default function SubscribeDialog({ open, onOpenChange }: { open: boolean;
 
             {data && !loading && (
               <div className="space-y-5">
+                {inApp.inApp && (
+                  <p className="flex items-start gap-2 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+                    <Info className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                    {inApp.appName ? t('calendar.subscribe.inApp', { app: inApp.appName }) : t('calendar.subscribe.inAppGeneric')}
+                  </p>
+                )}
                 <section className="space-y-2">
                   <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('calendar.subscribe.groupCalendars')}</h3>
                   {groups.length === 0 && <p className="text-sm text-muted-foreground">{t('calendar.subscribe.noGroups')}</p>}
                   {groups.map((row) => (
                     <div key={row.group_id} className="rounded-xl border border-border p-3">
-                      <div className="text-sm font-medium">{row.group_name}</div>
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        {canAddToGoogle(row) ? (
-                          <Button size="sm" asChild>
-                            <a href={row.google_url ?? undefined} target="_blank" rel="noopener noreferrer">
-                              {t('calendar.subscribe.addToGoogle')}
-                            </a>
-                          </Button>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">{t('calendar.subscribe.googlePending')}</span>
-                        )}
-                        <Button size="sm" variant="outline" onClick={() => copy(row.webcal_url || row.ics_url)}>
-                          <Copy className="mr-1.5 h-3.5 w-3.5" />
-                          Apple / Outlook
-                        </Button>
-                      </div>
+                      <div className="mb-2 text-sm font-medium">{row.group_name}</div>
+                      <AddToCalendar
+                        source={{ icsUrl: row.ics_url, name: row.group_name, googleUrl: row.google_url }}
+                        env={env}
+                        onCopy={() => copy(row.ics_url)}
+                      />
                     </div>
                   ))}
                 </section>
@@ -120,16 +128,16 @@ export default function SubscribeDialog({ open, onOpenChange }: { open: boolean;
                   <p className="text-sm text-muted-foreground">
                     {t('calendar.subscribe.myCalendarHint')}
                   </p>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button size="sm" variant="outline" onClick={() => copy(data.personal.webcal_url || data.personal.ics_url)}>
-                      <Copy className="mr-1.5 h-3.5 w-3.5" />
-                      {t('calendar.subscribe.copyLink')}
-                    </Button>
+                  <AddToCalendar
+                    source={{ icsUrl: data.personal.ics_url, name: t('calendar.subscribe.personalName') }}
+                    env={env}
+                    onCopy={() => copy(data.personal.ics_url)}
+                  >
                     <Button size="sm" variant="ghost" onClick={() => setConfirmReset(true)} disabled={resetting}>
                       <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                       {t('calendar.subscribe.resetLink')}
                     </Button>
-                  </div>
+                  </AddToCalendar>
                 </section>
               </div>
             )}

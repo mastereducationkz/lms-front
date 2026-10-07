@@ -1,8 +1,12 @@
 import type { GroupCalendarLink } from '../services/api/calendarFeeds';
 
-/** `webcal://` makes Apple Calendar and Outlook offer "subscribe" instead of downloading a file. */
-export function webcalUrl(url: string): string {
-  return url.replace(/^https?:\/\//i, 'webcal://');
+/**
+ * `webcal://` makes Apple Calendar and Outlook offer "subscribe" instead of downloading a file.
+ * Built only from an https feed: a webcal link to a plain-http feed would send the feed's secret
+ * (personal token, group signature) over the wire in the clear, so http gives null.
+ */
+export function webcalUrl(url: string): string | null {
+  return /^https:\/\//i.test(url) ? `webcal://${url.slice('https://'.length)}` : null;
 }
 
 /** The "Add to Google Calendar" link is offered only for a real, shared Google Calendar. */

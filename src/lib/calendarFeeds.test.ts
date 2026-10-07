@@ -7,8 +7,10 @@ describe('webcalUrl', () => {
       .toBe('webcal://lmsapi.mastereducation.kz/calendar/feeds/group/1-abc.ics');
   });
 
-  it('leaves an already-webcal link alone', () => {
-    expect(webcalUrl('webcal://host/feed.ics')).toBe('webcal://host/feed.ics');
+  it('never builds one from a plain-http (or any other) feed', () => {
+    expect(webcalUrl('http://localhost:8000/calendar/feeds/me/token.ics')).toBeNull();
+    expect(webcalUrl('webcal://host/feed.ics')).toBeNull();
+    expect(webcalUrl('')).toBeNull();
   });
 });
 
