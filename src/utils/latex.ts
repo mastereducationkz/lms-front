@@ -1,4 +1,5 @@
 import katex from 'katex';
+import { decodeMathEntities, escapeLtInMath } from '../lib/mathText';
 // CSS is imported in main.tsx
 
 export interface LatexMatch {
@@ -65,15 +66,18 @@ export function findLatexFormulas(text: string): LatexMatch[] {
       continue;
     }
     
+    // The checks below read the maths as typed: "<" may arrive as &lt; (escapeLtInMath, the editor).
+    const plain = decodeMathEntities(content);
+
     // Skip if content is too long (> 200 chars) - likely not real LaTeX
-    if (content.length > 200) {
+    if (plain.length > 200) {
       continue;
     }
     
     // Skip if content starts with a number followed by space (currency like "$24 coming to me"),
     // but NOT when it contains actual math — e.g. "12 + 11\sqrt{2}" or "2 + 19" are real formulas,
     // not currency. Only bail out when there's no LaTeX command, operator or math syntax.
-    if (/^\d+\s/.test(content) && !/[\\+\-=^_{}<>]|\b(sqrt|frac|times|cdot|div|sum|int|pi)\b/.test(content)) {
+    if (/^\d+\s/.test(plain) && !/[\\+\-=^_{}<>]|\b(sqrt|frac|times|cdot|div|sum|int|pi)\b/.test(plain)) {
       continue;
     }
     
@@ -102,7 +106,8 @@ export function renderLatex(latex: string, displayMode: boolean = false): string
     });
   } catch (error) {
     console.error('LaTeX rendering error:', error);
-    return `<span style="color: #cc0000;">LaTeX Error: ${latex}</span>`;
+    const shown = latex.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return `<span style="color: #cc0000;">LaTeX Error: ${shown}</span>`;
   }
 }
 
@@ -227,7 +232,8 @@ export function renderTextWithLatex(text: string): string {
   }
   
   // 1. Сначала автоматически оборачиваем LaTeX команды (если они не обернуты)
-  const wrappedText = autoWrapLatex(text);
+  // Then hide each "<" inside a formula from the HTML parser ("$0<x<c$" would become a fake tag).
+  const wrappedText = escapeLtInMath(autoWrapLatex(text));
   
   // 2. Находим все LaTeX формулы
   const matches = findLatexFormulas(wrappedText);
@@ -258,7 +264,7 @@ export function renderTextWithLatex(text: string): string {
     result += `${latexPlaceholder}${i}${latexPlaceholder}`;
     
     // Рендерим формулу и сохраняем
-    formulas.push(renderLatex(match.latex, match.type === 'block'));
+    formulas.push(renderLatex(decodeMathEntities(match.latex), match.type === 'block'));
     
     lastIndex = match.end;
   }
