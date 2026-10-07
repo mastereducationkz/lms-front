@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import { connectSocket } from '../services/socket';
 import { Badge } from './ui/badge';
 import { Link } from 'react-router-dom';
-import { Bell, Sun, Moon, Menu } from 'lucide-react';
-import { useTheme } from 'next-themes';
+import { Menu } from 'lucide-react';
+import ThemeMenu from './ThemeMenu';
 import StreakIcon from './StreakIcon';
 import { WhatsNewButton } from './PlatformUpdatesModal';
 import PointsDisplay from './gamification/PointsDisplay';
@@ -16,7 +16,6 @@ interface TopbarProps {
 
 export default function Topbar({ onOpenSidebar }: TopbarProps) {
   const { user, logout } = useAuth();
-  const { theme, setTheme } = useTheme();
   const [unreadCount, setUnreadCount] = useState(0);
   // Sticky page headers (the lesson page's) sit just below this bar: publish its height.
   const bar = useRef<HTMLDivElement>(null);
@@ -81,13 +80,7 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
 
         {user?.role !== 'parent' && <NotificationsBell />}
         <StreakIcon />
-        <button
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="w-9 h-9 rounded-lg bg-card border flex items-center justify-center text-muted-foreground hover:bg-muted dark:hover:text-foreground transition-colors"
-          aria-label="Toggle theme"
-        >
-          {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-        </button>
+        <ThemeMenu />
         <button className="lg:hidden w-10 h-10 rounded-lg bg-card border flex items-center justify-center text-gray-700 dark:text-foreground" onClick={onOpenSidebar} aria-label="Open menu" data-tour="mobile-menu"><Menu className="w-5 h-5" aria-hidden="true" /></button>
       </div>
     </div>

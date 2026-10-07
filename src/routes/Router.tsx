@@ -5,6 +5,7 @@ import { applyPendingPwaUpdate } from '../services/pwa';
 import { AuthProvider } from '../contexts/AuthContext.tsx';
 import { SettingsProvider } from '../contexts/SettingsContext';
 import { ThemeProvider } from '../components/ThemeProvider.tsx';
+import { THEME_PROVIDER_PROPS } from '../lib/theme';
 import { Toaster } from '../components/Toast';
 import OnboardingManager from '../components/OnboardingManager.tsx';
 import ProtectedRoute from '../components/ProtectedRoute.tsx';
@@ -125,7 +126,7 @@ export default function Router() {
   return (
     <BrowserRouter>
       <PwaUpdateOnNavigate />
-      <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+      <ThemeProvider {...THEME_PROVIDER_PROPS}>
         <Toaster />
         <AuthProvider>
           <SettingsProvider>

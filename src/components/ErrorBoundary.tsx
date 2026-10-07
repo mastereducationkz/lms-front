@@ -1,6 +1,7 @@
 import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { reportError } from '../lib/sentry';
+import { isDarkChoice } from '../lib/theme';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -37,7 +38,9 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
     const componentStack = info?.componentStack ?? '';
     // This screen renders outside the ThemeProvider: keep the reader's theme on it.
     try {
-      if (window.localStorage.getItem('theme') === 'dark') document.documentElement.classList.add('dark');
+      if (isDarkChoice(window.localStorage.getItem('theme'), window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false)) {
+        document.documentElement.classList.add('dark');
+      }
     } catch {
       /* storage blocked: light screen */
     }
