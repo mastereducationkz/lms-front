@@ -131,6 +131,7 @@ export const attendance = {
   'attendance.hw.notSubmitted': 'Not\nsubmitted',
   'attendance.hw.missing': 'Missing',
   'attendance.exam.notTaken': 'Not taken',
+  'attendance.exam.scaledScore': 'Scaled score',
   'attendance.exam.mathTitle': 'Click to see Math feedback',
   'attendance.exam.verbalTitle': 'Click to see Verbal feedback',
   'attendance.exam.ieltsTitle': 'Click to see IELTS results and feedback',
