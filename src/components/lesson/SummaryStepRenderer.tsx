@@ -11,6 +11,7 @@ import {
   TableRow,
 } from '../ui/table';
 import apiClient from '../../services/api';
+import { formatDate } from '../../lib/i18n';
 import type { LessonQuizSummary } from '../../types';
 
 interface SummaryStepRendererProps {
@@ -199,7 +200,7 @@ const SummaryStepRenderer = ({ lessonId, onLoad }: SummaryStepRendererProps) => 
                         <TableCell className="text-right hidden sm:table-cell">
                           {attempt ? (
                             <span className="text-sm text-muted-foreground">
-                              {new Date(attempt.completed_at).toLocaleDateString()}
+                              {formatDate(attempt.completed_at)}
                             </span>
                           ) : (
                             <span className="text-muted-foreground">—</span>

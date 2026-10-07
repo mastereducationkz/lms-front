@@ -10,6 +10,7 @@ import { getMySubstitutions, getEventParticipants, updateEventAttendance } from 
 import { SubstitutionLesson, EventStudent } from '../types';
 import { isAttendanceLockedLesson } from '../lib/attendance';
 import { parseAsUTC } from '../lib/datetime';
+import { formatDateTime as formatLocalDateTime } from '../lib/i18n';
 import { cn } from '../lib/utils';
 import { canBeExcused, excusePayload, isAbsenceStatus } from '../lib/excusedAbsence';
 import { ExcusePopover } from '../components/attendance/ExcusePopover';
@@ -48,10 +49,8 @@ function statusLabel(status: string, excused = false) {
 }
 
 function formatDateTime(iso: string) {
-  const dt = parseAsUTC(iso);
-  return dt.toLocaleString('ru-RU', {
+  return formatLocalDateTime(parseAsUTC(iso), {
     day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
-    timeZone: 'Asia/Almaty',
   });
 }
 
@@ -411,11 +410,6 @@ export default function SubstitutionAttendancePanel() {
                               onSave={(note) => { handleExcuseChange(s.student_id, true, note); setExcusePopoverFor(null); }}
                               onClear={() => { handleExcuseChange(s.student_id, false, null); setExcusePopoverFor(null); }}
                               onClose={() => setExcusePopoverFor(null)}
-                              // This panel is English throughout — «Present», «Absent»,
-                              // «Mark attendance», «Save» — because it is the substitute
-                              // teachers' screen. Without this the reason form would be the
-                              // one Russian island on it.
-                              en
                             />
                           )}
                         </div>

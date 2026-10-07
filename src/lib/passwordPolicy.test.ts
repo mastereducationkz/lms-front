@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, passwordPolicyError } from './passwordPolicy';
+import { afterEach, describe, expect, it } from 'vitest';
+import { setActiveLocale } from './i18n';
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH, passwordHint, passwordPolicyError } from './passwordPolicy';
 
 describe('passwordPolicyError', () => {
   it('accepts 8+ characters with a digit', () => {
@@ -23,5 +24,20 @@ describe('passwordPolicyError', () => {
   it('rejects whitespace-only and digit-free passwords', () => {
     expect(passwordPolicyError('          ')).toMatch(/only spaces/);
     expect(passwordPolicyError('abcdefghij')).toMatch(/digit/);
+  });
+
+  describe('in the reader\'s UI language', () => {
+    afterEach(() => setActiveLocale('en'));
+
+    it('speaks Russian to curators, with the same words as the server', () => {
+      setActiveLocale('ru');
+      expect(passwordPolicyError('abc123')).toMatch(/не короче 8/);
+      expect(passwordPolicyError('a1'.padEnd(PASSWORD_MAX_LENGTH + 1, 'x'))).toMatch(/128/);
+      expect(passwordHint()).toMatch(/8/);
+    });
+
+    it('hints the real minimum, not the old 6', () => {
+      expect(passwordHint()).toBe('At least 8 characters, including a digit');
+    });
   });
 });

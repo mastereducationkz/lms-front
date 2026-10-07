@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   canEditCourseContent, canManageCourseAccess, filterCatalog, isReadOnlyCourseViewer, isStaffPreview,
-  seesCorrectAnswers, sortStaffCatalog, usesRussianUi,
+  seesCorrectAnswers, sortStaffCatalog,
 } from './courseAccess';
 
 const ROLES = ['student', 'parent', 'curator', 'head_curator', 'teacher', 'head_teacher', 'admin'];
@@ -29,10 +29,6 @@ describe('course content roles', () => {
 
   it('only admins manage access and delete courses', () => {
     expect(ROLES.filter(canManageCourseAccess)).toEqual(['admin']);
-  });
-
-  it('curator roles get Russian copy', () => {
-    expect(ROLES.filter(usesRussianUi)).toEqual(['curator', 'head_curator']);
   });
 });
 

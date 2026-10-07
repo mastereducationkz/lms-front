@@ -9,6 +9,8 @@ import CourseCard from './CourseCard.tsx';
 import apiClient from '../services/api';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import type { CourseType } from '../types';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/adminTools';
 
 interface CreateCourseModalProps {
   open: boolean;
@@ -19,6 +21,7 @@ interface CreateCourseModalProps {
 export default function CreateCourseModal({ open, onClose, onCreated }: CreateCourseModalProps) {
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
+  const tr = useT();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -152,7 +155,7 @@ export default function CreateCourseModal({ open, onClose, onCreated }: CreateCo
           </div>
 
           <div>
-            <Label className="mb-2 block">Тип курса</Label>
+            <Label className="mb-2 block">{tr('adminTools.course.type')}</Label>
             <Select value={courseType} onValueChange={(v) => setCourseType(v as CourseType)}>
               <SelectTrigger className="w-full">
                 <SelectValue />

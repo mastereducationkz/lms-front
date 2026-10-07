@@ -1,0 +1,58 @@
+import type { settings as en } from '../en/settings';
+import type { RuTable } from '../types';
+
+export const settings: RuTable<typeof en> = {
+  'settings.title': 'Настройки',
+
+  'settings.progress.title': 'Управление прогрессом студентов',
+  'settings.progress.description': 'Завершить или сбросить шаги за студента',
+  'settings.progress.student': 'Студент',
+  'settings.progress.searchPlaceholder': 'Поиск по имени или email...',
+  'settings.progress.noStudents': 'Студенты не найдены',
+  'settings.progress.typeToSearch': 'Введите имя или email',
+  'settings.progress.shownOf': 'Показано {shown} из {total}. Уточните поиск.',
+  'settings.progress.course': 'Курс',
+  'settings.progress.coursePlaceholder': 'Выберите курс...',
+  'settings.progress.loading': 'Загрузка прогресса...',
+  'settings.progress.steps': '{done} / {total} шагов',
+  'settings.progress.chooseLessons': 'Выберите уроки (или оставьте пустым для всех)',
+  'settings.progress.selectedCount': 'Выбрано: {count}',
+  'settings.progress.allLessons': 'Все уроки',
+  'settings.progress.selectAll': 'Выбрать все',
+  'settings.progress.clearSelection': 'Снять выбор',
+  'settings.progress.completeLessons': {
+    one: 'Завершить ({count} урок)',
+    few: 'Завершить ({count} урока)',
+    many: 'Завершить ({count} уроков)',
+    other: 'Завершить ({count} урока)',
+  },
+  'settings.progress.completeAll': 'Завершить все шаги',
+  'settings.progress.reset': 'Сбросить прогресс',
+  'settings.progress.pickBoth': 'Выберите студента и курс, чтобы управлять прогрессом',
+  'settings.progress.pickCourse': 'Выберите курс для просмотра прогресса',
+  'settings.progress.completeResult': '{newly} шагов завершено, {updated} обновлено, {already} уже были завершены',
+  'settings.progress.completeFailed': 'Ошибка при завершении шагов',
+  'settings.progress.resetConfirm': 'Вы уверены, что хотите сбросить прогресс? Это действие нельзя отменить.',
+  'settings.progress.resetResult': {
+    one: 'Удалена {count} запись прогресса',
+    few: 'Удалено {count} записи прогресса',
+    many: 'Удалено {count} записей прогресса',
+    other: 'Удалено {count} записи прогресса',
+  },
+  'settings.progress.resetFailed': 'Ошибка при сбросе прогресса',
+
+  'settings.password.title': 'Смена пароля',
+  'settings.password.description': 'Обновите пароль от аккаунта.',
+  'settings.password.current': 'Текущий пароль',
+  'settings.password.new': 'Новый пароль',
+  'settings.password.newPlaceholder': 'Не меньше 8 символов, хотя бы одна цифра',
+  'settings.password.confirm': 'Повторите новый пароль',
+  'settings.password.saving': 'Сохранение…',
+  'settings.password.submit': 'Сменить пароль',
+  'settings.password.mismatch': 'Пароли не совпадают',
+  'settings.password.changed': 'Пароль изменён',
+  'settings.password.failed': 'Не удалось сменить пароль',
+
+  'settings.tour.title': 'Тур по платформе',
+  'settings.tour.description': 'Короткая прогулка по главным разделам. Запускается на дашборде.',
+};

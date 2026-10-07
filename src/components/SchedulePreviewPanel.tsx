@@ -3,13 +3,15 @@ import { Loader2 } from 'lucide-react';
 
 import { previewSchedule } from '../services/api';
 import {
-    PREVIEW_CHANGE_TAGS,
     formatPreviewLessonRow,
+    previewChangeTag,
     previewSummary,
     type SchedulePreview,
     type SchedulePreviewPayload,
 } from '../lib/schedulePreview';
+import { useLocale, useT } from '../lib/i18n/react';
 import { cn } from '../lib/utils';
+import '@/lib/i18n/catalogs/schedule';
 
 /**
  * What pressing «Generate» would do, shown before it is pressed: how many lessons have passed,
@@ -37,6 +39,8 @@ interface SchedulePreviewPanelProps {
 }
 
 export default function SchedulePreviewPanel({ payload }: SchedulePreviewPanelProps) {
+    const t = useT();
+    const locale = useLocale();
     const [state, setState] = useState<PreviewState>({ status: 'idle' });
     const [showDates, setShowDates] = useState(false);
 
@@ -78,7 +82,7 @@ export default function SchedulePreviewPanel({ payload }: SchedulePreviewPanelPr
                 role="status"
                 className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200"
             >
-                Не удалось рассчитать — сохранение всё равно возможно
+                {t('schedule.preview.failed')}
             </p>
         );
     }
@@ -90,12 +94,12 @@ export default function SchedulePreviewPanel({ payload }: SchedulePreviewPanelPr
         return (
             <p role="status" className="flex items-center gap-2 rounded-md border dark:border-border px-3 py-2 text-xs text-muted-foreground">
                 <Loader2 className="h-3 w-3 animate-spin" />
-                Рассчитываю…
+                {t('schedule.preview.calculating')}
             </p>
         );
     }
 
-    const summary = previewSummary(preview);
+    const summary = previewSummary(preview, locale);
 
     return (
         <div
@@ -125,19 +129,19 @@ export default function SchedulePreviewPanel({ payload }: SchedulePreviewPanelPr
                         onClick={() => setShowDates((open) => !open)}
                         aria-expanded={showDates}
                     >
-                        {showDates ? 'Скрыть даты' : 'Показать даты'}
+                        {showDates ? t('schedule.preview.hideDates') : t('schedule.preview.showDates')}
                     </button>
                     {showDates && (
                         <ul className="mt-1.5 max-h-48 space-y-0.5 overflow-y-auto pr-1 tabular-nums">
                             {preview.lessons.map((lesson, index) => {
-                                const tag = PREVIEW_CHANGE_TAGS[lesson.change];
+                                const tag = previewChangeTag(lesson.change, locale);
                                 const before =
                                     lesson.previous_start && lesson.previous_end
-                                        ? `было: ${formatPreviewLessonRow(lesson.previous_start, lesson.previous_end)}`
+                                        ? t('schedule.preview.before', { lesson: formatPreviewLessonRow(lesson.previous_start, lesson.previous_end, locale) })
                                         : undefined;
                                 return (
                                     <li key={`${lesson.event_id ?? 'new'}-${lesson.start}-${index}`} className="flex items-center gap-2">
-                                        <span>{formatPreviewLessonRow(lesson.start, lesson.end)}</span>
+                                        <span>{formatPreviewLessonRow(lesson.start, lesson.end, locale)}</span>
                                         {tag && (
                                             <span
                                                 className={cn(
@@ -159,7 +163,7 @@ export default function SchedulePreviewPanel({ payload }: SchedulePreviewPanelPr
                 </div>
             )}
 
-            {loading && <p className="text-muted-foreground">Рассчитываю…</p>}
+            {loading && <p className="text-muted-foreground">{t('schedule.preview.calculating')}</p>}
         </div>
     );
 }

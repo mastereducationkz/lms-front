@@ -15,6 +15,7 @@ import {
 } from '../components/ui/select';
 import { Button } from '../components/ui/button';
 import UserAvatar from '@/components/mascot/UserAvatar';
+import { formatDate as formatDay } from '@/lib/i18n';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -79,7 +80,7 @@ function progressBar(value: number | null) {
 
 function formatDate(iso: string | null) {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  return formatDay(iso, { day: '2-digit', month: '2-digit', year: '2-digit' });
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────

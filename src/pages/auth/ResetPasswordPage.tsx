@@ -6,7 +6,7 @@ import { toast } from '../../components/Toast';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Label } from '../../components/ui/label';
-import { PASSWORD_HINT, passwordPolicyError } from '../../lib/passwordPolicy';
+import { passwordHint, passwordPolicyError } from '../../lib/passwordPolicy';
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -72,7 +72,7 @@ export default function ResetPasswordPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder={PASSWORD_HINT}
+                  placeholder={passwordHint()}
                   autoComplete="new-password"
                   aria-invalid={!!password && !!policyError}
                   aria-describedby="password-error"

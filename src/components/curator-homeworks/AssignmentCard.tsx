@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, FileText } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { StudentsTable } from './StudentsTable';
 import type { AssignmentData, StudentProgress, StatusFilter } from './types';
+import { formatDate as formatDay } from '../../lib/i18n';
 
 interface AssignmentCardProps {
   assignment: AssignmentData;
@@ -15,11 +16,7 @@ interface AssignmentCardProps {
 
 const formatDate = (dateString: string | null): string => {
   if (!dateString) return '';
-  return new Date(dateString).toLocaleDateString('ru-RU', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
+  return formatDay(dateString, { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
 export const AssignmentCard: React.FC<AssignmentCardProps> = ({

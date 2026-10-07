@@ -32,6 +32,7 @@ import Loader from '../components/Loader';
 import { getAllEvents, deleteEvent, bulkDeleteEvents, getAllGroups } from '../services/api';
 import type { Event, EventType, Group } from '../types';
 import { EVENT_TYPE_LABELS } from '../types';
+import { formatDateTime as formatAppDateTime } from '../lib/i18n';
 
 export default function EventManagement() {
   const navigate = useNavigate();
@@ -166,8 +167,7 @@ export default function EventManagement() {
   });
 
   const formatDateTime = (dateTimeString: string) => {
-    const date = new Date(dateTimeString);
-    return date.toLocaleString('ru-RU', {
+    return formatAppDateTime(dateTimeString, {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',

@@ -8,6 +8,8 @@ import { isOidcConfigured, startOidcLogin, getLastAccount, oidcStorageAvailable,
 // --- TYPE DEFINITIONS ---
 
 import { PlatformSwitcher } from './PlatformSwitcher';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/auth';
 
 export interface Testimonial {
   avatarSrc: string;
@@ -52,8 +54,8 @@ const TestimonialCard = ({ testimonial, delay }: { testimonial: Testimonial, del
 // --- MAIN COMPONENT ---
 
 export const SignInPage: React.FC<SignInPageProps> = ({
-  title = <span className="font-light text-foreground tracking-tighter">Welcome</span>,
-  description = "Access your account and continue your journey with us",
+  title,
+  description,
   heroImageSrc,
   testimonials = [],
   onSignIn,
@@ -64,6 +66,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
   error,
   loading = false,
 }) => {
+  const t = useT();
   const [showPassword, setShowPassword] = useState(false);
   // SSO ("Continue with Master Education") is the primary path. The email/password form is the
   // only path when SSO isn't configured (local dev), otherwise it's revealed on demand as a
@@ -82,17 +85,15 @@ export const SignInPage: React.FC<SignInPageProps> = ({
   const beginSso = (opts?: { selectAccount?: boolean; loginHint?: string }) => {
     setSsoError('');
     if (!oidcStorageAvailable()) {
-      setSsoError(
-        'Браузер не разрешает сайту сохранять данные, поэтому вход через Master Education невозможен. Откройте LMS в обычном окне браузера и разрешите файлы cookie, либо войдите по паролю.',
-      );
+      setSsoError(t('auth.signIn.storageBlocked'));
       return;
     }
     startOidcLogin(opts).catch((err: unknown) => {
       console.error('[sso] could not start login:', err);
       setSsoError(
         err instanceof OidcCallbackError && err.reason === 'not_configured'
-          ? 'Вход через Master Education сейчас недоступен. Войдите по паролю или сообщите администратору.'
-          : 'Не удалось открыть вход через Master Education. Проверьте интернет и попробуйте ещё раз.',
+          ? t('auth.signIn.ssoUnavailable')
+          : t('auth.signIn.ssoStartFailed'),
       );
     });
   };
@@ -103,8 +104,8 @@ export const SignInPage: React.FC<SignInPageProps> = ({
       <section className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           <div className="flex flex-col gap-6">
-            <h1 className="animate-element animate-delay-100 text-4xl md:text-5xl font-semibold leading-tight">{title}</h1>
-            <p className="animate-element animate-delay-200 text-muted-foreground">{description}</p>
+            <h1 className="animate-element animate-delay-100 text-4xl md:text-5xl font-semibold leading-tight">{title ?? <span className="font-light text-foreground tracking-tighter">{t('auth.signIn.title')}</span>}</h1>
+            <p className="animate-element animate-delay-200 text-muted-foreground">{description ?? t('auth.signIn.description')}</p>
 
             {(error || ssoError) && (
               <div className="animate-element animate-delay-250 -mb-2 p-3 text-sm text-red-700 dark:text-red-400 bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded">
@@ -125,9 +126,9 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                   className="w-full rounded bg-primary px-4 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {lastAccount ? (
-                    <span className="block truncate">Продолжить с аккаунтом {lastAccount.name || lastAccount.email}</span>
+                    <span className="block truncate">{t('auth.signIn.continueAs', { name: lastAccount.name || lastAccount.email })}</span>
                   ) : (
-                    'Продолжить с Master Education'
+                    t('auth.signIn.continueWithSso')
                   )}
                 </button>
                 <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm">
@@ -139,7 +140,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                     disabled={loading}
                     className="text-muted-foreground underline transition-colors hover:text-foreground"
                   >
-                    Войти под другим аккаунтом
+                    {t('auth.signIn.otherAccount')}
                   </button>
                   {!passwordFormVisible && (
                     <>
@@ -150,7 +151,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                         disabled={loading}
                         className="text-muted-foreground underline transition-colors hover:text-foreground"
                       >
-                        Другие способы входа
+                        {t('auth.signIn.otherMethods')}
                       </button>
                     </>
                   )}
@@ -165,19 +166,19 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                 {oidcEnabled && (
                   <div className="flex items-center gap-3">
                     <div className="h-px flex-1 bg-border" />
-                    <span className="text-xs uppercase tracking-wide text-muted-foreground">или по паролю</span>
+                    <span className="text-xs uppercase tracking-wide text-muted-foreground">{t('auth.signIn.orPassword')}</span>
                     <div className="h-px flex-1 bg-border" />
                   </div>
                 )}
 
                 <form className="space-y-5" onSubmit={onSignIn}>
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Email Address</label>
+                    <label className="text-sm font-medium text-muted-foreground">{t('auth.signIn.email')}</label>
                     <GlassInputWrapper>
                       <Input
                         name="email"
                         type="email"
-                        placeholder="Enter your email address"
+                        placeholder={t('auth.signIn.emailPlaceholder')}
                         className="w-full bg-card text-lg p-4 focus:outline-none "
                         required
                         disabled={loading}
@@ -186,13 +187,13 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-sm font-medium text-muted-foreground">Password</label>
+                    <label className="text-sm font-medium text-muted-foreground">{t('auth.signIn.password')}</label>
                     <GlassInputWrapper>
                       <div className="relative">
                         <Input
                           name="password"
                           type={showPassword ? 'text' : 'password'}
-                          placeholder="Enter your password"
+                          placeholder={t('auth.signIn.passwordPlaceholder')}
                           className="w-full bg-card text-lg p-4 focus:outline-none"
                           required
                           disabled={loading}
@@ -212,10 +213,10 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                   <div className="flex items-center justify-between text-sm">
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" name="rememberMe" className="custom-checkbox" disabled={loading} />
-                      <span className="text-foreground/90">Keep me signed in</span>
+                      <span className="text-foreground/90">{t('auth.signIn.keepSignedIn')}</span>
                     </label>
                     <Link to="/forgot-password" className="text-primary hover:underline">
-                      Forgot your password?
+                      {t('auth.signIn.forgotPassword')}
                     </Link>
                   </div>
 
@@ -224,7 +225,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                     disabled={loading}
                     className={`w-full rounded py-2 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${oidcEnabled ? 'border border-input bg-background text-foreground hover:bg-accent' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}
                   >
-                    {loading ? 'Signing In...' : 'Sign In'}
+                    {loading ? t('auth.signIn.submitting') : t('auth.signIn.submit')}
                   </button>
                 </form>
               </div>
@@ -241,7 +242,7 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                   className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4"
                 >
                   <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-                  Back to Home
+                  {t('auth.signIn.backToHome')}
                 </button>
               </div>
             )}

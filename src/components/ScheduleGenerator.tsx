@@ -18,10 +18,14 @@ import {
     configFromScheduleSlots,
     invalidScheduleTimes,
     scheduleSlotsFromConfig,
+    weekdayLabel,
     type ScheduleConfig,
 } from '../lib/scheduleShorthand';
-import { schedulePreviewPayload } from '../lib/schedulePreview';
+import { formatHoursTotal, schedulePreviewPayload } from '../lib/schedulePreview';
+import type { Locale } from '../lib/i18n';
+import { useLocale, useT } from '../lib/i18n/react';
 import SchedulePreviewPanel from './SchedulePreviewPanel';
+import '@/lib/i18n/catalogs/schedule';
 
 interface ScheduleGeneratorProps {
     groupId: number | null;
@@ -31,27 +35,18 @@ interface ScheduleGeneratorProps {
     trigger?: React.ReactNode;
 }
 
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const WEEKDAYS = [0, 1, 2, 3, 4, 5, 6];
+
+/** «Mon» / «Пн» — the row label for a weekday (0 = Monday). */
+const dayName = (day: number, locale: Locale): string => {
+    const label = weekdayLabel(day, locale);
+    return label.charAt(0).toUpperCase() + label.slice(1);
+};
 
 // The lengths offered in the per-day select. A stored value outside this set (e.g. a group
 // generated before per-day lengths existed with something non-standard) is added to the list
 // for that day so it stays visible instead of silently snapping to 60.
 const STANDARD_LESSON_LENGTHS = [60, 90, 120];
-
-const LESSON_LENGTH_LABELS: Record<number, string> = {
-    60: '1 ч',
-    90: '1 ч 30 мин',
-    120: '2 ч',
-};
-
-const lessonLengthLabel = (minutes: number): string => {
-    if (LESSON_LENGTH_LABELS[minutes]) return LESSON_LENGTH_LABELS[minutes];
-    const hours = Math.floor(minutes / 60);
-    const rest = minutes % 60;
-    if (!hours) return `${rest} мин`;
-    if (!rest) return `${hours} ч`;
-    return `${hours} ч ${rest} мин`;
-};
 
 const lessonLengthOptions = (current: number): number[] =>
     STANDARD_LESSON_LENGTHS.includes(current)
@@ -59,6 +54,8 @@ const lessonLengthOptions = (current: number): number[] =>
         : [...STANDARD_LESSON_LENGTHS, current].sort((a, b) => a - b);
 
 export default function ScheduleGenerator({ groupId, open, onOpenChange, onSuccess, trigger }: ScheduleGeneratorProps) {
+    const t = useT();
+    const locale = useLocale();
     const [isGenerating, setIsGenerating] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
@@ -160,7 +157,7 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
         // falls back to `scheduleConfig` — the live, currently-displayed schedule — not the
         // base, so clearing the box or typing garbage after a valid parse never discards what
         // was just typed.
-        const { config, problems } = applyShorthand(text, baseConfigRef.current, scheduleConfig);
+        const { config, problems } = applyShorthand(text, baseConfigRef.current, scheduleConfig, locale);
         setShorthandProblems(problems);
         setScheduleConfig(config);
     };
@@ -171,7 +168,7 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
         const items = scheduleSlotsFromConfig(scheduleConfig);
 
         if (items.length === 0) {
-            toast("Please select at least one day", "error");
+            toast(t('schedule.generator.pickDay'), "error");
             return;
         }
 
@@ -188,12 +185,12 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
                 schedule_items: items,
                 lessons_count: lessons
             });
-            toast("Schedule generated successfully", "success");
+            toast(t('schedule.generator.generated'), "success");
             onOpenChange(false);
             if (onSuccess) onSuccess();
         } catch (e) {
             console.error("Failed to generate schedule", e);
-            toast("Failed to generate schedule", "error");
+            toast(t('schedule.generator.generateFailed'), "error");
         } finally {
             setIsGenerating(false);
         }
@@ -205,7 +202,7 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
             {/* The preview panel makes the dialog taller than a laptop screen can show at once. */}
             <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Generate Class Schedule</DialogTitle>
+                    <DialogTitle>{t('schedule.generator.title')}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-4 text-foreground/80">
                     {isLoading ? (
@@ -215,10 +212,10 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
                     ) : (
                         <>
                             <div className="grid gap-2">
-                                <Label htmlFor="shorthand" className="text-foreground dark:text-foreground font-semibold">Быстрый ввод (пн ср пт 19:00-20:30)</Label>
+                                <Label htmlFor="shorthand" className="text-foreground dark:text-foreground font-semibold">{t('schedule.generator.quickEntry')}</Label>
                                 <Input
                                     id="shorthand"
-                                    placeholder="вт чт 20 00 сб 12 00"
+                                    placeholder={t('schedule.generator.quickEntryPlaceholder')}
                                     value={shorthandText}
                                     onChange={(e) => handleShorthandChange(e.target.value)}
                                     className="border-input dark:border-border focus:border-brand"
@@ -233,7 +230,7 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="start-date" className="text-foreground dark:text-foreground font-semibold">Start Date</Label>
+                                <Label htmlFor="start-date" className="text-foreground dark:text-foreground font-semibold">{t('schedule.generator.startDate')}</Label>
                                 <Input
                                     id="start-date"
                                     type="date"
@@ -244,13 +241,13 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
                             </div>
 
                             <div className="space-y-3">
-                                <Label>Weekly Schedule</Label>
+                                <Label>{t('schedule.generator.weekly')}</Label>
                                 <div className="grid gap-4 border dark:border-border rounded-md p-3">
-                                    {DAYS.map((day, i) => {
+                                    {WEEKDAYS.map((i) => {
                                         const isSelected = scheduleConfig[i] !== undefined;
                                         const duration = scheduleConfig[i]?.duration ?? DEFAULT_LESSON_MINUTES;
                                         return (
-                                            <div key={day} className="flex items-center justify-between gap-2">
+                                            <div key={i} className="flex items-center justify-between gap-2">
                                                 <div className="flex items-center space-x-2">
                                                     <Checkbox
                                                         id={`day-${i}`}
@@ -258,7 +255,7 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
                                                         onCheckedChange={() => handleToggleDay(i)}
                                                     />
                                                     <Label htmlFor={`day-${i}`} className={isSelected ? "font-medium" : "text-muted-foreground"}>
-                                                        {day}
+                                                        {dayName(i, locale)}
                                                     </Label>
                                                 </div>
                                                 {isSelected && (
@@ -283,7 +280,7 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
                                                             <SelectContent>
                                                                 {lessonLengthOptions(duration).map((minutes) => (
                                                                     <SelectItem key={minutes} value={String(minutes)}>
-                                                                        {lessonLengthLabel(minutes)}
+                                                                        {formatHoursTotal(minutes, locale)}
                                                                     </SelectItem>
                                                                 ))}
                                                             </SelectContent>
@@ -296,13 +293,13 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
                                 </div>
                                 {badTimeDays.length > 0 && (
                                     <p role="alert" className="text-xs text-red-500 dark:text-red-400">
-                                        Время в формате ЧЧ:ММ (00:00–23:59): {badTimeDays.map((day) => DAYS[day]).join(', ')}
+                                        {t('schedule.generator.badTimes', { days: badTimeDays.map((day) => dayName(day, locale)).join(', ') })}
                                     </p>
                                 )}
                             </div>
 
                             <div className="grid gap-2">
-                                <Label htmlFor="lessons">Duration (Lessons)</Label>
+                                <Label htmlFor="lessons">{t('schedule.generator.lessonsCount')}</Label>
                                 <Input
                                     id="lessons"
                                     type="number"
@@ -313,7 +310,7 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
                                     aria-describedby="lessons-hint"
                                 />
                                 <p id="lessons-hint" className="text-xs text-muted-foreground">
-                                    Всего за курс, включая прошедшие уроки
+                                    {t('schedule.generator.lessonsCountHint')}
                                 </p>
                             </div>
 
@@ -322,9 +319,9 @@ export default function ScheduleGenerator({ groupId, open, onOpenChange, onSucce
                     )}
                 </div>
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel')}</Button>
                     <Button onClick={handleGenerate} disabled={isGenerating}>
-                        {isGenerating ? <ThinkingLoader state="solving" size={20} label="Generating schedule…" /> : "Generate"}
+                        {isGenerating ? <ThinkingLoader state="solving" size={20} label={t('schedule.generator.generating')} /> : t('schedule.generator.generate')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

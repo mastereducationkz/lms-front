@@ -4,7 +4,9 @@
  * achievements.test.ts.
  */
 import { applyPart } from '../components/mascot/config';
+import { activeLocale, t, type Locale } from './i18n';
 import type { Achievement, AchievementReward, AchievementTier, GroupStars, StarAward } from '../services/api/achievementsUi';
+import '@/lib/i18n/catalogs/achievements';
 
 export const TOTAL_LABEL = (list: Achievement[]) => `${list.filter((a) => a.unlocked).length} / ${list.length}`;
 
@@ -148,9 +150,8 @@ export function starQuota(stars: GroupStars): number {
   return stars.this_week.some((a) => a.awarded_by_role === stars.my_role) ? 0 : 1;
 }
 
-export function starQuotaLabel(left: number, lang: 'ru' | 'en'): string {
-  if (lang === 'ru') return left > 0 ? 'Можно наградить 1 ученика на этой неделе' : 'Звезда этой недели уже выдана';
-  return left > 0 ? 'You can give 1 star this week' : 'This week’s star is already given';
+export function starQuotaLabel(left: number, locale: Locale = activeLocale()): string {
+  return t(left > 0 ? 'achievements.star.quotaLeft' : 'achievements.star.quotaUsed', undefined, locale);
 }
 
 export function validStarReason(reason: string): boolean {

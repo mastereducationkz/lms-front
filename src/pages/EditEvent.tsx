@@ -4,10 +4,13 @@ import EventForm from '../components/EventForm';
 import Loader from '../components/Loader';
 import { getEventDetails } from '../services/api';
 import type { Event } from '../types';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/adminTools';
 
 export default function EditEvent() {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
+  const t = useT();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +27,7 @@ export default function EditEvent() {
       const eventData = await getEventDetails(parseInt(eventId!));
       setEvent(eventData);
     } catch (error: any) {
-      setError(error.message || 'Ошибка при загрузке события');
+      setError(error.message || t('adminTools.events.loadFailed'));
     } finally {
       setLoading(false);
     }

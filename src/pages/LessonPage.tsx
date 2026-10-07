@@ -27,7 +27,9 @@ import { lookupAllowed } from '../components/lesson/lookup/selection';
 import { toast } from '../components/Toast';
 import { getAnswerKey, scoreQuiz } from '../components/lesson/quiz/scoring';
 import { isQuizScorePassing, resolveQuizPassingScorePercent } from '../utils/quizPassingScore';
-import { canEditCourseContent, isStaffPreview, seesCorrectAnswers, usesRussianUi } from '../lib/courseAccess';
+import { canEditCourseContent, isStaffPreview, seesCorrectAnswers } from '../lib/courseAccess';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/learning';
 
 // Utility function to extract correct answers from gap text
 // If an option ends with *, it's the correct answer (without the *)
@@ -396,6 +398,7 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
 
 export default function LessonPage() {
   const { user } = useAuth();
+  const t = useT();
   const { isLookUpEnabled, toggleLookUp } = useSettings(); // Added useSettings hook
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
   const navigate = useNavigate();
@@ -866,7 +869,7 @@ export default function LessonPage() {
         // sent rather than a generic string that tells the student nothing they can act on.
         // The fallback stays for a request that never reached the server, where there is no
         // response to read and no reason to give.
-        setError(typeof detail === 'string' && detail.trim() ? detail : 'Не удалось загрузить урок. Обновите страницу или напишите куратору.');
+        setError(typeof detail === 'string' && detail.trim() ? detail : t('learning.lesson.loadFailed'));
       }
     } finally {
       setIsLessonLoading(false);
@@ -2361,12 +2364,10 @@ export default function LessonPage() {
             {staffPreview && (
               <span
                 className="ml-2 h-5 px-2 inline-flex items-center gap-1 rounded text-[10px] font-medium shrink-0 bg-brand-surface text-brand-subtle-foreground"
-                title={usesRussianUi(user?.role)
-                  ? 'Вы смотрите урок как сотрудник: прогресс, попытки и завершения не сохраняются.'
-                  : 'You are previewing as staff: no progress, attempts or completions are saved.'}
+                title={t('learning.lesson.staffPreviewHint')}
               >
                 <Eye className="w-3 h-3" aria-hidden="true" />
-                {usesRussianUi(user?.role) ? 'Просмотр' : 'Preview'}
+                {t('learning.lesson.staffPreview')}
               </span>
             )}
             {staffPreview && (
@@ -2374,11 +2375,11 @@ export default function LessonPage() {
                 variant="ghost" 
                 size="sm" 
                 onClick={skipLesson} 
-                title={usesRussianUi(user?.role) ? 'Следующий урок (ничего не отмечается)' : 'Next lesson (nothing is marked complete)'}
+                title={t('learning.lesson.skipHint')}
                 className="ml-2 text-orange-600 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20"
               >
                 <SkipForward className="w-4 h-4 mr-1" />
-                {usesRussianUi(user?.role) ? 'Дальше' : 'Skip'}
+                {t('learning.lesson.skip')}
               </Button>
             )}
             {import.meta.env.DEV && (

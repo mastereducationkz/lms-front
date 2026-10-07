@@ -23,6 +23,9 @@ describe('lessonChips', () => {
       ['recap', 'No recap', 'notes'],
     ]);
     expect(lessonChips(base, 'ru').map((c) => c.label)).toEqual(['3 не отмечены', 'Без балла: 5', 'Нет ДЗ', 'Нет итогов']);
+    const one = { ...base, register: { ...base.register!, unmarked: 1, scores_missing: 1 } };
+    expect(lessonChips(one, 'en').slice(0, 2).map((c) => c.label)).toEqual(['1 not marked', '1 score missing']);
+    expect(lessonChips(one, 'ru')[0].label).toBe('1 не отмечен');
   });
   it('says Meet takes the register instead of asking for marks', () => {
     const meet = { ...base, register: { ...base.register!, meet_marks: true }, todo: ['scores' as const] };
@@ -57,6 +60,7 @@ describe('todaySummary', () => {
 describe('groupLine', () => {
   it('drops the teacher from the group name and adds the lesson number', () => {
     expect(groupLine(base, 'en')).toBe('IELTS Oct · lesson 26');
+    expect(groupLine(base, 'ru')).toBe('IELTS Oct · урок 26');
     expect(groupLine({ ...base, groups: [] }, 'ru')).toBe('IELTS Oct - Лайла: Lesson 26');
   });
 });

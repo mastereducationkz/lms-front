@@ -27,6 +27,7 @@
   import MultiTaskSubmission from '../../components/assignments/MultiTaskSubmission';
   import { AudioPlayer, isAudioUrl } from '../../components/AudioPlayer';
   import { safeUploadUrl } from '../../lib/mediaUrl';
+  import { formatDate, formatDateTime } from '../../lib/i18n';
   import type { AssignmentExtension } from '../../types/index';
 
   // A submission file reference is untrusted (student-supplied); this resolves it to a
@@ -403,7 +404,7 @@
                   {data.assignment.due_date ? (
                     <span className={`flex items-center ${isOverdue(data.assignment.due_date) ? 'text-red-600 dark:text-red-400' : ''}`}>
                       <Calendar className="w-4 h-4 mr-1" />
-                      {new Date(data.assignment.due_date).toLocaleDateString()}
+                      {formatDate(new Date(data.assignment.due_date))}
                       {isOverdue(data.assignment.due_date) && <AlertCircle className="w-4 h-4 ml-1" />}
                     </span>
                   ) : (
@@ -592,7 +593,7 @@
                               {studentExtension && (
                                 <div className="text-sm text-green-600 dark:text-green-400 flex items-center mt-1">
                                   <Calendar className="w-3 h-3 mr-1" />
-                                  Extended: {new Date(studentExtension.extended_deadline).toLocaleDateString()}
+                                  Extended: {formatDate(new Date(studentExtension.extended_deadline))}
                                   {studentExtension.reason && ` - ${studentExtension.reason}`}
                                 </div>
                               )}
@@ -618,7 +619,7 @@
                               <div className="flex flex-col">
                                 <div className="flex items-center">
                                   <Clock className="w-4 h-4 mr-1 text-muted-foreground" />
-                                  {new Date(student.submitted_at).toLocaleDateString()}
+                                  {formatDate(new Date(student.submitted_at))}
                                 </div>
                                 {student.is_late && (
                                   <Badge variant="outline" className="mt-1 w-fit border-amber-500 dark:border-amber-600 text-amber-600 dark:text-amber-400 px-1 py-0 text-[10px]">
@@ -845,7 +846,7 @@
                         <div className="font-medium">{selectedSubmission.user_name || 'Student #' + selectedSubmission.user_id}</div>
                         {selectedSubmission.submitted_at && (
                           <div className="text-sm text-muted-foreground mt-1">
-                            Submitted: {new Date(selectedSubmission.submitted_at).toLocaleString()}
+                            Submitted: {formatDateTime(new Date(selectedSubmission.submitted_at))}
                           </div>
                         )}
                       </div>

@@ -5,6 +5,8 @@ import ThinkingLoader from './ThinkingLoader';
 import TrialExpiredPanel from './trial/TrialExpiredPanel';
 import TrialBanner from './trial/TrialBanner';
 import { parseAsUTC } from '../lib/datetime';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/shell';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -23,6 +25,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const { loading, isAuthenticated, hasAnyRole, user } = useAuth();
   const location = useLocation();
+  const t = useT();
 
   // Show loading while checking authentication, but only for protected routes
   if (loading && requireAuth) {
@@ -61,15 +64,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return fallback || (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('shell.accessDenied.title')}</h1>
           <p className="text-gray-600 mb-4">
-            You don't have permission to access this page.
+            {t('shell.accessDenied.body')}
           </p>
           <button
             onClick={() => window.history.back()}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            Go Back
+            {t('shell.accessDenied.back')}
           </button>
         </div>
       </div>

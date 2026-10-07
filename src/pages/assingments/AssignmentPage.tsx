@@ -31,6 +31,7 @@ import { formatAssignmentStatus } from '../../lib/assignmentStatus';
 import { UploadFailedError } from '../../lib/uploadFailure';
 import { safeLinkUrl, safeUploadUrl } from '../../lib/mediaUrl';
 import { lessonPath } from '../../lib/lessonLinks';
+import { formatDate, formatDateTime, formatTime } from '../../lib/i18n';
 
 export default function AssignmentPage() {
   const { id } = useParams<{ id: string }>();
@@ -366,7 +367,7 @@ export default function AssignmentPage() {
                   )}
                 </CardTitle>
                 <CardDescription>
-                  Submitted: {new Date(submission.submitted_at).toLocaleString()}
+                  Submitted: {formatDateTime(new Date(submission.submitted_at))}
                   {(status as any)?.late && <span className="ml-2 font-medium text-amber-700 dark:text-amber-300">Late submission</span>}
                 </CardDescription>
               </CardHeader>
@@ -432,7 +433,7 @@ export default function AssignmentPage() {
                           <div key={attempt.id} className="flex items-center justify-between gap-3 p-3">
                             <div>
                               <div className="font-medium text-sm">Attempt {attempt.attempt_number || 1}</div>
-                              <div className="text-xs text-muted-foreground">Submitted {new Date(attempt.submitted_at).toLocaleString()}</div>
+                              <div className="text-xs text-muted-foreground">Submitted {formatDateTime(new Date(attempt.submitted_at))}</div>
                               {attempt.is_graded
                                 ? <div className="text-sm mt-1">Historical score: {attempt.score ?? 0}/{attempt.max_score}</div>
                                 : <div className="text-sm mt-1 text-muted-foreground">Not graded</div>}
@@ -902,7 +903,7 @@ export default function AssignmentPage() {
             {assignment.due_date && (
               <div className={`flex items-center space-x-2 ${isOverdue ? 'text-red-600 dark:text-red-400' : ''}`} data-tip="homework-due">
                 <Calendar className="w-4 h-4" />
-                <span>Due: {new Date(assignment.due_date).toLocaleDateString()}</span>
+                <span>Due: {formatDate(new Date(assignment.due_date))}</span>
                 {isOverdue && <AlertCircle className="w-4 h-4" />}
               </div>
             )}
@@ -917,7 +918,7 @@ export default function AssignmentPage() {
               <div className="flex items-center space-x-2 text-green-600 dark:text-green-400">
                 <Calendar className="w-4 h-4" />
                 <span className="font-semibold">
-                  Extended Deadline: {new Date(extension.extended_deadline).toLocaleDateString()} {new Date(extension.extended_deadline).toLocaleTimeString()}
+                  Extended Deadline: {formatDate(new Date(extension.extended_deadline))} {formatTime(new Date(extension.extended_deadline))}
                 </span>
                 {extension.reason && (
                   <span className="text-xs text-muted-foreground">({extension.reason})</span>
@@ -931,7 +932,7 @@ export default function AssignmentPage() {
               </div>
             )}
             <div className="flex items-center space-x-2">
-              <span>Created: {new Date(assignment.created_at).toLocaleDateString()}</span>
+              <span>Created: {formatDate(new Date(assignment.created_at))}</span>
             </div>
           </div>
         </CardContent>

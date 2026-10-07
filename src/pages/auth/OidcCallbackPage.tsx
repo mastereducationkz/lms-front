@@ -15,6 +15,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { takeLinkAfterLogin } from '../../lib/meetAddonLink'
 import apiClient from '../../services/api'
+import type { MessageKey } from '../../lib/i18n'
+import { useT } from '../../lib/i18n/react'
 import {
   completeOidcLogin,
   hasOidcCallbackParams,
@@ -24,6 +26,7 @@ import {
   startOidcLogin,
   type OidcFailureReason,
 } from '../../services/oidc'
+import '@/lib/i18n/catalogs/auth';
 
 /** Survives the redirect to the IdP and back (same tab, same origin), so one silent
  *  re-login attempt can never become a redirect loop. */
@@ -55,20 +58,16 @@ function releaseRetry(): void {
   }
 }
 
-const MESSAGES: Record<OidcFailureReason, string> = {
-  idp_rejected:
-    'Master Education не разрешил вход в LMS. Обычно это значит, что у аккаунта пока нет доступа к LMS или он деактивирован — обратитесь к куратору или администратору.',
-  link_expired:
-    'Ссылка для входа уже была использована. Так бывает, если страница обновилась или открылась второй раз. Начните вход заново.',
-  storage_blocked:
-    'Браузер не разрешает сайту сохранять данные, поэтому вход невозможно завершить. Откройте LMS в обычном окне браузера (не в режиме инкогнито и не внутри Telegram или Instagram) и разрешите файлы cookie для этого сайта.',
-  not_configured: 'Вход через Master Education сейчас недоступен. Сообщите администратору.',
-  token_rejected:
-    'LMS не принял вход от Master Education. Это настройка на стороне сервера — сообщите администратору код ниже.',
-  network: 'Не удалось связаться с Master Education. Проверьте интернет и попробуйте ещё раз.',
-  lms_unreachable: 'Вход выполнен, но LMS сейчас не отвечает. Проверьте интернет и попробуйте ещё раз.',
-  no_lms_account: 'Аккаунт не найден в LMS. Обратитесь к администратору, чтобы связать вашу учётную запись.',
-  unknown: 'Не удалось завершить вход через Master Education. Попробуйте ещё раз.',
+const MESSAGES: Record<OidcFailureReason, MessageKey> = {
+  idp_rejected: 'auth.callback.idpRejected',
+  link_expired: 'auth.callback.linkExpired',
+  storage_blocked: 'auth.callback.storageBlocked',
+  not_configured: 'auth.callback.notConfigured',
+  token_rejected: 'auth.callback.tokenRejected',
+  network: 'auth.callback.network',
+  lms_unreachable: 'auth.callback.lmsUnreachable',
+  no_lms_account: 'auth.callback.noLmsAccount',
+  unknown: 'auth.callback.unknown',
 }
 
 type Failure = { reason: OidcFailureReason; code: string }
@@ -76,6 +75,7 @@ type Failure = { reason: OidcFailureReason; code: string }
 export default function OidcCallbackPage() {
   const navigate = useNavigate()
   const { updateUser } = useAuth()
+  const t = useT()
   const [failure, setFailure] = useState<Failure | null>(null)
   // Second belt around the retry guard: even with sessionStorage misbehaving, one page
   // load can only ever kick off one re-login.
@@ -198,7 +198,7 @@ export default function OidcCallbackPage() {
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background p-6 text-center">
       {failure ? (
         <>
-          <p className="max-w-md text-sm text-destructive">{MESSAGES[failure.reason]}</p>
+          <p className="max-w-md text-sm text-destructive">{t(MESSAGES[failure.reason])}</p>
           <button
             type="button"
             onClick={() => {
@@ -207,19 +207,19 @@ export default function OidcCallbackPage() {
             }}
             className="rounded bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Войти ещё раз
+            {t('auth.callback.retry')}
           </button>
           <Link to="/login" className="text-sm text-primary underline hover:no-underline">
-            Вернуться ко входу
+            {t('auth.callback.backToLogin')}
           </Link>
           {/* Support needs to know WHICH failure this was; the student can only relay what
               is on screen, so put the classification where they can screenshot it. */}
-          <p className="text-xs text-muted-foreground">Код для поддержки: {failure.code}</p>
+          <p className="text-xs text-muted-foreground">{t('auth.callback.supportCode', { code: failure.code })}</p>
         </>
       ) : (
         <>
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted-foreground">Выполняется вход…</p>
+          <p className="text-sm text-muted-foreground">{t('auth.callback.signingIn')}</p>
         </>
       )}
     </div>

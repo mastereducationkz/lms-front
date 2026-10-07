@@ -1,4 +1,6 @@
 import type { Event } from '../types';
+import { activeLocale, intlLocale, t, type Locale } from './i18n';
+import '@/lib/i18n/catalogs/recordings';
 
 /**
  * The pure half of lesson recordings: how durations, days and lesson names read, and which
@@ -11,7 +13,7 @@ import type { Event } from '../types';
 
 export const ALMATY_TZ = 'Asia/Almaty';
 
-export type Locale = 'en' | 'ru';
+export type { Locale } from './i18n';
 export type RecordingFilter = 'all' | 'with' | 'without';
 
 /** "1:03:54" or "45:12" — the badge on a preview, as every video player writes it. */
@@ -25,14 +27,15 @@ export function formatClock(seconds?: number | null): string | null {
 }
 
 /** "1 h 4 min", "45 min", "1 ч 4 мин" — for sentences, where a clock reads oddly. */
-export function formatDurationWords(seconds?: number | null, locale: Locale = 'en'): string | null {
+export function formatDurationWords(seconds?: number | null, locale: Locale = activeLocale()): string | null {
   if (seconds == null || !Number.isFinite(seconds) || seconds <= 0) return null;
-  const minutes = Math.max(1, Math.round(seconds / 60));
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  const [H, M] = locale === 'ru' ? ['ч', 'мин'] : ['h', 'min'];
-  if (h === 0) return `${m} ${M}`;
-  return m ? `${h} ${H} ${m} ${M}` : `${h} ${H}`;
+  const total = Math.max(1, Math.round(seconds / 60));
+  const hours = Math.floor(total / 60);
+  const minutes = total % 60;
+  if (hours === 0) return t('recordings.duration.minutes', { minutes }, locale);
+  return minutes
+    ? t('recordings.duration.hoursMinutes', { hours, minutes }, locale)
+    : t('recordings.duration.hours', { hours }, locale);
 }
 
 const dayKeyFormat = new Intl.DateTimeFormat('en-CA', {
@@ -60,11 +63,11 @@ function capitalise(text: string): string {
  * "Fri, 11 Sep" / "пт, 11 сентября" — a day in a few characters, the year only when it is not
  * this one. The date picker's label and the Today/Yesterday headings both say it this way.
  */
-export function shortDate(dayKey: string, now: Date, locale: Locale = 'en'): string {
+export function shortDate(dayKey: string, now: Date, locale: Locale = activeLocale()): string {
   const [y, m, d] = dayKey.split('-').map(Number);
   const noon = new Date(Date.UTC(y, m - 1, d, 12));
   // Only the parts are used, in our own order; en-US because en-GB now abbreviates September "Sept".
-  const format = new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : 'en-US', {
+  const format = new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : intlLocale(locale), {
     timeZone: ALMATY_TZ, weekday: 'short', day: 'numeric', month: locale === 'ru' ? 'long' : 'short',
   });
   const parts = Object.fromEntries(format.formatToParts(noon).map((p) => [p.type, p.value]));
@@ -73,16 +76,16 @@ export function shortDate(dayKey: string, now: Date, locale: Locale = 'en'): str
 }
 
 /** "Today · Fri, 11 Sep", "Yesterday · …", else "Monday 7 September" — the year only when it is not this one. */
-export function dayHeading(dayKey: string, now: Date, locale: Locale = 'en'): string {
+export function dayHeading(dayKey: string, now: Date, locale: Locale = activeLocale()): string {
   const today = almatyDayKey(now);
-  if (dayKey === today) return `${locale === 'ru' ? 'Сегодня' : 'Today'} · ${shortDate(dayKey, now, locale)}`;
+  if (dayKey === today) return t('recordings.day.today', { date: shortDate(dayKey, now, locale) }, locale);
   if (dayKey === almatyDayKey(new Date(now.getTime() - 86_400_000))) {
-    return `${locale === 'ru' ? 'Вчера' : 'Yesterday'} · ${shortDate(dayKey, now, locale)}`;
+    return t('recordings.day.yesterday', { date: shortDate(dayKey, now, locale) }, locale);
   }
   const [y, m, d] = dayKey.split('-').map(Number);
   // Noon UTC falls on the same calendar day in Almaty (UTC+5), so the date cannot drift.
   const noon = new Date(Date.UTC(y, m - 1, d, 12));
-  const format = new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : 'en-GB', {
+  const format = new Intl.DateTimeFormat(intlLocale(locale), {
     timeZone: ALMATY_TZ, weekday: 'long', day: 'numeric', month: 'long',
     ...(String(y) === today.slice(0, 4) ? {} : { year: 'numeric' }),
   });
@@ -124,13 +127,14 @@ function withoutTeacher(name: string): string {
 export function splitLessonTitle(
   title: string,
   groups?: { name: string }[] | null,
-  locale: Locale = 'en',
+  locale: Locale = activeLocale(),
 ): { name: string; lesson: string | null } {
   const match = title.match(/^(.*?):\s*(Lesson\s+\d+.*)$/i);
   const source = groups && groups.length ? groups.map((g) => g.name) : [match ? match[1] : title];
   const name = source.map(withoutTeacher).filter(Boolean).join(', ') || title;
   let lesson = match ? match[2].trim() : null;
-  if (lesson && locale === 'ru') lesson = lesson.replace(/^Lesson\b/i, 'Урок');
+  // Titles are written in English ("Lesson 29"); the word follows the reader's language.
+  if (lesson) lesson = lesson.replace(/^Lesson\b/i, t('recordings.heading.lessonWord', undefined, locale));
   return { name, lesson };
 }
 
@@ -140,7 +144,7 @@ export function splitLessonTitle(
  */
 export function recordingHeading(
   item: { title: string; event_type?: string | null; groups?: { name: string }[] | null },
-  locale: Locale = 'en',
+  locale: Locale = activeLocale(),
 ): { name: string; lesson: string | null } {
   if (item.event_type === 'webinar') return { name: item.title, lesson: null };
   return splitLessonTitle(item.title, item.groups, locale);
@@ -178,7 +182,3 @@ export function parseWatchParam(params: URLSearchParams): number | null {
   return id > 0 ? id : null;
 }
 
-/** The app's existing language rule: curators and head curators read Russian. */
-export function recordingsLocale(role?: string | null): Locale {
-  return role === 'curator' || role === 'head_curator' ? 'ru' : 'en';
-}

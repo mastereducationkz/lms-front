@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getClassMaterials, type LessonMaterials, type MaterialItem } from '../../services/api/classMaterials';
-import { homeworkLinkLabel, materialsLocale, openedCount, pendingAfterClass, t } from '../../lib/classMaterials';
+import { homeworkLinkLabel, openedCount, pendingAfterClass, t } from '../../lib/classMaterials';
+import { useLocale } from '../../lib/i18n/react';
 import { parseAsUTC } from '../../lib/datetime';
 import { canSkipFetch, materialsVisibility, type MaterialsVisibility } from '../../lib/classMaterialsView';
 import MaterialRow from './MaterialRow';
@@ -70,7 +71,7 @@ export default function ClassMaterialsSection({ eventId, variant = 'page', onCha
   const frame = variant === 'dialog' ? '' : 'mt-4 border-t border-border pt-4';
   const headingRow = `flex flex-wrap items-center justify-between gap-2${variant === 'dialog' ? ' pr-6' : ''}`;
   const isParent = user?.role === 'parent';
-  const locale = materialsLocale(user?.role);
+  const locale = useLocale();
 
   const [data, setData] = useState<LessonMaterials | null>(
     initialData && initialData.lesson.id === eventId ? initialData : null,

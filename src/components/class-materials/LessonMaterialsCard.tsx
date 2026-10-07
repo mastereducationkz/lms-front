@@ -36,7 +36,7 @@ export default function LessonMaterialsCard({ entry, locale, onOpenItem, highlig
           <Link
             to={lessonPath(lesson.id, 'materials')}
             className="group/lesson inline-flex items-start gap-1 hover:text-primary hover:underline"
-            title={locale === 'ru' ? 'Открыть урок' : 'Open lesson'}
+            title={t('openLesson', locale)}
           >
             {lessonHeading(lesson, locale)}
             <ArrowUpRight className="mt-0.5 h-3.5 w-3.5 flex-none text-muted-foreground group-hover/lesson:text-primary" aria-hidden />

@@ -37,11 +37,13 @@ import { LineChart, Line, XAxis, YAxis, ReferenceLine, ResponsiveContainer, Tool
 import apiClient from '../../services/api';
 import api from '../../services/api';
 import { toast } from '../Toast';
+import { useT } from '../../lib/i18n/react';
 import {
   getAnswerKey,
   getQuestionStatus,
   isAnswerComplete
 } from './quiz/scoring';
+import '@/lib/i18n/catalogs/learning';
 
 // Exam mode badge component
 const ExamModeBadge = ({ maxPlays }: { maxPlays: number }) => (
@@ -118,6 +120,7 @@ interface QuizRendererProps {
 }
 
 const QuizRenderer = (props: QuizRendererProps) => {
+  const t = useT();
   const {
     quizState,
     quizData,
@@ -885,7 +888,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
             <Button
               onClick={handleCheckAnswersClick}
               disabled={isQuizIncomplete}
-              title={isQuizIncomplete ? `Ответьте на все вопросы (${answeredCount}/${answerableQuestions.length})` : undefined}
+              title={isQuizIncomplete ? t('learning.quiz.answerAll', { answered: answeredCount, total: answerableQuestions.length }) : undefined}
               className="px-8 py-3 rounded-lg text-lg font-semibold min-h-[44px] bg-brand-solid hover:bg-brand-solid-hover text-brand-solid-foreground"
             >
               Check Answers
@@ -1120,7 +1123,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                       size="sm"
                       onClick={handleCheckAnswersClick}
                       disabled={isQuizIncomplete}
-                      title={isQuizIncomplete ? `Ответьте на все вопросы (${answeredCount}/${answerableQuestions.length})` : undefined}
+                      title={isQuizIncomplete ? t('learning.quiz.answerAll', { answered: answeredCount, total: answerableQuestions.length }) : undefined}
                       className="shrink-0 whitespace-nowrap text-xs sm:text-sm font-medium border-brand text-brand hover:bg-brand-surface"
                     >
                       Check Answers

@@ -15,9 +15,11 @@ import {
   asCalendarEvent, lessonWhen, sectionFromHash, sectionOrder, stampKz, type PageSection,
 } from '../lib/classLessonPage';
 import { lessonPath } from '../lib/lessonLinks';
+import { useLocale, useT } from '../lib/i18n/react';
 import {
   getLesson, LessonLoadError, type LessonNote, type LessonView, type NoteKind,
 } from '../services/api/classLessons';
+import '@/lib/i18n/catalogs/classLesson';
 
 // The live room and the move from «скоро» to «идёт» are a minute apart at most.
 const POLL_MS = 60_000;
@@ -32,6 +34,8 @@ export default function ClassLessonPage() {
   const { eventId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const t = useT();
+  const locale = useLocale();
   const [view, setView] = useState<LessonView | null>(null);
   const [error, setError] = useState<LessonLoadError | null>(null);
   const [groupId, setGroupId] = useState<number | null>(null);
@@ -81,8 +85,8 @@ export default function ClassLessonPage() {
   useEffect(() => {
     if (!view) return;
     const g = view.groups.find((x) => x.id === groupId) ?? view.groups[0];
-    document.title = `${g ? g.name : view.title} · ${lessonWhen(view.start, view.end, view.viewer.locale)}`;
-  }, [view, groupId]);
+    document.title = `${g ? g.name : view.title} · ${lessonWhen(view.start, view.end, locale)}`;
+  }, [view, groupId, locale]);
 
   const sections = useMemo<PageSection[]>(() => (view ? sectionOrder(view.status, {
     viewer: view.viewer,
@@ -120,28 +124,26 @@ export default function ClassLessonPage() {
   if (error) return <LoadFailure error={error} />;
   if (!view || !event) return <PageSkeleton />;
 
-  const ru = view.viewer.locale === 'ru';
-  const t = (r: string, e: string) => (ru ? r : e);
   const group = view.groups.find((g) => g.id === groupId) ?? view.groups[0] ?? null;
 
   const render = (key: PageSection) => {
     switch (key) {
       case 'live':
         return (
-          <SectionCard key={key} id="live" title={t('Сейчас в уроке', 'In the room now')} icon={<Radio className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden />}>
-            <LiveRoom view={view} />
+          <SectionCard key={key} id="live" title={t('classLesson.section.liveTitle')} icon={<Radio className="h-4 w-4 text-emerald-600 dark:text-emerald-400" aria-hidden />}>
+            <LiveRoom view={view} locale={locale} />
           </SectionCard>
         );
       case 'activities':
         return (
-          <SectionCard key={key} id="activities" title={t('Активности', 'Activities')} icon={<MessageSquareText className="h-4 w-4 text-primary" aria-hidden />}>
+          <SectionCard key={key} id="activities" title={t('classLesson.section.activities')} icon={<MessageSquareText className="h-4 w-4 text-primary" aria-hidden />}>
             <LiveLessonSection view={view} />
           </SectionCard>
         );
       case 'me':
         return (
-          <SectionCard key={key} id="me" title={t('Моя отметка', 'My mark')} icon={<Star className="h-4 w-4 text-yellow-500 dark:text-yellow-400" aria-hidden />}>
-            <MyMark view={view} />
+          <SectionCard key={key} id="me" title={t('classLesson.section.me')} icon={<Star className="h-4 w-4 text-yellow-500 dark:text-yellow-400" aria-hidden />}>
+            <MyMark view={view} locale={locale} />
           </SectionCard>
         );
       case 'materials':
@@ -158,19 +160,19 @@ export default function ClassLessonPage() {
         );
       case 'register':
         return (
-          <SectionCard key={key} id="register" title={t('Посещаемость и баллы', 'Attendance and scores')} icon={<UsersRound className="h-4 w-4 text-muted-foreground" aria-hidden />}>
+          <SectionCard key={key} id="register" title={t('classLesson.section.registerTitle')} icon={<UsersRound className="h-4 w-4 text-muted-foreground" aria-hidden />}>
             <RegisterSection view={view} groupId={group?.id ?? null} onSaved={() => void load(true)} />
           </SectionCard>
         );
       case 'homework':
         return (
-          <SectionCard key={key} id="homework" title={t('Домашнее задание', 'Homework')} icon={<ClipboardList className="h-4 w-4 text-muted-foreground" aria-hidden />}>
-            <HomeworkList view={view} />
+          <SectionCard key={key} id="homework" title={t('classLesson.section.homework')} icon={<ClipboardList className="h-4 w-4 text-muted-foreground" aria-hidden />}>
+            <HomeworkList view={view} locale={locale} />
           </SectionCard>
         );
       case 'notes':
         return (
-          <SectionCard key={key} id="notes" title={t('Заметки урока', 'Lesson notes')} icon={<NotebookPen className="h-4 w-4 text-muted-foreground" aria-hidden />}>
+          <SectionCard key={key} id="notes" title={t('classLesson.section.notesTitle')} icon={<NotebookPen className="h-4 w-4 text-muted-foreground" aria-hidden />}>
             <NotesSection view={view} onSaved={onNoteSaved} />
           </SectionCard>
         );
@@ -182,8 +184,8 @@ export default function ClassLessonPage() {
         );
       case 'requests':
         return (
-          <SectionCard key={key} id="requests" title={t('Заявки по уроку', 'Lesson requests')} icon={<Send className="h-4 w-4 text-muted-foreground" aria-hidden />}>
-            <RequestsBlock view={view} />
+          <SectionCard key={key} id="requests" title={t('classLesson.section.requestsTitle')} icon={<Send className="h-4 w-4 text-muted-foreground" aria-hidden />}>
+            <RequestsBlock view={view} locale={locale} />
           </SectionCard>
         );
       default:
@@ -199,14 +201,14 @@ export default function ClassLessonPage() {
           <div className="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-100">
             <AlertTriangle className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
             <div>
-              <p className="font-semibold">{t('Урок отменён', 'This lesson was cancelled')}</p>
+              <p className="font-semibold">{t('classLesson.page.cancelled')}</p>
               {view.cancelled.reason && <p className="mt-0.5">{view.cancelled.reason}</p>}
               {view.cancelled.replacement ? (
                 <Link to={lessonPath(view.cancelled.replacement.id)} className="mt-1 inline-block font-semibold underline underline-offset-2">
-                  {t('Перейти к уроку-замене', 'Go to the make-up lesson')} · {stampKz(view.cancelled.replacement.start, view.viewer.locale)}
+                  {t('classLesson.page.goToReplacement', { when: stampKz(view.cancelled.replacement.start, locale) })}
                 </Link>
               ) : (
-                <p className="mt-0.5 text-rose-800/80 dark:text-rose-200/80">{t('Урока-замены нет.', 'There is no make-up lesson.')}</p>
+                <p className="mt-0.5 text-rose-800/80 dark:text-rose-200/80">{t('classLesson.page.noReplacement')}</p>
               )}
             </div>
           </div>
@@ -214,17 +216,17 @@ export default function ClassLessonPage() {
         {view.viewer.is_student && view.live_lesson?.open && (
           <Link to="/live" className="flex items-center gap-3 rounded-2xl border border-emerald-300 bg-emerald-50 p-4 text-sm text-emerald-900 transition hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-100">
             <span className="relative flex h-3 w-3 flex-none"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" /><span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-500" /></span>
-            <span className="flex-1"><b>Live now:</b> your teacher opened a question.</span>
-            <span className="font-semibold underline underline-offset-2">Answer</span>
+            <span className="flex-1"><b>{t('classLesson.page.liveNowLabel')}</b> {t('classLesson.page.liveNowText')}</span>
+            <span className="font-semibold underline underline-offset-2">{t('classLesson.page.liveNowAnswer')}</span>
           </Link>
         )}
         {view.me?.missed && (
           <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-100">
             <BookOpenCheck className="mt-0.5 h-4 w-4 flex-none" aria-hidden />
             <p>
-              {t('Вы пропустили урок — посмотрите запись и материалы.', 'You missed this lesson — watch the recording and go through the materials.')}
+              {t('classLesson.page.missed')}
               {' '}
-              <button type="button" onClick={() => jump('recording')} className="font-semibold underline underline-offset-2">{t('К записи', 'To the recording')}</button>
+              <button type="button" onClick={() => jump('recording')} className="font-semibold underline underline-offset-2">{t('classLesson.page.toRecording')}</button>
             </p>
           </div>
         )}
@@ -246,18 +248,19 @@ function PageSkeleton() {
 }
 
 function LoadFailure({ error }: { error: LessonLoadError }) {
+  const t = useT();
   const text = error.status === 404
-    ? ['Урок не найден', 'Возможно, его удалили или ссылка неверная.']
+    ? [t('classLesson.page.notFoundTitle'), t('classLesson.page.notFoundText')]
     : error.status === 403
-      ? ['Нет доступа к уроку', 'Этот урок не относится к вашим группам.']
-      : ['Не удалось открыть урок', error.message || 'Попробуйте обновить страницу.'];
+      ? [t('classLesson.page.forbiddenTitle'), t('classLesson.page.forbiddenText')]
+      : [t('classLesson.page.failedTitle'), error.message || t('classLesson.page.failedText')];
   return (
     <div className="mx-auto flex max-w-md flex-col items-center px-4 py-20 text-center">
       <AlertTriangle className="h-8 w-8 text-muted-foreground" aria-hidden />
       <h1 className="mt-3 text-lg font-semibold text-foreground">{text[0]}</h1>
       <p className="mt-1 text-sm text-muted-foreground">{text[1]}</p>
       <Link to="/calendar" className="mt-5 rounded-lg border border-border px-4 py-2 text-sm font-semibold text-foreground hover:bg-muted">
-        Календарь / Calendar
+        {t('classLesson.page.calendar')}
       </Link>
     </div>
   );

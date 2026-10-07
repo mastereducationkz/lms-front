@@ -34,10 +34,6 @@ export function seesCorrectAnswers(role?: string | null): boolean {
   return isStaffPreview(role);
 }
 
-/** Russian copy for curator roles, English for everyone else — same rule as the sidebar. */
-export function usesRussianUi(role?: string | null): boolean {
-  return role === 'curator' || role === 'head_curator';
-}
 
 export interface CatalogCourse {
   title: string;

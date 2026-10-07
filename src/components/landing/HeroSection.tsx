@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { ArrowRight, Play } from "lucide-react";
 import { Button } from "../ui/button";
 import LogoIcon from '../../assets/masteredlogo-ico.ico';
+import { formatNumber } from '../../lib/i18n';
 
 export function HeroSection() {
   const [counts, setCounts] = useState({
@@ -131,7 +132,7 @@ export function HeroSection() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pt-12 border-t border-border">
             <div className="text-center">
-              <div className="text-2xl md:text-3xl font-bold text-primary mb-2">{counts.students.toLocaleString()}+</div>
+              <div className="text-2xl md:text-3xl font-bold text-primary mb-2">{formatNumber(counts.students)}+</div>
               <div className="text-sm text-muted-foreground">Active Students</div>
             </div>
             <div className="text-center">

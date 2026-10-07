@@ -10,7 +10,8 @@ describe('the Recordings date picker', () => {
     expect(weeks[0][1]).toEqual({ key: '2026-09-01', day: 1, inMonth: true });
     expect(weeks[4][6]).toEqual({ key: '2026-10-04', day: 4, inMonth: false });
     expect(weeks.flat().filter((c) => c.inMonth)).toHaveLength(30);
-    expect(weekdayNames()[0]).toBe('Mo');
+    expect(weekdayNames()).toEqual(['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su']);
+    expect(weekdayNames('ru')).toEqual(['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']);
   });
 
   it('needs only four weeks for a February that starts on a Monday', () => {

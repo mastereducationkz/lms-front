@@ -1,5 +1,7 @@
 import type { LessonSection } from './lessonLinks';
 import type { TodayLesson } from '../services/api/classLessons';
+import { activeLocale, t, type Locale, type MessageKey, type Params } from './i18n';
+import '@/lib/i18n/catalogs/teacher';
 
 /**
  * «Today» on the teacher dashboard (owner, 2026-09-28): what each of today's lessons still needs, as short
@@ -16,69 +18,55 @@ export interface TodayChip {
   section?: LessonSection;
 }
 
-type Locale = 'ru' | 'en';
-
-const plural = (n: number, locale: Locale, ru: [string, string, string], en: [string, string]) => {
-  if (locale === 'en') return `${n} ${n === 1 ? en[0] : en[1]}`;
-  const m10 = n % 10, m100 = n % 100;
-  const form = m10 === 1 && m100 !== 11 ? ru[0] : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? ru[1] : ru[2];
-  return `${n} ${form}`;
-};
-
 /** The chips of one lesson, most urgent first. */
-export function lessonChips(lesson: TodayLesson, locale: Locale): TodayChip[] {
-  const t = (ru: string, en: string) => (locale === 'ru' ? ru : en);
-  if (lesson.status === 'cancelled') return [{ key: 'cancelled', label: t('Урок отменён', 'Cancelled'), tone: 'muted' }];
+export function lessonChips(lesson: TodayLesson, locale: Locale = activeLocale()): TodayChip[] {
+  const tr = (key: MessageKey, params?: Params) => t(key, params, locale);
+  if (lesson.status === 'cancelled') return [{ key: 'cancelled', label: tr('teacher.today.chips.cancelled'), tone: 'muted' }];
   const chips: TodayChip[] = [];
   const reg = lesson.register;
   if (lesson.live) {
-    chips.push({ key: 'room', label: t(`В комнате ${lesson.live.in_room} из ${lesson.live.expected}`,
-      `${lesson.live.in_room} of ${lesson.live.expected} in the room`), tone: 'info' });
+    chips.push({ key: 'room', label: tr('teacher.today.chips.inRoom', { inRoom: lesson.live.in_room, expected: lesson.live.expected }), tone: 'info' });
   }
   if (reg?.meet_marks) {
-    chips.push({ key: 'meet', label: t('Meet отметит посещаемость', 'Meet takes the register'), tone: 'info', section: 'register' });
+    chips.push({ key: 'meet', label: tr('teacher.today.chips.meetMarks'), tone: 'info', section: 'register' });
   } else if (lesson.todo.includes('marks') && reg) {
-    chips.push({ key: 'marks', label: plural(reg.unmarked, locale, ['не отмечен', 'не отмечены', 'не отмечены'],
-      ['not marked', 'not marked']), tone: 'action', section: 'register' });
+    chips.push({ key: 'marks', label: tr('teacher.today.chips.unmarked', { count: reg.unmarked }), tone: 'action', section: 'register' });
   }
   if (lesson.todo.includes('scores') && reg) {
-    const label = locale === 'ru' ? `Без балла: ${reg.scores_missing}`
-      : plural(reg.scores_missing, 'en', ['', '', ''], ['score missing', 'scores missing']);
-    chips.push({ key: 'scores', label, tone: 'todo', section: 'register' });
+    chips.push({ key: 'scores', label: tr('teacher.today.chips.scoresMissing', { count: reg.scores_missing }), tone: 'todo', section: 'register' });
   }
   if (lesson.todo.includes('homework')) {
-    chips.push({ key: 'homework', label: t('Нет ДЗ', 'No homework'), tone: 'todo', section: 'homework' });
+    chips.push({ key: 'homework', label: tr('teacher.today.chips.noHomework'), tone: 'todo', section: 'homework' });
   }
   if (lesson.todo.includes('recap')) {
-    chips.push({ key: 'recap', label: t('Нет итогов', 'No recap'), tone: 'todo', section: 'notes' });
+    chips.push({ key: 'recap', label: tr('teacher.today.chips.noRecap'), tone: 'todo', section: 'notes' });
   }
   if (lesson.recording?.status === 'ready') {
-    chips.push({ key: 'recording', label: t('Запись готова', 'Recording ready'), tone: 'info', section: 'recording' });
+    chips.push({ key: 'recording', label: tr('teacher.today.chips.recordingReady'), tone: 'info', section: 'recording' });
   } else if (lesson.recording?.status === 'pending') {
-    chips.push({ key: 'recording', label: t('Запись обрабатывается', 'Recording processing'), tone: 'muted', section: 'recording' });
+    chips.push({ key: 'recording', label: tr('teacher.today.chips.recordingProcessing'), tone: 'muted', section: 'recording' });
   }
-  if (lesson.done) chips.unshift({ key: 'done', label: t('Всё готово', 'All done'), tone: 'done' });
+  if (lesson.done) chips.unshift({ key: 'done', label: tr('teacher.today.chips.allDone'), tone: 'done' });
   return chips;
 }
 
 /** The card's header line: how many lessons, what is next or on now, and how many still need something. */
 export function todaySummary(lessons: TodayLesson[], now: Date, locale: Locale, clock: (iso: string) => string): string {
-  const t = (ru: string, en: string) => (locale === 'ru' ? ru : en);
   const active = lessons.filter((l) => l.status !== 'cancelled');
-  const parts = [plural(active.length, locale, ['урок', 'урока', 'уроков'], ['lesson', 'lessons'])];
+  const parts = [t('common.lessons', { count: active.length }, locale)];
   const live = active.find((l) => l.status === 'live');
   const next = active.find((l) => l.status === 'upcoming' && new Date(l.start).getTime() > now.getTime());
-  if (live) parts.push(t('идёт урок', 'live now'));
-  else if (next) parts.push(t(`следующий в ${clock(next.start)}`, `next at ${clock(next.start)}`));
+  if (live) parts.push(t('teacher.today.liveNow', undefined, locale));
+  else if (next) parts.push(t('teacher.today.nextAt', { time: clock(next.start) }, locale));
   const open = active.filter((l) => l.todo.length > 0 && l.status !== 'upcoming').length;
-  if (open) parts.push(t(`ждут действий: ${open}`, `${open} need${open === 1 ? 's' : ''} you`));
-  else if (active.length && active.every((l) => l.done)) parts.push(t('всё готово', 'all done'));
+  if (open) parts.push(t('teacher.today.needYou', { count: open }, locale));
+  else if (active.length && active.every((l) => l.done)) parts.push(t('teacher.today.allDoneSummary', undefined, locale));
   return parts.join(' · ');
 }
 
 /** The group line of a row: names, and the lesson's number in the (first) group. */
-export function groupLine(lesson: TodayLesson, locale: Locale): string {
+export function groupLine(lesson: TodayLesson, locale: Locale = activeLocale()): string {
   const names = lesson.groups.map((g) => g.name.replace(/\s+-\s+[^-]+$/, '')).join(', ') || lesson.title;
   const n = lesson.groups[0]?.lesson_number;
-  return n ? `${names} · ${locale === 'ru' ? 'урок' : 'lesson'} ${n}` : names;
+  return n ? `${names} · ${t('teacher.today.lessonNumber', { number: n }, locale)}` : names;
 }

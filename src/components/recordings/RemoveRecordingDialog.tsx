@@ -4,44 +4,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import { removeRecording } from '../../services/api/recordings';
-
-type Locale = 'en' | 'ru';
-
-const TEXT = {
-  en: {
-    title: 'Remove this recording',
-    intro: 'Nobody will be able to watch it, including accountants holding a watch link. Nothing is deleted — you can restore it.',
-    hide: 'Hide the video',
-    hideHint: 'The lesson still counts as recorded and is paid as usual.',
-    notRecorded: 'This lesson was not recorded',
-    notRecordedHint: 'Marks the lesson as having no recording. Accountants apply “no recording, no pay”, so this affects the teacher’s pay.',
-    reason: 'Reason',
-    reasonPlaceholder: 'Why is this recording being removed?',
-    cancel: 'Cancel',
-    confirm: 'Remove recording',
-    working: 'Removing…',
-  },
-  ru: {
-    title: 'Удалить эту запись',
-    intro: 'Её никто не сможет посмотреть, включая бухгалтеров со ссылкой на просмотр. Ничего не удаляется безвозвратно — запись можно вернуть.',
-    hide: 'Скрыть видео',
-    hideHint: 'Урок остаётся записанным и оплачивается как обычно.',
-    notRecorded: 'Урок не был записан',
-    notRecordedHint: 'Помечает урок как не записанный. Бухгалтерия применяет правило «нет записи — нет оплаты», поэтому это влияет на оплату преподавателю.',
-    reason: 'Причина',
-    reasonPlaceholder: 'Почему удаляется эта запись?',
-    cancel: 'Отмена',
-    confirm: 'Удалить запись',
-    working: 'Удаляем…',
-  },
-} as const;
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/recordings';
 
 interface Props {
   eventId: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onRemoved: () => void;
-  locale?: Locale;
 }
 
 /**
@@ -52,8 +22,8 @@ interface Props {
  * A reason is required — this is visible to staff, adjacent to money, and looks permanent to
  * everyone who hits it, so it must never be anonymous.
  */
-export default function RemoveRecordingDialog({ eventId, open, onOpenChange, onRemoved, locale = 'en' }: Props) {
-  const t = TEXT[locale];
+export default function RemoveRecordingDialog({ eventId, open, onOpenChange, onRemoved }: Props) {
+  const t = useT();
   const [notRecorded, setNotRecorded] = useState(false);
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
@@ -102,25 +72,25 @@ export default function RemoveRecordingDialog({ eventId, open, onOpenChange, onR
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <VideoOff className="h-4 w-4" aria-hidden />
-            {t.title}
+            {t('recordings.remove.title')}
           </DialogTitle>
-          <DialogDescription>{t.intro}</DialogDescription>
+          <DialogDescription>{t('recordings.remove.intro')}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-2">
-          {option(false, t.hide, t.hideHint)}
-          {option(true, t.notRecorded, t.notRecordedHint)}
+          {option(false, t('recordings.remove.hide'), t('recordings.remove.hideHint'))}
+          {option(true, t('recordings.remove.notRecorded'), t('recordings.remove.notRecordedHint'))}
         </div>
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="removal-reason" className="text-sm font-medium text-foreground">
-            {t.reason}
+            {t('recordings.remove.reason')}
           </label>
           <Textarea
             id="removal-reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            placeholder={t.reasonPlaceholder}
+            placeholder={t('recordings.remove.reasonPlaceholder')}
             rows={3}
           />
         </div>
@@ -129,10 +99,10 @@ export default function RemoveRecordingDialog({ eventId, open, onOpenChange, onR
 
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
-            {t.cancel}
+            {t('common.cancel')}
           </Button>
           <Button variant="destructive" onClick={submit} disabled={busy || !reason.trim()}>
-            {busy ? t.working : t.confirm}
+            {busy ? t('recordings.remove.working') : t('recordings.remove.confirm')}
           </Button>
         </div>
       </DialogContent>

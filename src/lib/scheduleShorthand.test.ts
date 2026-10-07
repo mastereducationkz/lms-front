@@ -51,7 +51,8 @@ describe('parseScheduleShorthand', () => {
 
   it('reports what it cannot read instead of ignoring it', () => {
     expect(parseScheduleShorthand('пн 18:00 хз').problems.some((p) => p.includes('хз'))).toBe(true);
-    expect(parseScheduleShorthand('пн 18:00 ср').problems.some((p) => p.includes('ср'))).toBe(true);
+    expect(parseScheduleShorthand('пн 18:00 ср', undefined, 'ru').problems).toEqual(['Нет времени для: ср']);
+    expect(parseScheduleShorthand('пн 18:00 ср', undefined, 'en').problems).toEqual(['No time for: Wed']);
     expect(parseScheduleShorthand('пн 18:00-18:05').problems.length).toBeGreaterThan(0); // 5 min is not a lesson
   });
 

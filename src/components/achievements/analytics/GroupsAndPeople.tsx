@@ -3,10 +3,13 @@
 import { useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import type { AnalyticsGroup, AnalyticsPerson, ShareStats } from '@/services/api/achievementsAnalytics';
-import { filterGroups, tr, type Lang } from '@/lib/achievementsAnalytics';
+import { filterGroups } from '@/lib/achievementsAnalytics';
+import { useT } from '@/lib/i18n/react';
 import { Empty, OrcaStack, PersonRow, StatCard } from './parts';
+import '@/lib/i18n/catalogs/achievements';
 
-export function GroupsTable({ groups, lang, onPick }: { groups: AnalyticsGroup[]; lang: Lang; onPick?: (id: number) => void }) {
+export function GroupsTable({ groups, onPick }: { groups: AnalyticsGroup[]; onPick?: (id: number) => void }) {
+  const t = useT();
   const [query, setQuery] = useState('');
   const shown = useMemo(() => filterGroups(groups, query), [groups, query]);
   const best = groups.reduce((m, g) => Math.max(m, g.avg_achievements), 0) || 1;
@@ -18,13 +21,13 @@ export function GroupsTable({ groups, lang, onPick }: { groups: AnalyticsGroup[]
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={tr(lang, 'Найти группу', 'Find a group')}
+            placeholder={t('achievements.analytics.findGroup')}
             className="w-full bg-transparent outline-none placeholder:text-muted-foreground"
           />
         </label>
       )}
       {!shown.length ? (
-        <Empty>{tr(lang, 'Нет групп', 'No groups')}</Empty>
+        <Empty>{t('achievements.analytics.noGroups')}</Empty>
       ) : (
         <div className="max-h-[420px] overflow-y-auto divide-y divide-border">
           {shown.map((g) => (
@@ -41,7 +44,7 @@ export function GroupsTable({ groups, lang, onPick }: { groups: AnalyticsGroup[]
                     <div className="h-1.5 rounded-full bg-brand-solid" style={{ width: `${Math.round((g.avg_achievements / best) * 100)}%` }} />
                   </div>
                   <span className="text-xs text-muted-foreground tabular-nums">
-                    {g.avg_achievements} {tr(lang, 'в среднем', 'avg')} · {g.students} {tr(lang, 'уч.', 'students')}
+                    {t('achievements.analytics.groupStats', { avg: g.avg_achievements, students: g.students })}
                   </span>
                 </div>
               </div>
@@ -54,24 +57,26 @@ export function GroupsTable({ groups, lang, onPick }: { groups: AnalyticsGroup[]
   );
 }
 
-export function TopEarners({ people, lang }: { people: AnalyticsPerson[]; lang: Lang }) {
-  if (!people.length) return <Empty>{tr(lang, 'Пока никто ничего не получил', 'Nobody has earned anything yet')}</Empty>;
+export function TopEarners({ people }: { people: AnalyticsPerson[] }) {
+  const t = useT();
+  if (!people.length) return <Empty>{t('achievements.nobodyYet')}</Empty>;
   return (
     <div className="divide-y divide-border">
       {people.map((p, i) => (
-        <PersonRow key={p.id} person={p} rank={i + 1} lang={lang} sub={(p.groups || []).join(', ')} />
+        <PersonRow key={p.id} person={p} rank={i + 1} sub={(p.groups || []).join(', ')} />
       ))}
     </div>
   );
 }
 
-export function ShareTotals({ stats, lang }: { stats: ShareStats; lang: Lang }) {
+export function ShareTotals({ stats }: { stats: ShareStats }) {
+  const t = useT();
   const m = stats.totals.by_method || {};
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-      <StatCard label={tr(lang, 'Поделились', 'Shares')} value={stats.totals.shares} />
-      <StatCard label={tr(lang, 'В сторис (share)', 'Share sheet')} value={m.native ?? 0} />
-      <StatCard label={tr(lang, 'Сохранили картинку', 'Saved image')} value={m.download ?? 0} />
+      <StatCard label={t('achievements.analytics.shares')} value={stats.totals.shares} />
+      <StatCard label={t('achievements.analytics.shareSheet')} value={m.native ?? 0} />
+      <StatCard label={t('achievements.analytics.savedImage')} value={m.download ?? 0} />
     </div>
   );
 }

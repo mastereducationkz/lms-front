@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  almatyDay, asCalendarEvent, joinState, journalUrl, markEditable, registerChanges, registerSummary,
-  scoreEditable, sectionFromHash, sectionOrder, summaryLine,
+  almatyDay, asCalendarEvent, clockKz, joinState, journalUrl, lessonWhen, markEditable, registerChanges, registerSummary,
+  scoreEditable, sectionFromHash, sectionOrder, stampKz, summaryLine,
 } from './classLessonPage';
 import type { LessonView, RegisterStudent } from '../services/api/classLessons';
 
@@ -102,6 +102,16 @@ describe('registerSummary', () => {
     expect(s).toEqual({ present: 1, late: 1, absent: 1, unmarked: 1, scored: 1, attended: 2 });
     expect(summaryLine(s, 'ru')).toBe('Был 1 · Опоздал 1 · Не был 1 · Не отмечено 1 · баллы 1/2');
     expect(summaryLine({ ...s, unmarked: 0 }, 'en')).toBe('Present 1 · Late 1 · Absent 1 · scores 1/2');
+  });
+});
+
+describe('times, on the school clock in the viewer\'s language', () => {
+  it('writes the lesson slot, a clock time and a stamp in both languages', () => {
+    expect(lessonWhen('2026-09-28T13:00:00', '2026-09-28T14:00:00', 'en')).toBe('Mon 28 Sept, 18:00–19:00');
+    expect(lessonWhen('2026-09-28T13:00:00', '2026-09-28T14:00:00', 'ru')).toBe('пн, 28 сент., 18:00–19:00');
+    expect(clockKz(new Date('2026-09-28T12:50:00Z'), 'en')).toBe('17:50');
+    expect(stampKz('2026-09-28T13:05:00', 'en')).toBe('28 Sept, 18:05');
+    expect(stampKz('2026-09-28T13:05:00', 'ru')).toBe('28 сент., 18:05');
   });
 });
 
