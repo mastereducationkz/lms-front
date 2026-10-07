@@ -1,0 +1,114 @@
+/* The streak square's flame (see StreakFlame in StreakIcon.tsx). With a count it perches on
+   the square's top-right corner; with none it is the square's own glyph, unlit. */
+.streak-flame {
+  --flame-body: #f97316;      /* orange-500 */
+  --flame-core: #fcd34d;      /* amber-300 */
+  position: absolute;
+  top: -7px;
+  right: -6px;
+  width: 17px;
+  height: 17px;
+  pointer-events: none;
+  transform: rotate(10deg);
+  z-index: 1;
+}
+
+.streak-flame svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transform-origin: 50% 92%;
+}
+
+.streak-flame__body path {
+  fill: var(--flame-body);
+  /* A thin cut-out in the bar's colour where the flame crosses the square's border. */
+  stroke: var(--flame-ring, #f9fafb);
+  stroke-width: 2.4px;
+  stroke-linejoin: round;
+  paint-order: stroke;
+}
+
+.streak-flame__core path {
+  fill: var(--flame-core);
+}
+
+/* At risk: the same flame, smaller, yellower, burning low and slow. */
+.streak-flame--flicker {
+  --flame-body: #eab308;      /* yellow-500 */
+  --flame-core: #fef08a;      /* yellow-200 */
+  top: -5px;
+  right: -5px;
+  width: 15px;
+  height: 15px;
+}
+
+.streak-flame--out {
+  --flame-body: hsl(var(--muted-foreground));
+  --flame-core: hsl(var(--muted));
+}
+
+/* Streak 0: the unlit flame is the glyph itself, centred in the square. */
+.streak-flame--solo {
+  position: relative;
+  top: auto;
+  right: auto;
+  width: 20px;
+  height: 20px;
+  transform: none;
+  opacity: 0.6;
+}
+
+.streak-flame--solo .streak-flame__body path {
+  stroke: none;
+}
+
+.dark .streak-flame {
+  --flame-ring: hsl(var(--card));
+}
+
+.dark .streak-flame--lit {
+  --flame-body: #fb923c;      /* orange-400 */
+  --flame-core: #fde68a;      /* amber-200 */
+}
+
+.streak-flame--lit .streak-flame__body {
+  animation: streak-flame-body 1.6s ease-in-out infinite;
+  will-change: transform;
+}
+
+.streak-flame--lit .streak-flame__core {
+  animation: streak-flame-core 1.1s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+.streak-flame--flicker .streak-flame__body {
+  animation: streak-flame-body 3.2s ease-in-out infinite;
+  will-change: transform;
+}
+
+.streak-flame--flicker .streak-flame__core {
+  animation: streak-flame-core 2.3s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes streak-flame-body {
+  0%, 100% { transform: scale(1, 1) skewX(0deg); }
+  22% { transform: scale(0.95, 1.07) skewX(-3deg); }
+  48% { transform: scale(1.04, 0.96) skewX(2deg); }
+  74% { transform: scale(0.97, 1.04) skewX(-1.5deg); }
+}
+
+@keyframes streak-flame-core {
+  0%, 100% { transform: scale(1, 1); opacity: 1; }
+  30% { transform: scale(0.86, 1.14); opacity: 0.8; }
+  62% { transform: scale(1.08, 0.92); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .streak-flame svg {
+    animation: none !important;
+  }
+}
