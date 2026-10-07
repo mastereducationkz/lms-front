@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from '@/contexts/AuthContext';
+import { DATE, formatDate as formatDay, formatDateTime } from '@/lib/i18n';
+import { useT } from '@/lib/i18n/react';
 import apiClient from '@/services/api';
 
 interface StepProgress {
@@ -109,11 +111,14 @@ interface DetailedProgress {
   homework: HomeworkItem[];
 }
 
+const DATE_AND_TIME: Intl.DateTimeFormatOptions = { ...DATE, hour: '2-digit', minute: '2-digit' };
+
 export const StudentAnalyticsPage: React.FC = () => {
   const { studentId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { isTeacher, isCurator, isAdmin, hasAnyRole } = useAuth();
+  const { isTeacher, isAdmin, hasAnyRole } = useAuth();
+  const t = useT();
   const courseId = searchParams.get('course_id');
   const activeTab = searchParams.get('tab') || 'performance';
 
@@ -164,7 +169,7 @@ export const StudentAnalyticsPage: React.FC = () => {
                     }
                     
                     return {
-                        date: new Date(t.completedAt).toLocaleDateString(),
+                        date: formatDay(new Date(t.completedAt)),
                         timestamp: new Date(t.completedAt).getTime(),
                         score: t.score,
                         percentage: t.percentage,
@@ -175,7 +180,7 @@ export const StudentAnalyticsPage: React.FC = () => {
                         verbalScore: t.verbal_score,
                         verbalTotal: t.verbal_total,
                         testName: t.testName,
-                        fullDate: new Date(t.completedAt).toLocaleString()
+                        fullDate: formatDateTime(new Date(t.completedAt), DATE_AND_TIME)
                     };
                 });
             setSatData(processed);
@@ -200,7 +205,7 @@ export const StudentAnalyticsPage: React.FC = () => {
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
-    return new Date(dateString).toLocaleDateString() + ' ' + new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return formatDateTime(new Date(dateString), DATE_AND_TIME);
   };
 
   if (loading) {
@@ -245,16 +250,16 @@ export const StudentAnalyticsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col space-y-2">
         <Button variant="ghost" onClick={() => navigate(-1)} className="w-fit pl-0 mb-2 hover:bg-muted dark:hover:bg-secondary -ml-2 text-muted-foreground">
-          <ArrowLeft className="mr-2 h-4 w-4" /> {isCurator() ? 'Назад к аналитике' : 'Back to Course Analytics'}
+          <ArrowLeft className="mr-2 h-4 w-4" /> {t('analytics.student.back')}
         </Button>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">{data.student_info?.name || (isCurator() ? 'Детали студента' : 'Student Details')}</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">{data.student_info?.name || t('analytics.student.details')}</h1>
             <p className="text-muted-foreground">{data.student_info?.email}</p>
           </div>
           {hasAnyRole(['curator', 'admin', 'head_curator', 'head_teacher']) && (
             <Button onClick={() => navigate(`/curator/students/${studentId}/report`)}>
-              <FileText className="mr-2 h-4 w-4" /> Отчёт об успеваемости
+              <FileText className="mr-2 h-4 w-4" /> {t('analytics.student.progressReport')}
             </Button>
           )}
         </div>
@@ -264,7 +269,7 @@ export const StudentAnalyticsPage: React.FC = () => {
       <div className="grid grid-cols-1 @3xl:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{isCurator() ? 'Общее время обучения' : 'Total Study Time'}</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('analytics.student.totalStudyTime')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-foreground">{formatDuration(data.total_stats?.total_study_time || 0)}</div>
@@ -272,7 +277,7 @@ export const StudentAnalyticsPage: React.FC = () => {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{isCurator() ? 'Прогресс' : 'Progress'}</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('analytics.student.progress')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-foreground">
@@ -290,7 +295,7 @@ export const StudentAnalyticsPage: React.FC = () => {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{isCurator() ? 'Последняя активность' : 'Last Activity'}</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('analytics.student.lastActivity')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-xl font-bold text-foreground">{formatDate(data.total_stats?.last_activity)}</div>
@@ -299,7 +304,7 @@ export const StudentAnalyticsPage: React.FC = () => {
         </Card>
         <Card>
            <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">{isCurator() ? 'Статус зачисления' : 'Enrollment Status'}</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('analytics.student.enrollmentStatus')}</CardTitle>
           </CardHeader>
           <CardContent>
              <Badge variant="outline" className="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">Active</Badge>
@@ -310,16 +315,16 @@ export const StudentAnalyticsPage: React.FC = () => {
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-4 mb-8 max-w-xl">
           <TabsTrigger value="performance" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" /> {isCurator() ? 'Успеваемость' : 'Performance'}
+            <TrendingUp className="h-4 w-4" /> {t('analytics.student.tabs.performance')}
           </TabsTrigger>
           <TabsTrigger value="curriculum" className="flex items-center gap-2">
-            <BookOpen className="h-4 w-4" /> {isCurator() ? 'Учебный план' : 'Curriculum'}
+            <BookOpen className="h-4 w-4" /> {t('analytics.student.tabs.curriculum')}
           </TabsTrigger>
           <TabsTrigger value="homework" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" /> {isCurator() ? 'Домашние задания' : 'Homework'}
+            <FileText className="h-4 w-4" /> {t('analytics.student.tabs.homework')}
           </TabsTrigger>
           <TabsTrigger value="activity" className="flex items-center gap-2">
-            <History className="h-4 w-4" /> {isCurator() ? 'История' : 'History'}
+            <History className="h-4 w-4" /> {t('analytics.student.tabs.history')}
           </TabsTrigger>
         </TabsList>
 
@@ -572,7 +577,7 @@ export const StudentAnalyticsPage: React.FC = () => {
                               <div className="flex items-center gap-3 mt-1">
                                 <span className={`text-[10px] flex items-center gap-1 ${isOverdue ? 'text-rose-500 dark:text-rose-400 font-medium' : 'text-muted-foreground'}`}>
                                   <AlertTriangle className="h-3 w-3" />
-                                  {hw.due_date ? `Due: ${new Date(hw.due_date).toLocaleDateString()}` : 'No deadline'}
+                                  {hw.due_date ? `Due: ${formatDay(new Date(hw.due_date))}` : 'No deadline'}
                                 </span>
                                 <span className="text-[10px] text-muted-foreground  flex items-center gap-1">
                                   <BookOpen className="h-3 w-3" />
@@ -635,7 +640,7 @@ export const StudentAnalyticsPage: React.FC = () => {
                               <div className="flex items-center gap-3 mt-1">
                                 <span className="text-[10px] text-muted-foreground  flex items-center gap-1">
                                   <History className="h-3 w-3" />
-                                  Submitted: {hw.submitted_at ? new Date(hw.submitted_at).toLocaleDateString() : 'Unknown'}
+                                  Submitted: {hw.submitted_at ? formatDay(new Date(hw.submitted_at)) : 'Unknown'}
                                 </span>
                                 {hw.is_graded ? (
                                   <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-none">Graded</Badge>
@@ -739,7 +744,7 @@ export const StudentAnalyticsPage: React.FC = () => {
                                                             </span>
                                                         )}
                                                         {step.progress.completed_at && (
-                                                            <span className="hidden @2xl:inline">{new Date(step.progress.completed_at).toLocaleDateString()}</span>
+                                                            <span className="hidden @2xl:inline">{formatDay(new Date(step.progress.completed_at))}</span>
                                                         )}
                                                     </div>
                                                 </div>
@@ -789,7 +794,7 @@ export const StudentAnalyticsPage: React.FC = () => {
                         <div className="flex items-center justify-between gap-4">
                           <p className="text-sm font-semibold text-foreground leading-none">{event.title}</p>
                           <span className="text-[10px] text-muted-foreground whitespace-nowrap bg-muted dark:bg-secondary px-2 py-0.5 rounded border border-border">
-                             {new Date(event.timestamp).toLocaleDateString()} {new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                             {formatDateTime(new Date(event.timestamp), DATE_AND_TIME)}
                           </span>
                         </div>
                         <p className="text-xs text-muted-foreground">{event.context}</p>

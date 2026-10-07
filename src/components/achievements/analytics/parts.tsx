@@ -4,22 +4,23 @@ import type { AchievementTier } from '@/services/api/achievementsUi';
 import { TIER_STYLE } from '@/components/achievements/tierStyle';
 import UserAvatar from '@/components/mascot/UserAvatar';
 import type { AnalyticsPerson } from '@/services/api/achievementsAnalytics';
-import { tr, type Lang } from '@/lib/achievementsAnalytics';
+import type { MessageKey } from '@/lib/i18n';
+import { useT } from '@/lib/i18n/react';
 
-const TIER_LABEL: Record<AchievementTier, [string, string]> = {
-  earned: ['Базовое', 'Earned'],
-  rare: ['Редкое', 'Rare'],
-  legendary: ['Легендарное', 'Legendary'],
-  social: ['Социальное', 'Social'],
-  seasonal: ['Сезонное', 'Seasonal'],
+const TIER_LABEL: Record<AchievementTier, MessageKey> = {
+  earned: 'achievements.tier.earned',
+  rare: 'achievements.tier.rare',
+  legendary: 'achievements.tier.legendary',
+  social: 'achievements.tier.social',
+  seasonal: 'achievements.tier.seasonal',
 };
 
-export function TierBadge({ tier, lang }: { tier: AchievementTier; lang: Lang }) {
+export function TierBadge({ tier }: { tier: AchievementTier }) {
+  const t = useT();
   const style = TIER_STYLE[tier] ?? TIER_STYLE.earned;
-  const [ru, en] = TIER_LABEL[tier] ?? TIER_LABEL.earned;
   return (
     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${style.badge}`}>
-      {tr(lang, ru, en)}
+      {t(TIER_LABEL[tier] ?? TIER_LABEL.earned)}
     </span>
   );
 }
@@ -54,7 +55,8 @@ export function StatCard({ label, value, hint, accent = 'text-foreground' }: {
 }
 
 /** A student with their orca, name and count — the staff-only "top earners" row (S4). */
-export function PersonRow({ person, rank, lang, sub }: { person: AnalyticsPerson; rank?: number; lang: Lang; sub?: string }) {
+export function PersonRow({ person, rank, sub }: { person: AnalyticsPerson; rank?: number; sub?: string }) {
+  const t = useT();
   return (
     <div className="flex items-center gap-3 py-2">
       {rank !== undefined && <span className="w-5 text-right text-xs font-semibold text-muted-foreground tabular-nums">{rank}</span>}
@@ -65,7 +67,7 @@ export function PersonRow({ person, rank, lang, sub }: { person: AnalyticsPerson
       </div>
       <span className="text-sm font-semibold tabular-nums text-foreground">
         {person.count}
-        <span className="ml-1 text-xs font-normal text-muted-foreground">{tr(lang, 'дост.', person.count === 1 ? 'badge' : 'badges')}</span>
+        <span className="ml-1 text-xs font-normal text-muted-foreground">{t('achievements.analytics.badges', { count: person.count })}</span>
       </span>
     </div>
   );

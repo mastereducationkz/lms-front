@@ -17,7 +17,7 @@ import { getCuratorGroups, getWeeklyLessonsWithHwStatus, updateAttendanceBulk, u
 import { Group, CourseType } from '../types';
 import {
   PROGRAM_LABELS, PROGRAM_BADGE_STYLES, getGroupProgramType,
-  formatGroupLabel, getGroupDateText, pluralizeGroups, sortGroupsByCreatedAt,
+  formatGroupLabel, getGroupDateText, sortGroupsByCreatedAt,
 } from '../lib/groupPicker';
 import { Checkbox } from '../components/ui/checkbox';
 import { Label } from '../components/ui/label';
@@ -27,7 +27,7 @@ import { cellsToSave, isAttendanceLockedLesson } from '../lib/attendance';
 import { canBeExcused, displaysAsAbsence, excuseAwareStatus, excusePayload, isAbsenceStatus } from '../lib/excusedAbsence';
 import { ExcusePopover } from '../components/attendance/ExcusePopover';
 import { listMeetRecords, type MeetLessonFlag, type MeetReviewOptions, type MeetStudentVerdict } from '../services/api/meetAttendance';
-import { flagText, flagTextRu, mismatchIndex, reasonText, verdictIndex } from '../lib/meetAttendance';
+import { flagText, mismatchIndex, reasonText, verdictIndex } from '../lib/meetAttendance';
 import { MeetVerdictBadge, verdictNote } from '../components/meetAttendance/MeetVerdictBadge';
 import type { RegisterMode, StudentRegister } from '../services/api/meetRegister';
 import { decidedLessons, lessonStateIndex, overridesToAsk, reasonPayload, registerIndex, registerNote, scoreDue, type OverrideAsk, type OverrideReason } from '../lib/meetRegister';
@@ -43,6 +43,8 @@ import { lessonPath } from '../lib/lessonLinks';
 import UserAvatar from '@/components/mascot/UserAvatar';
 import { StarOfWeekButton } from '@/components/achievements/StarOfWeekDialog';
 import GroupAchievementsPanel from '@/components/achievements/analytics/GroupAchievementsPanel';
+import { formatDate, formatDateTime, formatTime, type Locale } from '../lib/i18n';
+import { useLocale, useT } from '../lib/i18n/react';
 
 interface HomeworkMeta {
     id: number;
@@ -241,7 +243,6 @@ const AttendanceToggle = ({
     onChange,
     disabled = false,
     isFuture = false,
-    en = false,
     note = null,
     excused = false,
     excuseNote = null,
@@ -253,8 +254,6 @@ const AttendanceToggle = ({
     // The lesson hasn't happened yet (start_datetime is in the future). A future
     // lesson can't be "Не был", so we show a neutral pending cell and block editing.
     isFuture?: boolean,
-    // Render status labels/titles in English (teacher view).
-    en?: boolean,
     // A second line for the hover, e.g. how long the student spoke in the lesson's Meet room.
     note?: string | null,
     // Whether this "Не был" already carries an excuse, and its reason.
@@ -266,6 +265,7 @@ const AttendanceToggle = ({
     // absences; that caller simply never passes this prop.
     onExcuseChange?: (excused: boolean, note: string | null) => void,
 }) => {
+  const t = useT();
   const [excusePopoverOpen, setExcusePopoverOpen] = useState(false);
 
   // Attendance belongs to one student; cancelling belongs to the whole lesson
@@ -287,24 +287,24 @@ const AttendanceToggle = ({
   const normalizedStatus = displaysAsAbsence(initialStatus) ? 'missed' : initialStatus;
 
   const getStatusConfig = () => {
-    if (initialStatus === 'cancelled') return { label: en ? 'Cancelled' : 'Отменён', color: 'bg-muted-foreground/60 text-white', title: en ? 'Lesson cancelled' : 'Урок отменён' };
+    if (initialStatus === 'cancelled') return { label: t('attendance.status.cancelled'), color: 'bg-muted-foreground/60 text-white', title: t('attendance.status.cancelledTitle') };
     const s = normalizedStatus;
 
     // A lesson that hasn't happened yet shouldn't read as "Не был" — the backend
     // just defaults an unmarked lesson to "missed". Show a neutral "—" instead.
-    if (isFuture && s === 'missed') return { label: '—', color: 'bg-muted text-muted-foreground dark:bg-secondary', title: en ? "Lesson hasn't happened yet" : 'Занятие ещё не прошло' };
+    if (isFuture && s === 'missed') return { label: '—', color: 'bg-muted text-muted-foreground dark:bg-secondary', title: t('attendance.status.notYet') };
 
     if (s === 'missed' && excused) {
       return {
-        label: en ? 'Exc.' : 'Ув.',
+        label: t('attendance.status.excusedShort'),
         color: 'bg-rose-200 text-rose-900 dark:bg-rose-300 dark:text-rose-950',
-        title: (en ? 'Excused absence' : 'Уважительная причина') + (excuseNote ? `: ${excuseNote}` : ''),
+        title: excuseNote ? t('attendance.status.excusedWithNote', { note: excuseNote }) : t('attendance.status.excused'),
       };
     }
 
-    if (s === 'attended') return { label: en ? 'Present' : 'Был', color: 'bg-emerald-500 text-white dark:bg-emerald-600', title: en ? 'Present' : 'Был' };
-    if (s === 'late') return { label: en ? 'Late' : 'Опоздал', color: 'bg-amber-400 text-amber-950 font-bold dark:bg-amber-500', title: en ? 'Late' : 'Опоздал' };
-    return { label: en ? 'Absent' : 'Не был', color: 'bg-rose-500 text-white dark:bg-rose-600', title: en ? 'Absent' : 'Не был' };
+    if (s === 'attended') return { label: t('attendance.status.present'), color: 'bg-emerald-500 text-white dark:bg-emerald-600', title: t('attendance.status.present') };
+    if (s === 'late') return { label: t('attendance.status.late'), color: 'bg-amber-400 text-amber-950 font-bold dark:bg-amber-500', title: t('attendance.status.late') };
+    return { label: t('attendance.status.absent'), color: 'bg-rose-500 text-white dark:bg-rose-600', title: t('attendance.status.absent') };
   };
 
   const config = getStatusConfig();
@@ -325,7 +325,7 @@ const AttendanceToggle = ({
             config.color,
             nonInteractive ? "cursor-default brightness-[0.9] grayscale-[0.2]" : "cursor-pointer active:brightness-95 hover:brightness-105"
         )}
-        title={(isFuture ? config.title : (disabled ? (en ? `Status: ${config.title} (view only)` : `Статус: ${config.title} (Только просмотр)`) : (en ? `Status: ${config.title}. Click to cycle.` : `Статус: ${config.title}. Нажмите для переключения.`))) + (note ? `\n${note}` : '')}
+        title={(isFuture ? config.title : (disabled ? t('attendance.toggle.viewOnly', { status: config.title }) : t('attendance.toggle.clickToCycle', { status: config.title }))) + (note ? `\n${note}` : '')}
     >
         <span className="flex items-center gap-1">
             <span className="text-[10px] uppercase">{config.label}</span>
@@ -347,11 +347,11 @@ const AttendanceToggle = ({
                     excused ? "bg-rose-600" : "bg-transparent border border-white/80"
                 )}
                 title={excused
-                    ? (en ? `Excused absence${excuseNote ? `: ${excuseNote}` : ''} — click to edit` : `Уважительная причина${excuseNote ? `: ${excuseNote}` : ''} — нажмите, чтобы изменить`)
-                    : (en ? 'Mark this absence as excused' : 'Отметить пропуск уважительной причиной')}
+                    ? (excuseNote ? t('attendance.excuse.editTitleWithNote', { note: excuseNote }) : t('attendance.excuse.editTitle'))
+                    : t('attendance.excuse.markTitle')}
                 aria-label={excused
-                    ? (en ? 'Excused absence, edit reason' : 'Уважительная причина, изменить')
-                    : (en ? 'Mark absence as excused' : 'Отметить пропуск уважительным')}
+                    ? t('attendance.excuse.editAria')
+                    : t('attendance.excuse.markAria')}
             />
         )}
         </span>
@@ -359,7 +359,6 @@ const AttendanceToggle = ({
             <ExcusePopover
                 excused={excused}
                 note={excuseNote}
-                en={en}
                 onSave={(savedNote) => { onExcuseChange(true, savedNote); setExcusePopoverOpen(false); }}
                 onClear={() => { onExcuseChange(false, null); setExcusePopoverOpen(false); }}
                 onClose={() => setExcusePopoverOpen(false)}
@@ -420,16 +419,16 @@ const getWeekMonday = (createdAtStr: string, week: number) => {
     return week1;
 };
 
-// `en`: render in English (en-US locale) for the teacher-facing UI; defaults to Russian.
-const formatDayMonth = (d: Date, en: boolean = false) =>
-    d.toLocaleDateString(en ? 'en-US' : 'ru-RU', { day: '2-digit', month: 'short' }).replace('.', '');
+// "01 Jun" / "01 июн" in the viewer's language.
+const formatDayMonth = (d: Date, locale: Locale) =>
+    formatDate(d, { day: '2-digit', month: 'short' }, locale).replace('.', '');
 
 // "01 – 07 июн" range label for a week number.
-const weekRangeLabel = (createdAtStr: string, week: number, en: boolean = false) => {
+const weekRangeLabel = (createdAtStr: string, week: number, locale: Locale) => {
     const start = getWeekMonday(createdAtStr, week);
     const end = new Date(start);
     end.setDate(end.getDate() + 6);
-    return `${formatDayMonth(start, en)} – ${formatDayMonth(end, en)}`;
+    return `${formatDayMonth(start, locale)} – ${formatDayMonth(end, locale)}`;
 };
 
 // The date leaderboard weeks are numbered from. The backend anchors week 1 to
@@ -542,13 +541,14 @@ const MarkdownContent = ({ children }: { children: string }) => {
 export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: { embedded?: boolean; titleSlot?: React.ReactNode } = {}) {
   const { user } = useAuth();
   const isTeacher = user?.role === 'teacher';
-  // Teachers get an English UI; curators/admins keep Russian.
-  const t = (ru: string, en: string) => (isTeacher ? en : ru);
+  // One language per person (lib/i18n): curators and head curators read Russian, everyone else English.
+  const t = useT();
+  const locale = useLocale();
   // «(закроется 10.09)» — the pending close of a group inside its grace window. The date
   // comes from the backend; the Wednesday rule is never recomputed here.
   const closeLabel = (group: Group) => {
     const day = formatGroupCloseDate(group);
-    return day && t(`(закроется ${day})`, `(closes ${day})`);
+    return day && t('attendance.picker.closes', { day });
   };
   // Curators view attendance read-only; every other role on this page can mark it.
   const canMarkAttendance = user?.role !== 'curator';
@@ -631,11 +631,11 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       const res = await setGroupWeekOffset({ group_id: selectedGroupId, offset: clamped });
       setGroups(prev => prev.map(g =>
         g.id === selectedGroupId ? { ...g, weekly_set_week_offset: res.weekly_set_week_offset } : g));
-      toast(t('Смещение недели сохранено', 'Week offset saved'), 'success');
+      toast(t('attendance.toast.offsetSaved'), 'success');
       await loadLeaderboard();
     } catch (err) {
       console.error('Failed to save week offset:', err);
-      toast(t('Не удалось сохранить смещение', 'Failed to save offset'), 'error');
+      toast(t('attendance.toast.offsetFailed'), 'error');
     } finally {
       setSavingOffset(false);
     }
@@ -748,7 +748,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   const [satModal, setSatModal] = useState<SatFeedbackModal>({
     open: false, studentName: '', section: 'math', testName: null, feedback: null, feedbackRu: null, correct: null, total: null, completedAt: null
   })
-  // Language shown in the SAT feedback modal; Russian (curator-facing) wins when available
+  // Language shown in the SAT feedback modal; the viewer's own language wins when available
   const [satFeedbackLang, setSatFeedbackLang] = useState<'ru' | 'en'>('ru')
   // Same for the IELTS feedback modal; translation is best-effort per field,
   // so Russian mode falls back to the English text wherever the Russian is null
@@ -895,7 +895,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         }
     } catch (e) {
         console.error("Failed to load leaderboard", e);
-        toast(t("Не удалось загрузить лидерборд", "Failed to load leaderboard"), "error");
+        toast(t('attendance.toast.loadFailed'), "error");
     } finally {
         setLoading(false);
     }
@@ -1178,11 +1178,11 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
           ),
         };
       });
-      toast(res.topic ? t('Тема сохранена', 'Topic saved') : t('Тема удалена', 'Topic cleared'), 'success');
+      toast(res.topic ? t('attendance.toast.topicSaved') : t('attendance.toast.topicCleared'), 'success');
       setTopicModal({ open: false, lesson: null, value: '' });
     } catch (err) {
       console.error('Failed to save lesson topic:', err);
-      toast(t('Не удалось сохранить тему', 'Failed to save topic'), 'error');
+      toast(t('attendance.toast.topicFailed'), 'error');
     } finally {
       setSavingTopic(false);
     }
@@ -1196,8 +1196,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
     if (canMarkAttendance) {
       const lessonLabel = (key: string) => {
         const meta = data.lessons.find((l) => l.lesson_number.toString() === key);
-        const day = meta ? parseAsUTC(meta.start_datetime).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' }) : '';
-        return `${t('Урок', 'Lesson')} ${key}${day ? ` · ${day}` : ''}`;
+        const day = meta ? formatDate(meta.start_datetime, { day: '2-digit', month: '2-digit' }, locale) : '';
+        return `${t('attendance.lessonNumber', { number: key })}${day ? ` · ${day}` : ''}`;
       };
       const ask = overridesToAsk(data.students, changedEntries, meetRegister, reasons, lessonLabel);
       if (ask.length > 0) {
@@ -1330,7 +1330,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         successCount = entryResult.status === 'fulfilled' ? entriesToSave.length : 0;
 
         if (successCount === entriesToSave.length && attendanceFailures === 0) {
-            toast(t("Все изменения сохранены", "All changes saved"), "success");
+            toast(t('attendance.toast.allSaved'), "success");
             setChangedEntries(new Set());
             setTouchedExcuses(new Set());
             setConfigChanged(false);
@@ -1355,20 +1355,13 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                 console.error('Failed to reload config:', reloadErr);
             }
         } else if (attendanceFailures > 0) {
-            toast(attendanceErrorDetail || t(
-                `Сохранено с ошибками (не сохранилось ${attendanceFailures} отметок). Попробуйте ещё раз.`,
-                `Saved with errors (${attendanceFailures} marks failed). Please try again.`
-            ), "error");
+            toast(attendanceErrorDetail || t('attendance.toast.marksFailed', { count: attendanceFailures }), "error");
         } else {
-            toast(t(
-                `Сохранено ${successCount}/${entriesToSave.length} записей. Попробуйте ещё раз.`,
-                `Saved ${successCount}/${entriesToSave.length} entries. Please try again.`
-            ), "error");
+            toast(t('attendance.toast.entriesPartial', { saved: successCount, total: entriesToSave.length }), "error");
         }
     } catch (e) {
         console.error("Failed to save configuration:", e);
-        // Teachers can't trigger a config save (skipped above), so this stays Russian.
-        toast("Не удалось сохранить конфигурацию", "error");
+        toast(t('attendance.toast.configFailed'), "error");
     } finally {
         setIsSaving(false);
     }
@@ -1382,13 +1375,12 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       // Backend stores in UTC, convert to Kazakhstan time (GMT+5).
       // parseAsUTC appends "Z" when missing — new Date() would otherwise
       // treat a naive string as browser-local and skip the conversion.
-      const dt = parseAsUTC(dateStr);
-      const locale = isTeacher ? 'en-US' : 'ru-RU';
+      // formatDate/formatTime parse it with parseAsUTC and show it on Almaty time.
       // Date: 03 фев
-      const date = dt.toLocaleDateString(locale, { day: '2-digit', month: 'short', timeZone: 'Asia/Almaty' }).replace('.', '');
+      const date = formatDate(dateStr, { day: '2-digit', month: 'short' }, locale).replace('.', '');
       // DayTime: Пн 19:00
-      const day = dt.toLocaleDateString(locale, { weekday: 'short', timeZone: 'Asia/Almaty' }); // Пн, Вт
-      const time = dt.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Almaty' });
+      const day = formatDate(dateStr, { weekday: 'short' }, locale); // Пн, Вт
+      const time = formatTime(dateStr, undefined, locale);
       // Capitalize day and month if needed
       const dayCap = day.charAt(0).toUpperCase() + day.slice(1);
       
@@ -1396,7 +1388,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   };
 
   const renderSectionFraction = (correct?: number | null, total?: number | null) => {
-    if (correct == null) return t('Не сдано', 'Not taken');
+    if (correct == null) return t('attendance.exam.notTaken');
     if (total != null && total > 0) return `${correct}/${total}`;
     return `${correct}`;
   };
@@ -1423,25 +1415,21 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   // as an absolute instant and render in Almaty local time, matching the schedule grid.
   const formatSpeakingSessionAt = (iso?: string | null): string | null => {
     if (!iso) return null;
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return null;
-    const locale = isTeacher ? 'en-US' : 'ru-RU';
-    const date = d.toLocaleDateString(locale, { day: '2-digit', month: 'short', timeZone: 'Asia/Almaty' });
-    const time = d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Almaty' });
-    return `${date}, ${time}`;
+    const date = formatDate(iso, { day: '2-digit', month: 'short' }, locale);
+    if (!date) return null;
+    return `${date}, ${formatTime(iso, undefined, locale)}`;
   };
 
-  // Operational speaking-session states. Kept in Russian to match the leaderboard's
-  // "Не сдано" / "Отменён" vocabulary (English for teachers); `short` is used in the
-  // dense inline cell.
+  // Operational speaking-session states, in the leaderboard's own vocabulary; `short` is
+  // used in the dense inline cell.
   const SPEAKING_STATUS_META: Record<
     NonNullable<StudentRow['ielts_speaking_status']>,
     { label: string; short: string; className: string; dot: string }
   > = {
-    completed: { label: t('Проведено', 'Completed'), short: t('Сдано', 'Done'), className: 'text-emerald-700 bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-900/40', dot: 'bg-emerald-500' },
-    scheduled: { label: t('Запланировано', 'Scheduled'), short: t('Запл.', 'Sched.'), className: 'text-amber-700 bg-amber-100 dark:text-amber-300 dark:bg-amber-900/40', dot: 'bg-amber-500' },
-    no_show: { label: t('Неявка', 'No-show'), short: t('Неявка', 'No-show'), className: 'text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900/40', dot: 'bg-red-500' },
-    cancelled: { label: t('Отменено', 'Cancelled'), short: t('Отменено', 'Cancelled'), className: 'text-muted-foreground bg-muted dark:bg-secondary', dot: 'bg-muted-foreground/50' },
+    completed: { label: t('attendance.speaking.completed'), short: t('attendance.speaking.completedShort'), className: 'text-emerald-700 bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-900/40', dot: 'bg-emerald-500' },
+    scheduled: { label: t('attendance.speaking.scheduled'), short: t('attendance.speaking.scheduledShort'), className: 'text-amber-700 bg-amber-100 dark:text-amber-300 dark:bg-amber-900/40', dot: 'bg-amber-500' },
+    no_show: { label: t('attendance.speaking.noShow'), short: t('attendance.speaking.noShow'), className: 'text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900/40', dot: 'bg-red-500' },
+    cancelled: { label: t('attendance.speaking.cancelled'), short: t('attendance.speaking.cancelled'), className: 'text-muted-foreground bg-muted dark:bg-secondary', dot: 'bg-muted-foreground/50' },
   };
 
   const hasIeltsEnFeedback = (s: StudentRow) =>
@@ -1454,6 +1442,10 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       s.ielts_writing_feedback_ru?.task1 || s.ielts_writing_feedback_ru?.task2 ||
       (s.ielts_speaking_feedback_ru && Object.values(s.ielts_speaking_feedback_ru).some(Boolean)));
 
+  // Which feedback text a modal opens on: the viewer's language when that text exists.
+  const feedbackLang = (hasRu: boolean, hasEn: boolean): Locale =>
+    locale === 'ru' ? (hasRu || !hasEn ? 'ru' : 'en') : (hasEn || !hasRu ? 'en' : 'ru');
+
   // Week-navigation bounds and the group's "real" current week (based on today).
   const maxWeek = selectedGroup?.max_week || 52;
   const realCurrentWeek = selectedGroup
@@ -1461,13 +1453,13 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
     : 1;
   const isViewingCurrentWeek = currentWeek === realCurrentWeek;
   const viewedRangeLabel = data
-    ? `${formatDayMonth(new Date(data.week_start), isTeacher)} – ${(() => {
+    ? `${formatDayMonth(new Date(data.week_start), locale)} – ${(() => {
         const end = new Date(data.week_start);
         end.setDate(end.getDate() + 6);
-        return formatDayMonth(end, isTeacher);
+        return formatDayMonth(end, locale);
       })()}`
     : selectedGroup
-      ? weekRangeLabel(groupWeekAnchor(selectedGroup), currentWeek, isTeacher)
+      ? weekRangeLabel(groupWeekAnchor(selectedGroup), currentWeek, locale)
       : '';
 
   return (
@@ -1477,7 +1469,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       <div className="flex flex-col gap-3 border-b pb-4 dark:border-border">
         {/* Row 1: title (or the wrapper's view toggle) + save */}
         <div className="flex items-center justify-between gap-3">
-          {titleSlot ?? <h1 className="text-xl font-semibold text-foreground dark:text-foreground">{t('Лидерборд', 'Leaderboard')}</h1>}
+          {titleSlot ?? <h1 className="text-xl font-semibold text-foreground dark:text-foreground">{t('attendance.header.title')}</h1>}
           <Button
               onClick={() => void handleSaveChanges()}
               disabled={(!configChanged && changedEntries.size === 0) || isSaving}
@@ -1488,9 +1480,9 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
               )}
           >
               {isSaving ? (
-                  <><Loader2 className="w-3 h-3 mr-2 animate-spin" /> {t('Сохранение', 'Saving')}</>
+                  <><Loader2 className="w-3 h-3 mr-2 animate-spin" /> {t('attendance.header.saving')}</>
               ) : (
-                  <><Save className="w-3 h-3 mr-2" /> {t(`Сохранить (${changedEntries.size})`, `Save (${changedEntries.size})`)}</>
+                  <><Save className="w-3 h-3 mr-2" /> {t('attendance.header.save', { count: changedEntries.size })}</>
               )}
           </Button>
         </div>
@@ -1503,10 +1495,10 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     onValueChange={(value) => setProgramFilter(value as 'all' | CourseType)}
                 >
                     <SelectTrigger className="h-8 w-[130px] rounded-md border-border text-xs">
-                        <SelectValue placeholder={t('Предмет', 'Subject')} />
+                        <SelectValue placeholder={t('attendance.filters.subject')} />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">{t('Все предметы', 'All subjects')}</SelectItem>
+                        <SelectItem value="all">{t('attendance.filters.allSubjects')}</SelectItem>
                         <SelectItem value="sat">SAT</SelectItem>
                         <SelectItem value="ielts">IELTS</SelectItem>
                         <SelectItem value="nuet">NUET</SelectItem>
@@ -1524,7 +1516,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 <span className="truncate">
                                     {(() => {
                                         const g = filteredGroups.find((g) => g.id === selectedGroupId);
-                                        return g ? formatGroupLabel(g) : t('Выберите группу', 'Select a group');
+                                        return g ? formatGroupLabel(g) : t('attendance.picker.selectGroup');
                                     })()}
                                 </span>
                                 <ChevronsUpDown className="ml-2 h-3.5 w-3.5 shrink-0 opacity-50" />
@@ -1536,19 +1528,19 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     autoFocus
                                     value={groupQuery}
                                     onChange={(e) => setGroupQuery(e.target.value)}
-                                    placeholder={t('Поиск по предмету, дате или учителю...', 'Search by subject, date or teacher...')}
+                                    placeholder={t('attendance.picker.search')}
                                     className="h-8 text-xs"
                                 />
                             </div>
                             <div className="flex items-center justify-between px-3 py-1 border-b border-border">
                                 <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                                    {groupMatches.length} {isTeacher ? (groupMatches.length === 1 ? 'group' : 'groups') : pluralizeGroups(groupMatches.length)}
+                                    {t('common.groups', { count: groupMatches.length })}
                                 </span>
                             </div>
                             <div className="max-h-72 overflow-y-auto py-0.5">
                                 {groupMatches.length === 0 ? (
                                     <div className="px-3 py-3 text-xs text-muted-foreground text-center">
-                                        {t('Ничего не найдено', 'Nothing found')}
+                                        {t('attendance.picker.nothingFound')}
                                     </div>
                                 ) : (
                                     groupMatches.map((g) => {
@@ -1584,7 +1576,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                             {getGroupDateText(g)}
                                                         </span>
                                                         {g.is_over ? (
-                                                            <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">{t('(завершена)', '(completed)')}</span>
+                                                            <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">{t('attendance.picker.completed')}</span>
                                                         ) : closeLabel(g) && (
                                                             // Finished, but still open to everyone until the Wednesday cutoff.
                                                             <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">{closeLabel(g)}</span>
@@ -1615,7 +1607,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                         htmlFor="hide-completed-groups"
                         className="text-xs text-muted-foreground cursor-pointer select-none whitespace-nowrap"
                     >
-                        {t('Скрыть завершённые', 'Hide completed')}
+                        {t('attendance.filters.hideCompleted')}
                     </Label>
                 </div>
             </div>
@@ -1628,7 +1620,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                             type="button"
                             onClick={() => setCurrentWeek(Math.max(1, currentWeek - 1))}
                             disabled={currentWeek <= 1}
-                            title={currentWeek <= 1 ? t('Это первая неделя', 'This is the first week') : t('Предыдущая неделя', 'Previous week')}
+                            title={currentWeek <= 1 ? t('attendance.week.first') : t('attendance.week.previous')}
                             className="flex w-8 items-center justify-center border-r border-border text-muted-foreground hover:bg-muted/60 disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                             <ChevronLeft className="w-4 h-4" />
@@ -1639,9 +1631,9 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 <SelectValue>
                                     <div className="flex flex-col items-center leading-tight text-center">
                                         <span className="text-xs font-semibold text-foreground dark:text-foreground">
-                                            {t(`Неделя ${currentWeek}`, `Week ${currentWeek}`)}
+                                            {t('attendance.week.label', { week: currentWeek })}
                                             <span className="text-muted-foreground font-normal"> / {maxWeek}</span>
-                                            {isViewingCurrentWeek && <span className="ml-1 text-[9px] font-bold uppercase text-brand align-middle">{t('сейчас', 'now')}</span>}
+                                            {isViewingCurrentWeek && <span className="ml-1 text-[9px] font-bold uppercase text-brand align-middle">{t('attendance.week.now')}</span>}
                                         </span>
                                         <span className="text-[10px] text-muted-foreground">{viewedRangeLabel}</span>
                                     </div>
@@ -1651,9 +1643,9 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 {Array.from({ length: maxWeek }, (_, i) => i + 1).map(w => (
                                     <SelectItem key={w} value={w.toString()} className="text-xs">
                                         <span className="flex items-center gap-2">
-                                            <span className="font-medium">{t(`Неделя ${w}`, `Week ${w}`)}</span>
-                                            {selectedGroup && <span className="text-muted-foreground">{weekRangeLabel(groupWeekAnchor(selectedGroup), w, isTeacher)}</span>}
-                                            {w === realCurrentWeek && <span className="text-[9px] font-bold uppercase text-brand">{t('сейчас', 'now')}</span>}
+                                            <span className="font-medium">{t('attendance.week.label', { week: w })}</span>
+                                            {selectedGroup && <span className="text-muted-foreground">{weekRangeLabel(groupWeekAnchor(selectedGroup), w, locale)}</span>}
+                                            {w === realCurrentWeek && <span className="text-[9px] font-bold uppercase text-brand">{t('attendance.week.now')}</span>}
                                         </span>
                                     </SelectItem>
                                 ))}
@@ -1664,7 +1656,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                             type="button"
                             onClick={() => setCurrentWeek(Math.min(maxWeek, currentWeek + 1))}
                             disabled={currentWeek >= maxWeek}
-                            title={currentWeek >= maxWeek ? t('Это последняя неделя', 'This is the last week') : t('Следующая неделя', 'Next week')}
+                            title={currentWeek >= maxWeek ? t('attendance.week.last') : t('attendance.week.next')}
                             className="flex w-8 items-center justify-center border-l border-border text-muted-foreground hover:bg-muted/60 disabled:opacity-30 disabled:cursor-not-allowed"
                         >
                             <ChevronRight className="w-4 h-4" />
@@ -1677,19 +1669,16 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                             size="sm"
                             className="h-8 text-xs"
                             onClick={() => setCurrentWeek(realCurrentWeek)}
-                            title={t('Перейти к текущей неделе', 'Go to current week')}
+                            title={t('attendance.week.goToCurrent')}
                         >
-                            {t('Сейчас', 'Now')}
+                            {t('attendance.week.nowButton')}
                         </Button>
                     )}
 
                     {isIeltsGroup && (
                         <label
                             className="flex items-center gap-1.5 rounded-lg border border-border bg-card dark:bg-card px-2 h-8 cursor-pointer select-none"
-                            title={t(
-                                'Автоматические задания «недельный тест IELTS» для этой группы (создаются при публикации набора на платформе).',
-                                'Auto-created "IELTS weekly test" assignments for this group (created when a set is published on the platform).',
-                            )}
+                            title={t('attendance.platformTests.title')}
                         >
                             <input
                                 type="checkbox"
@@ -1698,19 +1687,16 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 onChange={(e) => savePlatformTests(e.target.checked)}
                                 className="h-3.5 w-3.5"
                             />
-                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">{t('Авто-тесты', 'Auto tests')}</span>
+                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">{t('attendance.platformTests.label')}</span>
                             {savingPlatformTests && <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />}
                         </label>
                     )}
                     {isNuetGroup && (
                         <div
                             className="flex items-center gap-1.5 rounded-lg border border-border bg-card dark:bg-card px-2 h-8"
-                            title={t(
-                                'Смещение недели для NUET: контентная неделя = неделя − смещение. Укажите, если группа стартовала с середины недели (напр. 1).',
-                                'NUET week offset: content week = week − offset. Set this if the group started mid-week (e.g. 1).'
-                            )}
+                            title={t('attendance.nuetOffset.title')}
                         >
-                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">{t('Смещение', 'Offset')}</span>
+                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">{t('attendance.nuetOffset.label')}</span>
                             <input
                                 type="number"
                                 min={0}
@@ -1732,7 +1718,6 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                         <StarOfWeekButton
                             groupId={selectedGroup.id}
                             students={data.students.map((s) => ({ id: s.student_id, name: s.student_name }))}
-                            lang={isTeacher ? 'en' : 'ru'}
                         />
                     )}
                 </div>
@@ -1744,8 +1729,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       <div className="border border-border overflow-x-auto">
             {filteredGroups.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                    <p className="text-sm">{t('Нет групп по выбранным фильтрам', 'No groups match the filters')}</p>
-                    <p className="text-xs mt-1">{t('Снимите «Скрыть завершённые» или выберите другой предмет', "Uncheck 'Hide completed' or pick another subject")}</p>
+                    <p className="text-sm">{t('attendance.empty.noGroups')}</p>
+                    <p className="text-xs mt-1">{t('attendance.empty.hint')}</p>
                 </div>
             ) : loading || !data ? (
                 <Table className="border-collapse w-full text-xs">
@@ -1775,7 +1760,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
               <TableHeader className="bg-muted dark:bg-secondary sticky top-0 z-30">
                 <TableRow className="h-auto border-b border-border hover:bg-muted dark:hover:bg-secondary">
                     <TableHead className="w-28 md:w-48 sticky left-0 z-40 bg-muted dark:bg-secondary font-semibold text-foreground p-2 border-r border-border text-left align-middle text-center">
-                        {t('Студент', 'Student')}
+                        {t('attendance.grid.student')}
                     </TableHead>
                     {/* Dynamic Lesson Columns */}
                     {data.lessons.map(lesson => {
@@ -1789,7 +1774,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                         canMarkAttendance && !lessonIsFuture && "cursor-pointer hover:bg-gray-300/50 dark:hover:bg-muted"
                                     )}
                                     onClick={() => markAllPresentForLesson(lesson)}
-                                    title={canMarkAttendance && !lessonIsFuture ? t('Нажмите, чтобы отметить всех «Был»', 'Click to mark everyone Present') : undefined}
+                                    title={canMarkAttendance && !lessonIsFuture ? t('attendance.grid.markAllTitle') : undefined}
                                 >
                                     <span className="text-sm">{formatDateParts(lesson.start_datetime).date}</span>
                                     <span className="text-[10px] font-normal text-muted-foreground leading-tight uppercase">{formatDateParts(lesson.start_datetime).dayTime}</span>
@@ -1798,25 +1783,25 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     {/* Замена: показываем имя подменяющего учителя под датой (тот же приём с invisible-слотом) */}
                                     <span
                                         className={cn("text-[9px] font-medium text-amber-600 dark:text-amber-400 truncate max-w-[150px] leading-tight", !lesson.substitute_teacher_name && "invisible")}
-                                        title={lesson.substitute_teacher_name ? `${t('Замена', 'Substitute')}: ${lesson.substitute_teacher_name}` : undefined}
+                                        title={lesson.substitute_teacher_name ? t('attendance.grid.substitute', { name: lesson.substitute_teacher_name }) : undefined}
                                     >
-                                        {lesson.substitute_teacher_name ? `${t('Замена', 'Substitute')}: ${lesson.substitute_teacher_name}` : '·'}
+                                        {lesson.substitute_teacher_name ? t('attendance.grid.substitute', { name: lesson.substitute_teacher_name }) : '·'}
                                     </span>
                                     {canMarkAttendance && (
                                         <span className={cn("mt-0.5 flex items-center gap-1.5 leading-tight", lessonIsFuture && "invisible")}>
                                             <span className="text-[9px] font-bold uppercase tracking-tight text-brand">
-                                                {t('Отметить всех', 'Mark all')}
+                                                {t('attendance.grid.markAll')}
                                             </span>
                                             {/* «Баллы за урок» (2026-09-28): the whole lesson's scores on one screen, from its start. */}
                                             {lesson.event_id && !(isTeacher && lesson.is_substitution) && (
                                                 <button
                                                     type="button"
                                                     className="inline-flex items-center gap-0.5 rounded px-1 text-[9px] font-bold uppercase tracking-tight text-yellow-600 hover:bg-yellow-100 hover:dark:bg-yellow-500/15 dark:text-yellow-400 dark:hover:bg-yellow-900/30"
-                                                    title={t('Баллы за активность для всего урока', 'Activity scores for the whole lesson')}
+                                                    title={t('attendance.grid.scoresTitle')}
                                                     onClick={(e) => { e.stopPropagation(); setScoresLesson(lesson); }}
                                                 >
                                                     <Star className="w-3 h-3" aria-hidden />
-                                                    {t('Баллы', 'Scores')}
+                                                    {t('attendance.grid.scores')}
                                                 </button>
                                             )}
                                         </span>
@@ -1827,8 +1812,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                             to={lessonPath(lesson.event_id)}
                                             onClick={(e) => e.stopPropagation()}
                                             className="absolute top-1 right-1 p-1 text-muted-foreground hover:text-brand"
-                                            title={t('Открыть урок', 'Open lesson')}
-                                            aria-label={t('Открыть урок', 'Open lesson')}
+                                            title={t('attendance.grid.openLesson')}
+                                            aria-label={t('attendance.grid.openLesson')}
                                         >
                                             <ArrowUpRight className="w-3.5 h-3.5" />
                                         </Link>
@@ -1837,7 +1822,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                         <button
                                             type="button"
                                             className="absolute top-1 right-6 p-1 text-muted-foreground hover:text-brand opacity-100 md:opacity-0 md:group-hover/lesson:opacity-100 transition-opacity"
-                                            title={t('Тема урока', 'Lesson topic')}
+                                            title={t('attendance.grid.lessonTopic')}
                                             onClick={(e) => { e.stopPropagation(); setTopicModal({ open: true, lesson, value: lesson.topic ?? '' }); }}
                                         >
                                             <Pencil className="w-3.5 h-3.5" />
@@ -1847,26 +1832,25 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                         eventId={lesson.event_id}
                                         count={materialCounts[lesson.event_id] ?? 0}
                                         role={user?.role}
-                                        t={t}
                                         onOpen={(eventId) => setMaterialsDialog({ open: true, eventId })}
                                     />
                                 </div>
                                 <div className="flex flex-1 items-stretch">
                                     <div className="w-1/2 py-2 text-[10px] font-bold text-muted-foreground border-r border-border text-center uppercase tracking-tighter flex items-center justify-center">
-                                        {t('Урок', 'Lesson')}
+                                        {t('attendance.grid.lesson')}
                                     </div>
                                     {lessonHomeworks(lesson).length === 0 && canAssignHw && selectedGroupId ? (
                                         <button
                                             type="button"
                                             className="w-1/2 py-2 text-[10px] font-bold bg-gray-50 dark:bg-secondary text-center uppercase tracking-tighter flex items-center justify-center gap-0.5 text-brand hover:bg-brand-surface transition-colors"
-                                            title={t('Задать ДЗ к этому уроку', 'Assign homework for this lesson')}
+                                            title={t('attendance.grid.assignTitle')}
                                             onClick={() => navigate(`/homework/new/group/${selectedGroupId}?lesson_number=${lesson.lesson_number}`)}
                                         >
-                                            <Plus className="w-3 h-3" />{t('Задать', 'Assign')}
+                                            <Plus className="w-3 h-3" />{t('attendance.grid.assign')}
                                         </button>
                                     ) : (
-                                    <div className="w-1/2 py-2 text-[10px] font-bold text-muted-foreground bg-gray-50 dark:bg-secondary text-center uppercase tracking-tighter flex items-center justify-center" title={lessonHomeworks(lesson).map(h => h.title).join(', ') || t("Без ДЗ", "No homework")}>
-                                        {lessonHomeworks(lesson).length > 1 ? t(`ДЗ (${lessonHomeworks(lesson).length})`, `HW (${lessonHomeworks(lesson).length})`) : t('ДЗ', 'HW')}
+                                    <div className="w-1/2 py-2 text-[10px] font-bold text-muted-foreground bg-gray-50 dark:bg-secondary text-center uppercase tracking-tighter flex items-center justify-center" title={lessonHomeworks(lesson).map(h => h.title).join(', ') || t('attendance.grid.noHomework')}>
+                                        {lessonHomeworks(lesson).length > 1 ? t('attendance.grid.homeworkCount', { count: lessonHomeworks(lesson).length }) : t('attendance.grid.homework')}
                                     </div>
                                     )}
                                 </div>
@@ -1880,10 +1864,10 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     <TableHead
                         className={cn("text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-muted dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.curator_hour && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-muted-foreground")}
                         onClick={() => toggleColumn('curator_hour')}
-                        title={enabledCols.curator_hour ? "Нажмите, чтобы скрыть" : "Нажмите, чтобы показать"}
+                        title={enabledCols.curator_hour ? t('attendance.columns.clickToHide') : t('attendance.columns.clickToShow')}
                     >
                         <div className="flex flex-col items-center justify-center gap-1">
-                            <span>Час<br/>куратора</span>
+                            <span className="whitespace-pre-line">{t('attendance.columns.curatorHour')}</span>
                             <Input
                                 type="date"
                                 className="h-6 w-24 text-[10px] p-1 mt-1 border-border"
@@ -1921,16 +1905,16 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     ) : isIeltsGroup ? (
                         <TableHead className="text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight">IELTS</TableHead>
                     ) : (
-                        <TableHead className="text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight">{isTeacher ? <>Mock<br/>exam</> : <>Пробный<br/>экзамен</>}</TableHead>
+                        <TableHead className="text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight"><span className="whitespace-pre-line">{t('attendance.columns.mockExam')}</span></TableHead>
                     )}
                     {!isTeacher && (<>
                     <TableHead
                         className={cn("text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-muted dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.study_buddy && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-muted-foreground")}
                         onClick={() => toggleColumn('study_buddy')}
-                        title={enabledCols.study_buddy ? "Нажмите, чтобы скрыть" : "Нажмите, чтобы показать"}
+                        title={enabledCols.study_buddy ? t('attendance.columns.clickToHide') : t('attendance.columns.clickToShow')}
                     >
                         <div className="flex flex-col items-center justify-center gap-1">
-                            <span>Учебный<br/>бадди</span>
+                            <span className="whitespace-pre-line">{t('attendance.columns.studyBuddy')}</span>
                             {enabledCols.study_buddy 
                                 ? <Eye className="w-3 h-3 text-muted-foreground opacity-50 group-hover:opacity-100 transition-opacity absolute top-1 right-1" /> 
                                 : <EyeOff className="w-3 h-3 text-muted-foreground absolute top-1 right-1" />
@@ -1940,10 +1924,10 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     <TableHead 
                         className={cn("text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-muted dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.self_reflection_journal && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-muted-foreground")}
                         onClick={() => toggleColumn('self_reflection_journal')}
-                        title={enabledCols.self_reflection_journal ? "Нажмите, чтобы скрыть" : "Нажмите, чтобы показать"}
+                        title={enabledCols.self_reflection_journal ? t('attendance.columns.clickToHide') : t('attendance.columns.clickToShow')}
                     >
                         <div className="flex flex-col items-center justify-center gap-1">
-                            <span>Журнал</span>
+                            <span>{t('attendance.columns.journal')}</span>
                             {enabledCols.self_reflection_journal 
                                 ? <Eye className="w-3 h-3 text-muted-foreground opacity-50 group-hover:opacity-100 transition-opacity absolute top-1 right-1" /> 
                                 : <EyeOff className="w-3 h-3 text-muted-foreground absolute top-1 right-1" />
@@ -1953,10 +1937,10 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     <TableHead 
                         className={cn("text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-muted dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.weekly_evaluation && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-muted-foreground")}
                         onClick={() => toggleColumn('weekly_evaluation')}
-                        title={enabledCols.weekly_evaluation ? "Нажмите, чтобы скрыть" : "Нажмите, чтобы показать"}
+                        title={enabledCols.weekly_evaluation ? t('attendance.columns.clickToHide') : t('attendance.columns.clickToShow')}
                     >
                         <div className="flex flex-col items-center justify-center gap-1">
-                            <span>Ежен.<br/>оценка</span>
+                            <span className="whitespace-pre-line">{t('attendance.columns.weeklyEvaluation')}</span>
                             {enabledCols.weekly_evaluation 
                                 ? <Eye className="w-3 h-3 text-muted-foreground opacity-50 group-hover:opacity-100 transition-opacity absolute top-1 right-1" /> 
                                 : <EyeOff className="w-3 h-3 text-muted-foreground absolute top-1 right-1" />
@@ -1966,10 +1950,10 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     <TableHead 
                         className={cn("text-center font-semibold p-2 w-28 text-foreground bg-muted dark:bg-secondary border-r border-border align-middle whitespace-normal leading-tight cursor-pointer hover:bg-muted dark:hover:bg-secondary/80 transition-colors select-none group relative", !enabledCols.extra_points && "opacity-60 bg-gray-50 dark:bg-secondary/50 text-muted-foreground")}
                         onClick={() => toggleColumn('extra_points')}
-                        title={enabledCols.extra_points ? "Нажмите, чтобы скрыть" : "Нажмите, чтобы показать"}
+                        title={enabledCols.extra_points ? t('attendance.columns.clickToHide') : t('attendance.columns.clickToShow')}
                     >
                         <div className="flex flex-col items-center justify-center gap-1">
-                            <span>Доп.</span>
+                            <span>{t('attendance.columns.extra')}</span>
                             {enabledCols.extra_points 
                                 ? <Eye className="w-3 h-3 text-muted-foreground opacity-50 group-hover:opacity-100 transition-opacity absolute top-1 right-1" /> 
                                 : <EyeOff className="w-3 h-3 text-muted-foreground absolute top-1 right-1" />
@@ -1978,7 +1962,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                     </TableHead>
                     </>)}
 
-                    <TableHead className="text-center font-bold p-2 w-16 text-foreground dark:text-foreground bg-muted dark:bg-secondary border-r border-border align-middle">{t('Итого', 'Total')}</TableHead>
+                    <TableHead className="text-center font-bold p-2 w-16 text-foreground dark:text-foreground bg-muted dark:bg-secondary border-r border-border align-middle">{t('attendance.columns.total')}</TableHead>
                     <TableHead className="text-center font-bold p-2 w-16 md:sticky md:right-0 z-40 bg-muted dark:bg-secondary align-middle md:shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">%</TableHead>
                 </TableRow>
               </TableHeader>
@@ -1994,7 +1978,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                 <button
                                     type="button"
                                     onClick={() => setStudentHwModal({ open: true, studentId: student.student_id, studentName: student.student_name })}
-                                    title={t(`${student.student_name} — все домашние задания`, `${student.student_name} — all homework`)}
+                                    title={t('attendance.row.allHomework', { name: student.student_name })}
                                     className="group flex items-center gap-1 truncate max-w-[84px] md:max-w-[150px] font-medium text-foreground dark:text-foreground hover:text-brand hover:underline transition-colors"
                                 >
                                     <span className="truncate">{student.student_name}</span>
@@ -2002,8 +1986,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                         <span
                                             className="ml-1 shrink-0 rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-950/40 dark:text-sky-300"
                                             title={student.freeze.planned_resume_date
-                                                ? t(`Плановое возобновление ${student.freeze.planned_resume_date}`,
-                                                    `Planned return ${student.freeze.planned_resume_date}`)
+                                                ? t('attendance.row.plannedReturn', { date: student.freeze.planned_resume_date })
                                                 : undefined}
                                         >
                                             {student.freeze.label}
@@ -2039,18 +2022,18 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                         {preEnroll ? (
                                         <div
                                             className="w-1/2 border-r border-border flex items-center justify-center text-[11px] text-muted-foreground/50 select-none"
-                                            title={t('Ученик ещё не был в группе на этом уроке', 'Student had not joined the group for this lesson')}
+                                            title={t('attendance.cell.notEnrolled')}
                                         >—</div>
                                         ) : frozenLesson ? (
                                         <div
                                             className="w-1/2 border-r border-border flex items-center justify-center bg-sky-50 dark:bg-sky-950/30 text-[10px] text-sky-700 dark:text-sky-300 select-none"
-                                            title={t('Ученик был на заморозке — урок не учитывается', 'Student was frozen — the lesson does not count')}
-                                        >{t('Заморозка', 'Frozen')}</div>
+                                            title={t('attendance.cell.frozenTitle')}
+                                        >{t('attendance.cell.frozen')}</div>
                                         ) : blockedLesson ? (
                                         <div
                                             className="w-1/2 border-r border-border flex items-center justify-center bg-amber-50 dark:bg-amber-950/30 text-[10px] text-amber-800 dark:text-amber-300 select-none"
-                                            title={t('Доступ к платформе был закрыт (не продлил) — урок не учитывается', 'Platform access was off (not renewed) — the lesson does not count')}
-                                        >{t('Нет доступа', 'No access')}</div>
+                                            title={t('attendance.cell.blockedTitle')}
+                                        >{t('attendance.cell.blocked')}</div>
                                         ) : unmarked ? (
                                         <div
                                             className={cn(
@@ -2059,23 +2042,23 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                             )}
                                             onClick={() => { if (canMarkAttendance) handleAttendanceChange(student.student_id, lessonKey, 'attended'); }}
                                             title={(canMarkAttendance
-                                                ? t('Не отмечено — нажмите, чтобы отметить (Был)', 'Not marked — click to mark (Present)')
-                                                : t('Посещаемость ещё не отмечена', 'Attendance not recorded yet'))
+                                                ? t('attendance.cell.unmarkedClick')
+                                                : t('attendance.cell.unmarkedView'))
                                                 + (meetVerdicts.has(`${lessonInfo.event_id}:${student.student_id}`)
-                                                    ? `\n${verdictNote(meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`), isTeacher ? 'en' : 'ru')}`
+                                                    ? `\n${verdictNote(meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`), locale)}`
                                                     : '')}
                                         >
-                                            <span className="w-full text-center text-[9px] md:text-[10px] leading-tight font-semibold uppercase text-muted-foreground border border-dashed border-border rounded px-1 py-1">
+                                            <span className="w-full text-center text-[9px] md:text-[10px] leading-tight font-semibold uppercase text-muted-foreground border border-dashed border-border rounded px-1 py-1 whitespace-pre-line">
                                                 {registerMode === 'live' && meetLessonState.get(lessonInfo.event_id ?? -1) === 'waiting'
-                                                    ? (isTeacher ? <>Meet<br/>will mark</> : <>Meet<br/>отметит</>)
-                                                    : (isTeacher ? <>Not<br/>marked</> : <>Не<br/>отмечено</>)}
+                                                    ? t('attendance.cell.meetWillMark')
+                                                    : t('attendance.cell.notMarked')}
                                             </span>
                                             {meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`) && (
-                                                <MeetVerdictBadge verdict={meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`)!} locale={isTeacher ? 'en' : 'ru'} register={meetRegister.get(`${lessonInfo.event_id}:${student.student_id}`)} />
+                                                <MeetVerdictBadge verdict={meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`)!} locale={locale} register={meetRegister.get(`${lessonInfo.event_id}:${student.student_id}`)} />
                                             )}
                                             {/* A score given before Meet marked the student waits here and stays. */}
                                             {lessonStatus?.activity_score != null && (
-                                                <span className="absolute top-0 right-0 text-[10px] px-1.5 bg-yellow-400 text-yellow-950 rounded-bl font-bold pointer-events-none" title={t(`Активность: ${lessonStatus.activity_score}/10`, `Activity: ${lessonStatus.activity_score}/10`)}>
+                                                <span className="absolute top-0 right-0 text-[10px] px-1.5 bg-yellow-400 text-yellow-950 rounded-bl font-bold pointer-events-none" title={t('attendance.cell.activity', { score: lessonStatus.activity_score })}>
                                                     {lessonStatus.activity_score}
                                                 </span>
                                             )}
@@ -2100,41 +2083,39 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                 onChange={(newStatus) => handleAttendanceChange(student.student_id, lessonKey, newStatus)}
                                                 disabled={user?.role === 'curator'}
                                                 isFuture={cellIsFuture}
-                                                en={isTeacher}
                                                 note={[
-                                                    verdictNote(meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`), isTeacher ? 'en' : 'ru'),
-                                                    registerNote(meetRegister.get(`${lessonInfo.event_id}:${student.student_id}`), isTeacher ? 'en' : 'ru'),
-                                                    spokeNote(meetTalk.get(`${lessonInfo.event_id}:${student.student_id}`), isTeacher ? 'en' : 'ru'),
+                                                    verdictNote(meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`), locale),
+                                                    registerNote(meetRegister.get(`${lessonInfo.event_id}:${student.student_id}`), locale),
+                                                    spokeNote(meetTalk.get(`${lessonInfo.event_id}:${student.student_id}`), locale),
                                                 ].filter(Boolean).join('\n') || null}
                                                 excused={Boolean(lessonStatus?.excused)}
                                                 excuseNote={lessonStatus?.excuse_note ?? null}
                                                 onExcuseChange={(excused, excuseNote) => handleExcuseChange(student.student_id, lessonKey, excused, excuseNote)}
                                             />
                                             {!cellIsFuture && meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`) && (
-                                                <MeetVerdictBadge verdict={meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`)!} locale={isTeacher ? 'en' : 'ru'} register={meetRegister.get(`${lessonInfo.event_id}:${student.student_id}`)} />
+                                                <MeetVerdictBadge verdict={meetVerdicts.get(`${lessonInfo.event_id}:${student.student_id}`)!} locale={locale} register={meetRegister.get(`${lessonInfo.event_id}:${student.student_id}`)} />
                                             )}
                                             {meetMismatches.get(`${lessonInfo.event_id}:${student.student_id}`)?.map((f) => {
                                                 // Answered in Meet attendance: grey with a tick and the reason, instead of red.
                                                 const reason = reasonText(f.review);
                                                 const answered = f.review
-                                                    ? t(` · Проверено${reason ? `: ${reason}` : ''}${f.review.by ? ` (${f.review.by})` : ''}`,
-                                                        ` · Reviewed${reason ? `: ${reason}` : ''}${f.review.by ? ` (${f.review.by})` : ''}`)
+                                                    ? ` · ${reason ? t('attendance.meet.reviewedReason', { reason }) : t('attendance.meet.reviewed')}${f.review.by ? ` (${f.review.by})` : ''}`
                                                     : '';
                                                 return (
                                                     <span
                                                         key={f.code}
                                                         className={`absolute left-0.5 top-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full ring-2 ring-white dark:ring-card pointer-events-auto ${f.review ? 'bg-muted-foreground/60 dark:bg-slate-500' : 'bg-rose-600'}`}
-                                                        title={`Meet: ${t(flagTextRu(f), flagText(f))}${answered}`}
+                                                        title={`Meet: ${flagText(f, locale)}${answered}`}
                                                         aria-label={f.review
-                                                            ? t('Расхождение с Meet проверено', 'Mark disagreement reviewed')
-                                                            : t('Отметка расходится с Meet', 'Mark disagrees with Meet')}
+                                                            ? t('attendance.meet.reviewedAria')
+                                                            : t('attendance.meet.mismatchAria')}
                                                     >
                                                         {f.review && <Check className="h-2 w-2 text-white" strokeWidth={4} aria-hidden />}
                                                     </span>
                                                 );
                                             })}
                                             {lessonStatus?.activity_score != null && (
-                                                <span className="absolute top-0 right-0 text-[10px] px-1.5 bg-yellow-400 text-yellow-950 rounded-bl font-bold pointer-events-none" title={t(`Активность: ${lessonStatus.activity_score}/10`, `Activity: ${lessonStatus.activity_score}/10`)}>
+                                                <span className="absolute top-0 right-0 text-[10px] px-1.5 bg-yellow-400 text-yellow-950 rounded-bl font-bold pointer-events-none" title={t('attendance.cell.activity', { score: lessonStatus.activity_score })}>
                                                     {lessonStatus.activity_score}
                                                 </span>
                                             )}
@@ -2151,7 +2132,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                             ? "bg-amber-500 ring-2 ring-amber-300 opacity-100"
                                                             : "bg-black/20 hover:bg-black/35 opacity-100 md:opacity-0 md:group-hover/att:opacity-100"
                                                     )}
-                                                    title={needsScore ? t('Нужен балл за активность', 'Activity score needed') : t('Балл за активность', 'Activity Score')}
+                                                    title={needsScore ? t('attendance.cell.scoreNeeded') : t('attendance.cell.activityScore')}
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         setActivityModal({
@@ -2177,9 +2158,9 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                 if (hws.length === 0) {
                                                     // Для учителя «Не задано» — сигнал (ДЗ не создано); кнопка Assign живёт в шапке колонки
                                                     return <span className={cn(
-                                                        "w-full text-center text-[11px] italic leading-tight",
+                                                        "w-full text-center text-[11px] italic leading-tight whitespace-pre-line",
                                                         isTeacher ? "text-rose-500 dark:text-rose-400 font-medium" : "text-muted-foreground/50"
-                                                    )}>{isTeacher ? <>Not<br/>assigned</> : <>Не<br/>задано</>}</span>;
+                                                    )}>{t('attendance.hw.notAssigned')}</span>;
                                                 }
                                                 const statuses = lessonHwStatuses(lessonStatus);
                                                 const rows = hws.map((hw, i) => ({
@@ -2192,8 +2173,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                     open: true,
                                                     studentName: student.student_name,
                                                     lessonTitle: single
-                                                        ? (lessonInfo.title || `Lesson ${lessonInfo.lesson_number}`)
-                                                        : `${lessonInfo.title || `Lesson ${lessonInfo.lesson_number}`} — ${hw.title}`,
+                                                        ? (lessonInfo.title || t('attendance.lessonNumber', { number: lessonInfo.lesson_number }))
+                                                        : `${lessonInfo.title || t('attendance.lessonNumber', { number: lessonInfo.lesson_number })} — ${hw.title}`,
                                                     score: st.score,
                                                     maxScore: st.max_score ?? hw.max_score ?? undefined,
                                                     feedback: st.feedback ?? null,
@@ -2217,15 +2198,15 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                                     )}
                                                                     onClick={() => { if (submitted && st) openFeedback(hw, st); }}
                                                                     title={submitted
-                                                                        ? t(`${hw.title}: нажмите, чтобы увидеть фидбэк`, `${hw.title}: click to see feedback`)
-                                                                        : t(`${hw.title}: не сдано`, `${hw.title}: not submitted`)}
+                                                                        ? t('attendance.hw.clickFeedback', { title: hw.title })
+                                                                        : t('attendance.hw.notSubmittedTitle', { title: hw.title })}
                                                                 >
                                                                     {submitted && st ? (
                                                                         single ? (
                                                                             <span className="flex flex-col items-center leading-none">
-                                                                                <span>{st.score !== null ? `${st.score}${hwMax ? `/${hwMax}` : ''}` : t('Сдано', 'Submitted')}</span>
+                                                                                <span>{st.score !== null ? `${st.score}${hwMax ? `/${hwMax}` : ''}` : t('attendance.hw.submitted')}</span>
                                                                                 {st.late ? (
-                                                                                    <span className="text-[10px] font-semibold text-amber-500 dark:text-amber-400 mt-0.5">{t('Поздно', 'Late')}</span>
+                                                                                    <span className="text-[10px] font-semibold text-amber-500 dark:text-amber-400 mt-0.5">{t('attendance.hw.late')}</span>
                                                                                 ) : (st.score !== null && hwMax && hwMax > 0) ? (
                                                                                     <span className="text-[10px] font-normal text-muted-foreground mt-0.5">
                                                                                         {Math.round((st.score / hwMax) * 100)}%
@@ -2234,17 +2215,17 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                                             </span>
                                                                         ) : (
                                                                             <span className="leading-none">
-                                                                                {st.score !== null ? `${st.score}${hwMax ? `/${hwMax}` : ''}` : t('Сдано', 'Submitted')}
-                                                                                {st.late && <span className="ml-0.5 font-semibold text-amber-500 dark:text-amber-400">{t('·П', '·L')}</span>}
+                                                                                {st.score !== null ? `${st.score}${hwMax ? `/${hwMax}` : ''}` : t('attendance.hw.submitted')}
+                                                                                {st.late && <span className="ml-0.5 font-semibold text-amber-500 dark:text-amber-400">{t('attendance.hw.lateShort')}</span>}
                                                                             </span>
                                                                         )
                                                                     ) : (
                                                                         // Для учителя несданное ДЗ — зона куратора, приглушаем
                                                                         <span className={cn(
-                                                                            "font-medium leading-tight",
+                                                                            "font-medium leading-tight whitespace-pre-line",
                                                                             isTeacher ? "text-muted-foreground" : "text-rose-500 dark:text-rose-400"
                                                                         )}>
-                                                                            {single ? (isTeacher ? <>Not<br/>submitted</> : <>Не<br/>выполнено</>) : rows.length > 2 ? '—' : t('Не сдано', 'Missing')}
+                                                                            {single ? t('attendance.hw.notSubmitted') : rows.length > 2 ? '—' : t('attendance.hw.missing')}
                                                                         </span>
                                                                     )}
                                                                 </div>
@@ -2279,7 +2260,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                     )}
                                                     onClick={() => {
                                                         if (!mathHasData) return
-                                                        setSatFeedbackLang(student.sat_math_feedback_ru ? 'ru' : 'en')
+                                                        setSatFeedbackLang(feedbackLang(Boolean(student.sat_math_feedback_ru), Boolean(student.sat_math_feedback)))
                                                         setSatModal({
                                                             open: true,
                                                             studentName: student.student_name,
@@ -2292,7 +2273,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                             completedAt: student.sat_math_completed_at ?? null,
                                                         })
                                                     }}
-                                                    title={mathHasData ? 'Click to see Math feedback' : undefined}
+                                                    title={mathHasData ? t('attendance.exam.mathTitle') : undefined}
                                                 >
                                                     {renderExamSectionContent(student.sat_math_correct_count, student.sat_math_total_count)}
                                                 </div>
@@ -2305,7 +2286,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                     )}
                                                     onClick={() => {
                                                         if (!verbalHasData) return
-                                                        setSatFeedbackLang(student.sat_verbal_feedback_ru ? 'ru' : 'en')
+                                                        setSatFeedbackLang(feedbackLang(Boolean(student.sat_verbal_feedback_ru), Boolean(student.sat_verbal_feedback)))
                                                         setSatModal({
                                                             open: true,
                                                             studentName: student.student_name,
@@ -2318,7 +2299,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                                             completedAt: student.sat_verbal_completed_at ?? null,
                                                         })
                                                     }}
-                                                    title={verbalHasData ? 'Click to see Verbal feedback' : undefined}
+                                                    title={verbalHasData ? t('attendance.exam.verbalTitle') : undefined}
                                                 >
                                                     {renderExamSectionContent(student.sat_verbal_correct_count, student.sat_verbal_total_count)}
                                                 </div>
@@ -2338,10 +2319,10 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     )}
                                     onClick={() => {
                                         if (!hasIeltsData(student)) return
-                                        setIeltsFeedbackLang(hasIeltsRuFeedback(student) ? 'ru' : 'en')
+                                        setIeltsFeedbackLang(feedbackLang(hasIeltsRuFeedback(student), hasIeltsEnFeedback(student)))
                                         setIeltsModal({ open: true, student })
                                     }}
-                                    title={hasIeltsData(student) ? 'Click to see IELTS results and feedback' : undefined}
+                                    title={hasIeltsData(student) ? t('attendance.exam.ieltsTitle') : undefined}
                                 >
                                     {student.ielts_overall_band != null ? (
                                         <span className="text-foreground dark:text-foreground">{formatBand(student.ielts_overall_band)}</span>
@@ -2362,7 +2343,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     ) : hasIeltsData(student) ? (
                                         <span className="text-muted-foreground">—</span>
                                     ) : (
-                                        <span className="text-muted-foreground italic">{t('Не сдано', 'Not taken')}</span>
+                                        <span className="text-muted-foreground italic">{t('attendance.exam.notTaken')}</span>
                                     )}
                                 </div>
                             </TableCell>
@@ -2372,7 +2353,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                                     {student.mock_exam > 0 ? (
                                         <span className="text-foreground dark:text-foreground">{student.mock_exam}%</span>
                                     ) : (
-                                        <span className="text-muted-foreground italic">{t('Не сдано', 'Not taken')}</span>
+                                        <span className="text-muted-foreground italic">{t('attendance.exam.notTaken')}</span>
                                     )}
                                 </div>
                             </TableCell>
@@ -2414,7 +2395,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
             </Table>
             )}
       </div>
-      {selectedGroup && <GroupAchievementsPanel groupId={selectedGroup.id} lang={isTeacher ? 'en' : 'ru'} />}
+      {selectedGroup && <GroupAchievementsPanel groupId={selectedGroup.id} />}
     </div>
 
     {/* ── HW Feedback Modal ──────────────────────────────────────── */}
@@ -2426,7 +2407,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
           <h2 className="text-base font-semibold text-foreground dark:text-foreground">{hwModal.studentName}</h2>
           {hwModal.submittedAt && (
             <p className="text-xs text-muted-foreground mt-1">
-              Submitted {new Date(hwModal.submittedAt).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              {t('attendance.hwModal.submitted', { date: formatDateTime(hwModal.submittedAt, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }, locale) })}
             </p>
           )}
         </div>
@@ -2435,17 +2416,17 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         {hwModal.score !== null ? (
           <div className="flex items-center justify-between px-5 py-3 bg-green-50 dark:bg-green-900/20">
             <span className="text-sm font-semibold text-green-700 dark:text-green-400">
-              {hwModal.score}{hwModal.maxScore != null ? `/${hwModal.maxScore}` : ''} pts
+              {t('attendance.hwModal.points', { score: `${hwModal.score}${hwModal.maxScore != null ? `/${hwModal.maxScore}` : ''}` })}
             </span>
             {hwModal.gradedAt && (
               <span className="text-xs text-green-600/70 dark:text-green-500/70">
-                Checked {new Date(hwModal.gradedAt).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })}
+                {t('attendance.hwModal.checked', { date: formatDate(hwModal.gradedAt, { day: '2-digit', month: '2-digit' }, locale) })}
               </span>
             )}
           </div>
         ) : (
           <div className="px-5 py-3 bg-gray-50 dark:bg-secondary text-xs text-muted-foreground">
-            Not graded yet
+            {t('attendance.hwModal.notGraded')}
           </div>
         )}
 
@@ -2456,7 +2437,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
               {hwModal.feedback}
             </p>
           ) : (
-            <p className="text-sm text-muted-foreground italic">No comment left</p>
+            <p className="text-sm text-muted-foreground italic">{t('attendance.hwModal.noComment')}</p>
           )}
         </div>
       </DialogContent>
@@ -2478,7 +2459,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
             </span>
             {satModal.completedAt && (
               <span className="text-xs text-muted-foreground">
-                {new Date(satModal.completedAt).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                {formatDateTime(satModal.completedAt, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }, locale)}
               </span>
             )}
           </div>
@@ -2515,7 +2496,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
             <>
               {satModal.feedback && satModal.feedbackRu && (
                 <div className="flex items-center gap-1 mb-3">
-                  {([['ru', 'Русский'], ['en', 'English']] as const).map(([lang, label]) => (
+                  {([['ru', t('attendance.feedback.langRu')], ['en', t('attendance.feedback.langEn')]] as const).map(([lang, label]) => (
                     <button
                       key={lang}
                       type="button"
@@ -2537,7 +2518,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
               </MarkdownContent>
             </>
           ) : (
-            <p className="text-sm text-muted-foreground italic">No feedback available</p>
+            <p className="text-sm text-muted-foreground italic">{t('attendance.feedback.none')}</p>
           )}
         </div>
       </DialogContent>
@@ -2644,7 +2625,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                               ? "bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"
                               : "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300"
                           )}>
-                            {isAi ? 'AI' : 'Экзаменатор'}
+                            {isAi ? 'AI' : t('attendance.ielts.examiner')}
                           </span>
                           {meta && (
                             <span className={cn("text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded", meta.className)}>
@@ -2656,9 +2637,9 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                           {isAi ? (
                             <>
                               {s.ielts_speaking_band != null ? (
-                                <>Оценка ИИ: <span className="font-semibold tabular-nums">{formatBand(s.ielts_speaking_band)}</span></>
+                                <>{t('attendance.ielts.aiScore')} <span className="font-semibold tabular-nums">{formatBand(s.ielts_speaking_band)}</span></>
                               ) : (
-                                <span className="text-muted-foreground">Оценка ИИ ещё не готова</span>
+                                <span className="text-muted-foreground">{t('attendance.ielts.aiPending')}</span>
                               )}
                               {s.ielts_speaking_test_name && (
                                 <span className="text-muted-foreground"> · {s.ielts_speaking_test_name}</span>
@@ -2691,7 +2672,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
               <div className="px-5 py-4 overflow-y-auto space-y-5">
                 {showLangToggle && (
                   <div className="flex items-center gap-1">
-                    {([['ru', 'Русский'], ['en', 'English']] as const).map(([lang, label]) => (
+                    {([['ru', t('attendance.feedback.langRu')], ['en', t('attendance.feedback.langEn')]] as const).map(([lang, label]) => (
                       <button
                         key={lang}
                         type="button"
@@ -2711,7 +2692,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                 {examFeedbacks.filter(f => f.text).map(f => (
                   <div key={f.label}>
                     <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                      {f.label} feedback{f.testName ? ` · ${f.testName}` : ''}
+                      {t('attendance.ielts.sectionFeedback', { section: f.label })}{f.testName ? ` · ${f.testName}` : ''}
                     </h3>
                     <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{f.text}</p>
                   </div>
@@ -2719,7 +2700,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                 {hasWritingFb && (
                   <div>
                     <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                      Writing feedback{s.ielts_writing_test_name ? ` · ${s.ielts_writing_test_name}` : ''}
+                      {t('attendance.ielts.sectionFeedback', { section: 'Writing' })}{s.ielts_writing_test_name ? ` · ${s.ielts_writing_test_name}` : ''}
                     </h3>
                     <div className="space-y-3">
                       {writingTasks.filter(t => t.text).map(t => (
@@ -2734,7 +2715,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                 {hasSpeakingFb && (
                   <div>
                     <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
-                      Speaking feedback{s.ielts_speaking_test_name ? ` · ${s.ielts_speaking_test_name}` : ''}
+                      {t('attendance.ielts.sectionFeedback', { section: 'Speaking' })}{s.ielts_speaking_test_name ? ` · ${s.ielts_speaking_test_name}` : ''}
                     </h3>
                     <div className="space-y-3">
                       {speakingCriteria.filter(c => c.text).map(c => (
@@ -2747,7 +2728,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
                   </div>
                 )}
                 {!hasExamFb && !hasWritingFb && !hasSpeakingFb && (
-                  <p className="text-sm text-muted-foreground italic">No feedback available</p>
+                  <p className="text-sm text-muted-foreground italic">{t('attendance.feedback.none')}</p>
                 )}
               </div>
             </>
@@ -2767,11 +2748,11 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
     <Dialog open={activityModal.open} onOpenChange={(open) => !open && setActivityModal(prev => ({ ...prev, open: false }))}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('Балл за активность', 'Activity Score')}</DialogTitle>
+          <DialogTitle>{t('attendance.cell.activityScore')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <p className="text-sm text-muted-foreground">
-            {t('Балл за активность для', 'Set activity score for')} <strong>{activityModal.studentName}</strong>
+            {t('attendance.activity.for')} <strong>{activityModal.studentName}</strong>
           </p>
           <div className="flex flex-wrap gap-2 justify-center">
             {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(score => (
@@ -2790,13 +2771,13 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
             ))}
           </div>
           <div className="mt-3 rounded-lg bg-gray-50 dark:bg-secondary border border-border p-3 text-xs text-muted-foreground space-y-1">
-            <p className="font-semibold text-foreground mb-1">{t('Шкала оценки:', 'Scoring guide:')}</p>
-            <div className="flex items-center gap-2"><span className="font-medium text-muted-foreground w-10">0</span> {t('Не участвовал(а) вообще', 'Did not participate at all')}</div>
-            <div className="flex items-center gap-2"><span className="font-medium text-muted-foreground w-10">1-3</span> {t('Минимальное участие, преимущественно пассивен(на)', 'Minimal participation, mostly passive')}</div>
-            <div className="flex items-center gap-2"><span className="font-medium text-muted-foreground w-10">4-5</span> {t('Среднее участие, отвечал(а) при обращении', 'Average participation, answered when called on')}</div>
-            <div className="flex items-center gap-2"><span className="font-medium text-muted-foreground w-10">6-7</span> {t('Активен(на), вызывался(лась) отвечать, вовлечён(а)', 'Active, volunteered to answer, engaged')}</div>
-            <div className="flex items-center gap-2"><span className="font-medium text-muted-foreground w-10">8-9</span> {t('Очень активен(на), помогал(а) другим, задавал(а) вопросы', 'Very active, helped others, asked questions')}</div>
-            <div className="flex items-center gap-2"><span className="font-medium text-muted-foreground w-10">10</span> {t('Выдающееся участие, вёл(а) обсуждение, исключительные усилия', 'Outstanding participation, led the discussion, exceptional effort')}</div>
+            <p className="font-semibold text-foreground mb-1">{t('attendance.rubric.title')}:</p>
+            <div className="flex items-center gap-2"><span className="font-medium text-muted-foreground w-10">0</span> {t('attendance.rubric.r0')}</div>
+            <div className="flex items-center gap-2"><span className="font-medium text-muted-foreground w-10">1-3</span> {t('attendance.rubric.r1to3')}</div>
+            <div className="flex items-center gap-2"><span className="font-medium text-muted-foreground w-10">4-5</span> {t('attendance.rubric.r4to5')}</div>
+            <div className="flex items-center gap-2"><span className="font-medium text-muted-foreground w-10">6-7</span> {t('attendance.rubric.r6to7')}</div>
+            <div className="flex items-center gap-2"><span className="font-medium text-muted-foreground w-10">8-9</span> {t('attendance.rubric.r8to9')}</div>
+            <div className="flex items-center gap-2"><span className="font-medium text-muted-foreground w-10">10</span> {t('attendance.rubric.r10')}</div>
           </div>
         </div>
         <DialogFooter>
@@ -2804,7 +2785,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
             variant="outline"
             onClick={() => setActivityModal({ open: false, studentId: null, lessonKey: null, studentName: '', currentScore: 0 })}
           >
-            {t('Отмена', 'Cancel')}
+            {t('common.cancel')}
           </Button>
           <Button
             onClick={() => {
@@ -2815,7 +2796,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
             }}
             className="bg-yellow-500 hover:bg-yellow-600"
           >
-            {t('Сохранить', 'Save Score')}
+            {t('attendance.activity.saveScore')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -2828,10 +2809,9 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         eventId={scoresLesson.event_id}
         start={scoresLesson.start_datetime}
         title={`${formatDateParts(scoresLesson.start_datetime).date} · ${formatDateParts(scoresLesson.start_datetime).dayTime}${scoresLesson.topic ? ` · ${scoresLesson.topic}` : ''}`}
-        en={isTeacher}
         onSaved={(saved) => {
           applySavedScores(scoresLesson.lesson_number.toString(), saved);
-          toast(t('Баллы сохранены', 'Scores saved'), 'success');
+          toast(t('attendance.toast.scoresSaved'), 'success');
         }}
       />
     )}
@@ -2840,7 +2820,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
     <Dialog open={topicModal.open} onOpenChange={(open) => !open && setTopicModal({ open: false, lesson: null, value: '' })}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('Тема урока', 'Lesson topic')}</DialogTitle>
+          <DialogTitle>{t('attendance.grid.lessonTopic')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3 py-2">
           {topicModal.lesson && (
@@ -2851,12 +2831,12 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
           <Input
             autoFocus
             maxLength={200}
-            placeholder={t('Например: Present Perfect Tense', 'e.g. Present Perfect Tense')}
+            placeholder={t('attendance.topic.placeholder')}
             value={topicModal.value}
             onChange={(e) => setTopicModal(prev => ({ ...prev, value: e.target.value }))}
             onKeyDown={(e) => { if (e.key === 'Enter' && !savingTopic) saveTopic(); }}
           />
-          <p className="text-xs text-muted-foreground">{t('Оставьте поле пустым, чтобы удалить тему.', 'Leave empty to remove the topic.')}</p>
+          <p className="text-xs text-muted-foreground">{t('attendance.topic.hint')}</p>
         </div>
         <DialogFooter>
           <Button
@@ -2864,10 +2844,10 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
             onClick={() => setTopicModal({ open: false, lesson: null, value: '' })}
             disabled={savingTopic}
           >
-            {t('Отмена', 'Cancel')}
+            {t('common.cancel')}
           </Button>
           <Button onClick={saveTopic} disabled={savingTopic}>
-            {savingTopic ? <Loader2 className="h-4 w-4 animate-spin" /> : t('Сохранить', 'Save')}
+            {savingTopic ? <Loader2 className="h-4 w-4 animate-spin" /> : t('common.save')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -2877,7 +2857,6 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       eventId={materialsDialog.eventId}
       open={materialsDialog.open}
       onOpenChange={(open) => setMaterialsDialog((prev) => ({ ...prev, open }))}
-      t={t}
       onChanged={() => {
         if (data) void refetchMaterialCounts(data.lessons);
       }}
@@ -2887,7 +2866,6 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
       open={overrideAsk !== null}
       items={overrideAsk ?? []}
       options={reviewOptions}
-      en={isTeacher}
       onCancel={() => setOverrideAsk(null)}
       onConfirm={(given) => {
         const merged = new Map(overrideReasons);

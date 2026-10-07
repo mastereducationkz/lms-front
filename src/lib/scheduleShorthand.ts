@@ -4,10 +4,13 @@
 // Groups can run a different lesson length on different days, so a bare day→time map is not
 // enough; every day carries its own `duration`. `parseScheduleShorthand` never throws on bad
 // input — unparseable tokens and days left without a time are collected into `problems` and
-// reported, not silently dropped or guessed at.
+// reported, not silently dropped or guessed at. The day words below are a parse table (people type
+// Russian or English); the problems themselves are catalog messages in the viewer's language.
 //
 // Ported from crm-master frontend/src/lib/scheduleShorthand.ts (2026-09-16) — keep the two in
 // step; do not import across repos.
+
+import { activeLocale, formatDate, t, type Locale } from './i18n';
 
 export type ScheduleDay = { time: string; duration: number };
 export type ScheduleConfig = Record<number, ScheduleDay>;
@@ -35,7 +38,9 @@ const DAY_MAP: Record<string, number> = {
   'sun': 6,
 };
 
-const DAY_ABBREVS = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'] as const;
+/** «Mon» / «пн» for a weekday index (0 = Monday): 1–7 January 2024 ran Monday to Sunday. */
+export const weekdayLabel = (day: number, locale: Locale = activeLocale()): string =>
+  formatDate(`2024-01-0${day + 1}`, { weekday: 'short' }, locale);
 
 // A single time, with a colon/dot for minutes, or a lone «,5»/«.5» meaning a half hour.
 const SINGLE_TIME_RE = /^(\d{1,2})(?:[:.](\d{2})|[.,](5))?$/;
@@ -64,6 +69,7 @@ export const normalizeScheduleTime = (raw: string): string => {
 export const parseScheduleShorthand = (
   text: string,
   current?: ScheduleConfig,
+  locale: Locale = activeLocale(),
 ): { config: ScheduleConfig; problems: string[] } => {
   const config: ScheduleConfig = {};
   const problems: string[] = [];
@@ -80,12 +86,12 @@ export const parseScheduleShorthand = (
 
   const applyTime = (hour: number, minute: number, raw: string) => {
     if (hour > 23 || minute > 59) {
-      problems.push(`Не понял «${raw}»`);
+      problems.push(t('schedule.shorthand.unreadable', { text: raw }, locale));
       currentDays = [];
       return;
     }
     if (currentDays.length === 0) {
-      problems.push(`Нет дня для «${raw}»`);
+      problems.push(t('schedule.shorthand.noDay', { text: raw }, locale));
       return;
     }
     const time = `${pad(hour)}:${pad(minute)}`;
@@ -106,13 +112,13 @@ export const parseScheduleShorthand = (
     // 24 is only meaningful as the end of a range (midnight), and only spelled «24»/«24:00».
     const endValid = endHour <= 24 && endMinute <= 59 && !(endHour === 24 && endMinute !== 0);
     if (!startValid || !endValid) {
-      problems.push(`Не понял «${raw}»`);
+      problems.push(t('schedule.shorthand.unreadable', { text: raw }, locale));
       currentDays = [];
       return;
     }
 
     if (currentDays.length === 0) {
-      problems.push(`Нет дня для «${raw}»`);
+      problems.push(t('schedule.shorthand.noDay', { text: raw }, locale));
       return;
     }
 
@@ -122,7 +128,7 @@ export const parseScheduleShorthand = (
 
     if (duration < MIN_LESSON_MINUTES || duration > MAX_LESSON_MINUTES) {
       problems.push(
-        `«${raw}» — длительность должна быть от ${MIN_LESSON_MINUTES} минут до ${MAX_LESSON_MINUTES / 60} часов`,
+        t('schedule.shorthand.badLength', { text: raw, min: MIN_LESSON_MINUTES, max: MAX_LESSON_MINUTES / 60 }, locale),
       );
       currentDays = [];
       return;
@@ -167,12 +173,12 @@ export const parseScheduleShorthand = (
       continue;
     }
 
-    problems.push(`Не понял «${token}»`);
+    problems.push(t('schedule.shorthand.unreadable', { text: token }, locale));
     index += 1;
   }
 
   if (currentDays.length > 0) {
-    problems.push(`Нет времени для: ${currentDays.map((day) => DAY_ABBREVS[day]).join(' ')}`);
+    problems.push(t('schedule.shorthand.noTime', { days: currentDays.map((day) => weekdayLabel(day, locale)).join(' ') }, locale));
   }
 
   return { config, problems };
@@ -237,7 +243,8 @@ export const applyShorthand = (
   text: string,
   base: ScheduleConfig,
   current: ScheduleConfig,
+  locale: Locale = activeLocale(),
 ): { config: ScheduleConfig; problems: string[] } => {
-  const { config, problems } = parseScheduleShorthand(text, base);
+  const { config, problems } = parseScheduleShorthand(text, base, locale);
   return { config: Object.keys(config).length > 0 ? config : current, problems };
 };

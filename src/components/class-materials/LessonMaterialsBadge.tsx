@@ -1,16 +1,13 @@
 import { Paperclip } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { materialsBadgeVariant } from '../../lib/classMaterials';
+import { useT } from '../../lib/i18n/react';
 import ClassMaterialsSection from './ClassMaterialsSection';
 
 interface Props {
   eventId: number | null | undefined;
   count: number;
   role?: string | null;
-  /** The attendance grid's own `t(ru, en)` role rule (Russian for curator/admin/head_teacher,
-   *  English for teacher) — not `materialsLocale`, which follows a different rule. Any label
-   *  this button shows stays consistent with the rest of the page it lives on. */
-  t: (ru: string, en: string) => string;
   onOpen: (eventId: number) => void;
 }
 
@@ -26,11 +23,12 @@ interface Props {
  * dialog through its React parents. Stopping them inside the dialog instead would also stop
  * the document listeners Radix closes the dialog with (a tap on the overlay on phones).
  */
-export default function LessonMaterialsBadge({ eventId, count, role, t, onOpen }: Props) {
+export default function LessonMaterialsBadge({ eventId, count, role, onOpen }: Props) {
+  const t = useT();
   const variant = materialsBadgeVariant(eventId, count, role);
   if (!variant || !eventId) return null;
 
-  const label = t('Материалы урока', 'Lesson materials');
+  const label = t('attendance.materials.title');
 
   return (
     <button
@@ -58,7 +56,6 @@ interface DialogProps {
   eventId: number | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  t: (ru: string, en: string) => string;
   /** Fired after the section reports a write, so the page can refetch the grid's counts. */
   onChanged?: () => void;
 }
@@ -68,14 +65,15 @@ interface DialogProps {
  * own `can_manage` check — not the badge's role guess — gates adding, so a role-eligible viewer
  * who isn't this lesson's manager gets the read-only view, as anywhere else.
  */
-export function LessonMaterialsDialog({ eventId, open, onOpenChange, t, onChanged }: DialogProps) {
+export function LessonMaterialsDialog({ eventId, open, onOpenChange, onChanged }: DialogProps) {
+  const t = useT();
   return (
     <Dialog open={open && eventId !== null} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
         {/* `ClassMaterialsSection` renders its own visible «Материалы урока» heading below;
             this title only supplies the dialog's accessible name, so the two don't stack. */}
         <DialogHeader className="sr-only">
-          <DialogTitle>{t('Материалы урока', 'Lesson materials')}</DialogTitle>
+          <DialogTitle>{t('attendance.materials.title')}</DialogTitle>
         </DialogHeader>
         {eventId !== null && <ClassMaterialsSection eventId={eventId} variant="dialog" onChanged={onChanged} />}
       </DialogContent>

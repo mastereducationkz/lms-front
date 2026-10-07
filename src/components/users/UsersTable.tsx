@@ -10,6 +10,7 @@ import {
 } from '../ui/dropdown-menu';
 import type { User } from '../../types';
 import { roleLabel } from '@/lib/roleLabel';
+import { useT } from '@/lib/i18n/react';
 
 interface UsersTableProps {
   users: User[];
@@ -37,6 +38,7 @@ const roleBadgeClass = (role: string) =>
   : 'bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700';
 
 function GroupsCell({ user, groupNameById }: { user: User; groupNameById: Map<number, string> }) {
+  const t = useT();
   const names = (user.group_ids || [])
     .map((id) => groupNameById.get(id))
     .filter((n): n is string => Boolean(n));
@@ -55,12 +57,12 @@ function GroupsCell({ user, groupNameById }: { user: User; groupNameById: Map<nu
   if (user.teacher_name || user.curator_name) {
     return (
       <div className="text-sm">
-        {user.teacher_name && <div className="flex items-center gap-1 text-xs text-muted-foreground"><GraduationCap className="h-3.5 w-3.5 shrink-0" aria-label="Teacher" />{user.teacher_name}</div>}
-        {user.curator_name && <div className="flex items-center gap-1 text-xs text-muted-foreground"><UserCog className="h-3.5 w-3.5 shrink-0" aria-label="Curator" />{user.curator_name}</div>}
+        {user.teacher_name && <div className="flex items-center gap-1 text-xs text-muted-foreground"><GraduationCap className="h-3.5 w-3.5 shrink-0" aria-label={t('users.table.teacher')} />{user.teacher_name}</div>}
+        {user.curator_name && <div className="flex items-center gap-1 text-xs text-muted-foreground"><UserCog className="h-3.5 w-3.5 shrink-0" aria-label={t('users.table.curator')} />{user.curator_name}</div>}
       </div>
     );
   }
-  return <span className="text-sm text-muted-foreground">No group</span>;
+  return <span className="text-sm text-muted-foreground">{t('users.table.noGroup')}</span>;
 }
 
 export function UsersTable({
@@ -77,6 +79,7 @@ export function UsersTable({
   onProvisionPlatform,
   provisioningIds,
 }: UsersTableProps) {
+  const t = useT();
   const allChecked = selectable && users.length > 0 && users.every((u) => selectedIds?.has(Number(u.id)));
   const th = 'px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider';
 
@@ -87,14 +90,14 @@ export function UsersTable({
           <tr>
             {selectable && (
               <th className="px-3 @4xl:px-4 py-3 w-10">
-                <Checkbox checked={allChecked} onCheckedChange={(c) => onToggleAll?.(c === true)} aria-label="Выбрать всех на странице" />
+                <Checkbox checked={allChecked} onCheckedChange={(c) => onToggleAll?.(c === true)} aria-label={t('users.table.selectAll')} />
               </th>
             )}
-            <th className={th}>User</th>
-            {showRole && <th className={th}>Role</th>}
-            <th className={th}>Groups</th>
-            <th className={th}>Status</th>
-            <th className={`${th} text-right`}>Actions</th>
+            <th className={th}>{t('users.table.user')}</th>
+            {showRole && <th className={th}>{t('users.table.role')}</th>}
+            <th className={th}>{t('users.table.groups')}</th>
+            <th className={th}>{t('users.table.status')}</th>
+            <th className={`${th} text-right`}>{t('users.table.actions')}</th>
           </tr>
         </thead>
         <tbody className="bg-card dark:bg-card divide-y divide-border dark:divide-border">
@@ -106,7 +109,7 @@ export function UsersTable({
               <tr key={user.id || user.email} className={`hover:bg-muted dark:hover:bg-secondary ${checked ? 'bg-brand-surface/50 dark:bg-secondary' : ''}`}>
                 {selectable && (
                   <td className="px-3 @4xl:px-4 py-4">
-                    <Checkbox checked={checked} onCheckedChange={(c) => onToggle?.(id, c === true)} aria-label={`Выбрать ${user.name || user.email}`} />
+                    <Checkbox checked={checked} onCheckedChange={(c) => onToggle?.(id, c === true)} aria-label={t('users.table.selectOne', { name: user.name || user.email })} />
                   </td>
                 )}
                 <td className="px-3 @4xl:px-4 py-4 whitespace-nowrap">
@@ -115,7 +118,7 @@ export function UsersTable({
                       {user.name || user.full_name}
                       {user.is_trial && (
                         <span className="px-2 py-0.5 text-xs rounded-full bg-amber-100 dark:bg-amber-900/35 dark:text-amber-200 text-amber-900">
-                          Trial
+                          {t('users.table.trial')}
                         </span>
                       )}
                     </div>
@@ -134,11 +137,11 @@ export function UsersTable({
                 <td className="px-3 @4xl:px-4 py-4 whitespace-nowrap">
                   <div className="flex flex-col gap-1">
                     <span className={`px-2 py-1 text-xs rounded-full w-fit ${user.is_active ? 'bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700' : 'bg-muted text-foreground/80'}`}>
-                      {user.is_active ? 'Active' : 'Inactive'}
+                      {user.is_active ? t('users.table.active') : t('users.table.inactive')}
                     </span>
                     {isCuratorRow && user.is_analytics_hidden && (
                       <span className="px-2 py-1 text-xs rounded-full w-fit bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400 text-orange-700">
-                        Скрыт из аналитики
+                        {t('users.table.hiddenFromAnalytics')}
                       </span>
                     )}
                   </div>
@@ -151,14 +154,14 @@ export function UsersTable({
                           <Button
                             variant="ghost"
                             size="sm"
-                            title="Создать аккаунт на платформе (SAT/IELTS)"
+                            title={t('users.table.createPlatformAccount')}
                             disabled={provisioningIds?.has(Number(user.id))}
                           >
                             <UploadCloud className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Создать аккаунт</DropdownMenuLabel>
+                          <DropdownMenuLabel>{t('users.table.createAccount')}</DropdownMenuLabel>
                           <DropdownMenuItem onClick={() => onProvisionPlatform(user, 'ielts')}>
                             IELTS
                           </DropdownMenuItem>
@@ -169,15 +172,15 @@ export function UsersTable({
                       </DropdownMenu>
                     )}
                     {isCuratorRow && onToggleAnalyticsHidden && (
-                      <Button onClick={() => onToggleAnalyticsHidden(user)} variant="ghost" size="sm" title={user.is_analytics_hidden ? 'Показать в аналитике' : 'Скрыть из аналитики'}>
+                      <Button onClick={() => onToggleAnalyticsHidden(user)} variant="ghost" size="sm" title={user.is_analytics_hidden ? t('users.table.showInAnalytics') : t('users.table.hideFromAnalytics')}>
                         {user.is_analytics_hidden ? <Eye className="w-4 h-4 text-orange-500 dark:text-orange-400" /> : <EyeOff className="w-4 h-4 text-muted-foreground" />}
                       </Button>
                     )}
                     {onEdit && (
-                      <Button onClick={() => onEdit(user)} variant="ghost" size="sm" title="Edit User"><Edit className="w-4 h-4" /></Button>
+                      <Button onClick={() => onEdit(user)} variant="ghost" size="sm" title={t('users.table.editUser')}><Edit className="w-4 h-4" /></Button>
                     )}
                     {onDelete && (
-                      <Button onClick={() => onDelete(user)} variant="ghost" size="sm" title="Deactivate User"><Trash2 className="w-4 h-4" /></Button>
+                      <Button onClick={() => onDelete(user)} variant="ghost" size="sm" title={t('users.table.deactivateUser')}><Trash2 className="w-4 h-4" /></Button>
                     )}
                   </div>
                 </td>

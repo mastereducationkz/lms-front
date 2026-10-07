@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { toast } from '../Toast';
+import { useT } from '../../lib/i18n/react';
 import { copyAnnouncementHtml } from './announcementClipboard';
 import { downloadableHtml, markdownToTelegramHtml, richHtmlToTelegramHtml } from './markdownToHtml';
 import { renderPreviewHtml } from './telegramText';
@@ -14,6 +15,7 @@ interface MarkdownHtmlConverterProps {
 }
 
 export function MarkdownHtmlConverter({ onUse }: MarkdownHtmlConverterProps) {
+  const t = useT();
   const [source, setSource] = useState('');
   const [richHtml, setRichHtml] = useState<string | null>(null);
   const html = useMemo(() => richHtml ?? markdownToTelegramHtml(source), [richHtml, source]);
@@ -74,7 +76,7 @@ export function MarkdownHtmlConverter({ onUse }: MarkdownHtmlConverterProps) {
               setRichHtml(null);
             }}
             onPaste={handlePaste}
-            placeholder="📢 **SAT 2026**\n\nВаш текст здесь..."
+            placeholder={t('announcements.converter.placeholder')}
             className="min-h-[180px] text-sm"
           />
         </div>

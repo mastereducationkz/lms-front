@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import apiClient from '../../services/api';
 import type { LessonRequest, CancelResolution } from '../../types';
-import { formatInKZ } from '../../lib/datetime';
+import { formatDateTime, type MessageKey, type TFunction } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Badge } from '../../components/ui/badge';
@@ -23,57 +24,62 @@ type Props = {
 };
 
 /** «Head teacher» is not a job title anybody here uses. */
-const APPROVER_ROLE_LABELS: Record<string, string> = {
-  head_teacher: 'старший преподаватель',
-  teacher: 'преподаватель',
-  admin: 'администратор',
-  head_curator: 'старший куратор',
-  curator: 'куратор',
+const APPROVER_ROLE_LABELS: Record<string, MessageKey> = {
+  head_teacher: 'lessonRequests.role.headTeacher',
+  teacher: 'lessonRequests.role.teacher',
+  admin: 'lessonRequests.role.admin',
+  head_curator: 'lessonRequests.role.headCurator',
+  curator: 'lessonRequests.role.curator',
 };
 
-const TYPE_LABELS: Record<string, string> = {
-  substitution: 'Замена',
-  reschedule: 'Перенос',
-  cancel: 'Отмена',
+const TYPE_LABELS: Record<string, MessageKey> = {
+  substitution: 'lessonRequests.type.substitution',
+  reschedule: 'lessonRequests.type.reschedule',
+  cancel: 'lessonRequests.type.cancel',
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  approved: 'Одобрено',
-  rejected: 'Отклонено',
-  pending_teacher: 'Ждёт педагога',
-  pending: 'Ждёт решения',
+const STATUS_LABELS: Record<string, MessageKey> = {
+  approved: 'lessonRequests.status.approved',
+  rejected: 'lessonRequests.status.rejected',
+  pending_teacher: 'lessonRequests.status.pendingTeacher',
+  pending: 'lessonRequests.status.pending',
 };
 
 /** The two ways an approved cancel can go. The approver has to pick one — there is no
  *  default on this page, because «the lesson just disappears» and «one more lesson at the
  *  end of the course» are decisions about the group's plan, not about this request. */
-const CANCEL_RESOLUTION_OPTIONS: { value: CancelResolution; label: string; hint: string }[] = [
+const CANCEL_RESOLUTION_OPTIONS: { value: CancelResolution; label: MessageKey; hint: MessageKey }[] = [
   {
     value: 'cancel_only',
-    label: 'Только отменить урок',
-    hint: 'урок исчезнет из расписания и CRM, как будто его не было',
+    label: 'lessonRequests.cancel.cancelOnly',
+    hint: 'lessonRequests.cancel.cancelOnlyHint',
   },
   {
     value: 'add_replacement',
-    label: 'Отменить и добавить урок в конец курса',
-    hint: 'в расписание группы добавится один урок после последнего запланированного',
+    label: 'lessonRequests.cancel.addReplacement',
+    hint: 'lessonRequests.cancel.addReplacementHint',
   },
 ];
 
-const cancelResolutionLabel = (value?: string | null) =>
-  value ? CANCEL_RESOLUTION_OPTIONS.find(o => o.value === value)?.label ?? value : null;
+const cancelResolutionLabel = (t: TFunction, value?: string | null) => {
+  if (!value) return null;
+  const option = CANCEL_RESOLUTION_OPTIONS.find(o => o.value === value);
+  return option ? t(option.label) : value;
+};
 
-const roleLabel = (role?: string | null) =>
-  role ? APPROVER_ROLE_LABELS[role] ?? role : null;
+const roleLabel = (t: TFunction, role?: string | null) =>
+  role ? (APPROVER_ROLE_LABELS[role] ? t(APPROVER_ROLE_LABELS[role]) : role) : null;
 
-const typeLabel = (t: string) => TYPE_LABELS[t] ?? t;
+const typeLabel = (t: TFunction, type: string) => (TYPE_LABELS[type] ? t(TYPE_LABELS[type]) : type);
+
+const statusLabel = (t: TFunction, status: string) => (STATUS_LABELS[status] ? t(STATUS_LABELS[status]) : status);
 
 /** Exact Almaty date and time. The list used to print only a short date, so two requests for
  *  the same day were indistinguishable and "19:00" — the thing being argued about — was
  *  nowhere on the page. */
 const formatExact = (value?: string | null) =>
   value
-    ? formatInKZ(value, {
+    ? formatDateTime(value, {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -81,6 +87,11 @@ const formatExact = (value?: string | null) =>
         minute: '2-digit',
       })
     : '—';
+
+/** A translated sentence with its {placeholders} shown in bold. */
+function withBoldParams(template: string, values: Record<string, React.ReactNode>) {
+  return template.split(/\{(\w+)\}/).map((part, i) => (i % 2 ? <strong key={i}>{values[part]}</strong> : part));
+}
 
 /** One labelled fact in the detail panel. */
 function Fact({ label, children }: { label: string; children: React.ReactNode }) {
@@ -97,23 +108,24 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
  * The list showed a status and a pair of names; it could not answer "when was this decided,
  * and did anything happen afterwards". */
 function Timeline({ req }: { req: LessonRequest }) {
-  const steps: { at?: string | null; title: string; detail?: string | null }[] = [
+  const t = useT();
+  const steps: { at?: string | null; title: string; detail?: string | null; alert?: boolean }[] = [
     {
       at: req.created_at,
-      title: 'Заявка создана',
+      title: t('lessonRequests.timeline.created'),
       detail: req.requester_name ? `${req.requester_name}` : null,
     },
   ];
 
   if (req.confirmed_teacher_name) {
-    steps.push({ at: null, title: 'Выбран замещающий педагог', detail: req.confirmed_teacher_name });
+    steps.push({ at: null, title: t('lessonRequests.timeline.substituteChosen'), detail: req.confirmed_teacher_name });
   }
 
   if (req.status === 'approved' || req.status === 'rejected') {
-    const who = [req.resolver_name, roleLabel(req.resolver_role)].filter(Boolean).join(', ');
+    const who = [req.resolver_name, roleLabel(t, req.resolver_role)].filter(Boolean).join(', ');
     steps.push({
       at: req.resolved_at,
-      title: req.status === 'approved' ? 'Одобрено' : 'Отклонено',
+      title: t(req.status === 'approved' ? 'lessonRequests.status.approved' : 'lessonRequests.status.rejected'),
       detail: who || null,
     });
   }
@@ -121,9 +133,9 @@ function Timeline({ req }: { req: LessonRequest }) {
   if (req.status === 'approved' && req.is_applied === true) {
     steps.push({
       at: null,
-      title: 'Изменение применено к уроку',
+      title: t('lessonRequests.timeline.applied'),
       detail: req.current_event_teacher_name
-        ? `Урок ведёт ${req.current_event_teacher_name}`
+        ? t('lessonRequests.timeline.taughtBy', { name: req.current_event_teacher_name })
         : null,
     });
   }
@@ -131,15 +143,16 @@ function Timeline({ req }: { req: LessonRequest }) {
   if (req.status === 'approved' && req.is_applied === false) {
     steps.push({
       at: null,
-      title: 'Изменение НЕ применено',
+      title: t('lessonRequests.timeline.notApplied'),
       detail: req.current_event_teacher_name
-        ? `В расписании урок за ${req.current_event_teacher_name}`
+        ? t('lessonRequests.timeline.scheduledWith', { name: req.current_event_teacher_name })
         : null,
+      alert: true,
     });
   }
 
   if (req.attendance_marked) {
-    steps.push({ at: null, title: 'Посещаемость отмечена' });
+    steps.push({ at: null, title: t('lessonRequests.timeline.attendanceMarked') });
   }
 
   return (
@@ -148,7 +161,7 @@ function Timeline({ req }: { req: LessonRequest }) {
         <li key={i} className="flex gap-3 text-sm">
           <span
             className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-              s.title.includes('НЕ применено') ? 'bg-red-500' : 'bg-muted-foreground/40'
+              s.alert ? 'bg-red-500' : 'bg-muted-foreground/40'
             }`}
           />
           <div className="min-w-0">
@@ -165,6 +178,7 @@ function Timeline({ req }: { req: LessonRequest }) {
 }
 
 export default function LessonRequestManagement({ variant = 'admin' }: Props) {
+  const t = useT();
   const [requests, setRequests] = useState<LessonRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -218,7 +232,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
       });
     } catch (err) {
       console.error('Failed to fetch lesson requests:', err);
-      setError('Не удалось загрузить заявки. Обновите страницу или попробуйте позже.');
+      setError(t('lessonRequests.error.load'));
     } finally {
       setLoading(false);
     }
@@ -254,7 +268,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
       await fetchRequests();
     } catch (err) {
       console.error('Failed to approve:', err);
-      setError(serverDetail(err) ?? 'Не удалось одобрить заявку.');
+      setError(serverDetail(err) ?? t('lessonRequests.error.approve'));
     } finally {
       setProcessing(null);
     }
@@ -267,7 +281,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
       await fetchRequests();
     } catch (err) {
       console.error('Failed to reject:', err);
-      setError('Не удалось отклонить заявку.');
+      setError(t('lessonRequests.error.reject'));
     } finally {
       setProcessing(null);
     }
@@ -292,7 +306,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
     req.status === 'approved' && req.is_applied === false;
 
   const statusBadge = (status: string) => {
-    const label = STATUS_LABELS[status] ?? status;
+    const label = statusLabel(t, status);
     switch (status) {
       case 'approved':
         return <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200 dark:bg-green-900/40 dark:text-green-300 dark:hover:bg-green-900/40 dark:border-green-800/60">{label}</Badge>;
@@ -315,8 +329,8 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
     <div className="space-y-6">
       <div className="flex rounded-md shadow-sm w-fit">
         {([
-          ['requests', 'Запросы'],
-          ['stats', 'Статистика по учителям'],
+          ['requests', t('lessonRequests.tabs.requests')],
+          ['stats', t('lessonRequests.tabs.stats')],
         ] as [string, string][]).map(([value, label], idx, arr) => {
           const isActive = activeTab === value;
           return (
@@ -344,19 +358,19 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
       <>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Заявки по урокам</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('lessonRequests.title')}</h1>
           <p className="text-muted-foreground mt-1">
             {isHeadTeacher
-              ? 'Замены, переносы и отмены от ваших педагогов'
-              : 'Замены, переносы и отмены — с полной историей решений'}
+              ? t('lessonRequests.subtitle.headTeacher')
+              : t('lessonRequests.subtitle.admin')}
           </p>
         </div>
         <div className="flex rounded-md shadow-sm">
           {([
-            ['pending,pending_teacher', 'Ожидают'],
-            ['approved', 'Одобрены'],
-            ['rejected', 'Отклонены'],
-            ...(isHeadTeacher ? [] : [['', 'Все'] as [string, string]]),
+            ['pending,pending_teacher', t('lessonRequests.filter.pending')],
+            ['approved', t('lessonRequests.filter.approved')],
+            ['rejected', t('lessonRequests.filter.rejected')],
+            ...(isHeadTeacher ? [] : [['', t('common.all')] as [string, string]]),
           ] as [string, string][]).map(([value, label], idx, arr) => {
             const isActive = statusFilter === value;
             return (
@@ -381,7 +395,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
 
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-          Дата урока с
+          {t('lessonRequests.filter.dateFrom')}
           <Input
             type="date"
             className="h-9 w-[160px]"
@@ -390,7 +404,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
           />
         </label>
         <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-          по
+          {t('lessonRequests.filter.dateTo')}
           <Input
             type="date"
             className="h-9 w-[160px]"
@@ -410,7 +424,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
               setSearchParams(next, { replace: true });
             }}
           >
-            Сбросить даты
+            {t('lessonRequests.filter.resetDates')}
           </Button>
         )}
       </div>
@@ -423,42 +437,42 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
 
       {inconsistentCount > 0 && (
         <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
-          <strong>Расхождение с расписанием: {inconsistentCount}.</strong>{' '}
-          Одобренная замена не отражена в уроке — откройте заявку, чтобы увидеть подробности.
+          <strong>{t('lessonRequests.mismatch.count', { count: inconsistentCount })}</strong>{' '}
+          {t('lessonRequests.mismatch.hint')}
         </div>
       )}
 
       <Card>
         <CardHeader className="px-6 py-4 border-b">
-          <CardTitle className="text-lg">Заявки</CardTitle>
+          <CardTitle className="text-lg">{t('lessonRequests.list.title')}</CardTitle>
           <CardDescription>
-            {loading ? 'Загрузка…' : `Найдено заявок: ${visible.length}`}
+            {loading ? t('common.loading') : t('lessonRequests.list.found', { count: visible.length })}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[64px]">№</TableHead>
-                <TableHead className="w-[110px]">Тип</TableHead>
-                <TableHead className="min-w-[10rem]">Группа и урок</TableHead>
-                <TableHead>Дата и время</TableHead>
-                <TableHead>Кто ведёт</TableHead>
-                <TableHead>Статус</TableHead>
-                <TableHead className="text-right">Действия</TableHead>
+                <TableHead className="w-[64px]">{t('lessonRequests.col.id')}</TableHead>
+                <TableHead className="w-[110px]">{t('lessonRequests.col.type')}</TableHead>
+                <TableHead className="min-w-[10rem]">{t('lessonRequests.col.groupLesson')}</TableHead>
+                <TableHead>{t('lessonRequests.col.dateTime')}</TableHead>
+                <TableHead>{t('lessonRequests.col.teacher')}</TableHead>
+                <TableHead>{t('lessonRequests.col.status')}</TableHead>
+                <TableHead className="text-right">{t('lessonRequests.col.actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
                   <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                    Загрузка…
+                    {t('common.loading')}
                   </TableCell>
                 </TableRow>
               ) : visible.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                    По этим условиям заявок нет.
+                    {t('lessonRequests.list.empty')}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -473,13 +487,13 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                     >
                       <TableCell className="text-muted-foreground tabular-nums">{req.id}</TableCell>
                       <TableCell className="font-medium">
-                        {typeLabel(req.request_type)}
+                        {typeLabel(t, req.request_type)}
                         {req.status === 'approved' && req.cancel_resolution === 'add_replacement' && (
                           <Badge
                             variant="secondary"
                             className="mt-1 block w-fit bg-sky-100 text-sky-800 hover:bg-sky-100 border-sky-200 px-1.5 py-0 text-[10px] font-medium dark:bg-sky-900/40 dark:text-sky-300 dark:hover:bg-sky-900/40 dark:border-sky-800/60"
                           >
-                            + урок в конце
+                            {t('lessonRequests.row.lessonAtEnd')}
                           </Badge>
                         )}
                       </TableCell>
@@ -487,7 +501,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                         {/* The group is not linked because this app has no group-detail
                             page to link to; a link to a 404 is worse than none. The lesson
                             is linked for admins, who have the event editor. */}
-                        <div className="font-medium">{req.group_name || `Группа ${req.group_id}`}</div>
+                        <div className="font-medium">{req.group_name || t('lessonRequests.row.group', { id: req.group_id })}</div>
                         <div className="text-xs text-muted-foreground">
                           {req.event_id && !isHeadTeacher ? (
                             <Link
@@ -495,7 +509,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                               className="hover:underline"
                               onClick={e => e.stopPropagation()}
                             >
-                              {req.lesson_title || `Урок ${req.event_id}`}
+                              {req.lesson_title || t('lessonRequests.row.lesson', { id: req.event_id })}
                             </Link>
                           ) : (
                             req.lesson_title || '—'
@@ -506,7 +520,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                         {formatExact(req.original_datetime)}
                         {req.request_type === 'reschedule' && req.new_datetime && (
                           <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <ArrowRight className="h-3 w-3 shrink-0" aria-label="moved to" />
+                            <ArrowRight className="h-3 w-3 shrink-0" aria-label={t('lessonRequests.row.movedTo')} />
                             {formatExact(req.new_datetime)}
                           </span>
                         )}
@@ -526,7 +540,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                               variant="secondary"
                               className="ml-2 bg-purple-100 text-purple-800 hover:bg-purple-100 dark:bg-purple-900/40 dark:text-purple-300 dark:hover:bg-purple-900/40"
                             >
-                              Замена
+                              {t('lessonRequests.row.substitute')}
                             </Badge>
                           )}
                       </TableCell>
@@ -534,14 +548,14 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                         {statusBadge(req.status)}
                         {bad && (
                           <span className="mt-1 block text-xs font-medium text-red-700 dark:text-red-300">
-                            не применено
+                            {t('lessonRequests.row.notApplied')}
                           </span>
                         )}
                       </TableCell>
                       <TableCell className="text-right align-top" onClick={e => e.stopPropagation()}>
                         {req.status === 'pending_teacher' && (
                           <span className="text-xs text-muted-foreground italic">
-                            Ждём подтверждения педагога
+                            {t('lessonRequests.row.waitingTeacher')}
                           </span>
                         )}
                         {req.status === 'pending' && (
@@ -549,7 +563,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                             {req.request_type === 'cancel' && (
                               <fieldset className="w-full min-w-[200px] max-w-[260px] space-y-1.5 text-left">
                                 <legend className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-                                  Решение по уроку
+                                  {t('lessonRequests.decision.legend')}
                                 </legend>
                                 {CANCEL_RESOLUTION_OPTIONS.map(opt => (
                                   <label
@@ -568,9 +582,9 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                                       disabled={processing === req.id}
                                     />
                                     <span>
-                                      <span className="font-medium">{opt.label}</span>
+                                      <span className="font-medium">{t(opt.label)}</span>
                                       <span className="block text-muted-foreground">
-                                        — {opt.hint}
+                                        — {t(opt.hint)}
                                       </span>
                                     </span>
                                   </label>
@@ -578,7 +592,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                               </fieldset>
                             )}
                             <Input
-                              placeholder="Комментарий…"
+                              placeholder={t('lessonRequests.decision.comment')}
                               className="h-8 w-[150px] text-xs"
                               value={adminComment[req.id] || ''}
                               onChange={e =>
@@ -592,9 +606,9 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                                 className="h-7 text-xs hover:bg-green-50 hover:text-green-700 hover:border-green-200 dark:hover:bg-green-950/40 dark:hover:text-green-300 dark:hover:border-green-800/60"
                                 onClick={() => handleApprove(req)}
                                 disabled={processing === req.id || needsCancelChoice(req)}
-                                title={needsCancelChoice(req) ? 'Сначала выберите решение по уроку' : undefined}
+                                title={needsCancelChoice(req) ? t('lessonRequests.decision.chooseFirst') : undefined}
                               >
-                                Одобрить
+                                {t('lessonRequests.decision.approve')}
                               </Button>
                               <Button
                                 size="sm"
@@ -603,7 +617,7 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                                 onClick={() => handleReject(req.id)}
                                 disabled={processing === req.id}
                               >
-                                Отклонить
+                                {t('lessonRequests.decision.reject')}
                               </Button>
                             </div>
                           </div>
@@ -616,14 +630,12 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
                         <TableCell colSpan={7} className="p-6">
                           {bad && (
                             <div className="mb-4 rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
-                              <strong>Одобренная замена не применена к уроку.</strong>
+                              <strong>{t('lessonRequests.detail.notAppliedTitle')}</strong>
                               <div className="mt-1">
-                                Одобрен педагог{' '}
-                                <strong>
-                                  {req.confirmed_teacher_name || req.substitute_teacher_name || '—'}
-                                </strong>
-                                , но в расписании урок закреплён за{' '}
-                                <strong>{req.current_event_teacher_name || '—'}</strong>.
+                                {withBoldParams(t('lessonRequests.detail.notAppliedBody'), {
+                                  approved: req.confirmed_teacher_name || req.substitute_teacher_name || '—',
+                                  current: req.current_event_teacher_name || '—',
+                                })}
                               </div>
                               {req.consistency_note && (
                                 <div className="mt-1 text-red-800 dark:text-red-300">{req.consistency_note}</div>
@@ -633,83 +645,85 @@ export default function LessonRequestManagement({ variant = 'admin' }: Props) {
 
                           <div className="grid gap-6 @4xl:grid-cols-[1fr_320px]">
                             <dl className="grid gap-4 @xl:grid-cols-2 @6xl:grid-cols-3">
-                              <Fact label="Тип заявки">{typeLabel(req.request_type)}</Fact>
-                              <Fact label="Статус">{STATUS_LABELS[req.status] ?? req.status}</Fact>
-                              <Fact label="Автор заявки">{req.requester_name}</Fact>
-                              <Fact label="Создана">{formatExact(req.created_at)}</Fact>
-                              <Fact label="Исходное время урока">
+                              <Fact label={t('lessonRequests.detail.type')}>{typeLabel(t, req.request_type)}</Fact>
+                              <Fact label={t('lessonRequests.col.status')}>{statusLabel(t, req.status)}</Fact>
+                              <Fact label={t('lessonRequests.detail.requester')}>{req.requester_name}</Fact>
+                              <Fact label={t('lessonRequests.detail.created')}>{formatExact(req.created_at)}</Fact>
+                              <Fact label={t('lessonRequests.detail.originalTime')}>
                                 {formatExact(req.original_datetime)}
                               </Fact>
                               {req.request_type === 'reschedule' && (
-                                <Fact label="Новое время">{formatExact(req.new_datetime)}</Fact>
+                                <Fact label={t('lessonRequests.detail.newTime')}>{formatExact(req.new_datetime)}</Fact>
                               )}
                               {req.request_type === 'cancel' && (
-                                <Fact label="Решение по уроку">
-                                  {cancelResolutionLabel(req.cancel_resolution)
-                                    ? `${cancelResolutionLabel(req.cancel_resolution)}${
-                                        req.status === 'pending' ? ' (предложение педагога)' : ''
-                                      }`
+                                <Fact label={t('lessonRequests.decision.legend')}>
+                                  {cancelResolutionLabel(t, req.cancel_resolution)
+                                    ? req.status === 'pending'
+                                      ? t('lessonRequests.detail.teacherProposal', {
+                                          resolution: cancelResolutionLabel(t, req.cancel_resolution) ?? '',
+                                        })
+                                      : cancelResolutionLabel(t, req.cancel_resolution)
                                     : '—'}
                                 </Fact>
                               )}
                               {req.replacement_event_id && (
-                                <Fact label="Добавленный урок">
-                                  {req.replacement_lesson_title || `Урок ${req.replacement_event_id}`}
+                                <Fact label={t('lessonRequests.detail.addedLesson')}>
+                                  {req.replacement_lesson_title || t('lessonRequests.row.lesson', { id: req.replacement_event_id })}
                                   <span className="block text-xs text-muted-foreground">
                                     {formatExact(req.replacement_datetime)}
                                   </span>
                                 </Fact>
                               )}
-                              <Fact label="Предложенные кандидаты">
+                              <Fact label={t('lessonRequests.detail.candidates')}>
                                 {req.substitute_teacher_names?.length
                                   ? req.substitute_teacher_names.join(', ')
                                   : req.substitute_teacher_name || '—'}
                               </Fact>
-                              <Fact label="Подтверждённый педагог">
+                              <Fact label={t('lessonRequests.detail.confirmedTeacher')}>
                                 {req.confirmed_teacher_name}
                               </Fact>
-                              <Fact label="Сейчас урок ведёт">
+                              <Fact label={t('lessonRequests.detail.currentTeacher')}>
                                 <span className={bad ? 'text-red-700 font-medium dark:text-red-300' : ''}>
                                   {req.current_event_teacher_name}
                                 </span>
                               </Fact>
-                              <Fact label="Ответственный за группу">
+                              <Fact label={t('lessonRequests.detail.groupTeacher')}>
                                 {req.group_teacher_name}
                               </Fact>
-                              <Fact label="Отмечает посещаемость">
+                              <Fact label={t('lessonRequests.detail.attendanceOwner')}>
                                 {req.attendance_owner_name}
                               </Fact>
-                              <Fact label="Посещаемость">
+                              <Fact label={t('lessonRequests.detail.attendance')}>
                                 {req.attendance_marked == null
                                   ? '—'
                                   : req.attendance_marked
-                                    ? 'Отмечена'
-                                    : 'Не отмечена'}
+                                    ? t('lessonRequests.detail.attendanceMarked')
+                                    : t('lessonRequests.detail.attendanceNotMarked')}
                               </Fact>
-                              <Fact label="Состояние урока">
+                              <Fact label={t('lessonRequests.detail.lessonState')}>
                                 {req.lesson_is_active == null
                                   ? '—'
                                   : req.lesson_is_active
-                                    ? 'Активен'
-                                    : 'Отменён'}
+                                    ? t('lessonRequests.detail.lessonActive')
+                                    : t('lessonRequests.detail.lessonCancelled')}
                               </Fact>
-                              <Fact label="Кто решил">
+                              <Fact label={t('lessonRequests.detail.resolver')}>
                                 {req.resolver_name
                                   ? `${req.resolver_name}${
-                                      roleLabel(req.resolver_role)
-                                        ? ` (${roleLabel(req.resolver_role)})`
+                                      roleLabel(t, req.resolver_role)
+                                        ? ` (${roleLabel(t, req.resolver_role)})`
                                         : ''
                                     }`
                                   : '—'}
                               </Fact>
-                              <Fact label="Когда решено">{formatExact(req.resolved_at)}</Fact>
-                              <Fact label="Причина">{req.reason}</Fact>
-                              <Fact label="Комментарий решения">{req.admin_comment}</Fact>
+                              <Fact label={t('lessonRequests.detail.resolvedAt')}>{formatExact(req.resolved_at)}</Fact>
+                              <Fact label={t('lessonRequests.detail.reason')}>{req.reason}</Fact>
+                              <Fact label={t('lessonRequests.detail.resolutionComment')}>{req.admin_comment}</Fact>
                             </dl>
 
                             <div className="rounded-md border bg-background p-4">
                               <div className="mb-3 text-[11px] uppercase tracking-wide text-muted-foreground">
-                                Хронология
+                                {t('lessonRequests.timeline.title')}
                               </div>
                               <Timeline req={req} />
                             </div>

@@ -8,17 +8,17 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '@/components/Toast';
 import { STAR_REASON_MAX, starQuota, starQuotaLabel, validStarReason } from '@/lib/achievements';
+import { useLocale, useT } from '@/lib/i18n/react';
 import { awardStar, getGroupStars, type GroupStars } from '@/services/api/achievementsUi';
 
 interface StarOfWeekButtonProps {
   groupId: number;
   students: { id: number; name: string }[];
-  lang: 'ru' | 'en';
 }
 
-export function StarOfWeekButton({ groupId, students, lang }: StarOfWeekButtonProps) {
+export function StarOfWeekButton({ groupId, students }: StarOfWeekButtonProps) {
+  const t = useT();
   const [open, setOpen] = useState(false);
-  const ru = lang === 'ru';
   return (
     <>
       <Button
@@ -31,18 +31,19 @@ export function StarOfWeekButton({ groupId, students, lang }: StarOfWeekButtonPr
         data-tip="star-of-week"
       >
         <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-500" aria-hidden />
-        {ru ? 'Звезда недели' : 'Star of the Week'}
+        {t('achievements.star.title')}
       </Button>
-      {open && <StarOfWeekDialog groupId={groupId} students={students} lang={lang} onClose={() => setOpen(false)} />}
+      {open && <StarOfWeekDialog groupId={groupId} students={students} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
 /** Also opened straight from the live lesson's «Also give Star of the Week?», prefilled (2026-10-04). */
-export function StarOfWeekDialog({ groupId, students, lang, onClose, initialStudentId }: StarOfWeekButtonProps & {
+export function StarOfWeekDialog({ groupId, students, onClose, initialStudentId }: StarOfWeekButtonProps & {
   onClose: () => void; initialStudentId?: number;
 }) {
-  const ru = lang === 'ru';
+  const t = useT();
+  const locale = useLocale();
   const [stars, setStars] = useState<GroupStars | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [studentId, setStudentId] = useState<number | ''>(initialStudentId ?? '');
@@ -66,7 +67,7 @@ export function StarOfWeekDialog({ groupId, students, lang, onClose, initialStud
     awardStar({ student_id: studentId, group_id: groupId, reason: reason.trim() })
       .then(() => {
         const name = students.find((s) => s.id === studentId)?.name ?? '';
-        toast(ru ? `${name} — звезда недели!` : `${name} is this week’s star!`, 'success');
+        toast(t('achievements.star.awarded', { name }), 'success');
         onClose();
       })
       .catch((e: Error) => {
@@ -82,12 +83,10 @@ export function StarOfWeekDialog({ groupId, students, lang, onClose, initialStud
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Star className="h-5 w-5 fill-yellow-400 text-yellow-500" aria-hidden />
-            {ru ? 'Звезда недели' : 'Star of the Week'}
+            {t('achievements.star.title')}
           </DialogTitle>
           <DialogDescription>
-            {ru
-              ? 'Отметьте ученика, который особенно постарался. Он увидит звезду и вашу причину у себя в достижениях.'
-              : 'Celebrate a student who really went for it. They’ll see the star and your reason on their achievements page.'}
+            {t('achievements.star.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -95,25 +94,25 @@ export function StarOfWeekDialog({ groupId, students, lang, onClose, initialStud
           <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden /></div>
         )}
         {loadError && (
-          <p className="text-sm text-red-600 dark:text-red-300">{ru ? 'Не удалось загрузить звёзды группы.' : 'Couldn’t load this group’s stars.'}</p>
+          <p className="text-sm text-red-600 dark:text-red-300">{t('achievements.star.loadFailed')}</p>
         )}
 
         {stars && (
           <div className="space-y-4">
             <p className={`rounded-lg px-3 py-2 text-sm ${left > 0 ? 'bg-yellow-50 text-yellow-900 dark:bg-yellow-950/30 dark:text-yellow-200' : 'bg-gray-50 dark:bg-muted text-muted-foreground'}`}>
-              {stars.can_award ? starQuotaLabel(left, lang) : ru ? 'Звезду выдают учитель и куратор этой группы.' : 'Only this group’s teacher and curator can give the star.'}
+              {stars.can_award ? starQuotaLabel(left, locale) : t('achievements.star.onlyGroupStaff')}
             </p>
 
             {left > 0 && (
               <>
                 <label className="block space-y-1.5">
-                  <span className="text-sm font-medium">{ru ? 'Ученик' : 'Student'}</span>
+                  <span className="text-sm font-medium">{t('achievements.star.student')}</span>
                   <select
                     value={studentId}
                     onChange={(e) => setStudentId(e.target.value ? Number(e.target.value) : '')}
                     className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                   >
-                    <option value="">{ru ? 'Выберите ученика' : 'Choose a student'}</option>
+                    <option value="">{t('achievements.star.chooseStudent')}</option>
                     {students.map((s) => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))}
@@ -121,7 +120,7 @@ export function StarOfWeekDialog({ groupId, students, lang, onClose, initialStud
                 </label>
                 <label className="block space-y-1.5">
                   <span className="flex items-center justify-between text-sm font-medium">
-                    {ru ? 'За что' : 'Why'}
+                    {t('achievements.star.reason')}
                     <span className={`text-xs font-normal ${reason.trim().length > STAR_REASON_MAX ? 'text-red-600 dark:text-red-300' : 'text-muted-foreground'}`}>
                       {reason.trim().length}/{STAR_REASON_MAX}
                     </span>
@@ -131,7 +130,7 @@ export function StarOfWeekDialog({ groupId, students, lang, onClose, initialStud
                     onChange={(e) => setReason(e.target.value)}
                     rows={3}
                     maxLength={STAR_REASON_MAX + 20}
-                    placeholder={ru ? 'Например: сдала все домашки вовремя и помогала одногруппникам' : 'e.g. handed in every homework on time and helped classmates'}
+                    placeholder={t('achievements.star.reasonPlaceholder')}
                     className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                   />
                 </label>
@@ -143,7 +142,7 @@ export function StarOfWeekDialog({ groupId, students, lang, onClose, initialStud
             {stars.this_week.length > 0 && (
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {ru ? 'На этой неделе' : 'This week'}
+                  {t('achievements.star.thisWeek')}
                 </p>
                 <ul className="mt-1.5 space-y-1">
                   {stars.this_week.map((s, i) => (
@@ -156,11 +155,11 @@ export function StarOfWeekDialog({ groupId, students, lang, onClose, initialStud
             )}
 
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="ghost" onClick={onClose}>{ru ? 'Отмена' : 'Cancel'}</Button>
+              <Button type="button" variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
               {left > 0 && (
                 <Button type="button" disabled={!canSubmit} onClick={submit} className="bg-yellow-500 text-yellow-950 hover:bg-yellow-400">
                   {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />}
-                  {ru ? 'Наградить' : 'Award the star'}
+                  {t('achievements.star.award')}
                 </Button>
               )}
             </div>

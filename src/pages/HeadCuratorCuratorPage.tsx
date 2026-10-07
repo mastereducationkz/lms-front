@@ -23,6 +23,7 @@ import {
 import apiClient from '../services/api';
 import { ChevronLeft } from 'lucide-react';
 import UserAvatar from '@/components/mascot/UserAvatar';
+import { formatDate } from '@/lib/i18n';
 
 interface Student {
     id: number;
@@ -174,7 +175,7 @@ export default function HeadCuratorCuratorPage() {
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartColors.grid} />
                                 <XAxis 
                                     dataKey="date" 
-                                    tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })}
+                                    tickFormatter={(val) => formatDate(val, { day: '2-digit', month: '2-digit' })}
                                     tick={chartTick(12)} 
                                     axisLine={false}
                                     tickLine={false}
@@ -188,7 +189,7 @@ export default function HeadCuratorCuratorPage() {
                                 />
                                 <RechartsTooltip 
                                     contentStyle={chartTooltipStyle}
-                                    labelFormatter={(label) => new Date(label).toLocaleDateString()}
+                                    labelFormatter={(label) => formatDate(label, { day: '2-digit', month: '2-digit', year: 'numeric' })}
                                 />
                                 <Line 
                                     type="monotone" 

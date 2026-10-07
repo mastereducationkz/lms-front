@@ -1,22 +1,25 @@
 /** Stars of the Week given per teacher and curator, per week (S3): shows who uses it. */
 import { Star } from 'lucide-react';
 import type { AchievementsAnalytics } from '@/services/api/achievementsAnalytics';
-import { staffRoleLabel, tr, weekLabel, type Lang } from '@/lib/achievementsAnalytics';
+import { staffRoleLabel, weekLabel } from '@/lib/achievementsAnalytics';
+import { useLocale, useT } from '@/lib/i18n/react';
 import { Empty } from './parts';
 
-export default function StarsByStaff({ stars, lang, limit }: { stars: AchievementsAnalytics['stars']; lang: Lang; limit?: number }) {
+export default function StarsByStaff({ stars, limit }: { stars: AchievementsAnalytics['stars']; limit?: number }) {
+  const t = useT();
+  const locale = useLocale();
   const rows = limit ? stars.by_staff.slice(0, limit) : stars.by_staff;
-  if (!rows.length) return <Empty>{tr(lang, 'В этой выборке нет преподавателей или кураторов.', 'No teachers or curators in this view.')}</Empty>;
+  if (!rows.length) return <Empty>{t('achievements.staffStars.none')}</Empty>;
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[520px] text-sm">
         <thead>
           <tr className="text-left text-xs text-muted-foreground">
-            <th className="pb-2 font-medium">{tr(lang, 'Сотрудник', 'Staff')}</th>
+            <th className="pb-2 font-medium">{t('achievements.staffStars.staff')}</th>
             {stars.weeks.map((w) => (
               <th key={w} className="pb-2 text-center font-medium tabular-nums">{weekLabel(w)}</th>
             ))}
-            <th className="pb-2 text-right font-medium">{tr(lang, 'Всего', 'Total')}</th>
+            <th className="pb-2 text-right font-medium">{t('achievements.staffStars.total')}</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
@@ -24,7 +27,7 @@ export default function StarsByStaff({ stars, lang, limit }: { stars: Achievemen
             <tr key={s.user_id}>
               <td className="py-2 pr-3">
                 <p className="font-medium text-foreground">{s.name}</p>
-                <p className="text-xs text-muted-foreground">{staffRoleLabel(s.role, lang)}</p>
+                <p className="text-xs text-muted-foreground">{staffRoleLabel(s.role, locale)}</p>
               </td>
               {s.per_week.map((n, i) => (
                 <td key={stars.weeks[i] ?? i} className="py-2 text-center">

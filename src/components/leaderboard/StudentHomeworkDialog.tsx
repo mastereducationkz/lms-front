@@ -9,6 +9,8 @@ import type { StudentProgress, AssignmentData, SubmissionDetails } from '../cura
 import { PROGRAM_LABELS } from '../../lib/groupPicker';
 import type { CourseType } from '../../types';
 import { cn } from '../../lib/utils';
+import { formatDate, type Locale } from '../../lib/i18n';
+import { useLocale, useT } from '../../lib/i18n/react';
 
 // Canonical program order for the filter tabs.
 const PROGRAM_ORDER: CourseType[] = ['sat', 'ielts', 'nuet', 'general_english'];
@@ -32,13 +34,13 @@ interface StudentHomeworkDialogProps {
   studentName: string;
 }
 
-const formatDeadline = (dateString: string | null): string => {
+const formatDeadline = (dateString: string | null, locale: Locale): string => {
   if (!dateString) return '—';
-  return new Date(dateString).toLocaleDateString('ru-RU', {
+  return formatDate(dateString, {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
-  });
+  }, locale);
 };
 
 // Map an endpoint item -> the shapes the reused ViewDialog expects.
@@ -76,6 +78,8 @@ const toAssignmentData = (item: StudentHomeworkItem): AssignmentData => ({
 });
 
 export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentName }: StudentHomeworkDialogProps) {
+  const t = useT();
+  const locale = useLocale();
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<StudentHomeworkItem[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -100,7 +104,7 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
         if (!cancelled) setItems(res.items || []);
       })
       .catch(() => {
-        if (!cancelled) setError('Не удалось загрузить домашние задания');
+        if (!cancelled) setError(t('attendance.studentHw.loadFailed'));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -153,7 +157,7 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
           <DialogHeader className="px-5 pt-5 pb-3 border-b border-border">
             <DialogTitle className="flex items-center gap-2 text-base">
               <ClipboardList className="w-4 h-4 text-brand" />
-              Все домашние задания — {studentName}
+              {t('attendance.studentHw.title', { name: studentName })}
             </DialogTitle>
           </DialogHeader>
 
@@ -161,7 +165,7 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
             <div className="flex items-center gap-1 px-5 pt-2 border-b border-border overflow-x-auto shrink-0">
               {(['all' as const, ...programs]).map((p) => {
                 const active = activeProgram === p;
-                const label = p === 'all' ? 'Все' : PROGRAM_LABELS[p];
+                const label = p === 'all' ? t('common.all') : PROGRAM_LABELS[p];
                 const count = p === 'all'
                   ? items.length
                   : items.filter((i) => programOfItem(i) === p).length;
@@ -187,23 +191,23 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
           <div className="overflow-y-auto px-5 py-4">
             {loading ? (
               <div className="flex items-center justify-center py-12 text-muted-foreground">
-                <Loader2 className="w-5 h-5 animate-spin mr-2" /> Загрузка…
+                <Loader2 className="w-5 h-5 animate-spin mr-2" /> {t('common.loading')}
               </div>
             ) : error ? (
               <div className="text-center py-12 text-sm text-red-500 dark:text-red-400">{error}</div>
             ) : items.length === 0 ? (
               <div className="text-center py-12 text-sm text-muted-foreground">
-                У этого ученика пока нет домашних заданий.
+                {t('attendance.studentHw.empty')}
               </div>
             ) : (
               <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs text-muted-foreground border-b border-border">
-                    <th className="font-medium pb-2 pr-2">Задание</th>
-                    {showGroupColumn && <th className="font-medium pb-2 pr-2">Группа</th>}
-                    <th className="font-medium pb-2 pr-2 whitespace-nowrap">Дедлайн</th>
-                    <th className="font-medium pb-2 pl-2 text-right">Статус</th>
+                    <th className="font-medium pb-2 pr-2">{t('attendance.studentHw.assignment')}</th>
+                    {showGroupColumn && <th className="font-medium pb-2 pr-2">{t('attendance.studentHw.group')}</th>}
+                    <th className="font-medium pb-2 pr-2 whitespace-nowrap">{t('attendance.studentHw.deadline')}</th>
+                    <th className="font-medium pb-2 pl-2 text-right">{t('attendance.studentHw.status')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -229,7 +233,7 @@ export function StudentHomeworkDialog({ open, onOpenChange, studentId, studentNa
                           </td>
                         )}
                         <td className="py-2.5 pr-2 text-muted-foreground dark:text-muted-foreground whitespace-nowrap">
-                          {formatDeadline(item.due_date)}
+                          {formatDeadline(item.due_date, locale)}
                         </td>
                         <td className="py-2.5 pl-2 text-right">
                           <StatusBadge status={item.status} score={item.score} maxScore={item.max_score} late={item.late} />

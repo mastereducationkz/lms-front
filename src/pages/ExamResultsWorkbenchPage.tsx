@@ -6,6 +6,7 @@ import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { useAuth } from '../contexts/AuthContext';
+import { useT } from '../lib/i18n/react';
 import { RecordResultDialog } from '../components/exams/RecordResultDialog';
 import { TestimonialDialog } from '../components/exams/TestimonialDialog';
 import {
@@ -71,36 +72,37 @@ const chipMuted = `${chipBase} bg-muted text-muted-foreground`;
  * testimonial IS the consent record - only it allows using the student's name or photo.
  * Renders nothing when the row is not eligible.
  */
-function MarketingChips({ row, t }: { row: ExamResultRow; t: (ru: string, en: string) => string }) {
+function MarketingChips({ row }: { row: ExamResultRow }) {
+  const t = useT();
   if (!row.marketing_eligible) return null;
   const byScore = row.marketing_basis.includes('score');
   const byTestimonial = row.marketing_basis.includes('testimonial');
   // The qualifying sitting, spelled out: the verdict is judged on the student's current
   // attempt, which is not always the attempt this row displays - a status or date filter
   // can narrow the row to another one.
-  const attempt = row.marketing_score != null && row.marketing_test_date != null
-    ? ` — ${Number(row.marketing_score)}, ${row.marketing_test_date}`
-    : '';
+  const scoreTitle = row.marketing_score != null && row.marketing_test_date != null
+    ? t('exams.marketing.scoreTitleWithAttempt', {
+        threshold: row.marketing_threshold ?? '', score: Number(row.marketing_score), date: row.marketing_test_date,
+      })
+    : t('exams.marketing.scoreTitle', { threshold: row.marketing_threshold ?? '' });
   return (
     <span className="inline-flex items-center gap-1">
       {byScore && (
         <span className={chipOk}
-              title={t(`Текущая попытка выше ${row.marketing_threshold} баллов${attempt}`,
-                       `Current attempt above ${row.marketing_threshold}${attempt}`)}>
-          {t('балл', 'score')}
+              title={scoreTitle}>
+          {t('exams.marketing.score')}
         </span>
       )}
       {byTestimonial && (
         <span className={chipOk}
-              title={t('Одобренный отзыв с записанным согласием', 'Approved testimonial with recorded consent')}>
-          {t('отзыв', 'testimonial')}
+              title={t('exams.marketing.testimonialTitle')}>
+          {t('exams.marketing.testimonial')}
         </span>
       )}
       {byScore && !byTestimonial && (
         <span className={chipMuted}
-              title={t('Согласие не записано: балл можно упоминать, но имя и фото ученика — только после оформления отзыва с согласием.',
-                       'No consent recorded: the score may be cited, but the student\'s name or photo may only be used once a testimonial with consent is on file.')}>
-          {t('без согласия', 'no consent')}
+              title={t('exams.marketing.noConsentTitle')}>
+          {t('exams.marketing.noConsent')}
         </span>
       )}
     </span>
@@ -109,8 +111,7 @@ function MarketingChips({ row, t }: { row: ExamResultRow; t: (ru: string, en: st
 
 export default function ExamResultsWorkbenchPage() {
   const { user } = useAuth();
-  const isRu = ['curator', 'head_curator'].includes(user?.role || '');
-  const t = (ru: string, en: string) => (isRu ? ru : en);
+  const t = useT();
   const canWrite = WRITE_ROLES.has(user?.role || '');
   const canApprove = APPROVE_ROLES.has(user?.role || '');
 
@@ -181,13 +182,12 @@ export default function ExamResultsWorkbenchPage() {
     } catch (e: any) {
       setRows([]);
       setError(e?.response?.status === 403
-        ? t('Нет доступа к этим результатам.', 'You do not have access to those results.')
-        : t('Не удалось загрузить результаты.', 'Could not load exam results.'));
+        ? t('exams.errors.noAccess')
+        : t('exams.errors.loadFailed'));
     } finally {
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isRu]);
+  }, [t]);
 
   useEffect(() => {
     const handle = setTimeout(() => load(filters), 300);
@@ -227,11 +227,10 @@ export default function ExamResultsWorkbenchPage() {
     rows.find((r) => r.marketing_threshold != null)?.marketing_threshold ?? null;
   const marketingLabel =
     marketingThreshold != null
-      ? t(`Готово для маркетинга (${examType.toUpperCase()} > ${marketingThreshold} или отзыв)`,
-          `Marketing-ready (${examType.toUpperCase()} > ${marketingThreshold} or testimonial)`)
+      ? t('exams.marketing.readyWithThreshold', { exam: examType.toUpperCase(), threshold: marketingThreshold })
       : rows.length > 0
-        ? t('Готово для маркетинга (только отзыв)', 'Marketing-ready (testimonial only)')
-        : t('Готово для маркетинга', 'Marketing-ready');
+        ? t('exams.marketing.readyTestimonialOnly')
+        : t('exams.marketing.ready');
 
   const counts = useMemo(() => ({
     all: rows.length,
@@ -251,7 +250,7 @@ export default function ExamResultsWorkbenchPage() {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      setError(t('Экспорт не удался.', 'Export failed.'));
+      setError(t('exams.errors.exportFailed'));
     } finally {
       setExporting(false);
     }
@@ -267,12 +266,12 @@ export default function ExamResultsWorkbenchPage() {
         exam_type: examType,
         planned_test_date: newDate,
       });
-      setNotice(t('Дата перенесена.', 'Planned date updated.'));
+      setNotice(t('exams.notice.rescheduled'));
       await load(filters);
     } catch (e: any) {
       const detail = e?.response?.data?.detail;
       setError(typeof detail === 'string' ? detail
-        : t('Не удалось перенести дату.', 'Could not reschedule.'));
+        : t('exams.errors.rescheduleFailed'));
     } finally {
       setRescheduling(null);
     }
@@ -292,23 +291,22 @@ export default function ExamResultsWorkbenchPage() {
     <div className="space-y-4 p-4 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold">{t('Результаты экзаменов', 'Exam results')}</h1>
+          <h1 className="text-xl font-semibold">{t('exams.title')}</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            {t('Отслеживание, внесение результатов и подтверждения — в одном месте.',
-               'Track, record and evidence exam results in one place.')}
+            {t('exams.subtitle')}
           </p>
         </div>
         <Button size="sm" onClick={handleExport} disabled={exporting || visible.length === 0}>
           <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
-          {exporting ? t('Экспорт…', 'Exporting…') : t('Экспорт XLSX', 'Export XLSX')}
+          {exporting ? t('exams.export.running') : t('exams.export.button')}
         </Button>
       </div>
 
       <Card>
         <CardContent className="p-4 space-y-3">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground w-24">{t('Экзамен', 'Exam')}</span>
-            <div className="flex gap-1" role="group" aria-label={t('Тип экзамена', 'Exam type')}>
+            <span className="text-xs font-medium text-muted-foreground w-24">{t('exams.filters.exam')}</span>
+            <div className="flex gap-1" role="group" aria-label={t('exams.filters.examType')}>
               {EXAM_TYPES.map((x) => (
                 <Button key={x.value} size="sm"
                         variant={examType === x.value ? 'default' : 'outline'}
@@ -322,12 +320,12 @@ export default function ExamResultsWorkbenchPage() {
 
           {/* Triage presets - the daily "who do I chase" workflow the old curator page owned. */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground w-24">{t('Показать', 'Show')}</span>
-            <div className="flex flex-wrap gap-1" role="group" aria-label={t('Фильтр задач', 'Triage filter')}>
-              {([['all', t('Все', 'All'), counts.all],
-                 ['todo', t('Нужно спросить', 'To chase'), counts.todo],
-                 ['overdue', t('Просрочено', 'Overdue'), counts.overdue],
-                 ['done', t('Завершено', 'Completed'), counts.done]] as const).map(([key, label, n]) => (
+            <span className="text-xs font-medium text-muted-foreground w-24">{t('exams.filters.show')}</span>
+            <div className="flex flex-wrap gap-1" role="group" aria-label={t('exams.filters.triage')}>
+              {([['all', t('exams.preset.all'), counts.all],
+                 ['todo', t('exams.preset.todo'), counts.todo],
+                 ['overdue', t('exams.preset.overdue'), counts.overdue],
+                 ['done', t('exams.preset.done'), counts.done]] as const).map(([key, label, n]) => (
                 <Button key={key} size="sm" variant={preset === key ? 'default' : 'outline'}
                         aria-pressed={preset === key}
                         onClick={() => setPreset(key as Preset)}>
@@ -346,21 +344,21 @@ export default function ExamResultsWorkbenchPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium text-muted-foreground w-24">{t('Дата по', 'Date basis')}</span>
-            <div className="flex gap-1" role="group" aria-label={t('Какая дата', 'Which date to filter on')}>
+            <span className="text-xs font-medium text-muted-foreground w-24">{t('exams.filters.dateBasis')}</span>
+            <div className="flex gap-1" role="group" aria-label={t('exams.filters.whichDate')}>
               <Button size="sm" variant={dateField === 'planned' ? 'default' : 'outline'}
                       aria-pressed={dateField === 'planned'} onClick={() => setDateField('planned')}>
-                {t('Плановая', 'Planned')}
+                {t('exams.filters.planned')}
               </Button>
               <Button size="sm" variant={dateField === 'actual' ? 'default' : 'outline'}
                       aria-pressed={dateField === 'actual'} onClick={() => setDateField('actual')}>
-                {t('Фактическая', 'Actual')}
+                {t('exams.filters.actual')}
               </Button>
             </div>
             <span className="text-[11px] text-muted-foreground">
               {dateField === 'planned'
-                ? t('Кто планирует сдавать', 'Who is scheduled to sit the exam')
-                : t('Когда экзамен реально сдан', 'When the exam was actually taken')}
+                ? t('exams.filters.plannedHint')
+                : t('exams.filters.actualHint')}
             </span>
           </div>
 
@@ -368,35 +366,35 @@ export default function ExamResultsWorkbenchPage() {
             {isSat && (
               <div>
                 <label htmlFor="er-cohort" className="text-xs font-medium">
-                  {t('Официальная дата', 'Official date (cohort)')}
+                  {t('exams.filters.officialDate')}
                 </label>
                 <select id="er-cohort" value={exactDate} onChange={(e) => setExactDate(e.target.value)}
                         className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                  <option value="">{t('Любая', 'Any date')}</option>
+                  <option value="">{t('exams.filters.anyDate')}</option>
                   {officialDates.map((d) => (
                     <option key={d.test_date} value={d.test_date}>
-                      {d.label}{d.is_past ? t(' (прошла)', ' (past)') : ''}
+                      {d.is_past ? t('exams.filters.pastDate', { label: d.label }) : d.label}
                     </option>
                   ))}
                 </select>
               </div>
             )}
             <div>
-              <label htmlFor="er-from" className="text-xs font-medium">{t('С', 'From')}</label>
+              <label htmlFor="er-from" className="text-xs font-medium">{t('exams.filters.from')}</label>
               <Input id="er-from" type="date" value={dateFrom} className="mt-1"
                      onChange={(e) => setDateFrom(e.target.value)} />
             </div>
             <div>
-              <label htmlFor="er-to" className="text-xs font-medium">{t('По', 'To')}</label>
+              <label htmlFor="er-to" className="text-xs font-medium">{t('exams.filters.to')}</label>
               <Input id="er-to" type="date" value={dateTo} className="mt-1"
                      onChange={(e) => setDateTo(e.target.value)} />
             </div>
             <div>
-              <label htmlFor="er-group" className="text-xs font-medium">{t('Группа', 'Group')}</label>
+              <label htmlFor="er-group" className="text-xs font-medium">{t('exams.filters.group')}</label>
               <select id="er-group" value={groupId}
                       onChange={(e) => setGroupId(e.target.value ? Number(e.target.value) : '')}
                       className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                <option value="">{t('Все мои группы', 'All my groups')}</option>
+                <option value="">{t('exams.filters.allMyGroups')}</option>
                 {groups.map((g) => (
                   <option key={g.id} value={g.id}>
                     {g.teacher_name ? `${g.name} — ${g.teacher_name}` : g.name}
@@ -411,14 +409,14 @@ export default function ExamResultsWorkbenchPage() {
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
                       aria-hidden="true" />
               <Input type="search" value={search} onChange={(e) => setSearch(e.target.value)}
-                     placeholder={t('Поиск: ученик…', 'Search student name…')}
-                     aria-label={t('Поиск по имени', 'Search by student name')} className="pl-8" />
+                     placeholder={t('exams.filters.searchPlaceholder')}
+                     aria-label={t('exams.filters.searchLabel')} className="pl-8" />
             </div>
             <Button size="sm" variant="ghost" onClick={() => {
               setExactDate(''); setDateFrom(''); setDateTo(''); setGroupId(''); setSearch(''); setPreset('all');
-            }}>{t('Сбросить', 'Reset')}</Button>
+            }}>{t('exams.filters.reset')}</Button>
             <span className="text-xs text-muted-foreground">
-              {loading ? t('Загрузка…', 'Loading…') : `${visible.length} / ${rows.length}`}
+              {loading ? t('common.loading') : `${visible.length} / ${rows.length}`}
             </span>
           </div>
         </CardContent>
@@ -435,7 +433,7 @@ export default function ExamResultsWorkbenchPage() {
 
       {!loading && visible.length === 0 && !error && (
         <Card><CardContent className="p-8 text-center text-muted-foreground">
-          {t('Нет учеников по этим фильтрам.', 'No students match these filters.')}
+          {t('exams.empty')}
         </CardContent></Card>
       )}
 
@@ -447,22 +445,22 @@ export default function ExamResultsWorkbenchPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-8" />
-                    <TableHead className="sticky left-0 z-[3] bg-background border-r w-52">{t('Ученик', 'Student')}</TableHead>
-                    <TableHead>{t('Группа', 'Group')}</TableHead>
-                    <TableHead>{t('Телефон', 'Phone')}</TableHead>
+                    <TableHead className="sticky left-0 z-[3] bg-background border-r w-52">{t('exams.columns.student')}</TableHead>
+                    <TableHead>{t('exams.columns.group')}</TableHead>
+                    <TableHead>{t('exams.columns.phone')}</TableHead>
                     <TableHead>Telegram</TableHead>
-                    <TableHead>{t('Родитель', 'Parent')}</TableHead>
-                    <TableHead>{t('Тел. родителя', 'Parent phone')}</TableHead>
-                    <TableHead>{t('План', 'Planned')}</TableHead>
-                    <TableHead>{t('Спросить', 'Ask on')}</TableHead>
-                    <TableHead>{t('Сдан', 'Test date')}</TableHead>
+                    <TableHead>{t('exams.columns.parent')}</TableHead>
+                    <TableHead>{t('exams.columns.parentPhone')}</TableHead>
+                    <TableHead>{t('exams.columns.planned')}</TableHead>
+                    <TableHead>{t('exams.columns.askOn')}</TableHead>
+                    <TableHead>{t('exams.columns.testDate')}</TableHead>
                     {isSat && <><TableHead className="text-center">Verbal</TableHead><TableHead className="text-center">Math</TableHead></>}
-                    <TableHead className="text-center">{isIelts ? 'Overall' : t('Итог', 'Total')}</TableHead>
-                    <TableHead className="text-center whitespace-nowrap">{t('Маркетинг', 'Marketing')}</TableHead>
-                    <TableHead>{t('Статус', 'Status')}</TableHead>
-                    <TableHead className="text-center">{t('Подтв.', 'Proof')}</TableHead>
-                    {canWrite && <TableHead className="text-center">{t('Отзыв', 'Testimonial')}</TableHead>}
-                    {canWrite && <TableHead className="text-right">{t('Действия', 'Actions')}</TableHead>}
+                    <TableHead className="text-center">{isIelts ? 'Overall' : t('exams.columns.total')}</TableHead>
+                    <TableHead className="text-center whitespace-nowrap">{t('exams.columns.marketing')}</TableHead>
+                    <TableHead>{t('exams.columns.status')}</TableHead>
+                    <TableHead className="text-center">{t('exams.columns.proof')}</TableHead>
+                    {canWrite && <TableHead className="text-center">{t('exams.columns.testimonial')}</TableHead>}
+                    {canWrite && <TableHead className="text-right">{t('exams.columns.actions')}</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -477,7 +475,7 @@ export default function ExamResultsWorkbenchPage() {
                             {row.attempts.length > 1 && (
                               <button onClick={() => toggle(id)}
                                       aria-expanded={isOpen}
-                                      aria-label={t('История попыток', 'Attempt history')}
+                                      aria-label={t('exams.row.attemptHistory')}
                                       className="p-1 rounded hover:bg-accent">
                                 {isOpen ? <ChevronDown className="h-3.5 w-3.5" />
                                         : <ChevronRight className="h-3.5 w-3.5" />}
@@ -508,13 +506,13 @@ export default function ExamResultsWorkbenchPage() {
                             {r ? Number(r.total_score) : '—'}
                           </TableCell>
                           <TableCell className="text-center">
-                            <MarketingChips row={row} t={t} />
+                            <MarketingChips row={row} />
                           </TableCell>
                           <TableCell>
                             <Badge variant="secondary" className={triageTone[row.triage_status ?? ''] ?? ''}
                                    title={row.triage_status === 'declined' ? row.decline_note ?? undefined : undefined}>
                               {row.triage_status === 'declined'
-                                ? t('Не хочет делиться', 'Declined to share')
+                                ? t('exams.row.declined')
                                 : row.triage_status ?? '—'}
                             </Badge>
                           </TableCell>
@@ -522,11 +520,11 @@ export default function ExamResultsWorkbenchPage() {
                             {r?.has_proof ? (
                               <button type="button"
                                       onClick={() => openResultProof(r.id).catch(
-                                        () => setError(t('Не удалось открыть файл.', 'Could not open the file.')))}
+                                        () => setError(t('exams.errors.openFileFailed')))}
                                       className="inline-flex items-center gap-1 text-primary hover:underline"
-                                      aria-label={t('Открыть подтверждение', 'Open proof')}>
+                                      aria-label={t('exams.row.openProof')}>
                                 <FileText className="h-3.5 w-3.5" aria-hidden="true" />
-                                {t('Открыть', 'View')}
+                                {t('exams.row.view')}
                               </button>
                             ) : '—'}
                           </TableCell>
@@ -538,16 +536,16 @@ export default function ExamResultsWorkbenchPage() {
                                   <button
                                     onClick={() => setTestimonialFor(row)}
                                     className="inline-flex items-center gap-1 hover:underline"
-                                    aria-label={t('Отзыв и фото', 'Testimonial and photo')}
+                                    aria-label={t('exams.row.testimonialAndPhoto')}
                                   >
                                     <MessageSquareQuote className="h-3.5 w-3.5" aria-hidden="true" />
                                     {tst?.is_marketing_ready
                                       ? <span className="text-green-700 dark:text-green-400">
-                                          {t('готов', 'ready')}
+                                          {t('exams.row.testimonialReady')}
                                         </span>
                                       : tst
                                         ? <span className="text-muted-foreground">{tst.status}</span>
-                                        : <span className="text-muted-foreground">{t('добавить', 'add')}</span>}
+                                        : <span className="text-muted-foreground">{t('exams.row.testimonialAdd')}</span>}
                                   </button>
                                 );
                               })()}
@@ -557,18 +555,18 @@ export default function ExamResultsWorkbenchPage() {
                             <TableCell className="text-right whitespace-nowrap">
                               <div className="inline-flex items-center gap-1">
                                 <label className="sr-only" htmlFor={`resch-${id}`}>
-                                  {t('Перенести', 'Reschedule')}
+                                  {t('exams.row.reschedule')}
                                 </label>
                                 <input id={`resch-${id}`} type="date"
                                        disabled={rescheduling === id}
                                        defaultValue={row.planned_test_date ?? ''}
                                        onChange={(e) => reschedule(row, e.target.value)}
-                                       title={t('Перенести плановую дату', 'Reschedule planned date')}
+                                       title={t('exams.row.reschedulePlanned')}
                                        className="rounded border border-input bg-background px-1.5 py-1 text-[11px]" />
                                 <Button size="sm" variant="secondary"
                                         onClick={() => setRecording(row)}>
                                   <Plus className="mr-1 h-3 w-3" aria-hidden="true" />
-                                  {t('Внести', 'Add')}
+                                  {t('exams.row.addResult')}
                                 </Button>
                               </div>
                             </TableCell>
@@ -580,7 +578,7 @@ export default function ExamResultsWorkbenchPage() {
                             <TableCell />
                             <TableCell className="sticky left-0 z-[2] bg-muted/30 border-r pl-6 text-muted-foreground">
                               <CalendarClock className="inline h-3 w-3 mr-1" aria-hidden="true" />
-                              {t('Попытка', 'Attempt')} {a.test_date}
+                              {t('exams.row.attempt', { date: a.test_date })}
                             </TableCell>
                             <TableCell colSpan={7} />
                             <TableCell>{a.test_date}</TableCell>
@@ -595,8 +593,8 @@ export default function ExamResultsWorkbenchPage() {
                               {a.has_proof ? (
                                 <button type="button"
                                         onClick={() => openResultProof(a.id).catch(
-                                          () => setError(t('Не удалось открыть файл.', 'Could not open the file.')))}
-                                        className="text-primary hover:underline">{t('Открыть', 'View')}</button>
+                                          () => setError(t('exams.errors.openFileFailed')))}
+                                        className="text-primary hover:underline">{t('exams.row.view')}</button>
                               ) : '—'}
                             </TableCell>
                             {canWrite && <TableCell />}
@@ -633,7 +631,7 @@ export default function ExamResultsWorkbenchPage() {
           examType={examType}
           officialDates={pastDates}
           onClose={() => setRecording(null)}
-          onSaved={() => { setNotice(t('Результат сохранён.', 'Result saved.')); load(filters); }}
+          onSaved={() => { setNotice(t('exams.notice.resultSaved')); load(filters); }}
         />
       )}
     </div>

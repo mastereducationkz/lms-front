@@ -7,6 +7,7 @@ import { Dialog, DialogContent } from '../ui/dialog';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '../ui/select';
+import { useT } from '../../lib/i18n/react';
 
 interface AddToGroupDialogProps {
   open: boolean;
@@ -20,6 +21,7 @@ interface AddToGroupDialogProps {
  * and by curators (groups = own groups); the backend 403-guards foreign groups.
  */
 export function AddToGroupDialog({ open, studentIds, groups, onClose }: AddToGroupDialogProps) {
+  const t = useT();
   const [groupId, setGroupId] = useState<string>('');
   const [saving, setSaving] = useState(false);
 
@@ -31,11 +33,11 @@ export function AddToGroupDialog({ open, studentIds, groups, onClose }: AddToGro
     try {
       await api.bulkAddStudentsToGroup(Number(groupId), studentIds);
       const groupName = groups.find((g) => g.id === Number(groupId))?.name || '';
-      toast(`${studentIds.length} учеников добавлено в «${groupName}»`, 'success');
+      toast(t('users.addToGroup.done', { count: studentIds.length, group: groupName }), 'success');
       onClose(true);
     } catch (e) {
       console.error('Failed to add students to group', e);
-      toast('Не удалось добавить в группу', 'error');
+      toast(t('users.addToGroup.failed'), 'error');
     } finally {
       setSaving(false);
     }
@@ -45,13 +47,13 @@ export function AddToGroupDialog({ open, studentIds, groups, onClose }: AddToGro
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(false); }}>
       <DialogContent className="sm:max-w-md p-0 overflow-hidden">
         <div className="px-5 pt-5 pb-3 border-b">
-          <h2 className="text-base font-semibold">Добавить в группу</h2>
-          <p className="text-xs text-muted-foreground mt-1">Выбрано учеников: {studentIds.length}</p>
+          <h2 className="text-base font-semibold">{t('users.bulk.addToGroup')}</h2>
+          <p className="text-xs text-muted-foreground mt-1">{t('users.addToGroup.selected', { count: studentIds.length })}</p>
         </div>
         <div className="px-5 py-4">
           <Select value={groupId} onValueChange={setGroupId}>
             <SelectTrigger>
-              <SelectValue placeholder="Выберите группу" />
+              <SelectValue placeholder={t('users.addToGroup.chooseGroup')} />
             </SelectTrigger>
             <SelectContent className="max-h-72">
               {groups.map((g) => (
@@ -61,9 +63,9 @@ export function AddToGroupDialog({ open, studentIds, groups, onClose }: AddToGro
           </Select>
         </div>
         <div className="px-5 py-3 border-t flex items-center justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={() => onClose(false)} disabled={saving}>Отмена</Button>
+          <Button variant="ghost" size="sm" onClick={() => onClose(false)} disabled={saving}>{t('common.cancel')}</Button>
           <Button size="sm" onClick={confirm} disabled={saving || !groupId}>
-            {saving ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Добавление</> : <><Check className="w-3.5 h-3.5 mr-1.5" /> Добавить</>}
+            {saving ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> {t('users.addToGroup.adding')}</> : <><Check className="w-3.5 h-3.5 mr-1.5" /> {t('users.addToGroup.add')}</>}
           </Button>
         </div>
       </DialogContent>

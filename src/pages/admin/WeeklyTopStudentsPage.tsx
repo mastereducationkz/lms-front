@@ -11,6 +11,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '../../components/ui/table';
 import { getWeeklyTopStudents, exportWeeklyTopStudents, getGroups } from '../../services/api';
+import { formatDate } from '../../lib/i18n';
 
 const PROGRAMS = [
   { value: 'all', label: 'All programs' },
@@ -42,7 +43,7 @@ function fmtRange(mondayISO: string): string {
   const start = new Date(y, m - 1, d);
   const end = addDays(start, 6);
   const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
-  return `${start.toLocaleDateString(undefined, opts)} – ${end.toLocaleDateString(undefined, { ...opts, year: 'numeric' })}`;
+  return `${formatDate(start, opts)} – ${formatDate(end, { ...opts, year: 'numeric' })}`;
 }
 
 const num = (v: number | null | undefined, dp = 0) =>

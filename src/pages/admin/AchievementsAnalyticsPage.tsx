@@ -5,11 +5,11 @@
  */
 import { useEffect, useState } from 'react';
 import { Loader2, Trophy } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 import {
   getAchievementsAnalytics, getShareStats, type AchievementsAnalytics, type ShareStats,
 } from '@/services/api/achievementsAnalytics';
-import { formatPct, highlights, langForRole, tr } from '@/lib/achievementsAnalytics';
+import { formatPct, highlights } from '@/lib/achievementsAnalytics';
+import { useT } from '@/lib/i18n/react';
 import RarityTable from '@/components/achievements/analytics/RarityTable';
 import { StreakHistogram, TrendChart } from '@/components/achievements/analytics/Charts';
 import StarsByStaff from '@/components/achievements/analytics/StarsByStaff';
@@ -19,8 +19,7 @@ import { Section, StatCard } from '@/components/achievements/analytics/parts';
 const WEEK_OPTIONS = [8, 12, 26];
 
 export default function AchievementsAnalyticsPage() {
-  const { user } = useAuth();
-  const lang = langForRole(user?.role);
+  const t = useT();
   const [groupId, setGroupId] = useState<number | null>(null);
   const [weeks, setWeeks] = useState(12);
   const [data, setData] = useState<AchievementsAnalytics | null>(null);
@@ -34,10 +33,10 @@ export default function AchievementsAnalyticsPage() {
     setError(null);
     getAchievementsAnalytics({ groupId, weeks })
       .then((d) => { if (alive) setData(d); })
-      .catch(() => { if (alive) setError(tr(lang, 'Не удалось загрузить данные', 'Could not load the data')); })
+      .catch(() => { if (alive) setError(t('achievements.analytics.loadFailed')); })
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
-  }, [groupId, weeks, lang]);
+  }, [groupId, weeks, t]);
 
   useEffect(() => {
     let alive = true;
@@ -56,9 +55,9 @@ export default function AchievementsAnalyticsPage() {
             <Trophy className="h-5 w-5" />
           </span>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{tr(lang, 'Достижения', 'Achievements')}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{t('achievements.title')}</h1>
             <p className="text-sm text-muted-foreground">
-              {tr(lang, 'Как ученики зарабатывают награды для своего Касатика', 'How students earn rewards for their Kasatik')}
+              {t('achievements.analytics.subtitle')}
             </p>
           </div>
         </div>
@@ -67,16 +66,16 @@ export default function AchievementsAnalyticsPage() {
             value={groupId ?? ''}
             onChange={(e) => setGroupId(e.target.value ? Number(e.target.value) : null)}
             className="h-9 max-w-[260px] rounded-lg border border-border dark:border-border bg-card dark:bg-card px-3 text-sm"
-            aria-label={tr(lang, 'Группа', 'Group')}
+            aria-label={t('achievements.analytics.group')}
           >
-            <option value="">{tr(lang, 'Все группы', 'All groups')}</option>
+            <option value="">{t('achievements.analytics.allGroups')}</option>
             {(data?.scope.groups ?? []).map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
           </select>
           <div className="flex rounded-lg border border-border dark:border-border p-0.5">
             {WEEK_OPTIONS.map((w) => (
               <button key={w} type="button" onClick={() => setWeeks(w)}
                 className={`rounded-md px-2.5 py-1 text-xs font-medium ${weeks === w ? 'bg-brand-solid text-white' : 'text-muted-foreground hover:text-foreground'}`}>
-                {w} {tr(lang, 'нед.', 'wk')}
+                {t('achievements.analytics.weeksOption', { weeks: w })}
               </button>
             ))}
           </div>
@@ -89,79 +88,76 @@ export default function AchievementsAnalyticsPage() {
       ) : data && s ? (
         <>
           <div className={`grid grid-cols-2 gap-3 lg:grid-cols-5 transition-opacity ${loading ? 'opacity-60' : ''}`}>
-            <StatCard label={tr(lang, 'Активные ученики', 'Active students')} value={s.active_students} />
-            <StatCard label={tr(lang, 'Есть хотя бы одно', 'Earned at least one')} value={formatPct(s.students_with_any_pct)}
-              hint={`${s.students_with_any} ${tr(lang, 'учеников', 'students')}`} accent="text-brand" />
-            <StatCard label={tr(lang, 'В среднем на ученика', 'Average per student')} value={s.avg_per_student}
-              hint={`${tr(lang, 'из', 'of')} ${s.achievements_total}`} />
-            <StatCard label={tr(lang, 'Получено за 7 дней', 'Unlocked in 7 days')} value={s.last_7_days}
-              hint={`${s.last_30_days} ${tr(lang, 'за 30 дней', 'in 30 days')}`} />
-            <StatCard label={tr(lang, 'Звезда недели', 'Star of the Week')} value={formatPct(data.stars.coverage_this_week_pct)}
-              hint={tr(lang, `групп отмечено на этой неделе (${data.stars.groups_this_week}/${data.stars.groups_total})`,
-                `of groups got one this week (${data.stars.groups_this_week}/${data.stars.groups_total})`)}
+            <StatCard label={t('achievements.analytics.activeStudents')} value={s.active_students} />
+            <StatCard label={t('achievements.earnedAny')} value={formatPct(s.students_with_any_pct)}
+              hint={t('achievements.analytics.students', { count: s.students_with_any })} accent="text-brand" />
+            <StatCard label={t('achievements.avgPerStudent')} value={s.avg_per_student}
+              hint={t('achievements.outOf', { total: s.achievements_total })} />
+            <StatCard label={t('achievements.analytics.unlocked7Days')} value={s.last_7_days}
+              hint={t('achievements.in30Days', { count: s.last_30_days })} />
+            <StatCard label={t('achievements.star.title')} value={formatPct(data.stars.coverage_this_week_pct)}
+              hint={t('achievements.analytics.starCoverage', { given: data.stars.groups_this_week, total: data.stars.groups_total })}
               accent="text-amber-600 dark:text-amber-400" />
           </div>
           {s.retro_unlocks > 0 && (
             <p className="text-xs text-muted-foreground">
-              {tr(lang,
-                `${s.retro_unlocks} достижений выдано при запуске (за то, что уже было сделано) — они учтены в «Получили», но не в «7/30 дней» и не в графике.`,
-                `${s.retro_unlocks} achievements were granted at launch for work already done — counted in "Earned by", not in the 7/30-day columns or the trend.`)}
+              {t('achievements.analytics.retroNote', { count: s.retro_unlocks })}
             </p>
           )}
 
           <div className="grid gap-5 lg:grid-cols-3">
-            <Section className="lg:col-span-2" title={tr(lang, 'Новые достижения по неделям', 'Unlocks per week')}
-              subtitle={tr(lang, 'Скользящие 7-дневные окна до сегодня · без выдачи при запуске', 'Rolling 7-day windows ending today · launch grants excluded')}>
-              <TrendChart trend={data.trend} lang={lang} />
+            <Section className="lg:col-span-2" title={t('achievements.analytics.trendTitle')}
+              subtitle={t('achievements.analytics.trendSubtitle')}>
+              <TrendChart trend={data.trend} />
             </Section>
-            <Section title={tr(lang, 'Самые редкие и самые частые', 'Rarest and most common')}>
+            <Section title={t('achievements.analytics.rarestAndCommonest')}>
               {picks && picks.rarest.length ? (
                 <div className="space-y-4 text-sm">
                   <div>
-                    <p className="mb-1 text-xs font-medium text-muted-foreground">{tr(lang, 'Редкие', 'Rarest held')}</p>
+                    <p className="mb-1 text-xs font-medium text-muted-foreground">{t('achievements.analytics.rarestHeld')}</p>
                     {picks.rarest.map((a) => <p key={a.key} className="flex justify-between"><span>{a.title}</span><span className="tabular-nums text-muted-foreground">{formatPct(a.pct)}</span></p>)}
                   </div>
                   <div>
-                    <p className="mb-1 text-xs font-medium text-muted-foreground">{tr(lang, 'Частые', 'Most common')}</p>
+                    <p className="mb-1 text-xs font-medium text-muted-foreground">{t('achievements.analytics.commonest')}</p>
                     {picks.commonest.map((a) => <p key={a.key} className="flex justify-between"><span>{a.title}</span><span className="tabular-nums text-muted-foreground">{formatPct(a.pct)}</span></p>)}
                   </div>
                 </div>
-              ) : <p className="text-sm text-muted-foreground">{tr(lang, 'Пока пусто', 'Nothing yet')}</p>}
+              ) : <p className="text-sm text-muted-foreground">{t('achievements.nothingYet')}</p>}
             </Section>
           </div>
 
-          <Section title={tr(lang, 'Все достижения — сначала редкие', 'Every achievement — rarest first')}
-            subtitle={tr(lang, 'Доля активных учеников, у которых оно есть', 'Share of active students who hold it')}>
-            <RarityTable items={data.achievements} lang={lang} />
+          <Section title={t('achievements.analytics.everyTitle')}
+            subtitle={t('achievements.analytics.everySubtitle')}>
+            <RarityTable items={data.achievements} />
           </Section>
 
           <div className="grid gap-5 lg:grid-cols-2">
-            <Section title={data.scope.kind === 'group' ? tr(lang, 'Группа', 'Group') : tr(lang, 'Группы', 'Groups')}
-              subtitle={tr(lang, 'Среднее число достижений на ученика · лучшие трое', 'Average badges per student · top three')}>
-              <GroupsTable groups={data.groups} lang={lang} onPick={data.scope.kind === 'school' ? setGroupId : undefined} />
+            <Section title={data.scope.kind === 'group' ? t('achievements.analytics.group') : t('achievements.analytics.groups')}
+              subtitle={t('achievements.analytics.groupsSubtitle')}>
+              <GroupsTable groups={data.groups} onPick={data.scope.kind === 'school' ? setGroupId : undefined} />
             </Section>
-            <Section title={tr(lang, 'Больше всего достижений', 'Most achievements')}
-              subtitle={tr(lang, 'Видно только сотрудникам', 'Visible to staff only')}>
-              <TopEarners people={data.top_earners} lang={lang} />
+            <Section title={t('achievements.mostAchievements')}
+              subtitle={t('achievements.analytics.staffOnly')}>
+              <TopEarners people={data.top_earners} />
             </Section>
           </div>
 
-          <Section title={tr(lang, 'Звезда недели — кто отмечает', 'Star of the Week — who gives it')}
-            subtitle={tr(lang, `Последние ${data.stars.weeks.length} недель · всего ${data.stars.total}`, `Last ${data.stars.weeks.length} weeks · ${data.stars.total} in total`)}>
-            <StarsByStaff stars={data.stars} lang={lang} />
+          <Section title={t('achievements.analytics.starsTitle')}
+            subtitle={t('achievements.analytics.starsSubtitle', { weeks: data.stars.weeks.length, total: data.stars.total })}>
+            <StarsByStaff stars={data.stars} />
           </Section>
 
           <div className="grid gap-5 lg:grid-cols-2">
-            <Section title={tr(lang, 'Серии учебных дней', 'Learning-day streaks')}
-              subtitle={tr(lang,
-                `Сейчас в серии ${data.streaks.students_on_a_streak} уч. · в среднем ${data.streaks.avg_current} дн. · рекорд ${data.streaks.best_longest}`,
-                `${data.streaks.students_on_a_streak} on a streak now · avg ${data.streaks.avg_current} days · record ${data.streaks.best_longest}`)}>
-              <StreakHistogram streaks={data.streaks} lang={lang} />
+            <Section title={t('achievements.analytics.streaksTitle')}
+              subtitle={t('achievements.analytics.streaksSubtitle', {
+                onStreak: data.streaks.students_on_a_streak, avg: data.streaks.avg_current, best: data.streaks.best_longest,
+              })}>
+              <StreakHistogram streaks={data.streaks} />
             </Section>
             {shares && (
-              <Section title={tr(lang, 'Делятся достижениями', 'Achievement sharing')}
-                subtitle={tr(lang, 'Сторис, скачивания, ссылки и их просмотры', 'Stories, downloads, links and their views')}>
-                <ShareTotals stats={shares} lang={lang} />
+              <Section title={t('achievements.analytics.sharingTitle')}
+                subtitle={t('achievements.analytics.sharingSubtitle')}>
+                <ShareTotals stats={shares} />
               </Section>
             )}
           </div>

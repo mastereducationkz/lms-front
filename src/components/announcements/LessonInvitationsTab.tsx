@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { SearchableSelect } from '../ui/searchable-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { toast } from '../Toast';
+import { formatDateTime } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
 import { errorMessage } from './shared';
 import { InvitationChatsView } from './InvitationChatsView';
 import { GROUP_STATUS_LABEL, chatRows, isInactive } from './invitationChats';
@@ -24,8 +26,7 @@ const LAST_STYLES: Record<string, string> = {
 };
 
 function when(iso: string | null): string {
-  if (!iso) return '';
-  return new Date(iso).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return formatDateTime(iso);
 }
 
 /**
@@ -36,6 +37,7 @@ function when(iso: string | null): string {
  * chat for each group by name; a person confirms it, one by one or all at once.
  */
 export function LessonInvitationsTab() {
+  const t = useT();
   const [data, setData] = useState<InvitationLinks | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<number | 'all' | null>(null);
@@ -150,9 +152,7 @@ export function LessonInvitationsTab() {
         <div>
           <CardTitle className="text-base">Lesson invitations</CardTitle>
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-            Five minutes before each lesson held in an LMS Meet room, the bot posts the invitation to the
-            group's Telegram chat — the same text as the lesson card's «Скопировать приглашение». Link each
-            group to its chat; matches are suggested by name for you to confirm.
+            {t('announcements.invitations.intro')}
           </p>
         </div>
 

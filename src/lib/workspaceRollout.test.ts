@@ -90,9 +90,17 @@ describe('helpers', () => {
   });
 
   it('writes instructions with the address and a blank for the password', () => {
-    const text = teacherInstructions('Nuray', 'nuray@mastereducation.kz');
+    const text = teacherInstructions('Nuray', 'nuray@mastereducation.kz', 'ru');
     expect(text).toContain('Здравствуйте, Nuray!');
     expect(text).toContain('Адрес: nuray@mastereducation.kz');
     expect(text).toContain('Временный пароль: ________');
+  });
+
+  it('writes them in the admin’s language, greeting without a name when there is none', () => {
+    const text = teacherInstructions('  ', 'nuray@mastereducation.kz', 'en');
+    expect(text.split('\n')[0]).toBe('Hello!');
+    expect(text).toContain('Address: nuray@mastereducation.kz');
+    expect(text).toContain('sign in as nuray@mastereducation.kz');
+    expect(text).toContain('Temporary password: ________');
   });
 });

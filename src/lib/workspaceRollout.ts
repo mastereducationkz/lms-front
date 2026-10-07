@@ -9,6 +9,7 @@
  *    way round, because Google's upload overwrites an account whose address already exists;
  *  - without an uploaded users list neither is allowed.
  */
+import { activeLocale, t, type Locale } from './i18n';
 
 export const WORKSPACE_DOMAIN = 'mastereducation.kz';
 export const NAME_MAX = 60;
@@ -122,20 +123,22 @@ export function directoryAgeHours(uploadedAt: string | null, now: Date = new Dat
 }
 
 /**
- * The message an admin copies and sends a teacher. The temporary password lives only in the
- * import file, so the admin fills it in; the LMS never stores or shows it.
+ * The message an admin copies and sends a teacher, in the admin's language (the teacher's LMS
+ * speaks the same one). The temporary password lives only in the import file, so the admin fills
+ * it in; the LMS never stores or shows it.
  */
-export function teacherInstructions(firstName: string, workspaceEmail: string): string {
+export function teacherInstructions(firstName: string, workspaceEmail: string, locale: Locale = activeLocale()): string {
   const name = firstName.trim();
+  const email = { email: workspaceEmail };
   return [
-    `Здравствуйте${name ? `, ${name}` : ''}!`,
+    name ? t('workspace.instructions.greetingNamed', { name }, locale) : t('workspace.instructions.greeting', undefined, locale),
     '',
-    'Для ваших уроков создан рабочий Google-аккаунт Master Education:',
-    `Адрес: ${workspaceEmail}`,
-    'Временный пароль: ________',
+    t('workspace.instructions.intro', undefined, locale),
+    t('workspace.instructions.address', email, locale),
+    t('workspace.instructions.password', undefined, locale),
     '',
-    `1. До ближайшего урока откройте https://accounts.google.com, войдите как ${workspaceEmail} и задайте свой пароль. Пока вы ни разу не вошли, Google не считает вас сотрудником школы — и урок не запишется.`,
-    `2. На урок заходите кнопкой «Join» в LMS: ссылка сама откроет Meet под рабочим аккаунтом. Если Google спросит, какой аккаунт использовать, выберите ${workspaceEmail}, а не личный.`,
-    '3. Запись включается сама, нажимать ничего не нужно. Записи ваших уроков появятся в LMS в разделе Lesson Recordings.',
+    t('workspace.instructions.signIn', email, locale),
+    t('workspace.instructions.join', email, locale),
+    t('workspace.instructions.recording', undefined, locale),
   ].join('\n');
 }

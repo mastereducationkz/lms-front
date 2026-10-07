@@ -16,6 +16,7 @@ import { Upload, FileText, Image, Plus, Trash2, ChevronUp, ChevronDown, CheckCir
 import { FillInBlankRenderer } from './FillInBlankRenderer';
 import { TextCompletionRenderer } from './TextCompletionRenderer';
 import { parseGap } from '../../utils/gapParser';
+import { useT } from '../../lib/i18n/react';
 import {
   DEFAULT_QUIZ_PASSING_SCORE_OPTIONAL,
   DEFAULT_QUIZ_PASSING_SCORE_REQUIRED,
@@ -67,6 +68,7 @@ export default function QuizLessonEditor({
   setQuizPassingScorePercent,
   isOptionalStep = false,
 }: QuizLessonEditorProps) {
+  const tr = useT();
   // Handle scrolling to highlighted question
   React.useEffect(() => {
     if (highlightedQuestionId && quizQuestions.length > 0) {
@@ -1132,7 +1134,7 @@ export default function QuizLessonEditor({
       {/* Audio Playback Mode Selection */}
       {quizType === 'audio' && setAudioPlaybackMode && (
         <div className="space-y-3">
-          <Label>Режим воспроизведения аудио</Label>
+          <Label>{tr('adminTools.quiz.audioMode')}</Label>
           <div className="grid grid-cols-2 gap-3">
             <div
               className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
@@ -1144,11 +1146,10 @@ export default function QuizLessonEditor({
             >
               <div className="flex items-center gap-2 mb-2">
                 <Headphones className="h-5 w-5 text-foreground/80" aria-hidden="true" />
-                <span className="font-medium">Свободный режим</span>
+                <span className="font-medium">{tr('adminTools.quiz.audioFlexible')}</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                Студент может перематывать, ставить на паузу и переслушивать аудио без ограничений. 
-                Подходит для практики и обучения.
+                {tr('adminTools.quiz.audioFlexibleHint')}
               </p>
             </div>
             <div
@@ -1161,11 +1162,10 @@ export default function QuizLessonEditor({
             >
               <div className="flex items-center gap-2 mb-2">
                 <Lock className="h-5 w-5 text-foreground/80" aria-hidden="true" />
-                <span className="font-medium">Экзаменационный режим</span>
+                <span className="font-medium">{tr('adminTools.quiz.audioStrict')}</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                Студент не может перематывать аудио. Доступно только 2 повтора. 
-                Подходит для экзаменов и тестирования.
+                {tr('adminTools.quiz.audioStrictHint')}
               </p>
             </div>
           </div>

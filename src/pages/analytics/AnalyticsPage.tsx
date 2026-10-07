@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import apiClient from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { formatDate } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { Input } from '../../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
@@ -112,6 +114,7 @@ function SortMark({ dir }: { dir: string }) {
 
 export default function AnalyticsPage() {
   const { user } = useAuth();
+  const t = useT();
   const navigate = useNavigate();
   
   const [searchParams, setSearchParams] = useSearchParams();
@@ -438,7 +441,7 @@ export default function AnalyticsPage() {
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString();
+    return formatDate(date);
   };
 
   const formatDuration = (minutes?: number) => {
@@ -491,8 +494,8 @@ export default function AnalyticsPage() {
       {/* Header & Controls */}
       <div className="flex flex-col @2xl:flex-row gap-4 items-start @2xl:items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">{user?.role === 'head_curator' ? 'Аналитика' : 'Analytics'}</h1>
-          <p className="text-muted-foreground  mt-1">{user?.role === 'head_curator' ? 'Отслеживание прогресса студентов и эффективности курсов' : 'Monitor student progress and course performance'}</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">{t('analytics.title')}</h1>
+          <p className="text-muted-foreground  mt-1">{t('analytics.subtitle')}</p>
         </div>
         
         <div className="flex flex-col @lg:flex-row gap-3 w-full @2xl:w-auto">
@@ -501,7 +504,7 @@ export default function AnalyticsPage() {
              onValueChange={handleCourseChange}
           >
             <SelectTrigger className="w-full @lg:w-[280px] bg-card">
-              <SelectValue placeholder={user?.role === 'head_curator' ? "Выберите курс" : "Select course"} />
+              <SelectValue placeholder={t('analytics.selectCourse')} />
             </SelectTrigger>
             <SelectContent>
               {courses.map(course => (
@@ -518,10 +521,10 @@ export default function AnalyticsPage() {
              disabled={loadingGroups}
           >
 <SelectTrigger className="w-full @lg:w-[200px] bg-card">
-            <SelectValue placeholder={user?.role === 'head_curator' ? "Фильтр по группе" : "Filter by group"} />
+            <SelectValue placeholder={t('analytics.filterByGroup')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{user?.role === 'head_curator' ? "Все группы" : "All Groups"}</SelectItem>
+              <SelectItem value="all">{t('analytics.allGroups')}</SelectItem>
               {groups.map(group => (
                 <SelectItem key={group.id} value={String(group.id)}>
                   {group.description || group.name}
@@ -556,7 +559,7 @@ export default function AnalyticsPage() {
         <div className="grid gap-4 @xl:grid-cols-2 @3xl:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{user?.role === 'head_curator' ? "Всего студентов" : "Total Students"}</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('analytics.stats.totalStudents')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{overview.total_students}</div>
@@ -567,7 +570,7 @@ export default function AnalyticsPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{user?.role === 'head_curator' ? "Средний прогресс" : "Avg. Progress"}</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('analytics.stats.avgProgress')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{Math.round(overview.average_progress)}%</div>
@@ -576,7 +579,7 @@ export default function AnalyticsPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{user?.role === 'head_curator' ? "Средний балл" : "Avg. Score"}</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('analytics.stats.avgScore')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{Math.round(overview.average_score)}%</div>
@@ -587,7 +590,7 @@ export default function AnalyticsPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{user?.role === 'head_curator' ? "Процент завершения" : "Completion Rate"}</CardTitle>
+              <CardTitle className="text-sm font-medium">{t('analytics.stats.completionRate')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{Math.round(overview.completion_rate)}%</div>
@@ -601,12 +604,12 @@ export default function AnalyticsPage() {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList className="grid w-full grid-cols-6 h-auto">
-          <TabsTrigger value="overview">{user?.role === 'head_curator' ? "Обзор" : "Overview"}</TabsTrigger>
-          <TabsTrigger value="students">{user?.role === 'head_curator' ? "Студенты" : "Students"}</TabsTrigger>
-          <TabsTrigger value="groups">{user?.role === 'head_curator' ? "Группы" : "Groups"}</TabsTrigger>
-          <TabsTrigger value="quizzes">{user?.role === 'head_curator' ? "Тесты" : "Quizzes"}</TabsTrigger>
-          <TabsTrigger value="topics">{user?.role === 'head_curator' ? "Темы" : "Topics"}</TabsTrigger>
-          <TabsTrigger value="engagement">{user?.role === 'head_curator' ? "Активность" : "Engagement"}</TabsTrigger>
+          <TabsTrigger value="overview">{t('analytics.tabs.overview')}</TabsTrigger>
+          <TabsTrigger value="students">{t('analytics.tabs.students')}</TabsTrigger>
+          <TabsTrigger value="groups">{t('analytics.tabs.groups')}</TabsTrigger>
+          <TabsTrigger value="quizzes">{t('analytics.tabs.quizzes')}</TabsTrigger>
+          <TabsTrigger value="topics">{t('analytics.tabs.topics')}</TabsTrigger>
+          <TabsTrigger value="engagement">{t('analytics.tabs.engagement')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -645,7 +648,7 @@ export default function AnalyticsPage() {
                                 // Format date as "MMM dd" (e.g., Jan 15)
                                 if (!value) return '';
                                 const date = new Date(value);
-                                return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                                return formatDate(date, { month: 'short', day: 'numeric' });
                             }}
                           />
                           <YAxis 
@@ -739,7 +742,7 @@ export default function AnalyticsPage() {
                   <Input
                     value={studentSearch}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setStudentSearch(e.target.value)}
-                    placeholder={user?.role === 'head_curator' || user?.role === 'curator' ? 'Поиск: имя или email…' : 'Search name or email…'}
+                    placeholder={t('analytics.students.searchPlaceholder')}
                     className="pl-9"
                   />
                 </div>
@@ -750,7 +753,7 @@ export default function AnalyticsPage() {
                     onChange={e => setShowInactiveStudents(e.target.checked)}
                     className="rounded border-border"
                   />
-                  {user?.role === 'head_curator' || user?.role === 'curator' ? 'Деактивированные студенты' : 'Include deactivated'}
+                  {t('analytics.students.includeDeactivated')}
                 </label>
               </div>
             </CardHeader>
@@ -800,7 +803,7 @@ export default function AnalyticsPage() {
                           <p className="font-medium text-foreground">
                             {student.student_name}
                             {student.is_inactive && (
-                              <span className="ml-1.5 text-[10px] font-normal text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-500/15 border border-red-200 dark:border-red-500/30 rounded px-1 py-px align-middle">деактивирован</span>
+                              <span className="ml-1.5 text-[10px] font-normal text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-500/15 border border-red-200 dark:border-red-500/30 rounded px-1 py-px align-middle">{t('analytics.students.deactivated')}</span>
                             )}
                           </p>
                           <p className="text-muted-foreground">{student.email}</p>
@@ -957,7 +960,7 @@ export default function AnalyticsPage() {
                     <Input
                       value={groupSearch}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGroupSearch(e.target.value)}
-                      placeholder={user?.role === 'head_curator' || user?.role === 'curator' ? 'Поиск группы…' : 'Search group…'}
+                      placeholder={t('analytics.groups.searchPlaceholder')}
                       className="pl-9"
                     />
                   </div>
@@ -968,7 +971,7 @@ export default function AnalyticsPage() {
                       onChange={e => setShowArchivedGroups(e.target.checked)}
                       className="rounded border-border"
                     />
-                    {user?.role === 'head_curator' || user?.role === 'curator' ? 'Архивные группы' : 'Show archived'}
+                    {t('analytics.groups.showArchived')}
                   </label>
                 </div>
               </CardHeader>
@@ -996,7 +999,7 @@ export default function AnalyticsPage() {
                       <TableCell className="font-medium">
                         {group.description || group.group_name}
                         {group.is_archived && (
-                          <Badge variant="outline" className="ml-2 text-xs text-muted-foreground border-border">архив</Badge>
+                          <Badge variant="outline" className="ml-2 text-xs text-muted-foreground border-border">{t('analytics.groups.archived')}</Badge>
                         )}
                       </TableCell>
                       <TableCell>

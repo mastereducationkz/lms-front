@@ -1,12 +1,6 @@
 /** Pure helpers for the staff achievements analytics (owner, 2026-10-04). */
 import type { AnalyticsAchievement, AnalyticsGroup } from '@/services/api/achievementsAnalytics';
-
-export type Lang = 'ru' | 'en';
-
-export const tr = (lang: Lang, ru: string, en: string) => (lang === 'ru' ? ru : en);
-
-/** Russian for curator roles, English for everyone else — the sidebar's own rule. */
-export const langForRole = (role?: string | null): Lang => (role === 'curator' || role === 'head_curator' ? 'ru' : 'en');
+import { activeLocale, t, type Locale, type MessageKey } from './i18n';
 
 export function formatPct(value: number): string {
   if (!Number.isFinite(value) || value <= 0) return '0%';
@@ -20,17 +14,17 @@ export function weekLabel(isoMonday: string): string {
   return m && d ? `${d}.${m}` : isoMonday;
 }
 
-const ROLE_LABELS: Record<string, [string, string]> = {
-  teacher: ['Преподаватель', 'Teacher'],
-  curator: ['Куратор', 'Curator'],
-  head_teacher: ['Head Teacher', 'Head Teacher'],
-  head_curator: ['Руководитель кураторов', 'Head Curator'],
-  admin: ['Админ', 'Admin'],
+const ROLE_LABELS: Record<string, MessageKey> = {
+  teacher: 'achievements.role.teacher',
+  curator: 'achievements.role.curator',
+  head_teacher: 'achievements.role.headTeacher',
+  head_curator: 'achievements.role.headCurator',
+  admin: 'achievements.role.admin',
 };
 
-export function staffRoleLabel(role: string, lang: Lang): string {
-  const pair = ROLE_LABELS[role];
-  return pair ? tr(lang, pair[0], pair[1]) : role;
+export function staffRoleLabel(role: string, locale: Locale = activeLocale()): string {
+  const key = ROLE_LABELS[role];
+  return key ? t(key, undefined, locale) : role;
 }
 
 /** Bar width for a percentage: never 0 for a non-zero value, so a rare unlock stays visible. */
