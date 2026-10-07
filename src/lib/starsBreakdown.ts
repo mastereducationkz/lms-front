@@ -2,6 +2,8 @@
  * Pure helpers for the header star pill's breakdown (GET /gamification/breakdown).
  * "Stars" is the student-facing name for activity points; this UI never says "points".
  */
+import '@/lib/i18n/catalogs/stars';
+import { formatNumber, t } from '@/lib/i18n';
 import type { StarsBreakdown, StarSource, StarStreak } from '../services/api/gamification';
 
 /** A bar's length as a share of the largest bar, so the biggest source spans the track. */
@@ -21,38 +23,46 @@ export function starRange(min: number, max: number): string {
   return min === max ? `+${min}` : `+${min}–${max}`;
 }
 
-export function formatMultiplier(value: number): string {
-  return `×${value.toFixed(1)}`;
+const ONE_DECIMAL = { minimumFractionDigits: 1, maximumFractionDigits: 1 } as const;
+
+function decimal(value: number): string {
+  return formatNumber(value, ONE_DECIMAL);
 }
 
-function moreDays(n: number): string {
-  return n === 1 ? '1 more day' : `${n} more days`;
+export function formatMultiplier(value: number): string {
+  return `×${decimal(value)}`;
 }
 
 /**
- * The streak panel: where the student stands, when the bonus next grows, and the rule itself.
- * The bonus is baked into every award, so it explains the bars rather than being one.
+ * The streak panel: where the student stands, when the bonus next grows (or that it is at its
+ * cap), and the rule itself. The bonus is baked into every award but a teacher's, so it explains
+ * the bars rather than being one.
  */
 export function streakCopy(streak: StarStreak): { title: string; status: string; rule: string } {
-  const rule =
-    `${formatMultiplier(streak.start_multiplier)} from a ${streak.starts_at_days}-day streak, ` +
-    `then +${streak.step.toFixed(1)} for every ${streak.step_days} more days. ` +
-    'It is added to each award as you earn it.';
-  const toGo = moreDays(streak.next_at_days - streak.days);
-  const next = formatMultiplier(streak.next_multiplier);
+  const rule = t('stars.streak.rule', {
+    start: decimal(streak.start_multiplier),
+    startDays: streak.starts_at_days,
+    step: decimal(streak.step),
+    stepDays: streak.step_days,
+    max: decimal(streak.max_multiplier),
+  });
+  const next = streak.next_multiplier !== null ? decimal(streak.next_multiplier) : '';
+  const more = streak.next_at_days !== null
+    ? t('stars.streak.moreDays', { count: streak.next_at_days - streak.days })
+    : '';
   if (streak.days >= streak.starts_at_days) {
+    const params = { days: streak.days, multiplier: decimal(streak.multiplier), more, next };
     return {
-      title: `Streak bonus ${formatMultiplier(streak.multiplier)}`,
-      status: `Your ${streak.days}-day streak multiplies every star you earn by ${streak.multiplier.toFixed(1)}. ` +
-        `Keep it going ${toGo} to reach ${next}.`,
+      title: t('stars.streak.titleWith', { multiplier: decimal(streak.multiplier) }),
+      status: streak.next_at_days === null ? t('stars.streak.atMax', params) : t('stars.streak.active', params),
       rule,
     };
   }
   return {
-    title: 'Streak bonus',
+    title: t('stars.streak.title'),
     status: streak.days > 0
-      ? `You're on a ${streak.days}-day streak. Keep it going ${toGo} and every star you earn gets ${next}.`
-      : `Learn ${streak.starts_at_days} days in a row and every star you earn gets ${next}.`,
+      ? t('stars.streak.building', { days: streak.days, more, next })
+      : t('stars.streak.notStarted', { count: streak.starts_at_days, next }),
     rule,
   };
 }

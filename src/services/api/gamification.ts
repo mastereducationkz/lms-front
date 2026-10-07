@@ -34,12 +34,15 @@ export interface StarRule {
 export interface StarStreak {
   days: number;
   multiplier: number;
-  next_multiplier: number;
-  next_at_days: number;
+  /** Both null once the multiplier is at its cap. */
+  next_multiplier: number | null;
+  next_at_days: number | null;
   starts_at_days: number;
   start_multiplier: number;
   step: number;
   step_days: number;
+  /** The cap (×2.5, owner 2026-10-07). */
+  max_multiplier: number;
 }
 
 export interface StarsBreakdown {

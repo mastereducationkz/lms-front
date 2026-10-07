@@ -230,7 +230,7 @@ export interface DailyStreakInfo {
   is_active_today: boolean;
   total_study_time_minutes: number;
   current_multiplier?: number;
-  next_multiplier_at?: number;
+  next_multiplier_at?: number | null; // null once the multiplier is at its cap
 }
 
 // =============================================================================

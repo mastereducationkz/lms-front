@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { setActiveLocale } from '@/lib/i18n';
 import type { StarsBreakdown, StarStreak } from '../services/api/gamification';
 import { barPercent, earlierLabel, isEmptyBreakdown, starRange, streakCopy } from './starsBreakdown';
 
-const RULE = { starts_at_days: 5, start_multiplier: 1.1, step: 0.1, step_days: 2 };
-const streak = (days: number, multiplier: number, next_multiplier: number, next_at_days: number): StarStreak =>
+const RULE = { starts_at_days: 5, start_multiplier: 1.1, step: 0.1, step_days: 2, max_multiplier: 2.5 };
+const streak = (days: number, multiplier: number, next_multiplier: number | null, next_at_days: number | null): StarStreak =>
   ({ days, multiplier, next_multiplier, next_at_days, ...RULE });
 
 const source = (key: StarsBreakdown['sources'][number]['key'], stars: number) => ({ key, label: key, stars });
@@ -43,8 +44,30 @@ describe('starsBreakdown helpers', () => {
     expect(active.status)
       .toBe('Your 12-day streak multiplies every star you earn by 1.4. Keep it going 1 more day to reach ×1.5.');
     expect(streakCopy(streak(5, 1.1, 1.2, 7)).status).toContain('Keep it going 2 more days to reach ×1.2.');
-    expect(active.rule)
-      .toBe('×1.1 from a 5-day streak, then +0.1 for every 2 more days. It is added to each award as you earn it.');
+    expect(active.rule).toBe(
+      '×1.1 from a 5-day streak, then +0.1 for every 2 more days, ×2.5 max. ' +
+      'It is added to each award as you earn it, except teacher bonuses.',
+    );
+  });
+
+  it('says when the streak bonus is at its ×2.5 cap', () => {
+    const capped = streakCopy(streak(40, 2.5, null, null));
+    expect(capped.title).toBe('Streak bonus ×2.5');
+    expect(capped.status).toBe('Your 40-day streak multiplies every star you earn by 2.5, the highest it goes.');
+    expect(capped.rule).toContain('×2.5 max');
+    expect(streakCopy(streak(31, 2.4, 2.5, 33)).status).toContain('Keep it going 2 more days to reach ×2.5.');
+  });
+
+  it('has the cap in the Russian catalog too', () => {
+    setActiveLocale('ru');
+    try {
+      const capped = streakCopy(streak(40, 2.5, null, null));
+      expect(capped.title).toBe('Бонус за серию ×2,5');
+      expect(capped.rule).toContain('максимум ×2,5');
+      expect(streakCopy(streak(31, 2.4, 2.5, 33)).status).toContain('ещё 2 дня');
+    } finally {
+      setActiveLocale('en');
+    }
   });
 
   it('names the unexplained remainder by its sign', () => {
