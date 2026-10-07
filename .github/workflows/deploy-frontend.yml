@@ -60,6 +60,8 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          # The build plus two container handovers (15 s settles each); the default is 10 min.
+          command_timeout: 20m
           script: |
             set -e
             echo "🚀 Deploying frontend..."
@@ -76,9 +78,13 @@ jobs:
             git fetch origin master
             git checkout -B master "$SHA"
             # The commit being built, as the Sentry release (the image has no .git to ask).
-            LMS_FRONT_GIT_COMMIT="$(git rev-parse HEAD)" docker compose build
-            docker compose up -d lms-frontend
-            echo "✅ Frontend container rebuilt & restarted"
+            LMS_FRONT_GIT_COMMIT="$(git rev-parse HEAD)" docker compose build lms-frontend
+            # `up -d lms-frontend` stopped the container before the new one served (1-5 failed
+            # requests per deploy) and dropped the previous build's /assets (open tabs 404'd on
+            # their next lazy route). The script serves the new build from lms-frontend-standby
+            # first and keeps old assets for 14 days; see its header.
+            bash scripts/deploy_frontend.sh
+            echo "✅ Frontend replaced without downtime"
 
       - name: Health check
         uses: appleboy/ssh-action@v1.2.0

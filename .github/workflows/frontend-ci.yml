@@ -18,6 +18,9 @@ on:
       - "nginx.conf"
       - "docker-compose.yml"
       - ".dockerignore"
+      - "scripts/deploy_frontend.sh"
+      - "scripts/deploy_frontend.test.sh"
+      - "scripts/nginx-entrypoint.sh"
       - ".github/workflows/frontend-ci.yml"
       - ".github/workflows/deploy-frontend.yml"
   push:
@@ -34,6 +37,9 @@ on:
       - "nginx.conf"
       - "docker-compose.yml"
       - ".dockerignore"
+      - "scripts/deploy_frontend.sh"
+      - "scripts/deploy_frontend.test.sh"
+      - "scripts/nginx-entrypoint.sh"
       - ".github/workflows/frontend-ci.yml"
       - ".github/workflows/deploy-frontend.yml"
 
@@ -54,6 +60,9 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+      - name: Test the zero-downtime deploy script
+        run: bash scripts/deploy_frontend.test.sh
 
       - name: Build (Vite, production)
         run: npm run build
