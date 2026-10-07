@@ -20,4 +20,8 @@ RUN npm run build
 FROM nginx:1.27-alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=builder /app/dist /usr/share/nginx/html
+# Graceful stop plus a short linger, for deploys that never refuse a request (the script's header).
+COPY --chmod=755 scripts/nginx-entrypoint.sh /nginx-entrypoint.sh
 EXPOSE 80
+ENTRYPOINT ["/nginx-entrypoint.sh"]
+CMD ["nginx", "-g", "daemon off;"]
