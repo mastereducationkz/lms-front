@@ -294,8 +294,12 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
     loadSpecialGroupsState();
   }, [user?.id, user?.role, user?.special_group_only_student]);
   
+  // Keyed on who is signed in (and their role, which the graded-count handler reads): a profile
+  // edit hands out a new user object and must not re-ask and re-subscribe.
+  const userId = user?.id;
+  const userRole = user?.role;
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
 
     // Connect to socket and load unread count
     const socket = connectSocket();
@@ -320,7 +324,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
     
     // Listen for unseen graded updates
     const handleUnseenGradedUpdate = async () => {
-      if (user?.role === 'student') {
+      if (userRole === 'student') {
         try {
           const result = await apiClient.getUnseenGradedCount();
           setUnseenGraded(result.count);
@@ -342,7 +346,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
       socket.off('unseen_graded:update', handleUnseenGradedUpdate);
       window.removeEventListener('updateUnreadCount', handleUpdateUnreadCount);
     };
-  }, [user]);
+  }, [userId, userRole]);
 
   // Load courses when expanding
   const loadCourses = async () => {

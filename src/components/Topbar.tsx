@@ -34,8 +34,10 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
   
   const firstName = user?.name?.split(' ')[0] || 'User';
   
+  const userId = user?.id;
+  // Keyed on who is signed in: a profile edit (a new user object) must not re-ask and re-subscribe.
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
 
     // Connect to socket and load unread count
     const socket = connectSocket();
@@ -61,7 +63,7 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
     return () => {
       socket.off('unread:update', handleUnreadUpdate);
     };
-  }, [user]);
+  }, [userId]);
   
   const handleLogout = async () => {
     try {

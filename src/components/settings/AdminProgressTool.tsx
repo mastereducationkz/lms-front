@@ -93,11 +93,13 @@ export default function AdminProgressTool() {
   , [users, selectedUserId]);
 
   // Load courses and users for admin
+  // Keyed on the role, not the user object: changing the language right here in Settings hands out a
+  // new user object and used to reload every course and user.
   useEffect(() => {
     if (user?.role === 'admin') {
       loadCoursesAndUsers();
     }
-  }, [user]);
+  }, [user?.id, user?.role]);
 
   // Load progress when user and course selected
   useEffect(() => {

@@ -791,7 +791,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
         }
     };
     loadGroups();
-  }, [user]);
+  }, [user?.id]); // who is signed in, not the user object: a profile edit doesn't reload the groups
 
   useEffect(() => {
     if (groups.length === 0) return;

@@ -191,8 +191,9 @@ function DailyQuestionsPopupInner({
     } finally {
       setLoading(false);
     }
+    // Who is signed in, not the user object: a profile edit must not schedule another load.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, controlled, pathname]);
+  }, [user?.id, user?.role, controlled, pathname]);
 
   useEffect(() => {
     // Small delay to not block initial page load (only in auto mode)
@@ -209,17 +210,18 @@ function DailyQuestionsPopupInner({
 
   // The queue grants the slot → open, and remember that today's auto-open is spent.
   const granted = queue.granted('daily_questions');
+  const userId = user?.id;
   useEffect(() => {
-    if (controlled || !wants || !granted || open || !user) return;
+    if (controlled || !wants || !granted || open || !userId) return;
     attention.take('daily_questions');
     try {
-      window.localStorage.setItem(dailyQuestionsAutoOpenedKey(user.id, dailyQuestionsDay()), '1');
+      window.localStorage.setItem(dailyQuestionsAutoOpenedKey(userId, dailyQuestionsDay()), '1');
     } catch {
       /* storage blocked: once per page load still holds */
     }
     setWants(false);
     setOpen(true);
-  }, [controlled, wants, granted, open, user]);
+  }, [controlled, wants, granted, open, userId]);
 
   // Closing frees the slot (the visit has still had its one popup).
   const wasOpen = useRef(false);

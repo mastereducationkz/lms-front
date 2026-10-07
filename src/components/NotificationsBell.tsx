@@ -42,9 +42,11 @@ export default function NotificationsBell() {
   const lastCount = useRef<number | null>(null);
 
   const isParent = user?.role === 'parent';
+  const userId = user?.id;
 
+  // Keyed on who is signed in, not on the user object, so a profile edit doesn't refetch and restart the poll.
   useEffect(() => {
-    if (!user || isParent) return undefined;
+    if (!userId || isParent) return undefined;
     let cancelled = false;
 
     const loadCount = () => {
@@ -84,7 +86,7 @@ export default function NotificationsBell() {
       clearTimeout(timer);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [user, isParent]);
+  }, [userId, isParent]);
 
   useEffect(() => {
     if (!open) return undefined;

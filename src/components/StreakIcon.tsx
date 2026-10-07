@@ -40,27 +40,26 @@ const StreakIcon: React.FC = () => {
   const { user } = useAuth();
   const t = useT();
   const [streakData, setStreakData] = useState<DailyStreakInfo | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const titleId = useId();
+  const userId = user?.id;
+  const isStudent = user?.role === 'student';
 
+  // Keyed on who is signed in, not on the user object: a profile edit (a new name, the language)
+  // hands out a new object and used to refetch here, with the square vanishing meanwhile. While a
+  // refetch runs the square keeps what it shows; only another person's streak is cleared first.
   useEffect(() => {
-    if (user?.role === 'student') {
-      loadStreakData();
+    if (!isStudent) {
+      setStreakData(null);
+      return undefined;
     }
-  }, [user]);
-
-  const loadStreakData = async () => {
-    try {
-      setIsLoading(true);
-      const data = await getDailyStreak();
-      setStreakData(data);
-    } catch (error) {
-      console.error('Failed to load streak data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    let alive = true;
+    setStreakData((shown) => (shown && String(shown.student_id) === String(userId) ? shown : null));
+    getDailyStreak()
+      .then((data) => { if (alive) setStreakData(data); })
+      .catch((error) => console.error('Failed to load streak data:', error));
+    return () => { alive = false; };
+  }, [userId, isStudent]);
 
   const getStreakColor = () => {
     switch (streakData?.streak_status) {
@@ -183,8 +182,8 @@ const StreakIcon: React.FC = () => {
     return null;
   }
 
-  // Don't show while loading or if no data
-  if (isLoading || !streakData) {
+  // Nothing until the first answer; after that a refresh never hides the square
+  if (!streakData) {
     return null;
   }
 
