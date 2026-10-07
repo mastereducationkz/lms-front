@@ -3,10 +3,13 @@ import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { Progress } from '../ui/progress';
 import { Badge } from '../ui/badge';
-import { ChevronLeft, ChevronRight, RotateCcw, CheckCircle, XCircle, Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RotateCcw, Check, CheckCircle, Repeat, Heart } from 'lucide-react';
 import type { FlashcardSet } from '../../types';
 import { addFavoriteFlashcard, removeFavoriteByCardId, checkIsFavorite } from '../../services/api';
 import { toast } from '../Toast';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/learning';
+import { useStillLearningSave } from './useStillLearningSave';
 
 interface FlashcardViewerProps {
   flashcardSet: FlashcardSet;
@@ -18,6 +21,7 @@ interface FlashcardViewerProps {
 }
 
 export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, stepId, lessonId, courseId }: FlashcardViewerProps) {
+  const t = useT();
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [completedCards, setCompletedCards] = useState<Set<string>>(new Set());
@@ -25,6 +29,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
   const [showingAnswer, setShowingAnswer] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isLoadingFavorite, setIsLoadingFavorite] = useState(false);
+  const stillLearning = useStillLearningSave({ stepId, lessonId, courseId });
 
   // Ensure cards array exists and has content
   const cards = flashcardSet?.cards || [];
@@ -38,6 +43,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
         try {
           const result = await checkIsFavorite(stepId, currentCard.id);
           setIsFavorite(result.is_favorite);
+          stillLearning.remember(currentCard.id, result.is_favorite);
         } catch (error) {
           console.error('Failed to check favorite status:', error);
         }
@@ -71,6 +77,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
         // Remove from favorites
         await removeFavoriteByCardId(stepId, currentCard.id);
         setIsFavorite(false);
+        stillLearning.remember(currentCard.id, false);
         toast('Removed from favorites', 'success');
       } else {
         // Add to favorites
@@ -82,6 +89,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
           flashcard_data: JSON.stringify(currentCard)
         });
         setIsFavorite(true);
+        stillLearning.remember(currentCard.id, true);
         toast('Added to favorites', 'success');
       }
     } catch (error: any) {
@@ -97,6 +105,9 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
     setShowingAnswer(!showingAnswer);
   };
 
+  // «Got it» / «Still learning» steer this session: a card still being learnt comes back before
+  // the deck ends, and the step completes once every card is «Got it». The first «Still learning»
+  // on a card also saves it to My Flashcards (useStillLearningSave).
   const handleCorrect = () => {
     const newCompleted = new Set(completedCards);
     newCompleted.add(currentCard.id);
@@ -106,18 +117,22 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
     newIncorrect.delete(currentCard.id);
     setIncorrectCards(newIncorrect);
     
-    goToNextCard();
+    goToNextCard(newIncorrect);
   };
 
   const handleIncorrect = () => {
+    // The first «Still learning» on a card also keeps it in My Flashcards (never blocks the round).
+    stillLearning.keep(currentCard);
     const newIncorrect = new Set(incorrectCards);
     newIncorrect.add(currentCard.id);
     setIncorrectCards(newIncorrect);
     
-    goToNextCard();
+    goToNextCard(newIncorrect);
   };
 
-  const goToNextCard = () => {
+  // Takes the updated set: reading `incorrectCards` here saw the state from before the click,
+  // so a last card marked «Still learning» never came back.
+  const goToNextCard = (stillLearning: Set<string> = incorrectCards) => {
     setIsFlipped(false);
     setShowingAnswer(false);
     
@@ -125,7 +140,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
       setCurrentCardIndex(currentCardIndex + 1);
     } else {
       // If there are incorrect cards, cycle through them again
-      const incorrectCardIds = Array.from(incorrectCards);
+      const incorrectCardIds = Array.from(stillLearning);
       if (incorrectCardIds.length > 0) {
         const firstIncorrectIndex = cards.findIndex(card => incorrectCardIds.includes(card.id));
         if (firstIncorrectIndex !== -1) {
@@ -193,8 +208,17 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
       {/* Card Counter and Difficulty */}
       {cards.length > 0 && (
         <div className="flex justify-between items-center">
-          <div className="text-sm text-muted-foreground">
-            Card {currentCardIndex + 1} of {cards.length}
+          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+            <span>Card {currentCardIndex + 1} of {cards.length}</span>
+            {/* A quiet note, not a toast: the round goes on underneath it. */}
+            <span aria-live="polite" className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400">
+              {stillLearning.saved && (
+                <>
+                  <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                  {t('learning.flashcards.savedToMine')}
+                </>
+              )}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             {stepId && (
@@ -309,19 +333,22 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
             <Button 
               onClick={handleIncorrect}
               variant="outline"
-              className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+              className="flex items-center gap-2 border-amber-300 text-amber-800 hover:bg-amber-50 hover:text-amber-900 dark:border-amber-700/60 dark:text-amber-300 dark:hover:bg-amber-900/20 dark:hover:text-amber-200"
             >
-              <XCircle className="w-4 h-4" />
-              Incorrect
+              <Repeat className="w-4 h-4" aria-hidden="true" />
+              {t('learning.flashcards.stillLearning')}
             </Button>
             <Button 
               onClick={handleCorrect}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+              className="flex items-center gap-2 bg-green-600 text-white hover:bg-green-700"
             >
-              <CheckCircle className="w-4 h-4" />
-              Correct
+              <Check className="w-4 h-4" aria-hidden="true" />
+              {t('learning.flashcards.gotIt')}
             </Button>
           </div>
+        )}
+        {showingAnswer && (
+          <p className="text-center text-xs text-muted-foreground">{t('learning.flashcards.stillLearningHint')}</p>
         )}
 
         {/* Navigation */}
@@ -346,7 +373,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
           </Button>
 
           <Button 
-            onClick={goToNextCard}
+            onClick={() => goToNextCard()}
             variant="outline"
             disabled={currentCardIndex === cards.length - 1 && incorrectCards.size === 0}
             className="flex items-center gap-2"

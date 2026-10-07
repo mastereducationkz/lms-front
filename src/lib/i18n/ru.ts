@@ -28,6 +28,7 @@ import { studentReport } from './ru/studentReport';
 import { studentCard } from './ru/studentCard';
 import { curatorHomeworks } from './ru/curatorHomeworks';
 import { curatorPages } from './ru/curatorPages';
+import { profile } from './ru/profile';
 
 export const RU_NAMESPACES = {
   common,
@@ -58,6 +59,7 @@ export const RU_NAMESPACES = {
   studentCard,
   curatorHomeworks,
   curatorPages,
+  profile,
 } as const;
 
 export const ru: Readonly<Record<string, Message>> = {
@@ -89,4 +91,5 @@ export const ru: Readonly<Record<string, Message>> = {
   ...studentCard,
   ...curatorHomeworks,
   ...curatorPages,
+  ...profile,
 };

@@ -1,21 +1,10 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { useNavigate } from "react-router-dom";
 import apiClient from "../services/api";
 import type { ExamCountdown as ExamCountdownData, ExamKind } from "../services/api/assignment-zero";
 import { Button } from "./ui/button";
 import { GraduationCap } from "lucide-react";
-import { Input } from "./ui/input";
 import "./ExamCountdown.css";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "./ui/dialog";
-
-const EXAM_LABEL: Record<ExamKind, string> = { sat: "SAT", ielts: "IELTS" };
+import ExamDateDialog, { EXAM_LABEL } from "./exams/ExamDateDialog";
 
 function formatDate(iso: string): string {
   const d = new Date(`${iso.slice(0, 10)}T00:00:00`);
@@ -121,17 +110,12 @@ function UnitSeparator() {
  * the same field curators read to follow up on results on time.
  */
 export default function ExamCountdown({ tileColor, tileColorDark }: { tileColor?: string; tileColorDark?: string }) {
-  const navigate = useNavigate();
   const [data, setData] = useState<ExamCountdownData | null>(null);
   const [loading, setLoading] = useState(true);
   // Which exam's date dialog is open, if any. Replaces the old single "active" exam:
   // every available exam is rendered, so editing has to name its target.
   const [editing, setEditing] = useState<ExamKind | null>(null);
   const [open, setOpen] = useState(false);
-  const [dateValue, setDateValue] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [needsAssignmentZero, setNeedsAssignmentZero] = useState(false);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -161,41 +145,10 @@ export default function ExamCountdown({ tileColor, tileColorDark }: { tileColor?
   // The exam the dialog is editing. Falls back to the first available one so the
   // dialog always has a subject even if state is momentarily out of step.
   const active: ExamKind = editing ?? data.default_exam ?? data.available_exams[0];
-  const examLabel = EXAM_LABEL[active];
 
   const openModal = (kind: ExamKind) => {
     setEditing(kind);
-    setError("");
-    setNeedsAssignmentZero(false);
-    const target = data.exams[kind]?.target_date;
-    setDateValue(target ? target.slice(0, 10) : "");
     setOpen(true);
-  };
-
-  const saveDate = async () => {
-    if (!dateValue) {
-      setError("Please choose a date.");
-      return;
-    }
-    try {
-      setSaving(true);
-      setError("");
-      await apiClient.updateAssignmentZeroPlannedDate({
-        exam_type: active,
-        planned_test_date: dateValue,
-      });
-      setOpen(false);
-      await load();
-    } catch (e) {
-      const status = (e as { response?: { status?: number } })?.response?.status;
-      if (status === 404) {
-        setNeedsAssignmentZero(true);
-      } else {
-        setError("Could not save. Please try again.");
-      }
-    } finally {
-      setSaving(false);
-    }
   };
 
   // The nearest upcoming exam gets the full flip clock; the other tracks sit under it
@@ -242,85 +195,14 @@ export default function ExamCountdown({ tileColor, tileColorDark }: { tileColor?
         )}
       </div>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Your {examLabel} test date</DialogTitle>
-            <DialogDescription>
-              {active === "sat"
-                ? "The SAT is held on fixed official test dates. Pick the date you're registered for."
-                : "IELTS is offered on many dates each month. Enter the date you're registered to take your test."}
-            </DialogDescription>
-          </DialogHeader>
-
-          {needsAssignmentZero ? (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Please complete Assignment Zero first — that's where your exam details are set up.
-              </p>
-              <Button
-                className="w-full"
-                onClick={() => {
-                  setOpen(false);
-                  navigate("/assignment-zero");
-                }}
-              >
-                Go to Assignment Zero
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {active === "sat" && officialDates.length > 0 && (
-                <div>
-                  <p className="mb-2 text-xs font-medium text-muted-foreground">Official SAT dates</p>
-                  <div className="flex flex-wrap gap-2">
-                    {officialDates.map((d) => {
-                      const iso = d.slice(0, 10);
-                      const isSelected = dateValue === iso;
-                      return (
-                        <button
-                          key={iso}
-                          type="button"
-                          onClick={() => setDateValue(iso)}
-                          className={`rounded-md border px-2.5 py-1 text-xs transition-colors ${
-                            isSelected
-                              ? "border-brand-solid bg-brand-solid text-brand-solid-foreground"
-                              : "border-border hover:border-blue-400 hover:bg-brand-surface"
-                          }`}
-                        >
-                          {formatDate(iso)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                  {active === "sat" && officialDates.length > 0 ? "Or enter another date" : "Test date"}
-                </label>
-                <Input type="date" value={dateValue} onChange={(e) => setDateValue(e.target.value)} />
-              </div>
-
-              <p className="text-[11px] text-muted-foreground">
-                Your curator uses this date to check in and ask about your results on time.
-              </p>
-
-              {error ? <p className="text-sm text-destructive">{error}</p> : null}
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>
-                  Cancel
-                </Button>
-                <Button onClick={saveDate} disabled={saving || !dateValue}>
-                  {saving ? "Saving…" : "Save date"}
-                </Button>
-              </DialogFooter>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ExamDateDialog
+        open={open}
+        onOpenChange={setOpen}
+        kind={active}
+        current={data.exams[active]?.target_date}
+        officialDates={officialDates}
+        onSaved={load}
+      />
     </>
   );
 }

@@ -82,4 +82,19 @@ export const exams = {
   'exams.errors.openFileFailed': 'Could not open the file.',
 
   'exams.testimonial.quote': 'Quote',
+
+  // A student's own planned test date (dashboard countdown and profile).
+  'exams.date.title': 'Your {exam} test date',
+  'exams.date.satHint': 'The SAT is held on fixed official test dates. Pick the date you’re registered for.',
+  'exams.date.ieltsHint': 'IELTS is offered on many dates each month. Enter the date you’re registered to take your test.',
+  'exams.date.needsAssignmentZero': 'Please complete Assignment Zero first — that’s where your exam details are set up.',
+  'exams.date.goToAssignmentZero': 'Go to Assignment Zero',
+  'exams.date.official': 'Official SAT dates',
+  'exams.date.other': 'Or enter another date',
+  'exams.date.label': 'Test date',
+  'exams.date.curatorNote': 'Your curator uses this date to check in and ask about your results on time.',
+  'exams.date.choose': 'Please choose a date.',
+  'exams.date.failed': 'Could not save. Please try again.',
+  'exams.date.saving': 'Saving…',
+  'exams.date.save': 'Save date',
 } as const satisfies MessageTable;

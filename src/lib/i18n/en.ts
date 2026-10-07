@@ -30,6 +30,7 @@ import { studentReport } from './en/studentReport';
 import { studentCard } from './en/studentCard';
 import { curatorHomeworks } from './en/curatorHomeworks';
 import { curatorPages } from './en/curatorPages';
+import { profile } from './en/profile';
 
 export const EN_NAMESPACES = {
   common,
@@ -60,6 +61,7 @@ export const EN_NAMESPACES = {
   studentCard,
   curatorHomeworks,
   curatorPages,
+  profile,
 } as const;
 
 export const en = {
@@ -91,6 +93,7 @@ export const en = {
   ...studentCard,
   ...curatorHomeworks,
   ...curatorPages,
+  ...profile,
 } as const;
 
 export type MessageKey = keyof typeof en;
