@@ -18,6 +18,7 @@
 // minus the app's own positioning utilities (fixed/absolute/sticky, z-*, inset-*) that would
 // let content cover the page with a fake login form.
 import DOMPurify, { type Config } from 'dompurify';
+import { escapeLtInMath } from './mathText';
 
 const HTML_TAGS = [
   'p', 'br', 'b', 'strong', 'i', 'em', 'u', 's', 'strike', 'del', 'ins', 'mark', 'small', 'big',
@@ -180,7 +181,8 @@ function escapeHtml(text: string): string {
 
 /** Stored or rendered HTML made safe for dangerouslySetInnerHTML / innerHTML. */
 export function sanitizeHtml(html: unknown): string {
-  const input = typeof html === 'string' ? html : String(html ?? '');
+  // A "<" inside $…$ maths ("$0<x<c$") would open a fake tag and swallow the rest of the text.
+  const input = escapeLtInMath(typeof html === 'string' ? html : String(html ?? ''));
   if (!input) return '';
   // No DOM to sanitise with (unit tests in a node environment): show it as text, never as HTML.
   if (!purifier) return escapeHtml(input);
