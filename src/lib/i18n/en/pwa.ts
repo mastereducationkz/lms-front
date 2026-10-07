@@ -22,10 +22,11 @@ export const pwa = {
   'pwa.notNow': 'Not now',
 
   // Reminders card (inside the installed app)
-  'pwa.pushTitle': 'Turn on lesson reminders',
-  'pwa.pushBody': 'We’ll let you know before each lesson starts, so you’re never late.',
+  'pwa.pushTitle': 'Turn on notifications',
+  'pwa.pushBody': 'Lesson reminders, new homework, grades and messages, right on this device, even when Master LMS is closed.',
   'pwa.turnOn': 'Turn on',
-  'pwa.pushOnToast': 'Lesson reminders are on',
+  'pwa.pushLine': 'Get notifications on this device, even when Master LMS is closed.',
+  'pwa.pushOnToast': 'Notifications are on for this device',
   'pwa.pushBlockedToast': 'Notifications are blocked. You can allow them in Settings.',
 
   // Sheet: iPhone/iPad
@@ -72,15 +73,15 @@ export const pwa = {
   'pwa.entryTitle': 'Install the app',
   'pwa.entryDescription': 'Master LMS on your home screen: opens in one tap, with lesson reminders.',
   'pwa.entryUnsupported': 'This browser can’t install apps. Open Master LMS in Chrome, Edge or Safari to install it.',
-  'pwa.remindersTitle': 'Lesson reminders',
-  'pwa.remindersDescription': 'Notifications on this device before your lessons start.',
+  'pwa.remindersTitle': 'Notifications on this device',
+  'pwa.remindersDescription': 'Lesson reminders, new homework, grades and messages — the events you switch on for Push above.',
   'pwa.remindersChecking': 'Checking this device…',
-  'pwa.remindersNeedsInstall': 'On iPhone, reminders come through the installed app. Add Master LMS to your Home Screen first.',
+  'pwa.remindersNeedsInstall': 'On iPhone, notifications come through the installed app. Add Master LMS to your Home Screen first.',
   'pwa.remindersOff': 'Off on this device.',
   'pwa.remindersOn': 'On for this device.',
   'pwa.turnOff': 'Turn off',
   'pwa.remindersDeniedIos': 'Notifications are blocked. Open iPhone Settings → Notifications → Master LMS and allow them.',
   'pwa.remindersDeniedAndroid': 'Notifications are blocked. Long-press the Master LMS icon → App info → Notifications, or allow them in your browser’s site settings.',
   'pwa.remindersDeniedDesktop': 'Notifications are blocked. Click the icon left of the address bar, allow Notifications, then reload.',
-  'pwa.remindersFailed': 'Couldn’t turn on reminders. Check your connection and try again.',
+  'pwa.remindersFailed': 'Couldn’t turn on notifications. Check your connection and try again.',
 } as const satisfies MessageTable;

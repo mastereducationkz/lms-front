@@ -39,6 +39,7 @@ import { format, subDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { cn } from '../lib/utils';
 import StudentSearchBox from '../components/StudentSearchBox';
+import InstallAppCard from '../components/pwa/InstallAppCard';
 import { formatDate } from '../lib/i18n';
 
 export default function HeadCuratorDashboard() {
@@ -224,6 +225,9 @@ export default function HeadCuratorDashboard() {
           </Popover>
         </div>
       </div>
+
+      {/* Inside the installed app: «turn on notifications on this device» (components/pwa). */}
+      <InstallAppCard variant="teacher" only="push" />
 
       {/* Missing Attendance Reminders */}
       {stats?.missing_attendance_reminders && stats.missing_attendance_reminders.length > 0 && (

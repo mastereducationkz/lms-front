@@ -41,6 +41,7 @@ import {
   Bar
 } from 'recharts';
 import Skeleton from '../components/Skeleton';
+import InstallAppCard from '../components/pwa/InstallAppCard';
 import { formatDate } from '../lib/i18n';
 
 interface ManagedCourse {
@@ -379,6 +380,9 @@ export default function HeadTeacherDashboardPage() {
           </Popover>
         </div>
       </div>
+
+      {/* Inside the installed app: «turn on notifications on this device» (components/pwa). */}
+      <InstallAppCard variant="teacher" only="push" />
 
       {/* Oversight — attendance / homework gaps, grouped by teacher (tabbed) */}
       {(attendanceGaps.length > 0 || hwTeachers.length > 0) && (() => {

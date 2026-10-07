@@ -135,6 +135,17 @@ describe('createWebPush', () => {
     expect(deps.requestPermission).not.toHaveBeenCalled();
   });
 
+  it('a server without a key yet is asked again: push going live reaches open apps (2026-10-07)', async () => {
+    const getKey = vi.fn().mockResolvedValueOnce(null).mockResolvedValue(KEY);
+    const { push } = setup({ getKey });
+    expect(await push.refresh()).toBe('unsupported');
+    expect(await push.refresh()).toBe('default');
+    expect(getKey).toHaveBeenCalledTimes(2);
+    // A real key is kept: no third request.
+    await push.refresh();
+    expect(getKey).toHaveBeenCalledTimes(2);
+  });
+
   it('server without push, or no service worker (dev): unsupported', async () => {
     expect(await setup({ getKey: vi.fn(async () => null) }).push.refresh()).toBe('unsupported');
     expect(await setup({ noWorker: true }).push.refresh()).toBe('unsupported');

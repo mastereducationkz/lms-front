@@ -84,7 +84,7 @@ function asJson(sub: SubscriptionLike): WebPushSubscriptionJson {
 
 export function createWebPush(deps: PushDeps) {
   let status: PushStatus | null = null;
-  let key: string | null | undefined;
+  let key: string | undefined;
   let keyRequest: Promise<string | null> | null = null;
   const listeners = new Set<() => void>();
 
@@ -100,7 +100,12 @@ export function createWebPush(deps: PushDeps) {
     if (key !== undefined) return Promise.resolve(key);
     keyRequest ??= deps
       .getKey()
-      .then((k) => (key = k))
+      .then((k) => {
+        // Only a real key is kept. «No key» is asked again next time: push went live on the
+        // server while installed apps that had asked earlier were still open (2026-10-07).
+        if (k) key = k;
+        return k;
+      })
       .catch(() => null) // a network blip: ask again next time, show nothing now
       .finally(() => (keyRequest = null));
     return keyRequest;
