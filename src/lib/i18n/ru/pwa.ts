@@ -18,10 +18,11 @@ export const pwa: RuTable<typeof en> = {
   'pwa.notNow': 'Не сейчас',
 
   // Reminders card (inside the installed app)
-  'pwa.pushTitle': 'Включите напоминания об уроках',
-  'pwa.pushBody': 'Мы напомним перед началом каждого урока, чтобы вы не опаздывали.',
+  'pwa.pushTitle': 'Включите уведомления',
+  'pwa.pushBody': 'Напоминания об уроках, новые задания, оценки и сообщения — прямо на этом устройстве, даже когда Master LMS закрыт.',
   'pwa.turnOn': 'Включить',
-  'pwa.pushOnToast': 'Напоминания включены',
+  'pwa.pushLine': 'Получайте уведомления на этом устройстве, даже когда Master LMS закрыт.',
+  'pwa.pushOnToast': 'Уведомления на этом устройстве включены',
   'pwa.pushBlockedToast': 'Уведомления запрещены. Их можно разрешить в настройках.',
 
   // Sheet: iPhone/iPad
@@ -68,15 +69,15 @@ export const pwa: RuTable<typeof en> = {
   'pwa.entryTitle': 'Установить приложение',
   'pwa.entryDescription': 'Master LMS на главном экране: открывается в одно касание и напоминает об уроках.',
   'pwa.entryUnsupported': 'Этот браузер не устанавливает приложения. Откройте Master LMS в Chrome, Edge или Safari.',
-  'pwa.remindersTitle': 'Напоминания об уроках',
-  'pwa.remindersDescription': 'Уведомления на этом устройстве перед началом уроков.',
+  'pwa.remindersTitle': 'Уведомления на этом устройстве',
+  'pwa.remindersDescription': 'Напоминания об уроках, новые задания, оценки и сообщения — то, что вы включили для пуша выше.',
   'pwa.remindersChecking': 'Проверяем устройство…',
-  'pwa.remindersNeedsInstall': 'На iPhone напоминания приходят через установленное приложение. Сначала добавьте Master LMS на экран «Домой».',
+  'pwa.remindersNeedsInstall': 'На iPhone уведомления приходят через установленное приложение. Сначала добавьте Master LMS на экран «Домой».',
   'pwa.remindersOff': 'Выключены на этом устройстве.',
   'pwa.remindersOn': 'Включены на этом устройстве.',
   'pwa.turnOff': 'Выключить',
   'pwa.remindersDeniedIos': 'Уведомления запрещены. Откройте Настройки iPhone → Уведомления → Master LMS и разрешите их.',
   'pwa.remindersDeniedAndroid': 'Уведомления запрещены. Удерживайте значок Master LMS → О приложении → Уведомления, или разрешите их в настройках сайта в браузере.',
   'pwa.remindersDeniedDesktop': 'Уведомления запрещены. Нажмите на значок слева от адреса, разрешите уведомления и обновите страницу.',
-  'pwa.remindersFailed': 'Не удалось включить напоминания. Проверьте соединение и попробуйте ещё раз.',
+  'pwa.remindersFailed': 'Не удалось включить уведомления. Проверьте соединение и попробуйте ещё раз.',
 };

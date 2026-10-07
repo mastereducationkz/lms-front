@@ -28,7 +28,7 @@ function Nudge({ variant, art, title, body, action, busy, onAction, dismiss, onD
   if (variant === 'teacher') {
     return (
       <section aria-label={title} className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-border bg-card px-4 py-3">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
+        <div className="flex min-w-0 flex-1 basis-64 items-center gap-3">
           {art(true)}
           <p className="min-w-0 text-sm text-foreground">{body}</p>
         </div>
@@ -99,14 +99,16 @@ function BellTile({ compact }: { compact: boolean }) {
 
 /**
  * The dashboard's invitation to install the app (owner, 2026-10-07), then, inside the installed
- * app, to turn on lesson reminders. Pacing in src/lib/installNudge.ts, one-at-a-time in
- * src/lib/dashboardPrompt.ts; nothing renders when neither is due.
+ * app, to turn on notifications on that device (push carries every event the person switched on,
+ * owner 2026-10-07). Pacing in src/lib/installNudge.ts, one-at-a-time in src/lib/dashboardPrompt.ts;
+ * nothing renders when neither is due. `only="push"` is the staff dashboards' variant: no install
+ * invitation, only the notifications one inside the installed app.
  */
-export default function InstallAppCard({ variant = 'student' }: { variant?: 'student' | 'teacher' }) {
+export default function InstallAppCard({ variant = 'student', only }: { variant?: 'student' | 'teacher'; only?: 'push' }) {
   const { snapshot, t, start, sheet, oneTap } = useInstallFlow('dashboard');
   // One prompt at a time: the Kasatik spotlight, the tour and tips go first (lib/dashboardPrompt).
   const gate = useDashboardPrompt();
-  const showInstall = gate.allowed && installNudgeVisible(snapshot);
+  const showInstall = gate.allowed && only !== 'push' && installNudgeVisible(snapshot);
   const pushCandidate = gate.allowed && !showInstall && pushNudgeVisible(snapshot);
   const push = usePushStatus(pushCandidate);
   const showPush = pushCandidate && push === 'default';
@@ -167,7 +169,7 @@ export default function InstallAppCard({ variant = 'student' }: { variant?: 'stu
         variant={variant}
         art={(compact) => <BellTile compact={compact} />}
         title={t.pushTitle}
-        body={variant === 'teacher' ? t.pushTitle : t.pushBody}
+        body={variant === 'teacher' ? t.pushLine : t.pushBody}
         action={t.turnOn}
         busy={busy}
         onAction={turnOn}

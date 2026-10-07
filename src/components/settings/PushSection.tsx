@@ -9,9 +9,10 @@ import { useInstallFlow } from '../pwa/useInstallFlow';
 import { SOLID, SettingsRow, SettingsSection } from './SettingsSection';
 
 /**
- * Push on this device (web push, services/webPush): the one switch for it, formerly the «Lesson
- * reminders» card. Permission is asked only from the «Turn on» tap. An iPhone gets push only from
- * the installed app, so a Safari tab explains installing instead.
+ * Push on this device (web push, services/webPush): the one switch for it. Push carries every event
+ * the person switched on for Push in the grid above, not only lesson reminders. Permission is asked
+ * only from the «Turn on» tap. An iPhone gets push only from the installed app, so a Safari tab
+ * explains installing instead; a refusal says how to allow it again.
  */
 export default function PushSection() {
   const t = useT();
@@ -54,7 +55,14 @@ export default function PushSection() {
             {copy.remindersTitle}
           </span>
         }
-        description={<span role="status">{line}</span>}
+        description={
+          <>
+            <span className="block">{copy.remindersDescription}</span>
+            <span role="status" className="mt-1 block font-medium text-foreground">
+              {line}
+            </span>
+          </>
+        }
       >
         {status === 'default' && (
           // enablePush must be the first await of the tap (services/webPush.ts).

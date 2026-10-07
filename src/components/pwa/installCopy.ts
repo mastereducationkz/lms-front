@@ -22,6 +22,7 @@ const KEYS = [
   'notNow',
   'pushTitle',
   'pushBody',
+  'pushLine',
   'turnOn',
   'pushOnToast',
   'pushBlockedToast',
