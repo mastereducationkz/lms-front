@@ -21,9 +21,8 @@ const THEME_KEYS: Record<string, MessageKey> = {
 
 export default function ThemeMenu() {
   const t = useT();
-  const { theme = 'system', setTheme, resolvedTheme } = useTheme();
+  const { theme = 'system', setTheme } = useTheme();
   const Current = THEME_OPTIONS.find((o) => o.value === theme)?.icon ?? THEME_OPTIONS[2].icon;
-  const name = (value: string) => (THEME_KEYS[value] ? t(THEME_KEYS[value]) : value);
 
   return (
     <DropdownMenu>
@@ -31,10 +30,10 @@ export default function ThemeMenu() {
         <button
           type="button"
           className="w-9 h-9 rounded-lg bg-card border flex items-center justify-center text-muted-foreground hover:bg-muted dark:hover:text-foreground transition-colors"
+          // No native `title` tooltip: it stayed on screen after the menu opened (the open menu
+          // stops pointer events, so the tooltip never sees the pointer leave) and covered whatever
+          // sat under it, the Settings index for one. The menu itself marks the current theme.
           aria-label={t('chatLive.theme.label')}
-          title={theme === 'system' && resolvedTheme
-            ? t('chatLive.theme.currentResolved', { theme: name(theme), resolved: name(resolvedTheme) })
-            : t('chatLive.theme.current', { theme: name(theme) })}
         >
           <Current className="w-4 h-4" aria-hidden="true" />
         </button>
