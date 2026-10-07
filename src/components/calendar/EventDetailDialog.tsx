@@ -3,6 +3,7 @@ import { ArrowRight, Clock, Copy, ExternalLink, MapPin, Video, Users } from 'luc
 import { toast } from 'sonner';
 import { openPlatformPage, parsePlatformUrl } from '../../lib/platformLinks';
 import { meetInvitationText, meetJoinUrl } from '../../lib/meetLinks';
+import { safeLinkUrl } from '../../lib/mediaUrl';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import LessonRecordingSection from './LessonRecordingSection';
 import { lessonPath } from '../../lib/lessonLinks';
@@ -27,6 +28,8 @@ export default function EventDetailDialog({ event, open, onOpenChange, user }: P
   if (!event) return null;
   // Auto-managed weekly-test events link to the set page on the platform: open it signed in.
   const platformLink = event.event_type === 'weekly_test' ? parsePlatformUrl(event.meeting_url) : null;
+  // Only an http(s) meeting link becomes clickable; anything else is shown as text.
+  const joinHref = event.meeting_url ? safeLinkUrl(meetJoinUrl(event.meeting_url, user?.workspace_email)) : null;
   const s = eventStyle(event);
   const isClass = event.event_type === 'class';
   // What this lesson's substitution means for whoever is reading it.
@@ -100,14 +103,18 @@ export default function EventDetailDialog({ event, open, onOpenChange, user }: P
             {event.meeting_url && !platformLink && (
               <div className="flex items-center gap-2.5">
                 <Video className="h-4 w-4 flex-none text-muted-foreground/70" />
-                <a
-                  href={meetJoinUrl(event.meeting_url, user?.workspace_email)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium text-primary underline-offset-4 hover:underline"
-                >
-                  Join / Войти
-                </a>
+                {joinHref ? (
+                  <a
+                    href={joinHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    Join / Войти
+                  </a>
+                ) : (
+                  <span className="min-w-0 break-all text-muted-foreground">{event.meeting_url}</span>
+                )}
                 {/* A ready-to-send invitation for the group chat, built on the clean link. The
                     Join link above may carry the viewer's own account (?authuser=…), which
                     would ask students to sign in as the teacher. */}

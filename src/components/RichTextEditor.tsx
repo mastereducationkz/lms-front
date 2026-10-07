@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import { sanitizeHtml } from '../lib/safeHtml';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -100,6 +101,17 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   const [cursorPosition, setCursorPosition] = useState<number>(0);
   const latexInputRef = useRef<HTMLInputElement>(null);
   const [quillCursorPosition, setQuillCursorPosition] = useState<number | null>(null);
+
+  // Quill 1.x loads a value by assigning it to innerHTML of a live element, so stored markup
+  // runs (an <img onerror> fires) the moment the editor opens. Anything that didn't come out
+  // of this editor is sanitised first; Quill's own output is passed back untouched, so the
+  // controlled value never ping-pongs between two normalisations.
+  const lastEmitted = useRef<string | null>(null);
+  const editorValue = value === lastEmitted.current ? value : sanitizeHtml(value);
+  const handleEditorChange = (html: string) => {
+    lastEmitted.current = html;
+    onChange(html);
+  };
 
   // Функция для открытия диалога LaTeX
   const openLatexDialog = () => {
@@ -476,8 +488,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       <ReactQuill
         ref={quillRef}
         theme="snow"
-        value={value}
-        onChange={onChange}
+        value={editorValue}
+        onChange={handleEditorChange}
         modules={modules}
         formats={formats}
         placeholder={placeholder}

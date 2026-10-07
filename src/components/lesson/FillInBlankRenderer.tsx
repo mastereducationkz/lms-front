@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { renderTextWithLatex } from '../../utils/latex';
+import { sanitizeHtml } from '../../lib/safeHtml';
 import { parseGap } from '../../utils/gapParser';
 import { applyHighlightsToDOM } from '../../utils/highlightUtils';
 import type { GapMark } from './quiz/scoring';
@@ -81,7 +82,7 @@ export const FillInBlankRenderer: React.FC<FillInBlankRendererProps> = ({
     }).join('');
 
     // Set HTML content (without highlights initially)
-    containerRef.current.innerHTML = htmlContent;
+    containerRef.current.innerHTML = sanitizeHtml(htmlContent);
 
     // Find all gap containers and store references
     const updatedGaps = gapData.map(gap => {

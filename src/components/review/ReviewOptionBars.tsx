@@ -4,6 +4,7 @@
 // typed, most common first.
 import React from 'react'
 import { renderTextWithLatex } from '../../utils/latex'
+import { sanitizeHtml } from '../../lib/safeHtml'
 import type { OptionStat, QuestionStat } from './reviewStats'
 import { EN } from './strings'
 
@@ -41,15 +42,14 @@ export const ReviewOptionBars: React.FC<Props> = ({ stat, revealed, showNames })
               <span className="w-6 shrink-0 font-semibold text-foreground">{option.label}</span>
             )}
             {/* 'choice' rows are the question's own authored option text — safe to render as
-                HTML via renderTextWithLatex/dangerouslySetInnerHTML, same as ChoiceQuestion.
-                'text' rows are NOT: they are strings students typed into an answer box. This
-                repo's renderMarkdown deliberately preserves raw HTML tags and there is no
-                sanitizer, so piping student input through dangerouslySetInnerHTML here would
-                let a student's <img onerror=…> execute in the teacher's session on the class
-                projector. Free text always renders as a plain JSX child instead. */}
+                HTML via renderTextWithLatex + sanitizeHtml, same as ChoiceQuestion.
+                'text' rows are NOT: they are strings students typed into an answer box, and
+                renderMarkdown deliberately preserves raw HTML tags. Even sanitised, a student's
+                markup (a huge <img>, a fake link) would land on the teacher's class projector,
+                so free text always renders as a plain JSX child instead. */}
             {option.text
               ? (stat.distributionKind === 'choice'
-                  ? <span className="flex-1 break-words" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(option.text) }} />
+                  ? <span className="flex-1 break-words" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(option.text)) }} />
                   : <span className="flex-1 break-words">{option.text}</span>)
               : <span className="flex-1 text-muted-foreground">—</span>}
             <span className="shrink-0 tabular-nums text-xs text-muted-foreground">

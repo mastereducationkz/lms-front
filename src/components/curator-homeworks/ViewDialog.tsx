@@ -10,7 +10,7 @@ import { Button } from '../ui/button';
 import { StatusBadge } from './StatusBadge';
 import { FileText, Download, Loader2, CheckCircle, ExternalLink, Link as LinkIcon } from 'lucide-react';
 import { AudioPlayer, isAudioUrl } from '../AudioPlayer';
-import { safeUploadUrl } from '../../lib/mediaUrl';
+import { safeLinkUrl, safeUploadUrl } from '../../lib/mediaUrl';
 import type { StudentProgress, AssignmentData, SubmissionDetails } from './types';
 
 interface ViewDialogProps {
@@ -116,14 +116,18 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                   {task.task_type === 'link_task' && task.content.url && (
                     <div className="flex items-center p-2 bg-brand-surface  rounded border">
                       <LinkIcon className="w-4 h-4 text-brand mr-2 flex-shrink-0" />
-                      <a 
-                        href={task.content.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="text-brand hover:underline text-sm truncate"
-                      >
-                        {task.content.url}
-                      </a>
+                      {safeLinkUrl(task.content.url) ? (
+                        <a 
+                          href={safeLinkUrl(task.content.url)!} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-brand hover:underline text-sm truncate"
+                        >
+                          {task.content.url}
+                        </a>
+                      ) : (
+                        <span className="text-sm truncate">{task.content.url}</span>
+                      )}
                       <ExternalLink className="w-3 h-3 text-muted-foreground ml-2 flex-shrink-0" />
                     </div>
                   )}

@@ -84,6 +84,7 @@ import { UsersTable } from '../components/users/UsersTable';
 import { BulkActionsBar } from '../components/users/BulkActionsBar';
 import { AddToGroupDialog } from '../components/users/AddToGroupDialog';
 import { teacherGroupTail } from '../lib/groupNames';
+import { PASSWORD_HINT, passwordPolicyError } from '../lib/passwordPolicy';
 
 interface UserFormData {
   name: string;
@@ -591,11 +592,10 @@ export default function UserManagement() {
     }
 
     // Password is optional (empty = keep current / auto-generate on create), but when
-    // provided it must satisfy the backend policy: >= 8 chars and at least one digit.
+    // provided it must satisfy the backend policy (src/lib/passwordPolicy).
     if (formData.password) {
-      if (formData.password.length < 8 || !/\d/.test(formData.password)) {
-        errors.password = 'Пароль должен быть не короче 8 символов и содержать хотя бы одну цифру';
-      }
+      const passwordError = passwordPolicyError(formData.password);
+      if (passwordError) errors.password = passwordError;
     }
 
     const workspaceEmail = (formData.workspace_email || '').trim();
@@ -1644,6 +1644,7 @@ export default function UserManagement() {
         title="Create New User"
         onSubmit={handleCreateUser}
         submitText="Create User"
+        submitDisabled={!!formData.password && !!passwordPolicyError(formData.password)}
       >
         <UserForm
           formData={formData}
@@ -1669,6 +1670,7 @@ export default function UserManagement() {
         title="Edit User"
         onSubmit={handleUpdateUser}
         submitText="Update User"
+        submitDisabled={!!formData.password && !!passwordPolicyError(formData.password)}
       >
         <UserForm
           formData={formData}
@@ -1933,6 +1935,8 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
   // credential (which was being sent as an unintended password change and failing the
   // policy). It's revealed only when the admin deliberately chooses to change it.
   const [changePassword, setChangePassword] = useState(false);
+  // Checked live as the admin types; the submit button stays disabled until it passes.
+  const passwordError = formData.password ? passwordPolicyError(formData.password) : null;
   const displayedGroups = React.useMemo(() => {
     const q = groupSearch.trim().toLowerCase();
     const filtered = (groups || []).filter((g) => !q || g.name.toLowerCase().includes(q));
@@ -2229,7 +2233,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
               autoFocus={isEdit}
               value={formData.password || ''}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              placeholder={isEdit ? 'New password (min 8 chars, 1 digit)' : 'Leave empty for auto-generation'}
+              placeholder={isEdit ? PASSWORD_HINT : 'Leave empty for auto-generation'}
             />
             {isEdit && (
               <button
@@ -2242,8 +2246,8 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
             )}
           </>
         )}
-        {errors.password && (
-          <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.password}</p>
+        {passwordError && (
+          <p className="mt-1 text-xs text-red-600 dark:text-red-400">{passwordError}</p>
         )}
       </div>
       

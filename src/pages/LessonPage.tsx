@@ -18,6 +18,7 @@ import { unitStepProgress } from '../lib/unitProgress';
 import YouTubeVideoPlayer from '../components/YouTubeVideoPlayer';
 import HlsVideoPlayer from '../components/HlsVideoPlayer';
 import { renderTextWithLatex } from '../utils/latex';
+import { sanitizeHtml } from '../lib/safeHtml';
 import FlashcardViewer from '../components/lesson/FlashcardViewer';
 import QuizRenderer from '../components/lesson/QuizRenderer';
 import SummaryStepRenderer from '../components/lesson/SummaryStepRenderer';
@@ -1960,9 +1961,9 @@ export default function LessonPage() {
               {renderAttachments(currentStep.attachments)}
               <div className="prose dark:prose-invert max-w-none">
                 <div dangerouslySetInnerHTML={{ 
-                  __html: renderTextWithLatex(
+                  __html: sanitizeHtml(renderTextWithLatex(
                     (currentStep.content_text || '').replace(/<p><strong>Read the explanation and make notes.<\/strong><\/p>/g, '')
-                  ) 
+                  )) 
                 }} />
               </div>
             </div>
@@ -2068,9 +2069,9 @@ export default function LessonPage() {
               {currentStep.content_text && (
                 <div className="prose dark:prose-invert max-w-none">
                   <div dangerouslySetInnerHTML={{ 
-                    __html: renderTextWithLatex(
+                    __html: sanitizeHtml(renderTextWithLatex(
                       cleanVideoContentText.replace(/<p><strong>Watch the explanations for the previous questions<\/strong><\/p>/g, '')
-                    ) 
+                    )) 
                   }} />
                 </div>
               )}

@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
+import { sanitizeHtml } from '../lib/safeHtml';
 import { Link, useNavigate } from 'react-router-dom';
 import { WebinarPayCard, type WebinarPay } from '../components/teacher/WebinarPayCard';
 import { lessonPath } from '../lib/lessonLinks';
@@ -1679,7 +1680,7 @@ export default function TeacherDashboard() {
                     // Default/Text fallback
                     <div 
                       className="prose prose-sm dark:prose-invert max-w-none text-foreground"
-                      dangerouslySetInnerHTML={{ __html: selectedQuizAttempt.quiz_media_url }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedQuizAttempt.quiz_media_url) }}
                     />
                   )}
                 </div>
@@ -1718,7 +1719,7 @@ export default function TeacherDashboard() {
                             <p className="text-[14px] font-semibold text-foreground  mb-1">Passage</p>
                             <div 
                               className="text-foreground  prose prose-sm max-w-none text-[14px]"
-                              dangerouslySetInnerHTML={{ __html: item.content_text }}
+                              dangerouslySetInnerHTML={{ __html: sanitizeHtml(item.content_text) }}
                             />
                           </div>
                         )}

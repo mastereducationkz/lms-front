@@ -1,4 +1,5 @@
 import React from 'react';
+import { sanitizeHtml } from '../lib/safeHtml';
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
 
@@ -79,7 +80,7 @@ const LatexContentViewer: React.FC<LatexContentViewerProps> = ({ content, classN
     <div className={`latex-content-viewer ${className}`}>
       {parts.map((part, index) => {
         if (part.type === 'text') {
-          return <span key={index} dangerouslySetInnerHTML={{ __html: part.content }} />;
+          return <span key={index} dangerouslySetInnerHTML={{ __html: sanitizeHtml(part.content) }} />;
         } else if (part.type === 'inline') {
           try {
             return <InlineMath key={index} math={part.content} />;

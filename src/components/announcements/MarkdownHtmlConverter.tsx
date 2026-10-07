@@ -1,4 +1,5 @@
 import { Clipboard, Download, FileCode2, Sparkles } from 'lucide-react';
+import { sanitizeHtml } from '../../lib/safeHtml';
 import { useMemo, useState, type ClipboardEvent } from 'react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -81,7 +82,7 @@ export function MarkdownHtmlConverter({ onUse }: MarkdownHtmlConverterProps) {
         <div className="space-y-2">
           <Label>Preview</Label>
           <div className="min-h-[180px] whitespace-pre-wrap rounded-md border border-border bg-muted/30 p-3 text-sm leading-relaxed [&_a]:text-primary [&_a]:underline [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:font-mono">
-            {html ? <span dangerouslySetInnerHTML={{ __html: renderPreviewHtml(html) }} /> : <span className="text-muted-foreground">Nothing to preview yet.</span>}
+            {html ? <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderPreviewHtml(html)) }} /> : <span className="text-muted-foreground">Nothing to preview yet.</span>}
           </div>
         </div>
         <div className="flex flex-wrap gap-2 lg:col-span-2">

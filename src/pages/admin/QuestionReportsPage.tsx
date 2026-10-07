@@ -23,6 +23,7 @@ import { Button } from '../../components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import api from '../../services/api';
 import { renderTextWithLatex } from '../../utils/latex';
+import { sanitizeHtml } from '../../lib/safeHtml';
 import { TriageBar, TriageChip, TriagePanel } from '../../components/admin/questionReports/Triage';
 import { labelCounts, sortReports, type ReportTriage, type SortMode } from '../../lib/reportTriage';
 import { useAuth } from '../../contexts/AuthContext';
@@ -394,7 +395,7 @@ export default function QuestionReportsPage() {
           <div className="p-4 bg-brand-surface border border-brand-border rounded-lg">
             <h5 className="font-medium text-brand mb-2">Passage</h5>
             <div className="text-sm text-brand prose prose-sm max-w-none"
-              dangerouslySetInnerHTML={{ __html: question.passage }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(question.passage) }}
             />
           </div>
         )}
@@ -404,7 +405,7 @@ export default function QuestionReportsPage() {
           <h5 className="font-medium text-foreground/80 mb-2">Question</h5>
           <div 
             className="text-foreground"
-            dangerouslySetInnerHTML={{ __html: renderTextWithLatex(question.question_text || 'No question text') }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(question.question_text || 'No question text')) }}
           />
         </div>
 
@@ -437,7 +438,7 @@ export default function QuestionReportsPage() {
                     }`}
                   >
                     <span className="font-medium mr-2">{String.fromCharCode(65 + idx)}.</span>
-                    <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex(optText) }} />
+                    <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(optText)) }} />
                     {isCorrect && <CheckCircle className="w-4 h-4 inline ml-2 text-green-600 dark:text-green-400" />}
                   </div>
                 );
@@ -464,7 +465,7 @@ export default function QuestionReportsPage() {
             <h5 className="font-medium text-purple-800 mb-1 dark:text-purple-300">Explanation</h5>
             <div 
               className="text-purple-900 text-sm dark:text-purple-300"
-              dangerouslySetInnerHTML={{ __html: renderTextWithLatex(question.explanation) }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(question.explanation)) }}
             />
           </div>
         )}

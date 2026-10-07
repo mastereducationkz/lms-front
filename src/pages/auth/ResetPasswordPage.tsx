@@ -6,6 +6,7 @@ import { toast } from '../../components/Toast';
 import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Label } from '../../components/ui/label';
+import { PASSWORD_HINT, passwordPolicyError } from '../../lib/passwordPolicy';
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams();
@@ -15,12 +16,14 @@ export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
+  const policyError = passwordPolicyError(password);
+  const mismatch = confirm.length > 0 && password !== confirm;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
-    if (password.length < 6) {
-      toast('Password must be at least 6 characters', 'error');
+    if (policyError) {
+      toast(policyError, 'error');
       return;
     }
     if (password !== confirm) {
@@ -69,9 +72,13 @@ export default function ResetPasswordPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 6 characters"
+                  placeholder={PASSWORD_HINT}
+                  autoComplete="new-password"
+                  aria-invalid={!!password && !!policyError}
+                  aria-describedby="password-error"
                   className="mt-1.5"
                 />
+                {password && policyError && <p id="password-error" className="mt-1 text-xs text-destructive">{policyError}</p>}
               </div>
               <div>
                 <Label htmlFor="confirm" className="text-sm font-medium">Confirm password</Label>
@@ -81,10 +88,14 @@ export default function ResetPasswordPage() {
                   required
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
+                  autoComplete="new-password"
+                  aria-invalid={mismatch}
+                  aria-describedby="confirm-error"
                   className="mt-1.5"
                 />
+                {mismatch && <p id="confirm-error" className="mt-1 text-xs text-destructive">Passwords don't match</p>}
               </div>
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full" disabled={loading || !!policyError || password !== confirm}>
                 {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving…</> : 'Reset password'}
               </Button>
             </form>

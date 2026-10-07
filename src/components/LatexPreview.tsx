@@ -1,5 +1,6 @@
 import React from 'react';
 import { renderLatex, validateLatex } from '../utils/latex';
+import { sanitizeHtml } from '../lib/safeHtml';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 
 interface LatexPreviewProps {
@@ -49,7 +50,7 @@ export const LatexPreview: React.FC<LatexPreviewProps> = ({
       <div 
         className="flex justify-center"
         dangerouslySetInnerHTML={{ 
-          __html: renderLatex(latex, displayMode) 
+          __html: sanitizeHtml(renderLatex(latex, displayMode)) 
         }} 
       />
     </div>

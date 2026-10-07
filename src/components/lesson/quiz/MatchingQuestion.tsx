@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { renderTextWithLatex } from '../../../utils/latex';
+import { sanitizeHtml } from '../../../lib/safeHtml';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 interface MatchingPair {
@@ -189,7 +190,7 @@ export const MatchingQuestion = ({
                     }`}>
                       {leftIdx + 1}
                     </span>
-                    <span className="flex-1" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(pair.left) }} />
+                    <span className="flex-1" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(pair.left)) }} />
                   </div>
                   {isMatched && displayLetter && (
                     <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${color?.badge} ${color?.text}`} aria-hidden="true">
@@ -256,7 +257,7 @@ export const MatchingQuestion = ({
                   }`}>
                     {displayLetter}
                   </span>
-                  <span className="flex-1" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(pair.right) }} />
+                  <span className="flex-1" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(pair.right)) }} />
                   {isMatched && matchedLeft !== undefined && (
                     <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${color?.badge} ${color?.text}`} aria-hidden="true">
                       <span className="font-bold">{matchedLeft + 1}</span>
