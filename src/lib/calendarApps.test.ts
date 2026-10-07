@@ -56,9 +56,9 @@ describe('preferredApp', () => {
     expect(preferredApp({ userAgent: UA.macChrome })).toBe('apple');
   });
 
-  it('picks Google on Android, Outlook on Windows, Google anywhere else', () => {
+  it('picks Google on Android, on Windows and anywhere else', () => {
     expect(preferredApp({ userAgent: UA.android })).toBe('google');
-    expect(preferredApp({ userAgent: UA.windows })).toBe('outlook');
+    expect(preferredApp({ userAgent: UA.windows })).toBe('google');
     expect(preferredApp({ userAgent: UA.linux })).toBe('google');
     expect(preferredApp({ userAgent: '' })).toBe('google');
   });
@@ -79,7 +79,7 @@ describe('feedActions', () => {
   it('leads with the device’s app and offers the other three', () => {
     expect(feedActions(links, { userAgent: UA.iphone })).toEqual({ primary: 'apple', others: ['google', 'outlook', 'office'] });
     expect(feedActions(links, { userAgent: UA.android })).toEqual({ primary: 'google', others: ['apple', 'outlook', 'office'] });
-    expect(feedActions(links, { userAgent: UA.windows })).toEqual({ primary: 'outlook', others: ['google', 'apple', 'office'] });
+    expect(feedActions(links, { userAgent: UA.windows })).toEqual({ primary: 'google', others: ['apple', 'outlook', 'office'] });
   });
 
   it('lets "Copy link" lead inside an in-app browser', () => {
