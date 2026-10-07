@@ -5,6 +5,7 @@ import 'katex/dist/katex.min.css';
 import Router from "./routes/Router";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { registerPwa } from "./services/pwa";
+import { startPwaInstall } from "./services/pwaInstall";
 import { installDomErrorGuard } from "./utils/domErrorGuard";
 import { installAppTimeZone } from "./lib/datetime";
 import { startSentry } from "./lib/sentry";
@@ -15,6 +16,8 @@ installDomErrorGuard();
 startSentry();
 // Every date on screen in Kazakhstan time, whatever zone the viewer's laptop is in.
 installAppTimeZone();
+// Before anything renders: Chrome's one-off install offer is caught and kept for the install card.
+startPwaInstall();
 
 const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error('Root element not found');

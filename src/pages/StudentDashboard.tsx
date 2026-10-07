@@ -28,6 +28,7 @@ import SampleBadge from "../components/trial/SampleBadge";
 import { TRIAL_SAMPLE_SESSIONS, TRIAL_SAMPLE_TASKS } from "../data/trialSampleData";
 import { lessonPath } from '../lib/lessonLinks';
 import LiveNowTile from '../components/dashboard/LiveNowTile';
+import InstallAppCard from '../components/pwa/InstallAppCard';
 import { AchievementsTile } from '@/components/achievements/AchievementsTile';
 
 interface StudentDashboardProps {
@@ -744,6 +745,8 @@ export default function StudentDashboard({
           live group memberships. Renders nothing when no track applies. */}
       {/* A question open in the student's lesson right now (hides itself otherwise). */}
       <LiveNowTile />
+      {/* «Get Master LMS on your phone», never on a first day (components/pwa, lib/installNudge). */}
+      <InstallAppCard />
       {/* Current IELTS weekly test: countdown + one checkmark per part (hides itself when off). */}
       <WeeklyTestCountdown />
       <CheckpointsCard />

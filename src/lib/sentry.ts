@@ -514,9 +514,13 @@ function onEarlyRejection(e: PromiseRejectionEvent) {
   bufferError(e.reason);
 }
 
+// Tags set before the SDK arrived (display_mode, from src/services/pwaInstall.ts), applied on init.
+const tags: Record<string, string> = {};
+
 function applyUser(s: SentrySdk) {
   s.setUser(buildSentryUser(currentUser));
   s.setTag('role', currentUser?.role ?? undefined);
+  for (const [key, value] of Object.entries(tags)) s.setTag(key, value);
 }
 
 /**
@@ -598,4 +602,15 @@ export function reportError(error: unknown, extra?: Record<string, unknown>): vo
 export function setSentryUser(user: SentryUserInput): void {
   currentUser = user;
   if (sdk) applyUser(sdk);
+}
+
+/** A tag on every later event, e.g. display_mode=standalone. Kept until the SDK loads. */
+export function setSentryTag(key: string, value: string): void {
+  tags[key] = value;
+  if (sdk) sdk.setTag(key, value);
+}
+
+/** A breadcrumb (no PII: event names and platform only). Dropped before the SDK loads. */
+export function addSentryBreadcrumb(category: string, message: string, data?: Record<string, string | number | boolean>): void {
+  if (sdk) sdk.addBreadcrumb({ category, message, level: 'info', ...(data ? { data } : {}) });
 }

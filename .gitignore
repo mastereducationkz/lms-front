@@ -102,3 +102,6 @@ temp/
 # Claude Code worktrees and macOS metadata
 .claude/worktrees/
 .DS_Store
+
+# Generated at build by scripts/generate-pwa-icons.mjs (prebuild)
+public/splash/

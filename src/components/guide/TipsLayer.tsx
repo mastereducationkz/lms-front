@@ -9,6 +9,7 @@ import { visibleInViewport } from '@/lib/guide/geometry';
 import { findShown, isShown, otherDialogOpen, viewportSize } from './dom';
 import { TipCard } from './GuideCards';
 import { tipGotIt, tipsFor, type TipDefinition } from './tips';
+import { tourStore } from './tourStore';
 import { useAnchoredCard } from './useAnchoredCard';
 
 /** How often the page is looked at while a tip is waiting for its element. */
@@ -47,6 +48,11 @@ function TipBubble({ tip, el, onGotIt }: { tip: TipDefinition; el: HTMLElement; 
 export default function TipsLayer({ role, pathname, busy, dismissed, onDismiss }: Props) {
   const candidates = useMemo(() => tipsFor(role, pathname, dismissed), [role, pathname, dismissed]);
   const [active, setActive] = useState<{ tip: TipDefinition; el: HTMLElement } | null>(null);
+  // Tell the dashboard prompts (lib/dashboardPrompt) a tip is up, so they don't pile on.
+  useEffect(() => {
+    tourStore.setTip(active !== null);
+  }, [active]);
+  useEffect(() => () => tourStore.setTip(false), []);
 
   useEffect(() => {
     setActive(null);

@@ -8,8 +8,11 @@ import { THEME_COLORS } from '../lib/theme';
 function ThemeColorSync() {
   const { resolvedTheme } = useTheme();
   useEffect(() => {
-    const meta = document.querySelector('meta[name="theme-color"]');
-    if (meta && resolvedTheme) meta.setAttribute('content', resolvedTheme === 'dark' ? THEME_COLORS.dark : THEME_COLORS.light);
+    if (!resolvedTheme) return;
+    // index.html has one meta per device scheme; a pick that differs from the device's must win in both.
+    document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+      meta.setAttribute('content', resolvedTheme === 'dark' ? THEME_COLORS.dark : THEME_COLORS.light);
+    });
   }, [resolvedTheme]);
   return null;
 }

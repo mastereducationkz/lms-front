@@ -5,14 +5,21 @@
     <link rel="icon" type="image/x-icon" href="/src/assets/masteredlogo-ico.ico"/>
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
     <meta name="referrer" content="strict-origin-when-cross-origin"/>
-    <meta name="theme-color" content="#0f172a"/>
+    <!-- The page background of each theme; ThemeProvider rewrites both when someone picks a theme. -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff"/>
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#121317"/>
+    <meta name="application-name" content="Master LMS"/>
+    <meta name="mobile-web-app-capable" content="yes"/>
     <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <!-- "default": a solid status bar painted with theme-color, so it follows light and dark and
+         never sits over the top bar the way black-translucent would. -->
     <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
-    <meta name="apple-mobile-web-app-title" content="LMS"/>
+    <meta name="apple-mobile-web-app-title" content="Master LMS"/>
     <link rel="apple-touch-icon" href="/icons/icon-192.png"/>
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png"/>
     <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png"/>
-    <title>LMS | Master Education</title>
+    <!-- pwa:ios-splash -->
+    <title>Master LMS</title>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   </head>
