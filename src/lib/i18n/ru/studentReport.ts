@@ -1,9 +1,8 @@
 import type { studentReport as en } from '../en/studentReport';
 import type { RuTable } from '../types';
 
-// Curators read this page every day: the text is the page's Russian as it always was. Where
-// English needs a plural, the Russian keeps its one wording in every form («5 попыток»,
-// «1 попыток» alike) rather than changing what curators see.
+// Curators read this page every day: the text is the page's Russian as it always was, except
+// that counts now agree with their number («1 попытка», «5 попыток»).
 export const studentReport: RuTable<typeof en> = {
   'studentReport.title': 'Отчёт об успеваемости — {name}',
   'studentReport.groupSince': '{group} · с {date}',
@@ -24,14 +23,9 @@ export const studentReport: RuTable<typeof en> = {
   'studentReport.stats.attendedOf': '{attended} из {total}',
   'studentReport.stats.pointsOf': '{earned} из {max} баллов',
   'studentReport.stats.avgQuiz': 'Средний квиз',
-  'studentReport.stats.attempts': { one: '{count} попыток', few: '{count} попыток', many: '{count} попыток', other: '{count} попыток' },
+  'studentReport.stats.attempts': { one: '{count} попытка', few: '{count} попытки', many: '{count} попыток', other: '{count} попытки' },
   'studentReport.stats.activityPoints': 'Баллы активности',
-  'studentReport.stats.dailyTasks': {
-    one: '{count} ежедневных заданий',
-    few: '{count} ежедневных заданий',
-    many: '{count} ежедневных заданий',
-    other: '{count} ежедневных заданий',
-  },
+  'studentReport.stats.dailyTasks': { one: '{count} ежедневное задание', few: '{count} ежедневных задания', many: '{count} ежедневных заданий', other: '{count} ежедневного задания' },
 
   'studentReport.section.homework': 'Домашние задания',
   'studentReport.section.weeklySatNuet': 'Еженедельные SAT/NUET тесты',

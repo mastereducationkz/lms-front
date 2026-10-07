@@ -1,15 +1,15 @@
 import type { curatorHomeworks as en } from '../en/curatorHomeworks';
 import type { RuTable } from '../types';
 
-// Curators keep exactly the wording they had, so some counts stay in one form («групп», «заданий», «студентов»).
+// Curators keep the wording they had; counts now agree with their number («1 группа», «5 заданий»).
 export const curatorHomeworks: RuTable<typeof en> = {
   'curatorHomeworks.title': 'Домашние задания',
   'curatorHomeworks.loadError': 'Не удалось загрузить домашние задания',
   'curatorHomeworks.teacherFallback': 'Учитель #{id}',
   'curatorHomeworks.allGroups': 'Все группы',
 
-  'curatorHomeworks.stats.groups': { one: 'групп', few: 'групп', many: 'групп', other: 'групп' },
-  'curatorHomeworks.stats.assignments': { one: 'заданий', few: 'заданий', many: 'заданий', other: 'заданий' },
+  'curatorHomeworks.stats.groups': { one: 'группа', few: 'группы', many: 'групп', other: 'группы' },
+  'curatorHomeworks.stats.assignments': { one: 'задание', few: 'задания', many: 'заданий', other: 'задания' },
   'curatorHomeworks.stats.submitted': 'сдано',
   'curatorHomeworks.stats.notSubmitted': 'не сдано',
   'curatorHomeworks.stats.overdue': 'просрочено',
@@ -22,8 +22,8 @@ export const curatorHomeworks: RuTable<typeof en> = {
   'curatorHomeworks.count.graded': '{graded}/{submitted} оценено',
 
   'curatorHomeworks.group.finished': 'Завершена',
-  'curatorHomeworks.group.assignments': { one: '{count} заданий', few: '{count} заданий', many: '{count} заданий', other: '{count} заданий' },
-  'curatorHomeworks.group.students': { one: '{count} студентов', few: '{count} студентов', many: '{count} студентов', other: '{count} студентов' },
+  'curatorHomeworks.group.assignments': { one: '{count} задание', few: '{count} задания', many: '{count} заданий', other: '{count} задания' },
+  'curatorHomeworks.group.students': { one: '{count} студент', few: '{count} студента', many: '{count} студентов', other: '{count} студента' },
   'curatorHomeworks.group.noAssignments': 'В этой группе нет заданий',
   'curatorHomeworks.group.empty': 'Нет заданий',
 

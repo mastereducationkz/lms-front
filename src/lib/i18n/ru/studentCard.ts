@@ -1,14 +1,14 @@
 import type { studentCard as en } from '../en/studentCard';
 import type { RuTable } from '../types';
 
-// Curators keep exactly the wording they had, so a few counts stay in one form («студентов», «курс(а)»).
+// Curators keep the wording they had; counts now agree with their number («1 студент», «3 курса»).
 export const studentCard: RuTable<typeof en> = {
   'studentCard.az.submitted': 'Сдано',
   'studentCard.az.draft': 'Черновик',
   'studentCard.az.notStarted': 'Не начато',
 
   'studentCard.journal.title': 'Журнал студентов',
-  'studentCard.journal.total': { one: '{count} студентов', few: '{count} студентов', many: '{count} студентов', other: '{count} студентов' },
+  'studentCard.journal.total': { one: '{count} студент', few: '{count} студента', many: '{count} студентов', other: '{count} студента' },
   'studentCard.journal.searchPlaceholder': 'Поиск по имени или email...',
   'studentCard.journal.allGroups': 'Все группы',
   'studentCard.journal.archivedGroup': '{name} (архив)',
@@ -45,7 +45,7 @@ export const studentCard: RuTable<typeof en> = {
 
   'studentCard.stats.attendance': 'Посещаемость',
   'studentCard.stats.attendedOf': '{attended} из {total}',
-  'studentCard.stats.courses': { one: '{count} курс(а)', few: '{count} курс(а)', many: '{count} курс(а)', other: '{count} курс(а)' },
+  'studentCard.stats.courses': { one: '{count} курс', few: '{count} курса', many: '{count} курсов', other: '{count} курса' },
   'studentCard.stats.homework': 'Домашних работ',
   'studentCard.stats.averageScore': 'Ср. балл: {score}',
   'studentCard.stats.noGrades': 'Нет оценок',

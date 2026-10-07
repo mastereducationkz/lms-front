@@ -2,9 +2,8 @@ import type { curatorPages as en } from '../en/curatorPages';
 import type { RuTable } from '../types';
 
 /**
- * Copied exactly from the pages (owner, Q24: curators see no change). The plurals below repeat
- * the one form the pages always printed («Выбрано 1 учеников» included) — fix them on purpose,
- * not as a side effect of the migration.
+ * Copied from the pages (owner, Q24: curators see no change), except that counts now agree with
+ * their number («Выбран 1 ученик», «В 21 группе»).
  */
 export const curatorPages: RuTable<typeof en> = {
   'curatorPages.groups.title': 'Мои группы',
@@ -18,12 +17,7 @@ export const curatorPages: RuTable<typeof en> = {
   'curatorPages.roster.loadFailed': 'Не удалось загрузить состав группы',
   'curatorPages.roster.saved': 'Состав обновлён: +{added} / −{removed}',
   'curatorPages.roster.saveFailed': 'Не удалось сохранить изменения состава',
-  'curatorPages.roster.selected': {
-    one: 'Выбрано {count} учеников',
-    few: 'Выбрано {count} учеников',
-    many: 'Выбрано {count} учеников',
-    other: 'Выбрано {count} учеников',
-  },
+  'curatorPages.roster.selected': { one: 'Выбран {count} ученик', few: 'Выбрано {count} ученика', many: 'Выбрано {count} учеников', other: 'Выбрано {count} ученика' },
   'curatorPages.roster.pendingChanges': '{added} добавить, {removed} удалить',
   'curatorPages.roster.searchPlaceholder': 'Поиск ученика по имени или email…',
   'curatorPages.roster.hint': 'Отметьте, чтобы добавить в группу; снимите отметку у текущих — чтобы удалить.',
@@ -60,12 +54,7 @@ export const curatorPages: RuTable<typeof en> = {
   'curatorPages.curatorDetail.notFound': 'Куратор не найден',
   'curatorPages.curatorDetail.backToDashboard': 'Назад к дашборду',
   'curatorPages.curatorDetail.students': 'Студентов',
-  'curatorPages.curatorDetail.inGroups': {
-    one: 'В {count} группах',
-    few: 'В {count} группах',
-    many: 'В {count} группах',
-    other: 'В {count} группах',
-  },
+  'curatorPages.curatorDetail.inGroups': { one: 'В {count} группе', few: 'В {count} группах', many: 'В {count} группах', other: 'В {count} группах' },
   'curatorPages.curatorDetail.overdue': 'Просрочено',
   'curatorPages.curatorDetail.overdueHomework': 'Просроченные задания',
   'curatorPages.curatorDetail.avgProgressShort': 'Ср. прогресс',
@@ -75,12 +64,7 @@ export const curatorPages: RuTable<typeof en> = {
   'curatorPages.curatorDetail.groupsAndStudents': 'Группы и студенты',
   'curatorPages.curatorDetail.groupsAndStudentsHint': 'Подробная информация о студентах каждой группы',
   'curatorPages.curatorDetail.noGroups': 'У этого куратора нет групп.',
-  'curatorPages.curatorDetail.studentCount': {
-    one: '{count} студентов',
-    few: '{count} студентов',
-    many: '{count} студентов',
-    other: '{count} студентов',
-  },
+  'curatorPages.curatorDetail.studentCount': { one: '{count} студент', few: '{count} студента', many: '{count} студентов', other: '{count} студента' },
   'curatorPages.curatorDetail.overdueCount': '{count} просрочено',
   'curatorPages.curatorDetail.leaderboard': 'Лидерборд',
   'curatorPages.curatorDetail.noStudents': 'Студентов не найдено.',

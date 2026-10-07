@@ -70,6 +70,22 @@ describe('catalogs', () => {
     }
   });
 
+  // A Russian plural whose forms are all the same reads «Выбрано 1 учеников» for one of them.
+  // Only wordings that never inflect may do it: the count after a colon, «видео», abbreviations.
+  const RU_INVARIANT = new Set([
+    'teacher.today.needYou', 'teacher.today.chips.scoresMissing', 'recordings.folders.videos',
+    'achievements.analytics.badges', 'achievements.student.streak', 'studentReport.talk.summary',
+    'studentReport.talk.summaryQuestions', 'studentReport.viewer.points', 'studentCard.profile.streakDays',
+  ]);
+
+  it('inflects every Russian plural (1 урок, 2 урока, 5 уроков)', () => {
+    const flat = Object.entries(ru)
+      .filter((entry): entry is [string, Exclude<Message, string>] => typeof entry[1] !== 'string')
+      .filter(([key, forms]) => forms.one === forms.few && forms.few === forms.many && !RU_INVARIANT.has(key))
+      .map(([key]) => key);
+    expect(flat, 'give these one/few/many forms, or list them in RU_INVARIANT').toEqual([]);
+  });
+
   it('has no empty messages', () => {
     for (const [key, msg] of Object.entries({ ...en, ...ru }) as [string, Message][]) {
       const texts = typeof msg === 'string' ? [msg] : Object.values(msg);
