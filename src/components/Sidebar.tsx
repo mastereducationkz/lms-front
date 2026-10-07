@@ -143,7 +143,7 @@ function getNavigationItems(
     ['/admin/weekly-top-students', t('shell.nav.weeklyTopStudents'), Trophy, 0, ['admin'], 'weekly-top-students-nav', 'admin'],
     ['/admin/announcements', t('shell.nav.announcements'), Megaphone, 0, ['admin', 'head_curator', 'head_teacher'], 'announcements-nav', 'admin'],
     ['/admin/checkpoints', t('shell.nav.satCheckpoints'), ClipboardCheck, 0, ['admin', 'head_curator', 'head_teacher', 'teacher', 'curator'], 'checkpoints-admin-nav', 'admin'],
-    ['/admin/events', t('shell.nav.manageEvents'), Calendar, 0, ['admin'], 'events-management', 'admin'],
+    ['/admin/events', t('shell.nav.manageEvents'), Calendar, 0, ['admin', 'head_teacher'], 'events-management', 'admin'],
     ['/admin/recordings', t('shell.nav.recordingsRollout'), Video, 0, ['admin', 'head_curator', 'head_teacher'], 'recordings-admin-nav', 'admin'],
     ['/exam-results', t('shell.nav.examResults'), ClipboardCheck, 0, ['teacher', 'curator', 'head_curator', 'head_teacher', 'admin'], 'exam-results-nav', 'primary'],
     ['/bluebook-results', t('shell.nav.bluebookResults'), ClipboardCheck, 0, ['teacher', 'curator', 'head_curator', 'head_teacher', 'admin'], 'bluebook-results-nav', 'primary'],
