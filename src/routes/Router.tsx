@@ -508,7 +508,7 @@ export default function Router() {
           } />
 
           <Route path="/admin/events" element={
-            <ProtectedRoute allowedRoles={['admin']}>
+            <ProtectedRoute allowedRoles={['admin', 'head_teacher']}>
               <AppLayout>
                 <EventManagement />
               </AppLayout>
@@ -590,13 +590,13 @@ export default function Router() {
           } />
 
           <Route path="/admin/events/create" element={
-            <ProtectedRoute allowedRoles={['admin']}>
+            <ProtectedRoute allowedRoles={['admin', 'head_teacher']}>
               <CreateEvent />
             </ProtectedRoute>
           } />
 
           <Route path="/admin/events/:eventId/edit" element={
-            <ProtectedRoute allowedRoles={['admin']}>
+            <ProtectedRoute allowedRoles={['admin', 'head_teacher']}>
               <EditEvent />
             </ProtectedRoute>
           } />

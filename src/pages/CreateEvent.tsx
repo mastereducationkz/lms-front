@@ -16,7 +16,7 @@ export default function CreateEvent() {
 
   const handleCancel = () => {
     // Navigate back to appropriate page based on role
-    if (user?.role === 'admin') {
+    if (user?.role === 'admin' || user?.role === 'head_teacher') {
       navigate('/admin/events');
     } else {
       navigate('/calendar');
