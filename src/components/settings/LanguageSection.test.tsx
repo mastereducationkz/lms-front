@@ -4,7 +4,8 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { User } from '../../types';
 
-const h = vi.hoisted(() => ({ save: vi.fn(), toastError: vi.fn() }));
+const h = vi.hoisted(() => ({ save: vi.fn(), toastError: vi.fn(), released: true }));
+vi.mock('../../lib/i18n/release', () => ({ languageSwitchEnabled: () => h.released }));
 vi.mock('../../services/api/auth', () => ({ saveUiLanguage: (language: 'en' | 'ru') => h.save(language) }));
 vi.mock('../../services/api/uiState', () => ({ saveLookupLang: vi.fn(async () => ({})) }));
 vi.mock('sonner', () => ({ toast: { error: h.toastError } }));
@@ -48,9 +49,17 @@ afterEach(() => {
   host?.remove();
   h.save.mockReset();
   h.toastError.mockReset();
+  h.released = true;
 });
 
 describe('Settings → App language', () => {
+  it('only shows the language until the switch is released', async () => {
+    h.released = false;
+    await mount({ id: '4', role: 'curator' });
+    expect(radio('English')).toBeUndefined();
+    expect(host.textContent).toContain('Скоро его можно будет сменить здесь.');
+  });
+
   it('starts on the role’s language and switches a student to Russian', async () => {
     h.save.mockImplementation(async (language: string) => ({ id: 1, role: 'student', ui_language: language }));
     await mount({ id: '1', role: 'student' });

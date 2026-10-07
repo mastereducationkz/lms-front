@@ -19,7 +19,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { EN_NAMESPACES } from '../lib/i18n/en';
-import { RUSSIAN_ALLOWED } from './ui-language.allowlist';
+import { RUSSIAN_ALLOWED, SAME_IN_BOTH_LANGUAGES } from './ui-language.allowlist';
 import { catalogImportFindings, englishFindings, scan, type Finding } from './uiLanguageScan';
 
 const ROOT = path.resolve(__dirname, '../..');
@@ -89,12 +89,15 @@ describe('one UI language per role', () => {
 
 /**
  * Anyone may choose Русский (owner, Q27), so English written straight into a screen stays English
- * for them. ui-language.english-baseline.json holds what is left per file; it may only go down.
+ * for them. Text that reads the same in both languages is listed in SAME_IN_BOTH_LANGUAGES
+ * (ui-language.allowlist.ts); ui-language.english-baseline.json holds anything else left per file
+ * and may only go down (it is empty: keep it so).
  * Refresh it after moving copy into the catalog with
  *   UPDATE_UI_LANGUAGE_BASELINE=1 ./node_modules/.bin/vitest run src/test/ui-language.test.ts
  */
 describe('English written straight into screens (ratchet)', () => {
-  const english = countByFile(englishFindings(ROOT));
+  const allEnglish = englishFindings(ROOT);
+  const english = countByFile(allEnglish.filter((f) => !(f.text in SAME_IN_BOTH_LANGUAGES)));
   if (process.env.UPDATE_UI_LANGUAGE_BASELINE) {
     fs.writeFileSync(ENGLISH_BASELINE_PATH, `${JSON.stringify(Object.fromEntries(Object.entries(english).sort()), null, 2)}\n`);
   }
@@ -105,6 +108,11 @@ describe('English written straight into screens (ratchet)', () => {
       .filter(([file, n]) => n > (baseline[file] ?? 0))
       .map(([file, n]) => `${file}: ${n} (baseline ${baseline[file] ?? 0}) — show new copy through t()`);
     expect(over).toEqual([]);
+  });
+
+  it('lists only text that still appears in SAME_IN_BOTH_LANGUAGES', () => {
+    const seen = new Set(allEnglish.map((f) => f.text));
+    expect(Object.keys(SAME_IN_BOTH_LANGUAGES).filter((text) => !seen.has(text)), 'remove these').toEqual([]);
   });
 
   it('only ever lowers the English baseline', () => {

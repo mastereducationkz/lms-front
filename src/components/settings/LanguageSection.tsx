@@ -7,6 +7,7 @@ import '@/lib/i18n/catalogs/settings';
 import { useLookupLang } from '../lesson/lookup/lookupLang';
 import type { LookupLang } from '../../services/api/lookup';
 import { saveUiLanguage } from '../../services/api/auth';
+import { languageSwitchEnabled } from '../../lib/i18n/release';
 import { Segmented, SettingsRow, SettingsSection } from './SettingsSection';
 
 /**
@@ -40,17 +41,26 @@ export default function LanguageSection() {
 
   return (
     <SettingsSection id="language" title={t('settings.language.title')} description={t('settings.language.description')}>
-      <SettingsRow label={t('settings.language.app')} description={t('settings.language.appNote')}>
-        <Segmented<Locale>
-          label={t('settings.language.app')}
-          value={locale}
-          onChange={chooseLanguage}
-          options={[
-            { value: 'en', label: t('settings.language.english') },
-            { value: 'ru', label: t('settings.language.russian') },
-          ]}
-        />
-      </SettingsRow>
+      {languageSwitchEnabled() ? (
+        <SettingsRow label={t('settings.language.app')} description={t('settings.language.appNote')}>
+          <Segmented<Locale>
+            label={t('settings.language.app')}
+            value={locale}
+            onChange={chooseLanguage}
+            options={[
+              { value: 'en', label: t('settings.language.english') },
+              { value: 'ru', label: t('settings.language.russian') },
+            ]}
+          />
+        </SettingsRow>
+      ) : (
+        // Hidden until the owner has read the Russian (lib/i18n/release.ts): the language is shown, not offered.
+        <SettingsRow label={t('settings.language.app')} description={t('settings.language.appNoteSoon')}>
+          <span className="rounded-md border border-border bg-muted px-3 py-1.5 text-sm font-medium text-foreground">
+            {locale === 'ru' ? t('settings.language.russian') : t('settings.language.english')}
+          </span>
+        </SettingsRow>
+      )}
       {showLookup && (
         <SettingsRow label={t('settings.language.lookup')} description={t('settings.language.lookupNote')}>
           <Segmented<LookupLang>

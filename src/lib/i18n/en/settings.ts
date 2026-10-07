@@ -60,6 +60,7 @@ export const settings = {
   'settings.language.english': 'English',
   'settings.language.russian': 'Русский',
   'settings.language.appNote': 'Used across the app and in your notifications.',
+  'settings.language.appNoteSoon': 'Set for your role. You’ll be able to change it here soon.',
   'settings.language.saveFailed': 'Couldn’t save your language. Try again.',
   'settings.language.lookup': 'Look Up translates into',
   'settings.language.lookupRu': 'Russian',

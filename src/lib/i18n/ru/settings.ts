@@ -69,6 +69,7 @@ export const settings: RuTable<typeof en> = {
   'settings.language.english': 'English',
   'settings.language.russian': 'Русский',
   'settings.language.appNote': 'Используется во всём приложении и в ваших уведомлениях.',
+  'settings.language.appNoteSoon': 'Зависит от вашей роли. Скоро его можно будет сменить здесь.',
   'settings.language.saveFailed': 'Не удалось сохранить язык. Попробуйте ещё раз.',
   'settings.language.lookup': '«Перевод слова» переводит на',
   'settings.language.lookupRu': 'Русский',
