@@ -16,7 +16,8 @@ export const THEME_OPTIONS: { value: ThemeChoice; label: string; icon: typeof Su
   { value: 'system', label: 'System', icon: Monitor },
 ];
 
-export const THEME_COLORS = { light: '#ffffff', dark: '#0f172a' } as const;
+// The browser/status bar colour per theme: each theme's page background (src/index.css --background).
+export const THEME_COLORS = { light: '#ffffff', dark: '#121317' } as const;
 
 /** Whether a stored choice (or none) renders dark, given the device's setting. */
 export function isDarkChoice(saved: string | null | undefined, systemDark: boolean): boolean {

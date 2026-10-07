@@ -1,4 +1,5 @@
 import { api } from './client';
+import { notePwaHomeworkSubmitted } from '../pwaInstall';
 
 export async function getAssignments(params = {}) {
   try {
@@ -98,6 +99,8 @@ export async function updateAssignment(assignmentId: string, assignmentData: any
 export async function submitAssignment(assignmentId: string, submissionData: any): Promise<any> {
   try {
     const response = await api.post(`/assignments/${assignmentId}/submit`, submissionData);
+    // The first submission is one of the two moments the install card may appear.
+    notePwaHomeworkSubmitted();
     return response.data;
   } catch (error) {
     throw new Error('Failed to submit assignment');

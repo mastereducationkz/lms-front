@@ -2,10 +2,18 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 import path from 'node:path'
+import { SHORTCUTS, splashLinkTags } from './scripts/pwa-assets.mjs'
+
+// iPhone launch screens: scripts/generate-pwa-icons.mjs draws them, this names them in index.html.
+const iosSplashLinks = () => ({
+  name: 'ios-splash-links',
+  transformIndexHtml: (html) => html.replace('<!-- pwa:ios-splash -->', splashLinkTags()),
+})
 
 export default defineConfig({
   plugins: [
     react(),
+    iosSplashLinks(),
     VitePWA({
       strategies: 'injectManifest',
       srcDir: 'public',
@@ -17,26 +25,44 @@ export default defineConfig({
       injectRegister: false,
       includeAssets: ['favicon.ico', 'logo.svg', 'icons/*.png'],
       manifest: {
-        name: 'LMS Platform',
-        short_name: 'LMS',
-        description: 'Learning Management System',
-        theme_color: '#0f172a',
+        // The identity Chrome keys an install on: what start_url "/" already resolved to, so
+        // existing installs stay the same app.
+        id: '/',
+        name: 'Master LMS',
+        short_name: 'Master LMS',
+        description: 'Lessons, homework and reminders from Master Education.',
+        lang: 'en',
+        categories: ['education'],
+        // White like the light theme and the icon's own background; the page's theme-color
+        // metas (index.html, ThemeProvider) take over in dark mode once it loads.
+        theme_color: '#ffffff',
         background_color: '#ffffff',
         display: 'standalone',
         scope: '/',
         start_url: '/',
         orientation: 'portrait-primary',
         icons: [
-          { src: '/icons/icon-72.png', sizes: '72x72', type: 'image/png', purpose: 'any maskable' },
-          { src: '/icons/icon-96.png', sizes: '96x96', type: 'image/png', purpose: 'any maskable' },
-          { src: '/icons/icon-128.png', sizes: '128x128', type: 'image/png', purpose: 'any maskable' },
-          { src: '/icons/icon-144.png', sizes: '144x144', type: 'image/png', purpose: 'any maskable' },
-          { src: '/icons/icon-152.png', sizes: '152x152', type: 'image/png', purpose: 'any maskable' },
-          { src: '/icons/icon-180.png', sizes: '180x180', type: 'image/png', purpose: 'any maskable' },
-          { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
-          { src: '/icons/icon-384.png', sizes: '384x384', type: 'image/png', purpose: 'any maskable' },
-          { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+          ...[72, 96, 128, 144, 152, 180, 192, 384, 512].map((size) => ({
+            src: `/icons/icon-${size}.png`,
+            sizes: `${size}x${size}`,
+            type: 'image/png',
+            purpose: 'any',
+          })),
+          // Logo shrunk into the safe zone, so Android's round/squircle masks never crop it.
+          { src: '/icons/icon-maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: '/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
+        // Shown by Chrome's richer install dialog. Made-up demo data from a local stack.
+        screenshots: [
+          { src: '/screenshots/dashboard-narrow.webp', sizes: '780x1688', type: 'image/webp', form_factor: 'narrow', label: 'Your dashboard on a phone' },
+          { src: '/screenshots/dashboard-wide.webp', sizes: '1440x900', type: 'image/webp', form_factor: 'wide', label: 'Your dashboard on a computer' },
+        ],
+        shortcuts: SHORTCUTS.map(({ name, short_name, url, file }) => ({
+          name,
+          ...(short_name ? { short_name } : {}),
+          url,
+          icons: [{ src: file, sizes: '96x96', type: 'image/png' }],
+        })),
       },
       injectManifest: {
         rollupFormat: 'iife',

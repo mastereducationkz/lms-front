@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Offline | Master LMS</title>
+<script>
+  // The app's own theme pick (next-themes stores it under "theme"), else the device's.
+  (function () {
+    var pick = null
+    try { pick = localStorage.getItem('theme') } catch (e) {}
+    var dark = pick === 'dark' || (pick !== 'light' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches)
+    document.documentElement.className = dark ? 'dark' : 'light'
+  })()
+</script>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #0a0a0a; --muted: #6b6b6b; --border: #e5e5e5;
+    --brand: #2563eb; --solid: #2563eb; --solid-hover: #1d4ed8; --surface: #eff6ff; --ring: #bfdbfe;
+  }
+  :root.dark {
+    --bg: #121317; --fg: #e6e8ec; --muted: #9ca0a9; --border: #393c42;
+    --brand: #60a5fa; --solid: #3363cc; --solid-hover: #4671ce; --surface: #1c263b; --ring: #2f456a;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font: 16px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: grid; place-items: center;
+    padding: max(24px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: var(--ring); color: var(--fg); }
+  main { width: 100%; max-width: 22rem; text-align: center; }
+  .mark {
+    width: 72px; height: 72px; margin: 0 auto 28px; border-radius: 20px;
+    display: grid; place-items: center; color: var(--brand); background: var(--surface);
+    box-shadow: 0 0 0 1px var(--ring) inset;
+  }
+  .mark svg { width: 48px; height: 48px; animation: drift 6s ease-in-out infinite; }
+  @keyframes drift { 50% { transform: rotate(18deg); } }
+  h1 { font-size: 1.5rem; line-height: 1.25; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 8px; text-wrap: balance; }
+  p { margin: 0; color: var(--muted); font-size: 1rem; text-wrap: pretty; }
+  button {
+    margin-top: 28px; width: 100%; min-height: 44px; border: 0; border-radius: 10px;
+    background: var(--solid); color: #fff; font: inherit; font-weight: 600; cursor: pointer;
+    transition: background-color .15s ease-out;
+  }
+  button:hover { background: var(--solid-hover); }
+  button:focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+  .status { margin-top: 16px; font-size: 0.8125rem; color: var(--muted); display: inline-flex; align-items: center; gap: 8px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); animation: pulse 1.6s ease-out infinite; }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--muted) 45%, transparent); } 100% { box-shadow: 0 0 0 8px transparent; } }
+  @media (prefers-reduced-motion: reduce) { .mark svg, .dot { animation: none; } }
+</style>
+</head>
+<body>
+<main>
+  <div class="mark" aria-hidden="true">
+    <svg viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg"><g transform="translate(0.000000,150.000000) scale(0.100000,-0.100000)" fill="currentColor" stroke="none"> <path d="M556 1221 c-8 -13 85 -232 101 -238 22 -9 38 12 62 82 13 36 26 67 30 69 4 3 20 -29 36 -70 29 -70 56 -99 75 -77 19 22 90 227 81 236 -19 19 -38 -3 -65 -77 -16 -42 -31 -76 -36 -76 -4 0 -21 33 -38 73 -25 59 -34 72 -52 72 -19 0 -28 -13 -53 -80 l-30 -79 -14 29 c-7 17 -24 56 -38 88 -23 52 -45 71 -59 48z"/> <path d="M420 1134 c0 -9 23 -43 50 -76 28 -33 50 -64 50 -70 0 -5 -12 -7 -27 -4 -86 16 -136 18 -144 5 -13 -21 -12 -24 42 -89 28 -34 49 -63 47 -66 -3 -2 -44 1 -92 8 -65 8 -90 8 -99 -1 -8 -8 -8 -14 0 -22 12 -12 227 -43 248 -35 25 9 17 35 -32 97 -25 33 -44 61 -42 64 3 2 34 0 69 -5 90 -13 98 -13 105 10 5 15 -12 42 -67 110 -69 84 -108 111 -108 74z"/> <path d="M972 1054 c-61 -81 -70 -98 -61 -115 8 -15 17 -19 42 -14 18 3 53 9 80 14 29 5 47 5 47 -1 0 -5 -20 -36 -45 -68 -49 -63 -52 -72 -32 -89 10 -8 44 -5 128 9 63 11 115 20 117 20 1 0 2 10 2 21 0 20 -4 21 -47 15 -27 -4 -70 -10 -98 -13 l-49 -6 53 66 c39 49 51 72 46 87 -7 23 -6 23 -96 9 -38 -7 -72 -9 -75 -6 -4 3 17 35 45 70 53 67 63 97 34 97 -11 0 -48 -39 -91 -96z"/> <path d="M358 712 c-100 -17 -132 -32 -111 -53 8 -8 34 -7 97 3 47 8 86 11 86 7 0 -5 -20 -35 -45 -68 -49 -64 -52 -73 -32 -90 10 -8 34 -7 91 3 90 16 89 17 21 -73 -43 -56 -53 -91 -26 -91 10 0 91 97 139 166 18 26 19 34 9 48 -12 16 -20 16 -72 7 -113 -21 -114 -20 -54 55 42 53 50 70 42 83 -14 22 -32 22 -145 3z"/> <path d="M997 713 c-15 -14 -5 -37 38 -90 25 -30 45 -58 45 -62 0 -4 -36 -3 -81 3 -66 7 -83 7 -90 -5 -5 -8 -7 -20 -4 -27 10 -26 140 -181 153 -182 31 -1 21 33 -31 97 -31 37 -52 69 -47 71 6 2 42 -1 81 -7 53 -9 75 -9 85 0 21 17 18 27 -24 78 -75 92 -74 84 -12 77 30 -4 75 -10 98 -13 42 -5 44 -4 40 18 -3 22 -10 25 -93 36 -107 14 -149 15 -158 6z"/> <path d="M630 498 c-35 -82 -77 -205 -72 -216 11 -31 37 -2 66 76 17 45 33 82 36 82 3 0 19 -34 35 -75 27 -68 32 -75 55 -73 20 3 29 15 50 70 15 37 29 70 32 73 3 3 21 -31 40 -77 33 -79 59 -106 71 -75 3 7 -16 63 -42 123 -36 85 -52 110 -68 112 -17 3 -25 -6 -41 -50 -11 -29 -25 -66 -32 -83 l-11 -30 -36 83 c-38 87 -63 106 -83 60z"/> </g></svg>
+  </div>
+  <h1>You’re offline</h1>
+  <p>Master LMS needs the internet to open this page. It will reload on its own as soon as you’re back online.</p>
+  <button type="button" id="retry">Try again</button>
+  <div class="status" role="status"><span class="dot" aria-hidden="true"></span><span id="status-text">Waiting for a connection</span></div>
+</main>
+<script>
+  (function () {
+    var reload = function () { location.reload() }
+    document.getElementById('retry').addEventListener('click', reload)
+    window.addEventListener('online', function () {
+      document.getElementById('status-text').textContent = 'Back online. Reloading'
+      setTimeout(reload, 400)
+    })
+  })()
+</script>
+</body>
+</html>

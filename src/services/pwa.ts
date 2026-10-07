@@ -1,4 +1,5 @@
 import { toast } from 'sonner'
+import { pwaLang } from './pwaInstall'
 
 // Poll the server for a newer service worker while a tab stays open, so a
 // long-lived session doesn't get stuck on a stale precached bundle until the
@@ -14,7 +15,7 @@ const FOCUS_CHECK_THROTTLE_MS = 5 * 60 * 1000 // 5 min
 //   - the user backgrounds/hides the tab (reload happens while they're away), or
 //   - the user navigates to another page (see applyPendingPwaUpdate, called by
 //     the router on route change).
-// The "Обновить" toast still lets an active user apply it immediately. In every
+// The "Update" toast still lets an active user apply it immediately. In every
 // case the reload goes through beforeunload, so useUnsavedChangesWarning still
 // guards any in-progress homework.
 let updatePending = false
@@ -126,6 +127,21 @@ export function pickRegisterSW<F>(mod: { registerSW?: F } | null | undefined): F
   return typeof registerSW === 'function' ? registerSW : null
 }
 
+/** The update toast's words: Russian for curators, English for everyone else (the sidebar's rule). */
+export function updateToastCopy(lang: 'ru' | 'en'): { title: string; description: string; action: string } {
+  return lang === 'ru'
+    ? {
+        title: 'Доступна новая версия',
+        description: 'Обновление применится само при переходе на другую страницу. Можно обновить сейчас.',
+        action: 'Обновить',
+      }
+    : {
+        title: 'A new version is ready',
+        description: 'It switches in by itself when you open another page. Or update now.',
+        action: 'Update',
+      }
+}
+
 /**
  * Registers the service worker. New builds are detected proactively
  * (registration.update() on an interval + on tab focus) and then applied at the
@@ -168,11 +184,12 @@ export function registerPwa(): void {
       immediate: true,
       onNeedRefresh() {
         updatePending = true
-        toast('Доступна новая версия', {
-          description: 'Обновление применится автоматически. Нажмите, чтобы применить сейчас.',
+        const copy = updateToastCopy(pwaLang())
+        toast(copy.title, {
+          description: copy.description,
           duration: Infinity,
           action: {
-            label: 'Обновить',
+            label: copy.action,
             onClick: () => {
               applyUpdate()
             },

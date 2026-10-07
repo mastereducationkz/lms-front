@@ -3,6 +3,8 @@ import apiClient from "../services/api";
 import type { User, UserRole } from '../types';
 import { clearOidcSession, isOidcSession } from '../services/oidc';
 import { setSentryUser } from '../lib/sentry';
+import { setPwaUser } from '../services/pwaInstall';
+import { detachPushOnSignOut, syncPushSubscription } from '../services/webPush';
 
 interface AuthContextType {
   // State
@@ -61,6 +63,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     setSentryUser(user ? { id: user.id, email: user.email, name: user.full_name || user.name, role: user.role } : null);
   }, [user?.id, user?.email, user?.full_name, user?.name, user?.role]);
+
+  // The install card's per-person pacing and the update toast's language (services/pwaInstall);
+  // a browser already subscribed to push is re-linked to whoever signed in (services/webPush).
+  useEffect(() => {
+    setPwaUser(user ? { id: user.id, role: user.role, onboardingCompletedAt: user.onboarding_completed_at ?? null } : null);
+    if (user) syncPushSubscription();
+  }, [user?.id, user?.role, user?.onboarding_completed_at]);
 
   // A failed /auth/me should only end the session when the credentials are genuinely
   // rejected (401/403). Network errors, timeouts and 5xx/429 are transient — the backend
@@ -139,6 +148,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async (): Promise<void> => {
     const wasOidc = isOidcSession();
     try {
+      // While the token still works: stop this device's push reminders for the person leaving.
+      await detachPushOnSignOut();
       await apiClient.logout();
     } catch (error) {
       console.error('Logout error:', error);
