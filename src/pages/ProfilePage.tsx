@@ -1,7 +1,8 @@
 /**
  * Profile = who you are (owner, 2026-10-07): the avatar with the Kasatik customiser, name, email
  * and role, your groups with their teacher and curator, and for a student the exam date, target
- * score and achievements. How the app works — theme, password, notifications — is in Settings.
+ * score and achievements; for a teacher, whether others may ask them to substitute. How the app
+ * works — theme, password, notifications — is in Settings.
  */
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
@@ -94,8 +95,6 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {user.role === 'teacher' && <SubstitutionToggle />}
-
       {(hasOwnGroups(user.role) || isStudent) && (
         // Two columns once there is room; a column whose cards all hide themselves (no exam
         // track, targets off) collapses and the other takes the full width.
@@ -109,6 +108,9 @@ export default function ProfilePage() {
           )}
         </div>
       )}
+
+      {/* Work availability, not app behaviour: it stays on Profile, under the groups. */}
+      {user.role === 'teacher' && <SubstitutionToggle />}
 
       {isStudent && <div className="[&>*]:mt-0"><AchievementsTile /></div>}
     </div>
