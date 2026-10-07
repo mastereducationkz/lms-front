@@ -107,6 +107,12 @@ export async function getCurrentUser(): Promise<User> {
   }
 }
 
+/** The signed-in person's own UI language (Settings); null goes back to the role's default. */
+export async function saveUiLanguage(language: 'en' | 'ru' | null): Promise<User> {
+  const response = await api.put('/auth/me/language', { language });
+  return response.data as User;
+}
+
 export async function updateProfile(userId: number, profileData: { name?: string; email?: string }): Promise<User> {
   try {
     const response = await api.put(`/users/${userId}`, profileData);

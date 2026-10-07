@@ -1,28 +1,55 @@
+import { useState } from 'react';
+import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
+import type { Locale } from '../../lib/i18n';
 import { useLocale, useT } from '../../lib/i18n/react';
 import '@/lib/i18n/catalogs/settings';
 import { useLookupLang } from '../lesson/lookup/lookupLang';
 import type { LookupLang } from '../../services/api/lookup';
+import { saveUiLanguage } from '../../services/api/auth';
 import { Segmented, SettingsRow, SettingsSection } from './SettingsSection';
 
 /**
- * The app's language (one per role for now, owner 2026-10-07: read-only here until a per-user
- * switch exists) and Look Up's translation language, the same choice the lesson popover makes.
+ * The app's language — each person's own choice since Q27 (2026-10-07); without one, the role
+ * decides (lib/i18n/locale.ts) — and Look Up's translation language, the same choice the lesson
+ * popover makes. The language names are written in their own language, as every app does.
  */
 export default function LanguageSection() {
   const t = useT();
   const locale = useLocale();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [lookup, setLookup] = useLookupLang();
+  const [saving, setSaving] = useState(false);
   // Parents never read lessons, so Look Up means nothing to them.
   const showLookup = user?.role !== 'parent';
+
+  const chooseLanguage = async (next: Locale) => {
+    if (!user || next === locale || saving) return;
+    setSaving(true);
+    // Switch at once; the saved record follows (and puts it back if the save fails).
+    updateUser({ ...user, ui_language: next });
+    try {
+      updateUser(await saveUiLanguage(next));
+    } catch {
+      updateUser(user);
+      toast.error(t('settings.language.saveFailed'));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <SettingsSection id="language" title={t('settings.language.title')} description={t('settings.language.description')}>
       <SettingsRow label={t('settings.language.app')} description={t('settings.language.appNote')}>
-        <span className="rounded-md border border-border bg-muted px-3 py-1.5 text-sm font-medium text-foreground">
-          {locale === 'ru' ? t('settings.language.russian') : t('settings.language.english')}
-        </span>
+        <Segmented<Locale>
+          label={t('settings.language.app')}
+          value={locale}
+          onChange={chooseLanguage}
+          options={[
+            { value: 'en', label: t('settings.language.english') },
+            { value: 'ru', label: t('settings.language.russian') },
+          ]}
+        />
       </SettingsRow>
       {showLookup && (
         <SettingsRow label={t('settings.language.lookup')} description={t('settings.language.lookupNote')}>

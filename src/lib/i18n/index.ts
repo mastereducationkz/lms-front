@@ -9,7 +9,7 @@
  *   formatDate(iso) / formatTime / formatDateTime / formatNumber
  *   uiLocale(role)                              → the rule: curators read Russian, everyone else English
  */
-export { activeLocale, intlLocale, isLocale, localeForUser, LOCALES, setActiveLocale, uiLocale, userLanguagePreference, type Locale } from './locale';
+export { activeLocale, deviceLocale, intlLocale, isLocale, localeForUser, LOCALES, rememberDeviceLocale, setActiveLocale, uiLocale, userLanguagePreference, type Locale } from './locale';
 export { hasMessage, plural, t, type TFunction } from './translate';
 export { DATE, DATE_TIME, formatDate, formatDateTime, formatNumber, formatTime, TIME, type DateInput } from './format';
 export type { MessageKey } from './en';
