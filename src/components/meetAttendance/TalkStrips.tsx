@@ -9,6 +9,7 @@ import {
 } from '../../lib/meetTalk';
 import { t, type Locale } from '../../lib/i18n';
 import type { TalkPerson, TalkRecord, TalkRole } from '../../services/api/meetTalk';
+import '@/lib/i18n/catalogs/meet';
 
 // Three shades per role for a minute: a few words, a sentence or two, most of the minute.
 // Written out whole so Tailwind keeps every class.

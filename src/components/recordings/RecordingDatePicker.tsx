@@ -6,6 +6,7 @@ import { almatyDayKey, shortDate, type Locale } from '../../lib/recordings';
 import { monthTitle, monthWeeks, shiftMonth, thisMonth, weekdayNames } from '../../lib/recordingCalendar';
 import { listRecordingDays, type RecordingDays, type RecordingDaysQuery } from '../../services/api/recordings';
 import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/recordings';
 
 interface Props {
   /** The chosen Almaty day, "YYYY-MM-DD", or null for every date. */

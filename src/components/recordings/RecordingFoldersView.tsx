@@ -11,6 +11,7 @@ import {
 import { dayHeading, groupByDay, type Locale } from '../../lib/recordings';
 import type { MessageKey } from '../../lib/i18n';
 import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/recordings';
 
 const PAGE_SIZE = 24;
 const FOLDER_BUTTON_CLASS = 'inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition hover:bg-muted';

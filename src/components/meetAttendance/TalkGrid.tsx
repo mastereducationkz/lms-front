@@ -10,6 +10,7 @@ import {
 import { t, type Locale, type MessageKey, type Params } from '../../lib/i18n';
 import { columnAt } from '../../lib/transcriptFollow';
 import type { TalkRecord, TalkRole } from '../../services/api/meetTalk';
+import '@/lib/i18n/catalogs/meet';
 
 /** One block picked in the grid: a person's (or, with key null, the class's) five minutes. */
 export interface TalkFocus {

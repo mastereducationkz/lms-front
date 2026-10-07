@@ -22,6 +22,7 @@ import type { MessageKey } from '../lib/i18n';
 import { useLocale, useT } from '../lib/i18n/react';
 import { summaryHint, summaryLine, type RecordingViewSummary } from '../lib/recordingViews';
 import { getRecordingViewSummary } from '../services/api/recordingViews';
+import '@/lib/i18n/catalogs/recordings';
 
 const PAGE_SIZE = 24;
 type StatusFilter = 'all' | 'ready' | 'pending' | 'failed';

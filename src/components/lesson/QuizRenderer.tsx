@@ -42,6 +42,7 @@ import {
   getQuestionStatus,
   isAnswerComplete
 } from './quiz/scoring';
+import '@/lib/i18n/catalogs/learning';
 
 // Exam mode badge component
 const ExamModeBadge = ({ maxPlays }: { maxPlays: number }) => (

@@ -1,5 +1,6 @@
 // Day and unread separators for the message list, ported from the mobile client.
 import { activeLocale, formatDate, formatTime, t, type Locale } from '../../lib/i18n';
+import '@/lib/i18n/catalogs/shell';
 
 export function isSameDay(a: string, b: string) {
   const d1 = new Date(a);

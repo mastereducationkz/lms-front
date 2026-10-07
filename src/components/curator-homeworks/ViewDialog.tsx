@@ -14,6 +14,7 @@ import { safeUploadUrl } from '../../lib/mediaUrl';
 import type { StudentProgress, AssignmentData, SubmissionDetails } from './types';
 import { formatDateTime, type Locale } from '../../lib/i18n';
 import { useLocale, useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/attendance';
 
 interface ViewDialogProps {
   open: boolean;

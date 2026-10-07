@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import { materialsBadgeVariant } from '../../lib/classMaterials';
 import { useT } from '../../lib/i18n/react';
 import ClassMaterialsSection from './ClassMaterialsSection';
+import '@/lib/i18n/catalogs/attendance';
 
 interface Props {
   eventId: number | null | undefined;

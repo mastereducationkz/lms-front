@@ -17,6 +17,7 @@ import type {
   TeachersTalk,
   TranscriptLine,
 } from '../services/api/meetTalk';
+import '@/lib/i18n/catalogs/meet';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 

@@ -7,6 +7,8 @@
  *    ru/<area>.ts and show it with t('<area>.key') or useT().
  *  - No language chosen by a role check, no 'ru-RU', and no toLocale*String() without a locale:
  *    use formatDate / formatTime / formatDateTime / formatNumber from lib/i18n.
+ *  - A file that shows '<area>.…' keys imports '@/lib/i18n/catalogs/<area>' (catalogs load with
+ *    the screens that use them, not up front).
  *
  * ui-language.baseline.json is a ratchet for legacy per-module en/ru tables that already follow
  * the locale: a file's count may only go down. After migrating one, refresh it with
@@ -16,8 +18,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { EN_NAMESPACES } from '../lib/i18n/en';
 import { RUSSIAN_ALLOWED } from './ui-language.allowlist';
-import { scan, type Finding } from './uiLanguageScan';
+import { catalogImportFindings, scan, type Finding } from './uiLanguageScan';
 
 const ROOT = path.resolve(__dirname, '../..');
 const BASELINE_PATH = path.join(__dirname, 'ui-language.baseline.json');
@@ -67,6 +70,11 @@ describe('one UI language per role', () => {
   it("formats dates and numbers through lib/i18n (no 'ru-RU', no browser locale)", () => {
     const formatting = findings.filter((f) => f.kind === 'ru-RU' || f.kind === 'no-locale');
     expect(formatting, `use formatDate/formatTime/formatDateTime/formatNumber:\n${report(formatting)}`).toEqual([]);
+  });
+
+  it('imports the catalog of every area whose keys a file shows', () => {
+    const missing = catalogImportFindings(ROOT, EN_NAMESPACES);
+    expect(missing, `add the side-effect import:\n${report(missing)}`).toEqual([]);
   });
 
   it('lists only allowlisted files that exist and still need it', () => {

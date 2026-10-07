@@ -10,6 +10,7 @@ import { WhatsNewButton } from './PlatformUpdatesModal';
 import PointsDisplay from './gamification/PointsDisplay';
 import NotificationsBell from './NotificationsBell';
 import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/shell';
 
 interface TopbarProps {
   onOpenSidebar: () => void;

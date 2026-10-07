@@ -6,6 +6,7 @@ import { NOTE_LIMIT, stampKz } from '../../lib/classLessonPage';
 import type { MessageKey } from '../../lib/i18n';
 import { useLocale, useT } from '../../lib/i18n/react';
 import { saveLessonNote, type LessonNote, type LessonView, type NoteKind } from '../../services/api/classLessons';
+import '@/lib/i18n/catalogs/classLesson';
 
 const KINDS: Record<NoteKind, { label: MessageKey; hint: MessageKey }> = {
   plan: { label: 'classLesson.notes.plan', hint: 'classLesson.notes.planHint' },

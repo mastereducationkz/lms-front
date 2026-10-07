@@ -5,6 +5,7 @@ import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import { removeRecording } from '../../services/api/recordings';
 import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/recordings';
 
 interface Props {
   eventId: number;

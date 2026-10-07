@@ -15,6 +15,7 @@ import {
   confirmInvitationLinks, getInvitationLinks, setInvitationLink,
   type InvitationGroupRow, type InvitationLinks,
 } from '../../services/api/announcements';
+import '@/lib/i18n/catalogs/announcements';
 
 type View = 'all' | 'suggested' | 'linked' | 'unlinked';
 

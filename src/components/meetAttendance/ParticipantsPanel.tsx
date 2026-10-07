@@ -17,6 +17,7 @@ import {
 import { t, type Locale, type MessageKey } from '../../lib/i18n';
 import { useLocale } from '../../lib/i18n/react';
 import type { MeetFlag, MeetMark, MeetWaitingStage } from '../../services/api/meetAttendance';
+import '@/lib/i18n/catalogs/meet';
 
 const STAGE: Record<MeetWaitingStage, MessageKey> = {
   lesson_running: 'meet.participants.stageLessonRunning',

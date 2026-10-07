@@ -5,6 +5,7 @@ import Loader from '../components/Loader';
 import { getEventDetails } from '../services/api';
 import type { Event } from '../types';
 import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/adminTools';
 
 export default function EditEvent() {
   const { eventId } = useParams<{ eventId: string }>();

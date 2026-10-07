@@ -1,6 +1,7 @@
 import type { LessonSection } from './lessonLinks';
 import type { TodayLesson } from '../services/api/classLessons';
 import { activeLocale, t, type Locale, type MessageKey, type Params } from './i18n';
+import '@/lib/i18n/catalogs/teacher';
 
 /**
  * «Today» on the teacher dashboard (owner, 2026-09-28): what each of today's lessons still needs, as short

@@ -6,6 +6,7 @@
 import { applyPart } from '../components/mascot/config';
 import { activeLocale, t, type Locale } from './i18n';
 import type { Achievement, AchievementReward, AchievementTier, GroupStars, StarAward } from '../services/api/achievementsUi';
+import '@/lib/i18n/catalogs/achievements';
 
 export const TOTAL_LABEL = (list: Achievement[]) => `${list.filter((a) => a.unlocked).length} / ${list.length}`;
 

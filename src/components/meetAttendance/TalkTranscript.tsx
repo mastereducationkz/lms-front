@@ -6,6 +6,7 @@ import { t, type Locale, type MessageKey, type Params } from '../../lib/i18n';
 import { currentLineIndex, isSpeaking, lessonAt, revealScrollTop } from '../../lib/transcriptFollow';
 import type { TalkRole, TalkTranscript as TranscriptData, TranscriptLine } from '../../services/api/meetTalk';
 import type { TalkFocus } from './TalkGrid';
+import '@/lib/i18n/catalogs/meet';
 
 const TRANSCRIPT_STATE: Record<Exclude<TranscriptData['state'], 'ready'>, MessageKey> = {
   pending: 'meet.transcript.statePending',

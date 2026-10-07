@@ -1,5 +1,6 @@
 import type { Event } from '../types';
 import { activeLocale, intlLocale, t, type Locale } from './i18n';
+import '@/lib/i18n/catalogs/recordings';
 
 /**
  * The pure half of lesson recordings: how durations, days and lesson names read, and which

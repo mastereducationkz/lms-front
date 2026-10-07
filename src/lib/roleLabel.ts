@@ -1,4 +1,5 @@
 import { activeLocale, t, type Locale, type MessageKey } from './i18n';
+import '@/lib/i18n/catalogs/shell';
 
 /** Human names for user roles, shown wherever a role is displayed (never the raw `head_teacher`),
  *  in the viewer's language: an admin reads "Curator", a head curator «Куратор». */

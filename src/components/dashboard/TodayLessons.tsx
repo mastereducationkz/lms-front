@@ -11,6 +11,7 @@ import { formatDate, formatDateTime } from '../../lib/i18n';
 import { useLocale, useT } from '../../lib/i18n/react';
 import { groupLine, lessonChips, todaySummary, type ChipTone, type TodayChip } from '../../lib/todayLessons';
 import { getTodayLessons, type TodayLesson, type TodayLessons as TodayData } from '../../services/api/classLessons';
+import '@/lib/i18n/catalogs/teacher';
 
 // The day moves on its own: a lesson starts, a register gets marked, a recording lands.
 const REFRESH_MS = 60_000;

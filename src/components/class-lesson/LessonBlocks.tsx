@@ -4,6 +4,7 @@ import { cn } from '../../lib/utils';
 import { clockKz, stampKz } from '../../lib/classLessonPage';
 import { t as translate, type Locale, type MessageKey, type Params } from '../../lib/i18n';
 import type { LessonHomework, LessonView } from '../../services/api/classLessons';
+import '@/lib/i18n/catalogs/classLesson';
 
 /*
  * These blocks take the viewer's `locale` as a prop rather than calling useT(): the Google Meet

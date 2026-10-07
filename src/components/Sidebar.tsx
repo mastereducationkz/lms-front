@@ -54,6 +54,7 @@ import { replayLabel } from '@/components/guide/tours';
 import { requestTourReplay } from '@/components/guide/tourStore';
 import { useT } from '@/lib/i18n/react';
 import type { TFunction } from '@/lib/i18n';
+import '@/lib/i18n/catalogs/shell';
 
 /** Only three groups: primary nav, curator tools, admin tools */
 type NavCategory = 'primary' | 'curator' | 'admin';

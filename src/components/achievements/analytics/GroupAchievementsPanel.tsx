@@ -11,6 +11,7 @@ import { useT } from '@/lib/i18n/react';
 import RarityTable from './RarityTable';
 import StarsByStaff from './StarsByStaff';
 import { Empty, PersonRow, StatCard } from './parts';
+import '@/lib/i18n/catalogs/achievements';
 
 const OPEN_KEY = 'group-achievements-open';
 

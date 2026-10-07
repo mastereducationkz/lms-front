@@ -1,4 +1,5 @@
 import { activeLocale, formatDate, t, type Locale } from './i18n'
+import '@/lib/i18n/catalogs/shell';
 
 type GroupScheduleItem = {
   day_of_week?: number

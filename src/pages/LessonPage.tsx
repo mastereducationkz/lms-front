@@ -28,6 +28,7 @@ import { getAnswerKey, scoreQuiz } from '../components/lesson/quiz/scoring';
 import { isQuizScorePassing, resolveQuizPassingScorePercent } from '../utils/quizPassingScore';
 import { canEditCourseContent, isStaffPreview, seesCorrectAnswers } from '../lib/courseAccess';
 import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/learning';
 
 // Utility function to extract correct answers from gap text
 // If an option ends with *, it's the correct answer (without the *)

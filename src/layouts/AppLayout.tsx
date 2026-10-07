@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext.tsx';
 import apiClient from '../services/api';
 import { hideReferral, readReferralHidden, useAttention } from '../lib/attention';
 import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/shell';
 
 interface AppLayoutProps {
   children: React.ReactNode;

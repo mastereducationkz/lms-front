@@ -14,6 +14,7 @@ import LinkTaskEditor from './LinkTaskEditor';
 import FileUploadEditor from './FileUploadEditor';
 import PdfTextTaskEditor from './PdfTextTaskEditor';
 import { AnswerKeyEditor } from './AnswerKeyEditor';
+import '@/lib/i18n/catalogs/teacher';
 
 interface Task {
   id: string;

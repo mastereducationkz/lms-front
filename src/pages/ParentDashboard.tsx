@@ -6,6 +6,7 @@ import { getMyChildren, type ParentChild } from '../services/api';
 import { ChildTargets } from '../components/parents/ChildTargets';
 import Skeleton from '../components/Skeleton.tsx';
 import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/parent';
 
 export default function ParentDashboard() {
   const { user } = useAuth();

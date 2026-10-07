@@ -3,6 +3,7 @@ import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAx
 import type { AchievementsAnalytics } from '@/services/api/achievementsAnalytics';
 import { weekLabel } from '@/lib/achievementsAnalytics';
 import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/achievements';
 
 const AXIS = { fontSize: 11, fill: 'currentColor' };
 const TIP = {

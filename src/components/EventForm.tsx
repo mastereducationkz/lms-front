@@ -43,6 +43,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { toDatetimeLocal, fromDatetimeLocalKZ } from '../lib/datetime';
 import { roleLabel } from '@/lib/roleLabel';
 import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/adminTools';
 
 interface EventFormProps {
   event?: Event;

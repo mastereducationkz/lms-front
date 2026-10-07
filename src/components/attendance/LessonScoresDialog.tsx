@@ -8,6 +8,7 @@ import { useT } from '../../lib/i18n/react';
 import { canScore, changedScores, lessonStarted, scoredCount } from '../../lib/lessonScores';
 import { getEventParticipants, saveActivityScores } from '../../services/api/events';
 import type { EventStudent } from '../../types';
+import '@/lib/i18n/catalogs/attendance';
 
 interface Props {
   open: boolean;

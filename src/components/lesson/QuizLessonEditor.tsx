@@ -21,6 +21,7 @@ import {
   DEFAULT_QUIZ_PASSING_SCORE_OPTIONAL,
   DEFAULT_QUIZ_PASSING_SCORE_REQUIRED,
 } from '../../utils/quizPassingScore';
+import '@/lib/i18n/catalogs/adminTools';
 
 export interface QuizLessonEditorProps {
   quizTitle: string;

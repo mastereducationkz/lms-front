@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Target } from 'lucide-react';
 import { band, getStudentTargets, score, type TargetsPayload } from '../../services/api/targets';
 import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/parent';
 
 /**
  * Parent dashboard: a read-only line per exam track for one child — target vs current level.

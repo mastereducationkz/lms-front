@@ -1,5 +1,6 @@
 import { toast } from 'sonner'
 import { t } from '../lib/i18n'
+import '@/lib/i18n/catalogs/shell';
 
 // Poll the server for a newer service worker while a tab stays open, so a
 // long-lived session doesn't get stuck on a stale precached bundle until the

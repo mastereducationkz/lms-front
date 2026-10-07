@@ -14,6 +14,7 @@ import {
 } from '../../services/api/calendarFeeds';
 import { canAddToGoogle, sortGroupCalendars, webcalUrl } from '../../lib/calendarFeeds';
 import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/calendar';
 
 /**
  * «Подписаться» on the Calendar page: add a group's calendar to Google (a real Google Calendar

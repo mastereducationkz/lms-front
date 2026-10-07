@@ -11,6 +11,7 @@ import ScoresCard from './ScoresCard';
 import LiveCard from './LiveCard';
 import NotesCard from './NotesCard';
 import MaterialsCard from './MaterialsCard';
+import '@/lib/i18n/catalogs/classLesson';
 
 // The lesson page's rhythm: the room and «скоро → идёт» move a minute at a time.
 const POLL_MS = 60_000;

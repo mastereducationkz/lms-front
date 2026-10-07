@@ -28,6 +28,7 @@ import apiClient from '../services/api';
 import { changePassword } from '../services/api/auth';
 import { toast } from '../components/Toast';
 import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/settings';
 
 interface CourseItem {
   id: number;

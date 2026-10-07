@@ -2,6 +2,7 @@
 // Teacher Attendance pages, so both offer the same subject/date/teacher search.
 import type { CourseType, Group } from '../types';
 import { activeLocale, t, type Locale } from './i18n';
+import '@/lib/i18n/catalogs/shell';
 
 export const PROGRAM_LABELS: Record<CourseType, string> = {
   sat: 'SAT',

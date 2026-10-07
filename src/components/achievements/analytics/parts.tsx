@@ -6,6 +6,7 @@ import UserAvatar from '@/components/mascot/UserAvatar';
 import type { AnalyticsPerson } from '@/services/api/achievementsAnalytics';
 import type { MessageKey } from '@/lib/i18n';
 import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/achievements';
 
 const TIER_LABEL: Record<AchievementTier, MessageKey> = {
   earned: 'achievements.tier.earned',

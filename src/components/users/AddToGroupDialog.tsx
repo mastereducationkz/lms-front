@@ -8,6 +8,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '../ui/select';
 import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/users';
 
 interface AddToGroupDialogProps {
   open: boolean;

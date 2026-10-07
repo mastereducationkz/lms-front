@@ -15,6 +15,7 @@ import { StreakHistogram, TrendChart } from '@/components/achievements/analytics
 import StarsByStaff from '@/components/achievements/analytics/StarsByStaff';
 import { GroupsTable, ShareTotals, TopEarners } from '@/components/achievements/analytics/GroupsAndPeople';
 import { Section, StatCard } from '@/components/achievements/analytics/parts';
+import '@/lib/i18n/catalogs/achievements';
 
 const WEEK_OPTIONS = [8, 12, 26];
 

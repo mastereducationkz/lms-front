@@ -6,6 +6,7 @@ import type { AnalyticsGroup, AnalyticsPerson, ShareStats } from '@/services/api
 import { filterGroups } from '@/lib/achievementsAnalytics';
 import { useT } from '@/lib/i18n/react';
 import { Empty, OrcaStack, PersonRow, StatCard } from './parts';
+import '@/lib/i18n/catalogs/achievements';
 
 export function GroupsTable({ groups, onPick }: { groups: AnalyticsGroup[]; onPick?: (id: number) => void }) {
   const t = useT();

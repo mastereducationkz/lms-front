@@ -9,6 +9,7 @@ import { useT } from '../../lib/i18n/react';
 import { copyAnnouncementHtml } from './announcementClipboard';
 import { downloadableHtml, markdownToTelegramHtml, richHtmlToTelegramHtml } from './markdownToHtml';
 import { renderPreviewHtml } from './telegramText';
+import '@/lib/i18n/catalogs/announcements';
 
 interface MarkdownHtmlConverterProps {
   onUse: (html: string) => void;

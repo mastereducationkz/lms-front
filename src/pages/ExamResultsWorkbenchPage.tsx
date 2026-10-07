@@ -23,6 +23,7 @@ import {
   type SatOfficialDate,
   type Testimonial,
 } from '../services/api/exams';
+import '@/lib/i18n/catalogs/exams';
 
 /**
  * The single exam-results screen: triage, reporting, recording and evidence in one

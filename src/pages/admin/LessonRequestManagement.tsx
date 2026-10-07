@@ -18,6 +18,7 @@ import {
 } from '../../components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import TeacherRescheduleStatsPanel from './TeacherRescheduleStatsPanel';
+import '@/lib/i18n/catalogs/lessonRequests';
 
 type Props = {
   variant?: 'admin' | 'head_teacher';

@@ -1,6 +1,7 @@
 import { lessonUrl } from './lessonLinks';
 import { splitLessonTitle, timeRange } from './recordings';
 import { activeLocale, formatDate, t, type Locale } from './i18n';
+import '@/lib/i18n/catalogs/calendar';
 
 /**
  * Point a Google Meet link at the viewer's work account.

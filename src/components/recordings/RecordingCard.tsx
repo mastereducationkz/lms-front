@@ -7,6 +7,7 @@ import { viewsHint, viewsLine } from '../../lib/recordingViews';
 import { useT } from '../../lib/i18n/react';
 import { cx } from '../calendar/calendarUtils';
 import { ProgressBar, RecordingCardStage, RecordingStageBadge } from './RecordingProgress';
+import '@/lib/i18n/catalogs/recordings';
 
 // How long a card that has just become watchable says so, before it looks like every other card.
 const JUST_READY_MS = 4_000;

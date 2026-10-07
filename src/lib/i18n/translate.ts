@@ -1,9 +1,26 @@
-import { en, type MessageKey } from './en';
+import type { MessageKey } from './en';
+import { common as enCommon } from './en/common';
 import { activeLocale, intlLocale, type Locale } from './locale';
-import { ru } from './ru';
-import type { Message, Params, PluralForms } from './types';
+import { common as ruCommon } from './ru/common';
+import type { Message, MessageTable, Params, PluralForms } from './types';
 
-const CATALOGS: Record<Locale, Readonly<Record<string, Message>>> = { en, ru };
+/**
+ * The messages this page has loaded. Each area's catalog travels with the code that shows it:
+ * src/lib/i18n/catalogs/<area>.ts registers both languages and is imported (for that effect) by
+ * every file that names one of its keys, so a screen's copy downloads with the screen rather than
+ * every visitor fetching every screen's text up front. ui-language.test.ts checks those imports.
+ */
+const CATALOGS: Record<Locale, Record<string, Message>> = { en: { ...enCommon }, ru: { ...ruCommon } };
+
+export function registerMessages(en: MessageTable, ru: Readonly<Record<string, Message>>): void {
+  Object.assign(CATALOGS.en, en);
+  Object.assign(CATALOGS.ru, ru);
+}
+
+/** Whether `key` names a loaded message (for keys built from server data). */
+export function hasMessage(key: string): key is MessageKey {
+  return key in CATALOGS.en;
+}
 
 export type TFunction = (key: MessageKey, params?: Params) => string;
 
@@ -13,7 +30,7 @@ export type TFunction = (key: MessageKey, params?: Params) => string;
  * the Russian catalog falls back to English — the catalog test makes sure none is.
  */
 export function t(key: MessageKey, params?: Params, locale: Locale = activeLocale()): string {
-  const message = CATALOGS[locale][key] ?? en[key];
+  const message = CATALOGS[locale][key] ?? CATALOGS.en[key];
   if (message === undefined) return key;
   const text = typeof message === 'string' ? message : pluralForm(message, Number(params?.count), locale);
   return params ? interpolate(text, params) : text;

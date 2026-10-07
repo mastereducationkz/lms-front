@@ -19,6 +19,7 @@ import { useLocale, useT } from '../lib/i18n/react';
 import {
   getLesson, LessonLoadError, type LessonNote, type LessonView, type NoteKind,
 } from '../services/api/classLessons';
+import '@/lib/i18n/catalogs/classLesson';
 
 // The live room and the move from «скоро» to «идёт» are a minute apart at most.
 const POLL_MS = 60_000;

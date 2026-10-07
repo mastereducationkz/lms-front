@@ -11,6 +11,7 @@ import type { CourseType } from '../../types';
 import { cn } from '../../lib/utils';
 import { formatDate, type Locale } from '../../lib/i18n';
 import { useLocale, useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/attendance';
 
 // Canonical program order for the filter tabs.
 const PROGRAM_ORDER: CourseType[] = ['sat', 'ielts', 'nuet', 'general_english'];

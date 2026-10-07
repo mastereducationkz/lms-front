@@ -5,6 +5,7 @@ import type {
   LessonStatus, LessonView, LessonViewer, RegisterStudent, UiMark,
 } from '../services/api/classLessons';
 import type { Event } from '../types';
+import '@/lib/i18n/catalogs/classLesson';
 
 /**
  * `/lessons/:id` (owner, 2026-09-28): the rules the page follows, kept apart from the components so

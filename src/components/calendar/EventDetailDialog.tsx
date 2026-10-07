@@ -11,6 +11,7 @@ import { cx, formatTime, eventStyle, typeLabel } from './calendarUtils';
 import { substitutionBadge } from '../../lib/substitutionBadge';
 import { formatDate } from '../../lib/i18n';
 import { useLocale, useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/calendar';
 
 interface Props {
   event: Event | null;

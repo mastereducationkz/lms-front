@@ -12,6 +12,7 @@ import {
 import type { Locale, MessageKey } from '../../lib/i18n';
 import { useT } from '../../lib/i18n/react';
 import type { RecordingProgress } from '../../services/api/recordings';
+import '@/lib/i18n/catalogs/recordings';
 
 /**
  * A recording on its way to watchable, shown as what it is (2026-09-15): the stage, how far the

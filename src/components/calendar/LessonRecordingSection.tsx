@@ -8,6 +8,7 @@ import type { Event } from '../../types';
 import { formatClock } from '../../lib/recordings';
 import { useLocale, useT } from '../../lib/i18n/react';
 import { pollInterval, progressFor } from '../../lib/recordingProgress';
+import '@/lib/i18n/catalogs/recordings';
 
 interface Props {
   event: Event;

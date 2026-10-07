@@ -9,6 +9,7 @@ import { isOidcConfigured, startOidcLogin, getLastAccount, oidcStorageAvailable,
 
 import { PlatformSwitcher } from './PlatformSwitcher';
 import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/auth';
 
 export interface Testimonial {
   avatarSrc: string;

@@ -8,6 +8,7 @@ import type { Event } from '../types';
 import type { RecordingStatusEntry } from '../services/api/recordings';
 import { badgeText, pollInterval, progressFor } from './recordingProgress';
 import { activeLocale, t, type Locale, type MessageKey } from './i18n';
+import '@/lib/i18n/catalogs/recordings';
 
 /** Who sees a recording that is not watchable yet — as in the library, students see only finished ones. */
 const STAFF = new Set(['admin', 'head_curator', 'head_teacher', 'teacher', 'curator']);

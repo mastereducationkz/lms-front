@@ -10,6 +10,7 @@ import { toast } from '@/components/Toast';
 import { STAR_REASON_MAX, starQuota, starQuotaLabel, validStarReason } from '@/lib/achievements';
 import { useLocale, useT } from '@/lib/i18n/react';
 import { awardStar, getGroupStars, type GroupStars } from '@/services/api/achievementsUi';
+import '@/lib/i18n/catalogs/achievements';
 
 interface StarOfWeekButtonProps {
   groupId: number;

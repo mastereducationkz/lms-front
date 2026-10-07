@@ -9,6 +9,7 @@ import type { TalkRecord } from '../../services/api/meetTalk';
 import { Headline, Insights, Notes, Section, SplitBar } from './TalkPanel';
 import { TalkStrips } from './TalkStrips';
 import { TalkTranscript } from './TalkTranscript';
+import '@/lib/i18n/catalogs/meet';
 
 type Tab = 'transcript' | 'who';
 

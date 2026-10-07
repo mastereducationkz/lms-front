@@ -9,6 +9,7 @@ import { lessonPath } from '../../lib/lessonLinks';
 import type { MessageKey } from '../../lib/i18n';
 import { useLocale, useT } from '../../lib/i18n/react';
 import type { LessonGroup, LessonStatus, LessonView } from '../../services/api/classLessons';
+import '@/lib/i18n/catalogs/classLesson';
 
 const STATUS: Record<LessonStatus, { label: MessageKey; tone: string }> = {
   upcoming: { label: 'classLesson.status.upcoming', tone: 'bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200' },

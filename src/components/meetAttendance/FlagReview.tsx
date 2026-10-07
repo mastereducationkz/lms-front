@@ -18,6 +18,7 @@ import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
+import '@/lib/i18n/catalogs/meet';
 
 export interface ReviewAnswer {
   reason_code: string | null;

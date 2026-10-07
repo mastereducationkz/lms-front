@@ -14,6 +14,7 @@ import { WatchRecordingButton } from './LessonRecordingCell';
 import { MeetRecordView, recordStateText, useMeetRecord } from './MeetRecordView';
 import { MeetWaitingProgress } from './MeetSyncStatus';
 import TalkPanel, { useLessonTalk } from './TalkPanel';
+import '@/lib/i18n/catalogs/meet';
 
 export type MeetDialogTab = 'attendance' | 'talk';
 

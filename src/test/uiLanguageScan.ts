@@ -7,12 +7,16 @@
  *               by the locale — the language rule lives in lib/i18n only
  *   ru-RU       a hard-coded Russian Intl locale
  *   no-locale   toLocale*String() / Intl formatters with no locale, which follow the browser
+ *
+ * catalogImportFindings adds one more: a file that names an area's keys must import that area's
+ * catalog (src/lib/i18n/catalogs/<area>), or the keys would show up raw on a page that loaded
+ * nothing else from the area.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
 
-export type FindingKind = 'cyrillic' | 'role-gated' | 'ru-RU' | 'no-locale';
+export type FindingKind = 'cyrillic' | 'role-gated' | 'ru-RU' | 'no-locale' | 'catalog-import';
 
 export interface Finding {
   file: string; // relative to the repo root, e.g. src/pages/SettingsPage.tsx
@@ -103,4 +107,37 @@ export function scanFile(root: string, file: string): Finding[] {
 
 export function scan(root: string): Finding[] {
   return sourceFiles(root).filter((f) => !f.startsWith(I18N_DIR)).flatMap((f) => scanFile(root, f));
+}
+
+/** Files that show keys of an area (other than common) without importing its catalog. */
+export function catalogImportFindings(root: string, namespaces: Record<string, Record<string, unknown>>): Finding[] {
+  const keys = new Map(Object.entries(namespaces).filter(([ns]) => ns !== 'common').map(([ns, table]) => [ns, Object.keys(table)]));
+  const findings: Finding[] = [];
+  for (const file of sourceFiles(root)) {
+    if (file.startsWith(I18N_DIR)) continue;
+    const text = fs.readFileSync(path.join(root, file), 'utf8');
+    const sf = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, file.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+    const imported = new Set(
+      sf.statements
+        .filter(ts.isImportDeclaration)
+        .map((d) => (d.moduleSpecifier as ts.StringLiteral).text.match(/i18n\/catalogs\/(\w+)$/)?.[1])
+        .filter((ns): ns is string => !!ns),
+    );
+    const firstUse = new Map<string, ts.Node>();
+    const visit = (node: ts.Node) => {
+      if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateHead(node)) {
+        const value = node.text;
+        const ns = value.split('.')[0];
+        const list = keys.get(ns);
+        if (list && value.length > ns.length + 1 && !firstUse.has(ns) && list.some((k) => k === value || k.startsWith(value))) firstUse.set(ns, node);
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(sf);
+    for (const [ns, node] of firstUse) {
+      if (imported.has(ns)) continue;
+      findings.push({ file, line: sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1, kind: 'catalog-import', text: `uses ${ns}.* keys without import '@/lib/i18n/catalogs/${ns}'` });
+    }
+  }
+  return findings;
 }

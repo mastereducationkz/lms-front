@@ -18,6 +18,7 @@ import type { MessageKey } from '../../lib/i18n';
 import { useLocale, useT } from '../../lib/i18n/react';
 import { live } from '../../services/api/liveLesson';
 import SuggestionBar from '../live-lesson/SuggestionBar';
+import '@/lib/i18n/catalogs/classLesson';
 
 const MARKS: { key: UiMark; tone: string }[] = [
   { key: 'attended', tone: 'bg-emerald-600 text-white border-emerald-600' },

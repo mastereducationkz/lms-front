@@ -25,6 +25,7 @@ import { formatHoursTotal, schedulePreviewPayload } from '../lib/schedulePreview
 import type { Locale } from '../lib/i18n';
 import { useLocale, useT } from '../lib/i18n/react';
 import SchedulePreviewPanel from './SchedulePreviewPanel';
+import '@/lib/i18n/catalogs/schedule';
 
 interface ScheduleGeneratorProps {
     groupId: number | null;

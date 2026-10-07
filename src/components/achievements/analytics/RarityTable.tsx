@@ -4,6 +4,7 @@ import type { AnalyticsAchievement } from '@/services/api/achievementsAnalytics'
 import { barWidth, formatPct } from '@/lib/achievementsAnalytics';
 import { useT } from '@/lib/i18n/react';
 import { TierBadge } from './parts';
+import '@/lib/i18n/catalogs/achievements';
 
 export default function RarityTable({ items }: { items: AnalyticsAchievement[] }) {
   const t = useT();

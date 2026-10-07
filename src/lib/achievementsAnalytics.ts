@@ -1,6 +1,7 @@
 /** Pure helpers for the staff achievements analytics (owner, 2026-10-04). */
 import type { AnalyticsAchievement, AnalyticsGroup } from '@/services/api/achievementsAnalytics';
 import { activeLocale, t, type Locale, type MessageKey } from './i18n';
+import '@/lib/i18n/catalogs/achievements';
 
 export function formatPct(value: number): string {
   if (!Number.isFinite(value) || value <= 0) return '0%';

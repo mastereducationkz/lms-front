@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UserRole } from '../types';
 import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/shell';
 
 interface WelcomeScreensProps {
   userName: string;

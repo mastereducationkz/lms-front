@@ -4,6 +4,7 @@ import type { MeetFlagCode, MeetReviewOptions } from '../../services/api/meetAtt
 import { reasonComplete, type OverrideAsk, type OverrideReason } from '../../lib/meetRegister';
 import type { MessageKey } from '../../lib/i18n';
 import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/meet';
 
 const FLAG: Partial<Record<MeetFlagCode, MessageKey>> = {
   marked_absent_was_in_room: 'meet.override.flagMarkedAbsentWasInRoom',

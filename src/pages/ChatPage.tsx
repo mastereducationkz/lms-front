@@ -20,6 +20,7 @@ import { ChatInfoDialog } from '../components/chat/ChatInfoDialog';
 import { DateSeparator, UnreadDivider, isSameDay, formatDateSeparator, formatMessageTime } from '../components/chat/ChatSeparators';
 import { formatDate, formatTime as formatClock } from '../lib/i18n';
 import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/shell';
 
 // Backstop only: how long to wait for the send ack before giving up on it ever arriving.
 // Success/failure is decided by the ack itself (see `deliver`), not by this clock.

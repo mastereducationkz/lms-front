@@ -10,6 +10,7 @@
  *  - without an uploaded users list neither is allowed.
  */
 import { activeLocale, t, type Locale } from './i18n';
+import '@/lib/i18n/catalogs/workspace';
 
 export const WORKSPACE_DOMAIN = 'mastereducation.kz';
 export const NAME_MAX = 60;

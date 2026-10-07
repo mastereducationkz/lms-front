@@ -11,6 +11,7 @@ import {
 import type { User } from '../../types';
 import { roleLabel } from '@/lib/roleLabel';
 import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/users';
 
 interface UsersTableProps {
   users: User[];

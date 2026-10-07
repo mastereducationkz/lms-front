@@ -20,6 +20,7 @@ import {
   type ScheduleConfig,
   type ScheduleSlot,
 } from './scheduleShorthand';
+import '@/lib/i18n/catalogs/schedule';
 
 export type SchedulePreviewChange = 'keep' | 'move' | 'resize' | 'create';
 

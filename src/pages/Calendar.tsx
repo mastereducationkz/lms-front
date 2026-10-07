@@ -41,6 +41,7 @@ import { todayInAlmaty } from '../lib/datetime';
 import SubscribeDialog from '../components/calendar/SubscribeDialog';
 import { getEventDetails } from '../services/api/events';
 import { eventIdFromSearch } from '../lib/calendarFeeds';
+import '@/lib/i18n/catalogs/calendar';
 
 type CalView = 'month' | 'week' | 'agenda';
 const VIEWS: { id: CalView; label: string }[] = [

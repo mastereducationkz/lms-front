@@ -14,6 +14,7 @@ import {
   canEditCourseContent, filterCatalog, isReadOnlyCourseViewer, sortStaffCatalog,
 } from '../lib/courseAccess';
 import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/learning';
 
 interface CourseItem {
   id: string;

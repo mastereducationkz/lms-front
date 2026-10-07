@@ -11,6 +11,7 @@ import {
 } from '../../components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../../components/ui/card';
 import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/lessonRequests';
 
 /** "2026-08" default = current month, computed without pulling in a date lib. */
 function currentYearMonth(): string {

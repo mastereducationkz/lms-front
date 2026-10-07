@@ -18,6 +18,7 @@ import type {
   MeetVerdictRules,
   MeetVerdictSummary,
 } from '../services/api/meetAttendance';
+import '@/lib/i18n/catalogs/meet';
 
 const MINUTE = 60_000;
 const MIN_BAR = 0.6; // percent

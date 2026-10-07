@@ -26,6 +26,7 @@ import { useT } from '../../lib/i18n/react';
 import {
   almatyDayKey, dayHeading, formatDurationWords, recordingHeading, timeRange, watchLinkPath, type Locale,
 } from '../../lib/recordings';
+import '@/lib/i18n/catalogs/recordings';
 
 /** What the dialog shows about the lesson before (and while) the video loads. */
 export interface RecordingMeta {

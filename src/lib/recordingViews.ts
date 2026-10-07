@@ -10,6 +10,7 @@
  * Students see nothing new.
  */
 import { activeLocale, formatDate, t, type Locale } from './i18n';
+import '@/lib/i18n/catalogs/recordings';
 
 /** How often a playing video reports. */
 export const HEARTBEAT_MS = 30_000;

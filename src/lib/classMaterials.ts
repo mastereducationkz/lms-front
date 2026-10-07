@@ -2,6 +2,7 @@ import { almatyDayKey } from './recordings';
 import { parseAsUTC } from './datetime';
 import { MAX_UPLOAD_BYTES, uploadFailureReason } from './uploadFailure';
 import { activeLocale, formatDate, formatNumber, t as tr, type Locale, type MessageKey, type Params } from './i18n';
+import '@/lib/i18n/catalogs/materials';
 
 export type { Locale };
 

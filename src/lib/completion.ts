@@ -5,6 +5,7 @@
 // beside it, in the reader's language: "12 of 30 lessons" / «12 из 30 уроков» and
 // "Checkpoints: 3 of 4 · average 72%" / «Чекпоинты: 3 из 4 · средний балл 72%».
 import { activeLocale, t, type Locale } from './i18n';
+import '@/lib/i18n/catalogs/learning';
 
 /** Checkpoint line payload: taken of opened, average score of the taken ones. */
 export interface CheckpointSummary {

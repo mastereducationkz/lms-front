@@ -16,6 +16,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/ta
 import { Badge } from '../../components/ui/badge';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { Clock, Search, Filter, ArrowRight, ArrowUp, ArrowDown } from 'lucide-react';
+import '@/lib/i18n/catalogs/analytics';
 
 interface Course {
   id: number;

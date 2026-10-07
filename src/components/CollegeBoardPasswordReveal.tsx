@@ -6,6 +6,7 @@ import { cn } from '../lib/utils';
 import { collegeBoardPasswordDisplay } from '../lib/assignmentZeroCollegeBoard';
 import { t as translate, type Locale } from '../lib/i18n';
 import { useLocale } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/materials';
 
 const HIDE_AFTER_MS = 60_000;
 

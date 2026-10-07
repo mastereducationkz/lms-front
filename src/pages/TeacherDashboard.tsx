@@ -53,6 +53,7 @@ import { WeeklyAwardsHub } from '../components/gamification/WeeklyAwardsHub';
 import TodayLessons from '../components/dashboard/TodayLessons';
 import { CompletionMeta } from '../components/progress/CompletionMeta';
 import type { CheckpointSummary } from '../lib/completion';
+import '@/lib/i18n/catalogs/teacher';
 
 interface TeacherStats {
   total_courses: number;

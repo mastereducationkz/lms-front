@@ -45,6 +45,7 @@ import { StarOfWeekButton } from '@/components/achievements/StarOfWeekDialog';
 import GroupAchievementsPanel from '@/components/achievements/analytics/GroupAchievementsPanel';
 import { formatDate, formatDateTime, formatTime, type Locale } from '../lib/i18n';
 import { useLocale, useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/attendance';
 
 interface HomeworkMeta {
     id: number;

@@ -3,6 +3,7 @@ import type { ErrorInfo, ReactNode } from 'react';
 import { reportError } from '../lib/sentry';
 import { isDarkChoice } from '../lib/theme';
 import { t } from '../lib/i18n';
+import '@/lib/i18n/catalogs/shell';
 
 interface ErrorBoundaryProps {
   children: ReactNode;

@@ -4,6 +4,7 @@ import type { AchievementsAnalytics } from '@/services/api/achievementsAnalytics
 import { staffRoleLabel, weekLabel } from '@/lib/achievementsAnalytics';
 import { useLocale, useT } from '@/lib/i18n/react';
 import { Empty } from './parts';
+import '@/lib/i18n/catalogs/achievements';
 
 export default function StarsByStaff({ stars, limit }: { stars: AchievementsAnalytics['stars']; limit?: number }) {
   const t = useT();

@@ -26,6 +26,7 @@ import {
   startOidcLogin,
   type OidcFailureReason,
 } from '../../services/oidc'
+import '@/lib/i18n/catalogs/auth';
 
 /** Survives the redirect to the IdP and back (same tab, same origin), so one silent
  *  re-login attempt can never become a redirect loop. */

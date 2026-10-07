@@ -6,6 +6,7 @@
  */
 import { formatDate, formatNumber } from '../../lib/i18n'
 import { useT } from '../../lib/i18n/react'
+import '@/lib/i18n/catalogs/teacher';
 
 export interface WebinarPayLine {
   event_id: number

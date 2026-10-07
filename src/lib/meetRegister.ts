@@ -1,6 +1,7 @@
 import { activeLocale, t, type Locale, type MessageKey } from './i18n';
 import type { MeetFlagCode, MeetLessonSummary } from '../services/api/meetAttendance';
 import type { RegisterCounts, StudentRegister } from '../services/api/meetRegister';
+import '@/lib/i18n/catalogs/meet';
 
 /**
  * Meet takes the register (owner, 2026-09-23) — what the journal and the Meet page need to know about

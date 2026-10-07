@@ -11,6 +11,7 @@
 // step; do not import across repos.
 
 import { activeLocale, formatDate, t, type Locale } from './i18n';
+import '@/lib/i18n/catalogs/schedule';
 
 export type ScheduleDay = { time: string; duration: number };
 export type ScheduleConfig = Record<number, ScheduleDay>;

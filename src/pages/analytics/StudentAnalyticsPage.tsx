@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { DATE, formatDate as formatDay, formatDateTime } from '@/lib/i18n';
 import { useT } from '@/lib/i18n/react';
 import apiClient from '@/services/api';
+import '@/lib/i18n/catalogs/analytics';
 
 interface StepProgress {
   status: 'completed' | 'in_progress' | 'not_started';

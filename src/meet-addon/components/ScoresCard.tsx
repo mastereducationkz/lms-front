@@ -9,6 +9,7 @@ import { lessons } from '../lessons';
 import { panelLive } from '../live';
 import { useScoreSuggestions } from '../../lib/liveLesson/useSuggestions';
 import SuggestionBar from '../../components/live-lesson/SuggestionBar';
+import '@/lib/i18n/catalogs/classLesson';
 
 const SCORES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const MARK: Record<string, [MessageKey, string]> = {

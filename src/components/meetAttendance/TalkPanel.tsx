@@ -22,6 +22,7 @@ import {
 } from '../../services/api/meetTalk';
 import { TalkGrid, type TalkFocus } from './TalkGrid';
 import { TalkTranscript } from './TalkTranscript';
+import '@/lib/i18n/catalogs/meet';
 
 /** Loads a lesson's talk time when `enabled`; null while loading, or when not the viewer's lesson. */
 export function useLessonTalk(eventId: number | null | undefined, enabled = true) {

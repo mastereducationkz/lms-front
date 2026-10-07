@@ -4,6 +4,8 @@ import { t as translate, type Locale, type MessageKey } from '../../lib/i18n';
 import type { MaterialItem } from '../../services/api/classMaterials';
 import { ApiError, SessionLost } from '../api';
 import { lessons } from '../lessons';
+import '@/lib/i18n/catalogs/classLesson';
+import '@/lib/i18n/catalogs/materials';
 
 /** What the panel lists: live items only (a moderated-away one is the lesson page's business). */
 export function visibleMaterials(items: MaterialItem[]): MaterialItem[] {

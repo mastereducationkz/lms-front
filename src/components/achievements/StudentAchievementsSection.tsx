@@ -10,6 +10,7 @@ import type { MessageKey } from '@/lib/i18n';
 import { useT } from '@/lib/i18n/react';
 import { getStudentAchievements, type StudentAchievements } from '@/services/api/achievementsUi';
 import { tierStyle } from './tierStyle';
+import '@/lib/i18n/catalogs/achievements';
 
 const AWARDER: Record<string, MessageKey> = {
   curator: 'achievements.student.awarder.curator',

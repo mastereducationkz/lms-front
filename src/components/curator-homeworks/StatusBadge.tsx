@@ -1,6 +1,7 @@
 import { Badge } from '../ui/badge';
 import { CheckCircle, Clock, AlertCircle, MinusCircle } from 'lucide-react';
 import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/attendance';
 
 interface StatusBadgeProps {
   status: string;

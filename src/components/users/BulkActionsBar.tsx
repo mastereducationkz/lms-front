@@ -1,6 +1,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/users';
 
 export interface BulkAction {
   label: string;

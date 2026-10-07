@@ -16,6 +16,7 @@ import type {
   RecordingStage,
 } from '../services/api/recordings';
 import type { MeetSync, MeetSyncStep } from '../services/api/meetAttendance';
+import '@/lib/i18n/catalogs/recordings';
 
 export const PHASES: RecordingPhase[] = ['downloading', 'packaging', 'preview', 'uploading'];
 

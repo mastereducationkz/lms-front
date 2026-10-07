@@ -11,6 +11,7 @@ import {
   type Testimonial,
 } from '../../services/api/exams';
 import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/exams';
 
 /**
  * Collect a student's photo and отзыв for the sales team, with the consent record.

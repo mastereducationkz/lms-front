@@ -5,6 +5,7 @@ import { Textarea } from '../ui/textarea';
 import { isValidExcuseNote } from '../../lib/excusedAbsence';
 import { useT } from '../../lib/i18n/react';
 import { cn } from '../../lib/utils';
+import '@/lib/i18n/catalogs/attendance';
 
 /**
  * Причина уважительного пропуска — свободный текст, обязательный.

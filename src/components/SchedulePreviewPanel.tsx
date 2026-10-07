@@ -11,6 +11,7 @@ import {
 } from '../lib/schedulePreview';
 import { useLocale, useT } from '../lib/i18n/react';
 import { cn } from '../lib/utils';
+import '@/lib/i18n/catalogs/schedule';
 
 /**
  * What pressing «Generate» would do, shown before it is pressed: how many lessons have passed,

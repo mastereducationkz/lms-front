@@ -9,6 +9,7 @@ import type {
 } from '../../types';
 import { api } from './client';
 import { t } from '../../lib/i18n';
+import '@/lib/i18n/catalogs/shell';
 
 export async function getDashboardStats(groupId?: number, startDate?: string, endDate?: string): Promise<DashboardStats> {
   try {

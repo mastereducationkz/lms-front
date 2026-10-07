@@ -10,6 +10,7 @@ import apiClient from '../services/api';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import type { CourseType } from '../types';
 import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/adminTools';
 
 interface CreateCourseModalProps {
   open: boolean;

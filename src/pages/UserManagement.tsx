@@ -86,6 +86,7 @@ import { AddToGroupDialog } from '../components/users/AddToGroupDialog';
 import { teacherGroupTail } from '../lib/groupNames';
 import { roleLabel } from '../lib/roleLabel';
 import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/users';
 
 interface UserFormData {
   name: string;

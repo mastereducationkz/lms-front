@@ -6,6 +6,7 @@ import { t, type MessageKey } from '../../lib/i18n';
 import type { LessonNote, LessonView, NoteKind } from '../../services/api/classLessons';
 import { SessionLost } from '../api';
 import { lessons } from '../lessons';
+import '@/lib/i18n/catalogs/classLesson';
 
 // The lesson page's labels (components/class-lesson/NotesSection.tsx), with shorter hints. The panel's
 // language is set from the lesson's viewer (LessonPanel), so `t` reads it from activeLocale().

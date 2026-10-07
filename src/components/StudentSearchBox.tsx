@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import apiClient from '../services/api';
 import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/users';
 
 /**
  * Global student search for staff dashboards (admin, head curator, head teacher,

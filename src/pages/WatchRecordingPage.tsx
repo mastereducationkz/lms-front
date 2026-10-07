@@ -13,6 +13,7 @@ import { cn } from '../lib/utils';
 import type { ParticipantsView } from '../lib/meetAttendance';
 import { publicTalkRecord } from '../lib/meetTalk';
 import type { PublicTalk } from '../services/api/meetTalk';
+import '@/lib/i18n/catalogs/recordings';
 
 interface WatchPayload {
   title: string;
