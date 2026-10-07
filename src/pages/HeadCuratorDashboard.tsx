@@ -41,9 +41,12 @@ import { cn } from '../lib/utils';
 import StudentSearchBox from '../components/StudentSearchBox';
 import InstallAppCard from '../components/pwa/InstallAppCard';
 import { formatDate } from '../lib/i18n';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/curatorDashboard';
 
 export default function HeadCuratorDashboard() {
   const { user } = useAuth();
+  const t = useT();
   const navigate = useNavigate();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -125,14 +128,14 @@ export default function HeadCuratorDashboard() {
       {/* Заголовок */}
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-foreground dark:text-foreground">Рады видеть вас, {user?.name}!</h1>
+          <h1 className="text-2xl font-bold text-foreground dark:text-foreground">{t('curatorDashboard.greeting', { name: user?.name ?? '' })}</h1>
           <p className="text-muted-foreground flex items-center gap-2">
             {user?.role === 'head_curator' 
-              ? "Обзор эффективности кураторов и активности студентов" 
-              : "Обзор успеваемости ваших групп и активности студентов"}
+              ? t('curatorDashboard.subtitle.headCurator')
+              : t('curatorDashboard.subtitle.curator')}
             {loading && (
               <span className="inline-flex items-center text-xs text-brand animate-pulse font-medium">
-                • Обновление данных...
+                • {t('curatorDashboard.updating')}
               </span>
             )}
           </p>
@@ -140,10 +143,10 @@ export default function HeadCuratorDashboard() {
         <div className="flex flex-wrap items-center gap-3 max-w-full">
           <Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
             <SelectTrigger className="w-[180px] max-w-full bg-card border-border">
-              <SelectValue placeholder="Все группы" />
+              <SelectValue placeholder={t('curatorDashboard.filter.allGroups')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Все группы</SelectItem>
+              <SelectItem value="all">{t('curatorDashboard.filter.allGroups')}</SelectItem>
               {groups.map((group) => (
                 <SelectItem key={group.id} value={group.id.toString()}>
                   {group.name}
@@ -173,20 +176,20 @@ export default function HeadCuratorDashboard() {
                     format(dateRange.from, "dd.MM.yyyy")
                   )
                 ) : (
-                  <span>Выберите период</span>
+                  <span>{t('curatorDashboard.period.pick')}</span>
                 )}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0 flex flex-row" align="end">
               <div className="flex flex-col border-r border-border p-2 gap-1 min-w-[120px]">
-                <p className="text-[10px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">Периоды</p>
+                <p className="text-[10px] font-semibold text-muted-foreground px-2 py-1 uppercase tracking-wider">{t('curatorDashboard.period.presets')}</p>
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   className="justify-start font-normal text-xs"
                   onClick={() => setDateRange({ from: subDays(new Date(), 7), to: new Date() })}
                 >
-                  7 дней
+                  {t('common.days', { count: 7 })}
                 </Button>
                 <Button 
                   variant="ghost" 
@@ -194,7 +197,7 @@ export default function HeadCuratorDashboard() {
                   className="justify-start font-normal text-xs"
                   onClick={() => setDateRange({ from: subDays(new Date(), 30), to: new Date() })}
                 >
-                  30 дней
+                  {t('common.days', { count: 30 })}
                 </Button>
                 <Button 
                   variant="ghost" 
@@ -202,7 +205,7 @@ export default function HeadCuratorDashboard() {
                   className="justify-start font-normal text-xs"
                   onClick={() => setDateRange({ from: subDays(new Date(), 90), to: new Date() })}
                 >
-                  90 дней
+                  {t('common.days', { count: 90 })}
                 </Button>
                 <Button 
                   variant="ghost" 
@@ -210,7 +213,7 @@ export default function HeadCuratorDashboard() {
                   className="justify-start font-normal text-xs"
                   onClick={() => setDateRange({ from: new Date(2024, 0, 1), to: new Date() })}
                 >
-                  Весь период
+                  {t('curatorDashboard.period.allTime')}
                 </Button>
               </div>
               <Calendar
@@ -234,7 +237,7 @@ export default function HeadCuratorDashboard() {
         <div className="bg-yellow-50 border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800 rounded-md p-3">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-xs font-medium text-yellow-900 dark:text-yellow-300">
-              Посещаемость не заполнена ({stats.missing_attendance_reminders.length})
+              {t('curatorDashboard.attendance.missing', { count: stats.missing_attendance_reminders.length })}
             </h3>
             <Button
               onClick={() => navigate('/attendance')}
@@ -242,7 +245,7 @@ export default function HeadCuratorDashboard() {
               variant="outline"
               className="text-xs h-6 px-2 border-yellow-300 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100 hover:dark:bg-yellow-500/15 dark:border-yellow-800 dark:hover:bg-yellow-900/20"
             >
-              Перейти к посещаемости
+              {t('curatorDashboard.attendance.open')}
             </Button>
           </div>
           <div className="space-y-1.5">
@@ -273,7 +276,7 @@ export default function HeadCuratorDashboard() {
                     variant="ghost"
                     className="text-[11px] h-6 px-2 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 hover:dark:bg-yellow-500/15"
                   >
-                    Заполнить
+                    {t('curatorDashboard.attendance.fill')}
                   </Button>
                 </div>
               </div>
@@ -287,47 +290,47 @@ export default function HeadCuratorDashboard() {
         <Card className="border-0 shadow-sm bg-gradient-to-br from-blue-600 to-indigo-700 text-white dark:from-brand-surface dark:to-brand-surface dark:border dark:border-brand-border dark:text-brand-surface-foreground">
           <CardContent className="p-6">
             <p className="text-blue-100 dark:text-brand-subtle-foreground text-sm font-medium">
-              {user?.role === 'head_curator' ? "Всего кураторов" : "Всего групп"}
+              {user?.role === 'head_curator' ? t('curatorDashboard.kpi.totalCurators') : t('curatorDashboard.kpi.totalGroups')}
             </p>
             <h3 className="text-3xl font-bold mt-1">
               {user?.role === 'head_curator' ? stats.total_curators : stats.total_groups}
             </h3>
             <div className="mt-4 text-xs text-blue-100 dark:text-brand-subtle-foreground flex items-center">
-              {user?.role === 'head_curator' ? "Активных на платформе" : "Прикреплено к вам"}
+              {user?.role === 'head_curator' ? t('curatorDashboard.kpi.activeOnPlatform') : t('curatorDashboard.kpi.assignedToYou')}
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-0 shadow-sm">
           <CardContent className="p-6">
-            <p className="text-muted-foreground text-sm font-medium">Студентов всего</p>
+            <p className="text-muted-foreground text-sm font-medium">{t('curatorDashboard.kpi.totalStudents')}</p>
             <h3 className="text-3xl font-bold mt-1 text-foreground dark:text-foreground">{stats.total_students}</h3>
             <div className="mt-4 text-xs text-brand flex items-center font-medium">
-              {stats.active_students_7d} активны за 7д
+              {t('curatorDashboard.kpi.active7d', { count: stats.active_students_7d ?? 0 })}
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-0 shadow-sm">
           <CardContent className="p-6">
-            <p className="text-muted-foreground text-sm font-medium">Просрочено ДЗ</p>
+            <p className="text-muted-foreground text-sm font-medium">{t('curatorDashboard.kpi.overdueHomework')}</p>
             <h3 className="text-3xl font-bold mt-1 text-red-600 dark:text-red-300">
               {stats.total_overdue || 0}
             </h3>
             <div className="mt-4 text-xs text-red-500 dark:text-red-400 flex items-center font-medium">
-              Требует внимания
+              {t('curatorDashboard.kpi.needsAttention')}
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-0 shadow-sm">
           <CardContent className="p-6">
-            <p className="text-muted-foreground text-sm font-medium">Неактивных</p>
+            <p className="text-muted-foreground text-sm font-medium">{t('curatorDashboard.kpi.inactive')}</p>
             <h3 className="text-3xl font-bold mt-1 text-amber-600 dark:text-amber-300">
               {stats.inactive_students || 0}
             </h3>
             <div className="mt-4 text-xs text-amber-600 dark:text-amber-300 flex items-center font-medium">
-              Бездействуют на протяжении 7 дней
+              {t('curatorDashboard.kpi.inactiveFor7d')}
             </div>
           </CardContent>
         </Card>
@@ -337,7 +340,7 @@ export default function HeadCuratorDashboard() {
       <div className="grid grid-cols-1 @4xl:grid-cols-2 gap-6">
         <Card className="shadow-sm border-0">
           <CardHeader>
-            <CardTitle className="text-lg font-bold">Активность студентов (%)</CardTitle>
+            <CardTitle className="text-lg font-bold">{t('curatorDashboard.chart.activity')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-80 w-full">
@@ -362,7 +365,7 @@ export default function HeadCuratorDashboard() {
                   />
                   <Tooltip 
                     contentStyle={chartTooltipStyle}
-                    formatter={(val: number) => [`${val}%`, 'Активность']}
+                    formatter={(val: number) => [`${val}%`, t('curatorDashboard.chart.activityTooltip')]}
                   />
                   <Line 
                     type="monotone" 
@@ -381,13 +384,13 @@ export default function HeadCuratorDashboard() {
         <Card className="shadow-sm border-0">
           <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-lg font-bold">
-              {user?.role === 'head_curator' ? "Эффективность кураторов (%)" : "Прогресс по группам (%)"}
+              {user?.role === 'head_curator' ? t('curatorDashboard.chart.curatorPerformance') : t('curatorDashboard.chart.groupProgress')}
             </CardTitle>
             <div 
               className="text-muted-foreground hover:text-muted-foreground cursor-help p-1"
               title={user?.role === 'head_curator' 
-                ? "Эффективность рассчитывается на основе среднего прогресса студентов, отсутствия просрочек и скорости проверки работ."
-                : "Средний прогресс освоения курсов студентами в каждой группе."}
+                ? t('curatorDashboard.chart.curatorPerformanceHint')
+                : t('curatorDashboard.chart.groupProgressHint')}
             >
               <Info className="h-4 w-4" />
             </div>
@@ -412,7 +415,7 @@ export default function HeadCuratorDashboard() {
                     cursor={{ fill: chartColors.cursor }}
                     contentStyle={chartTooltipStyle}
                   />
-                  <Bar dataKey="avg_progress" name="Ср. прогресс (%)" radius={[4, 4, 0, 0]}>
+                  <Bar dataKey="avg_progress" name={t('curatorDashboard.chart.avgProgress')} radius={[4, 4, 0, 0]}>
                     {curatorPerformance.map((_: any, index: number) => (
                       <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#3B82F6' : '#6366F1'} />
                     ))}
@@ -428,7 +431,7 @@ export default function HeadCuratorDashboard() {
       <Card className="shadow-sm border-0 overflow-hidden">
         <CardHeader className="bg-card dark:bg-card">
           <CardTitle className="text-lg font-bold">
-            {user?.role === 'head_curator' ? "Сводная таблица по кураторам" : "Сводная таблица по группам"}
+            {user?.role === 'head_curator' ? t('curatorDashboard.table.byCurator') : t('curatorDashboard.table.byGroup')}
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -437,14 +440,14 @@ export default function HeadCuratorDashboard() {
               <thead className="bg-gray-50/80 dark:bg-secondary/30 text-muted-foreground border-b border-border uppercase text-[10px] font-bold">
                 <tr>
                   <th className="text-left px-6 py-4">
-                    {user?.role === 'head_curator' ? "Куратор" : "Группа"}
+                    {user?.role === 'head_curator' ? t('curatorDashboard.table.curator') : t('curatorDashboard.table.group')}
                   </th>
-                  {user?.role === 'head_curator' && <th className="text-center px-4 py-4">Группы</th>}
-                  <th className="text-center px-4 py-4">Студенты</th>
-                  <th className="text-center px-4 py-4">Ср. прогресс</th>
-                  <th className="text-center px-4 py-4">Просрочено</th>
-                  <th className="text-center px-4 py-4">На проверке</th>
-                  <th className="text-right px-6 py-4">Действия</th>
+                  {user?.role === 'head_curator' && <th className="text-center px-4 py-4">{t('curatorDashboard.table.groups')}</th>}
+                  <th className="text-center px-4 py-4">{t('curatorDashboard.table.students')}</th>
+                  <th className="text-center px-4 py-4">{t('curatorDashboard.table.avgProgress')}</th>
+                  <th className="text-center px-4 py-4">{t('curatorDashboard.table.overdue')}</th>
+                  <th className="text-center px-4 py-4">{t('curatorDashboard.table.pendingGrading')}</th>
+                  <th className="text-right px-6 py-4">{t('curatorDashboard.table.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border dark:divide-border">
@@ -481,7 +484,7 @@ export default function HeadCuratorDashboard() {
                           {item.overdue_count}
                         </Badge>
                         <span className="text-[10px] text-muted-foreground font-medium">
-                          из {item.total_due} ({item.overdue_perc}%)
+                          {t('curatorDashboard.table.ofTotal', { total: item.total_due, percent: item.overdue_perc })}
                         </span>
                       </div>
                     </td>
@@ -491,7 +494,7 @@ export default function HeadCuratorDashboard() {
                           {item.pending_grading}
                         </Badge>
                         <span className="text-[10px] text-muted-foreground font-medium">
-                          из {item.total_submissions} ({item.pending_perc}%)
+                          {t('curatorDashboard.table.ofTotal', { total: item.total_submissions, percent: item.pending_perc })}
                         </span>
                       </div>
                     </td>
@@ -509,7 +512,7 @@ export default function HeadCuratorDashboard() {
                           }
                         }}
                       >
-                        Обзор <ChevronRight className="w-4 h-4 ml-1" />
+                        {t('curatorDashboard.table.view')} <ChevronRight className="w-4 h-4 ml-1" />
                       </Button>
                     </td>
                   </tr>
@@ -525,11 +528,11 @@ export default function HeadCuratorDashboard() {
         <CardHeader className="flex flex-col pb-2">
           <div className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg font-bold flex items-center gap-2 text-red-700 dark:text-red-300">
-              Группы с просрочками
+              {t('curatorDashboard.atRisk.title')}
             </CardTitle>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Здесь отображаются группы, в которых есть студенты с невыполненными вовремя заданиями или заданиями, сданными после дедлайна.
+            {t('curatorDashboard.atRisk.description')}
           </p>
         </CardHeader>
         <CardContent className="p-0">
@@ -537,9 +540,9 @@ export default function HeadCuratorDashboard() {
             <table className="min-w-full text-sm">
               <thead className="bg-red-50/50 dark:bg-red-500/15 text-red-800 dark:text-red-300 text-[10px] uppercase font-bold border-b border-red-100">
                 <tr>
-                  <th className="px-6 py-3 text-left">Группа</th>
-                  <th className="px-6 py-3 text-left">Куратор</th>
-                  <th className="px-6 py-3 text-center">Просрочено</th>
+                  <th className="px-6 py-3 text-left">{t('curatorDashboard.table.group')}</th>
+                  <th className="px-6 py-3 text-left">{t('curatorDashboard.table.curator')}</th>
+                  <th className="px-6 py-3 text-center">{t('curatorDashboard.table.overdue')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-red-50">
@@ -553,7 +556,7 @@ export default function HeadCuratorDashboard() {
                 {atRiskGroups.length === 0 && (
                   <tr>
                     <td colSpan={3} className="px-6 py-10 text-center text-muted-foreground italic bg-card dark:bg-card">
-                      Проблемных групп не обнаружено. Все задания под контролем!
+                      {t('curatorDashboard.atRisk.empty')}
                     </td>
                   </tr>
                 )}

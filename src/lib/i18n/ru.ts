@@ -30,6 +30,8 @@ import { curatorHomeworks } from './ru/curatorHomeworks';
 import { curatorPages } from './ru/curatorPages';
 import { profile } from './ru/profile';
 import { stars } from './ru/stars';
+import { guide } from './ru/guide';
+import { curatorDashboard } from './ru/curatorDashboard';
 
 export const RU_NAMESPACES = {
   common,
@@ -62,6 +64,8 @@ export const RU_NAMESPACES = {
   curatorPages,
   profile,
   stars,
+  guide,
+  curatorDashboard,
 } as const;
 
 export const ru: Readonly<Record<string, Message>> = {
@@ -95,4 +99,6 @@ export const ru: Readonly<Record<string, Message>> = {
   ...curatorPages,
   ...profile,
   ...stars,
+  ...guide,
+  ...curatorDashboard,
 };

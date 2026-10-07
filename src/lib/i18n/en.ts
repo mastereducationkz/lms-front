@@ -32,6 +32,8 @@ import { curatorHomeworks } from './en/curatorHomeworks';
 import { curatorPages } from './en/curatorPages';
 import { profile } from './en/profile';
 import { stars } from './en/stars';
+import { guide } from './en/guide';
+import { curatorDashboard } from './en/curatorDashboard';
 
 export const EN_NAMESPACES = {
   common,
@@ -64,6 +66,8 @@ export const EN_NAMESPACES = {
   curatorPages,
   profile,
   stars,
+  guide,
+  curatorDashboard,
 } as const;
 
 export const en = {
@@ -97,6 +101,8 @@ export const en = {
   ...curatorPages,
   ...profile,
   ...stars,
+  ...guide,
+  ...curatorDashboard,
 } as const;
 
 export type MessageKey = keyof typeof en;

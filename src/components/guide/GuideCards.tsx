@@ -1,11 +1,13 @@
 /**
  * What the tour and the tips look like: theme tokens only (they switch with dark mode — the old
- * tour's card was white on white in dark), lucide icons only, no emoji.
+ * tour's card was white on white in dark), lucide icons only, no emoji. Their buttons speak the
+ * viewer's language.
  */
 import { forwardRef, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { ArrowRight, Check, Lightbulb, Loader2, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { TourText } from './tours';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/guide';
 
 const FOCUS = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-popover';
 const SHADOW = 'shadow-[0_20px_44px_-18px_rgb(15_23_42/0.45),0_2px_6px_-2px_rgb(15_23_42/0.12)] dark:shadow-[0_22px_48px_-16px_rgb(0_0_0/0.75),0_2px_6px_-2px_rgb(0_0_0/0.4)]';
@@ -28,7 +30,6 @@ interface TourCardProps extends ArrowProps {
   body: string;
   index: number;
   total: number;
-  text: TourText;
   /** The stop's part of the page hasn't rendered yet: the card waits in the middle, Skip at hand. */
   loading?: boolean;
   leading?: ReactNode;
@@ -42,9 +43,10 @@ interface TourCardProps extends ArrowProps {
 }
 
 export const TourCard = forwardRef<HTMLDivElement, TourCardProps>(function TourCard(
-  { titleId, bodyId, title, body, index, total, text, loading, leading, style, className, stepId, onNext, onBack, onSkip, onClose, arrowRef, arrowStyle },
+  { titleId, bodyId, title, body, index, total, loading, leading, style, className, stepId, onNext, onBack, onSkip, onClose, arrowRef, arrowStyle },
   ref,
 ) {
+  const t = useT();
   const isFirst = index === 0;
   const isLast = index >= total - 1;
   return (
@@ -82,7 +84,7 @@ export const TourCard = forwardRef<HTMLDivElement, TourCardProps>(function TourC
           <button
             type="button"
             onClick={onClose}
-            aria-label={text.close}
+            aria-label={t('guide.tour.close')}
             data-guide-action="close"
             className={cn('-mr-1.5 -mt-0.5 inline-flex h-8 w-8 flex-none items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground', FOCUS)}
           >
@@ -92,7 +94,7 @@ export const TourCard = forwardRef<HTMLDivElement, TourCardProps>(function TourC
         {loading ? (
           <p id={bodyId} className="flex items-center gap-2 px-4 pt-1.5 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 flex-none animate-spin motion-reduce:animate-none" aria-hidden />
-            {text.loading}
+            {t('guide.tour.loading')}
           </p>
         ) : (
           <p id={bodyId} className="min-h-0 overflow-y-auto px-4 pt-1.5 text-sm leading-relaxed text-muted-foreground">
@@ -106,7 +108,7 @@ export const TourCard = forwardRef<HTMLDivElement, TourCardProps>(function TourC
             data-guide-action="skip"
             className={cn('-ml-1 rounded-md px-1 py-1 text-sm text-muted-foreground underline-offset-4 transition-colors hover:text-foreground hover:underline', FOCUS)}
           >
-            {text.skip}
+            {t('guide.tour.skip')}
           </button>
           <span className="flex-1" />
           {!isFirst && (
@@ -116,7 +118,7 @@ export const TourCard = forwardRef<HTMLDivElement, TourCardProps>(function TourC
               data-guide-action="back"
               className={cn('inline-flex h-9 items-center rounded-lg border border-border bg-background px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted', FOCUS)}
             >
-              {text.back}
+              {t('guide.tour.back')}
             </button>
           )}
           <button
@@ -126,7 +128,7 @@ export const TourCard = forwardRef<HTMLDivElement, TourCardProps>(function TourC
             data-guide-primary
             className={cn('inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-solid px-3.5 text-sm font-semibold text-brand-solid-foreground transition-colors hover:bg-brand-solid-hover', FOCUS)}
           >
-            {isLast ? text.done : text.next}
+            {isLast ? t('guide.tour.done') : t('guide.tour.next')}
             {isLast ? <Check className="h-4 w-4" aria-hidden /> : <ArrowRight className="h-4 w-4" aria-hidden />}
           </button>
         </div>
@@ -139,7 +141,6 @@ interface TipCardProps extends ArrowProps {
   tipKey: string;
   title: string;
   body: string;
-  gotIt: string;
   side: string;
   style?: CSSProperties;
   hidden?: boolean;
@@ -147,9 +148,10 @@ interface TipCardProps extends ArrowProps {
 }
 
 export const TipCard = forwardRef<HTMLDivElement, TipCardProps>(function TipCard(
-  { tipKey, title, body, gotIt, side, style, hidden, onGotIt, arrowRef, arrowStyle },
+  { tipKey, title, body, side, style, hidden, onGotIt, arrowRef, arrowStyle },
   ref,
 ) {
+  const t = useT();
   const titleId = `guide-tip-${tipKey.replace(/[^a-z0-9-]/gi, '-')}`;
   return (
     <div
@@ -189,7 +191,7 @@ export const TipCard = forwardRef<HTMLDivElement, TipCardProps>(function TipCard
             data-guide-action="got-it"
             className={cn('inline-flex h-8 items-center rounded-lg bg-brand-solid px-3 text-[13px] font-semibold text-brand-solid-foreground transition-colors hover:bg-brand-solid-hover', FOCUS)}
           >
-            {gotIt}
+            {t('guide.tip.gotIt')}
           </button>
         </div>
       </div>
