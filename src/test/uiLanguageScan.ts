@@ -11,12 +11,16 @@
  * catalogImportFindings adds one more: a file that names an area's keys must import that area's
  * catalog (src/lib/i18n/catalogs/<area>), or the keys would show up raw on a page that loaded
  * nothing else from the area.
+ *
+ * englishFindings counts English copy written straight into a screen (JSX text, placeholder /
+ * title / aria-label / alt / label, toasts and confirms) rather than through t(). Since anyone may
+ * pick Русский (Q27), such copy stays English for them; a ratchet keeps it from growing.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
 
-export type FindingKind = 'cyrillic' | 'role-gated' | 'ru-RU' | 'no-locale' | 'catalog-import';
+export type FindingKind = 'cyrillic' | 'role-gated' | 'ru-RU' | 'no-locale' | 'catalog-import' | 'english';
 
 export interface Finding {
   file: string; // relative to the repo root, e.g. src/pages/SettingsPage.tsx
@@ -138,6 +142,39 @@ export function catalogImportFindings(root: string, namespaces: Record<string, R
       if (imported.has(ns)) continue;
       findings.push({ file, line: sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1, kind: 'catalog-import', text: `uses ${ns}.* keys without import '@/lib/i18n/catalogs/${ns}'` });
     }
+  }
+  return findings;
+}
+
+const ENGLISH = /[A-Za-z]{3,}.*[A-Za-z]{2,}|[A-Z][a-z]{3,}/;
+const TEXT_ATTRIBUTES = new Set(['placeholder', 'title', 'aria-label', 'alt', 'label', 'description']);
+const MESSAGE_CALLS = /^(toast(\.\w+)?|window\.confirm|window\.alert|confirm|alert)$/;
+
+/** English copy written straight into a screen instead of through t() (see the header). */
+export function englishFindings(root: string): Finding[] {
+  const findings: Finding[] = [];
+  for (const file of sourceFiles(root)) {
+    if (file.startsWith(I18N_DIR) || !/\.(tsx|ts)$/.test(file)) continue;
+    const text = fs.readFileSync(path.join(root, file), 'utf8');
+    const sf = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, file.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+    const visit = (node: ts.Node) => {
+      let value: string | null = null;
+      if (ts.isJsxText(node)) value = node.text;
+      else if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
+        const parent = node.parent;
+        if (ts.isJsxAttribute(parent) && TEXT_ATTRIBUTES.has(parent.name.getText())) value = node.text;
+        else if (ts.isJsxExpression(parent)) value = node.text;
+        else if (ts.isCallExpression(parent) && parent.arguments[0] === node && MESSAGE_CALLS.test(parent.expression.getText())) value = node.text;
+      }
+      if (value !== null) {
+        const trimmed = value.replace(/\s+/g, ' ').trim();
+        if (trimmed && !CYRILLIC.test(trimmed) && ENGLISH.test(trimmed)) {
+          findings.push({ file, line: sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1, kind: 'english', text: trimmed.slice(0, 80) });
+        }
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(sf);
   }
   return findings;
 }

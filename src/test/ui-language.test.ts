@@ -20,10 +20,11 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { EN_NAMESPACES } from '../lib/i18n/en';
 import { RUSSIAN_ALLOWED } from './ui-language.allowlist';
-import { catalogImportFindings, scan, type Finding } from './uiLanguageScan';
+import { catalogImportFindings, englishFindings, scan, type Finding } from './uiLanguageScan';
 
 const ROOT = path.resolve(__dirname, '../..');
 const BASELINE_PATH = path.join(__dirname, 'ui-language.baseline.json');
+const ENGLISH_BASELINE_PATH = path.join(__dirname, 'ui-language.english-baseline.json');
 
 const findings = scan(ROOT);
 // Scanned here, at collection, like `findings`: a second full parse of src/ inside the test body
@@ -83,5 +84,33 @@ describe('one UI language per role', () => {
     const withRussian = new Set(findings.filter((f) => f.kind !== 'ru-RU' && f.kind !== 'no-locale').map((f) => f.file));
     const stale = Object.keys(RUSSIAN_ALLOWED).filter((file) => !withRussian.has(file));
     expect(stale, 'remove these from ui-language.allowlist.ts').toEqual([]);
+  });
+});
+
+/**
+ * Anyone may choose Русский (owner, Q27), so English written straight into a screen stays English
+ * for them. ui-language.english-baseline.json holds what is left per file; it may only go down.
+ * Refresh it after moving copy into the catalog with
+ *   UPDATE_UI_LANGUAGE_BASELINE=1 ./node_modules/.bin/vitest run src/test/ui-language.test.ts
+ */
+describe('English written straight into screens (ratchet)', () => {
+  const english = countByFile(englishFindings(ROOT));
+  if (process.env.UPDATE_UI_LANGUAGE_BASELINE) {
+    fs.writeFileSync(ENGLISH_BASELINE_PATH, `${JSON.stringify(Object.fromEntries(Object.entries(english).sort()), null, 2)}\n`);
+  }
+  const baseline: Record<string, number> = JSON.parse(fs.readFileSync(ENGLISH_BASELINE_PATH, 'utf8'));
+
+  it('adds no new untranslated English to any screen', () => {
+    const over = Object.entries(english)
+      .filter(([file, n]) => n > (baseline[file] ?? 0))
+      .map(([file, n]) => `${file}: ${n} (baseline ${baseline[file] ?? 0}) — show new copy through t()`);
+    expect(over).toEqual([]);
+  });
+
+  it('only ever lowers the English baseline', () => {
+    const stale = Object.entries(baseline)
+      .filter(([file, n]) => (english[file] ?? 0) < n)
+      .map(([file, n]) => `${file}: baseline ${n}, now ${english[file] ?? 0}`);
+    expect(stale, 'lower ui-language.english-baseline.json (see the comment above)').toEqual([]);
   });
 });
