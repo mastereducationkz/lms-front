@@ -9,7 +9,9 @@ import { collegeBoardPasswordDisplay } from '../lib/assignmentZeroCollegeBoard';
 import { checkpointLabel, lessonsLabel, type CheckpointSummary } from '../lib/completion';
 import UserAvatar from '@/components/mascot/UserAvatar';
 import StudentAchievementsSection from '@/components/achievements/StudentAchievementsSection';
-import { formatDate as formatDay } from '@/lib/i18n';
+import { formatDate as formatDay, type TFunction } from '@/lib/i18n';
+import { useLocale, useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/studentCard';
 
 // Older backends may not send `can_reveal_college_board_password` yet; on this
 // page (reachable by curators generally, not just admins) treat that as "no".
@@ -103,13 +105,13 @@ function formatDate(iso: string | null) {
   return formatDay(iso, { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-function attendanceStatusBadge(status: string) {
+function attendanceStatusBadge(status: string, t: TFunction) {
   const map: Record<string, { label: string; cls: string }> = {
-    attended: { label: 'Был', cls: 'bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300' },
-    late: { label: 'Опоздал', cls: 'bg-yellow-100 dark:bg-yellow-500/15 text-yellow-700 dark:text-yellow-300' },
-    missed: { label: 'Пропустил', cls: 'bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-300' },
-    absent: { label: 'Отсутствовал', cls: 'bg-muted text-muted-foreground' },
-    registered: { label: 'Зарегистрирован', cls: 'bg-brand-subtle text-brand' },
+    attended: { label: t('studentCard.attendance.attended'), cls: 'bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300' },
+    late: { label: t('studentCard.attendance.late'), cls: 'bg-yellow-100 dark:bg-yellow-500/15 text-yellow-700 dark:text-yellow-300' },
+    missed: { label: t('studentCard.attendance.missed'), cls: 'bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-300' },
+    absent: { label: t('studentCard.attendance.absent'), cls: 'bg-muted text-muted-foreground' },
+    registered: { label: t('studentCard.attendance.registered'), cls: 'bg-brand-subtle text-brand' },
   };
   const { label, cls } = map[status] ?? { label: status, cls: 'bg-muted text-muted-foreground' };
   return <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cls}`}>{label}</span>;
@@ -121,6 +123,12 @@ function scoreColor(score: number | null, max: number) {
   if (pct >= 0.8) return 'text-green-700 dark:text-green-300';
   if (pct >= 0.5) return 'text-yellow-700 dark:text-yellow-300';
   return 'text-red-600 dark:text-red-300';
+}
+
+function lmsStatusLabel(status: string, t: TFunction) {
+  if (status === 'completed') return t('studentCard.lms.completed');
+  if (status === 'in_progress') return t('studentCard.lms.inProgress');
+  return t('studentCard.lms.notStarted');
 }
 
 function lmsStatusDot(status: string) {
@@ -146,6 +154,8 @@ function ScoreBar({ value, pct }: { value: number; pct: number }) {
 export default function StudentProfilePage() {
   const { studentId } = useParams<{ studentId: string }>();
   const navigate = useNavigate();
+  const t = useT();
+  const locale = useLocale();
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -157,8 +167,8 @@ export default function StudentProfilePage() {
     setLoading(true);
     apiClient.getStudentProfile(Number(studentId))
       .then(data => { setProfile(data); setLoading(false); })
-      .catch(e => { setError(e?.response?.data?.detail ?? 'Ошибка загрузки'); setLoading(false); });
-  }, [studentId]);
+      .catch(e => { setError(e?.response?.data?.detail ?? t('studentCard.profile.loadError')); setLoading(false); });
+  }, [studentId, t]);
 
   if (loading) {
     return (
@@ -175,8 +185,8 @@ export default function StudentProfilePage() {
   if (error || !profile) {
     return (
       <div className="max-w-[1000px] mx-auto text-center">
-        <p className="text-red-500">{error ?? 'Студент не найден'}</p>
-        <Button variant="outline" size="sm" className="mt-3" onClick={() => navigate(-1)}>Назад</Button>
+        <p className="text-red-500">{error ?? t('studentCard.profile.notFound')}</p>
+        <Button variant="outline" size="sm" className="mt-3" onClick={() => navigate(-1)}>{t('common.back')}</Button>
       </div>
     );
   }
@@ -184,10 +194,10 @@ export default function StudentProfilePage() {
   const { student, groups, assignment_zero: az, attendance, homework, lms_progress } = profile;
 
   const tabs = [
-    { id: 'overview', label: 'Обзор' },
-    { id: 'attendance', label: `Посещаемость (${attendance.attended}/${attendance.total})` },
-    { id: 'homework', label: `Домашние задания (${homework.submitted})` },
-    { id: 'lms', label: 'LMS прогресс' },
+    { id: 'overview', label: t('studentCard.tabs.overview') },
+    { id: 'attendance', label: t('studentCard.tabs.attendance', { attended: attendance.attended, total: attendance.total }) },
+    { id: 'homework', label: t('studentCard.tabs.homework', { count: homework.submitted }) },
+    { id: 'lms', label: t('studentCard.tabs.lms') },
   ] as const;
 
   return (
@@ -195,7 +205,7 @@ export default function StudentProfilePage() {
       {/* Back */}
       <button onClick={() => navigate(-1)} className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-        Назад к журналу
+        {t('studentCard.profile.backToJournal')}
       </button>
 
       {/* Student card */}
@@ -212,11 +222,11 @@ export default function StudentProfilePage() {
         </div>
         <div className="flex flex-col items-end gap-1 text-right text-xs text-muted-foreground">
           <Button size="sm" className="mb-1" onClick={() => navigate(`/curator/students/${student.id}/report`)}>
-            Отчёт об успеваемости
+            {t('studentCard.profile.report')}
           </Button>
-          <span>Стрик: <span className="font-medium text-foreground">{student.daily_streak} дн.</span></span>
-          <span>Последняя активность: <span className="font-medium text-foreground">{formatDate(student.last_activity_date)}</span></span>
-          <span>Зарегистрирован: <span className="font-medium text-foreground">{formatDate(student.created_at)}</span></span>
+          <span>{t('studentCard.profile.streak')} <span className="font-medium text-foreground">{t('studentCard.profile.streakDays', { count: student.daily_streak })}</span></span>
+          <span>{t('studentCard.profile.lastActive')} <span className="font-medium text-foreground">{formatDate(student.last_activity_date)}</span></span>
+          <span>{t('studentCard.profile.joined')} <span className="font-medium text-foreground">{formatDate(student.created_at)}</span></span>
         </div>
       </div>
 
@@ -224,29 +234,29 @@ export default function StudentProfilePage() {
       <div className="grid grid-cols-2 @xl:grid-cols-4 gap-3">
         {[
           {
-            label: 'Посещаемость',
+            label: t('studentCard.stats.attendance'),
             value: attendance.rate !== null ? `${attendance.rate}%` : '—',
-            sub: `${attendance.attended} из ${attendance.total}`,
+            sub: t('studentCard.stats.attendedOf', { attended: attendance.attended, total: attendance.total }),
             color: attendance.rate !== null && attendance.rate >= 80 ? 'text-green-700 dark:text-green-300' : attendance.rate !== null && attendance.rate >= 60 ? 'text-yellow-700 dark:text-yellow-300' : 'text-red-600 dark:text-red-300',
           },
           {
-            label: 'LMS прогресс',
+            label: t('studentCard.tabs.lms'),
             value: lms_progress.overall !== null ? `${lms_progress.overall}%` : '—',
             sub: [
-              lessonsLabel(lms_progress.lessons_done, lms_progress.lessons_total, 'ru') || `${lms_progress.courses.length} курс(а)`,
-              checkpointLabel(lms_progress.checkpoints, 'ru'),
+              lessonsLabel(lms_progress.lessons_done, lms_progress.lessons_total, locale) || t('studentCard.stats.courses', { count: lms_progress.courses.length }),
+              checkpointLabel(lms_progress.checkpoints, locale),
             ].filter(Boolean).join(' · '),
             color: 'text-brand-subtle-foreground',
           },
           {
-            label: 'Домашних работ',
+            label: t('studentCard.stats.homework'),
             value: String(homework.submitted),
-            sub: homework.avg_score !== null ? `Ср. балл: ${homework.avg_score}` : 'Нет оценок',
+            sub: homework.avg_score !== null ? t('studentCard.stats.averageScore', { score: homework.avg_score }) : t('studentCard.stats.noGrades'),
             color: 'text-foreground',
           },
           {
             label: 'Assignment Zero',
-            value: student.assignment_zero_completed ? 'Сдано' : az ? 'Черновик' : 'Не начато',
+            value: student.assignment_zero_completed ? t('studentCard.az.submitted') : az ? t('studentCard.az.draft') : t('studentCard.az.notStarted'),
             sub: az ? (az.sat_target_date ? `SAT: ${az.sat_target_date}` : az.ielts_target_date ? `IELTS: ${az.ielts_target_date}` : '') : '',
             color: student.assignment_zero_completed ? 'text-green-700 dark:text-green-300' : az ? 'text-yellow-700 dark:text-yellow-300' : 'text-muted-foreground',
           },
@@ -284,18 +294,18 @@ export default function StudentProfilePage() {
         <div className="space-y-4">
           {!az ? (
             <div className="p-8 text-center text-sm text-muted-foreground bg-card border border-border rounded-xl">
-              Assignment Zero не заполнено
+              {t('studentCard.overview.azEmpty')}
             </div>
           ) : (
             <div className="grid @2xl:grid-cols-2 gap-4">
               {/* Personal info */}
               <div className="bg-card border border-border rounded-xl p-4">
-                <h3 className="text-sm font-semibold text-foreground mb-3">Личные данные</h3>
+                <h3 className="text-sm font-semibold text-foreground mb-3">{t('studentCard.overview.personal')}</h3>
                 <dl className="space-y-2 text-sm">
                   {[
-                    ['Полное имя', az.full_name],
-                    ['Телефон', az.phone_number],
-                    ['Тел. родителя', az.parent_phone_number],
+                    [t('studentCard.overview.fullName'), az.full_name],
+                    [t('studentCard.overview.phone'), az.phone_number],
+                    [t('studentCard.overview.parentPhone'), az.parent_phone_number],
                     ['Telegram', az.telegram_id],
                     ['Email', az.email],
                     ['College Board account', az.college_board_email],
@@ -321,16 +331,15 @@ export default function StudentProfilePage() {
                           hasPassword={!!az.has_college_board_password}
                           canReveal={az.can_reveal_college_board_password}
                           defaultCanReveal={CAN_REVEAL_DEFAULT}
-                          lang="ru"
                         />
                       </dd>
                     </div>
                   )}
                   {[
-                    ['Дата рождения', az.birthday_date],
-                    ['Город', az.city],
-                    ['Тип школы', az.school_type],
-                    ['Группа', az.group_name],
+                    [t('studentCard.overview.birthday'), az.birthday_date],
+                    [t('studentCard.overview.city'), az.city],
+                    [t('studentCard.overview.schoolType'), az.school_type],
+                    [t('studentCard.overview.group'), az.group_name],
                   ].filter(([, v]) => v).map(([label, value]) => (
                     <div key={label as string} className="flex gap-2">
                       <dt className="text-muted-foreground w-32 shrink-0">{label}</dt>
@@ -343,15 +352,15 @@ export default function StudentProfilePage() {
               {/* SAT / IELTS */}
               <div className="bg-card border border-border rounded-xl p-4">
                 <h3 className="text-sm font-semibold text-foreground mb-3">
-                  {az.sat_target_date ? 'SAT информация' : 'IELTS информация'}
+                  {az.sat_target_date ? t('studentCard.overview.satTitle') : t('studentCard.overview.ieltsTitle')}
                 </h3>
                 {az.sat_target_date ? (
                   <dl className="space-y-2 text-sm">
                     {[
-                      ['Дата экзамена', az.sat_target_date],
-                      ['Сдавал раньше', az.has_passed_sat_before ? 'Да' : 'Нет'],
-                      ['Предыдущий балл', az.previous_sat_score],
-                      ['Последний практик', az.recent_practice_test_score],
+                      [t('studentCard.overview.examDate'), az.sat_target_date],
+                      [t('studentCard.overview.takenBefore'), az.has_passed_sat_before ? t('common.yes') : t('common.no')],
+                      [t('studentCard.overview.previousScore'), az.previous_sat_score],
+                      [t('studentCard.overview.latestPractice'), az.recent_practice_test_score],
                       ['Bluebook Test 5', az.bluebook_practice_test_5_score],
                     ].filter(([, v]) => v !== null && v !== undefined && v !== '').map(([label, value]) => (
                       <div key={label as string} className="flex gap-2">
@@ -363,10 +372,10 @@ export default function StudentProfilePage() {
                 ) : az.ielts_target_date ? (
                   <dl className="space-y-2 text-sm">
                     {[
-                      ['Дата экзамена', az.ielts_target_date],
-                      ['Сдавал раньше', az.has_passed_ielts_before ? 'Да' : 'Нет'],
-                      ['Предыдущий балл', az.previous_ielts_score],
-                      ['Цель', az.ielts_target_score],
+                      [t('studentCard.overview.examDate'), az.ielts_target_date],
+                      [t('studentCard.overview.takenBefore'), az.has_passed_ielts_before ? t('common.yes') : t('common.no')],
+                      [t('studentCard.overview.previousScore'), az.previous_ielts_score],
+                      [t('studentCard.overview.targetScore'), az.ielts_target_score],
                     ].filter(([, v]) => v !== null && v !== undefined && v !== '').map(([label, value]) => (
                       <div key={label as string} className="flex gap-2">
                         <dt className="text-muted-foreground w-36 shrink-0">{label}</dt>
@@ -375,21 +384,21 @@ export default function StudentProfilePage() {
                     ))}
                   </dl>
                 ) : (
-                  <p className="text-sm text-muted-foreground">Нет данных</p>
+                  <p className="text-sm text-muted-foreground">{t('studentCard.overview.noData')}</p>
                 )}
 
                 {/* Self-assessment scores */}
                 {az.sat_target_date && (
                   <div className="mt-4">
-                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Самооценка (1–5)</h4>
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">{t('studentCard.overview.selfAssessment')}</h4>
                     <div className="space-y-1">
                       {[
-                        ['Пунктуация', az.grammar_punctuation],
+                        [t('studentCard.overview.punctuation'), az.grammar_punctuation],
                         ['Noun Clauses', az.grammar_noun_clauses],
                         ['Relative Clauses', az.grammar_relative_clauses],
-                        ['Формы глаголов', az.grammar_verb_forms],
+                        [t('studentCard.overview.verbForms'), az.grammar_verb_forms],
                         ['Word in Context', az.reading_word_in_context],
-                        ['Структура текста', az.reading_text_structure],
+                        [t('studentCard.overview.textStructure'), az.reading_text_structure],
                         ['Central Ideas', az.reading_central_ideas],
                       ].filter(([, v]) => v !== null && v !== undefined).map(([label, value]) => (
                         <div key={label as string} className="flex items-center gap-2">
@@ -415,15 +424,15 @@ export default function StudentProfilePage() {
       {activeTab === 'attendance' && (
         <div className="bg-card border border-border rounded-xl overflow-hidden">
           {attendance.records.length === 0 ? (
-            <div className="p-8 text-center text-sm text-muted-foreground">Нет записей посещаемости</div>
+            <div className="p-8 text-center text-sm text-muted-foreground">{t('studentCard.attendance.empty')}</div>
           ) : (
             <div className="overflow-x-auto"><table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 dark:bg-muted border-b border-border">
-                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Урок / событие</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Дата</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Статус</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Активность</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">{t('studentCard.attendance.event')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">{t('studentCard.attendance.date')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">{t('studentCard.attendance.status')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">{t('studentCard.attendance.activity')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -431,7 +440,7 @@ export default function StudentProfilePage() {
                   <tr key={r.event_id} className="border-b border-border last:border-0">
                     <td className="px-4 py-3 text-foreground">{r.event_topic ? `${r.event_title} — ${r.event_topic}` : r.event_title}</td>
                     <td className="px-4 py-3 text-muted-foreground">{formatDate(r.event_date)}</td>
-                    <td className="px-4 py-3">{attendanceStatusBadge(r.status)}</td>
+                    <td className="px-4 py-3">{attendanceStatusBadge(r.status, t)}</td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {r.activity_score !== null ? `${r.activity_score}/10` : '—'}
                     </td>
@@ -447,16 +456,16 @@ export default function StudentProfilePage() {
       {activeTab === 'homework' && (
         <div className="bg-card border border-border rounded-xl overflow-hidden">
           {homework.records.length === 0 ? (
-            <div className="p-8 text-center text-sm text-muted-foreground">Нет сданных домашних заданий</div>
+            <div className="p-8 text-center text-sm text-muted-foreground">{t('studentCard.homework.empty')}</div>
           ) : (
             <div className="overflow-x-auto"><table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 dark:bg-muted border-b border-border">
-                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Задание</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Балл</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Сдано</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Статус</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">Обратная связь</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">{t('studentCard.homework.assignment')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">{t('studentCard.homework.score')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">{t('studentCard.homework.submitted')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">{t('studentCard.homework.status')}</th>
+                  <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase">{t('studentCard.homework.feedback')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -469,17 +478,17 @@ export default function StudentProfilePage() {
                           {r.score}/{r.max_score}
                         </span>
                       ) : (
-                        <span className="text-muted-foreground">Не проверено</span>
+                        <span className="text-muted-foreground">{t('studentCard.homework.notGraded')}</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       {formatDate(r.submitted_at)}
-                      {r.is_late && <span className="ml-1 text-xs text-red-500">(опоздание)</span>}
+                      {r.is_late && <span className="ml-1 text-xs text-red-500">{t('studentCard.homework.late')}</span>}
                     </td>
                     <td className="px-4 py-3">
                       {r.is_graded
-                        ? <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300 font-medium">Проверено</span>
-                        : <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 font-medium">Ожидание</span>}
+                        ? <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300 font-medium">{t('studentCard.homework.graded')}</span>
+                        : <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 dark:bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 font-medium">{t('studentCard.homework.pending')}</span>}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground max-w-[200px] truncate">{r.feedback ?? '—'}</td>
                   </tr>
@@ -495,7 +504,7 @@ export default function StudentProfilePage() {
         <div className="space-y-3">
           {lms_progress.courses.length === 0 ? (
             <div className="p-8 text-center text-sm text-muted-foreground bg-card border border-border rounded-xl">
-              Нет данных о прогрессе
+              {t('studentCard.lms.empty')}
             </div>
           ) : (
             lms_progress.courses.map(course => (
@@ -506,14 +515,14 @@ export default function StudentProfilePage() {
                 >
                   <div className="flex items-center gap-3">
                     <div>
-                      <p className="text-sm font-medium text-foreground text-left">{course.course_name ?? `Курс ${course.course_id}`}</p>
+                      <p className="text-sm font-medium text-foreground text-left">{course.course_name ?? t('studentCard.lms.course', { id: course.course_id })}</p>
                       <p className="text-xs text-muted-foreground text-left">
                         {course.total_lessons > 0
-                          ? lessonsLabel(course.lessons_done ?? course.completed_lessons, course.lessons_total ?? course.total_lessons, 'ru')
-                          : `Статус: ${course.status === 'completed' ? 'Завершён' : course.status === 'in_progress' ? 'В процессе' : 'Не начат'}`}
+                          ? lessonsLabel(course.lessons_done ?? course.completed_lessons, course.lessons_total ?? course.total_lessons, locale)
+                          : t('studentCard.lms.statusLine', { status: lmsStatusLabel(course.status, t) })}
                       </p>
-                      {checkpointLabel(course.checkpoints, 'ru') && (
-                        <p className="text-xs text-muted-foreground text-left">{checkpointLabel(course.checkpoints, 'ru')}</p>
+                      {checkpointLabel(course.checkpoints, locale) && (
+                        <p className="text-xs text-muted-foreground text-left">{checkpointLabel(course.checkpoints, locale)}</p>
                       )}
                     </div>
                   </div>
@@ -530,10 +539,10 @@ export default function StudentProfilePage() {
                     <div className="overflow-x-auto"><table className="w-full text-sm">
                       <thead>
                         <tr className="bg-gray-50 dark:bg-muted">
-                          <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Урок</th>
-                          <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Статус</th>
-                          <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Прогресс</th>
-                          <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">Последний доступ</th>
+                          <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">{t('studentCard.lms.lesson')}</th>
+                          <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">{t('studentCard.lms.status')}</th>
+                          <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">{t('studentCard.lms.progress')}</th>
+                          <th className="text-left px-4 py-2 text-xs font-medium text-muted-foreground">{t('studentCard.lms.lastOpened')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -541,11 +550,11 @@ export default function StudentProfilePage() {
                           <tr key={l.lesson_id} className="border-t border-border">
                             <td className="px-4 py-2 text-foreground flex items-center gap-2">
                               {lmsStatusDot(l.status)}
-                              {l.lesson_title ?? `Урок ${l.lesson_id}`}
+                              {l.lesson_title ?? t('studentCard.lms.lessonFallback', { id: l.lesson_id })}
                             </td>
                             <td className="px-4 py-2">
                               <span className={`text-xs font-medium ${l.status === 'completed' ? 'text-green-600 dark:text-green-300' : l.status === 'in_progress' ? 'text-brand' : 'text-muted-foreground'}`}>
-                                {l.status === 'completed' ? 'Завершён' : l.status === 'in_progress' ? 'В процессе' : 'Не начат'}
+                                {lmsStatusLabel(l.status, t)}
                               </span>
                             </td>
                             <td className="px-4 py-2">

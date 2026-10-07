@@ -15,7 +15,9 @@ import {
 } from '../components/ui/select';
 import { Button } from '../components/ui/button';
 import UserAvatar from '@/components/mascot/UserAvatar';
-import { formatDate as formatDay } from '@/lib/i18n';
+import { formatDate as formatDay, type TFunction } from '@/lib/i18n';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/studentCard';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -48,10 +50,10 @@ interface Group {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function azBadge(status: StudentRow['az_status']) {
-  if (status === 'submitted') return <Badge className="bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300 border-green-200 dark:border-green-500/30 text-[11px] font-medium">Сдано</Badge>;
-  if (status === 'draft') return <Badge className="bg-yellow-100 dark:bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-500/30 text-[11px] font-medium">Черновик</Badge>;
-  return <Badge className="bg-muted text-muted-foreground border-border text-[11px] font-medium">Не начато</Badge>;
+function azBadge(status: StudentRow['az_status'], t: TFunction) {
+  if (status === 'submitted') return <Badge className="bg-green-100 dark:bg-green-500/15 text-green-700 dark:text-green-300 border-green-200 dark:border-green-500/30 text-[11px] font-medium">{t('studentCard.az.submitted')}</Badge>;
+  if (status === 'draft') return <Badge className="bg-yellow-100 dark:bg-yellow-500/15 text-yellow-700 dark:text-yellow-300 border-yellow-200 dark:border-yellow-500/30 text-[11px] font-medium">{t('studentCard.az.draft')}</Badge>;
+  return <Badge className="bg-muted text-muted-foreground border-border text-[11px] font-medium">{t('studentCard.az.notStarted')}</Badge>;
 }
 
 function attendanceBadge(rate: number | null, attended: number, total: number) {
@@ -87,6 +89,7 @@ function formatDate(iso: string | null) {
 
 export default function StudentsJournalPage() {
   const navigate = useNavigate();
+  const t = useT();
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [total, setTotal] = useState(0);
@@ -135,23 +138,23 @@ export default function StudentsJournalPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
         <div className="min-w-0">
-          <h1 className="text-xl font-semibold text-foreground">Журнал студентов</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{total} студентов</p>
+          <h1 className="text-xl font-semibold text-foreground">{t('studentCard.journal.title')}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{t('studentCard.journal.total', { count: total })}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 min-w-0">
           <Input
-            placeholder="Поиск по имени или email..."
+            placeholder={t('studentCard.journal.searchPlaceholder')}
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-52 h-8 text-sm"
           />
           <Select value={selectedGroup} onValueChange={setSelectedGroup}>
-            <SelectTrigger className="w-44 h-8 text-sm"><SelectValue placeholder="Все группы" /></SelectTrigger>
+            <SelectTrigger className="w-44 h-8 text-sm"><SelectValue placeholder={t('studentCard.journal.allGroups')} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Все группы</SelectItem>
+              <SelectItem value="all">{t('studentCard.journal.allGroups')}</SelectItem>
               {groups.map(g => (
                 <SelectItem key={g.id} value={String(g.id)}>
-                  {g.name}{(g as { is_archived?: boolean }).is_archived ? ' (архив)' : ''}
+                  {(g as { is_archived?: boolean }).is_archived ? t('studentCard.journal.archivedGroup', { name: g.name }) : g.name}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -163,7 +166,7 @@ export default function StudentsJournalPage() {
               onChange={e => setShowArchived(e.target.checked)}
               className="rounded border-border"
             />
-            Архивные группы
+            {t('studentCard.journal.showArchived')}
           </label>
           <label className="flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap cursor-pointer select-none">
             <input
@@ -172,7 +175,7 @@ export default function StudentsJournalPage() {
               onChange={e => setShowInactive(e.target.checked)}
               className="rounded border-border"
             />
-            Деактивированные
+            {t('studentCard.journal.showInactive')}
           </label>
         </div>
       </div>
@@ -183,13 +186,13 @@ export default function StudentsJournalPage() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 dark:bg-muted border-b border-border">
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Студент</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Группа</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Посещаемость</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('studentCard.journal.column.student')}</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('studentCard.journal.column.group')}</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('studentCard.journal.column.attendance')}</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">LMS</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Домашки</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('studentCard.journal.column.homework')}</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Assignment Zero</th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">Активность</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('studentCard.journal.column.activity')}</th>
             </tr>
           </thead>
           <tbody>
@@ -206,7 +209,7 @@ export default function StudentsJournalPage() {
             ) : students.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-4 py-16 text-center text-sm text-muted-foreground">
-                  {search || selectedGroup !== 'all' ? 'Студенты не найдены' : 'Нет студентов'}
+                  {search || selectedGroup !== 'all' ? t('studentCard.journal.noMatches') : t('studentCard.journal.empty')}
                 </td>
               </tr>
             ) : (
@@ -224,7 +227,7 @@ export default function StudentsJournalPage() {
                         <p className="font-medium text-foreground text-sm leading-tight">
                           {s.name}
                           {s.is_inactive && (
-                            <span className="ml-1.5 text-[10px] font-normal text-red-500 bg-red-50 dark:bg-red-500/15 border border-red-200 dark:border-red-500/30 rounded px-1 py-px align-middle">деактивирован</span>
+                            <span className="ml-1.5 text-[10px] font-normal text-red-500 bg-red-50 dark:bg-red-500/15 border border-red-200 dark:border-red-500/30 rounded px-1 py-px align-middle">{t('studentCard.journal.deactivated')}</span>
                           )}
                         </p>
                         <p className="text-xs text-muted-foreground">{s.email}</p>
@@ -249,13 +252,15 @@ export default function StudentsJournalPage() {
                   <td className="px-4 py-3">
                     {s.hw_submitted > 0 ? (
                       <span className="text-sm text-foreground">
-                        {s.hw_submitted} сдано{s.hw_avg_score !== null ? ` · ${s.hw_avg_score} б.` : ''}
+                        {s.hw_avg_score !== null
+                          ? t('studentCard.journal.hwSubmittedWithAverage', { count: s.hw_submitted, average: s.hw_avg_score })
+                          : t('studentCard.journal.hwSubmitted', { count: s.hw_submitted })}
                       </span>
                     ) : (
                       <span className="text-muted-foreground text-sm">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3">{azBadge(s.az_status)}</td>
+                  <td className="px-4 py-3">{azBadge(s.az_status, t)}</td>
                   <td className="px-4 py-3">
                     <span className="text-sm text-muted-foreground">{formatDate(s.last_activity)}</span>
                   </td>
@@ -270,11 +275,11 @@ export default function StudentsJournalPage() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>Показано {page * pageSize + 1}–{Math.min((page + 1) * pageSize, total)} из {total}</span>
+          <span>{t('studentCard.journal.showing', { from: page * pageSize + 1, to: Math.min((page + 1) * pageSize, total), total })}</span>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>Назад</Button>
-            <span className="flex items-center px-2">Стр. {page + 1} из {totalPages}</span>
-            <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>Вперёд</Button>
+            <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => p - 1)}>{t('studentCard.journal.previous')}</Button>
+            <span className="flex items-center px-2">{t('studentCard.journal.page', { page: page + 1, pages: totalPages })}</span>
+            <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>{t('studentCard.journal.next')}</Button>
           </div>
         </div>
       )}

@@ -13,13 +13,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../ui/select';
+import type { MessageKey } from '@/lib/i18n';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/studentReport';
 
-const TEMPLATE_LABELS: Record<ParentTemplateKey, string> = {
-  t1: 'Шаблон 1 — подробный',
-  t2: 'Шаблон 2 — про активность',
-  t3: 'Шаблон 3 — короткий',
-  t4: 'Шаблон 4 — рекомендации',
-  t5: 'Шаблон 5 — есть что обсудить',
+const TEMPLATE_LABELS: Record<ParentTemplateKey, MessageKey> = {
+  t1: 'studentReport.parent.template.t1',
+  t2: 'studentReport.parent.template.t2',
+  t3: 'studentReport.parent.template.t3',
+  t4: 'studentReport.parent.template.t4',
+  t5: 'studentReport.parent.template.t5',
 };
 
 interface Props {
@@ -32,12 +35,13 @@ interface Props {
 }
 
 export default function ParentReportCard({ studentId, studentName, week, initial, onSaved }: Props) {
+  const t = useT();
   const [state, setState] = useState<ParentStudentResponse | null>(initial);
   const [body, setBody] = useState(initial?.report?.body ?? '');
   const [note, setNote] = useState(initial?.report?.curator_note ?? '');
   const [template, setTemplate] = useState<ParentTemplateKey | ''>('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<MessageKey | null>(null);
   const [copied, setCopied] = useState(false);
 
   // Какой отчёт показан. Ученик и неделя — это и есть его личность; всё остальное
@@ -97,7 +101,7 @@ export default function ParentReportCard({ studentId, studentName, week, initial
       setNote(next.report?.curator_note ?? '');
       onSaved?.(next);
     } catch {
-      if (live.current === issuedFor) setError('Не удалось сгенерировать отчёт');
+      if (live.current === issuedFor) setError('studentReport.parent.generateFailed');
     } finally {
       // Безусловно: этот флаг только выключает кнопки, и не сбросить его означает
       // оставить карточку навсегда заблокированной, если куратор ушёл с неё во время запроса.
@@ -130,7 +134,7 @@ export default function ParentReportCard({ studentId, studentName, week, initial
       // в списке карточек текст, которого на сервере уже нет.
       onSaved?.(next);
     } catch {
-      if (live.current === issuedFor) setError('Не удалось сохранить правку');
+      if (live.current === issuedFor) setError('studentReport.parent.saveFailed');
     } finally {
       setBusy(false);
     }
@@ -144,7 +148,7 @@ export default function ParentReportCard({ studentId, studentName, week, initial
     } catch {
       // Буфера нет по http и он может быть запрещён настройками. Молчать здесь нельзя:
       // куратор нажал кнопку, ничего не произошло, и он отправит родителю пустое сообщение.
-      setError('Не удалось скопировать — выделите текст и скопируйте вручную');
+      setError('studentReport.parent.copyFailed');
     }
   };
 
@@ -156,7 +160,7 @@ export default function ParentReportCard({ studentId, studentName, week, initial
         <h3 className="text-base font-semibold text-foreground">{studentName}</h3>
         {state?.report && (
           <span className="text-xs text-muted-foreground">
-            {state.report.template_auto ? 'шаблон выбран автоматически' : 'шаблон выбран вручную'}
+            {t(state.report.template_auto ? 'studentReport.parent.templateAuto' : 'studentReport.parent.templateManual')}
           </span>
         )}
       </header>
@@ -167,25 +171,24 @@ export default function ParentReportCard({ studentId, studentName, week, initial
 
       {state?.prose_degraded && (
         <p className="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 rounded p-2">
-          Текстовые формулировки сгенерировать не удалось — цифры, посещаемость и ДЗ
-          проставлены, остальное допишите вручную.
+          {t('studentReport.parent.proseDegraded')}
         </p>
       )}
 
       {state?.facts.test_unavailable && (
         <p className="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-500/15 border border-amber-200 dark:border-amber-500/30 rounded p-2">
-          Платформа тестов не ответила — блок с результатами теста пропущен.
+          {t('studentReport.parent.testUnavailable')}
         </p>
       )}
 
       <label className="block text-sm text-foreground">
-        Заметка куратора
+        {t('studentReport.parent.note')}
         <textarea
           className="mt-1 w-full border border-border bg-background text-foreground placeholder:text-muted-foreground rounded-lg p-2 text-sm"
           rows={2}
           value={note}
           onChange={e => { dirty.current = true; setNote(e.target.value); }}
-          placeholder="Что вы знаете об ученике, чего нет в данных"
+          placeholder={t('studentReport.parent.notePlaceholder')}
           disabled={busy}
         />
       </label>
@@ -201,10 +204,10 @@ export default function ParentReportCard({ studentId, studentName, week, initial
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="auto">
-              {suggested ? `Автовыбор (${TEMPLATE_LABELS[suggested]})` : 'Автовыбор'}
+              {suggested ? t('studentReport.parent.autoSelectWith', { template: t(TEMPLATE_LABELS[suggested]) }) : t('studentReport.parent.autoSelect')}
             </SelectItem>
             {(Object.keys(TEMPLATE_LABELS) as ParentTemplateKey[]).map(key => (
-              <SelectItem key={key} value={key}>{TEMPLATE_LABELS[key]}</SelectItem>
+              <SelectItem key={key} value={key}>{t(TEMPLATE_LABELS[key])}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -214,11 +217,11 @@ export default function ParentReportCard({ studentId, studentName, week, initial
           disabled={busy}
           className="shrink-0 px-3 py-2 text-sm rounded-lg bg-brand-solid hover:bg-brand-solid-hover text-brand-solid-foreground disabled:opacity-50"
         >
-          {state?.report ? 'Перегенерировать' : 'Сгенерировать'}
+          {state?.report ? t('studentReport.parent.regenerate') : t('studentReport.parent.generate')}
         </button>
       </div>
 
-      {error && <p className="text-sm text-red-600 dark:text-red-300">{error}</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-300">{t(error)}</p>}
 
       {(state?.report || body) && (
         <>
@@ -235,7 +238,7 @@ export default function ParentReportCard({ studentId, studentName, week, initial
               onClick={copy}
               className="px-3 py-2 text-sm rounded-lg border border-border"
             >
-              {copied ? 'Скопировано' : 'Копировать'}
+              {copied ? t('common.copied') : t('studentReport.parent.copy')}
             </button>
             <button
               type="button"
@@ -243,7 +246,7 @@ export default function ParentReportCard({ studentId, studentName, week, initial
               disabled={busy}
               className="px-3 py-2 text-sm rounded-lg border border-border disabled:opacity-50"
             >
-              Сохранить правку
+              {t('studentReport.parent.saveEdit')}
             </button>
           </div>
         </>

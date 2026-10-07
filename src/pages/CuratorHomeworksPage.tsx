@@ -15,6 +15,8 @@ import {
 } from '../components/ui/table';
 import type { GroupData } from '../components/curator-homeworks';
 import { formatDateTime } from '../lib/i18n';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/curatorHomeworks';
 
 interface GroupStat {
   group: GroupData;
@@ -38,6 +40,7 @@ const formatDueShort = (dateString: string | null): string => {
 
 const CuratorHomeworksPage: React.FC = () => {
   const navigate = useNavigate();
+  const t = useT();
   const [groups, setGroups] = useState<GroupData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -73,7 +76,7 @@ const CuratorHomeworksPage: React.FC = () => {
       setGroups(Array.isArray(groupsData) ? groupsData : []);
     } catch (error) {
       console.error('Error fetching homeworks:', error);
-      toast('Не удалось загрузить домашние задания', 'error');
+      toast(t('curatorHomeworks.loadError'), 'error');
     } finally {
       setLoading(false);
     }
@@ -112,12 +115,12 @@ const CuratorHomeworksPage: React.FC = () => {
     const byId = new Map<number, string>();
     for (const g of groups) {
       if (g.teacher_id != null && !byId.has(g.teacher_id)) {
-        byId.set(g.teacher_id, g.teacher_name || `Учитель #${g.teacher_id}`);
+        byId.set(g.teacher_id, g.teacher_name || t('curatorHomeworks.teacherFallback', { id: g.teacher_id }));
       }
     }
     return Array.from(byId, ([id, name]) => ({ id, name }))
       .sort((a, b) => a.name.localeCompare(b.name, 'ru'));
-  }, [groups]);
+  }, [groups, t]);
 
   const scopeGroups = useMemo(
     () => groupStats.filter((s) => showCompletedGroups || !s.isOver),
@@ -187,7 +190,7 @@ const CuratorHomeworksPage: React.FC = () => {
       <div className="container mx-auto space-y-5">
         <Button variant="ghost" size="sm" onClick={() => setSelectedGroupId(null)} className="gap-2 -ml-2">
           <ArrowLeft className="w-4 h-4" />
-          Все группы
+          {t('curatorHomeworks.allGroups')}
         </Button>
 
         {/* Group health header */}
@@ -200,17 +203,17 @@ const CuratorHomeworksPage: React.FC = () => {
             )}
             {selected.isOver && (
               <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border text-muted-foreground shrink-0">
-                Завершена
+                {t('curatorHomeworks.group.finished')}
               </span>
             )}
           </div>
           <div className="flex items-center gap-5 text-sm">
-            <span><b className="text-base">{pct}%</b> <span className="text-muted-foreground">сдано</span></span>
+            <span><b className="text-base">{pct}%</b> <span className="text-muted-foreground">{t('curatorHomeworks.stats.submitted')}</span></span>
             {selected.notSubmitted > 0 && (
-              <span className="text-amber-600 dark:text-amber-400"><b className="text-base">{selected.notSubmitted}</b> не сдано</span>
+              <span className="text-amber-600 dark:text-amber-400"><b className="text-base">{selected.notSubmitted}</b> {t('curatorHomeworks.stats.notSubmitted')}</span>
             )}
             {selected.overdue > 0 && (
-              <span className="text-red-600 dark:text-red-400"><b className="text-base">{selected.overdue}</b> просрочено</span>
+              <span className="text-red-600 dark:text-red-400"><b className="text-base">{selected.overdue}</b> {t('curatorHomeworks.stats.overdue')}</span>
             )}
           </div>
         </div>
@@ -219,7 +222,7 @@ const CuratorHomeworksPage: React.FC = () => {
         {sortedAssignments.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
             <FileText className="w-12 h-12 mb-3 opacity-50" />
-            <p>В этой группе нет заданий</p>
+            <p>{t('curatorHomeworks.group.noAssignments')}</p>
           </div>
         ) : (
           <div className="border rounded-lg bg-card overflow-hidden">
@@ -227,19 +230,19 @@ const CuratorHomeworksPage: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="h-9 py-2 text-[10px] uppercase tracking-wider text-muted-foreground">Задание</TableHead>
+                    <TableHead className="h-9 py-2 text-[10px] uppercase tracking-wider text-muted-foreground">{t('curatorHomeworks.table.assignment')}</TableHead>
                     <TableHead className="h-9 py-2 text-[10px] uppercase tracking-wider text-muted-foreground">
                       <button
                         type="button"
                         onClick={() => setDeadlineDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
                         className="inline-flex items-center gap-1 uppercase tracking-wider hover:text-foreground transition-colors"
-                        title="Сортировать по сроку"
+                        title={t('curatorHomeworks.table.sortByDue')}
                       >
-                        Срок
+                        {t('curatorHomeworks.table.due')}
                         {deadlineDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
                       </button>
                     </TableHead>
-                    <TableHead className="h-9 py-2 text-[10px] uppercase tracking-wider text-muted-foreground w-[200px]">Сдано</TableHead>
+                    <TableHead className="h-9 py-2 text-[10px] uppercase tracking-wider text-muted-foreground w-[200px]">{t('curatorHomeworks.table.submitted')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -274,10 +277,10 @@ const CuratorHomeworksPage: React.FC = () => {
                               </span>
                             </div>
                             <div className="text-[11px] tabular-nums">
-                              {s.overdue > 0 && <span className="font-medium text-red-600 dark:text-red-400">{s.overdue} просрочено</span>}
+                              {s.overdue > 0 && <span className="font-medium text-red-600 dark:text-red-400">{t('curatorHomeworks.count.overdue', { count: s.overdue })}</span>}
                               {s.overdue > 0 && s.not_submitted > 0 && <span className="text-muted-foreground"> · </span>}
-                              {s.not_submitted > 0 && <span className="text-amber-600 dark:text-amber-400">{s.not_submitted} не сдано</span>}
-                              {s.overdue === 0 && s.not_submitted === 0 && <span className="inline-flex items-center gap-1 text-green-700 dark:text-green-400"><Check className="h-3.5 w-3.5" aria-hidden="true" />всё сдано</span>}
+                              {s.not_submitted > 0 && <span className="text-amber-600 dark:text-amber-400">{t('curatorHomeworks.count.notSubmitted', { count: s.not_submitted })}</span>}
+                              {s.overdue === 0 && s.not_submitted === 0 && <span className="inline-flex items-center gap-1 text-green-700 dark:text-green-400"><Check className="h-3.5 w-3.5" aria-hidden="true" />{t('curatorHomeworks.count.allSubmitted')}</span>}
                             </div>
                           </div>
                         </TableCell>
@@ -296,13 +299,13 @@ const CuratorHomeworksPage: React.FC = () => {
   // ── Overview: compact group cards sorted by attention ───────────────────────
   return (
     <div className="container mx-auto space-y-5">
-      <h1 className="text-2xl font-bold">Домашние задания</h1>
+      <h1 className="text-2xl font-bold">{t('curatorHomeworks.title')}</h1>
 
       {groups.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
           <FileText className="w-16 h-16 mb-4 opacity-50" />
-          <p className="text-lg">Нет домашних заданий</p>
-          <p className="text-sm">Задания ваших групп появятся здесь</p>
+          <p className="text-lg">{t('curatorHomeworks.empty.title')}</p>
+          <p className="text-sm">{t('curatorHomeworks.empty.hint')}</p>
         </div>
       ) : (
         <>
@@ -310,23 +313,23 @@ const CuratorHomeworksPage: React.FC = () => {
           <div className="flex flex-wrap items-center gap-x-7 gap-y-2 rounded-lg border bg-card px-5 py-3">
             <div className="flex items-baseline gap-1.5">
               <span className="text-xl font-bold tabular-nums">{rollup.groups}</span>
-              <span className="text-xs text-muted-foreground">групп</span>
+              <span className="text-xs text-muted-foreground">{t('curatorHomeworks.stats.groups', { count: rollup.groups })}</span>
             </div>
             <div className="flex items-baseline gap-1.5">
               <span className="text-xl font-bold tabular-nums">{rollup.assignments}</span>
-              <span className="text-xs text-muted-foreground">заданий</span>
+              <span className="text-xs text-muted-foreground">{t('curatorHomeworks.stats.assignments', { count: rollup.assignments })}</span>
             </div>
             <div className="flex items-baseline gap-1.5">
               <span className="text-xl font-bold text-brand tabular-nums">{rollupRate}%</span>
-              <span className="text-xs text-muted-foreground">сдано</span>
+              <span className="text-xs text-muted-foreground">{t('curatorHomeworks.stats.submitted')}</span>
             </div>
             <div className="flex items-baseline gap-1.5">
               <span className="text-xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">{rollup.notSubmitted}</span>
-              <span className="text-xs text-muted-foreground">не сдано</span>
+              <span className="text-xs text-muted-foreground">{t('curatorHomeworks.stats.notSubmitted')}</span>
             </div>
             <div className="flex items-baseline gap-1.5">
               <span className="text-xl font-bold text-red-600 dark:text-red-400 tabular-nums">{rollup.overdue}</span>
-              <span className="text-xs text-muted-foreground">просрочено</span>
+              <span className="text-xs text-muted-foreground">{t('curatorHomeworks.stats.overdue')}</span>
             </div>
           </div>
 
@@ -335,7 +338,7 @@ const CuratorHomeworksPage: React.FC = () => {
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="Поиск группы..."
+                placeholder={t('curatorHomeworks.filter.searchGroups')}
                 value={groupSearch}
                 onChange={(e) => setGroupSearch(e.target.value)}
                 className="pl-9 bg-card"
@@ -347,12 +350,12 @@ const CuratorHomeworksPage: React.FC = () => {
                 onValueChange={(v) => setSelectedTeacherId(v === 'all' ? 'all' : Number(v))}
               >
                 <SelectTrigger className="w-[220px] h-9 bg-card">
-                  <SelectValue placeholder="Учитель" />
+                  <SelectValue placeholder={t('curatorHomeworks.filter.teacher')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Все учителя</SelectItem>
-                  {teacherOptions.map((t) => (
-                    <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
+                  <SelectItem value="all">{t('curatorHomeworks.filter.allTeachers')}</SelectItem>
+                  {teacherOptions.map((opt) => (
+                    <SelectItem key={opt.id} value={String(opt.id)}>{opt.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -368,7 +371,7 @@ const CuratorHomeworksPage: React.FC = () => {
               }`}
             >
               <AlertCircle className="w-4 h-4" />
-              Только отстающие
+              {t('curatorHomeworks.filter.needsAttention')}
             </button>
             <div className="flex items-center gap-2 ml-auto">
               <Checkbox
@@ -377,7 +380,7 @@ const CuratorHomeworksPage: React.FC = () => {
                 onCheckedChange={(checked) => setShowCompletedGroups(Boolean(checked))}
               />
               <Label htmlFor="show-completed-groups" className="text-sm text-muted-foreground cursor-pointer select-none">
-                Показывать завершенные группы
+                {t('curatorHomeworks.filter.showFinished')}
               </Label>
             </div>
           </div>
@@ -386,7 +389,7 @@ const CuratorHomeworksPage: React.FC = () => {
           {overviewGroups.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
               <FileText className="w-12 h-12 mb-3 opacity-50" />
-              <p>{needsAttentionOnly ? 'Все группы в порядке' : 'Ничего не найдено'}</p>
+              <p>{needsAttentionOnly ? t('curatorHomeworks.filter.allOnTrack') : t('curatorHomeworks.filter.nothingFound')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 @6xl:grid-cols-4 gap-4">
@@ -405,16 +408,16 @@ const CuratorHomeworksPage: React.FC = () => {
                       <h3 className="font-bold truncate">{g.name}</h3>
                       {g.isOver && (
                         <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border text-muted-foreground shrink-0">
-                          Завершена
+                          {t('curatorHomeworks.group.finished')}
                         </span>
                       )}
                     </div>
                     {g.teacherName && (
                       <div className="text-xs text-muted-foreground mb-1 truncate">{g.teacherName}</div>
                     )}
-                    <div className="text-xs text-muted-foreground mb-2.5">{g.assignmentsCount} заданий</div>
+                    <div className="text-xs text-muted-foreground mb-2.5">{t('curatorHomeworks.group.assignments', { count: g.assignmentsCount })}</div>
                     {empty ? (
-                      <div className="text-xs text-muted-foreground italic">Нет заданий</div>
+                      <div className="text-xs text-muted-foreground italic">{t('curatorHomeworks.group.empty')}</div>
                     ) : (
                       <>
                         <div className="flex items-center gap-2 mb-1">
@@ -424,17 +427,17 @@ const CuratorHomeworksPage: React.FC = () => {
                           <span className="text-xs font-medium text-muted-foreground tabular-nums whitespace-nowrap">{pct}%</span>
                         </div>
                         <div className="text-[11px] text-muted-foreground mb-2.5 tabular-nums">
-                          {g.submitted}/{g.expected} сдано
+                          {t('curatorHomeworks.count.submittedOf', { submitted: g.submitted, expected: g.expected })}
                         </div>
                         <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
                           {g.overdue > 0 && (
-                            <span className="font-semibold text-red-600 dark:text-red-400">{g.overdue} просрочено</span>
+                            <span className="font-semibold text-red-600 dark:text-red-400">{t('curatorHomeworks.count.overdue', { count: g.overdue })}</span>
                           )}
                           {g.notSubmitted > 0 && (
-                            <span className="font-medium text-amber-600 dark:text-amber-400">{g.notSubmitted} не сдано</span>
+                            <span className="font-medium text-amber-600 dark:text-amber-400">{t('curatorHomeworks.count.notSubmitted', { count: g.notSubmitted })}</span>
                           )}
                           {g.overdue === 0 && g.notSubmitted === 0 && (
-                            <span className="inline-flex items-center gap-1 font-medium text-green-700 dark:text-green-400"><Check className="h-3.5 w-3.5" aria-hidden="true" />всё сдано</span>
+                            <span className="inline-flex items-center gap-1 font-medium text-green-700 dark:text-green-400"><Check className="h-3.5 w-3.5" aria-hidden="true" />{t('curatorHomeworks.count.allSubmitted')}</span>
                           )}
                         </div>
                       </>

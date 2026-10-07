@@ -26,6 +26,10 @@ import { workspace } from './en/workspace';
 import { announcements } from './en/announcements';
 import { serverErrors } from './en/serverErrors';
 import { pwa } from './en/pwa';
+import { studentReport } from './en/studentReport';
+import { studentCard } from './en/studentCard';
+import { curatorHomeworks } from './en/curatorHomeworks';
+import { curatorPages } from './en/curatorPages';
 import { profile } from './en/profile';
 
 export const EN_NAMESPACES = {
@@ -53,6 +57,10 @@ export const EN_NAMESPACES = {
   announcements,
   serverErrors,
   pwa,
+  studentReport,
+  studentCard,
+  curatorHomeworks,
+  curatorPages,
   profile,
 } as const;
 
@@ -81,6 +89,10 @@ export const en = {
   ...announcements,
   ...serverErrors,
   ...pwa,
+  ...studentReport,
+  ...studentCard,
+  ...curatorHomeworks,
+  ...curatorPages,
   ...profile,
 } as const;
 
