@@ -105,11 +105,70 @@ describe('sanitizeHtml neutralises attack payloads', () => {
     expect(filterStyle('position: relative; top: -0.2em;')).toBe('position: relative; top: -0.2em;');
   });
 
-  it('knows the embed hosts', () => {
-    expect(isAllowedEmbed('https://www.youtube-nocookie.com/embed/x')).toBe(true);
-    expect(isAllowedEmbed('https://player.vimeo.com/video/1')).toBe(true);
-    expect(isAllowedEmbed('https://drive.google.com/file/d/1/preview')).toBe(true);
-    expect(isAllowedEmbed('https://docs.google.com/x')).toBe(false);
+  // The embed / share URL each tool hands a teacher, one or more per allowed host.
+  const embeds = [
+    'https://www.youtube.com/embed/dQw4w9WgXcQ',
+    'https://youtube.com/embed/dQw4w9WgXcQ?start=30',
+    'https://www.youtube-nocookie.com/embed/x',
+    'https://player.vimeo.com/video/1',
+    'https://drive.google.com/file/d/1AbC/preview',
+    'https://docs.google.com/presentation/d/1AbC-d_E/embed?start=false&loop=false',
+    'https://docs.google.com/presentation/d/e/2PACX-1vT/pub?start=false',
+    'https://docs.google.com/forms/d/e/1FAIpQLSf/viewform?embedded=true',
+    'https://docs.google.com/document/d/1AbC/preview',
+    'https://docs.google.com/document/d/e/2PACX-1vR/pub?embedded=true',
+    'https://docs.google.com/spreadsheets/d/e/2PACX-1vS/pubhtml?widget=true',
+    'https://docs.google.com/a/mastereducation.kz/presentation/d/1AbC/embed',
+    'https://www.desmos.com/calculator/abc123xyz?embed',
+    'https://www.desmos.com/geometry/abc123',
+    'https://www.geogebra.org/material/iframe/id/abcd1234/width/800/height/600',
+    'https://www.geogebra.org/calculator/abcd1234?embed',
+    'https://quizlet.com/123456789/flashcards/embed?i=1a2b3c&x=1jj1',
+    'https://quizlet.com/ru/123456789/learn/embed',
+    'https://wordwall.net/embed/0f1e2d3c4b5a?themeId=1&templateId=5',
+    'https://wordwall.net/ru/embed/0f1e2d3c4b5a',
+    'https://www.canva.com/design/DAFabc123/xYz-AbC/view?embed',
+    'https://view.genial.ly/5f1e2d3c4b5a6978/interactive-content-quiz',
+  ];
+
+  it.each(embeds)('keeps a sandboxed embed from %s', (src) => {
+    expect(isAllowedEmbed(src)).toBe(true);
+    const frame = parsed(`<iframe src="${src.replace(/&/g, '&amp;')}" width="640" height="360"></iframe>`).querySelector('iframe');
+    expect(frame?.getAttribute('src')).toBe(src);
+    expect(frame?.getAttribute('sandbox')).toBe(
+      'allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox',
+    );
+  });
+
+  it.each([
+    // right host, wrong page: the editor or an arbitrary path
+    'https://docs.google.com/presentation/d/1AbC/edit',
+    'https://docs.google.com/document/d/1AbC/edit?usp=sharing',
+    'https://docs.google.com/',
+    'https://docs.google.com/uc?export=download&id=1',
+    'https://www.desmos.com/',
+    'https://www.geogebra.org/u/someone',
+    'https://quizlet.com/123456789/flashcards',
+    'https://wordwall.net/resource/0f1e2d3c',
+    'https://www.canva.com/design/DAFabc123/edit',
+    'https://view.genial.ly/',
+    // look-alike hosts, other schemes, userinfo, ports
+    'https://docs.google.com.evil.example/presentation/d/1/embed',
+    'https://evil-docs.google.com.example/forms/d/e/1/viewform',
+    'https://desmos.com.evil.example/calculator/1',
+    'https://quizlet.evil.example/123/flashcards/embed',
+    'http://docs.google.com/presentation/d/1/embed',
+    'https://user@docs.google.com/presentation/d/1/embed',
+    'https://www.desmos.com:8443/calculator/1',
+    'javascript:alert(1)',
+    'data:text/html,<script>alert(1)</script>',
+    '',
+  ])('drops an iframe from %s', (src) => {
+    expect(isAllowedEmbed(src)).toBe(false);
+    expect(sanitizeHtml(`<p>a</p><iframe src="${src}"></iframe>`)).toBe('<p>a</p>');
+  });
+
+  it('treats a missing src as not embeddable', () => {
     expect(isAllowedEmbed(null)).toBe(false);
   });
 });
