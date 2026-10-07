@@ -54,12 +54,10 @@ export function feedLinks({ icsUrl, name, googleUrl }: FeedSource): FeedLinks {
   };
 }
 
-/** The app this device most likely uses: Apple on iPhone, iPad and Mac; Google on Android;
- *  Outlook on Windows; Google anywhere else. */
+/** The app this device most likely uses: Apple on iPhone, iPad and Mac; Google everywhere else,
+ *  Windows included (owner, 2026-10-07: Outlook is in "Other calendar apps" there). */
 export function preferredApp({ userAgent = '', maxTouchPoints = 0 }: PlatformEnv): CalendarApp {
   if (isIosUserAgent(userAgent, maxTouchPoints) || /Macintosh|Mac OS X/.test(userAgent)) return 'apple';
-  if (/Android/i.test(userAgent)) return 'google';
-  if (/Windows NT|Windows Phone/i.test(userAgent)) return 'outlook';
   return 'google';
 }
 
