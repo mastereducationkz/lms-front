@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { Frown, Hand } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { LiveApi } from '../../lib/liveLesson/api';
+import { liveErrorText, withReconnect } from '../../lib/liveLesson/resilience';
 import { cooldownLeft } from '../../lib/liveLesson/reactions';
 import type { LiveState, Person, ReactionKind } from '../../lib/liveLesson/types';
 import ReactionOrca, { REACTION_KINDS, REACTION_LABEL } from '../mascot/ReactionOrca';
@@ -86,10 +87,11 @@ export function HandAndLost({ state, api }: { state: LiveState; api: LiveApi }) 
     setBusy(true);
     setNote(null);
     try {
-      const result = await api.hand(state.lesson.id, !mine);
-      if (!result.accepted) setNote(`You can raise your hand again in ${Math.ceil(result.retry_in)} s.`);
+      // Up or down is the same twice over, so a blip is simply waited out.
+      const result = await withReconnect(() => api.hand(state.lesson.id, !mine));
+      if (result && !result.accepted) setNote(`You can raise your hand again in ${Math.ceil(result.retry_in)} s.`);
     } catch (e) {
-      setNote((e as Error).message);
+      setNote(liveErrorText(e));
     } finally {
       setBusy(false);
     }

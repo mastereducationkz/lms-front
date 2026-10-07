@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BarChart3, Cloud, EyeOff, ListChecks, Loader2, Plus, RefreshCw, Target, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import type { LiveApi } from '../../lib/liveLesson/api';
+import { liveErrorText, withReconnect } from '../../lib/liveLesson/resilience';
 import { POLL_PRESETS, correctIndices } from '../../lib/liveLesson/logic';
 import type { MistakePreview, PopcheckPreview, StartActivity } from '../../lib/liveLesson/types';
 import { OptionRows, QuestionBody } from './parts';
@@ -138,16 +139,17 @@ function PopcheckForm({ lessonId, api, start, busy }: Props) {
   const load = async () => {
     setLoading(true);
     setError(null);
-    try { setPreview(await api.popcheckPreview(lessonId)); } catch (e) { setError((e as Error).message); } finally { setLoading(false); }
+    // Previews only read: a blip is waited out like a write.
+    try { setPreview((await withReconnect(() => api.popcheckPreview(lessonId))) ?? null); } catch (e) { setError(liveErrorText(e)); } finally { setLoading(false); }
   };
   const replace = async (index: number) => {
     if (!preview) return;
     setLoading(true);
     try {
-      const more = await api.popcheckPreview(lessonId, preview.items.map((i) => i.ref), 1);
-      if (!more.items.length) { setError('No other question left to swap in'); return; }
+      const more = await withReconnect(() => api.popcheckPreview(lessonId, preview.items.map((i) => i.ref), 1));
+      if (!more?.items.length) { setError('No other question left to swap in'); return; }
       setPreview({ ...preview, items: preview.items.map((it, i) => (i === index ? more.items[0] : it)) });
-    } catch (e) { setError((e as Error).message); } finally { setLoading(false); }
+    } catch (e) { setError(liveErrorText(e)); } finally { setLoading(false); }
   };
   if (!preview) {
     return (
@@ -194,7 +196,7 @@ function MistakeForm({ lessonId, api, start, busy }: Props) {
   const load = async () => {
     setLoading(true);
     setError(null);
-    try { setPreview(await api.mistakePreview(lessonId)); } catch (e) { setError((e as Error).message); } finally { setLoading(false); }
+    try { setPreview((await withReconnect(() => api.mistakePreview(lessonId))) ?? null); } catch (e) { setError(liveErrorText(e)); } finally { setLoading(false); }
   };
   if (!preview) {
     return (
