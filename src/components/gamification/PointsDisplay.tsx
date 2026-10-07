@@ -101,6 +101,7 @@ export const PointsDisplay: React.FC = () => {
     <button
       type="button"
       className="points-item"
+      data-tour="stars-pill"
       aria-label={`${total.toLocaleString('en-US')} ${total === 1 ? 'star' : 'stars'}. Show where they came from`}
     >
       <svg className="points-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">

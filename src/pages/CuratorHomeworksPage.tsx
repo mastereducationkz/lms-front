@@ -361,6 +361,7 @@ const CuratorHomeworksPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setNeedsAttentionOnly((v) => !v)}
+              data-tip="lagging-filter"
               className={`inline-flex items-center gap-1.5 h-9 px-3 rounded-md border text-sm font-medium transition-colors ${
                 needsAttentionOnly
                   ? 'border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'

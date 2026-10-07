@@ -134,7 +134,7 @@ export default function LessonHeader({ view, group, onGroup, sections, onJump, n
       </div>
 
       {sections.length > 1 && (
-        <nav className="-mx-1 mt-2 flex gap-1.5 overflow-x-auto px-1 pb-0.5 [scrollbar-width:none]" aria-label={t('Разделы урока', 'Lesson sections')}>
+        <nav className="-mx-1 mt-2 flex gap-1.5 overflow-x-auto px-1 pb-0.5 [scrollbar-width:none]" aria-label={t('Разделы урока', 'Lesson sections')} data-tip="lesson-sections">
           {sections.map((key) => (
             <button
               key={key}

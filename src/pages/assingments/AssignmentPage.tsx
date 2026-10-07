@@ -900,7 +900,7 @@ export default function AssignmentPage() {
         <CardContent>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
             {assignment.due_date && (
-              <div className={`flex items-center space-x-2 ${isOverdue ? 'text-red-600 dark:text-red-400' : ''}`}>
+              <div className={`flex items-center space-x-2 ${isOverdue ? 'text-red-600 dark:text-red-400' : ''}`} data-tip="homework-due">
                 <Calendar className="w-4 h-4" />
                 <span>Due: {new Date(assignment.due_date).toLocaleDateString()}</span>
                 {isOverdue && <AlertCircle className="w-4 h-4" />}

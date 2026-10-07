@@ -22,6 +22,7 @@ export default function TryOnButton({ rewards, className = '' }: { rewards: Achi
       type="button"
       onClick={go}
       className={`inline-flex items-center gap-1 rounded-full border border-brand/30 bg-brand/5 px-2.5 py-1 text-xs font-medium text-brand hover:bg-brand/10 ${className}`}
+      data-tip="try-on"
       aria-label={`Try on ${rewards.map((r) => r.name).join(' and ')}`}
     >
       <Shirt className="h-3.5 w-3.5" aria-hidden /> Try it on

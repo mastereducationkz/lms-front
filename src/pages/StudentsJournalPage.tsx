@@ -213,6 +213,7 @@ export default function StudentsJournalPage() {
                 <tr
                   key={s.id}
                   onClick={() => navigate(`/curator/students/${s.id}`)}
+                  data-tip="journal-row"
                   className="border-b border-border hover:bg-muted/60 cursor-pointer transition-colors"
                 >
                   <td className="px-4 py-3">

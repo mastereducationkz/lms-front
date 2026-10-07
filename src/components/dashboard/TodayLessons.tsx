@@ -68,7 +68,7 @@ export default function TodayLessons({ role, workspaceEmail }: Props) {
   }) : '';
 
   return (
-    <Card className="shadow-sm border border-border overflow-hidden" aria-labelledby="today-lessons-title">
+    <Card className="shadow-sm border border-border overflow-hidden" aria-labelledby="today-lessons-title" data-tour="today-lessons">
       <CardHeader className="px-4 sm:px-6 py-4 border-b border-border bg-card">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
           <div className="flex items-baseline gap-2">

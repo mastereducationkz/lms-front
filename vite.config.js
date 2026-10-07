@@ -67,11 +67,6 @@ export default defineConfig({
         find: '@',
         replacement: path.resolve(__dirname, './src'),
       },
-      // Mock Next.js navigation imports that nextstepjs might try to access
-      {
-        find: 'next/navigation',
-        replacement: path.join(process.cwd(), 'src/mocks/next-navigation.ts'),
-      },
     ]
   },
   esbuild: {
@@ -87,6 +82,6 @@ export default defineConfig({
     },
   },
   ssr: {
-    noExternal: ['nextstepjs', 'motion']
+    noExternal: ['motion']
   }
 }) 

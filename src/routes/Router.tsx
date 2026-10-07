@@ -2,7 +2,6 @@ import { Suspense, useEffect, useRef } from 'react';
 import { lazyRoute } from '../lib/lazyRoute';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { applyPendingPwaUpdate } from '../services/pwa';
-import { NextStepProvider } from 'nextstepjs';
 import { AuthProvider } from '../contexts/AuthContext.tsx';
 import { SettingsProvider } from '../contexts/SettingsContext';
 import { ThemeProvider } from '../components/ThemeProvider.tsx';
@@ -130,7 +129,6 @@ export default function Router() {
         <Toaster />
         <AuthProvider>
           <SettingsProvider>
-            <NextStepProvider>
               <OnboardingManager>
                 <Suspense fallback={<RouteFallback />}>
                 <Routes>
@@ -827,7 +825,6 @@ export default function Router() {
         </Routes>
                 </Suspense>
             </OnboardingManager>
-          </NextStepProvider>
         </SettingsProvider>
       </AuthProvider>
       </ThemeProvider>

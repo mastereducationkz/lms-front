@@ -27,7 +27,17 @@ export default function WelcomeScreens({ userName, userRole, onComplete }: Welco
     }
   }, [currentScreen, onComplete]);
 
-  const firstName = userName?.split(' ')[0] || 'there';
+  const ru = userRole === 'curator' || userRole === 'head_curator';
+  const firstName = userName?.split(' ')[0] || (ru ? '' : 'there');
+
+  // Never a wall: a click, a key or the button skips straight to the tour.
+  useEffect(() => {
+    const skip = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') onComplete();
+    };
+    window.addEventListener('keydown', skip);
+    return () => window.removeEventListener('keydown', skip);
+  }, [onComplete]);
 
   // Определяем текст второго экрана в зависимости от роли
   const getWelcomeMessage = () => {
@@ -44,8 +54,8 @@ export default function WelcomeScreens({ userName, userRole, onComplete }: Welco
         };
       case 'curator':
         return {
-          main: 'Welcome to',
-          highlight: 'guided mentorship'
+          main: 'Добро пожаловать',
+          highlight: 'в кураторскую'
         };
       case 'admin':
         return {
@@ -63,7 +73,14 @@ export default function WelcomeScreens({ userName, userRole, onComplete }: Welco
   const welcomeMessage = getWelcomeMessage();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-background">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-background" onClick={onComplete} data-guide="welcome">
+      <button
+        type="button"
+        onClick={onComplete}
+        className="absolute bottom-6 right-6 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        {ru ? 'Пропустить' : 'Skip'}
+      </button>
       <div className="text-center px-4">
         <AnimatePresence mode="wait">
           {currentScreen === 0 && (
@@ -75,7 +92,7 @@ export default function WelcomeScreens({ userName, userRole, onComplete }: Welco
               transition={{ duration: 0.6 }}
               className="text-6xl md:text-8xl font-light text-gray-900 dark:text-foreground"
             >
-              Hello,{' '}
+              {ru ? 'Здравствуйте' : 'Hello'},{' '}
               <span
                 className="italic font-serif bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent"
                 style={{ fontFamily: 'Georgia, serif' }}
