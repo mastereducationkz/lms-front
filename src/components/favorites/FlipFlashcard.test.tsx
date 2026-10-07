@@ -2,6 +2,14 @@
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// The card's strings come from the i18n layer, which reads the signed-in user from AuthContext;
+// stand the context in without the API client behind it (signed out = the default language).
+vi.mock('../../contexts/AuthContext', async () => {
+  const { createContext } = await vi.importActual<typeof import('react')>('react');
+  return { default: createContext(undefined), useAuth: () => ({ user: null }) };
+});
+
 import FlipFlashcard, { type SavedFlashcard } from './FlipFlashcard';
 
 const LOOKUP: SavedFlashcard = {

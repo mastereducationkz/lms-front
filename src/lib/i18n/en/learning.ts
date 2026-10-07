@@ -26,6 +26,16 @@ export const learning = {
   'learning.lesson.staffPreviewHint': 'You are previewing as staff: no progress, attempts or completions are saved.',
   'learning.lesson.skip': 'Skip',
   'learning.lesson.skipHint': 'Next lesson (nothing is marked complete)',
+  'learning.lesson.back': 'Back to course',
+  'learning.lesson.lessons': 'Lessons',
+
+  'learning.flashcards.easy': 'Easy',
+  'learning.flashcards.hard': 'Hard',
+  'learning.flashcards.reveal': 'Click to reveal',
+  'learning.flashcards.flipBack': 'Click to flip back',
+  'learning.flashcards.remove': 'Remove from favorites',
+  'learning.flashcards.frontImage': 'Front',
+  'learning.flashcards.backImage': 'Back',
 
   'learning.quiz.answerAll': 'Answer every question ({answered}/{total})',
 } as const satisfies MessageTable;

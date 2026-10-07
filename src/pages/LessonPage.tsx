@@ -2332,7 +2332,7 @@ export default function LessonPage() {
                 <PanelLeftOpen className="w-5 h-5" />
               </Button>
             )}
-            <Button variant="ghost" size="icon" className="shrink-0 -ml-2 md:ml-0" onClick={() => navigate(`/course/${courseId}`)} title="Back to Course" aria-label="Back to Course">
+            <Button variant="ghost" size="icon" className="shrink-0 -ml-2 md:ml-0" onClick={() => navigate(`/course/${courseId}`)} title={t('learning.lesson.back')} aria-label={t('learning.lesson.back')}>
               <ChevronLeft className="w-5 h-5" aria-hidden="true" />
             </Button>
             <h1 className="font-semibold text-base sm:text-lg leading-tight truncate min-w-0" title={lesson.title}>
@@ -2469,8 +2469,8 @@ export default function LessonPage() {
               size="sm"
               className="md:hidden h-9 w-9 p-0 rounded-lg border bg-background text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground"
               onClick={() => setIsMobileSidebarOpen(true)}
-              title="Lessons"
-              aria-label="Lessons"
+              title={t('learning.lesson.lessons')}
+              aria-label={t('learning.lesson.lessons')}
             >
               <ListTree className="w-5 h-5" aria-hidden="true" />
             </Button>

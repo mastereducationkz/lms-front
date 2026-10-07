@@ -32,6 +32,16 @@ export const learning: RuTable<typeof en> = {
   'learning.lesson.staffPreviewHint': 'Вы смотрите урок как сотрудник: прогресс, попытки и завершения не сохраняются.',
   'learning.lesson.skip': 'Дальше',
   'learning.lesson.skipHint': 'Следующий урок (ничего не отмечается)',
+  'learning.lesson.back': 'Назад к курсу',
+  'learning.lesson.lessons': 'Уроки',
+
+  'learning.flashcards.easy': 'Лёгкая',
+  'learning.flashcards.hard': 'Сложная',
+  'learning.flashcards.reveal': 'Нажмите, чтобы увидеть ответ',
+  'learning.flashcards.flipBack': 'Нажмите, чтобы перевернуть обратно',
+  'learning.flashcards.remove': 'Убрать из избранного',
+  'learning.flashcards.frontImage': 'Лицевая сторона',
+  'learning.flashcards.backImage': 'Обратная сторона',
 
   'learning.quiz.answerAll': 'Ответьте на все вопросы ({answered}/{total})',
 };

@@ -7,6 +7,8 @@ import type { MouseEvent, ReactNode } from 'react';
 import { Trash2 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import type { FlashcardItem } from '../../types';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/learning';
 import './FlipFlashcard.css';
 
 /** Look Up saves (POST /flashcards/quick_create) store these next to the FlashcardItem fields. */
@@ -22,11 +24,12 @@ export type SavedFlashcard = FlashcardItem & {
  * the student nothing, so only easy and hard get a badge.
  */
 export function DifficultyBadge({ difficulty, className = '' }: { difficulty?: string; className?: string }) {
+  const t = useT();
   if (difficulty === 'easy') {
-    return <Badge className={`border-transparent bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/40 dark:text-green-200 ${className}`}>Easy</Badge>;
+    return <Badge className={`border-transparent bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/40 dark:text-green-200 ${className}`}>{t('learning.flashcards.easy')}</Badge>;
   }
   if (difficulty === 'hard') {
-    return <Badge className={`border-transparent bg-red-100 text-red-800 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-200 ${className}`}>Hard</Badge>;
+    return <Badge className={`border-transparent bg-red-100 text-red-800 hover:bg-red-100 dark:bg-red-900/40 dark:text-red-200 ${className}`}>{t('learning.flashcards.hard')}</Badge>;
   }
   return null;
 }
@@ -65,6 +68,7 @@ interface FlipFlashcardProps {
 }
 
 export default function FlipFlashcard({ card, flipped, onFlip, onRemove }: FlipFlashcardProps) {
+  const t = useT();
   const rich = Boolean(card.definition || card.context);
   const tags = card.tags ?? [];
   const face = 'flip-card__face flex flex-col rounded-xl border bg-card p-6 text-card-foreground shadow-sm transition-shadow group-hover:shadow-lg';
@@ -90,7 +94,7 @@ export default function FlipFlashcard({ card, flipped, onFlip, onRemove }: FlipF
             </div>
             <div className="flex min-h-0 w-full flex-1 flex-col items-center justify-center gap-2">
               {card.front_image_url && (
-                <img src={card.front_image_url} alt="Front" className="mx-auto max-h-24 max-w-full rounded object-contain" />
+                <img src={card.front_image_url} alt={t('learning.flashcards.frontImage')} className="mx-auto max-h-24 max-w-full rounded object-contain" />
               )}
               <div className="line-clamp-3 px-2 text-2xl font-semibold leading-tight text-foreground [overflow-wrap:anywhere]">
                 {card.front_text}
@@ -105,7 +109,7 @@ export default function FlipFlashcard({ card, flipped, onFlip, onRemove }: FlipF
                 {tags.length > 2 && <Badge variant="outline" className="text-xs font-medium text-muted-foreground">+{tags.length - 2}</Badge>}
               </div>
             )}
-            <div className="text-xs text-muted-foreground">Click to reveal</div>
+            <div className="text-xs text-muted-foreground">{t('learning.flashcards.reveal')}</div>
           </div>
 
           {/* Back: the answer; a Look Up card adds its definition and the sentence it came from. */}
@@ -113,14 +117,14 @@ export default function FlipFlashcard({ card, flipped, onFlip, onRemove }: FlipF
             <div className={`flex min-h-0 w-full flex-1 flex-col gap-3 overflow-hidden ${rich ? 'justify-start' : 'items-center justify-center'}`}>
               {rich && <div className="truncate pr-8 text-sm font-medium text-muted-foreground">{card.front_text}</div>}
               {card.back_image_url && (
-                <img src={card.back_image_url} alt="Back" className="mx-auto max-h-24 max-w-full rounded object-contain" />
+                <img src={card.back_image_url} alt={t('learning.flashcards.backImage')} className="mx-auto max-h-24 max-w-full rounded object-contain" />
               )}
               <div className={`font-semibold leading-tight text-foreground [overflow-wrap:anywhere] ${rich ? 'line-clamp-2 text-xl' : 'line-clamp-3 px-2 text-2xl'}`}>
                 {card.back_text}
               </div>
               <LookupDetails card={card} />
             </div>
-            <div className={`pt-2 text-xs text-muted-foreground ${rich ? '' : 'text-center'}`}>Click to flip back</div>
+            <div className={`pt-2 text-xs text-muted-foreground ${rich ? '' : 'text-center'}`}>{t('learning.flashcards.flipBack')}</div>
           </div>
         </div>
       </div>
@@ -128,8 +132,8 @@ export default function FlipFlashcard({ card, flipped, onFlip, onRemove }: FlipF
       <button
         type="button"
         onClick={onRemove}
-        aria-label="Remove from favorites"
-        title="Remove from favorites"
+        aria-label={t('learning.flashcards.remove')}
+        title={t('learning.flashcards.remove')}
         className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-md text-red-600 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-700 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300 [@media(hover:none)]:opacity-100"
       >
         <Trash2 className="h-4 w-4" aria-hidden />
