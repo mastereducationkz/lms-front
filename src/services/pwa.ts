@@ -1,4 +1,5 @@
 import { toast } from 'sonner'
+import { t } from '../lib/i18n'
 
 // Poll the server for a newer service worker while a tab stays open, so a
 // long-lived session doesn't get stuck on a stale precached bundle until the
@@ -168,11 +169,11 @@ export function registerPwa(): void {
       immediate: true,
       onNeedRefresh() {
         updatePending = true
-        toast('Доступна новая версия', {
-          description: 'Обновление применится автоматически. Нажмите, чтобы применить сейчас.',
+        toast(t('shell.pwa.updateTitle'), {
+          description: t('shell.pwa.updateBody'),
           duration: Infinity,
           action: {
-            label: 'Обновить',
+            label: t('shell.pwa.updateAction'),
             onClick: () => {
               applyUpdate()
             },

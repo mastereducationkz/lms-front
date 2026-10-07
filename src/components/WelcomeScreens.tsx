@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { UserRole } from '../types';
+import { useT } from '../lib/i18n/react';
 
 interface WelcomeScreensProps {
   userName: string;
@@ -10,6 +11,7 @@ interface WelcomeScreensProps {
 
 export default function WelcomeScreens({ userName, userRole, onComplete }: WelcomeScreensProps) {
   const [currentScreen, setCurrentScreen] = useState(0);
+  const t = useT();
 
   useEffect(() => {
     if (currentScreen === 0) {
@@ -27,8 +29,7 @@ export default function WelcomeScreens({ userName, userRole, onComplete }: Welco
     }
   }, [currentScreen, onComplete]);
 
-  const ru = userRole === 'curator' || userRole === 'head_curator';
-  const firstName = userName?.split(' ')[0] || (ru ? '' : 'there');
+  const firstName = userName?.split(' ')[0] || '';
 
   // Never a wall: a click, a key or the button skips straight to the tour.
   useEffect(() => {
@@ -44,28 +45,28 @@ export default function WelcomeScreens({ userName, userRole, onComplete }: Welco
     switch (userRole) {
       case 'student':
         return {
-          main: 'Welcome to your',
-          highlight: 'learning journey'
+          main: t('shell.welcome.studentMain'),
+          highlight: t('shell.welcome.studentHighlight')
         };
       case 'teacher':
         return {
-          main: 'Welcome to',
-          highlight: 'empowered teaching'
+          main: t('shell.welcome.teacherMain'),
+          highlight: t('shell.welcome.teacherHighlight')
         };
       case 'curator':
         return {
-          main: 'Добро пожаловать',
-          highlight: 'в кураторскую'
+          main: t('shell.welcome.curatorMain'),
+          highlight: t('shell.welcome.curatorHighlight')
         };
       case 'admin':
         return {
-          main: 'Welcome to the',
-          highlight: 'control center'
+          main: t('shell.welcome.adminMain'),
+          highlight: t('shell.welcome.adminHighlight')
         };
       default:
         return {
-          main: 'Welcome to the',
-          highlight: 'calmer education'
+          main: t('shell.welcome.defaultMain'),
+          highlight: t('shell.welcome.defaultHighlight')
         };
     }
   };
@@ -79,7 +80,7 @@ export default function WelcomeScreens({ userName, userRole, onComplete }: Welco
         onClick={onComplete}
         className="absolute bottom-6 right-6 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
-        {ru ? 'Пропустить' : 'Skip'}
+        {t('shell.welcome.skip')}
       </button>
       <div className="text-center px-4">
         <AnimatePresence mode="wait">
@@ -92,13 +93,18 @@ export default function WelcomeScreens({ userName, userRole, onComplete }: Welco
               transition={{ duration: 0.6 }}
               className="text-6xl md:text-8xl font-light text-gray-900 dark:text-foreground"
             >
-              {ru ? 'Здравствуйте' : 'Hello'},{' '}
-              <span
-                className="italic font-serif bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent"
-                style={{ fontFamily: 'Georgia, serif' }}
-              >
-                {firstName}
-              </span>
+              {t('shell.welcome.hello')}
+              {firstName && (
+                <>
+                  ,{' '}
+                  <span
+                    className="italic font-serif bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent"
+                    style={{ fontFamily: 'Georgia, serif' }}
+                  >
+                    {firstName}
+                  </span>
+                </>
+              )}
               !
             </motion.h1>
           )}

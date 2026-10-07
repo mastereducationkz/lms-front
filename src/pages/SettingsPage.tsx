@@ -27,6 +27,7 @@ import { requestTourReplay } from '../components/guide/tourStore';
 import apiClient from '../services/api';
 import { changePassword } from '../services/api/auth';
 import { toast } from '../components/Toast';
+import { useT } from '../lib/i18n/react';
 
 interface CourseItem {
   id: number;
@@ -62,6 +63,7 @@ interface ProgressSummary {
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const t = useT();
   
   // Admin Progress Management State
   const [courses, setCourses] = useState<CourseItem[]>([]);
@@ -87,15 +89,15 @@ export default function SettingsPage() {
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pwNew.length < 6) { toast('Password must be at least 6 characters', 'error'); return; }
-    if (pwNew !== pwConfirm) { toast("Passwords don't match", 'error'); return; }
+    if (pwNew.length < 6) { toast(t('settings.password.tooShort'), 'error'); return; }
+    if (pwNew !== pwConfirm) { toast(t('settings.password.mismatch'), 'error'); return; }
     setPwSaving(true);
     try {
       await changePassword(pwCurrent, pwNew);
-      toast('Password changed successfully', 'success');
+      toast(t('settings.password.changed'), 'success');
       setPwCurrent(''); setPwNew(''); setPwConfirm('');
     } catch (err: any) {
-      toast(err.message || 'Failed to change password', 'error');
+      toast(err.message || t('settings.password.failed'), 'error');
     } finally {
       setPwSaving(false);
     }
@@ -197,7 +199,11 @@ export default function SettingsPage() {
       const result = await apiClient.completeStepsForUser(data);
       setActionResult({
         type: 'success',
-        message: `${result.statistics.newly_completed} шагов завершено, ${result.statistics.updated} обновлено, ${result.statistics.already_completed} уже были завершены`
+        message: t('settings.progress.completeResult', {
+          newly: result.statistics.newly_completed,
+          updated: result.statistics.updated,
+          already: result.statistics.already_completed,
+        })
       });
       
       // Reload progress
@@ -205,7 +211,7 @@ export default function SettingsPage() {
     } catch (error: any) {
       setActionResult({
         type: 'error',
-        message: error.message || 'Ошибка при завершении шагов'
+        message: error.message || t('settings.progress.completeFailed')
       });
     } finally {
       setIsLoading(false);
@@ -215,7 +221,7 @@ export default function SettingsPage() {
   const handleResetProgress = async () => {
     if (!selectedUserId || !selectedCourseId) return;
     
-    if (!confirm('Вы уверены, что хотите сбросить прогресс? Это действие нельзя отменить.')) {
+    if (!confirm(t('settings.progress.resetConfirm'))) {
       return;
     }
     
@@ -232,7 +238,7 @@ export default function SettingsPage() {
       const result = await apiClient.resetStepsForUser(data);
       setActionResult({
         type: 'success',
-        message: `Удалено ${result.deleted_records} записей прогресса`
+        message: t('settings.progress.resetResult', { count: result.deleted_records })
       });
       
       // Reload progress
@@ -240,7 +246,7 @@ export default function SettingsPage() {
     } catch (error: any) {
       setActionResult({
         type: 'error',
-        message: error.message || 'Ошибка при сбросе прогресса'
+        message: error.message || t('settings.progress.resetFailed')
       });
     } finally {
       setIsLoading(false);
@@ -281,11 +287,10 @@ export default function SettingsPage() {
   const { pathname } = useLocation();
   // The same «Replay tour» as the menu under the name; roles without a tour see no card.
   const replayKind = replayTourFor(user?.role);
-  const ru = replayKind === 'curator';
 
   return (
     <div className="space-y-6 p-4 sm:p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold">Настройки</h1>
+      <h1 className="text-3xl font-bold">{t('settings.title')}</h1>
       
       {/* Admin Progress Management Section */}
       {user?.role === 'admin' && (
@@ -296,8 +301,8 @@ export default function SettingsPage() {
                 <CheckCircle className="w-5 h-5 text-brand" />
               </div>
               <div>
-                <CardTitle>Управление прогрессом студентов</CardTitle>
-                <CardDescription>Завершить или сбросить шаги за студента</CardDescription>
+                <CardTitle>{t('settings.progress.title')}</CardTitle>
+                <CardDescription>{t('settings.progress.description')}</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -308,7 +313,7 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
                   <Users className="w-4 h-4" />
-                  Студент
+                  {t('settings.progress.student')}
                 </Label>
                 
                 <div className="relative user-search-dropdown">
@@ -332,7 +337,7 @@ export default function SettingsPage() {
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-muted-foreground" />
                         <Input
-                          placeholder="Поиск по имени или email..."
+                          placeholder={t('settings.progress.searchPlaceholder')}
                           value={userSearch}
                           onChange={(e) => {
                             setUserSearch(e.target.value);
@@ -347,7 +352,7 @@ export default function SettingsPage() {
                         <div className="absolute z-50 w-full mt-1 bg-card border dark:border-border rounded-md shadow-lg max-h-60 overflow-y-auto">
                           {filteredUsers.length === 0 ? (
                             <div className="px-3 py-4 text-center text-muted-foreground text-sm">
-                              {userSearch ? 'Студенты не найдены' : 'Введите имя или email'}
+                              {userSearch ? t('settings.progress.noStudents') : t('settings.progress.typeToSearch')}
                             </div>
                           ) : (
                             filteredUsers.slice(0, 50).map(u => (
@@ -363,7 +368,7 @@ export default function SettingsPage() {
                           )}
                           {filteredUsers.length > 50 && (
                             <div className="px-3 py-2 text-center text-gray-400 dark:text-muted-foreground text-xs">
-                              Показано 50 из {filteredUsers.length}. Уточните поиск.
+                              {t('settings.progress.shownOf', { shown: 50, total: filteredUsers.length })}
                             </div>
                           )}
                         </div>
@@ -377,14 +382,14 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <Label className="flex items-center gap-1.5">
                   <BookOpen className="w-4 h-4" />
-                  Курс
+                  {t('settings.progress.course')}
                 </Label>
                 <Select
                   value={selectedCourseId?.toString() || ''}
                   onValueChange={(value) => setSelectedCourseId(value ? Number(value) : null)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Выберите курс..." />
+                    <SelectValue placeholder={t('settings.progress.coursePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
                     {courses.map(c => (
@@ -401,7 +406,7 @@ export default function SettingsPage() {
             {isLoadingProgress && (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-brand" />
-                <span className="ml-2 text-muted-foreground">Загрузка прогресса...</span>
+                <span className="ml-2 text-muted-foreground">{t('settings.progress.loading')}</span>
               </div>
             )}
             
@@ -420,7 +425,7 @@ export default function SettingsPage() {
                           {progressSummary.overall.completion_percentage.toFixed(0)}%
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {progressSummary.overall.completed_steps} / {progressSummary.overall.total_steps} шагов
+                          {t('settings.progress.steps', { done: progressSummary.overall.completed_steps, total: progressSummary.overall.total_steps })}
                         </p>
                       </div>
                     </div>
@@ -435,11 +440,11 @@ export default function SettingsPage() {
                     onClick={() => setShowLessons(!showLessons)}
                   >
                     <Label className="cursor-pointer">
-                      Выберите уроки (или оставьте пустым для всех)
+                      {t('settings.progress.chooseLessons')}
                     </Label>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground">
-                        {selectedLessons.length > 0 ? `Выбрано: ${selectedLessons.length}` : 'Все уроки'}
+                        {selectedLessons.length > 0 ? t('settings.progress.selectedCount', { count: selectedLessons.length }) : t('settings.progress.allLessons')}
                       </span>
                       {showLessons ? (
                         <ChevronUp className="w-4 h-4 text-gray-400 dark:text-muted-foreground" />
@@ -458,7 +463,7 @@ export default function SettingsPage() {
                           onClick={selectAllLessons}
                           className="text-xs"
                         >
-                          Выбрать все
+                          {t('settings.progress.selectAll')}
                         </Button>
                         <Button
                           variant="ghost"
@@ -466,7 +471,7 @@ export default function SettingsPage() {
                           onClick={deselectAllLessons}
                           className="text-xs"
                         >
-                          Снять выбор
+                          {t('settings.progress.clearSelection')}
                         </Button>
                       </div>
                       
@@ -548,7 +553,7 @@ export default function SettingsPage() {
                     ) : (
                       <CheckCircle className="w-4 h-4 mr-2" />
                     )}
-                    Завершить {selectedLessons.length > 0 ? `(${selectedLessons.length} уроков)` : 'все шаги'}
+                    {selectedLessons.length > 0 ? t('settings.progress.completeLessons', { count: selectedLessons.length }) : t('settings.progress.completeAll')}
                   </Button>
                   
                   <Button
@@ -562,7 +567,7 @@ export default function SettingsPage() {
                     ) : (
                       <RotateCcw className="w-4 h-4 mr-2" />
                     )}
-                    Сбросить прогресс
+                    {t('settings.progress.reset')}
                   </Button>
                 </div>
               </div>
@@ -572,14 +577,14 @@ export default function SettingsPage() {
             {!selectedUserId && !selectedCourseId && !isLoadingProgress && (
               <div className="text-center py-8 text-muted-foreground">
                 <Users className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-muted-foreground" />
-                <p className="text-sm">Выберите студента и курс, чтобы управлять прогрессом</p>
+                <p className="text-sm">{t('settings.progress.pickBoth')}</p>
               </div>
             )}
             
             {selectedUserId && !selectedCourseId && !isLoadingProgress && (
               <div className="text-center py-8 text-muted-foreground">
                 <BookOpen className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-muted-foreground" />
-                <p className="text-sm">Выберите курс для просмотра прогресса</p>
+                <p className="text-sm">{t('settings.progress.pickCourse')}</p>
               </div>
             )}
           </CardContent>
@@ -589,25 +594,25 @@ export default function SettingsPage() {
       {/* Change Password Section (all roles) */}
       <Card>
         <CardHeader>
-          <CardTitle>Change password</CardTitle>
-          <CardDescription>Update your account password.</CardDescription>
+          <CardTitle>{t('settings.password.title')}</CardTitle>
+          <CardDescription>{t('settings.password.description')}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleChangePassword} className="space-y-4 max-w-sm">
             <div>
-              <Label htmlFor="pw-current" className="text-sm font-medium">Current password</Label>
+              <Label htmlFor="pw-current" className="text-sm font-medium">{t('settings.password.current')}</Label>
               <Input id="pw-current" type="password" required value={pwCurrent} onChange={(e) => setPwCurrent(e.target.value)} className="mt-1.5" />
             </div>
             <div>
-              <Label htmlFor="pw-new" className="text-sm font-medium">New password</Label>
-              <Input id="pw-new" type="password" required value={pwNew} onChange={(e) => setPwNew(e.target.value)} placeholder="At least 6 characters" className="mt-1.5" />
+              <Label htmlFor="pw-new" className="text-sm font-medium">{t('settings.password.new')}</Label>
+              <Input id="pw-new" type="password" required value={pwNew} onChange={(e) => setPwNew(e.target.value)} placeholder={t('settings.password.newPlaceholder')} className="mt-1.5" />
             </div>
             <div>
-              <Label htmlFor="pw-confirm" className="text-sm font-medium">Confirm new password</Label>
+              <Label htmlFor="pw-confirm" className="text-sm font-medium">{t('settings.password.confirm')}</Label>
               <Input id="pw-confirm" type="password" required value={pwConfirm} onChange={(e) => setPwConfirm(e.target.value)} className="mt-1.5" />
             </div>
             <Button type="submit" disabled={pwSaving}>
-              {pwSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving…</> : 'Change password'}
+              {pwSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('settings.password.saving')}</> : t('settings.password.submit')}
             </Button>
           </form>
         </CardContent>
@@ -616,11 +621,9 @@ export default function SettingsPage() {
       {replayKind && (
         <Card>
           <CardHeader>
-            <CardTitle>{ru ? 'Тур по платформе' : 'Platform tour'}</CardTitle>
+            <CardTitle>{t('settings.tour.title')}</CardTitle>
             <CardDescription>
-              {ru
-                ? 'Короткая прогулка по главным разделам. Запускается на дашборде.'
-                : 'A one-minute walk through the main sections. It runs on your dashboard.'}
+              {t('settings.tour.description')}
             </CardDescription>
           </CardHeader>
           <CardContent>

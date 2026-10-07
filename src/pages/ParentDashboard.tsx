@@ -5,9 +5,11 @@ import { useAuth } from '../contexts/AuthContext.tsx';
 import { getMyChildren, type ParentChild } from '../services/api';
 import { ChildTargets } from '../components/parents/ChildTargets';
 import Skeleton from '../components/Skeleton.tsx';
+import { useT } from '../lib/i18n/react';
 
 export default function ParentDashboard() {
   const { user } = useAuth();
+  const t = useT();
   const navigate = useNavigate();
   const [children, setChildren] = useState<ParentChild[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,20 +27,20 @@ export default function ParentDashboard() {
     return () => { active = false; };
   }, []);
 
-  const firstName = user?.name?.split(' ')[0] || 'Родитель';
+  const firstName = user?.name?.split(' ')[0] || t('parent.dashboard.nameFallback');
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-foreground dark:text-foreground">Здравствуйте, {firstName}!</h1>
+        <h1 className="text-2xl font-bold text-foreground dark:text-foreground">{t('parent.dashboard.greeting', { name: firstName })}</h1>
         <p className="text-muted-foreground mt-1">
-          Здесь ваши дети и связь с их учителями и кураторами.
+          {t('parent.dashboard.subtitle')}
         </p>
       </div>
 
       <section>
         <h2 className="text-lg font-semibold text-foreground dark:text-foreground mb-4 flex items-center gap-2">
-          <Users className="w-5 h-5" /> Мои дети
+          <Users className="w-5 h-5" /> {t('parent.dashboard.children')}
         </h2>
 
         {loading ? (
@@ -62,7 +64,7 @@ export default function ParentDashboard() {
                     <p className="font-semibold text-foreground dark:text-foreground truncate">{child.name}</p>
                     <p className="text-sm text-muted-foreground flex items-center gap-1 truncate">
                       <GraduationCap className="w-4 h-4 shrink-0" />
-                      {child.group_name || 'Без группы'}
+                      {child.group_name || t('parent.dashboard.noGroup')}
                     </p>
                   </div>
                 </div>
@@ -72,7 +74,7 @@ export default function ParentDashboard() {
           </div>
         ) : (
           <div className="card p-6 text-center text-muted-foreground">
-            Пока нет привязанных детей. Обратитесь к администратору, чтобы связать ваш аккаунт с ребёнком.
+            {t('parent.dashboard.noChildren')}
           </div>
         )}
       </section>
@@ -84,9 +86,9 @@ export default function ParentDashboard() {
               <MessageCircle className="w-5 h-5" />
             </div>
             <div>
-              <p className="font-semibold text-foreground dark:text-foreground">Связь с учителями и кураторами</p>
+              <p className="font-semibold text-foreground dark:text-foreground">{t('parent.dashboard.contactTitle')}</p>
               <p className="text-sm text-muted-foreground">
-                Пишите напрямую или в родительских чатах групп вашего ребёнка.
+                {t('parent.dashboard.contactBody')}
               </p>
             </div>
           </div>
@@ -94,7 +96,7 @@ export default function ParentDashboard() {
             onClick={() => navigate('/chat')}
             className="px-4 py-2 bg-brand-solid text-white rounded-lg hover:bg-brand-solid-hover transition-colors shrink-0"
           >
-            Открыть чат
+            {t('parent.dashboard.openChat')}
           </button>
         </div>
       </section>

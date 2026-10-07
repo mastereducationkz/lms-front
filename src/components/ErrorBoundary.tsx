@@ -2,6 +2,7 @@ import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { reportError } from '../lib/sentry';
 import { isDarkChoice } from '../lib/theme';
+import { t } from '../lib/i18n';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -137,17 +138,17 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
             </div>
 
             <h1 className="text-center text-xl font-bold text-foreground">
-              Вышла новая версия — обновите страницу
+              {t('shell.errorBoundary.newVersionTitle')}
             </h1>
             <p className="mt-2 text-center text-sm text-muted-foreground">
-              Мы обновили приложение, пока эта страница была открыта.
+              {t('shell.errorBoundary.newVersionBody')}
             </p>
 
             <button
               onClick={this.handleReload}
               className="mt-6 rounded-lg bg-brand-solid px-4 py-2 text-sm font-medium text-brand-solid-foreground transition-colors hover:bg-brand-solid-hover"
             >
-              Обновить страницу
+              {t('shell.errorBoundary.reload')}
             </button>
           </div>
         </div>
@@ -176,10 +177,9 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
             </svg>
           </div>
 
-          <h1 className="text-center text-xl font-bold text-foreground">Что-то пошло не так</h1>
+          <h1 className="text-center text-xl font-bold text-foreground">{t('common.error')}</h1>
           <p className="mt-2 text-center text-sm text-muted-foreground">
-            Страница неожиданно перестала отвечать. Обычно помогает перезагрузка.
-            Если не помогает — нажмите «Очистить кэш и перезагрузить».
+            {t('shell.errorBoundary.crashBody')}
           </p>
 
           <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
@@ -187,26 +187,26 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
               onClick={this.handleReload}
               className="rounded-lg bg-brand-solid px-4 py-2 text-sm font-medium text-brand-solid-foreground transition-colors hover:bg-brand-solid-hover"
             >
-              Обновить страницу
+              {t('shell.errorBoundary.reload')}
             </button>
             <button
               onClick={this.handleClearCacheAndReload}
               className="rounded-lg border border-gray-300 dark:border-input px-4 py-2 text-sm font-medium text-gray-700 dark:text-foreground transition-colors hover:bg-muted"
             >
-              Очистить кэш и перезагрузить
+              {t('shell.errorBoundary.clearCache')}
             </button>
           </div>
 
           <details className="mt-6 rounded-lg border border-border bg-muted p-3 text-left">
             <summary className="cursor-pointer text-sm font-medium text-gray-700 dark:text-foreground">
-              Технические детали (пришлите скриншот этого блока)
+              {t('shell.errorBoundary.details')}
             </summary>
             <div className="mt-2">
               <button
                 onClick={this.handleCopy}
                 className="mb-2 rounded border border-gray-300 dark:border-input bg-card px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
               >
-                Скопировать
+                {t('common.copy')}
               </button>
               <pre className="max-h-60 overflow-auto whitespace-pre-wrap break-words text-xs text-red-700 dark:text-red-300">
                 {error?.message ?? String(error)}

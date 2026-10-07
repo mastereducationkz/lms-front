@@ -1,4 +1,4 @@
-import { APP_TIMEZONE, parseAsUTC } from './datetime'
+import { activeLocale, formatDate, t, type Locale } from './i18n'
 
 type GroupScheduleItem = {
   day_of_week?: number
@@ -17,7 +17,7 @@ export type GroupListItem = {
 }
 
 /**
- * «10.09» — день, когда закроется группа внутри отсрочки. Иначе null.
+ * «10.09» (10/09 in English) — день, когда закроется группа внутри отсрочки. Иначе null.
  *
  * Группа не закрывается в момент начала последнего урока: она остаётся открытой всем —
  * кураторам, преподавателям, админам — до первой среды 23:59 по Алматы после его окончания.
@@ -26,23 +26,19 @@ export type GroupListItem = {
  */
 export const formatGroupCloseDate = (
   group: Pick<GroupListItem, 'is_over' | 'closes_at'>,
+  locale: Locale = activeLocale(),
 ): string | null => {
   if (group.is_over || !group.closes_at) return null
-  const parsed = parseAsUTC(group.closes_at)
-  if (Number.isNaN(parsed.getTime())) return null
-  return parsed.toLocaleDateString('ru-RU', {
-    timeZone: APP_TIMEZONE,
-    day: '2-digit',
-    month: '2-digit',
-  })
+  return formatDate(group.closes_at, { day: '2-digit', month: '2-digit' }, locale) || null
 }
 
 /** «Закроется 10.09» — то же в виде готовой подписи для бейджа. */
 export const formatGroupCloseLabel = (
   group: Pick<GroupListItem, 'is_over' | 'closes_at'>,
+  locale: Locale = activeLocale(),
 ): string | null => {
-  const day = formatGroupCloseDate(group)
-  return day && `Закроется ${day}`
+  const day = formatGroupCloseDate(group, locale)
+  return day && t('shell.groups.closesOn', { date: day }, locale)
 }
 
 export const parseTimeOfDayToMinutes = (time?: string | null): number | null => {

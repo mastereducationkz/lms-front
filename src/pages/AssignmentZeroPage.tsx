@@ -130,8 +130,8 @@ const SCHOOL_TYPES = [
   { value: 'NIS', label: 'Nazarbayev Intellectual Schools' },
   { value: 'RFMS', label: 'National Physics and Mathematics Schools' },
   { value: 'BIL', label: 'Bilim Innovation Lyceums' },
-  { value: 'Private', label: 'Private school (частная)' },
-  { value: 'Public', label: 'Public school (общеобразовательная)' },
+  { value: 'Private', label: 'Private school' },
+  { value: 'Public', label: 'Public school' },
 ];
 
 // SAT official dates are fetched from GET /exams/sat-dates (see satTargetDates below).

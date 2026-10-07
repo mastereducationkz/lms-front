@@ -1,6 +1,7 @@
 // Shared helpers for the group picker used by the Curator Leaderboard and the
 // Teacher Attendance pages, so both offer the same subject/date/teacher search.
 import type { CourseType, Group } from '../types';
+import { activeLocale, t, type Locale } from './i18n';
 
 export const PROGRAM_LABELS: Record<CourseType, string> = {
   sat: 'SAT',
@@ -57,14 +58,10 @@ export const getGroupDateText = (group: Group): string => {
   return base || rawName;
 };
 
-// Russian plural for "групп": 1 группа, 2-4 группы, 5+ групп
-export const pluralizeGroups = (n: number): string => {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return 'группа';
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'группы';
-  return 'групп';
-};
+// The word for "groups" after a count, in the reader's language: group/groups, группа/группы/групп.
+// New code should prefer the whole phrase, t('common.groups', { count }).
+export const pluralizeGroups = (n: number, locale: Locale = activeLocale()): string =>
+  t('shell.groups.word', { count: n }, locale);
 
 export const sortGroupsByCreatedAt = (items: Group[]): Group[] =>
   [...items].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());

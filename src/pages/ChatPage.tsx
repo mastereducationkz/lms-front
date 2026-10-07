@@ -18,6 +18,8 @@ import { ChatAttachment } from '../components/chat/ChatAttachment';
 import { ChatMessageBubble, type ChatMessage } from '../components/chat/ChatMessageBubble';
 import { ChatInfoDialog } from '../components/chat/ChatInfoDialog';
 import { DateSeparator, UnreadDivider, isSameDay, formatDateSeparator, formatMessageTime } from '../components/chat/ChatSeparators';
+import { formatDate, formatTime as formatClock } from '../lib/i18n';
+import { useT } from '../lib/i18n/react';
 
 // Backstop only: how long to wait for the send ack before giving up on it ever arriving.
 // Success/failure is decided by the ack itself (see `deliver`), not by this clock.
@@ -61,6 +63,7 @@ function replacePending(list: ChatMessage[], clientId: string, saved: ChatMessag
 
 export default function ChatPage() {
   const location = useLocation();
+  const tr = useT();
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [activePartnerId, setActivePartnerId] = useState<number | null>(null);
   const [groupThreads, setGroupThreads] = useState<GroupThread[]>([]);
@@ -535,11 +538,11 @@ export default function ChatPage() {
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
     
     if (diffInHours < 24) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return formatClock(date.getTime());
     } else if (diffInHours < 48) {
-      return 'Yesterday';
+      return tr('shell.chat.yesterday');
     } else {
-      return date.toLocaleDateString();
+      return formatDate(date.getTime(), { day: '2-digit', month: '2-digit', year: 'numeric' });
     }
   };
 
@@ -794,7 +797,7 @@ export default function ChatPage() {
           {groupThreads.length > 0 && (
             <div className="space-y-1">
               <p className="px-3 pt-3 pb-1 text-xs font-semibold uppercase text-muted-foreground">
-                Группы
+                {tr('shell.chat.groups')}
               </p>
               {groupThreads.map(conv => (
                 <div

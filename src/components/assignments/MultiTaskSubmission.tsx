@@ -17,6 +17,7 @@ import { BluebookGraderPanel } from './BluebookGraderPanel';
 import { formatAssignmentTaskLabel, gatedLessonIds, type UnitGate } from '../../lib/assignmentTask';
 import { UploadFailedError } from '../../lib/uploadFailure';
 import { safeUploadUrl } from '../../lib/mediaUrl';
+import { formatTime } from '../../lib/i18n';
 
 interface Task {
   id: string;
@@ -632,7 +633,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
         setAutosaveState('saving');
         await onAutosave(answers);
         setAutosaveState('saved');
-        setSavedAt(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+        setSavedAt(formatTime(Date.now()));
       } catch {
         setAutosaveState('idle'); // silent; will retry on next change
       }

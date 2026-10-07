@@ -1,4 +1,5 @@
 import { api } from './client';
+import { activeLocale, formatDateTime, type Locale } from '../../lib/i18n';
 
 // Platform-test assignments (Platform Integration Pack §6.3, E1/E2). Every call answers 503
 // while PLATFORM_ASSIGNMENTS_ENABLED is off on the backend; callers treat that as "feature off".
@@ -78,15 +79,13 @@ export async function setGroupPlatformTestsOptOut(
   return response.data;
 }
 
-/** Almaty wall-clock rendering of a platform timestamp (the platforms live in UTC+5). */
-export const formatAlmaty = (iso: string | null | undefined, withTime = true): string => {
+/** Almaty wall-clock rendering of a platform timestamp (the platforms live in UTC+5), in the
+ *  reader's language: "07 Oct, 19:00" / «07 окт., 19:00». */
+export const formatAlmaty = (iso: string | null | undefined, withTime = true, locale: Locale = activeLocale()): string => {
   if (!iso) return '';
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleString('ru-RU', {
-    timeZone: 'Asia/Almaty',
+  return formatDateTime(iso, {
     day: '2-digit',
     month: 'short',
     ...(withTime ? { hour: '2-digit', minute: '2-digit' } : {}),
-  });
+  }, locale) || iso;
 };

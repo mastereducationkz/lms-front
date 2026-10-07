@@ -261,9 +261,9 @@ export default function CuratorGroupsPage() {
                           Завершена
                         </span>
                       )}
-                      {formatGroupCloseLabel(g) && (
+                      {formatGroupCloseLabel(g, 'ru') && (
                         <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border border-dashed text-muted-foreground shrink-0">
-                          {formatGroupCloseLabel(g)}
+                          {formatGroupCloseLabel(g, 'ru')}
                         </span>
                       )}
                     </div>

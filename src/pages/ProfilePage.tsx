@@ -7,6 +7,7 @@ import { User, Mail, Shield, Calendar, Clock, Save, BellOff } from 'lucide-react
 import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning';
 import UnsavedChangesDialog from '../components/UnsavedChangesDialog';
 import { roleLabel } from '@/lib/roleLabel';
+import { formatDate } from '@/lib/i18n';
 
 export default function ProfilePage() {
   const { user, refreshUser } = useAuth();
@@ -96,7 +97,7 @@ export default function ProfilePage() {
         <h1 className="text-3xl font-bold">Profile</h1>
         <div className="flex items-center text-sm text-muted-foreground">
           <Clock className="w-4 h-4 mr-1" />
-          Last updated: {new Date().toLocaleDateString()}
+          Last updated: {formatDate(Date.now())}
         </div>
       </div>
 
@@ -215,7 +216,7 @@ export default function ProfilePage() {
               <input 
                 type="text"
                 className="w-full border border-gray-300 dark:border-border rounded-lg px-3 py-2 bg-muted text-foreground"
-                value={user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
+                value={user?.created_at ? formatDate(user.created_at) : 'Unknown'}
                 disabled
               />
             </div>
