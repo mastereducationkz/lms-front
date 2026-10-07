@@ -1,0 +1,38 @@
+import type { auth as en } from '../en/auth';
+import type { RuTable } from '../types';
+
+export const auth: RuTable<typeof en> = {
+  'auth.signIn.title': 'Добро пожаловать',
+  'auth.signIn.description': 'Войдите в аккаунт и продолжайте обучение',
+  'auth.signIn.storageBlocked': 'Браузер не разрешает сайту сохранять данные, поэтому вход через Master Education невозможен. Откройте LMS в обычном окне браузера и разрешите файлы cookie, либо войдите по паролю.',
+  'auth.signIn.ssoUnavailable': 'Вход через Master Education сейчас недоступен. Войдите по паролю или сообщите администратору.',
+  'auth.signIn.ssoStartFailed': 'Не удалось открыть вход через Master Education. Проверьте интернет и попробуйте ещё раз.',
+  'auth.signIn.continueAs': 'Продолжить с аккаунтом {name}',
+  'auth.signIn.continueWithSso': 'Продолжить с Master Education',
+  'auth.signIn.otherAccount': 'Войти под другим аккаунтом',
+  'auth.signIn.otherMethods': 'Другие способы входа',
+  'auth.signIn.orPassword': 'или по паролю',
+  'auth.signIn.email': 'Email',
+  'auth.signIn.emailPlaceholder': 'Введите email',
+  'auth.signIn.password': 'Пароль',
+  'auth.signIn.passwordPlaceholder': 'Введите пароль',
+  'auth.signIn.keepSignedIn': 'Не выходить из аккаунта',
+  'auth.signIn.forgotPassword': 'Забыли пароль?',
+  'auth.signIn.submit': 'Войти',
+  'auth.signIn.submitting': 'Вход...',
+  'auth.signIn.backToHome': 'На главную',
+
+  'auth.callback.idpRejected': 'Master Education не разрешил вход в LMS. Обычно это значит, что у аккаунта пока нет доступа к LMS или он деактивирован — обратитесь к куратору или администратору.',
+  'auth.callback.linkExpired': 'Ссылка для входа уже была использована. Так бывает, если страница обновилась или открылась второй раз. Начните вход заново.',
+  'auth.callback.storageBlocked': 'Браузер не разрешает сайту сохранять данные, поэтому вход невозможно завершить. Откройте LMS в обычном окне браузера (не в режиме инкогнито и не внутри Telegram или Instagram) и разрешите файлы cookie для этого сайта.',
+  'auth.callback.notConfigured': 'Вход через Master Education сейчас недоступен. Сообщите администратору.',
+  'auth.callback.tokenRejected': 'LMS не принял вход от Master Education. Это настройка на стороне сервера — сообщите администратору код ниже.',
+  'auth.callback.network': 'Не удалось связаться с Master Education. Проверьте интернет и попробуйте ещё раз.',
+  'auth.callback.lmsUnreachable': 'Вход выполнен, но LMS сейчас не отвечает. Проверьте интернет и попробуйте ещё раз.',
+  'auth.callback.noLmsAccount': 'Аккаунт не найден в LMS. Обратитесь к администратору, чтобы связать вашу учётную запись.',
+  'auth.callback.unknown': 'Не удалось завершить вход через Master Education. Попробуйте ещё раз.',
+  'auth.callback.retry': 'Войти ещё раз',
+  'auth.callback.backToLogin': 'Вернуться ко входу',
+  'auth.callback.supportCode': 'Код для поддержки: {code}',
+  'auth.callback.signingIn': 'Выполняется вход…',
+};

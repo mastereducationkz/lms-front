@@ -1,0 +1,43 @@
+import type { calendar as en } from '../en/calendar';
+import type { RuTable } from '../types';
+
+export const calendar: RuTable<typeof en> = {
+  'calendar.subscribe.button': 'Подписаться',
+  'calendar.subscribe.title': 'Подписаться на календарь',
+  'calendar.subscribe.description': 'Google Календарь обновляется сразу. Apple/Outlook обновляют подписку по своему расписанию.',
+  'calendar.subscribe.loadFailed': 'Не удалось загрузить календари. Попробуйте ещё раз.',
+  'calendar.subscribe.groupCalendars': 'Календари групп',
+  'calendar.subscribe.noGroups': 'Групп пока нет.',
+  'calendar.subscribe.addToGoogle': 'Добавить в Google Календарь',
+  'calendar.subscribe.googlePending': 'Google-календарь готовится',
+  'calendar.subscribe.myCalendar': 'Мой календарь',
+  'calendar.subscribe.myCalendarHint': 'Все ваши уроки и дедлайны в одной подписке. Ссылка личная — не пересылайте её.',
+  'calendar.subscribe.copyLink': 'Скопировать ссылку',
+  'calendar.subscribe.resetLink': 'Сбросить ссылку',
+  'calendar.subscribe.copied': 'Ссылка скопирована',
+  'calendar.subscribe.copiedHint': 'Вставьте её в «Добавить календарь по URL».',
+  'calendar.subscribe.copyFailed': 'Не удалось скопировать ссылку',
+  'calendar.subscribe.linkReset': 'Ссылка обновлена',
+  'calendar.subscribe.linkResetHint': 'Старые подписки на личный календарь больше не работают.',
+  'calendar.subscribe.resetFailed': 'Не удалось сбросить ссылку',
+  'calendar.subscribe.resetConfirmTitle': 'Сбросить ссылку на личный календарь?',
+  'calendar.subscribe.resetConfirmBody': 'Все уже добавленные подписки по старой ссылке перестанут обновляться. Новую ссылку нужно будет добавить заново.',
+  'calendar.subscribe.reset': 'Сбросить',
+
+  'calendar.event.substituted': 'Замена',
+  'calendar.event.due': 'Срок: {time} · {date}',
+  'calendar.event.enterClass': 'Войти в класс',
+  'calendar.event.openOnPlatform': 'Открыть на {platform}',
+  'calendar.event.join': 'Войти',
+  'calendar.event.copyInvitation': 'Скопировать приглашение',
+  'calendar.event.copyInvitationTitle': 'Скопировать приглашение для чата группы',
+  'calendar.event.invitationCopied': 'Приглашение скопировано',
+  'calendar.event.invitationCopiedHint': 'Можно отправить в чат группы.',
+  'calendar.event.invitationCopyFailed': 'Не удалось скопировать приглашение',
+  'calendar.event.openLesson': 'Открыть урок',
+
+  'calendar.invitation.title': 'Приглашение на урок',
+  'calendar.invitation.when': '{day}, {time} (время Алматы)',
+  'calendar.invitation.materials': 'Материалы и запись: {url}',
+  'calendar.invitation.joinEarly': 'Подключайтесь за пару минут до начала.',
+};
