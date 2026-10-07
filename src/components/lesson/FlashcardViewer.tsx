@@ -3,10 +3,12 @@ import { Button } from '../ui/button';
 import { Card, CardContent } from '../ui/card';
 import { Progress } from '../ui/progress';
 import { Badge } from '../ui/badge';
-import { ChevronLeft, ChevronRight, RotateCcw, CheckCircle, XCircle, Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RotateCcw, Check, CheckCircle, Repeat, Heart } from 'lucide-react';
 import type { FlashcardSet } from '../../types';
 import { addFavoriteFlashcard, removeFavoriteByCardId, checkIsFavorite } from '../../services/api';
 import { toast } from '../Toast';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/learning';
 
 interface FlashcardViewerProps {
   flashcardSet: FlashcardSet;
@@ -18,6 +20,7 @@ interface FlashcardViewerProps {
 }
 
 export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, stepId, lessonId, courseId }: FlashcardViewerProps) {
+  const t = useT();
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [completedCards, setCompletedCards] = useState<Set<string>>(new Set());
@@ -97,6 +100,9 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
     setShowingAnswer(!showingAnswer);
   };
 
+  // «Got it» / «Still learning» only steer this session: a card still being learnt comes back
+  // before the deck ends, and the step completes once every card is «Got it». Nothing is
+  // stored per card.
   const handleCorrect = () => {
     const newCompleted = new Set(completedCards);
     newCompleted.add(currentCard.id);
@@ -106,7 +112,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
     newIncorrect.delete(currentCard.id);
     setIncorrectCards(newIncorrect);
     
-    goToNextCard();
+    goToNextCard(newIncorrect);
   };
 
   const handleIncorrect = () => {
@@ -114,10 +120,12 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
     newIncorrect.add(currentCard.id);
     setIncorrectCards(newIncorrect);
     
-    goToNextCard();
+    goToNextCard(newIncorrect);
   };
 
-  const goToNextCard = () => {
+  // Takes the updated set: reading `incorrectCards` here saw the state from before the click,
+  // so a last card marked «Still learning» never came back.
+  const goToNextCard = (stillLearning: Set<string> = incorrectCards) => {
     setIsFlipped(false);
     setShowingAnswer(false);
     
@@ -125,7 +133,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
       setCurrentCardIndex(currentCardIndex + 1);
     } else {
       // If there are incorrect cards, cycle through them again
-      const incorrectCardIds = Array.from(incorrectCards);
+      const incorrectCardIds = Array.from(stillLearning);
       if (incorrectCardIds.length > 0) {
         const firstIncorrectIndex = cards.findIndex(card => incorrectCardIds.includes(card.id));
         if (firstIncorrectIndex !== -1) {
@@ -309,19 +317,22 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
             <Button 
               onClick={handleIncorrect}
               variant="outline"
-              className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+              className="flex items-center gap-2 border-amber-300 text-amber-800 hover:bg-amber-50 hover:text-amber-900 dark:border-amber-700/60 dark:text-amber-300 dark:hover:bg-amber-900/20 dark:hover:text-amber-200"
             >
-              <XCircle className="w-4 h-4" />
-              Incorrect
+              <Repeat className="w-4 h-4" aria-hidden="true" />
+              {t('learning.flashcards.stillLearning')}
             </Button>
             <Button 
               onClick={handleCorrect}
-              className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+              className="flex items-center gap-2 bg-green-600 text-white hover:bg-green-700"
             >
-              <CheckCircle className="w-4 h-4" />
-              Correct
+              <Check className="w-4 h-4" aria-hidden="true" />
+              {t('learning.flashcards.gotIt')}
             </Button>
           </div>
+        )}
+        {showingAnswer && (
+          <p className="text-center text-xs text-muted-foreground">{t('learning.flashcards.stillLearningHint')}</p>
         )}
 
         {/* Navigation */}
@@ -346,7 +357,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
           </Button>
 
           <Button 
-            onClick={goToNextCard}
+            onClick={() => goToNextCard()}
             variant="outline"
             disabled={currentCardIndex === cards.length - 1 && incorrectCards.size === 0}
             className="flex items-center gap-2"

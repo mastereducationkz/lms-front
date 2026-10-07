@@ -42,6 +42,9 @@ export const learning: RuTable<typeof en> = {
   'learning.flashcards.remove': 'Убрать из избранного',
   'learning.flashcards.frontImage': 'Лицевая сторона',
   'learning.flashcards.backImage': 'Обратная сторона',
+  'learning.flashcards.stillLearning': 'Ещё учу',
+  'learning.flashcards.gotIt': 'Знаю',
+  'learning.flashcards.stillLearningHint': 'Карточки, которые вы ещё учите, вернутся до конца колоды.',
 
   'learning.quiz.answerAll': 'Ответьте на все вопросы ({answered}/{total})',
 };

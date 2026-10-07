@@ -36,6 +36,9 @@ export const learning = {
   'learning.flashcards.remove': 'Remove from favorites',
   'learning.flashcards.frontImage': 'Front',
   'learning.flashcards.backImage': 'Back',
+  'learning.flashcards.stillLearning': 'Still learning',
+  'learning.flashcards.gotIt': 'Got it',
+  'learning.flashcards.stillLearningHint': 'Cards you’re still learning come back before the deck ends.',
 
   'learning.quiz.answerAll': 'Answer every question ({answered}/{total})',
 } as const satisfies MessageTable;
