@@ -749,6 +749,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
   const [satModal, setSatModal] = useState<SatFeedbackModal>({
     open: false, studentName: '', section: 'math', testName: null, feedback: null, feedbackRu: null, correct: null, total: null, completedAt: null
   })
+  const hasModalTotal = satModal.total != null && satModal.total > 0;
   // Language shown in the SAT feedback modal; the viewer's own language wins when available
   const [satFeedbackLang, setSatFeedbackLang] = useState<'ru' | 'en'>('ru')
   // Same for the IELTS feedback modal; translation is best-effort per field,
@@ -2483,7 +2484,12 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
           )}>
             {satModal.correct ?? '—'}
           </span>
-          <span className="text-muted-foreground text-sm">/ {satModal.total ?? '—'}</span>
+          {satModal.total ? (
+            <span className="text-muted-foreground text-sm">/ {satModal.total}</span>
+          ) : (
+            // NUET sends a scaled score without a question count: show it alone, not "84 / —"
+            <span className="text-muted-foreground text-sm">{t('attendance.exam.scaledScore')}</span>
+          )}
           {satModal.correct != null && satModal.total ? (
             <span className="ml-auto text-sm font-medium text-muted-foreground">
               {Math.round((satModal.correct / satModal.total) * 100)}%
@@ -2491,7 +2497,8 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
           ) : null}
         </div>
 
-        {/* Feedback body */}
+        {/* Feedback body (a score-only result has nothing to say here) */}
+        {(hasModalTotal || satModal.feedback || satModal.feedbackRu) && (
         <div className="px-5 py-4 overflow-y-auto">
           {satModal.feedback || satModal.feedbackRu ? (
             <>
@@ -2522,6 +2529,7 @@ export default function CuratorLeaderboardPage({ embedded = false, titleSlot }: 
             <p className="text-sm text-muted-foreground italic">{t('attendance.feedback.none')}</p>
           )}
         </div>
+        )}
       </DialogContent>
     </Dialog>
 
