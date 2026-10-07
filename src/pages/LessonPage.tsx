@@ -5,7 +5,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { Skeleton } from '../components/ui/skeleton';
-import { ChevronLeft, ChevronRight, Play, FileText, HelpCircle, ChevronDown, ChevronUp, Lock, Trophy, PanelLeftOpen, PanelLeftClose, SkipForward, Languages, Star, Layers, Check, Cloud, CloudOff, Loader2, Pencil, Printer, ClipboardCheck, Wrench, Eye } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ListTree, Play, FileText, HelpCircle, ChevronDown, ChevronUp, Lock, Trophy, PanelLeftOpen, PanelLeftClose, SkipForward, Languages, Star, Layers, Check, Cloud, CloudOff, Loader2, Pencil, Printer, ClipboardCheck, Wrench, Eye } from 'lucide-react';
 import { useSettings } from '../contexts/SettingsContext';
 import apiClient from '../services/api';
 import { api } from '../services/api/client';
@@ -2317,20 +2317,20 @@ export default function LessonPage() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden h-screen">
         {/* <MaintenanceBanner /> */}
         {/* Header */}
-        <div className="h-16 border-b border-border flex items-center justify-between px-4 md:px-6 bg-card flex-shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setIsMobileSidebarOpen(true)}>
-              <ChevronRight className="w-5 h-5" />
-            </Button>
+        <div className="h-16 border-b border-border flex items-center justify-between gap-2 px-4 md:px-6 bg-card flex-shrink-0">
+          {/* One back control, then the title on one line (owner, 2026-10-07: on phones a ›
+              drawer button sat next to the ‹ back button and the title wrapped). The phone's
+              lesson list opens from its own icon on the right. */}
+          <div className="flex flex-1 items-center gap-2 sm:gap-3 min-w-0">
             {isSidebarCollapsed && (
               <Button variant="ghost" size="icon" className="hidden md:flex" onClick={() => setIsSidebarCollapsed(false)} title="Expand Sidebar">
                 <PanelLeftOpen className="w-5 h-5" />
               </Button>
             )}
-            <Button variant="ghost" size="icon" onClick={() => navigate(`/course/${courseId}`)} title="Back to Course">
-              <ChevronLeft className="w-5 h-5" />
+            <Button variant="ghost" size="icon" className="shrink-0 -ml-2 md:ml-0" onClick={() => navigate(`/course/${courseId}`)} title="Back to Course" aria-label="Back to Course">
+              <ChevronLeft className="w-5 h-5" aria-hidden="true" />
             </Button>
-            <h1 className="font-semibold text-base sm:text-lg leading-tight line-clamp-2 break-words min-w-0 max-w-[220px] sm:max-w-2xl">
+            <h1 className="font-semibold text-base sm:text-lg leading-tight truncate min-w-0" title={lesson.title}>
               {lesson.title}
             </h1>
             {(() => {
@@ -2460,6 +2460,17 @@ export default function LessonPage() {
                 <Languages className="w-5 h-5" />
               </Button>
             )}
+            {/* Phones: the course's lesson list (the sidebar's drawer). */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="md:hidden h-9 w-9 p-0 rounded-lg border bg-background text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground"
+              onClick={() => setIsMobileSidebarOpen(true)}
+              title="Lessons"
+              aria-label="Lessons"
+            >
+              <ListTree className="w-5 h-5" aria-hidden="true" />
+            </Button>
           </div>
         </div>
 
