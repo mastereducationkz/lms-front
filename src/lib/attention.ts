@@ -8,8 +8,9 @@
  *   higher-priority popup that is still deciding (loading) holds the lower ones back, for at most
  *   DECIDE_TIMEOUT_MS.
  * - The visit in which onboarding runs shows ONLY onboarding; everything else waits for the next visit.
- * - Non-blocking nudges (the Kasatik spotlight, the referral strip) appear only on a quiet visit:
- *   not the first one, nothing blocking shown or held, every blocking candidate decided.
+ * - Non-blocking nudges (the Kasatik spotlight, the referral strip, the install card) appear only on
+ *   a quiet visit: not the first one, nothing blocking shown or held, every blocking candidate
+ *   decided. The install card also waits for the spotlight (lib/dashboardPrompt).
  */
 import { useEffect, useSyncExternalStore } from 'react';
 import { tourOwed, type GuideUser } from './guide/state';
@@ -17,7 +18,7 @@ import { readLocalMarks } from './guide/storage';
 
 export type BlockingKind = 'onboarding' | 'celebration' | 'daily_questions';
 export type Intent = 'unknown' | 'wants' | 'none';
-export type NudgeKind = 'spotlight' | 'referral';
+export type NudgeKind = 'spotlight' | 'referral' | 'install';
 
 export const BLOCKING_ORDER: readonly BlockingKind[] = ['onboarding', 'celebration', 'daily_questions'];
 /** How long a still-loading candidate may hold the others back. */

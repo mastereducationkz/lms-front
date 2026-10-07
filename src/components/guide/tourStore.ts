@@ -22,9 +22,11 @@ export interface GuideSnapshot {
   replayRequested: boolean;
   /** The full-screen welcome is up. */
   welcome: boolean;
+  /** A one-time page tip is on screen (TipsLayer): dashboard prompts wait for it. */
+  tip: boolean;
 }
 
-let snapshot: GuideSnapshot = { session: null, replayRequested: false, welcome: false };
+let snapshot: GuideSnapshot = { session: null, replayRequested: false, welcome: false, tip: false };
 const listeners = new Set<() => void>();
 
 function set(next: Partial<GuideSnapshot>): void {
@@ -57,6 +59,9 @@ export const tourStore = {
   },
   setWelcome(welcome: boolean): void {
     if (snapshot.welcome !== welcome) set({ welcome });
+  },
+  setTip(tip: boolean): void {
+    if (snapshot.tip !== tip) set({ tip });
   },
 };
 

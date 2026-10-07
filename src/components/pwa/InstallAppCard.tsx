@@ -5,6 +5,7 @@ import { Button } from '../ui/button';
 import { dismissInstallNudge, dismissPushNudge, installNudgeVisible, pushNudgeVisible, trackPwa } from '../../services/pwaInstall';
 import { enablePush, usePushStatus } from '../../services/webPush';
 import { useInstallFlow } from './useInstallFlow';
+import { useDashboardPrompt } from './useDashboardPrompt';
 
 const SOLID = 'bg-brand-solid text-brand-solid-foreground hover:bg-brand-solid-hover';
 
@@ -98,23 +99,30 @@ function BellTile({ compact }: { compact: boolean }) {
 
 /**
  * The dashboard's invitation to install the app (owner, 2026-10-07), then, inside the installed
- * app, to turn on lesson reminders. Pacing in src/lib/installNudge.ts; nothing renders when
- * neither is due.
+ * app, to turn on lesson reminders. Pacing in src/lib/installNudge.ts, one-at-a-time in
+ * src/lib/dashboardPrompt.ts; nothing renders when neither is due.
  */
 export default function InstallAppCard({ variant = 'student' }: { variant?: 'student' | 'teacher' }) {
   const { snapshot, t, start, sheet, oneTap } = useInstallFlow('dashboard');
-  const showInstall = installNudgeVisible(snapshot);
-  const pushCandidate = !showInstall && pushNudgeVisible(snapshot);
+  // One prompt at a time: the Kasatik spotlight, the tour and tips go first (lib/dashboardPrompt).
+  const gate = useDashboardPrompt();
+  const showInstall = gate.allowed && installNudgeVisible(snapshot);
+  const pushCandidate = gate.allowed && !showInstall && pushNudgeVisible(snapshot);
   const push = usePushStatus(pushCandidate);
   const showPush = pushCandidate && push === 'default';
   const [busy, setBusy] = useState(false);
+  const { noteShown } = gate;
 
   useEffect(() => {
-    if (showInstall) trackPwa('install_prompt_shown', { surface: 'dashboard', variant, one_tap: oneTap });
-  }, [showInstall, variant, oneTap]);
+    if (!showInstall) return;
+    noteShown();
+    trackPwa('install_prompt_shown', { surface: 'dashboard', variant, one_tap: oneTap });
+  }, [showInstall, variant, oneTap, noteShown]);
   useEffect(() => {
-    if (showPush) trackPwa('push_prompt_shown', { surface: 'dashboard', variant });
-  }, [showPush, variant]);
+    if (!showPush) return;
+    noteShown();
+    trackPwa('push_prompt_shown', { surface: 'dashboard', variant });
+  }, [showPush, variant, noteShown]);
 
   if (showInstall) {
     const { platform } = snapshot.platform;
