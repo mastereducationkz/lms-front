@@ -122,6 +122,8 @@ export const adminUsers = {
   'adminUsers.fields.workspaceEmail': 'Workspace email (recordings)',
   'adminUsers.fields.workspaceHelp':
     "Connecting gives this teacher's lessons Meet rooms, recordings and Telegram invitations. The account must already exist in the Workspace users list uploaded on Admin → Recordings Rollout. Clear the field to disconnect.",
+  'adminUsers.fields.personalEmail': 'Personal email',
+  'adminUsers.fields.personalEmailHelp': 'For contact and recovery only. Not used to sign in.',
   'adminUsers.fields.groups': 'Groups',
   'adminUsers.fields.noGroups': 'No groups available',
   'adminUsers.fields.groupsSelected': 'Selected: {count} group(s)',

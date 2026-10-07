@@ -27,6 +27,7 @@ export interface User {
   created_at: string;
   updated_at: string;
   course_ids?: number[]; // List of course IDs for head teachers
+  personal_email?: string | null; // Admin lists only: contact/recovery address, never a sign-in
   no_substitutions?: boolean; // Teacher opt-out of substitutions
   is_analytics_hidden?: boolean; // Curator hidden from analytics/dashboard/leaderboard views
   is_trial?: boolean; // Sales-prospect trial account (see /trial-access admin page)
@@ -456,6 +457,7 @@ export interface UpdateUserRequest {
   is_active?: boolean;
   password?: string;
   course_ids?: number[]; // Courses for head teachers
+  personal_email?: string | null; // Contact/recovery address (admin only); null or empty clears
   workspace_email?: string | null; // Connect teacher to recordings (@mastereducation.kz); null disconnects
 }
 

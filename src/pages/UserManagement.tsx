@@ -106,6 +106,7 @@ interface UserFormData {
   course_ids: number[]; // Multiple courses for head teachers
   child_ids: number[]; // Linked students when role === 'parent'
   workspace_email?: string; // @mastereducation.kz account — connects teachers to recordings
+  personal_email?: string; // contact/recovery address, admin only, never a sign-in
 }
 
 interface GroupFormData {
@@ -141,6 +142,7 @@ const sameIdSet = (a: number[], b: number[]) => {
 export default function UserManagement() {
   const { user: currentUser } = useAuth();
   const isHeadCurator = currentUser?.role === 'head_curator';
+  const isAdmin = currentUser?.role === 'admin';
   const t = useT();
   const [searchParams, setSearchParams] = useSearchParams();
   const [users, setUsers] = useState<User[]>([]);
@@ -374,6 +376,7 @@ export default function UserManagement() {
   const [originalUserGroupIds, setOriginalUserGroupIds] = useState<number[]>([]);
   const [originalChildIds, setOriginalChildIds] = useState<number[]>([]);
   const [originalWorkspaceEmail, setOriginalWorkspaceEmail] = useState('');
+  const [originalPersonalEmail, setOriginalPersonalEmail] = useState('');
 
   // When auth loads and user is head_curator, lock filters and form to curator role
   useEffect(() => {
@@ -608,6 +611,11 @@ export default function UserManagement() {
       if (passwordError) errors.password = passwordError;
     }
 
+    const personalEmail = (formData.personal_email || '').trim();
+    if (personalEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personalEmail)) {
+      errors.personal_email = t('adminUsers.form.emailInvalid');
+    }
+
     const workspaceEmail = (formData.workspace_email || '').trim();
     if (workspaceEmail && !workspaceEmail.endsWith('@mastereducation.kz')) {
       errors.workspace_email = t('adminUsers.form.workspaceDomain');
@@ -728,6 +736,10 @@ export default function UserManagement() {
       const nextWorkspace = (formData.workspace_email || '').trim();
       if (nextWorkspace !== originalWorkspaceEmail) {
         userData.workspace_email = nextWorkspace || null;
+      }
+      const nextPersonal = (formData.personal_email || '').trim();
+      if (isAdmin && nextPersonal !== originalPersonalEmail) {
+        userData.personal_email = nextPersonal || null;
       }
 
       if (
@@ -1015,6 +1027,7 @@ export default function UserManagement() {
       }
     }
     setOriginalWorkspaceEmail(workspaceEmail);
+    setOriginalPersonalEmail(user.personal_email ?? '');
 
     setFormData({
       name: user.name || user.full_name || '',
@@ -1026,7 +1039,8 @@ export default function UserManagement() {
       group_ids: groupIds,
       course_ids: user.course_ids || [],
       child_ids: childIds,
-      workspace_email: workspaceEmail
+      workspace_email: workspaceEmail,
+      personal_email: user.personal_email ?? ''
     });
     setShowEditModal(true);
   };
@@ -1047,12 +1061,14 @@ export default function UserManagement() {
       group_ids: [],
       course_ids: [],
       child_ids: [],
-      workspace_email: ''
+      workspace_email: '',
+      personal_email: ''
     });
     setSelectedUser(null);
     setOriginalUserGroupIds([])
     setOriginalChildIds([])
     setOriginalWorkspaceEmail('')
+    setOriginalPersonalEmail('')
     setFormErrors({});
   };
 
@@ -1693,6 +1709,7 @@ export default function UserManagement() {
           students={students}
           errors={formErrors}
           isHeadCurator={isHeadCurator}
+          canEditPersonalEmail={isAdmin}
           isEdit
         />
 
@@ -1937,10 +1954,11 @@ interface UserFormProps {
   students: User[];
   errors?: { [key: string]: string };
   isHeadCurator?: boolean;
+  canEditPersonalEmail?: boolean;
   isEdit?: boolean;
 }
 
-function UserForm({ formData, setFormData, groups, courses, students, errors = {}, isHeadCurator = false, isEdit = false }: UserFormProps) {
+function UserForm({ formData, setFormData, groups, courses, students, errors = {}, isHeadCurator = false, canEditPersonalEmail = false, isEdit = false }: UserFormProps) {
   const t = useT();
   const [groupSearch, setGroupSearch] = useState('');
   const [childSearch, setChildSearch] = useState('');
@@ -2047,6 +2065,28 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
           </Select>
         </div>
         
+        {/* Personal contact/recovery address: admin only, never used to sign in. */}
+        {isEdit && canEditPersonalEmail && formData.role !== 'student' && (
+          <div className="p-1">
+            <Label htmlFor="personal_email" className="text-sm font-medium">
+              {t('adminUsers.fields.personalEmail')}
+            </Label>
+            <Input
+              id="personal_email"
+              type="email"
+              value={formData.personal_email || ''}
+              onChange={(e) => setFormData({ ...formData, personal_email: e.target.value })}
+              className={errors.personal_email ? 'border-red-500' : ''}
+            />
+            {errors.personal_email && (
+              <p className="text-red-500 text-xs mt-1 dark:text-red-400">{errors.personal_email}</p>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">
+              {t('adminUsers.fields.personalEmailHelp')}
+            </p>
+          </div>
+        )}
+
         {/* Recordings connection — the teacher's @mastereducation.kz account. Only in edit
             mode: creating it here would run before the user row exists. */}
         {isEdit && (formData.role === 'teacher' || formData.role === 'head_teacher') && (
