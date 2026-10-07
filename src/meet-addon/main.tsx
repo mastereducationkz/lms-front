@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import '../index.css';
 import { installAppTimeZone } from '../lib/datetime';
 import App from './App';
+import { isDarkChoice } from '../lib/theme';
 
 // The Google Meet side panel's own entry (`/meet-addon.html`). Deliberately none of the main app's
 // router, providers, service worker or Sentry: Meet waits at most 10 seconds for the panel.
@@ -16,7 +17,7 @@ function savedTheme(): string | null {
 const scheme = window.matchMedia('(prefers-color-scheme: dark)');
 const applyTheme = () => {
   const saved = savedTheme();
-  document.documentElement.classList.toggle('dark', saved ? saved === 'dark' : scheme.matches);
+  document.documentElement.classList.toggle('dark', isDarkChoice(saved, scheme.matches));
 };
 applyTheme();
 scheme.addEventListener('change', applyTheme);
