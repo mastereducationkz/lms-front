@@ -6,7 +6,6 @@ import apiClient from '../services/api';
 import { User, Mail, Shield, Calendar, Clock, Save, BellOff } from 'lucide-react';
 import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning';
 import UnsavedChangesDialog from '../components/UnsavedChangesDialog';
-import ResetOnboardingButton from '../components/ResetOnboardingButton';
 import { roleLabel } from '@/lib/roleLabel';
 
 export default function ProfilePage() {

@@ -20,7 +20,10 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
-import { storage } from '../utils/storage';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { replayTourFor } from '../lib/guide/state';
+import { replayLabel } from '../components/guide/tours';
+import { requestTourReplay } from '../components/guide/tourStore';
 import apiClient from '../services/api';
 import { changePassword } from '../services/api/auth';
 import { toast } from '../components/Toast';
@@ -274,12 +277,11 @@ export default function SettingsPage() {
     setProgressSummary(null);
   };
 
-  const handleRestartTour = () => {
-    if (!user) return;
-    const tourName = `${user.role}-onboarding`;
-    storage.setItem('pending_tour', tourName);
-    window.location.href = '/dashboard';
-  };
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  // The same «Replay tour» as the menu under the name; roles without a tour see no card.
+  const replayKind = replayTourFor(user?.role);
+  const ru = replayKind === 'curator';
 
   return (
     <div className="space-y-6 p-4 sm:p-6 max-w-4xl mx-auto">
@@ -611,29 +613,28 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Onboarding Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Onboarding & Tour</CardTitle>
-          <CardDescription>
-            Restart the platform tour or reset the complete onboarding experience.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Button
-            onClick={handleRestartTour}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <Play className="w-4 h-4" />
-            Restart Tour
-          </Button>
-          
-          <p className="text-xs text-muted-foreground">
-            The tour will guide you through the main features of your {user?.role || 'user'} dashboard.
-          </p>
-        </CardContent>
-      </Card>
+      {replayKind && (
+        <Card>
+          <CardHeader>
+            <CardTitle>{ru ? 'Тур по платформе' : 'Platform tour'}</CardTitle>
+            <CardDescription>
+              {ru
+                ? 'Короткая прогулка по главным разделам. Запускается на дашборде.'
+                : 'A one-minute walk through the main sections. It runs on your dashboard.'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              onClick={() => requestTourReplay(navigate, pathname)}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <Play className="w-4 h-4" />
+              {replayLabel(replayKind)}
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

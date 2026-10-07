@@ -60,8 +60,12 @@ describe('shared dismissed state', () => {
     unsubscribe();
   });
 
-  it('treats the tour as pending until onboarding is completed', () => {
-    expect(onboardingPending(1, true)).toBe(false);
-    expect(onboardingPending(1, false)).toBe(true);
+  it('treats the tour as pending until this version of it is seen', () => {
+    const student = { id: 1, role: 'student', onboarding_completed: true };
+    expect(onboardingPending({ ...student, ui_state: { tour_version_seen: 1, tips: {} } })).toBe(false);
+    expect(onboardingPending({ ...student, ui_state: { tour_version_seen: 0, tips: {} } })).toBe(true);
+    // Before the server's state is known, the old flag answers.
+    expect(onboardingPending(student)).toBe(false);
+    expect(onboardingPending({ ...student, onboarding_completed: false })).toBe(true);
   });
 });

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { KasatikCoachmark } from '@/components/mascot/KasatikSpotlight';
 import UserAvatar from '@/components/mascot/UserAvatar';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import { connectSocket } from '../services/socket';
 import { useVisiblePolling } from '../hooks/useVisiblePolling';
@@ -44,10 +44,14 @@ import {
   MonitorCheck,
   MonitorPlay,
   Paperclip,
+  Route,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Course } from '../types';
 import { roleLabel } from '@/lib/roleLabel';
+import { replayTourFor } from '@/lib/guide/state';
+import { replayLabel } from '@/components/guide/tours';
+import { requestTourReplay } from '@/components/guide/tourStore';
 
 /** Only three groups: primary nav, curator tools, admin tools */
 type NavCategory = 'primary' | 'curator' | 'admin';
@@ -196,9 +200,11 @@ interface SidebarProps {
   variant?: SidebarVariant;
   isCollapsed?: boolean;
   onToggle?: () => void;
+  /** The mobile drawer closes itself, e.g. so a replayed tour isn't hidden behind it. */
+  onClose?: () => void;
 }
 
-export default function Sidebar({ variant = 'desktop', isCollapsed = false, onToggle }: SidebarProps) {
+export default function Sidebar({ variant = 'desktop', isCollapsed = false, onToggle, onClose }: SidebarProps) {
   const [unread, setUnread] = useState(0);
   const [unseenGraded, setUnseenGraded] = useState(0);
   const [lessonRequestCount, setLessonRequestCount] = useState(0);
@@ -210,6 +216,8 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
   const [groupsSpecialChecked, setGroupsSpecialChecked] = useState<boolean | null>(null);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const replayKind = replayTourFor(user?.role);
 
   // Hide restricted student nav items until role-specific special-group state is resolved.
   const hideRestrictedStudentNav = useMemo(() => {
@@ -595,6 +603,21 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                 <Settings className="w-4 h-4 mr-3" />
                 {['head_curator', 'curator'].includes(user?.role || '') ? 'Настройки' : 'Settings'}
               </NavLink>
+              {replayKind && (
+                <button
+                  type="button"
+                  data-guide-replay
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    onClose?.();
+                    requestTourReplay(navigate, pathname);
+                  }}
+                  className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-foreground hover:bg-muted transition-colors"
+                >
+                  <Route className="w-4 h-4 mr-3" />
+                  {replayLabel(replayKind)}
+                </button>
+              )}
               <div className="border-t my-1"></div>
               <button
                 onClick={handleLogout}
@@ -626,7 +649,7 @@ export function SidebarMobile({ open, onClose }: SidebarMobileProps) {
     <div className="lg:hidden fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
       <div className="absolute top-0 left-0 w-64 h-full bg-card border-r border-border p-0">
-        <Sidebar variant="mobile" />
+        <Sidebar variant="mobile" onClose={onClose} />
       </div>
     </div>
   );

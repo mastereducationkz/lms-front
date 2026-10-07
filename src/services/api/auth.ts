@@ -23,7 +23,11 @@ function getCurrentUserFromStorage(): User | null {
 
 function setCurrentUser(user: User | null): void {
   currentUser = user;
-  const userData = JSON.stringify(user);
+  // ui_state grows with every dismissed tip and /auth/me always brings it fresh: keep it out of
+  // the cookie, which must stay under the browser's 4 KB limit.
+  const persisted = user ? { ...user } : null;
+  if (persisted) delete persisted.ui_state;
+  const userData = JSON.stringify(persisted);
   CookieUtils.setCookie('current_user', userData, 7);
   localStorage.removeItem('current_user');
 }

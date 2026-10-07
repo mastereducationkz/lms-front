@@ -258,6 +258,7 @@ export default function CourseOverviewPage() {
                         key={lesson.id}
                         onClick={() => handleLessonClick(lesson)}
                         disabled={!isAccessible}
+                        data-tip={isCheckpointLesson ? 'checkpoint-row' : undefined}
                         title={!isAccessible
                           ? (isCheckpointLesson && checkpointItem
                               ? (checkpointItem.locked_reason || 'This checkpoint is not open yet')

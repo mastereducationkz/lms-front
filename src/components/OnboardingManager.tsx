@@ -1,200 +1,220 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+/**
+ * The platform tour and the one-time page tips (owner, 2026-10-07). nextstepjs is gone: its cards
+ * landed off-screen and its overlay froze the page until a reload. This decides who sees what and
+ * when, remembers it on the server (lib/guide/state), and mounts the layers that draw it.
+ *
+ * - Students, teachers and curators get their tour once, by itself, on the dashboard (students after
+ *   Assignment Zero). Head teachers, head curators, admins and parents never get one by itself, and
+ *   never the welcome screens.
+ * - Done, Skip, Close or Escape mark it seen on every device. Leaving the page, the back button or a
+ *   reload never do: an unfinished tour resumes where it was, next time on the dashboard.
+ * - «Replay tour» (the menu under the name, Settings) runs it again for the roles that have one.
+ */
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useNextStep } from 'nextstepjs';
+import { useAuth } from '../contexts/AuthContext';
 import WelcomeScreens from './WelcomeScreens';
-import OnboardingTour from './OnboardingTour';
-import { storage } from '../utils/storage';
-import apiClient from '../services/api';
-import { NextStepReact } from 'nextstepjs';
-import { getAllTourSteps } from '../config/allTourSteps';
+import UserAvatar from './mascot/UserAvatar';
 import { attention } from '../lib/attention';
+import {
+  NO_LOCAL_MARKS,
+  TOUR_VERSION,
+  assignmentZeroGate,
+  autoTourFor,
+  marksToSync,
+  readUiState,
+  replayTourFor,
+  shouldAutoStartTour,
+  shouldShowWelcome,
+  tipDismissed,
+  withTipDismissed,
+  withTourSeen,
+  type LocalMarks,
+  type TourKind,
+  type UiState,
+} from '../lib/guide/state';
+import { readLocalMarks, readTourProgress, writeLocalMarks, writeTourProgress } from '../lib/guide/storage';
+import { dismissTip as postTipDismissed, markTourSeen as postTourSeen } from '../services/api/uiState';
+import type { User } from '../types';
+import TourLayer from './guide/TourLayer';
+import TipsLayer from './guide/TipsLayer';
+import { TOURS } from './guide/tours';
+import { tourStore, useGuide, type TourOrigin } from './guide/tourStore';
 
-interface OnboardingManagerProps {
-  children: React.ReactNode;
-}
-
-const shouldDeferOnboardingForAssignmentZero = (user: {
-  role?: string;
-  assignment_zero_completed?: boolean;
-  special_group_only_student?: boolean;
-} | null) =>
-  user?.role === 'student' &&
-  !user?.special_group_only_student &&
-  user?.assignment_zero_completed === false;
-
-export default function OnboardingManager({ children }: OnboardingManagerProps) {
+export default function OnboardingManager({ children }: { children: ReactNode }) {
   const { user, updateUser } = useAuth();
-  const location = useLocation();
-  const { startNextStep } = useNextStep();
-  const [showWelcome, setShowWelcome] = useState(false);
-  const [showTour, setShowTour] = useState(false);
-  const [onboardingShownInSession, setOnboardingShownInSession] = useState(false);
+  const { pathname } = useLocation();
+  const guide = useGuide();
+  const userRef = useRef<User | null>(user);
+  userRef.current = user;
+  // AuthContext hands out a new updateUser on every render: read it through a ref so the callbacks
+  // below (and the effects that use them) stay put.
+  const updateUserRef = useRef(updateUser);
+  updateUserRef.current = updateUser;
+  const uid = user?.id ?? null;
+  const [marks, setMarks] = useState<LocalMarks>(NO_LOCAL_MARKS);
+  useEffect(() => setMarks(uid !== null ? readLocalMarks(uid) : NO_LOCAL_MARKS), [uid]);
+  const server = useMemo(() => readUiState(user?.ui_state), [user?.ui_state]);
+  const welcomedFor = useRef<string | number | null>(null);
 
-  // Проверяем, есть ли pending_tour от перехода из настроек
+  const saveMarks = useCallback((userId: string | number, next: LocalMarks) => {
+    writeLocalMarks(userId, next);
+    setMarks(next);
+  }, []);
+
+  const setUiState = useCallback((state: UiState, extra?: Partial<User>) => {
+    const current = userRef.current;
+    if (!current) return;
+    const next = { ...current, ...extra, ui_state: state };
+    userRef.current = next;
+    updateUserRef.current(next);
+  }, []);
+
+  /** The server answered: its state is the truth, and the local marks it now holds can go. */
+  const confirm = useCallback((state: UiState) => {
+    const current = userRef.current;
+    if (!current) return;
+    setUiState(state);
+    const local = readLocalMarks(current.id);
+    saveMarks(current.id, {
+      tourVersion: local.tourVersion > state.tour_version_seen ? local.tourVersion : 0,
+      tips: local.tips.filter((key) => !state.tips[key]),
+    });
+  }, [setUiState, saveMarks]);
+
+  // What this device marked and the server never got (offline, a failed request): sent again.
+  const serverKnown = server !== null;
   useEffect(() => {
-    const pendingTour = storage.getItem('pending_tour');
-    if (pendingTour && location.pathname === '/dashboard') {
-      storage.removeItem('pending_tour');
-      // Запускаем тур с небольшой задержкой, чтобы страница успела отрендериться
-      setTimeout(() => {
-        console.log('[OnboardingManager] Starting pending tour:', pendingTour);
-        startNextStep(pendingTour);
-      }, 500);
+    if (uid === null || !serverKnown) return;
+    const todo = marksToSync(readUiState(userRef.current?.ui_state), readLocalMarks(uid));
+    if (todo.tourVersion) postTourSeen(todo.tourVersion).then(confirm).catch(() => undefined);
+    for (const key of todo.tips) postTipDismissed(key).then(confirm).catch(() => undefined);
+  }, [uid, serverKnown, confirm]);
+
+  const markTourSeen = useCallback(() => {
+    const current = userRef.current;
+    if (!current) return;
+    const local = readLocalMarks(current.id);
+    saveMarks(current.id, { ...local, tourVersion: Math.max(local.tourVersion, TOUR_VERSION) });
+    setUiState(withTourSeen(readUiState(current.ui_state)), { onboarding_completed: true });
+    postTourSeen(TOUR_VERSION).then(confirm).catch(() => undefined);
+  }, [saveMarks, setUiState, confirm]);
+
+  const dismissTip = useCallback((key: string) => {
+    const current = userRef.current;
+    if (!current) return;
+    const local = readLocalMarks(current.id);
+    if (!local.tips.includes(key)) saveMarks(current.id, { ...local, tips: [...local.tips, key] });
+    setUiState(withTipDismissed(readUiState(current.ui_state), key));
+    postTipDismissed(key).then(confirm).catch(() => undefined);
+  }, [saveMarks, setUiState, confirm]);
+
+  const holdQueueForTour = useCallback((current: User) => {
+    // One calm popup at a time: the visit the tour runs in shows nothing else.
+    if (current.role !== 'student') return;
+    attention.begin(current.id, true);
+    attention.markOnboardingVisit();
+    attention.declare('onboarding', 'wants');
+    attention.take('onboarding');
+  }, []);
+
+  const start = useCallback((kind: TourKind, origin: TourOrigin, stepId: string) => {
+    const current = userRef.current;
+    if (!current) return;
+    if (origin === 'auto') holdQueueForTour(current);
+    tourStore.start({ kind, origin, stepId, path: '/dashboard' });
+    writeTourProgress(current.id, { kind, stepId, origin });
+  }, [holdQueueForTour]);
+
+  const goTo = useCallback((stepId: string) => {
+    const session = tourStore.get().session;
+    const current = userRef.current;
+    if (!session || !current) return;
+    tourStore.goTo(stepId);
+    writeTourProgress(current.id, { kind: session.kind, stepId, origin: session.origin });
+  }, []);
+
+  const end = useCallback(() => {
+    const current = userRef.current;
+    // Seen first, then gone: nothing may see «no tour running, still owed» in between.
+    if (current) {
+      writeTourProgress(current.id, null);
+      markTourSeen();
     }
-  }, [location.pathname, startNextStep]);
+    tourStore.stop();
+    if (current?.role === 'student') {
+      attention.release('onboarding');
+      attention.declare('onboarding', 'none');
+    }
+  }, [markTourSeen]);
 
+  // Leaving the page (a link, the back button) pauses an automatic tour and drops a replay — neither
+  // counts as seen. The welcome screens give way too.
   useEffect(() => {
-    console.log('OnboardingManager state changed:', { showWelcome, showTour });
-  }, [showWelcome, showTour]);
+    const { session, welcome } = tourStore.get();
+    if (welcome && pathname !== '/dashboard') tourStore.setWelcome(false);
+    if (!session || pathname === session.path) return;
+    tourStore.stop();
+    if (session.origin === 'replay' && uid !== null) writeTourProgress(uid, null);
+  }, [pathname, uid]);
 
-  // Hide welcome/tour while student must complete Assignment Zero first
+  // On the dashboard: a replay that was asked for, a tour this tab already started, or a new one.
   useEffect(() => {
-    if (!shouldDeferOnboardingForAssignmentZero(user)) return;
-
-    if (showWelcome) setShowWelcome(false);
-    if (showTour) setShowTour(false);
-  }, [user, showWelcome, showTour]);
-
-  useEffect(() => {
-    // Определяем дашборды для каждой роли
-    const getDashboardPathForRole = (role: string) => {
-      switch (role) {
-        case 'student':
-          return '/dashboard';
-        case 'teacher':
-          return '/dashboard';
-        case 'curator':
-          return '/dashboard';
-        case 'admin':
-          return '/dashboard';
-        default:
-          return '/dashboard';
-      }
-    };
-
-    // Students must finish Assignment Zero before welcome / platform guide
-    if (shouldDeferOnboardingForAssignmentZero(user)) {
+    if (!user || pathname !== '/dashboard' || guide.session || guide.welcome) return;
+    if (guide.replayRequested) {
+      tourStore.clearReplay();
+      const kind = replayTourFor(user.role);
+      if (kind) start(kind, 'replay', TOURS[kind].steps[0].id);
       return;
     }
-
-    // Проверяем, нужно ли показывать онбординг
-    if (user && !onboardingShownInSession) {
-      const userDashboard = getDashboardPathForRole(user.role);
-      const isOnDashboard = location.pathname === userDashboard;
-
-      if (location.pathname === '/assignment-zero') {
-        return;
-      }
-      
-      if (isOnDashboard) {
-        console.log('[OnboardingManager] Onboarding check:', {
-          userId: user.id,
-          userRole: user.role,
-          hasCompleted: user.onboarding_completed,
-          pathname: location.pathname,
-          shownInSession: onboardingShownInSession
-        });
-        
-        // Не показываем онбординг для стаффа (head_curator, admin, teacher)
-        const staffRoles = ['head_curator', 'admin', 'teacher'];
-        if (staffRoles.includes(user.role)) {
-          console.log(`[OnboardingManager] Skipping onboarding for ${user.role}`);
-          setOnboardingShownInSession(true);
-          return;
-        }
-        
-        // Проверяем статус из данных пользователя (с сервера) ИЛИ из localStorage
-        const localCompleted = storage.getItem(`onboarding_completed_${user.id}`) === 'true';
-        if (!user.onboarding_completed && !localCompleted) {
-          // Показываем приветственные экраны
-          console.log('[OnboardingManager] Starting onboarding flow for', user.role);
-          // One calm popup at a time: this visit belongs to onboarding — nothing else opens until the next one.
-          attention.begin(user.id, true);
-          attention.markOnboardingVisit();
-          attention.declare('onboarding', 'wants');
-          attention.take('onboarding');
-          setShowWelcome(true);
-          setOnboardingShownInSession(true); // Помечаем, что уже показали в этой сессии
-        } else {
-          console.log('[OnboardingManager] Onboarding already completed, skipping...');
-        }
-      }
+    const progress = readTourProgress(user.id);
+    const owed = shouldAutoStartTour(user, pathname, marks);
+    if (progress && progress.kind === replayTourFor(user.role) && (progress.origin === 'replay' || owed)) {
+      start(progress.kind, progress.origin, progress.stepId);
+      return;
     }
-  }, [user, location.pathname, onboardingShownInSession]);
-
-  const handleWelcomeComplete = () => {
-    console.log('Welcome screens completed, starting tour...');
-    setShowWelcome(false);
-    // После приветствия показываем тур с небольшой задержкой
-    setTimeout(() => {
-      console.log('Setting showTour to true');
-      setShowTour(true);
-    }, 500);
-  };
-
-  const handleTourComplete = async () => {
-    console.log('Tour completed!');
-    setShowTour(false);
-    attention.release('onboarding');
-    attention.declare('onboarding', 'none');
-    
-    // Сохраняем статус на сервере
-    if (user) {
-      try {
-        console.log('Calling completeOnboarding API for user:', user.id);
-        const updatedUser = await apiClient.completeOnboarding();
-        console.log('Onboarding API response:', updatedUser);
-        console.log('Onboarding status saved on server for user:', user.id);
-        
-        // Обновляем пользователя в контексте с новыми данными
-        console.log('Updating user in AuthContext with:', {
-          id: updatedUser.id,
-          onboarding_completed: updatedUser.onboarding_completed,
-          onboarding_completed_at: updatedUser.onboarding_completed_at
-        });
-        updateUser(updatedUser);
-        
-        // Также сохраняем локально для быстрого доступа
-        storage.setItem(`onboarding_completed_${user.id}`, 'true');
-        console.log('Onboarding saved to localStorage');
-      } catch (error) {
-        console.error('Failed to save onboarding status:', error);
-        // Сохраняем хотя бы локально, если сервер недоступен
-        storage.setItem(`onboarding_completed_${user.id}`, 'true');
-      }
+    const kind = autoTourFor(user.role);
+    if (!owed || !kind) return;
+    if (welcomedFor.current !== user.id && shouldShowWelcome(user, false)) {
+      welcomedFor.current = user.id;
+      holdQueueForTour(user);
+      tourStore.setWelcome(true);
+      return;
     }
-  };
+    start(kind, 'auto', TOURS[kind].steps[0].id);
+  }, [user, pathname, guide.session, guide.welcome, guide.replayRequested, marks, start, holdQueueForTour]);
 
-  const userName = user?.full_name || user?.name || 'there';
+  const isDismissed = useCallback((key: string) => tipDismissed(key, server, marks), [server, marks]);
+  const finishWelcome = useCallback(() => tourStore.setWelcome(false), []);
+  const session = guide.session;
 
   return (
     <>
-      {showWelcome && user && !shouldDeferOnboardingForAssignmentZero(user) && (
-        <WelcomeScreens 
-          userName={userName} 
-          userRole={user.role}
-          onComplete={handleWelcomeComplete} 
+      {children}
+      {guide.welcome && user && (
+        <WelcomeScreens userName={user.full_name || user.name || ''} userRole={user.role} onComplete={finishWelcome} />
+      )}
+      {session && user && (
+        <TourLayer
+          key={`${session.kind}:${session.origin}`}
+          tour={TOURS[session.kind]}
+          stepId={session.stepId}
+          welcomeLeading={
+            <UserAvatar userId={user.id} name={user.name} avatarUrl={user.avatar_url} mascot={user.mascot} isStudent={user.role === 'student'} size={40} />
+          }
+          onGoTo={goTo}
+          onEnd={end}
         />
       )}
-      
-      {user && showTour && !shouldDeferOnboardingForAssignmentZero(user) && (
-        <OnboardingTour
-          userRole={user.role}
-          steps={[]}
-          isOpen={showTour}
-          onComplete={handleTourComplete}
+      {user && server && (
+        <TipsLayer
+          role={user.role}
+          pathname={pathname}
+          busy={session !== null || guide.welcome || assignmentZeroGate(user)}
+          dismissed={isDismissed}
+          onDismiss={dismissTip}
         />
       )}
-      
-      <NextStepReact 
-        steps={getAllTourSteps()} 
-        onSkip={handleTourComplete} 
-        onComplete={handleTourComplete}
-      >
-        {children}
-      </NextStepReact>
     </>
   );
 }
-

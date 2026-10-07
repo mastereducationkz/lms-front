@@ -12,6 +12,8 @@
  *   not the first one, nothing blocking shown or held, every blocking candidate decided.
  */
 import { useEffect, useSyncExternalStore } from 'react';
+import { tourOwed, type GuideUser } from './guide/state';
+import { readLocalMarks } from './guide/storage';
 
 export type BlockingKind = 'onboarding' | 'celebration' | 'daily_questions';
 export type Intent = 'unknown' | 'wants' | 'none';
@@ -330,22 +332,17 @@ export const attention = new AttentionStore(() => storageOf('sessionStorage'), (
  * Subscribes to the queue and starts this tab's visit for the signed-in student (in an effect — the
  * store notifies listeners, which must never happen during another component's render).
  */
-export function useAttention(user: { id: string | number; role?: string; onboarding_completed?: boolean } | null | undefined): AttentionStore {
+export function useAttention(user: GuideUser | null | undefined): AttentionStore {
   useSyncExternalStore(attention.subscribe, attention.getVersion, attention.getVersion);
   const userId = user?.role === 'student' ? user.id : null;
-  const pending = userId !== null && onboardingOwed(userId, user?.onboarding_completed);
+  const pending = userId !== null && !!user && onboardingOwed(user);
   useEffect(() => {
     if (userId !== null) attention.begin(userId, pending);
   }, [userId, pending]);
   return attention;
 }
 
-/** Whether the onboarding tour is still owed to this user (mirrors OnboardingManager). */
-export function onboardingOwed(userId: string | number, onboardingCompleted?: boolean): boolean {
-  if (onboardingCompleted) return false;
-  try {
-    return window.localStorage.getItem(`onboarding_completed_${userId}`) !== 'true';
-  } catch {
-    return true;
-  }
+/** Whether the onboarding tour is still owed to this user (the rule lives in lib/guide/state). */
+export function onboardingOwed(user: GuideUser): boolean {
+  return tourOwed(user, readLocalMarks(user.id));
 }

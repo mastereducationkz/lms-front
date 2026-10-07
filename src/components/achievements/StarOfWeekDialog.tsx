@@ -28,6 +28,7 @@ export function StarOfWeekButton({ groupId, students, lang }: StarOfWeekButtonPr
         className="h-8 gap-1.5 border-yellow-300 text-xs text-yellow-800 hover:bg-yellow-50 hover:dark:bg-yellow-500/15 dark:border-yellow-800 dark:text-yellow-300 dark:hover:bg-yellow-950/30"
         onClick={() => setOpen(true)}
         disabled={students.length === 0}
+        data-tip="star-of-week"
       >
         <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-500" aria-hidden />
         {ru ? 'Звезда недели' : 'Star of the Week'}

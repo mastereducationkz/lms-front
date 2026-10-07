@@ -36,6 +36,8 @@ export interface User {
   avatar_url?: string | null;
   /** A student's chosen orca avatar code (components/mascot); null = the automatic one. */
   mascot?: string | null;
+  /** From /auth/me only: what this person has seen of the tour and the one-time tips (lib/guide/state). */
+  ui_state?: { tour_version_seen: number; tips: Record<string, string> } | null;
 }
 
 export type UserRole = 'student' | 'teacher' | 'curator' | 'admin' | 'head_curator' | 'head_teacher' | 'parent';

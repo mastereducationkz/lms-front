@@ -1,7 +1,7 @@
 /** The two «Meet your Kasatik» surfaces: a coachmark on the desktop sidebar avatar, a dashboard card on mobile. */
 import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useNextStep } from 'nextstepjs';
+import { useTourActive } from '../guide/tourStore';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../ui/button';
 import { Popover, PopoverAnchor, PopoverContent } from '../ui/popover';
@@ -23,7 +23,7 @@ function useKasatikSpotlight() {
   const { user } = useAuth();
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { isNextStepVisible } = useNextStep();
+  const tourRunning = useTourActive();
   useSyncExternalStore(subscribeSpotlight, spotlightVersion, spotlightVersion);
   const queue = useAttention(user);
   const userId = user?.id ?? '';
@@ -31,7 +31,7 @@ function useKasatikSpotlight() {
     role: user.role,
     mascot: user.mascot,
     dismissed: isSpotlightDismissed(userId),
-    tourActive: isNextStepVisible || onboardingPending(userId, user.onboarding_completed),
+    tourActive: tourRunning || onboardingPending(user),
     assignmentZeroGate: user.role === 'student' && !user.special_group_only_student && user.assignment_zero_completed === false,
     pathname,
     // One calm popup at a time: only on a quiet visit (not the first, nothing blocking shown),

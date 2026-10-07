@@ -7,7 +7,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useNextStep } from 'nextstepjs';
+import { useTourActive } from '@/components/guide/tourStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { parseMascot } from '@/components/mascot/config';
 import { onboardingPending } from '@/components/mascot/spotlight';
@@ -44,7 +44,7 @@ export default function UnlockCelebration() {
   const { user, updateUser } = useAuth();
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { isNextStepVisible } = useNextStep();
+  const tourActive = useTourActive();
   const queue = useAttention(user);
   const [data, setData] = useState<MyAchievements | null>(null);
   const [saving, setSaving] = useState(false);
@@ -79,8 +79,8 @@ export default function UnlockCelebration() {
 
   // Never over the tour, the Assignment Zero gate or its page.
   const blocked = !user
-    || isNextStepVisible
-    || onboardingPending(user.id, user.onboarding_completed)
+    || tourActive
+    || onboardingPending(user)
     || (!user.special_group_only_student && user.assignment_zero_completed === false)
     || pathname.startsWith('/assignment-zero');
 
