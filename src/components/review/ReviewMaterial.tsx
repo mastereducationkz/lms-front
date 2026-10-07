@@ -7,6 +7,7 @@ import React, { useEffect, useState } from 'react'
 import { BookOpen, ChevronDown, ChevronUp, ExternalLink, FileText, Headphones, Image as ImageIcon } from 'lucide-react'
 import { mediaUrl } from '../../lib/mediaUrl'
 import { renderTextWithLatex } from '../../utils/latex'
+import { sanitizeHtml } from '../../lib/safeHtml'
 import { ZoomableImage } from '../lesson/ZoomableImage'
 import { AudioPlayer } from '../lesson/quiz/AudioPlayer'
 import { EN } from './strings'
@@ -98,7 +99,7 @@ function QuizMaterialBody({ material }: { material: QuizMaterial }) {
       return (
         <div
           className="prose prose-lg dark:prose-invert max-h-[45vh] max-w-none overflow-y-auto"
-          dangerouslySetInnerHTML={{ __html: renderTextWithLatex(material.html) }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(material.html)) }}
         />
       )
   }

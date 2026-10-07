@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { sanitizeHtml } from '../lib/safeHtml';
 import { useLocation } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
@@ -562,7 +563,7 @@ function DailyQuestionsPopupInner({
                 <p className="text-xs font-medium text-muted-foreground uppercase mb-2">Passage</p>
                 <div 
                   className="text-sm text-foreground leading-relaxed prose prose-sm max-w-none dark:prose-invert"
-                  dangerouslySetInnerHTML={{ __html: currentQuestion.passageText }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentQuestion.passageText) }}
                 />
               </div>
             )}

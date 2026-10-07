@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { sanitizeHtml } from '../lib/safeHtml';
 import { useParams, useNavigate } from 'react-router-dom';
 import { fetchQuizById, getQuizAttemptsLeft, submitQuiz } from "../services/api";
 import { toast } from '../components/Toast.tsx';
@@ -175,7 +176,7 @@ export default function QuizPage() {
                         {parts.map((part, index) => {
                           const isGap = index % 2 === 1;
                           if (!isGap) {
-                            return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
+                            return <span key={index} dangerouslySetInnerHTML={{ __html: sanitizeHtml(part) }} />;
                           }
                           const currentGapIndex = gapIndex++;
                           return (

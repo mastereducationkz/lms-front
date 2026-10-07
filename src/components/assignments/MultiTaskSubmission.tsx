@@ -16,7 +16,7 @@ import { parseBluebookReport } from '../../services/api/exams';
 import { BluebookGraderPanel } from './BluebookGraderPanel';
 import { formatAssignmentTaskLabel, gatedLessonIds, type UnitGate } from '../../lib/assignmentTask';
 import { UploadFailedError } from '../../lib/uploadFailure';
-import { safeUploadUrl } from '../../lib/mediaUrl';
+import { safeLinkUrl, safeUploadUrl } from '../../lib/mediaUrl';
 import { formatTime } from '../../lib/i18n';
 
 interface Task {
@@ -1232,15 +1232,21 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
           </div>
         );
 
-      case 'link_task':
+      case 'link_task': {
+        // A teacher-typed URL: only http(s) becomes a link; anything else shows as plain text.
+        const linkHref = safeLinkUrl(task.content.url);
         return (
           <div className="space-y-3">
             <div className="text-sm text-slate-700 dark:text-foreground">{task.content.link_description}</div>
             <div className="flex items-center p-3 border rounded-lg bg-muted border-border">
               <LinkIcon className="w-4 h-4 text-muted-foreground mr-2" />
-              <a href={task.content.url} target="_blank" rel="noopener noreferrer" className="text-foreground hover:underline flex-1 truncate">
-                {task.content.url}
-              </a>
+              {linkHref ? (
+                <a href={linkHref} target="_blank" rel="noopener noreferrer" className="text-foreground hover:underline flex-1 truncate">
+                  {task.content.url}
+                </a>
+              ) : (
+                <span className="text-foreground flex-1 truncate">{task.content.url}</span>
+              )}
               <ExternalLink className="w-3 h-3 text-muted-foreground ml-2" />
             </div>
             <div className="flex items-center space-x-2 mt-2">
@@ -1258,6 +1264,7 @@ export default function MultiTaskSubmission({ assignment, onSubmit, initialAnswe
             </div>
           </div>
         );
+      }
 
       case 'pdf_text_task':
         return (

@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { replayTourFor } from '../lib/guide/state';
+import { passwordPolicyError } from '../lib/passwordPolicy';
 import { replayLabel } from '../components/guide/tours';
 import { requestTourReplay } from '../components/guide/tourStore';
 import apiClient from '../services/api';
@@ -87,10 +88,13 @@ export default function SettingsPage() {
   const [pwNew, setPwNew] = useState('');
   const [pwConfirm, setPwConfirm] = useState('');
   const [pwSaving, setPwSaving] = useState(false);
+  const pwPolicyError = passwordPolicyError(pwNew);
+  const pwMismatch = pwConfirm.length > 0 && pwNew !== pwConfirm;
+  const pwReady = !!pwCurrent && !pwPolicyError && pwNew === pwConfirm;
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pwNew.length < 6) { toast(t('settings.password.tooShort'), 'error'); return; }
+    if (pwPolicyError) { toast(pwPolicyError, 'error'); return; }
     if (pwNew !== pwConfirm) { toast(t('settings.password.mismatch'), 'error'); return; }
     setPwSaving(true);
     try {
@@ -606,13 +610,15 @@ export default function SettingsPage() {
             </div>
             <div>
               <Label htmlFor="pw-new" className="text-sm font-medium">{t('settings.password.new')}</Label>
-              <Input id="pw-new" type="password" required value={pwNew} onChange={(e) => setPwNew(e.target.value)} placeholder={t('settings.password.newPlaceholder')} className="mt-1.5" />
+              <Input id="pw-new" type="password" autoComplete="new-password" required value={pwNew} onChange={(e) => setPwNew(e.target.value)} placeholder={t('settings.password.newPlaceholder')} aria-invalid={!!pwNew && !!pwPolicyError} aria-describedby="pw-new-error" className="mt-1.5" />
+              {pwNew && pwPolicyError && <p id="pw-new-error" className="mt-1 text-xs text-destructive">{pwPolicyError}</p>}
             </div>
             <div>
               <Label htmlFor="pw-confirm" className="text-sm font-medium">{t('settings.password.confirm')}</Label>
-              <Input id="pw-confirm" type="password" required value={pwConfirm} onChange={(e) => setPwConfirm(e.target.value)} className="mt-1.5" />
+              <Input id="pw-confirm" type="password" autoComplete="new-password" required value={pwConfirm} onChange={(e) => setPwConfirm(e.target.value)} aria-invalid={pwMismatch} aria-describedby="pw-confirm-error" className="mt-1.5" />
+              {pwMismatch && <p id="pw-confirm-error" className="mt-1 text-xs text-destructive">{t('settings.password.mismatch')}</p>}
             </div>
-            <Button type="submit" disabled={pwSaving}>
+            <Button type="submit" disabled={pwSaving || !pwReady}>
               {pwSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('settings.password.saving')}</> : t('settings.password.submit')}
             </Button>
           </form>

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import apiClient from '../../services/api';
 import { renderTextWithLatex } from '../../utils/latex';
+import { sanitizeHtml } from '../../lib/safeHtml';
 import RichTextEditor from '../RichTextEditor';
 import PDFPreview from '../PDFPreview';
 import ThinkingLoader from '../ThinkingLoader';
@@ -1354,7 +1355,7 @@ export default function QuizLessonEditor({
                       )}
                       <div 
                         className="text-foreground"
-                        dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.question_text || '') }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(q.question_text || '')) }}
                       />
                       {q.question_type === 'media_question' && q.options && q.options.length > 0 && (
                         <div className="space-y-2 mt-3">
@@ -1368,7 +1369,7 @@ export default function QuizLessonEditor({
                               <span className="w-6 h-6 rounded-full bg-border flex items-center justify-center text-xs font-medium">
                                 {String.fromCharCode(65 + optIdx)}
                               </span>
-                              <span className="flex-1">{opt.text ? <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex(opt.text) }} /> : <span className="text-muted-foreground italic">Empty option</span>}</span>
+                              <span className="flex-1">{opt.text ? <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(opt.text)) }} /> : <span className="text-muted-foreground italic">Empty option</span>}</span>
                               {q.correct_answer === optIdx && (
                                 <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                               )}
@@ -1384,7 +1385,7 @@ export default function QuizLessonEditor({
                     <div className="space-y-3">
                       <div 
                         className="text-foreground font-medium"
-                        dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.question_text || '') }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(q.question_text || '')) }}
                       />
                       {q.options && q.options.length > 0 && (
                         <div className="space-y-2">
@@ -1402,7 +1403,7 @@ export default function QuizLessonEditor({
                                 <span className="w-6 h-6 rounded-full bg-border flex items-center justify-center text-xs font-medium">
                                   {String.fromCharCode(65 + optIdx)}
                                 </span>
-                                <span className="flex-1">{opt.text ? <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex(opt.text) }} /> : <span className="text-muted-foreground italic">Empty option</span>}</span>
+                                <span className="flex-1">{opt.text ? <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(opt.text)) }} /> : <span className="text-muted-foreground italic">Empty option</span>}</span>
                                 {isCorrect && (
                                   <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                                 )}
@@ -1419,7 +1420,7 @@ export default function QuizLessonEditor({
                     <div className="space-y-3">
                       <div 
                         className="text-foreground font-medium"
-                        dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.question_text || '') }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(q.question_text || '')) }}
                       />
                       <div className="text-sm">
                         <span className="text-muted-foreground">Correct answer:</span>{' '}
@@ -1434,18 +1435,18 @@ export default function QuizLessonEditor({
                       {q.question_text && (
                         <div 
                           className="text-foreground font-medium"
-                          dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.question_text) }}
+                          dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(q.question_text)) }}
                         />
                       )}
                       <div className="bg-muted p-3 rounded border text-sm">
                         <div 
                           dangerouslySetInnerHTML={{ 
-                            __html: renderTextWithLatex(
+                            __html: sanitizeHtml(renderTextWithLatex(
                               (q.content_text || '').replace(
-                                /\[\[([^\]]+)\]\]/g, 
+                                /\[\[([^\]]+)\]\]/g,
                                 '<span class="px-2 py-0.5 bg-green-100 text-green-800 rounded border border-green-300 font-medium">$1</span> dark:bg-green-900/40 dark:text-green-300 dark:border-green-800'
                               )
-                            )
+                            ))
                           }}
                         />
                       </div>
@@ -1457,7 +1458,7 @@ export default function QuizLessonEditor({
                     <div className="space-y-3">
                       <div 
                         className="text-foreground font-medium"
-                        dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.question_text || '') }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(q.question_text || '')) }}
                       />
                       <div className="text-sm text-muted-foreground italic">
                         Long text response expected
@@ -1470,7 +1471,7 @@ export default function QuizLessonEditor({
                     <div className="space-y-3">
                       <div 
                         className="text-foreground font-medium"
-                        dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.question_text || 'Match the following:') }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(q.question_text || 'Match the following:')) }}
                       />
                       <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-2">
@@ -1638,7 +1639,7 @@ export default function QuizLessonEditor({
                           />
                           {(draftQuestion.content_text || '').trim() && (
                             <div className="text-xs text-muted-foreground p-2 bg-muted rounded border dark:border-gray-700 max-h-32 overflow-y-auto">
-                              Preview: <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex((draftQuestion.content_text || '').replace(/\[\[(.*?)\]\]/g, '<b>[$1]</b>')) }} />
+                              Preview: <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex((draftQuestion.content_text || '').replace(/\[\[(.*?)\]\]/g, '<b>[$1]</b>'))) }} />
                             </div>
                           )}
                         </TabsContent>
@@ -1652,7 +1653,7 @@ export default function QuizLessonEditor({
                           />
                           {(draftQuestion.explanation || '').trim() && (
                             <div className="text-xs text-muted-foreground p-2 bg-muted rounded border dark:border-gray-700 max-h-32 overflow-y-auto">
-                              Preview: <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(draftQuestion.explanation || '') }} />
+                              Preview: <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(draftQuestion.explanation || '')) }} />
                             </div>
                           )}
                         </TabsContent>
@@ -2753,7 +2754,7 @@ Italy = Rome`}</pre>
                 {/* Passage/Content */}
                 {draftQuestion.content_text && (
                   <div className="bg-muted p-4 rounded-lg border">
-                    <div className="text-foreground prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(draftQuestion.content_text) }} />
+                    <div className="text-foreground prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(draftQuestion.content_text)) }} />
                   </div>
                 )}
 
@@ -2787,7 +2788,7 @@ Italy = Rome`}</pre>
                 {/* Question Text */}
                 <div className="space-y-3">
                   <div className="text-lg font-semibold text-foreground">
-                    <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex(draftQuestion.question_text) }} />
+                    <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(draftQuestion.question_text)) }} />
                   </div>
                   <div className="text-sm text-muted-foreground">Points: {draftQuestion.points}</div>
                 </div>
@@ -2816,7 +2817,7 @@ Italy = Rome`}</pre>
                             readOnly
                           />
                           <div className="flex-1">
-                            <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex(opt.text) }} />
+                            <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(opt.text)) }} />
                             {isCorrect && (
                               <span className="ml-2 inline-flex items-center gap-0.5 text-xs font-medium text-green-700 dark:text-green-300"><Check className="h-3.5 w-3.5" aria-hidden="true" />Correct</span>
                             )}
@@ -2923,7 +2924,7 @@ Italy = Rome`}</pre>
                 {draftQuestion.explanation && (
                   <div className="bg-brand-surface border border-brand-border rounded-lg p-4">
                     <div className="text-sm font-medium text-brand mb-2">Explanation:</div>
-                    <div className="text-foreground prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(draftQuestion.explanation) }} />
+                    <div className="text-foreground prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(draftQuestion.explanation)) }} />
                   </div>
                 )}
               </div>

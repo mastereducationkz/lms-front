@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { sanitizeHtml } from '../../lib/safeHtml';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
@@ -93,7 +94,7 @@ export function MessageEditor({ body, onBodyChange, images, onImagesChange }: Me
           <Label className="text-xs text-muted-foreground">Preview</Label>
           <div className="min-h-[64px] rounded-md border border-border bg-muted/30 p-3 text-sm leading-relaxed text-foreground [&_a]:text-primary [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:font-mono">
             {visibleText(body).trim() ? (
-              <span dangerouslySetInnerHTML={{ __html: renderPreviewHtml(body) }} />
+              <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderPreviewHtml(body)) }} />
             ) : (
               <span className="text-muted-foreground">Nothing to preview yet.</span>
             )}

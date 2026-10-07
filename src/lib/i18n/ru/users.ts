@@ -53,7 +53,6 @@ export const users: RuTable<typeof en> = {
   'users.filter.statusInactive': 'Статус: неактивные',
   'users.filter.trialOnly': 'Только пробные',
 
-  'users.form.passwordPolicy': 'Пароль должен быть не короче 8 символов и содержать хотя бы одну цифру',
   'users.form.selectedCount': 'Выбрано: {count}',
   'users.form.remove': 'Убрать {name}',
   'users.form.searchGroup': 'Поиск группы…',

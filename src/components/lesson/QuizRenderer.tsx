@@ -21,6 +21,7 @@ import {
 } from '../ui/dialog';
 import { ChevronRight, ChevronDown, ChevronUp, AlertTriangle, HelpCircle, Lock as LockIcon, AlertCircle, Wrench, ClipboardList } from 'lucide-react';
 import { renderTextWithLatex } from '../../utils/latex';
+import { sanitizeHtml } from '../../lib/safeHtml';
 import { applyHighlightsToHtml as applyHighlightsToHtmlShared } from '../../utils/highlightUtils';
 import type { Step } from '../../types';
 import { DEFAULT_QUIZ_PASSING_SCORE_REQUIRED } from '../../utils/quizPassingScore';
@@ -663,7 +664,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
               />
             ) : quizData.quiz_media_type === 'text' ? (
               <div className="prose prose-lg dark:prose-invert max-w-none bg-muted/50 p-6 rounded-lg border border-border">
-                <div dangerouslySetInnerHTML={{ __html: renderTextWithLatex(quizData.quiz_media_url) }} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(quizData.quiz_media_url)) }} />
               </div>
             ) : quizData.quiz_media_type === 'pdf' ? (
               // Check if it's actually a PDF or an image
@@ -767,14 +768,14 @@ const QuizRenderer = (props: QuizRendererProps) => {
                     <div className="bg-muted/40 p-4 rounded-lg mb-4 border border-border/60">
                       <div
                         className="text-foreground/90 prose dark:prose-invert max-w-none select-text"
-                        dangerouslySetInnerHTML={{ __html: renderHighlightedLatex(q.id.toString(), q.content_text) }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderHighlightedLatex(q.id.toString(), q.content_text)) }}
                       />
                     </div>
                   )}
 
                   {/* Question */}
                   <h3 className="text-lg font-bold text-foreground mb-4 select-text">
-                    <span dangerouslySetInnerHTML={{ __html: renderHighlightedLatex(q.id.toString(), (q.question_text || '').replace(/\[\[([^\]]+)\]\]/g, '[[blank]]')) }} />
+                    <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderHighlightedLatex(q.id.toString(), (q.question_text || '').replace(/\[\[([^\]]+)\]\]/g, '[[blank]]'))) }} />
                   </h3>
 
                   {/* Answer Input Based on Question Type */}
@@ -854,7 +855,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                     <div className="mt-4 space-y-3">
                       <div className="bg-brand-surface border border-brand-border rounded-lg p-4">
                         <p className="text-sm font-medium text-brand-subtle-foreground mb-1">Explanation:</p>
-                        <div className="text-brand-subtle-foreground dark:text-brand-surface-foreground text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.explanation) }} />
+                        <div className="text-brand-subtle-foreground dark:text-brand-surface-foreground text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(q.explanation)) }} />
                       </div>
                     </div>
                   )}
@@ -961,7 +962,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                             onChange={(e) => setReportSuggestedAnswer(e.target.value)}
                             className="w-4 h-4 text-orange-600 dark:text-orange-400 focus:ring-orange-500"
                           />
-                          <span className="text-sm text-foreground" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(opt.text || opt) }} />
+                          <span className="text-sm text-foreground" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(opt.text || opt)) }} />
                         </label>
                       ))}
                     </div>
@@ -996,7 +997,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                               }}
                               className="w-4 h-4 text-orange-600 dark:text-orange-400 focus:ring-orange-500 rounded"
                             />
-                            <span className="text-sm text-foreground" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(optText) }} />
+                            <span className="text-sm text-foreground" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(optText)) }} />
                           </label>
                         );
                       })}
@@ -1426,7 +1427,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
               />
             ) : quizData.quiz_media_type === 'text' ? (
               <div className="prose prose-lg dark:prose-invert max-w-none bg-muted/50 p-6 rounded-lg border border-border">
-                <div dangerouslySetInnerHTML={{ __html: renderTextWithLatex(quizData.quiz_media_url) }} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(quizData.quiz_media_url)) }} />
               </div>
             ) : quizData.quiz_media_type === 'pdf' ? (
               // Check if it's actually a PDF or an image
@@ -1481,14 +1482,14 @@ const QuizRenderer = (props: QuizRendererProps) => {
               <div className="bg-muted/40 p-4 rounded-lg mb-4 border border-border/60">
                 <div
                   className="text-foreground/90 prose dark:prose-invert max-w-none select-text"
-                  dangerouslySetInnerHTML={{ __html: renderHighlightedLatex(q.id.toString(), q.content_text) }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderHighlightedLatex(q.id.toString(), q.content_text)) }}
                 />
               </div>
             )}
 
             {/* Question */}
             <h3 className="text-lg font-bold text-foreground mb-4 select-text">
-              <span dangerouslySetInnerHTML={{ __html: renderHighlightedLatex(q.id.toString(), (q.question_text || '').replace(/\[\[([^\]]+)\]\]/g, '[[blank]]')) }} />
+              <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderHighlightedLatex(q.id.toString(), (q.question_text || '').replace(/\[\[([^\]]+)\]\]/g, '[[blank]]'))) }} />
             </h3>
 
             {/* Answer Input Based on Question Type */}
@@ -1620,7 +1621,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
               />
             ) : quizData.quiz_media_type === 'text' ? (
               <div className="prose prose-lg dark:prose-invert max-w-none bg-muted/50 p-6 rounded-lg border border-border">
-                <div dangerouslySetInnerHTML={{ __html: renderTextWithLatex(quizData.quiz_media_url) }} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(quizData.quiz_media_url)) }} />
               </div>
             ) : quizData.quiz_media_type === 'pdf' ? (
               // Check if it's actually a PDF or an image
@@ -1668,13 +1669,13 @@ const QuizRenderer = (props: QuizRendererProps) => {
             {/* Content Text / Passage */}
             {hasVisibleContent(question.content_text) && question.question_type !== 'text_completion' && question.question_type !== 'fill_blank' && (
               <div className="bg-muted/40 p-4 rounded-lg mb-4 border border-border/60">
-                <div className="text-foreground/90 prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(question.content_text) }} />
+                <div className="text-foreground/90 prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(question.content_text)) }} />
               </div>
             )}
 
             {question.question_type !== 'fill_blank' && question.question_type !== 'text_completion' && (
               <h3 className="text-xl font-bold text-foreground mb-6">
-                <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex(question.question_text.replace(/\[\[.*?\]\]/g, '')) }} />
+                <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(question.question_text.replace(/\[\[.*?\]\]/g, ''))) }} />
               </h3>
             )}
 
@@ -1732,7 +1733,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                         {parts.map((part: string, i: number) => {
                           const isGap = i % 2 === 1;
                           if (!isGap) {
-                            return <span key={i} dangerouslySetInnerHTML={{ __html: renderTextWithLatex(part) }} />;
+                            return <span key={i} dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(part)) }} />;
                           }
                           const idx = gapIndex++;
                           const userAnswer = current[idx] || '';
@@ -1761,7 +1762,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
             {question.explanation && (
               <div className="mt-8 p-6 bg-muted/40 rounded-xl border border-border motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
                 <h5 className="text-sm font-semibold text-foreground mb-2">Explanation</h5>
-                <div className="text-foreground/80 leading-relaxed" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(question.explanation) }} />
+                <div className="text-foreground/80 leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(question.explanation)) }} />
               </div>
             )}
           </div>
@@ -1928,13 +1929,13 @@ const QuizRenderer = (props: QuizRendererProps) => {
                     {/* Content Text */}
                     {hasVisibleContent(q.content_text) && q.question_type !== 'text_completion' && q.question_type !== 'fill_blank' && (
                       <div className="bg-muted/40 p-4 rounded-lg mb-4 border border-border/60">
-                        <div className="text-foreground/90 prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.content_text) }} />
+                        <div className="text-foreground/90 prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(q.content_text)) }} />
                       </div>
                     )}
 
                     {/* Question */}
                     <h3 className="text-lg font-bold text-foreground mb-4">
-                      <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex((q.question_text || '').replace(/\[\[([^\]]+)\]\]/g, '[[blank]]')) }} />
+                      <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex((q.question_text || '').replace(/\[\[([^\]]+)\]\]/g, '[[blank]]'))) }} />
                     </h3>
 
                     {/* Answer Input Based on Question Type - ALWAYS SHOW RESULT */}
@@ -1995,7 +1996,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                       <div className="mt-4 space-y-3">
                         <div className="bg-brand-surface border border-brand-border rounded-lg p-4">
                           <p className="text-sm font-medium text-brand-subtle-foreground mb-1">Explanation:</p>
-                          <div className="text-brand-subtle-foreground dark:text-brand-surface-foreground text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: renderTextWithLatex(q.explanation) }} />
+                          <div className="text-brand-subtle-foreground dark:text-brand-surface-foreground text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(q.explanation)) }} />
                         </div>
                       </div>
                     )}

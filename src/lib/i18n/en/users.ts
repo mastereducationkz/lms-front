@@ -48,7 +48,6 @@ export const users = {
   'users.filter.statusInactive': 'Status: inactive',
   'users.filter.trialOnly': 'Trial only',
 
-  'users.form.passwordPolicy': 'The password must be at least 8 characters long and contain at least one digit',
   'users.form.selectedCount': 'Selected: {count}',
   'users.form.remove': 'Remove {name}',
   'users.form.searchGroup': 'Search groups…',

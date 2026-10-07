@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { Printer } from 'lucide-react';
 import apiClient from '../services/api';
 import { renderTextWithLatex } from '../utils/latex';
+import { sanitizeHtml } from '../lib/safeHtml';
 import { parseGap } from '../utils/gapParser';
 import type { Lesson, Step, Question, QuestionOption, QuizData } from '../types';
 
@@ -108,10 +109,10 @@ function correctAnswerDisplay(q: Question): string {
   return String(ca);
 }
 
-/** dangerouslySetInnerHTML with LaTeX + markdown rendering. */
+/** Sanitised dangerouslySetInnerHTML with LaTeX + markdown rendering. */
 function Rich({ text, className }: { text?: string; className?: string }) {
   if (!text) return null;
-  return <span className={className} dangerouslySetInnerHTML={{ __html: renderTextWithLatex(text) }} />;
+  return <span className={className} dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(text)) }} />;
 }
 
 /** Blank ruled lines for hand-written answers. */
@@ -139,7 +140,7 @@ function GapWorksheet({ q }: { q: Question }) {
           <Rich text={q.question_text} />
         </div>
       )}
-      <div className="passage gap-passage" dangerouslySetInnerHTML={{ __html: html }} />
+      <div className="passage gap-passage" dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }} />
       {hasChoices && (
         <div className="gap-options">
           {gaps.map((g) =>
