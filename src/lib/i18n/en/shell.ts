@@ -120,4 +120,7 @@ export const shell = {
   'shell.accessDenied.back': 'Go Back',
   'shell.signingIn': 'Signing you in…',
   'shell.loadingPage': 'Loading page…',
+  'shell.attendanceBadge.toMark': '{count} to mark',
+  'shell.attendanceBadge.waiting': '{count} waiting on Meet',
+  'shell.attendanceBadge.scores': '{count} need activity scores',
 } as const satisfies MessageTable;

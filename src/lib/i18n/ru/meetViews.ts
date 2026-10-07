@@ -475,9 +475,6 @@ export const meetViews: RuTable<typeof en> = {
   'meetViews.sync.nextCheckStarting': 'следующая уже начинается',
 
   // ── the Attendance badge in the sidebar (lib/attendanceBadge) ────────────────────────────
-  'meetViews.badge.toMark': 'Отметить: {count}',
-  'meetViews.badge.waiting': 'Ждут Meet: {count}',
-  'meetViews.badge.scores': 'Нужны баллы за активность: {count}',
 
   // ── talk-time requests that failed (services/api/meetTalk) ───────────────────────────────
   'meetViews.talkErrors.switchedOff': 'Время речи выключено',

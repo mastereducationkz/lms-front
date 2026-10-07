@@ -403,9 +403,6 @@ export const meetViews = {
   'meetViews.sync.nextCheckStarting': 'next check starting',
 
   // ── the Attendance badge in the sidebar (lib/attendanceBadge) ────────────────────────────
-  'meetViews.badge.toMark': '{count} to mark',
-  'meetViews.badge.waiting': '{count} waiting on Meet',
-  'meetViews.badge.scores': '{count} need activity scores',
 
   // ── talk-time requests that failed (services/api/meetTalk) ───────────────────────────────
   'meetViews.talkErrors.switchedOff': 'Talk time is switched off',

@@ -1,5 +1,5 @@
 import { activeLocale, t, type Locale } from './i18n';
-import '@/lib/i18n/catalogs/meetViews';
+import '@/lib/i18n/catalogs/shell';
 
 export interface AttendanceDue {
   /** Registers this person still owes. */
@@ -30,9 +30,9 @@ export function attendanceBadge(due?: AttendanceDue, locale: Locale = activeLoca
   const waiting = Math.min(Math.max(0, due?.waiting ?? 0), total);
   const toMark = total - waiting;
   const title = [
-    toMark > 0 ? t('meetViews.badge.toMark', { count: toMark }, locale) : null,
-    waiting > 0 ? t('meetViews.badge.waiting', { count: waiting }, locale) : null,
-    scores > 0 ? t('meetViews.badge.scores', { count: scores }, locale) : null,
+    toMark > 0 ? t('shell.attendanceBadge.toMark', { count: toMark }, locale) : null,
+    waiting > 0 ? t('shell.attendanceBadge.waiting', { count: waiting }, locale) : null,
+    scores > 0 ? t('shell.attendanceBadge.scores', { count: scores }, locale) : null,
   ].filter(Boolean).join(' · ');
   return { count: total + scores, tone: toMark === 0 && scores === 0 ? 'waiting' : 'action', title };
 }
