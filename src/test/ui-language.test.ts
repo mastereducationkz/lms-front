@@ -26,6 +26,9 @@ const ROOT = path.resolve(__dirname, '../..');
 const BASELINE_PATH = path.join(__dirname, 'ui-language.baseline.json');
 
 const findings = scan(ROOT);
+// Scanned here, at collection, like `findings`: a second full parse of src/ inside the test body
+// ran past vitest's 5 s per-test timeout on a busy machine.
+const missingCatalogs = catalogImportFindings(ROOT, EN_NAMESPACES);
 const readBaseline = (): Record<string, number> => JSON.parse(fs.readFileSync(BASELINE_PATH, 'utf8'));
 
 const report = (list: Finding[]) => list.map((f) => `${f.kind.padEnd(10)} ${f.file}:${f.line}  ${f.text}`).join('\n');
@@ -73,8 +76,7 @@ describe('one UI language per role', () => {
   });
 
   it('imports the catalog of every area whose keys a file shows', () => {
-    const missing = catalogImportFindings(ROOT, EN_NAMESPACES);
-    expect(missing, `add the side-effect import:\n${report(missing)}`).toEqual([]);
+    expect(missingCatalogs, `add the side-effect import:\n${report(missingCatalogs)}`).toEqual([]);
   });
 
   it('lists only allowlisted files that exist and still need it', () => {

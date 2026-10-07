@@ -10,7 +10,6 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Shuffle, RotateCcw, Check, Lock, Undo2, Eye } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useAuth } from '../../contexts/AuthContext';
 import apiClient from '../../services/api';
@@ -164,7 +163,8 @@ export default function OrcaBuilder() {
               <Check className="w-4 h-4 mr-1" /> {saving ? 'Saving…' : 'Save'}
             </Button>
           )}
-          {block && (
+          {/* How to earn the part and the progress so far; nothing to show if the achievements didn't load. */}
+          {block && (block.howTo || (block.progress && block.progress.target > 0) || block.moreAchievements > 0) && (
             <div className="w-full rounded-xl border border-amber-200 dark:border-amber-900/50 bg-amber-50 dark:bg-amber-900/20 p-3 text-xs" role="status">
               {block.howTo && <p className="text-foreground">{block.howTo}</p>}
               {block.progress && block.progress.target > 0 && (
@@ -185,12 +185,6 @@ export default function OrcaBuilder() {
                   This look also needs {block.moreAchievements} more {block.moreAchievements === 1 ? 'achievement' : 'achievements'}.
                 </p>
               )}
-              <Link
-                to={block.achievementKey ? `/achievements#${block.achievementKey}` : '/achievements'}
-                className="mt-2 inline-block font-medium text-brand hover:underline"
-              >
-                How to earn it →
-              </Link>
             </div>
           )}
           {block && (

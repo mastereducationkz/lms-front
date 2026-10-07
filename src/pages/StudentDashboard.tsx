@@ -8,7 +8,7 @@ import { Badge } from "../components/ui/badge";
 import { Checkbox } from "../components/ui/checkbox";
 import { Input } from "../components/ui/input";
 import type { DashboardStats, StudentProgressOverview, Assignment, Event, AssignmentSubmission } from "../types";
-import { Clock, BookOpen, LineChart, CheckCircle, Target, Calendar, FileText, AlertCircle, Video, GraduationCap, MessageCircle, ArrowRight } from "lucide-react";
+import { Clock, BookOpen, LineChart, CheckCircle, Calendar, FileText, AlertCircle, Video, GraduationCap, MessageCircle, ArrowRight } from "lucide-react";
 import { TrackPlatformLinks } from "../components/dashboard/TrackPlatformLinks";
 import { WeeklyTestCountdown } from "../components/dashboard/WeeklyTestCountdown";
 import { CheckpointsCard } from "../components/dashboard/CheckpointsCard";
@@ -1121,7 +1121,8 @@ export default function StudentDashboard({
                     actionLabel={course.completion_percentage === 100 ? 'Course completed' : 'Continue learning'}
                     actionIcon={course.completion_percentage === 100
                       ? <CheckCircle className="w-4 h-4 mr-2" />
-                      : <Target className="w-4 h-4 mr-2" />}
+                      : undefined}
+                    actionArrow={course.completion_percentage !== 100}
                     actionVariant={course.completion_percentage === 100 ? 'outline' : 'default'}
                     onOpen={() => onContinueCourse(course.course_id.toString())}
                   />
