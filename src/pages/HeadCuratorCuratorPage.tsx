@@ -24,6 +24,8 @@ import apiClient from '../services/api';
 import { ChevronLeft } from 'lucide-react';
 import UserAvatar from '@/components/mascot/UserAvatar';
 import { formatDate } from '@/lib/i18n';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/curatorPages';
 
 interface Student {
     id: number;
@@ -59,6 +61,7 @@ interface CuratorDetails {
 }
 
 export default function HeadCuratorCuratorPage() {
+    const t = useT();
     const { curatorId } = useParams<{ curatorId: string }>();
     const navigate = useNavigate();
     const [curator, setCurator] = useState<CuratorDetails | null>(null);
@@ -85,7 +88,7 @@ export default function HeadCuratorCuratorPage() {
     if (loading) {
         return (
             <div className="p-8 flex justify-center items-center">
-                <div className="animate-pulse text-muted-foreground">Загрузка данных куратора...</div>
+                <div className="animate-pulse text-muted-foreground">{t('curatorPages.curatorDetail.loading')}</div>
             </div>
         );
     }
@@ -93,7 +96,7 @@ export default function HeadCuratorCuratorPage() {
     if (!curator) {
         return (
             <div className="p-8 text-center text-muted-foreground">
-                Куратор не найден
+                {t('curatorPages.curatorDetail.notFound')}
             </div>
         );
     }
@@ -107,7 +110,7 @@ export default function HeadCuratorCuratorPage() {
                     onClick={() => navigate('/dashboard')} 
                     className="w-fit pl-0 mb-2 hover:bg-muted -ml-2 text-muted-foreground"
                 >
-                    <ChevronLeft className="mr-2 h-4 w-4" /> Назад к дашборду
+                    <ChevronLeft className="mr-2 h-4 w-4" /> {t('curatorPages.curatorDetail.backToDashboard')}
                 </Button>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -128,27 +131,27 @@ export default function HeadCuratorCuratorPage() {
             <div className="grid grid-cols-1 @2xl:grid-cols-3 gap-4">
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Студентов</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">{t('curatorPages.curatorDetail.students')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">{curator.total_students}</div>
-                        <p className="text-xs text-muted-foreground mt-1">В {curator.groups.length} группах</p>
+                        <p className="text-xs text-muted-foreground mt-1">{t('curatorPages.curatorDetail.inGroups', { count: curator.groups.length })}</p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Просрочено</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">{t('curatorPages.curatorDetail.overdue')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-amber-600 dark:text-amber-300">{curator.total_overdue}</div>
-                        <p className="text-xs text-muted-foreground mt-1">Просроченные задания</p>
+                        <p className="text-xs text-muted-foreground mt-1">{t('curatorPages.curatorDetail.overdueHomework')}</p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Ср. прогресс</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">{t('curatorPages.curatorDetail.avgProgressShort')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className={`text-2xl font-bold ${
@@ -157,7 +160,7 @@ export default function HeadCuratorCuratorPage() {
                         }`}>
                             {curator.avg_progress}%
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">Средний прогресс</p>
+                        <p className="text-xs text-muted-foreground mt-1">{t('curatorPages.curatorDetail.avgProgress')}</p>
                     </CardContent>
                 </Card>
             </div>
@@ -165,8 +168,8 @@ export default function HeadCuratorCuratorPage() {
             {/* Overdue History Chart */}
             <Card className="border-border shadow-sm">
                 <CardHeader>
-                    <CardTitle className="text-lg">Тренды просрочек</CardTitle>
-                    <CardDescription>Новые просроченные задания за последние 30 дней</CardDescription>
+                    <CardTitle className="text-lg">{t('curatorPages.curatorDetail.overdueTrend')}</CardTitle>
+                    <CardDescription>{t('curatorPages.curatorDetail.overdueTrendHint')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="h-[300px] w-full">
@@ -208,12 +211,12 @@ export default function HeadCuratorCuratorPage() {
             {/* Groups with Student Details */}
             <Card className="border-border shadow-sm">
                 <CardHeader className="pb-3">
-                    <CardTitle className="text-lg">Группы и студенты</CardTitle>
-                    <CardDescription>Подробная информация о студентах каждой группы</CardDescription>
+                    <CardTitle className="text-lg">{t('curatorPages.curatorDetail.groupsAndStudents')}</CardTitle>
+                    <CardDescription>{t('curatorPages.curatorDetail.groupsAndStudentsHint')}</CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
                     {curator.groups.length === 0 && (
-                        <p className="p-6 text-center text-muted-foreground italic">У этого куратора нет групп.</p>
+                        <p className="p-6 text-center text-muted-foreground italic">{t('curatorPages.curatorDetail.noGroups')}</p>
                     )}
                     <Accordion type="multiple" className="w-full">
                         {curator.groups.map((group) => (
@@ -223,13 +226,13 @@ export default function HeadCuratorCuratorPage() {
                                         <div className="flex items-center gap-4">
                                             <div>
                                                 <p className="font-semibold text-foreground text-left">{group.name}</p>
-                                                <p className="text-sm text-muted-foreground text-left">{group.student_count} студентов</p>
+                                                <p className="text-sm text-muted-foreground text-left">{t('curatorPages.curatorDetail.studentCount', { count: group.student_count })}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-3">
                                             {group.overdue_count > 0 && (
                                                 <Badge variant="destructive" className="text-xs">
-                                                    {group.overdue_count} просрочено
+                                                    {t('curatorPages.curatorDetail.overdueCount', { count: group.overdue_count })}
                                                 </Badge>
                                             )}
                                             <Badge variant="outline" className="text-xs bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 border-green-200 dark:border-green-500/30">
@@ -244,23 +247,23 @@ export default function HeadCuratorCuratorPage() {
                                                     navigate(`/curator/leaderboard?groupId=${group.id}`);
                                                 }}
                                             >
-                                                Лидерборд
+                                                {t('curatorPages.curatorDetail.leaderboard')}
                                             </Button>
                                         </div>
                                     </div>
                                 </AccordionTrigger>
                                 <AccordionContent className="px-6 pb-4 bg-slate-50/30 dark:bg-muted/40">
                                     {group.students.length === 0 ? (
-                                        <p className="text-center text-muted-foreground italic py-4">Студентов не найдено.</p>
+                                        <p className="text-center text-muted-foreground italic py-4">{t('curatorPages.curatorDetail.noStudents')}</p>
                                     ) : (
                                         <div className="overflow-x-auto">
                                             <table className="w-full border-collapse bg-card rounded-lg overflow-hidden">
                                                 <thead>
                                                     <tr className="bg-slate-50 dark:bg-muted border-b">
-                                                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Студент</th>
+                                                        <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">{t('curatorPages.curatorDetail.student')}</th>
                                                         <th className="px-4 py-3 text-left text-xs font-bold text-muted-foreground uppercase">Email</th>
-                                                        <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Прогресс</th>
-                                                        <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">Просрочено</th>
+                                                        <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">{t('curatorPages.curatorDetail.progress')}</th>
+                                                        <th className="px-4 py-3 text-center text-xs font-bold text-muted-foreground uppercase">{t('curatorPages.curatorDetail.overdue')}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-border">

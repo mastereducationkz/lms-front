@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import ParentReportCard from '../components/parentReports/ParentReportCard';
+import type { MessageKey } from '../lib/i18n';
+import { useT } from '../lib/i18n/react';
 import { mondayOf, shiftWeek, weekLabel } from '../lib/parentReportWeek';
 import {
   fetchParentGroupOverview,
@@ -11,6 +13,7 @@ import {
   type ParentGroupOverview,
   type ParentStudentResponse,
 } from '../services/api/reports';
+import '@/lib/i18n/catalogs/curatorPages';
 
 /** Сколько запросов держим одновременно: упирается в LLM и во внешние платформы, больше не ускоряет. */
 const CONCURRENCY = 4;
@@ -30,6 +33,7 @@ async function runBounded<T>(items: T[], worker: (item: T) => Promise<void>, lim
 }
 
 export default function CuratorParentReportsPage() {
+  const t = useT();
   const [params, setParams] = useSearchParams();
   const groupId = Number(params.get('group') || 0);
   const weekParam = params.get('week');
@@ -40,7 +44,7 @@ export default function CuratorParentReportsPage() {
   const [failed, setFailed] = useState<Record<string, true>>({});
   const [loading, setLoading] = useState(false);
   const [bulkRunning, setBulkRunning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<MessageKey | null>(null);
 
   // У каждой загрузки свой номер. Ответ со старым номером не применяется: куратор мог
   // переключить неделю, пока запрос летел, и тогда эти данные уже не про то, что на экране.
@@ -88,7 +92,7 @@ export default function CuratorParentReportsPage() {
         CONCURRENCY,
       );
     } catch {
-      if (token === loadId.current) setError('Не удалось загрузить группу');
+      if (token === loadId.current) setError('curatorPages.parentReports.loadFailed');
     } finally {
       if (token === loadId.current) setLoading(false);
     }
@@ -130,7 +134,7 @@ export default function CuratorParentReportsPage() {
     } catch {
       // Сами воркеры свои ошибки ловят, так что сюда попасть нечем — но если очередь
       // всё же упадёт, куратор должен увидеть это, а не молчаливый провал в консоли.
-      setError('Не удалось выполнить массовую генерацию');
+      setError('curatorPages.parentReports.bulkFailed');
     } finally {
       setBulkRunning(false);
     }
@@ -169,14 +173,14 @@ export default function CuratorParentReportsPage() {
   return (
     <div className="space-y-4">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold text-foreground">Отчёты родителям</h1>
+        <h1 className="text-xl font-semibold text-foreground">{t('curatorPages.parentReports.title')}</h1>
         <div className="flex items-center gap-2">
           <button
             type="button"
             className="flex h-9 w-9 items-center justify-center border border-border rounded disabled:opacity-50"
             disabled={busy}
             onClick={() => goToWeek(shiftWeek(week, -1))}
-            aria-label="Предыдущая неделя"
+            aria-label={t('curatorPages.parentReports.previousWeek')}
           >
             <ChevronLeft className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -188,7 +192,7 @@ export default function CuratorParentReportsPage() {
             className="flex h-9 w-9 items-center justify-center border border-border rounded disabled:opacity-50"
             disabled={busy}
             onClick={() => goToWeek(shiftWeek(week, 1))}
-            aria-label="Следующая неделя"
+            aria-label={t('curatorPages.parentReports.nextWeek')}
           >
             <ChevronRight className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -197,12 +201,12 @@ export default function CuratorParentReportsPage() {
 
       {!groupId && (
         <p className="text-sm text-muted-foreground">
-          Откройте страницу с карточки группы — нужен параметр <code>?group=</code>.
+          {t('curatorPages.parentReports.noGroup')} <code>?group=</code>.
         </p>
       )}
 
-      {error && <p className="text-sm text-red-600 dark:text-red-300">{error}</p>}
-      {loading && !overview && <p className="text-sm text-muted-foreground">Загружаем…</p>}
+      {error && <p className="text-sm text-red-600 dark:text-red-300">{t(error)}</p>}
+      {loading && !overview && <p className="text-sm text-muted-foreground">{t('curatorPages.parentReports.loading')}</p>}
 
       {overview && (
         <>
@@ -214,19 +218,19 @@ export default function CuratorParentReportsPage() {
               className="px-3 py-2 text-sm rounded-lg bg-brand-solid hover:bg-brand-solid-hover text-brand-solid-foreground disabled:opacity-50"
             >
               {bulkRunning
-                ? 'Генерируем…'
-                : `Сгенерировать всем, у кого нет (${missingCount})`}
+                ? t('curatorPages.parentReports.generating')
+                : t('curatorPages.parentReports.generateMissing', { count: missingCount })}
             </button>
             <span className="text-sm text-muted-foreground">
-              Готово {students.length - missingCount} из {students.length}
+              {t('curatorPages.parentReports.readyCount', { done: students.length - missingCount, total: students.length })}
             </span>
             {failedCount > 0 && (
               <span className="text-sm text-amber-700 dark:text-amber-300">
-                Не получилось: {failedCount} — откройте карточку и попробуйте ещё раз
+                {t('curatorPages.parentReports.failedCount', { count: failedCount })}
               </span>
             )}
             {loading && (
-              <span className="text-sm text-muted-foreground">Догружаем данные учеников…</span>
+              <span className="text-sm text-muted-foreground">{t('curatorPages.parentReports.loadingRest')}</span>
             )}
           </div>
 
@@ -236,17 +240,15 @@ export default function CuratorParentReportsPage() {
             <div className="text-sm text-muted-foreground space-y-0.5">
               {withoutTestCount > 0 && (
                 <p>
-                  Тест за эту неделю есть у {withTestCount} из {loadedCount} — у остальных отчёт
-                  выйдет без результатов, прогресса и разбора навыков.
+                  {t('curatorPages.parentReports.withTestSummary', { withTest: withTestCount, loaded: loadedCount })}
                 </p>
               )}
               {unknownTestCount > 0 && (
-                <p>По {unknownTestCount} — платформа не ответила, есть ли тест, неизвестно.</p>
+                <p>{t('curatorPages.parentReports.unknownTestSummary', { count: unknownTestCount })}</p>
               )}
               {partlyMissingCount > 0 && (
                 <p>
-                  У {partlyMissingCount} тест есть по одному курсу и нет по другому — в их
-                  отчёт добавится просьба проконтролировать пропущенный.
+                  {t('curatorPages.parentReports.partlyMissingSummary', { count: partlyMissingCount })}
                 </p>
               )}
             </div>
@@ -264,7 +266,7 @@ export default function CuratorParentReportsPage() {
                     className="bg-card border border-border rounded-xl p-4 space-y-2 animate-pulse"
                   >
                     <h3 className="text-base font-semibold text-foreground">{student.name}</h3>
-                    <p className="text-sm text-muted-foreground">Загружаем данные…</p>
+                    <p className="text-sm text-muted-foreground">{t('curatorPages.parentReports.loadingCard')}</p>
                   </div>
                 );
               }
@@ -277,24 +279,25 @@ export default function CuratorParentReportsPage() {
                 <div key={key} className="space-y-1">
                   {failed[key] && (
                     <p className="text-xs text-amber-700 dark:text-amber-300">
-                      Не удалось сгенерировать при массовом запуске
+                      {t('curatorPages.parentReports.bulkCardFailed')}
                     </p>
                   )}
                   {/* Тише amber-уведомления выше: отсутствие теста — это факт, а не сбой. */}
                   {noTestYet && (
                     <p className="text-xs text-muted-foreground">
-                      Теста за эту неделю нет — отчёт будет без результатов
+                      {t('curatorPages.parentReports.noTest')}
                     </p>
                   )}
                   {testStatusUnknown && (
                     <p className="text-xs text-muted-foreground">
-                      Платформа не ответила — есть ли тест, неизвестно
+                      {t('curatorPages.parentReports.testUnknown')}
                     </p>
                   )}
                   {partlyMissing.length > 0 && (
                     <p className="text-xs text-muted-foreground">
-                      Нет теста по {partlyMissing.map(p => p.toUpperCase()).join(' и ')} — отчёт
-                      попросит родителя проконтролировать
+                      {t('curatorPages.parentReports.missingTests', {
+                        courses: partlyMissing.map(p => p.toUpperCase()).join(` ${t('curatorPages.parentReports.and')} `),
+                      })}
                     </p>
                   )}
                   <ParentReportCard

@@ -3,6 +3,8 @@ import { ChevronDown, ChevronRight, Users } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { AssignmentCard } from './AssignmentCard';
 import type { GroupData, AssignmentData, StudentProgress, StatusFilter } from './types';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/curatorHomeworks';
 
 interface GroupCardProps {
   group: GroupData;
@@ -25,6 +27,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
   statusFilter,
   onViewStudent,
 }) => {
+  const t = useT();
   const totalPending = group.assignments.reduce(
     (sum, a) => sum + (a.summary.submitted - a.summary.graded),
     0
@@ -45,17 +48,17 @@ export const GroupCard: React.FC<GroupCardProps> = ({
           <Users className="w-5 h-5 text-primary" />
           <span className="font-semibold text-lg">{group.group_name}</span>
           {group.is_over && (
-            <Badge variant="outline">Завершена</Badge>
+            <Badge variant="outline">{t('curatorHomeworks.group.finished')}</Badge>
           )}
-          <Badge variant="secondary">{group.assignments.length} заданий</Badge>
+          <Badge variant="secondary">{t('curatorHomeworks.group.assignments', { count: group.assignments.length })}</Badge>
           {totalPending > 0 && (
             <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
-              {totalPending} на проверке
+              {t('curatorHomeworks.count.inReview', { count: totalPending })}
             </Badge>
           )}
         </div>
         <div className="text-sm text-muted-foreground">
-          {group.students_count} студентов
+          {t('curatorHomeworks.group.students', { count: group.students_count })}
         </div>
       </button>
 
@@ -63,7 +66,7 @@ export const GroupCard: React.FC<GroupCardProps> = ({
         <div className="border-t">
           {group.assignments.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
-              В этой группе нет заданий
+              {t('curatorHomeworks.group.noAssignments')}
             </div>
           ) : (
             <div className="divide-y">

@@ -8,13 +8,16 @@ import { Button } from '../components/ui/button';
 import { Checkbox } from '../components/ui/checkbox';
 import { Dialog, DialogContent } from '../components/ui/dialog';
 import { formatGroupCloseLabel } from '../lib/groupList';
+import { useLocale, useT } from '../lib/i18n/react';
 import type { Group, User } from '../types';
+import '@/lib/i18n/catalogs/curatorPages';
 
 const sid = (u: User) => Number(u.id);
 const studentLabel = (u: User) => u.name || u.full_name || u.email || `#${u.id}`;
 
 // ── Roster management dialog (search all students, check to add/remove) ────────
 function RosterDialog({ group, onClose }: { group: Group | null; onClose: (changed: boolean) => void }) {
+  const t = useT();
   const open = group !== null;
   const [members, setMembers] = useState<User[]>([]);
   const [originalIds, setOriginalIds] = useState<number[]>([]);
@@ -39,7 +42,7 @@ function RosterDialog({ group, onClose }: { group: Group | null; onClose: (chang
         setOriginalIds(ids);
         setSelected(new Set(ids));
       })
-      .catch(() => { if (!cancelled) toast('Не удалось загрузить состав группы', 'error'); })
+      .catch(() => { if (!cancelled) toast(t('curatorPages.roster.loadFailed'), 'error'); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [group]);
@@ -96,11 +99,11 @@ function RosterDialog({ group, onClose }: { group: Group | null; onClose: (chang
     try {
       if (toAdd.length) await api.bulkAddStudentsToGroup(group.id, toAdd);
       for (const id of toRemove) await api.removeStudentFromGroup(group.id, id);
-      toast(`Состав обновлён: +${toAdd.length} / −${toRemove.length}`, 'success');
+      toast(t('curatorPages.roster.saved', { added: toAdd.length, removed: toRemove.length }), 'success');
       onClose(true);
     } catch (e) {
       console.error('Failed to save roster', e);
-      toast('Не удалось сохранить изменения состава', 'error');
+      toast(t('curatorPages.roster.saveFailed'), 'error');
     } finally {
       setSaving(false);
     }
@@ -115,8 +118,8 @@ function RosterDialog({ group, onClose }: { group: Group | null; onClose: (chang
             <h2 className="text-base font-semibold truncate">{group?.name}</h2>
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            Выбрано {selected.size} учеников
-            {changedCount > 0 && <span className="text-amber-600 dark:text-amber-400"> · {toAdd.length} добавить, {toRemove.length} удалить</span>}
+            {t('curatorPages.roster.selected', { count: selected.size })}
+            {changedCount > 0 && <span className="text-amber-600 dark:text-amber-400"> · {t('curatorPages.roster.pendingChanges', { added: toAdd.length, removed: toRemove.length })}</span>}
           </p>
         </div>
 
@@ -125,14 +128,14 @@ function RosterDialog({ group, onClose }: { group: Group | null; onClose: (chang
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               autoFocus
-              placeholder="Поиск ученика по имени или email…"
+              placeholder={t('curatorPages.roster.searchPlaceholder')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="pl-9 h-9"
             />
           </div>
           <p className="text-[11px] text-muted-foreground mt-1.5">
-            Отметьте, чтобы добавить в группу; снимите отметку у текущих — чтобы удалить.
+            {t('curatorPages.roster.hint')}
           </p>
         </div>
 
@@ -144,8 +147,8 @@ function RosterDialog({ group, onClose }: { group: Group | null; onClose: (chang
           ) : visible.length === 0 ? (
             <div className="text-center py-10 text-sm text-muted-foreground">
               {query.trim().length >= 2
-                ? (searching ? 'Поиск…' : 'Ничего не найдено')
-                : 'В группе пока нет учеников. Найдите их через поиск выше.'}
+                ? (searching ? t('curatorPages.roster.searching') : t('curatorPages.groups.nothingFound'))
+                : t('curatorPages.roster.empty')}
             </div>
           ) : (
             <>
@@ -163,14 +166,14 @@ function RosterDialog({ group, onClose }: { group: Group | null; onClose: (chang
                       <div className="text-xs text-muted-foreground truncate">{u.email}</div>
                     </div>
                     {isMember && (
-                      <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground shrink-0">в группе</span>
+                      <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground shrink-0">{t('curatorPages.roster.member')}</span>
                     )}
                   </label>
                 );
               })}
               {searching && query.trim().length >= 2 && (
                 <div className="flex items-center justify-center py-3 text-xs text-muted-foreground">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> Поиск…
+                  <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> {t('curatorPages.roster.searching')}
                 </div>
               )}
             </>
@@ -178,9 +181,9 @@ function RosterDialog({ group, onClose }: { group: Group | null; onClose: (chang
         </div>
 
         <div className="px-5 py-3 border-t flex items-center justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={() => onClose(false)} disabled={saving}>Отмена</Button>
+          <Button variant="ghost" size="sm" onClick={() => onClose(false)} disabled={saving}>{t('common.cancel')}</Button>
           <Button size="sm" onClick={save} disabled={saving || changedCount === 0}>
-            {saving ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Сохранение</> : <><Check className="w-3.5 h-3.5 mr-1.5" /> Сохранить{changedCount > 0 ? ` (${changedCount})` : ''}</>}
+            {saving ? <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> {t('curatorPages.roster.saving')}</> : <><Check className="w-3.5 h-3.5 mr-1.5" /> {t('common.save')}{changedCount > 0 ? ` (${changedCount})` : ''}</>}
           </Button>
         </div>
       </DialogContent>
@@ -189,6 +192,8 @@ function RosterDialog({ group, onClose }: { group: Group | null; onClose: (chang
 }
 
 export default function CuratorGroupsPage() {
+  const t = useT();
+  const locale = useLocale();
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -201,7 +206,7 @@ export default function CuratorGroupsPage() {
       setGroups(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error('Failed to load groups', e);
-      toast('Не удалось загрузить группы', 'error');
+      toast(t('curatorPages.groups.loadFailed'), 'error');
     } finally {
       setLoading(false);
     }
@@ -222,7 +227,7 @@ export default function CuratorGroupsPage() {
 
   return (
     <div className="container mx-auto space-y-5">
-      <h1 className="text-2xl font-bold">Мои группы</h1>
+      <h1 className="text-2xl font-bold">{t('curatorPages.groups.title')}</h1>
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
@@ -233,7 +238,7 @@ export default function CuratorGroupsPage() {
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Поиск группы…"
+              placeholder={t('curatorPages.groups.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 bg-card"
@@ -243,7 +248,7 @@ export default function CuratorGroupsPage() {
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
               <Users className="w-12 h-12 mb-3 opacity-50" />
-              <p>{groups.length === 0 ? 'У вас пока нет групп' : 'Ничего не найдено'}</p>
+              <p>{groups.length === 0 ? t('curatorPages.groups.empty') : t('curatorPages.groups.nothingFound')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 @xl:grid-cols-2 @4xl:grid-cols-3 gap-3">
@@ -258,17 +263,17 @@ export default function CuratorGroupsPage() {
                       <h3 className="font-semibold truncate">{g.name}</h3>
                       {g.is_over && (
                         <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border text-muted-foreground shrink-0">
-                          Завершена
+                          {t('curatorPages.groups.finished')}
                         </span>
                       )}
-                      {formatGroupCloseLabel(g, 'ru') && (
+                      {formatGroupCloseLabel(g, locale) && (
                         <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border border-dashed text-muted-foreground shrink-0">
-                          {formatGroupCloseLabel(g, 'ru')}
+                          {formatGroupCloseLabel(g, locale)}
                         </span>
                       )}
                     </div>
                     <div className="flex items-center gap-1 text-xs text-brand mt-2 font-medium">
-                      Управлять составом
+                      {t('curatorPages.groups.manageRoster')}
                       <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                     </div>
                   </button>
@@ -276,7 +281,7 @@ export default function CuratorGroupsPage() {
                     to={`/curator/parent-reports?group=${g.id}`}
                     className="mt-2 flex w-fit items-center gap-1 text-xs font-medium text-brand hover:underline"
                   >
-                    Отчёты родителям
+                    {t('curatorPages.parentReports.title')}
                     <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                   </Link>
                 </div>
