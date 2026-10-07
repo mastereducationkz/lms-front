@@ -9,6 +9,7 @@ import { addFavoriteFlashcard, removeFavoriteByCardId, checkIsFavorite } from '.
 import { toast } from '../Toast';
 import { useT } from '../../lib/i18n/react';
 import '@/lib/i18n/catalogs/learning';
+import { useStillLearningSave } from './useStillLearningSave';
 
 interface FlashcardViewerProps {
   flashcardSet: FlashcardSet;
@@ -28,6 +29,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
   const [showingAnswer, setShowingAnswer] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isLoadingFavorite, setIsLoadingFavorite] = useState(false);
+  const stillLearning = useStillLearningSave({ stepId, lessonId, courseId });
 
   // Ensure cards array exists and has content
   const cards = flashcardSet?.cards || [];
@@ -41,6 +43,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
         try {
           const result = await checkIsFavorite(stepId, currentCard.id);
           setIsFavorite(result.is_favorite);
+          stillLearning.remember(currentCard.id, result.is_favorite);
         } catch (error) {
           console.error('Failed to check favorite status:', error);
         }
@@ -74,6 +77,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
         // Remove from favorites
         await removeFavoriteByCardId(stepId, currentCard.id);
         setIsFavorite(false);
+        stillLearning.remember(currentCard.id, false);
         toast('Removed from favorites', 'success');
       } else {
         // Add to favorites
@@ -85,6 +89,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
           flashcard_data: JSON.stringify(currentCard)
         });
         setIsFavorite(true);
+        stillLearning.remember(currentCard.id, true);
         toast('Added to favorites', 'success');
       }
     } catch (error: any) {
@@ -100,9 +105,9 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
     setShowingAnswer(!showingAnswer);
   };
 
-  // «Got it» / «Still learning» only steer this session: a card still being learnt comes back
-  // before the deck ends, and the step completes once every card is «Got it». Nothing is
-  // stored per card.
+  // «Got it» / «Still learning» steer this session: a card still being learnt comes back before
+  // the deck ends, and the step completes once every card is «Got it». The first «Still learning»
+  // on a card also saves it to My Flashcards (useStillLearningSave).
   const handleCorrect = () => {
     const newCompleted = new Set(completedCards);
     newCompleted.add(currentCard.id);
@@ -116,6 +121,8 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
   };
 
   const handleIncorrect = () => {
+    // The first «Still learning» on a card also keeps it in My Flashcards (never blocks the round).
+    stillLearning.keep(currentCard);
     const newIncorrect = new Set(incorrectCards);
     newIncorrect.add(currentCard.id);
     setIncorrectCards(newIncorrect);
@@ -201,8 +208,17 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
       {/* Card Counter and Difficulty */}
       {cards.length > 0 && (
         <div className="flex justify-between items-center">
-          <div className="text-sm text-muted-foreground">
-            Card {currentCardIndex + 1} of {cards.length}
+          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+            <span>Card {currentCardIndex + 1} of {cards.length}</span>
+            {/* A quiet note, not a toast: the round goes on underneath it. */}
+            <span aria-live="polite" className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400">
+              {stillLearning.saved && (
+                <>
+                  <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                  {t('learning.flashcards.savedToMine')}
+                </>
+              )}
+            </span>
           </div>
           <div className="flex items-center gap-2">
             {stepId && (
