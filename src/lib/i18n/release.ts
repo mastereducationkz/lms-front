@@ -1,9 +1,9 @@
 /**
- * The per-user language switch (Q27) stays hidden until the owner has read the Russian (Q43): until
- * then Settings shows the app language read-only and everyone keeps their role's language.
- * Release = set RELEASED to true. Preview it locally with `VITE_LANGUAGE_SWITCH=on`.
+ * The per-user language switch (Q27). Released 2026-10-07 after the owner approved the Russian (Q43).
+ * Setting RELEASED back to false hides it again: Settings then shows the app language read-only and
+ * everyone keeps their role's language. `VITE_LANGUAGE_SWITCH=on` forces it on locally.
  */
-const RELEASED = false;
+const RELEASED = true;
 
 export function languageSwitchEnabled(): boolean {
   return RELEASED || import.meta.env.VITE_LANGUAGE_SWITCH === 'on';
