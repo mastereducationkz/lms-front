@@ -12,6 +12,9 @@ import { FileText, Download, Loader2, CheckCircle, ExternalLink, Link as LinkIco
 import { AudioPlayer, isAudioUrl } from '../AudioPlayer';
 import { safeUploadUrl } from '../../lib/mediaUrl';
 import type { StudentProgress, AssignmentData, SubmissionDetails } from './types';
+import { formatDateTime, type Locale } from '../../lib/i18n';
+import { useLocale, useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/attendance';
 
 interface ViewDialogProps {
   open: boolean;
@@ -22,15 +25,15 @@ interface ViewDialogProps {
   isLoading: boolean;
 }
 
-const formatDate = (dateString: string | null): string => {
+const formatDate = (dateString: string | null, locale: Locale): string => {
   if (!dateString) return '—';
-  return new Date(dateString).toLocaleString('ru-RU', {
+  return formatDateTime(dateString, {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  });
+  }, locale);
 };
 
 export const ViewDialog: React.FC<ViewDialogProps> = ({
@@ -41,12 +44,14 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
   submissionDetails,
   isLoading,
 }) => {
+  const t = useT();
+  const locale = useLocale();
   const renderSubmissionContent = () => {
     if (isLoading) {
       return (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-          <span className="ml-2 text-muted-foreground">Загрузка работы...</span>
+          <span className="ml-2 text-muted-foreground">{t('attendance.submission.loading')}</span>
         </div>
       );
     }
@@ -56,14 +61,14 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
       if (student?.status === 'graded' && student?.score !== null) {
         return (
           <div className="text-center py-8 text-muted-foreground">
-            <p>Эта работа была оценена без цифрового контента.</p>
-            <p className="text-sm mt-1">(Возможно, работа была устной или сдана внешне)</p>
+            <p>{t('attendance.submission.gradedOffline')}</p>
+            <p className="text-sm mt-1">{t('attendance.submission.gradedOfflineHint')}</p>
           </div>
         );
       }
       return (
         <div className="text-center py-8 text-muted-foreground">
-          Контент работы недоступен
+          {t('attendance.submission.unavailable')}
         </div>
       );
     }
@@ -89,10 +94,13 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                 {/* Task header */}
                 <div className="bg-muted px-4 py-2 border-b">
                   <span className="text-sm font-medium text-muted-foreground">
-                    Задание {idx + 1}: {task.task_type === 'text_task' ? 'Текстовый ответ' : 
-                                      task.task_type === 'file_task' ? 'Загрузка файла' :
-                                      task.task_type === 'link_task' ? 'Задание со ссылкой' :
-                                      task.task_type === 'course_unit' ? 'Юнит курса' : 'Задание'}
+                    {t('attendance.submission.taskHeading', {
+                      number: idx + 1,
+                      type: t(task.task_type === 'text_task' ? 'attendance.submission.type.text' :
+                              task.task_type === 'file_task' ? 'attendance.submission.type.file' :
+                              task.task_type === 'link_task' ? 'attendance.submission.type.link' :
+                              task.task_type === 'course_unit' ? 'attendance.submission.type.courseUnit' : 'attendance.submission.type.other'),
+                    })}
                   </span>
                 </div>
                 
@@ -100,14 +108,14 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                   {/* Question/Description */}
                   {task.content.question && (
                     <div>
-                      <label className="text-xs text-muted-foreground">Вопрос</label>
+                      <label className="text-xs text-muted-foreground">{t('attendance.submission.question')}</label>
                       <p className="text-sm font-medium">{task.content.question}</p>
                     </div>
                   )}
                   
                   {task.content.link_description && (
                     <div>
-                      <label className="text-xs text-muted-foreground">Описание</label>
+                      <label className="text-xs text-muted-foreground">{t('attendance.submission.description')}</label>
                       <p className="text-sm">{task.content.link_description}</p>
                     </div>
                   )}
@@ -130,7 +138,7 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
 
                   {/* Student's Answer */}
                   <div className="pt-2 border-t">
-                    <label className="text-xs text-muted-foreground block mb-1">Ответ студента</label>
+                    <label className="text-xs text-muted-foreground block mb-1">{t('attendance.submission.studentAnswer')}</label>
                     
                     {/* Text response */}
                     {task.task_type === 'text_task' && (
@@ -139,7 +147,7 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                           <p className="text-sm whitespace-pre-wrap">{taskAnswer.text_response}</p>
                         </div>
                       ) : (
-                        <p className="text-sm text-muted-foreground italic">Ответ не предоставлен</p>
+                        <p className="text-sm text-muted-foreground italic">{t('attendance.submission.noAnswer')}</p>
                       )
                     )}
 
@@ -155,7 +163,7 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                             <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950 rounded border border-green-200 dark:border-green-800">
                               <div className="flex items-center">
                                 <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400 mr-2" />
-                                <span className="text-sm font-medium">{taskAnswer.file_name || 'Загруженный файл'}</span>
+                                <span className="text-sm font-medium">{taskAnswer.file_name || t('attendance.submission.uploadedFile')}</span>
                               </div>
                               {fileHref && (
                                 <a
@@ -165,14 +173,14 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                                   className="text-brand hover:underline text-sm flex items-center"
                                 >
                                   <Download className="w-4 h-4 mr-1" />
-                                  Скачать
+                                  {t('attendance.submission.download')}
                                 </a>
                               )}
                             </div>
                           </div>
                         );
                       })() : (
-                        <p className="text-sm text-muted-foreground italic">Файл не загружен</p>
+                        <p className="text-sm text-muted-foreground italic">{t('attendance.submission.noFile')}</p>
                       )
                     )}
 
@@ -181,10 +189,10 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                       taskAnswer.completed ? (
                         <div className="flex items-center text-green-600 dark:text-green-400">
                           <CheckCircle className="w-4 h-4 mr-2" />
-                          <span className="text-sm font-medium">Завершено</span>
+                          <span className="text-sm font-medium">{t('attendance.submission.completed')}</span>
                         </div>
                       ) : (
-                        <p className="text-sm text-muted-foreground italic">Не завершено</p>
+                        <p className="text-sm text-muted-foreground italic">{t('attendance.submission.notCompleted')}</p>
                       )
                     )}
                   </div>
@@ -219,7 +227,7 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
             <FileText className="w-5 h-5 text-brand mr-3" />
             <div className="flex-1">
               <div className="font-medium">
-                {submissionDetails.submitted_file_name || 'Прикрепленный файл'}
+                {submissionDetails.submitted_file_name || t('attendance.submission.attachedFile')}
               </div>
             </div>
             {resolvedFileUrl && (
@@ -230,7 +238,7 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                 className="text-brand hover:underline text-sm font-medium flex items-center"
               >
                 <Download className="w-4 h-4 mr-1" />
-                Скачать
+                {t('attendance.submission.download')}
               </a>
             )}
           </div>
@@ -243,7 +251,7 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
         {hasSimpleTextAnswer && (
           <div>
             <label className="text-sm font-medium text-muted-foreground mb-2 block">
-              Ответ студента
+              {t('attendance.submission.studentAnswer')}
             </label>
             <div className="bg-muted p-4 rounded-lg border whitespace-pre-wrap">
               {answers.text}
@@ -255,7 +263,7 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
         {hasTaskCompletions && (
           <div>
             <label className="text-sm font-medium text-muted-foreground mb-2 block">
-              Ответы на задания
+              {t('attendance.submission.taskAnswers')}
             </label>
             <div className="space-y-2">
               {Object.entries(answers)
@@ -263,11 +271,11 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                 .map(([taskId, taskAnswer]: [string, any], idx) => (
                   <div key={taskId} className="bg-muted p-3 rounded-lg border">
                     <div className="text-sm font-medium text-muted-foreground mb-2">
-                      Задание {idx + 1}
+                      {t('attendance.submission.taskNumber', { number: idx + 1 })}
                     </div>
                     {taskAnswer.text_response && (
                       <div className="mb-2">
-                        <span className="text-xs text-muted-foreground">Текстовый ответ:</span>
+                        <span className="text-xs text-muted-foreground">{t('attendance.submission.textAnswer')}</span>
                         <p className="text-sm whitespace-pre-wrap">{taskAnswer.text_response}</p>
                       </div>
                     )}
@@ -283,10 +291,10 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                               rel="noopener noreferrer"
                               className="text-brand hover:underline text-sm"
                             >
-                              {taskAnswer.file_name || 'Скачать файл'}
+                              {taskAnswer.file_name || t('attendance.submission.downloadFile')}
                             </a>
                           ) : (
-                            <span className="text-sm text-muted-foreground">{taskAnswer.file_name || 'Файл'}</span>
+                            <span className="text-sm text-muted-foreground">{taskAnswer.file_name || t('attendance.submission.file')}</span>
                           )}
                         </div>
                       );
@@ -294,7 +302,7 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                     {taskAnswer.completed && !taskAnswer.text_response && !taskAnswer.file_url && (
                       <div className="flex items-center text-green-600 dark:text-green-400">
                         <CheckCircle className="w-4 h-4 mr-2" />
-                        <span className="text-sm">Завершено</span>
+                        <span className="text-sm">{t('attendance.submission.completed')}</span>
                       </div>
                     )}
                   </div>
@@ -308,11 +316,11 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
           <div className="text-center py-4 text-muted-foreground">
             {student?.status === 'graded' ? (
               <>
-                <p>Эта работа была оценена без цифрового контента.</p>
-                <p className="text-sm mt-1">(Возможно, работа была устной или сдана внешне)</p>
+                <p>{t('attendance.submission.gradedOffline')}</p>
+                <p className="text-sm mt-1">{t('attendance.submission.gradedOfflineHint')}</p>
               </>
             ) : (
-              <p>Контент работы недоступен</p>
+              <p>{t('attendance.submission.unavailable')}</p>
             )}
           </div>
         )}
@@ -324,14 +332,14 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Детали работы</DialogTitle>
+          <DialogTitle>{t('attendance.submission.title')}</DialogTitle>
         </DialogHeader>
         {student && assignment && (
           <div className="space-y-6 py-4">
             {/* Student & Assignment Info */}
             <div className="grid grid-cols-2 gap-4 bg-muted/50 p-4 rounded-lg">
               <div>
-                <label className="text-sm text-muted-foreground">Студент</label>
+                <label className="text-sm text-muted-foreground">{t('attendance.submission.student')}</label>
                 <p className="font-medium">{student.student_name}</p>
               </div>
               <div>
@@ -339,19 +347,19 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                 <p className="font-medium">{student.student_email}</p>
               </div>
               <div>
-                <label className="text-sm text-muted-foreground">Задание</label>
+                <label className="text-sm text-muted-foreground">{t('attendance.submission.assignment')}</label>
                 <p className="font-medium">{assignment.title}</p>
               </div>
               <div>
-                <label className="text-sm text-muted-foreground">Курс</label>
+                <label className="text-sm text-muted-foreground">{t('attendance.submission.course')}</label>
                 <p className="font-medium">{assignment.course_title}</p>
               </div>
               <div>
-                <label className="text-sm text-muted-foreground">Сдано в</label>
-                <p className="font-medium">{formatDate(student.submitted_at)}</p>
+                <label className="text-sm text-muted-foreground">{t('attendance.submission.submittedAt')}</label>
+                <p className="font-medium">{formatDate(student.submitted_at, locale)}</p>
               </div>
               <div>
-                <label className="text-sm text-muted-foreground">Статус</label>
+                <label className="text-sm text-muted-foreground">{t('attendance.submission.status')}</label>
                 <div className="mt-1">
                   <StatusBadge
                     status={student.status}
@@ -366,7 +374,7 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
             <div>
               <h3 className="text-sm font-semibold mb-3 flex items-center">
                 <FileText className="w-4 h-4 mr-2" />
-                Работа студента
+                {t('attendance.submission.studentWork')}
               </h3>
               {renderSubmissionContent()}
             </div>
@@ -375,7 +383,7 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
             {student.feedback && (
               <div>
                 <label className="text-sm font-medium text-muted-foreground mb-2 block">
-                  Отзыв преподавателя
+                  {t('attendance.submission.teacherFeedback')}
                 </label>
                 <p className="p-3 bg-brand-surface  rounded-lg border border-brand-border">
                   {student.feedback}
@@ -386,7 +394,7 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
         )}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Закрыть
+            {t('common.close')}
           </Button>
         </DialogFooter>
       </DialogContent>

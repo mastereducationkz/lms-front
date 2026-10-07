@@ -7,12 +7,14 @@ import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
 import { toast } from '../Toast';
+import { useT } from '../../lib/i18n/react';
 import CourseUnitTaskEditor from './CourseUnitTaskEditor';
 import TextTaskEditor from './TextTaskEditor';
 import LinkTaskEditor from './LinkTaskEditor';
 import FileUploadEditor from './FileUploadEditor';
 import PdfTextTaskEditor from './PdfTextTaskEditor';
 import { AnswerKeyEditor } from './AnswerKeyEditor';
+import '@/lib/i18n/catalogs/teacher';
 
 interface Task {
   id: string;
@@ -47,6 +49,7 @@ const TASK_TYPES = [
 const BLUEBOOK_TEST_NUMBERS = [4, 5, 6, 7, 8, 9, 10, 11];
 
 export default function MultiTaskEditor({ content, onContentChange, assignmentId }: MultiTaskEditorProps) {
+  const tr = useT();
   const [tasks, setTasks] = useState<Task[]>(content.tasks || []);
   const [instructions, setInstructions] = useState(content.instructions || '');
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -84,7 +87,7 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
     // tasks cause a course-resolution collision (the "Null course" bug) where one
     // of them becomes impossible to complete.
     if (taskType === 'course_unit' && tasks.some(t => t.task_type === 'course_unit')) {
-      toast('В одном задании можно добавить только один блок «Course Units»', 'error');
+      toast(tr('teacher.taskEditor.oneCourseUnitPerAssignment'), 'error');
       return;
     }
 
@@ -380,13 +383,13 @@ export default function MultiTaskEditor({ content, onContentChange, assignmentId
                   variant="outline"
                   onClick={() => addTask(taskType.value)}
                   disabled={courseUnitTaken}
-                  title={courseUnitTaken ? 'Можно добавить только один блок «Course Units»' : undefined}
+                  title={courseUnitTaken ? tr('teacher.taskEditor.oneCourseUnitOnly') : undefined}
                   className="flex flex-col items-center justify-center h-auto py-4 space-y-2 text-center whitespace-normal disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Icon className="w-6 h-6 flex-shrink-0" />
                   <span className="text-sm font-medium break-words w-full">{taskType.label}</span>
                   <span className="text-xs text-muted-foreground  break-words w-full">
-                    {courseUnitTaken ? 'Уже добавлен' : taskType.description}
+                    {courseUnitTaken ? tr('teacher.taskEditor.alreadyAdded') : taskType.description}
                   </span>
                 </Button>
               );

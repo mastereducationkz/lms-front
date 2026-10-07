@@ -9,6 +9,9 @@ import { lessonPath } from '../../lib/lessonLinks';
 import type { Event } from '../../types';
 import { cx, formatTime, eventStyle, typeLabel } from './calendarUtils';
 import { substitutionBadge } from '../../lib/substitutionBadge';
+import { formatDate } from '../../lib/i18n';
+import { useLocale, useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/calendar';
 
 interface Props {
   event: Event | null;
@@ -24,6 +27,8 @@ interface Props {
  * events keep their card as it was.
  */
 export default function EventDetailDialog({ event, open, onOpenChange, user }: Props) {
+  const t = useT();
+  const locale = useLocale();
   if (!event) return null;
   // Auto-managed weekly-test events link to the set page on the platform: open it signed in.
   const platformLink = event.event_type === 'weekly_test' ? parsePlatformUrl(event.meeting_url) : null;
@@ -31,9 +36,7 @@ export default function EventDetailDialog({ event, open, onOpenChange, user }: P
   const isClass = event.event_type === 'class';
   // What this lesson's substitution means for whoever is reading it.
   const badge = substitutionBadge(event, user);
-  const dateLabel = new Date(event.start_datetime).toLocaleDateString('en-US', {
-    weekday: 'long', day: 'numeric', month: 'long',
-  });
+  const dateLabel = formatDate(event.start_datetime, { weekday: 'long', day: 'numeric', month: 'long' }, locale);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -43,7 +46,7 @@ export default function EventDetailDialog({ event, open, onOpenChange, user }: P
           <DialogHeader className="space-y-1">
             <div className={cx('text-[11px] font-bold uppercase tracking-wider', s.time)}>
               {typeLabel(event.event_type)}
-              {badge && ' · Substituted'}
+              {badge && ` · ${t('calendar.event.substituted')}`}
             </div>
             <DialogTitle className="text-lg font-bold leading-snug">{event.title}</DialogTitle>
           </DialogHeader>
@@ -57,7 +60,7 @@ export default function EventDetailDialog({ event, open, onOpenChange, user }: P
               <Clock className="h-4 w-4 flex-none text-muted-foreground/70" />
               <span>
                 {event.event_type === 'assignment'
-                  ? `Due ${formatTime(event.start_datetime)} · ${dateLabel}`
+                  ? t('calendar.event.due', { time: formatTime(event.start_datetime), date: dateLabel })
                   : `${formatTime(event.start_datetime)} – ${formatTime(event.end_datetime)} · ${dateLabel}`}
               </span>
             </div>
@@ -76,7 +79,7 @@ export default function EventDetailDialog({ event, open, onOpenChange, user }: P
                     rel="noopener noreferrer"
                     className="font-medium text-primary underline-offset-4 hover:underline"
                   >
-                    Enter class
+                    {t('calendar.event.enterClass')}
                   </a>
                 ) : (
                   <span className="truncate">{event.location}</span>
@@ -92,7 +95,7 @@ export default function EventDetailDialog({ event, open, onOpenChange, user }: P
                   onClick={() => void openPlatformPage(platformLink.track, platformLink.path)}
                   className="font-medium text-primary underline-offset-4 hover:underline"
                 >
-                  Open on {platformLink.track.toUpperCase()} / Открыть на {platformLink.track.toUpperCase()}
+                  {t('calendar.event.openOnPlatform', { platform: platformLink.track.toUpperCase() })}
                 </button>
               </div>
             )}
@@ -106,7 +109,7 @@ export default function EventDetailDialog({ event, open, onOpenChange, user }: P
                   rel="noopener noreferrer"
                   className="font-medium text-primary underline-offset-4 hover:underline"
                 >
-                  Join / Войти
+                  {t('calendar.event.join')}
                 </a>
                 {/* A ready-to-send invitation for the group chat, built on the clean link. The
                     Join link above may carry the viewer's own account (?authuser=…), which
@@ -114,17 +117,17 @@ export default function EventDetailDialog({ event, open, onOpenChange, user }: P
                 <button
                   type="button"
                   onClick={() => {
-                    const text = meetInvitationText({ ...event, meeting_url: event.meeting_url as string });
+                    const text = meetInvitationText({ ...event, meeting_url: event.meeting_url as string }, locale);
                     navigator.clipboard.writeText(text).then(
-                      () => toast.success('Приглашение скопировано', { description: 'Можно отправить в чат группы.' }),
-                      () => toast.error('Не удалось скопировать приглашение'),
+                      () => toast.success(t('calendar.event.invitationCopied'), { description: t('calendar.event.invitationCopiedHint') }),
+                      () => toast.error(t('calendar.event.invitationCopyFailed')),
                     );
                   }}
-                  title="Copy an invitation for the group chat"
+                  title={t('calendar.event.copyInvitationTitle')}
                   className="ml-auto inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <Copy className="h-3.5 w-3.5" aria-hidden />
-                  Скопировать приглашение
+                  {t('calendar.event.copyInvitation')}
                 </button>
               </div>
             )}
@@ -157,7 +160,7 @@ export default function EventDetailDialog({ event, open, onOpenChange, user }: P
               onClick={() => onOpenChange(false)}
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              Open lesson / Открыть урок
+              {t('calendar.event.openLesson')}
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
           )}

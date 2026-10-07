@@ -9,8 +9,10 @@ import {
   recordingSteps, stageSentence, stageTitle, stageTone, updatedAgo, workerLine,
   type ProgressTone, type StepStatus,
 } from '../../lib/recordingProgress';
-import type { Locale } from '../../lib/recordings';
+import type { Locale, MessageKey } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
 import type { RecordingProgress } from '../../services/api/recordings';
+import '@/lib/i18n/catalogs/recordings';
 
 /**
  * A recording on its way to watchable, shown as what it is (2026-09-15): the stage, how far the
@@ -43,18 +45,13 @@ const HALO: Record<ProgressTone, string> = {
   success: 'bg-emerald-400/15 text-emerald-300',
 };
 
-const TEXT = {
-  en: {
-    retry: 'Try again', retrying: 'Starting again…', progress: 'Progress',
-    askAdmin: 'An admin or a head teacher can try this recording again.',
-    done: 'done', active: 'in progress', todo: 'to come', failed: 'failed',
-  },
-  ru: {
-    retry: 'Попробовать снова', retrying: 'Запускаем снова…', progress: 'Ход подготовки',
-    askAdmin: 'Повторить подготовку записи может администратор или руководитель.',
-    done: 'готово', active: 'идёт', todo: 'впереди', failed: 'не удалось',
-  },
-} as const;
+/** Each step's state, for screen readers. */
+const STEP_STATUS: Record<StepStatus, MessageKey> = {
+  done: 'recordings.panel.stepDone',
+  active: 'recordings.panel.stepActive',
+  todo: 'recordings.panel.stepTodo',
+  failed: 'recordings.panel.stepFailed',
+};
 
 function StageIcon({ progress, className }: { progress: RecordingProgress; className?: string }) {
   switch (progress.stage) {
@@ -244,7 +241,7 @@ interface PanelProps {
  * doing. Only the stage's title is announced to screen readers — never every percent.
  */
 export function RecordingProgressPanel({ progress, locale, staff, canRetry, retrying, onRetry }: PanelProps) {
-  const t = TEXT[locale];
+  const t = useT();
   const now = useNow(5_000);
   const tone = stageTone(progress);
   const percent = overallPercent(progress);
@@ -296,10 +293,10 @@ export function RecordingProgressPanel({ progress, locale, staff, canRetry, retr
                 className="inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-[13px] font-semibold text-slate-900 transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 disabled:opacity-60"
               >
                 <RotateCcw className={cn('h-3.5 w-3.5', retrying && 'motion-safe:animate-spin')} aria-hidden />
-                {retrying ? t.retrying : t.retry}
+                {retrying ? t('recordings.panel.retrying') : t('recordings.panel.retry')}
               </button>
             ) : (
-              <p className="text-xs text-white/55">{t.askAdmin}</p>
+              <p className="text-xs text-white/55">{t('recordings.panel.askAdmin')}</p>
             )}
           </div>
         )}
@@ -317,7 +314,7 @@ export function RecordingProgressPanel({ progress, locale, staff, canRetry, retr
         )}
       </div>
 
-      <ol className="min-w-0 self-center" aria-label={t.progress}>
+      <ol className="min-w-0 self-center" aria-label={t('recordings.panel.progress')}>
         {recordingSteps(progress, locale).map((step, index, steps) => (
           <li key={step.key} className="relative flex gap-2.5 pb-2.5 last:pb-0">
             {index < steps.length - 1 && (
@@ -336,7 +333,7 @@ export function RecordingProgressPanel({ progress, locale, staff, canRetry, retr
                 step.status === 'failed' && 'font-medium text-rose-300',
               )}>
                 {step.label}
-                <span className="sr-only"> ({t[step.status]})</span>
+                <span className="sr-only"> ({t(STEP_STATUS[step.status])})</span>
               </div>
               {step.detail && <div className="text-[11.5px] tabular-nums text-white/55">{step.detail}</div>}
               {step.status === 'active' && step.percent != null && (

@@ -1,0 +1,38 @@
+import type { MessageTable } from '../types';
+
+/** Signing in: the login page and the Master Education (SSO) callback. */
+export const auth = {
+  'auth.signIn.title': 'Welcome',
+  'auth.signIn.description': 'Access your account and continue your journey with us',
+  'auth.signIn.storageBlocked': 'Your browser doesn’t let this site store data, so signing in with Master Education won’t work. Open the LMS in a regular browser window and allow cookies, or sign in with your password.',
+  'auth.signIn.ssoUnavailable': 'Signing in with Master Education is unavailable right now. Sign in with your password or contact an administrator.',
+  'auth.signIn.ssoStartFailed': 'Couldn’t open Master Education sign-in. Check your connection and try again.',
+  'auth.signIn.continueAs': 'Continue as {name}',
+  'auth.signIn.continueWithSso': 'Continue with Master Education',
+  'auth.signIn.otherAccount': 'Use another account',
+  'auth.signIn.otherMethods': 'Other ways to sign in',
+  'auth.signIn.orPassword': 'or with a password',
+  'auth.signIn.email': 'Email Address',
+  'auth.signIn.emailPlaceholder': 'Enter your email address',
+  'auth.signIn.password': 'Password',
+  'auth.signIn.passwordPlaceholder': 'Enter your password',
+  'auth.signIn.keepSignedIn': 'Keep me signed in',
+  'auth.signIn.forgotPassword': 'Forgot your password?',
+  'auth.signIn.submit': 'Sign In',
+  'auth.signIn.submitting': 'Signing In...',
+  'auth.signIn.backToHome': 'Back to Home',
+
+  'auth.callback.idpRejected': 'Master Education didn’t allow you into the LMS. This usually means your account doesn’t have LMS access yet or has been deactivated — contact your curator or an administrator.',
+  'auth.callback.linkExpired': 'This sign-in link has already been used. That happens when the page reloads or opens twice. Please sign in again.',
+  'auth.callback.storageBlocked': 'Your browser doesn’t let this site store data, so sign-in can’t finish. Open the LMS in a regular browser window (not incognito, and not inside Telegram or Instagram) and allow cookies for this site.',
+  'auth.callback.notConfigured': 'Signing in with Master Education is unavailable right now. Please contact an administrator.',
+  'auth.callback.tokenRejected': 'The LMS didn’t accept the sign-in from Master Education. This is a server setting — send an administrator the code below.',
+  'auth.callback.network': 'Couldn’t reach Master Education. Check your connection and try again.',
+  'auth.callback.lmsUnreachable': 'You’re signed in, but the LMS isn’t responding right now. Check your connection and try again.',
+  'auth.callback.noLmsAccount': 'No LMS account was found. Ask an administrator to link your account.',
+  'auth.callback.unknown': 'Couldn’t finish signing in with Master Education. Please try again.',
+  'auth.callback.retry': 'Sign in again',
+  'auth.callback.backToLogin': 'Back to sign-in',
+  'auth.callback.supportCode': 'Support code: {code}',
+  'auth.callback.signingIn': 'Signing you in…',
+} as const satisfies MessageTable;

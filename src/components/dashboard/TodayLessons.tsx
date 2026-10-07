@@ -7,9 +7,11 @@ import { cn } from '../../lib/utils';
 import { clockKz, joinState } from '../../lib/classLessonPage';
 import { lessonPath } from '../../lib/lessonLinks';
 import { meetJoinUrl } from '../../lib/meetLinks';
-import { recordingsLocale } from '../../lib/recordings';
+import { formatDate, formatDateTime } from '../../lib/i18n';
+import { useLocale, useT } from '../../lib/i18n/react';
 import { groupLine, lessonChips, todaySummary, type ChipTone, type TodayChip } from '../../lib/todayLessons';
 import { getTodayLessons, type TodayLesson, type TodayLessons as TodayData } from '../../services/api/classLessons';
+import '@/lib/i18n/catalogs/teacher';
 
 // The day moves on its own: a lesson starts, a register gets marked, a recording lands.
 const REFRESH_MS = 60_000;
@@ -34,8 +36,8 @@ interface Props {
  * nothing today sees when the next lesson is.
  */
 export default function TodayLessons({ role, workspaceEmail }: Props) {
-  const locale = recordingsLocale(role);
-  const t = (ru: string, en: string) => (locale === 'ru' ? ru : en);
+  const locale = useLocale();
+  const t = useT();
   const [data, setData] = useState<TodayData | null>(null);
   const [failed, setFailed] = useState(false);
   const [now, setNow] = useState(() => new Date());
@@ -63,9 +65,7 @@ export default function TodayLessons({ role, workspaceEmail }: Props) {
   if (!data && !failed && role !== 'teacher') return null;
 
   const clock = (iso: string) => clockKz(iso, locale);
-  const dateLabel = data ? new Date(`${data.date}T12:00:00+05:00`).toLocaleDateString(locale === 'ru' ? 'ru-RU' : 'en-GB', {
-    weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Almaty',
-  }) : '';
+  const dateLabel = data ? formatDate(data.date, { weekday: 'long', day: 'numeric', month: 'long' }, locale) : '';
 
   return (
     <Card className="shadow-sm border border-border overflow-hidden" aria-labelledby="today-lessons-title" data-tour="today-lessons">
@@ -73,7 +73,7 @@ export default function TodayLessons({ role, workspaceEmail }: Props) {
         <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4">
           <div className="flex items-baseline gap-2">
             <CardTitle id="today-lessons-title" className="text-lg font-bold text-foreground">
-              {t('Сегодня', 'Today')}
+              {t('teacher.today.title')}
             </CardTitle>
             {dateLabel && <span className="text-sm text-muted-foreground first-letter:uppercase">{dateLabel}</span>}
           </div>
@@ -85,10 +85,10 @@ export default function TodayLessons({ role, workspaceEmail }: Props) {
       <CardContent className="p-0">
         {failed && !data ? (
           <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 text-sm text-muted-foreground">
-            <span>{t('Не удалось загрузить уроки на сегодня.', "Couldn't load today's lessons.")}</span>
+            <span>{t('teacher.today.loadFailed')}</span>
             <button type="button" onClick={() => void load()}
               className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 font-medium text-foreground ring-1 ring-gray-200 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:ring-border">
-              <RotateCw className="h-3.5 w-3.5" aria-hidden />{t('Повторить', 'Retry')}
+              <RotateCw className="h-3.5 w-3.5" aria-hidden />{t('common.retry')}
             </button>
           </div>
         ) : !data ? (
@@ -118,7 +118,7 @@ export default function TodayLessons({ role, workspaceEmail }: Props) {
 function LessonRow({ lesson, now, locale, workspaceEmail, first, last }: {
   lesson: TodayLesson; now: Date; locale: 'ru' | 'en'; workspaceEmail?: string | null; first: boolean; last: boolean;
 }) {
-  const t = (ru: string, en: string) => (locale === 'ru' ? ru : en);
+  const t = useT();
   const chips = lessonChips(lesson, locale);
   const join = joinState(lesson, now);
   const cancelled = lesson.status === 'cancelled';
@@ -155,7 +155,7 @@ function LessonRow({ lesson, now, locale, workspaceEmail, first, last }: {
           )}
         >
           {groupLine(lesson, locale)}
-          {live && <span className="ml-2 align-middle text-xs font-semibold text-emerald-700 dark:text-emerald-400">{t('идёт', 'live')}</span>}
+          {live && <span className="ml-2 align-middle text-xs font-semibold text-emerald-700 dark:text-emerald-400">{t('teacher.today.live')}</span>}
         </Link>
         {lesson.topic && <p className="mt-0.5 truncate text-sm text-muted-foreground">{lesson.topic}</p>}
         {chips.length > 0 && (
@@ -181,7 +181,7 @@ function LessonRow({ lesson, now, locale, workspaceEmail, first, last }: {
 function JoinAction({ join, url, workspaceEmail, locale, wide = false }: {
   join: ReturnType<typeof joinState>; url: string | null; workspaceEmail?: string | null; locale: 'ru' | 'en'; wide?: boolean;
 }) {
-  const t = (ru: string, en: string) => (locale === 'ru' ? ru : en);
+  const t = useT();
   return (
     <>
         {join.kind === 'open' ? (
@@ -191,12 +191,12 @@ function JoinAction({ join, url, workspaceEmail, locale, wide = false }: {
             rel="noopener noreferrer"
             className={cn('inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-card', wide && 'w-full py-2')}
           >
-            <Video className="h-4 w-4" aria-hidden />{t('Войти', 'Join')}
+            <Video className="h-4 w-4" aria-hidden />{t('teacher.today.join')}
           </a>
         ) : join.kind === 'soon' ? (
           <span className={cn('inline-flex items-center gap-1 whitespace-nowrap text-xs text-muted-foreground', !wide && 'pt-1')}>
             <Clock className="h-3.5 w-3.5" aria-hidden />
-            {t(`Вход с ${clockKz(join.opensAt, locale)}`, `Opens ${clockKz(join.opensAt, locale)}`)}
+            {t('teacher.today.opensAt', { time: clockKz(join.opensAt, locale) })}
           </span>
         ) : wide ? null : (
           <ChevronRight className="mt-0.5 h-4 w-4 text-gray-300 transition-transform group-hover:translate-x-0.5 group-hover:text-gray-500 dark:text-muted-foreground" aria-hidden />
@@ -222,20 +222,20 @@ function ChipView({ chip, lessonId }: { chip: TodayChip; lessonId: number }) {
 }
 
 function EmptyDay({ data, locale }: { data: TodayData; locale: 'ru' | 'en' }) {
-  const t = (ru: string, en: string) => (locale === 'ru' ? ru : en);
+  const t = useT();
   const next = data.next;
-  const nextWhen = next ? new Date(next.start).toLocaleString(locale === 'ru' ? 'ru-RU' : 'en-GB', {
-    weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Almaty',
-  }) : null;
+  const nextWhen = next ? formatDateTime(new Date(next.start), {
+    weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+  }, locale) : null;
   return (
     <div className="flex flex-col gap-3 px-4 sm:px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-start gap-3">
         <CalendarDays className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
         <div>
-          <p className="font-medium text-foreground">{t('Сегодня уроков нет', 'No lessons today')}</p>
+          <p className="font-medium text-foreground">{t('teacher.today.empty')}</p>
           {next && (
             <p className="mt-0.5 text-sm text-muted-foreground">
-              {t('Следующий: ', 'Next: ')}
+              {t('teacher.today.next')}{' '}
               <Link to={lessonPath(next.id)} className="font-medium text-brand-subtle-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded">
                 {nextWhen}{next.groups.length ? ` · ${next.groups[0].replace(/\s+-\s+[^-]+$/, '')}` : ''}
               </Link>
@@ -244,7 +244,7 @@ function EmptyDay({ data, locale }: { data: TodayData; locale: 'ru' | 'en' }) {
         </div>
       </div>
       <Link to="/calendar" className="self-start text-sm font-medium text-gray-700 underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded sm:self-auto dark:text-foreground">
-        {t('Открыть календарь', 'Open calendar')}
+        {t('teacher.today.openCalendar')}
       </Link>
     </div>
   );

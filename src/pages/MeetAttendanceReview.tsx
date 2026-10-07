@@ -37,7 +37,7 @@ import { LessonRecordingCell, recordingMeta } from '../components/meetAttendance
 import RecordingPlayerDialog, { type RecordingMeta } from '../components/recordings/RecordingPlayerDialog';
 import { useRecordingStatuses } from '../components/recordings/useRecordingStatuses';
 import { liveEventIds } from '../lib/recordingProgress';
-import { recordingsLocale } from '../lib/recordings';
+import { useLocale } from '../lib/i18n/react';
 import { percent } from '../lib/meetTalk';
 import {
   listMeetRecords,
@@ -103,6 +103,7 @@ const EMPTY: Record<Audience, (days: number) => string> = {
  */
 export default function MeetAttendanceReview() {
   const { user } = useAuth();
+  const locale = useLocale();
   const audience: Audience = user?.role === 'teacher' ? 'teacher' : user?.role === 'curator' ? 'curator' : 'heads';
   const [items, setItems] = useState<MeetLessonSummary[] | null>(null);
   const [error, setError] = useState(false);
@@ -636,7 +637,7 @@ export default function MeetAttendanceReview() {
         meta={playing}
         open={playing !== null}
         onOpenChange={(open) => { if (!open) setPlaying(null); }}
-        locale={recordingsLocale(user?.role)}
+        locale={locale}
       />
     </div>
   );

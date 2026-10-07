@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import apiClient from '../services/api';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/users';
 
 /**
  * Global student search for staff dashboards (admin, head curator, head teacher,
@@ -19,6 +21,7 @@ interface JournalStudent {
 }
 
 export default function StudentSearchBox({ className = '' }: { className?: string }) {
+  const t = useT();
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<JournalStudent[]>([]);
@@ -93,7 +96,7 @@ export default function StudentSearchBox({ className = '' }: { className?: strin
           onChange={e => setQuery(e.target.value)}
           onKeyDown={onKeyDown}
           onFocus={() => { if (results.length > 0) setOpen(true); }}
-          placeholder="Найти студента: имя или email…"
+          placeholder={t('users.search.placeholder')}
           className="w-full pl-9 pr-3 py-2 text-sm bg-card border border-border rounded-lg outline-none focus:border-brand focus:ring-2 focus:ring-brand-border placeholder:text-muted-foreground"
         />
       </div>
@@ -101,7 +104,7 @@ export default function StudentSearchBox({ className = '' }: { className?: strin
         <div className="absolute z-30 mt-1 w-full bg-card border border-border rounded-lg shadow-lg overflow-hidden">
           {results.length === 0 ? (
             <p className="px-3 py-2.5 text-sm text-muted-foreground">
-              {loading ? 'Ищем…' : 'Студенты не найдены'}
+              {loading ? t('users.search.searching') : t('users.search.empty')}
             </p>
           ) : (
             results.map((s, i) => (
@@ -117,7 +120,7 @@ export default function StudentSearchBox({ className = '' }: { className?: strin
                 <span className="min-w-0">
                   <span className="block text-sm text-foreground truncate">
                     {s.name}
-                    {s.is_inactive && <span className="ml-1.5 text-[10px] text-red-500 dark:text-red-400">деактивирован</span>}
+                    {s.is_inactive && <span className="ml-1.5 text-[10px] text-red-500 dark:text-red-400">{t('users.search.deactivated')}</span>}
                   </span>
                   <span className="block text-xs text-muted-foreground truncate">{s.email}</span>
                 </span>

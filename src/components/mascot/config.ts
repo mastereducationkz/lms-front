@@ -41,7 +41,7 @@ export const HATS: MascotPart[] = [
   { key: 'ninja', label: 'Ninja band' },
   { key: 'pirate', label: 'Pirate hat' },
   { key: 'party', label: 'Party hat' },
-  { key: 'takiya', label: 'Тақия' },
+  { key: 'takiya', label: 'Takiya' },
   { key: 'beanie', label: 'Beanie & scarf' },
   { key: 'nightcap', label: 'Nightcap' },
   { key: 'cap', label: 'Backwards cap' },

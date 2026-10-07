@@ -123,3 +123,11 @@ describe('registerSummary', () => {
     expect(registerSummary(counts({ scores_missed: 0 }), true)).not.toContain('scores');
   });
 });
+
+describe('registerSummary in Russian', () => {
+  it('agrees every count with its noun', () => {
+    const total: RegisterCounts = { lessons: 21, decided: 1, writes: 5, changes: 1, held: 2, overrides: 1, left_alone: {}, scores_missed: 1 };
+    expect(registerSummary(total, true, 'ru'))
+      .toBe('21 урок · Meet поставил 5 отметок · 2 ученика ждали преподавателя · Изменено после Meet: 1 · 1 урок без баллов за активность');
+  });
+});

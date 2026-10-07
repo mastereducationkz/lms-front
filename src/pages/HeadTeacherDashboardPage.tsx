@@ -41,6 +41,7 @@ import {
   Bar
 } from 'recharts';
 import Skeleton from '../components/Skeleton';
+import { formatDate } from '../lib/i18n';
 
 interface ManagedCourse {
   id: number;
@@ -468,7 +469,7 @@ export default function HeadTeacherDashboardPage() {
                                   <p className="truncate font-medium">{g.group_name}</p>
                                   {!isHw && g.oldest && (
                                     <p className="text-xs text-muted-foreground">
-                                      oldest: {new Date(g.oldest).toLocaleDateString()}
+                                      oldest: {formatDate(new Date(g.oldest))}
                                     </p>
                                   )}
                                   {isHw && (

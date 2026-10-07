@@ -52,24 +52,20 @@ import { roleLabel } from '@/lib/roleLabel';
 import { replayTourFor } from '@/lib/guide/state';
 import { replayLabel } from '@/components/guide/tours';
 import { requestTourReplay } from '@/components/guide/tourStore';
+import { useT } from '@/lib/i18n/react';
+import type { TFunction } from '@/lib/i18n';
+import '@/lib/i18n/catalogs/shell';
 
 /** Only three groups: primary nav, curator tools, admin tools */
 type NavCategory = 'primary' | 'curator' | 'admin';
 
 const CATEGORY_ORDER: NavCategory[] = ['primary', 'curator', 'admin'];
 
-const getCategoryLabels = (isRu: boolean): Record<NavCategory, string> =>
-  isRu
-    ? {
-        primary: 'ОСНОВНОЕ',
-        curator: 'КУРАТОРСТВО',
-        admin: 'АДМИН',
-      }
-    : {
-        primary: 'MAIN',
-        curator: 'CURATOR',
-        admin: 'ADMIN',
-      };
+const getCategoryLabels = (t: TFunction): Record<NavCategory, string> => ({
+  primary: t('shell.nav.sectionPrimary'),
+  curator: t('shell.nav.sectionCurator'),
+  admin: t('shell.nav.sectionAdmin'),
+});
 
 // Navigation items: optional 7th field = category (defaults to primary),
 // optional 8th = show a "Soon" pill for a feature that is announced but not open yet,
@@ -97,6 +93,7 @@ function badgeToneClass(tone?: AttendanceBadgeTone): string {
 }
 
 function getNavigationItems(
+  t: TFunction,
   _userRole: string | undefined,
   unreadCount: number,
   unseenGradedCount: number = 0,
@@ -108,58 +105,58 @@ function getNavigationItems(
   // be taken — see lib/attendanceBadge.
   const attendance = attendanceBadge(attendanceDue);
   const allItems: NavItemTuple[] = [
-    ['/dashboard', ['head_curator', 'curator'].includes(_userRole || '') ? 'Дашборд' : 'Dashboard', Home, 0, null, 'dashboard-nav', 'primary'],
-    ['/calendar', ['head_curator', 'curator'].includes(_userRole || '') ? 'Календарь' : 'Calendar', Calendar, 0, null, 'calendar-nav', 'primary'],
-    ['/recordings', ['head_curator', 'curator'].includes(_userRole || '') ? 'Записи уроков' : 'Lesson Recordings', Video, 0, null, 'recordings-nav', 'primary'],
-    ['/webinar-recordings', ['head_curator', 'curator'].includes(_userRole || '') ? 'Записи вебинаров' : 'Webinar Recordings', MonitorPlay, 0, null, 'webinar-recordings-nav', 'primary'],
-    ['/materials', ['head_curator', 'curator'].includes(_userRole || '') ? 'Материалы' : 'Materials', Paperclip, 0, ['student', 'teacher', 'curator', 'head_curator', 'head_teacher', 'admin'], 'materials-nav', 'primary'],
+    ['/dashboard', t('shell.nav.dashboard'), Home, 0, null, 'dashboard-nav', 'primary'],
+    ['/calendar', t('shell.nav.calendar'), Calendar, 0, null, 'calendar-nav', 'primary'],
+    ['/recordings', t('shell.nav.lessonRecordings'), Video, 0, null, 'recordings-nav', 'primary'],
+    ['/webinar-recordings', t('shell.nav.webinarRecordings'), MonitorPlay, 0, null, 'webinar-recordings-nav', 'primary'],
+    ['/materials', t('shell.nav.materials'), Paperclip, 0, ['student', 'teacher', 'curator', 'head_curator', 'head_teacher', 'admin'], 'materials-nav', 'primary'],
     // Who was in each lesson's Meet room. Teachers see their lessons, curators their groups' — the
     // backend scopes it; students never (the record is about marks, which are staff business).
-    ['/meet-attendance', ['head_curator', 'curator'].includes(_userRole || '') ? 'Посещаемость в Meet' : 'Meet Attendance', MonitorCheck, 0, ['admin', 'head_curator', 'head_teacher', 'teacher', 'curator'], 'meet-attendance-nav', 'primary'],
+    ['/meet-attendance', t('shell.nav.meetAttendance'), MonitorCheck, 0, ['admin', 'head_curator', 'head_teacher', 'teacher', 'curator'], 'meet-attendance-nav', 'primary'],
     // Lateness, missed lessons and their fines. A teacher sees only their own row.
-    ['/teacher-discipline', _userRole === 'teacher' ? 'My Discipline' : 'Teacher Discipline', ClipboardCheck, 0, ['admin', 'head_teacher', 'teacher'], 'teacher-discipline-nav', 'primary'],
-    ['/courses', 'My Courses', BookOpen, 0, ['student'], 'courses-nav', 'primary'],
+    ['/teacher-discipline', t(_userRole === 'teacher' ? 'shell.nav.myDiscipline' : 'shell.nav.teacherDiscipline'), ClipboardCheck, 0, ['admin', 'head_teacher', 'teacher'], 'teacher-discipline-nav', 'primary'],
+    ['/courses', t('shell.nav.myCourses'), BookOpen, 0, ['student'], 'courses-nav', 'primary'],
     // Read-only catalog of every published course (2026-10-03); replaced the teacher's /teacher/courses.
-    ['/courses', ['head_curator', 'curator'].includes(_userRole || '') ? 'Курсы' : 'Courses', BookOpen, 0, ['teacher', 'curator', 'head_curator'], 'courses-nav', 'primary'],
-    ['/homework', _userRole === 'student' ? 'My Homework' : 'Homework', ClipboardList, _userRole === 'student' ? unseenGradedCount : 0, ['student', 'teacher'], 'assignments-nav', 'primary'],
-    ['/favorites', 'My Favorites', Heart, 0, ['student'], 'favorites-nav', 'primary'],
+    ['/courses', t('shell.nav.courses'), BookOpen, 0, ['teacher', 'curator', 'head_curator'], 'courses-nav', 'primary'],
+    ['/homework', t(_userRole === 'student' ? 'shell.nav.myHomework' : 'shell.nav.homework'), ClipboardList, _userRole === 'student' ? unseenGradedCount : 0, ['student', 'teacher'], 'assignments-nav', 'primary'],
+    ['/favorites', t('shell.nav.favorites'), Heart, 0, ['student'], 'favorites-nav', 'primary'],
     // Kasatik Achievements (2026-10-04): badges that unlock new orca items.
-    ['/achievements', 'Achievements', Trophy, 0, ['student'], 'achievements-nav', 'primary'],
-    ['/teacher/class', 'My Class', GraduationCap, 0, ['teacher'], 'students-nav', 'primary'],
-    ['/attendance', 'Attendance', UserCheck, attendance.count, ['teacher', 'head_teacher', 'head_curator'], 'attendance-nav', 'primary', false, attendance.tone, attendance.title],
-    ['/analytics', ['head_curator', 'curator'].includes(_userRole || '') ? 'Аналитика' : 'Analytics', BarChart3, 0, ['teacher', 'curator', 'admin', 'head_curator', 'head_teacher'], 'analytics-nav', 'primary'],
+    ['/achievements', t('shell.nav.achievements'), Trophy, 0, ['student'], 'achievements-nav', 'primary'],
+    ['/teacher/class', t('shell.nav.myClass'), GraduationCap, 0, ['teacher'], 'students-nav', 'primary'],
+    ['/attendance', t('shell.nav.attendance'), UserCheck, attendance.count, ['teacher', 'head_teacher', 'head_curator'], 'attendance-nav', 'primary', false, attendance.tone, attendance.title],
+    ['/analytics', t('shell.nav.analytics'), BarChart3, 0, ['teacher', 'curator', 'admin', 'head_curator', 'head_teacher'], 'analytics-nav', 'primary'],
     // How students earn their Kasatik rewards, school-wide (2026-10-04). Teachers and curators see their groups under the leaderboard.
-    ['/admin/achievements', ['head_curator', 'curator'].includes(_userRole || '') ? 'Достижения' : 'Achievements', Trophy, 0, ['admin', 'head_curator', 'head_teacher'], 'achievements-analytics-nav', 'primary'],
-    ['/review', 'Quiz Review', Presentation, 0, ['teacher', 'curator', 'admin', 'head_curator', 'head_teacher'], 'quiz-review-nav', 'primary'],
-    ['/curator/homeworks', ['head_curator', 'curator'].includes(_userRole || '') ? 'Домашние задания' : 'Homework', FileText, 0, ['curator', 'head_curator'], 'homework-analytics-nav', 'curator'],
-    ['/curator/leaderboard', ['head_curator', 'curator'].includes(_userRole || '') ? 'Лидерборд' : 'Leaderboard', Trophy, 0, ['curator', 'head_curator'], 'leaderboard-nav', 'curator'],
+    ['/admin/achievements', t('shell.nav.achievements'), Trophy, 0, ['admin', 'head_curator', 'head_teacher'], 'achievements-analytics-nav', 'primary'],
+    ['/review', t('shell.nav.quizReview'), Presentation, 0, ['teacher', 'curator', 'admin', 'head_curator', 'head_teacher'], 'quiz-review-nav', 'primary'],
+    ['/curator/homeworks', t('shell.nav.homework'), FileText, 0, ['curator', 'head_curator'], 'homework-analytics-nav', 'curator'],
+    ['/curator/leaderboard', t('shell.nav.leaderboard'), Trophy, 0, ['curator', 'head_curator'], 'leaderboard-nav', 'curator'],
     // Curator tasks («Задачи») live in the CRM. Linked directly rather than through the in-app
     // redirect so curators land on the list in one hop; /curator/tasks and /curator/onboarding
     // still redirect, which is what catches existing bookmarks.
-    [CRM_TASKS_URL, ['head_curator', 'curator'].includes(_userRole || '') ? 'Задачи (CRM)' : 'Tasks (CRM)', ListChecks, 0, ['curator', 'head_curator'], 'curator-tasks-nav', 'curator'],
-    [CRM_ONBOARDING_URL, ['head_curator', 'curator'].includes(_userRole || '') ? 'Онбординг (CRM)' : 'Onboarding (CRM)', UserPlus, 0, ['curator', 'head_curator'], 'curator-onboarding-nav', 'curator'],
-    [CRM_WORKSPACE_URL, ['head_curator', 'curator'].includes(_userRole || '') ? 'Вернуться в CRM' : 'Back to CRM', ExternalLink, 0, ['curator', 'head_curator'], 'crm-workspace-nav', 'curator'],
-    ['/curator/students', ['head_curator', 'curator'].includes(_userRole || '') ? 'Журнал' : 'Students', Users, 0, ['curator', 'head_curator', 'admin', 'head_teacher'], 'students-journal-nav', 'curator'],
-    ['/curator/groups', ['head_curator', 'curator'].includes(_userRole || '') ? 'Мои группы' : 'My groups', UsersRound, 0, ['curator', 'head_curator'], 'curator-groups-nav', 'curator'],
-    ['/admin/courses', 'Manage Courses', BookMarked, 0, ['admin', 'head_teacher'], 'courses-management', 'admin'],
-    ['/admin/users', 'Manage Users', Users, 0, ['admin', 'head_curator'], 'users-management', 'admin'],
-    ['/admin/weekly-top-students', 'Weekly Top Students', Trophy, 0, ['admin'], 'weekly-top-students-nav', 'admin'],
-    ['/admin/announcements', 'Telegram Announcements', Megaphone, 0, ['admin', 'head_curator', 'head_teacher'], 'announcements-nav', 'admin'],
-    ['/admin/checkpoints', 'SAT Checkpoints', ClipboardCheck, 0, ['admin', 'head_curator', 'head_teacher', 'teacher', 'curator'], 'checkpoints-admin-nav', 'admin'],
-    ['/admin/events', 'Manage Events', Calendar, 0, ['admin'], 'events-management', 'admin'],
-    ['/admin/recordings', 'Recordings Rollout', Video, 0, ['admin', 'head_curator', 'head_teacher'], 'recordings-admin-nav', 'admin'],
-    ['/exam-results', ['head_curator', 'curator'].includes(_userRole || '') ? 'Результаты экзаменов' : 'Exam Results', ClipboardCheck, 0, ['teacher', 'curator', 'head_curator', 'head_teacher', 'admin'], 'exam-results-nav', 'primary'],
-    ['/bluebook-results', 'Bluebook Results', ClipboardCheck, 0, ['teacher', 'curator', 'head_curator', 'head_teacher', 'admin'], 'bluebook-results-nav', 'primary'],
-    ['/admin/question-reports', 'Question Reports', AlertTriangle, 0, ['admin', 'head_teacher'], 'question-reports-nav', 'admin'],
-    ['/curator/homeworks', 'Homework', FileText, 0, ['head_teacher'], 'head-homework-nav', 'primary'],
-    ['/curator/leaderboard', 'Leaderboard', Trophy, 0, ['head_teacher'], 'head-leaderboard-nav', 'primary'],
-    ['/head-teacher/lesson-requests', ['head_curator', 'curator'].includes(_userRole || '') ? 'Заявки по урокам' : 'Lesson Requests', ArrowLeftRight, lessonRequestCount, ['head_teacher', 'head_curator'], 'head-lesson-requests-nav', 'primary'],
-    ['/admin/lesson-requests', 'Lesson Requests', ArrowLeftRight, lessonRequestCount, ['admin'], 'lesson-requests-nav', 'admin'],
-    ['/my-requests', 'My Requests', ArrowLeftRight, lessonRequestCount, ['teacher'], 'my-requests-nav', 'primary'],
-    ['/manual-unlocks', 'Manual Unlocks', Unlock, 0, ['teacher', 'head_teacher'], 'manual-unlocks-nav', 'primary'],
-    ['/trial-access', 'Trial Access', Timer, 0, ['admin', 'head_curator'], 'trial-access-nav', 'admin'],
-    ['/chat', ['head_curator', 'curator'].includes(_userRole || '') ? 'Чат' : 'Chat', MessageCircle, unreadCount, null, 'messages-nav', 'primary'],
-    ['https://support.mastereducation.kz', ['head_curator', 'curator'].includes(_userRole || '') ? 'Поддержка' : 'Support', Headset, 0, null, 'support-nav', 'primary'],
+    [CRM_TASKS_URL, t('shell.nav.crmTasks'), ListChecks, 0, ['curator', 'head_curator'], 'curator-tasks-nav', 'curator'],
+    [CRM_ONBOARDING_URL, t('shell.nav.crmOnboarding'), UserPlus, 0, ['curator', 'head_curator'], 'curator-onboarding-nav', 'curator'],
+    [CRM_WORKSPACE_URL, t('shell.nav.backToCrm'), ExternalLink, 0, ['curator', 'head_curator'], 'crm-workspace-nav', 'curator'],
+    ['/curator/students', t('shell.nav.studentsJournal'), Users, 0, ['curator', 'head_curator', 'admin', 'head_teacher'], 'students-journal-nav', 'curator'],
+    ['/curator/groups', t('shell.nav.myGroups'), UsersRound, 0, ['curator', 'head_curator'], 'curator-groups-nav', 'curator'],
+    ['/admin/courses', t('shell.nav.manageCourses'), BookMarked, 0, ['admin', 'head_teacher'], 'courses-management', 'admin'],
+    ['/admin/users', t('shell.nav.manageUsers'), Users, 0, ['admin', 'head_curator'], 'users-management', 'admin'],
+    ['/admin/weekly-top-students', t('shell.nav.weeklyTopStudents'), Trophy, 0, ['admin'], 'weekly-top-students-nav', 'admin'],
+    ['/admin/announcements', t('shell.nav.announcements'), Megaphone, 0, ['admin', 'head_curator', 'head_teacher'], 'announcements-nav', 'admin'],
+    ['/admin/checkpoints', t('shell.nav.satCheckpoints'), ClipboardCheck, 0, ['admin', 'head_curator', 'head_teacher', 'teacher', 'curator'], 'checkpoints-admin-nav', 'admin'],
+    ['/admin/events', t('shell.nav.manageEvents'), Calendar, 0, ['admin'], 'events-management', 'admin'],
+    ['/admin/recordings', t('shell.nav.recordingsRollout'), Video, 0, ['admin', 'head_curator', 'head_teacher'], 'recordings-admin-nav', 'admin'],
+    ['/exam-results', t('shell.nav.examResults'), ClipboardCheck, 0, ['teacher', 'curator', 'head_curator', 'head_teacher', 'admin'], 'exam-results-nav', 'primary'],
+    ['/bluebook-results', t('shell.nav.bluebookResults'), ClipboardCheck, 0, ['teacher', 'curator', 'head_curator', 'head_teacher', 'admin'], 'bluebook-results-nav', 'primary'],
+    ['/admin/question-reports', t('shell.nav.questionReports'), AlertTriangle, 0, ['admin', 'head_teacher'], 'question-reports-nav', 'admin'],
+    ['/curator/homeworks', t('shell.nav.homework'), FileText, 0, ['head_teacher'], 'head-homework-nav', 'primary'],
+    ['/curator/leaderboard', t('shell.nav.leaderboard'), Trophy, 0, ['head_teacher'], 'head-leaderboard-nav', 'primary'],
+    ['/head-teacher/lesson-requests', t('shell.nav.lessonRequests'), ArrowLeftRight, lessonRequestCount, ['head_teacher', 'head_curator'], 'head-lesson-requests-nav', 'primary'],
+    ['/admin/lesson-requests', t('shell.nav.lessonRequests'), ArrowLeftRight, lessonRequestCount, ['admin'], 'lesson-requests-nav', 'admin'],
+    ['/my-requests', t('shell.nav.myRequests'), ArrowLeftRight, lessonRequestCount, ['teacher'], 'my-requests-nav', 'primary'],
+    ['/manual-unlocks', t('shell.nav.manualUnlocks'), Unlock, 0, ['teacher', 'head_teacher'], 'manual-unlocks-nav', 'primary'],
+    ['/trial-access', t('shell.nav.trialAccess'), Timer, 0, ['admin', 'head_curator'], 'trial-access-nav', 'admin'],
+    ['/chat', t('shell.nav.chat'), MessageCircle, unreadCount, null, 'messages-nav', 'primary'],
+    ['https://support.mastereducation.kz', t('shell.nav.support'), Headset, 0, null, 'support-nav', 'primary'],
   ];
 
   if (_userRole === 'student' && isSpecialGroupStudent) {
@@ -176,8 +173,8 @@ function getNavigationItems(
 
 type NavSection = { category: NavCategory; label: string; items: NavItemTuple[] };
 
-function buildNavSections(items: NavItemTuple[], userRole: string | undefined): NavSection[] {
-  const labels = getCategoryLabels(['head_curator', 'curator'].includes(userRole || ''));
+function buildNavSections(items: NavItemTuple[], t: TFunction): NavSection[] {
+  const labels = getCategoryLabels(t);
   const byCat = new Map<NavCategory, NavItemTuple[]>();
   for (const cat of CATEGORY_ORDER) byCat.set(cat, []);
 
@@ -215,6 +212,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
   const [isLoadingCourses, setIsLoadingCourses] = useState(false);
   const [groupsSpecialChecked, setGroupsSpecialChecked] = useState<boolean | null>(null);
   const { user, logout } = useAuth();
+  const t = useT();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const replayKind = replayTourFor(user?.role);
@@ -407,8 +405,8 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
       
       <nav className="flex flex-col flex-1 overflow-y-auto min-h-0 pt-1">
         {buildNavSections(
-          getNavigationItems(user?.role, unread, unseenGraded, hideRestrictedStudentNav, lessonRequestCount, attendanceDue),
-          user?.role
+          getNavigationItems(t, user?.role, unread, unseenGraded, hideRestrictedStudentNav, lessonRequestCount, attendanceDue),
+          t
         )
           .map((section) => ({
             ...section,
@@ -456,9 +454,9 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                         {isCoursesExpanded && !isCollapsed && (
                           <div className="ml-5 mt-1 space-y-0.5">
                             {isLoadingCourses ? (
-                              <div className="px-3 py-2 text-sm text-muted-foreground">{['head_curator', 'curator'].includes(user?.role || '') ? 'Загрузка курсов...' : 'Loading courses...'}</div>
+                              <div className="px-3 py-2 text-sm text-muted-foreground">{t('shell.nav.loadingCourses')}</div>
                             ) : courses.length === 0 ? (
-                              <div className="px-3 py-2 text-sm text-muted-foreground">{['head_curator', 'curator'].includes(user?.role || '') ? 'Курсы не найдены' : 'No courses found'}</div>
+                              <div className="px-3 py-2 text-sm text-muted-foreground">{t('shell.nav.noCourses')}</div>
                             ) : (
                               courses.slice(0, 5).map((course) => (
                                 <NavLink
@@ -483,7 +481,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                                 to="/courses"
                                 className="flex items-center rounded-lg text-brand hover:bg-brand-surface transition-colors px-3 py-2 text-sm font-medium"
                               >
-                                <span>{['head_curator', 'curator'].includes(user?.role || '') ? `Все курсы (${courses.length})` : `View all courses (${courses.length})`}</span>
+                                <span>{t('shell.nav.allCourses', { count: courses.length })}</span>
                               </NavLink>
                             )}
                           </div>
@@ -534,7 +532,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                           <span className="flex-1 min-w-0 text-foreground text-sm">{label}</span>
                           {comingSoon && (
                             <span className="ml-2 shrink-0 rounded-full bg-brand-surface px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-subtle-foreground">
-                              {['head_curator', 'curator'].includes(user?.role || '') ? 'Скоро' : 'Soon'}
+                              {t('shell.nav.soon')}
                             </span>
                           )}
                           {badge > 0 && (
@@ -575,7 +573,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
               })()}
               {!isCollapsed && (
                 <div className="ml-3 text-left">
-                  <div className="text-sm font-medium text-foreground line-clamp-1">{user?.name || 'User'}</div>
+                  <div className="text-sm font-medium text-foreground line-clamp-1">{user?.name || t('shell.menu.userFallback')}</div>
                   <div className="text-xs text-muted-foreground">{roleLabel(user?.role)}</div>
                 </div>
               )}
@@ -593,7 +591,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                 className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-foreground hover:bg-muted transition-colors"
               >
                 <UserCheck className="w-4 h-4 mr-3" />
-                {['head_curator', 'curator'].includes(user?.role || '') ? 'Профиль' : 'Profile'}
+                {t('shell.menu.profile')}
               </NavLink>
               <NavLink
                 to="/settings"
@@ -601,7 +599,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                 className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-foreground hover:bg-muted transition-colors"
               >
                 <Settings className="w-4 h-4 mr-3" />
-                {['head_curator', 'curator'].includes(user?.role || '') ? 'Настройки' : 'Settings'}
+                {t('shell.menu.settings')}
               </NavLink>
               {replayKind && (
                 <button
@@ -624,7 +622,7 @@ export default function Sidebar({ variant = 'desktop', isCollapsed = false, onTo
                 className="w-full flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
               >
                 <LogOut className="w-4 h-4 mr-3" />
-                {['head_curator', 'curator'].includes(user?.role || '') ? 'Выйти' : 'Logout'}
+                {t('shell.menu.logout')}
               </button>
             </div>
           )}

@@ -3,7 +3,7 @@ import { UploadFailedError, uploadFailureReason } from '../../lib/uploadFailure'
 import {
   missingChunks, planChunks, preCheckLibraryFile, retryDelayMs, uploadPercent,
 } from '../../lib/library';
-import { COPY, errorMessage, t, type Locale } from '../../lib/classMaterials';
+import { errorMessage, isCopyKey, t, type Locale } from '../../lib/classMaterials';
 import { api } from './client';
 import { apiErrorCode, type ClassFile, type MaterialItemFile, type OpenResult } from './classMaterials';
 
@@ -126,7 +126,7 @@ export async function unshareLibrarySection(id: number, groupId: number): Promis
 /** A library error as a sentence: our copy for a known `detail.code`, else the server's own message. */
 export function libraryErrorText(error: unknown, locale: Locale): string {
   const code = apiErrorCode(error);
-  if (code && Object.prototype.hasOwnProperty.call(COPY, code)) return t(code as keyof typeof COPY, locale);
+  if (code && isCopyKey(code)) return t(code, locale);
   const detail = (error as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
   if (detail && typeof detail === 'object' && typeof (detail as { message?: unknown }).message === 'string') {
     return (detail as { message: string }).message;

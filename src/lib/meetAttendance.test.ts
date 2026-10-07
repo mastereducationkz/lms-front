@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   barFor,
   buildAxis,
@@ -7,11 +7,13 @@ import {
   classOrder,
   clearedByReview,
   clock,
-  flagTextRu,
   flagText,
   hasIssue,
   isMismatch,
   issueCounts,
+  ISSUES,
+  MARK_LABEL,
+  markLabel,
   lessonHeadline,
   mismatchIndex,
   needsAttention,
@@ -32,6 +34,7 @@ import {
   withoutReviewed,
 } from './meetAttendance';
 import type { MeetLessonSummary, MeetPresence, MeetRecord } from '../services/api/meetAttendance';
+import { setActiveLocale } from './i18n';
 
 // Lesson 19:00–20:00 Almaty = 14:00–15:00 UTC.
 const lesson = { start: '2026-09-10T14:00:00Z', end: '2026-09-10T15:00:00Z' };
@@ -102,7 +105,7 @@ describe('flags', () => {
     expect(flagText({ code: 'late', minutes: 7 })).toBe('Late 7 min');
     expect(flagText({ code: 'marked_absent_was_in_room', minutes: 50 })).toBe('Marked absent, in the lesson 50 min');
     expect(flagText({ code: 'marked_present_too_short', minutes: 30, required: 45 })).toBe('Marked present, in the lesson 30 of 45 min');
-    expect(flagTextRu({ code: 'marked_present_too_short', minutes: 30, required: 45 })).toBe('Отмечен, но на уроке 30 из 45 мин');
+    expect(flagText({ code: 'marked_present_too_short', minutes: 30, required: 45 }, 'ru')).toBe('Отмечен, но на уроке 30 из 45 мин');
     expect(flagText({ code: 'teacher_not_joined' })).toBe('Teacher never joined');
   });
 
@@ -318,9 +321,9 @@ describe('the class beside a recording', () => {
   });
 
   it('speaks Russian to accountants', () => {
-    expect(flagTextRu({ code: 'late', minutes: 7 })).toBe('Опоздал на 7 мин');
-    expect(flagTextRu({ code: 'marked_present_not_joined' })).toBe('Отмечен, но не заходил');
-    expect(flagTextRu({ code: 'teacher_late', minutes: 4 })).toBe('Начал на 4 мин позже');
+    expect(flagText({ code: 'late', minutes: 7 }, 'ru')).toBe('Опоздал на 7 мин');
+    expect(flagText({ code: 'marked_present_not_joined' }, 'ru')).toBe('Отмечен, но не заходил');
+    expect(flagText({ code: 'teacher_late', minutes: 4 }, 'ru')).toBe('Начал на 4 мин позже');
   });
 });
 
@@ -437,3 +440,47 @@ describe('Meet took the register (2026-09-23)', () => {
     expect(kept.slice(-3, -1)).toEqual(['"0"', '"1"']);
   });
 });
+
+describe('one language per viewer (2026-10-07)', () => {
+  afterEach(() => setActiveLocale('en'));
+
+  it('reads marks, headlines and verdict lines in the viewer’s language', () => {
+    expect(markLabel('removed', 'en')).toBe('Removed');
+    expect(markLabel('removed', 'ru')).toBe('Снят с урока');
+    const flags = [
+      { code: 'marked_present_not_joined' as const, user_id: 1, name: 'A', role: 'student' as const },
+      { code: 'marked_present_not_joined' as const, user_id: 2, name: 'B', role: 'student' as const },
+      { code: 'teacher_late' as const, minutes: 4, user_id: 9, name: 'T', role: 'teacher' as const },
+    ];
+    expect(lessonHeadline({ mismatches: 2, unknown: 1, flags }, 'ru')).toBe('2 отметки расходятся · Начал на 4 мин позже · Подтвердить: 1');
+    expect(lessonHeadline({ mismatches: 0, unknown: 0, flags: [] }, 'ru')).toBe('Всё в порядке');
+    const counts = { present: 21, late: 2, absent: 5, held_back: 0, unmarked: 3, applicable: 3, compared: 12, agree: 11 };
+    expect(verdictLine(counts, 'ru')).toBe('Meet: 21 присутствовал · 2 опоздали · 5 не были · без отметки: 3');
+  });
+
+  it('follows the signed-in user in the tables components read', () => {
+    expect(MARK_LABEL.late).toBe('Late');
+    expect(ISSUES[0].label).toBe('Teacher late');
+    setActiveLocale('ru');
+    expect(MARK_LABEL.late).toBe('Опоздал');
+    expect(ISSUES[0].label).toBe('Преподаватель опоздал');
+    expect(flagText({ code: 'left_early', minutes: 12 })).toBe('Ушёл на 12 мин раньше');
+  });
+
+  it('keeps the spreadsheet in English whoever downloads it', () => {
+    setActiveLocale('ru');
+    const items = [{ ...lessonForCsv(), flags: [{ code: 'marked_present_not_joined' as const, user_id: 1, name: 'Аяулым', role: 'student' as const }] }];
+    expect(reportCsv(items as never)).toContain('Аяулым (Marked present, never joined)');
+  });
+
+  it('drops the «Other» preset’s label in either language', () => {
+    expect(reasonText({ reason_code: null, reason_label: 'Other', text: 'Phone died' })).toBe('Phone died');
+  });
+});
+
+function lessonForCsv() {
+  return {
+    event_id: 1, title: 'SAT', start: '2026-09-10T14:00:00Z', end: '2026-09-10T15:00:00Z', groups: [], teacher: null,
+    state: 'ready', students: 1, joined: 0, mismatches: 1, unknown: 0, flags: [],
+  };
+}

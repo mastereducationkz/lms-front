@@ -46,6 +46,7 @@ import {
 import { cn } from '../lib/utils';
 import { isAttendanceLockedLesson } from '../lib/attendance';
 import { parseAsUTC } from '../lib/datetime';
+import { formatDate } from '../lib/i18n';
 
 interface MissedAttendanceItem {
   event_id: number;
@@ -227,13 +228,11 @@ export default function HeadTeacherTeacherDetailsPage() {
   };
 
   const formatAttendanceDate = (dateStr: string) => {
-    const dt = parseAsUTC(dateStr);
-    return dt.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', timeZone: 'Asia/Almaty' });
+    return formatDate(parseAsUTC(dateStr), { day: '2-digit', month: '2-digit' });
   };
 
   const formatAttendanceDay = (dateStr: string) => {
-    const dt = parseAsUTC(dateStr);
-    return dt.toLocaleDateString('ru-RU', { weekday: 'short', timeZone: 'Asia/Almaty' });
+    return formatDate(parseAsUTC(dateStr), { weekday: 'short' });
   };
 
   const isFutureLesson = isAttendanceLockedLesson;
@@ -375,7 +374,7 @@ export default function HeadTeacherTeacherDetailsPage() {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{item.event_title}</p>
                     <p className="text-xs text-muted-foreground">
-                      {item.group_name} • {new Date(item.event_date).toLocaleDateString()}
+                      {item.group_name} • {formatDate(new Date(item.event_date))}
                     </p>
                   </div>
                   <Badge variant="secondary" className="bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/30">
@@ -459,7 +458,7 @@ export default function HeadTeacherTeacherDetailsPage() {
                           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartColors.grid} />
                           <XAxis 
                             dataKey="date" 
-                            tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { day: '2-digit', month: '2-digit' })}
+                            tickFormatter={(val) => formatDate(new Date(val), { day: '2-digit', month: '2-digit' })}
                             tick={chartTick(12)} 
                             axisLine={false}
                             tickLine={false}
@@ -473,7 +472,7 @@ export default function HeadTeacherTeacherDetailsPage() {
                           />
                           <RechartsTooltip 
                              contentStyle={chartTooltipStyle}
-                             labelFormatter={(label) => new Date(label).toLocaleDateString()}
+                             labelFormatter={(label) => formatDate(new Date(label))}
                           />
                           <Line 
                             type="monotone" 
@@ -525,7 +524,7 @@ export default function HeadTeacherTeacherDetailsPage() {
                          </div>
                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <Calendar className="h-3 w-3" />
-                            {new Date(item.graded_at).toLocaleDateString()}
+                            {formatDate(new Date(item.graded_at))}
                          </div>
                        </div>
                        
@@ -622,7 +621,7 @@ export default function HeadTeacherTeacherDetailsPage() {
                              {assignment.due_date ? (
                                <div className="flex items-center justify-end gap-1.5 text-muted-foreground">
                                    <Clock className="h-3.5 w-3.5" />
-                                   <span className="text-sm">{new Date(assignment.due_date).toLocaleDateString()}</span>
+                                   <span className="text-sm">{formatDate(new Date(assignment.due_date))}</span>
                                </div>
                              ) : (
                                <span className="text-muted-foreground text-sm">-</span>

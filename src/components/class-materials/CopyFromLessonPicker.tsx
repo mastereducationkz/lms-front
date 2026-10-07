@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import {
   apiErrorCode, copyClassMaterials, listMyMaterialLessons, type LessonBrief, type LessonMaterials,
 } from '../../services/api/classMaterials';
-import { copyResultToast, errorMessage, lessonHeading, plural, t, type Locale } from '../../lib/classMaterials';
+import { copyResultToast, errorMessage, lessonHeading, t, type Locale } from '../../lib/classMaterials';
 import { pickerListState } from '../../lib/classMaterialsView';
 
 interface Props {
@@ -108,7 +108,7 @@ export default function CopyFromLessonPicker({ open, onOpenChange, eventId, loca
                   </span>
                   <span className="flex flex-none items-center gap-1.5 text-xs text-muted-foreground">
                     {copyingId === lesson.id && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
-                    {plural(item_count, locale, ['материал', 'материала', 'материалов'], ['item', 'items'])}
+                    {t('itemCount', locale, { count: item_count })}
                   </span>
                 </button>
               </li>

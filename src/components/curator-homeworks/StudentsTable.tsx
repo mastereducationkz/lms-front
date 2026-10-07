@@ -11,6 +11,7 @@ import {
 import { Eye } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import type { StudentProgress, AssignmentData, StatusFilter } from './types';
+import { formatDateTime } from '../../lib/i18n';
 
 interface StudentsTableProps {
   students: StudentProgress[];
@@ -22,13 +23,7 @@ interface StudentsTableProps {
 
 const formatDate = (dateString: string | null): string => {
   if (!dateString) return '—';
-  return new Date(dateString).toLocaleString('ru-RU', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  return formatDateTime(dateString, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 };
 
 export const StudentsTable: React.FC<StudentsTableProps> = ({

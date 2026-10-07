@@ -10,6 +10,8 @@ import {
   uploadTestimonialPhoto,
   type Testimonial,
 } from '../../services/api/exams';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/exams';
 
 /**
  * Collect a student's photo and отзыв for the sales team, with the consent record.
@@ -41,6 +43,7 @@ interface Props {
 export function TestimonialDialog({
   studentId, studentName, examResultId, canApprove, onClose, onSaved,
 }: Props) {
+  const t = useT();
   const [existing, setExisting] = useState<Testimonial | null>(null);
   const [quote, setQuote] = useState('');
   const [channels, setChannels] = useState<string[]>([]);
@@ -209,7 +212,7 @@ export function TestimonialDialog({
 
             <div className="mt-4 space-y-3">
               <div>
-                <label htmlFor="tst-quote" className="text-xs font-medium">Отзыв / quote</label>
+                <label htmlFor="tst-quote" className="text-xs font-medium">{t('exams.testimonial.quote')}</label>
                 <textarea id="tst-quote" rows={4} value={quote}
                           onChange={(e) => setQuote(e.target.value)}
                           disabled={!!existing?.revoked_at}

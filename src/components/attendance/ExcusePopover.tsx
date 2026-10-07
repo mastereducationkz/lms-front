@@ -3,7 +3,9 @@ import { Popover, PopoverAnchor, PopoverContent } from '../ui/popover';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { isValidExcuseNote } from '../../lib/excusedAbsence';
+import { useT } from '../../lib/i18n/react';
 import { cn } from '../../lib/utils';
+import '@/lib/i18n/catalogs/attendance';
 
 /**
  * Причина уважительного пропуска — свободный текст, обязательный.
@@ -27,15 +29,14 @@ export function ExcusePopover({
   onSave,
   onClear,
   onClose,
-  en = false,
 }: {
   excused: boolean;
   note: string | null;
   onSave: (note: string) => void;
   onClear: () => void;
   onClose: () => void;
-  en?: boolean;
 }) {
+  const t = useT();
   const [value, setValue] = useState(note ?? '');
   const [touched, setTouched] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -76,7 +77,7 @@ export function ExcusePopover({
         }}
       >
         <Label htmlFor={`${formId}-note`} className="mb-1 block text-xs font-medium">
-          {en ? 'Reason for the absence' : 'Причина пропуска'}
+          {t('attendance.excuse.reasonLabel')}
         </Label>
         <Textarea
           id={`${formId}-note`}
@@ -97,11 +98,11 @@ export function ExcusePopover({
           )}
           // Namely NOT «предупредил заранее»: warning in advance is how the school hears
         // about the absence, not what makes it excusable. The reason has to be the reason.
-        placeholder={en ? 'e.g. ill, family matter, competition' : 'например: болел, семейные обстоятельства, олимпиада'}
+        placeholder={t('attendance.excuse.placeholder')}
         />
         {touched && !valid && (
           <div className="mt-1 text-[11px] text-rose-600 dark:text-rose-400">
-            {en ? 'A reason is required' : 'Причина обязательна'}
+            {t('attendance.excuse.required')}
           </div>
         )}
         <div className="mt-2 flex items-center justify-between gap-2">
@@ -111,7 +112,7 @@ export function ExcusePopover({
               onClick={onClear}
               className="text-[11px] text-muted-foreground underline hover:text-rose-600 hover:dark:text-rose-300"
             >
-              {en ? 'Not excused' : 'Снять уважительную'}
+              {t('attendance.excuse.clear')}
             </button>
           ) : (
             <span />
@@ -122,14 +123,14 @@ export function ExcusePopover({
               onClick={onClose}
               className="rounded px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted dark:hover:bg-secondary"
             >
-              {en ? 'Cancel' : 'Отмена'}
+              {t('common.cancel')}
             </button>
             <button
               type="button"
               onClick={save}
               className="rounded bg-amber-500 px-2 py-1 text-[11px] font-medium text-white hover:bg-amber-600"
             >
-              {en ? 'Save' : 'Сохранить'}
+              {t('common.save')}
             </button>
           </div>
         </div>

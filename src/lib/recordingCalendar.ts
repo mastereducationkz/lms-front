@@ -1,4 +1,5 @@
-import { almatyDayKey, type Locale } from './recordings';
+import { activeLocale, intlLocale, type Locale } from './i18n';
+import { almatyDayKey } from './recordings';
 
 /**
  * The Recordings date picker's month, as plain "YYYY-MM-DD" day keys — Almaty civil dates, the
@@ -13,14 +14,13 @@ export interface CalendarCell {
   inMonth: boolean;
 }
 
-const WEEKDAYS: Record<Locale, string[]> = {
-  en: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
-  ru: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
-};
+const capitalise = (text: string): string => (text ? `${text[0].toLocaleUpperCase()}${text.slice(1)}` : text);
 
-/** The column heads, Monday first, as the school's week runs. */
-export function weekdayNames(locale: Locale = 'en'): string[] {
-  return WEEKDAYS[locale];
+/** The column heads, Monday first, as the school's week runs: "Mo Tu We…" / "Пн Вт Ср…". */
+export function weekdayNames(locale: Locale = activeLocale()): string[] {
+  const format = new Intl.DateTimeFormat(intlLocale(locale), { weekday: 'short', timeZone: 'UTC' });
+  // 5 January 2026 is a Monday.
+  return Array.from({ length: 7 }, (_, i) => capitalise(format.format(new Date(Date.UTC(2026, 0, 5 + i, 12))).slice(0, 2)));
 }
 
 /** "2026-09" for this moment in Almaty. */
@@ -54,9 +54,9 @@ export function monthWeeks(month: string): CalendarCell[][] {
 }
 
 /** "September 2026" / "Сентябрь 2026". */
-export function monthTitle(month: string, locale: Locale = 'en'): string {
+export function monthTitle(month: string, locale: Locale = activeLocale()): string {
   const [y, m] = month.split('-').map(Number);
-  const name = new Intl.DateTimeFormat(locale === 'ru' ? 'ru-RU' : 'en-GB', { month: 'long', timeZone: 'UTC' })
+  const name = new Intl.DateTimeFormat(intlLocale(locale), { month: 'long', timeZone: 'UTC' })
     .format(new Date(Date.UTC(y, m - 1, 15)));
-  return `${name[0].toLocaleUpperCase()}${name.slice(1)} ${y}`;
+  return `${capitalise(name)} ${y}`;
 }

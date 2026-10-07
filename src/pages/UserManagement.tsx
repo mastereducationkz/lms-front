@@ -84,6 +84,9 @@ import { UsersTable } from '../components/users/UsersTable';
 import { BulkActionsBar } from '../components/users/BulkActionsBar';
 import { AddToGroupDialog } from '../components/users/AddToGroupDialog';
 import { teacherGroupTail } from '../lib/groupNames';
+import { roleLabel } from '../lib/roleLabel';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/users';
 
 interface UserFormData {
   name: string;
@@ -131,6 +134,7 @@ const sameIdSet = (a: number[], b: number[]) => {
 export default function UserManagement() {
   const { user: currentUser } = useAuth();
   const isHeadCurator = currentUser?.role === 'head_curator';
+  const t = useT();
   const [searchParams, setSearchParams] = useSearchParams();
   const [users, setUsers] = useState<User[]>([]);
   const [groups, setGroups] = useState<GroupWithDetails[]>([]);
@@ -499,8 +503,8 @@ export default function UserManagement() {
     const { ok, failed } = await apiClient.bulkSetUsersActive(ids, isActive);
     toast(
       failed === 0
-        ? `${isActive ? 'Активировано' : 'Деактивировано'}: ${ok}`
-        : `Готово: ${ok}, с ошибкой: ${failed}`,
+        ? t(isActive ? 'users.bulk.activated' : 'users.bulk.deactivated', { count: ok })
+        : t('users.bulk.partial', { ok, failed }),
       failed === 0 ? 'success' : 'error',
     );
     setSelectedIds(new Set());
@@ -554,11 +558,11 @@ export default function UserManagement() {
 
   const defaultRole = isHeadCurator ? 'curator' : 'all';
   const activeFilterChips = [
-    searchQuery.trim() ? { key: 'search', label: `Поиск: «${searchQuery.trim()}»`, clear: () => { setSearchQuery(''); handleFilterChange('search', ''); } } : null,
-    !isHeadCurator && roleFilter !== 'all' ? { key: 'role', label: `Роль: ${roleFilter}`, clear: () => { setRoleFilter('all'); handleFilterChange('role', 'all'); } } : null,
-    groupFilter !== 'all' ? { key: 'group', label: `Группа: ${allGroupsById.get(Number(groupFilter)) || groupFilter}`, clear: () => { setGroupFilter('all'); handleFilterChange('group_id', 'all'); } } : null,
-    statusFilter !== 'all' ? { key: 'status', label: `Статус: ${statusFilter === 'true' ? 'активные' : 'неактивные'}`, clear: () => { setStatusFilter('all'); handleFilterChange('is_active', 'all'); } } : null,
-    trialFilter === 'true' ? { key: 'trial', label: 'Только пробные', clear: () => { setTrialFilter('all'); handleFilterChange('is_trial', 'all'); } } : null,
+    searchQuery.trim() ? { key: 'search', label: t('users.filter.search', { query: searchQuery.trim() }), clear: () => { setSearchQuery(''); handleFilterChange('search', ''); } } : null,
+    !isHeadCurator && roleFilter !== 'all' ? { key: 'role', label: t('users.filter.role', { role: roleLabel(roleFilter) }), clear: () => { setRoleFilter('all'); handleFilterChange('role', 'all'); } } : null,
+    groupFilter !== 'all' ? { key: 'group', label: t('users.filter.group', { group: allGroupsById.get(Number(groupFilter)) || groupFilter }), clear: () => { setGroupFilter('all'); handleFilterChange('group_id', 'all'); } } : null,
+    statusFilter !== 'all' ? { key: 'status', label: t(statusFilter === 'true' ? 'users.filter.statusActive' : 'users.filter.statusInactive'), clear: () => { setStatusFilter('all'); handleFilterChange('is_active', 'all'); } } : null,
+    trialFilter === 'true' ? { key: 'trial', label: t('users.filter.trialOnly'), clear: () => { setTrialFilter('all'); handleFilterChange('is_trial', 'all'); } } : null,
   ].filter(Boolean) as { key: string; label: string; clear: () => void }[];
 
   const clearAllFilters = () => {
@@ -594,7 +598,7 @@ export default function UserManagement() {
     // provided it must satisfy the backend policy: >= 8 chars and at least one digit.
     if (formData.password) {
       if (formData.password.length < 8 || !/\d/.test(formData.password)) {
-        errors.password = 'Пароль должен быть не короче 8 символов и содержать хотя бы одну цифру';
+        errors.password = t('users.form.passwordPolicy');
       }
     }
 
@@ -772,8 +776,8 @@ export default function UserManagement() {
       setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_analytics_hidden: updated.is_analytics_hidden } : u))
       toast(
         updated.is_analytics_hidden
-          ? `${user.name} скрыт из аналитики и дашборда`
-          : `${user.name} снова виден в аналитике и дашборде`,
+          ? t('users.analytics.hidden', { name: user.name ?? '' })
+          : t('users.analytics.shown', { name: user.name ?? '' }),
         'success'
       )
     } catch (error: any) {
@@ -787,11 +791,14 @@ export default function UserManagement() {
     setProvisioningIds(prev => new Set(prev).add(id))
     try {
       const result = await provisionUserToPlatform(id, platform)
-      const verb = result.outcome === 'created' ? 'создан' : 'уже существует'
-      const linked = result.memberships_relinked > 0 ? `, привязан к ${result.memberships_relinked} группам` : ''
-      toast(`${label}: аккаунт ${verb}${linked} — ${user.name}`, 'success')
+      const created = result.outcome === 'created'
+      const count = result.memberships_relinked
+      const message = count > 0
+        ? t(created ? 'users.provision.createdLinked' : 'users.provision.existsLinked', { platform: label, count, name: user.name ?? '' })
+        : t(created ? 'users.provision.created' : 'users.provision.exists', { platform: label, name: user.name ?? '' })
+      toast(message, 'success')
     } catch (error: any) {
-      toast(error.message || `Не удалось создать аккаунт ${label}`, 'error')
+      toast(error.message || t('users.provision.failed', { platform: label }), 'error')
     } finally {
       setProvisioningIds(prev => {
         const next = new Set(prev)
@@ -1283,7 +1290,7 @@ export default function UserManagement() {
           </div>
           {activeFilterChips.length > 0 && (
             <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t dark:border-border">
-              <span className="text-xs text-muted-foreground">Фильтры:</span>
+              <span className="text-xs text-muted-foreground">{t('users.filter.label')}</span>
               {activeFilterChips.map((chip) => (
                 <button
                   key={chip.key}
@@ -1295,7 +1302,7 @@ export default function UserManagement() {
                 </button>
               ))}
               <button onClick={clearAllFilters} className="text-xs text-muted-foreground hover:text-foreground underline ml-1">
-                Сбросить всё
+                {t('users.filter.clearAll')}
               </button>
             </div>
           )}
@@ -1363,9 +1370,9 @@ export default function UserManagement() {
                   count={selectedIds.size}
                   onClear={() => setSelectedIds(new Set())}
                   actions={[
-                    { label: 'Добавить в группу', icon: <UserPlus className="w-4 h-4" />, onClick: () => setShowBulkAddToGroup(true) },
-                    { label: 'Активировать', icon: <Check className="w-4 h-4" />, onClick: () => handleBulkSetActive(true) },
-                    { label: 'Деактивировать', icon: <Trash2 className="w-4 h-4" />, variant: 'destructive', onClick: () => handleBulkSetActive(false) },
+                    { label: t('users.bulk.addToGroup'), icon: <UserPlus className="w-4 h-4" />, onClick: () => setShowBulkAddToGroup(true) },
+                    { label: t('users.bulk.activate'), icon: <Check className="w-4 h-4" />, onClick: () => handleBulkSetActive(true) },
+                    { label: t('users.bulk.deactivate'), icon: <Trash2 className="w-4 h-4" />, variant: 'destructive', onClick: () => handleBulkSetActive(false) },
                   ]}
                 />
               )}
@@ -1497,16 +1504,16 @@ export default function UserManagement() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="group-program-filter" className="text-sm font-medium">Программа (поиск в БД)</Label>
+                  <Label htmlFor="group-program-filter" className="text-sm font-medium">{t('users.groups.programFilter')}</Label>
                   <Select
                     value={groupProgramFilter}
                     onValueChange={(value: 'all' | CourseType) => setGroupProgramFilter(value)}
                   >
                     <SelectTrigger id="group-program-filter" className="mt-2 w-56">
-                      <SelectValue placeholder="Все программы" />
+                      <SelectValue placeholder={t('users.groups.allPrograms')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Все программы</SelectItem>
+                      <SelectItem value="all">{t('users.groups.allPrograms')}</SelectItem>
                       <SelectItem value="sat">SAT</SelectItem>
                       <SelectItem value="ielts">IELTS</SelectItem>
                       <SelectItem value="general_english">General English</SelectItem>
@@ -1528,7 +1535,7 @@ export default function UserManagement() {
                       Group Type
                     </th>
                     <th className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Программа
+                      {t('users.groups.program')}
                     </th>
                     <th className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Teacher
@@ -1657,7 +1664,7 @@ export default function UserManagement() {
         {formData.role === 'student' && (
           <label className="flex items-center gap-2 mt-2 px-1 cursor-pointer">
             <Checkbox checked={sendInviteOnCreate} onCheckedChange={(c) => setSendInviteOnCreate(c === true)} />
-            <span className="text-sm text-foreground/80">Отправить приглашение на почту (логин и пароль)</span>
+            <span className="text-sm text-foreground/80">{t('users.form.sendInvite')}</span>
           </label>
         )}
       </Modal>
@@ -1887,7 +1894,7 @@ export default function UserManagement() {
             <textarea
               value={bulkScheduleText}
               onChange={(e) => setBulkScheduleText(e.target.value)}
-              placeholder="February 5 2026	Student Name	Teacher Name	SAT 4 months	48	пн ср пт 20 00"
+              placeholder={t('users.bulkSchedule.placeholder')}
               className="w-full h-64 p-3 border rounded-md text-sm font-mono resize-y focus:ring-2 focus:ring-brand focus:border-brand"
               disabled={isBulkScheduleLoading}
             />
@@ -1926,6 +1933,7 @@ interface UserFormProps {
 }
 
 function UserForm({ formData, setFormData, groups, courses, students, errors = {}, isHeadCurator = false, isEdit = false }: UserFormProps) {
+  const t = useT();
   const [groupSearch, setGroupSearch] = useState('');
   const [childSearch, setChildSearch] = useState('');
   // In edit mode the password field is hidden behind an explicit "set new password"
@@ -2060,14 +2068,14 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
           <div className="p-1">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium">Groups</Label>
-              <span className="text-xs text-muted-foreground">Выбрано: {formData.group_ids.length}</span>
+              <span className="text-xs text-muted-foreground">{t('users.form.selectedCount', { count: formData.group_ids.length })}</span>
             </div>
             {selectedGroups.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {selectedGroups.map((g) => (
                   <span key={g.id} className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-brand-subtle text-brand-subtle-foreground">
                     {g.name}
-                    <button type="button" aria-label={`Убрать ${g.name}`} onClick={() => setFormData({ ...formData, group_ids: formData.group_ids.filter((id) => id !== g.id) })}>
+                    <button type="button" aria-label={t('users.form.remove', { name: g.name })} onClick={() => setFormData({ ...formData, group_ids: formData.group_ids.filter((id) => id !== g.id) })}>
                       <X className="w-3 h-3" />
                     </button>
                   </span>
@@ -2076,7 +2084,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
             )}
             <div className="relative mt-2">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input value={groupSearch} onChange={(e) => setGroupSearch(e.target.value)} placeholder="Поиск группы…" className="pl-9 h-9" />
+              <Input value={groupSearch} onChange={(e) => setGroupSearch(e.target.value)} placeholder={t('users.form.searchGroup')} className="pl-9 h-9" />
             </div>
             <div className="mt-2 max-h-48 overflow-y-auto space-y-0.5 border rounded-md p-2">
               {displayedGroups.length > 0 ? (
@@ -2096,7 +2104,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
                 ))
               ) : (
                 <p className="text-sm text-muted-foreground px-2 py-1.5">
-                  {groups && groups.length > 0 ? 'Ничего не найдено' : 'No groups available'}
+                  {groups && groups.length > 0 ? t('users.form.nothingFound') : 'No groups available'}
                 </p>
               )}
             </div>
@@ -2151,14 +2159,14 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
           <div className="p-1">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium">Children (students)</Label>
-              <span className="text-xs text-muted-foreground">Выбрано: {formData.child_ids.length}</span>
+              <span className="text-xs text-muted-foreground">{t('users.form.selectedCount', { count: formData.child_ids.length })}</span>
             </div>
             {selectedChildren.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {selectedChildren.map((s) => (
                   <span key={s.id} className="inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-brand-subtle text-brand-subtle-foreground">
                     {s.name}
-                    <button type="button" aria-label={`Убрать ${s.name}`} onClick={() => setFormData({ ...formData, child_ids: formData.child_ids.filter((id) => id !== Number(s.id)) })}>
+                    <button type="button" aria-label={t('users.form.remove', { name: s.name ?? '' })} onClick={() => setFormData({ ...formData, child_ids: formData.child_ids.filter((id) => id !== Number(s.id)) })}>
                       <X className="w-3 h-3" />
                     </button>
                   </span>
@@ -2167,7 +2175,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
             )}
             <div className="relative mt-2">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input value={childSearch} onChange={(e) => setChildSearch(e.target.value)} placeholder="Поиск студента по имени или email…" className="pl-9 h-9" />
+              <Input value={childSearch} onChange={(e) => setChildSearch(e.target.value)} placeholder={t('users.form.searchStudent')} className="pl-9 h-9" />
             </div>
             <div className="mt-2 max-h-48 overflow-y-auto space-y-0.5 border rounded-md p-2">
               {displayedChildren.length > 0 ? (
@@ -2190,7 +2198,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
                 })
               ) : (
                 <p className="text-sm text-muted-foreground px-2 py-1.5">
-                  {students && students.length > 0 ? 'Ничего не найдено' : 'No students available'}
+                  {students && students.length > 0 ? t('users.form.nothingFound') : 'No students available'}
                 </p>
               )}
             </div>
@@ -2782,8 +2790,8 @@ interface BulkTextUploadFormProps {
 }
 
 function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading }: BulkTextUploadFormProps) {
-  const exampleText = `Ибрагим Саида Асланкызы\t87756486372\tноябрь, декабрь\tDecember 3 2025\tibragim.saida@mail.ru
-Кокорев Руслан Владимирович\t87077492110\tмарт\tDecember 3 2025\trkokorev73@gmail.com`;
+  const t = useT();
+  const exampleText = t('users.bulkText.example');
 
   return (
     <div className="space-y-4">
@@ -2822,7 +2830,7 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
           onCheckedChange={(c) => setFormData({ ...formData, sendInvites: c === true })}
           disabled={isLoading}
         />
-        <span className="text-sm text-foreground/80">Отправить приглашения на почту (логин и пароль каждому студенту)</span>
+        <span className="text-sm text-foreground/80">{t('users.bulkText.sendInvites')}</span>
       </label>
 
       <div className="p-1">
@@ -2887,11 +2895,11 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
                       .map(item => `${item.user.name}\t${item.user.email}\t${item.generated_password || ''}`)
                       .join('\n');
                     navigator.clipboard.writeText(text);
-                    alert('Скопировано! Формат: Имя, Email, Пароль (через Tab)');
+                    alert(t('users.bulkText.copiedAll'));
                   }}
                 >
                   <Copy className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
-                  Копировать все
+                  {t('users.bulkText.copyAll')}
                 </Button>
               </div>
               <div className="max-h-40 overflow-y-auto space-y-1">
@@ -2903,7 +2911,7 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
                         onClick={() => {
                           navigator.clipboard.writeText(item.generated_password!);
                         }}
-                        title="Нажмите чтобы скопировать"
+                        title={t('users.bulkText.clickToCopy')}
                       >
                         {item.generated_password}
                       </code>
