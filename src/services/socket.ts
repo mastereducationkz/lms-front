@@ -117,6 +117,15 @@ export function disconnectSocket(): void {
   }
 }
 
+/**
+ * «Sign out other devices» keeps this connection alive (the server is told its id) and hands this
+ * device new tokens: use them for the next reconnect without dropping the live socket now.
+ */
+export function adoptSocketToken(token: string): void {
+  if (socket) (socket as unknown as { auth: Record<string, unknown> }).auth = { ...((socket as unknown as { auth?: Record<string, unknown> }).auth ?? {}), token };
+  lastToken = token;
+}
+
 // Call this after login/logout to force the socket to pick up a new token
 export function refreshSocketAuth(): void {
   const current = getAccessTokenFromCookie();
