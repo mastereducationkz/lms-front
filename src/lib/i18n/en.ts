@@ -48,6 +48,7 @@ import { adminUsers } from './en/adminUsers';
 import { adminPages } from './en/adminPages';
 import { quizReview } from './en/quizReview';
 import { sharedUi } from './en/sharedUi';
+import { live } from './en/live';
 
 export const EN_NAMESPACES = {
   common,
@@ -96,6 +97,7 @@ export const EN_NAMESPACES = {
   adminPages,
   quizReview,
   sharedUi,
+  live,
 } as const;
 
 export const en = {
@@ -145,6 +147,7 @@ export const en = {
   ...adminPages,
   ...quizReview,
   ...sharedUi,
+  ...live,
 } as const;
 
 export type MessageKey = keyof typeof en;

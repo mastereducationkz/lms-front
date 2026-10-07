@@ -231,7 +231,8 @@ export default function Calendar() {
     });
   };
 
-  const canCreate = user?.role === 'admin' || user?.role === 'curator';
+  const isEventManager = user?.role === 'admin' || user?.role === 'head_teacher';
+  const canCreate = isEventManager || user?.role === 'curator';
   const showGroupFilter =
     (user?.role === 'teacher' || user?.role === 'curator' || user?.role === 'admin') && groups.length > 0;
   // Oversight roles always get it; everyone else once any of their lessons has a recording.
@@ -401,7 +402,7 @@ export default function Calendar() {
           {canCreate && (
             <Button
               size="sm"
-              onClick={() => navigate(user?.role === 'admin' ? '/admin/events/create' : '/curator/events/create')}
+              onClick={() => navigate(isEventManager ? '/admin/events/create' : '/curator/events/create')}
               className="gap-1.5"
             >
               <Plus className="h-4 w-4" />

@@ -10,7 +10,7 @@ import { cn } from '../../lib/utils';
 import type { LiveApi } from '../../lib/liveLesson/api';
 import { lostShowing } from '../../lib/liveLesson/reactions';
 import { useLiveEvent } from '../../lib/liveLesson/useLiveEvent';
-import type { LiveSocket } from '../../lib/liveLesson/useLiveLesson';
+import type { LiveAct, LiveSocket } from '../../lib/liveLesson/useLiveLesson';
 import type { LiveState, Person, ReactionEvent } from '../../lib/liveLesson/types';
 import type { MessageKey } from '../../lib/i18n';
 import { useT } from '../../lib/i18n/react';
@@ -25,7 +25,7 @@ export type RenderStar = (student: Person, groupId: number, close: () => void) =
 interface Props {
   state: LiveState;
   api: LiveApi;
-  act: <T>(write: () => Promise<T>) => Promise<T>;
+  act: LiveAct;
   socket?: LiveSocket | null;
   /** The lesson page passes the Star of the Week dialog; the Meet panel can't (other auth). */
   renderStar?: RenderStar;
