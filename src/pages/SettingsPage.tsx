@@ -30,6 +30,8 @@ import { changePassword } from '../services/api/auth';
 import { toast } from '../components/Toast';
 import { useT } from '../lib/i18n/react';
 import '@/lib/i18n/catalogs/settings';
+import InstallAppEntry from '../components/pwa/InstallAppEntry';
+import NotificationsEntry from '../components/pwa/NotificationsEntry';
 
 interface CourseItem {
   id: number;
@@ -596,6 +598,10 @@ export default function SettingsPage() {
         </Card>
       )}
       
+      {/* This device: the app and its lesson reminders (components/pwa). */}
+      <InstallAppEntry />
+      <NotificationsEntry />
+
       {/* Change Password Section (all roles) */}
       <Card>
         <CardHeader>
