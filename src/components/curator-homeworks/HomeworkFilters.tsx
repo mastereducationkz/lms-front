@@ -11,6 +11,9 @@ import {
   SelectValue,
 } from '../ui/select';
 import type { StatusFilter } from './types';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/curatorHomeworks';
+import '@/lib/i18n/catalogs/attendance';
 
 interface HomeworkFiltersProps {
   searchQuery: string;
@@ -29,13 +32,14 @@ export const HomeworkFilters: React.FC<HomeworkFiltersProps> = ({
   showCompletedGroups,
   onShowCompletedGroupsChange,
 }) => {
+  const t = useT();
   return (
     <div className="flex flex-wrap gap-4 items-center bg-card p-4 rounded-lg border">
       <div className="flex-1 min-w-[200px]">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Поиск по имени студента..."
+            placeholder={t('curatorHomeworks.filter.searchStudents')}
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="pl-9"
@@ -48,13 +52,13 @@ export const HomeworkFilters: React.FC<HomeworkFiltersProps> = ({
       >
         <SelectTrigger className="w-[180px]">
           <Filter className="w-4 h-4 mr-2" />
-          <SelectValue placeholder="Статус" />
+          <SelectValue placeholder={t('curatorHomeworks.filter.status')} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">Все</SelectItem>
-          <SelectItem value="submitted">На проверке</SelectItem>
-          <SelectItem value="graded">Оценено</SelectItem>
-          <SelectItem value="not_submitted">Не сдано</SelectItem>
+          <SelectItem value="all">{t('common.all')}</SelectItem>
+          <SelectItem value="submitted">{t('attendance.hwStatus.inReview')}</SelectItem>
+          <SelectItem value="graded">{t('curatorHomeworks.filter.graded')}</SelectItem>
+          <SelectItem value="not_submitted">{t('attendance.hwStatus.notSubmitted')}</SelectItem>
         </SelectContent>
       </Select>
       <div className="flex items-center gap-2">
@@ -67,7 +71,7 @@ export const HomeworkFilters: React.FC<HomeworkFiltersProps> = ({
           htmlFor="show-completed-groups"
           className="text-sm text-muted-foreground cursor-pointer select-none"
         >
-          Показывать завершенные группы
+          {t('curatorHomeworks.filter.showFinished')}
         </Label>
       </div>
     </div>

@@ -4,6 +4,8 @@ import { Badge } from '../ui/badge';
 import { StudentsTable } from './StudentsTable';
 import type { AssignmentData, StudentProgress, StatusFilter } from './types';
 import { formatDate as formatDay } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/curatorHomeworks';
 
 interface AssignmentCardProps {
   assignment: AssignmentData;
@@ -27,6 +29,7 @@ export const AssignmentCard: React.FC<AssignmentCardProps> = ({
   statusFilter,
   onViewStudent,
 }) => {
+  const t = useT();
   const { summary } = assignment;
 
   return (
@@ -50,15 +53,15 @@ export const AssignmentCard: React.FC<AssignmentCardProps> = ({
         <div className="flex items-center gap-3">
           {assignment.due_date && (
             <span className="text-sm text-muted-foreground">
-              Срок: {formatDate(assignment.due_date)}
+              {t('curatorHomeworks.assignment.due', { date: formatDate(assignment.due_date) })}
             </span>
           )}
           <Badge variant="outline">
-            {summary.graded}/{summary.submitted} оценено
+            {t('curatorHomeworks.count.graded', { graded: summary.graded, submitted: summary.submitted })}
           </Badge>
           {summary.not_submitted > 0 && (
             <Badge variant="secondary">
-              {summary.not_submitted} не сдано
+              {t('curatorHomeworks.count.notSubmitted', { count: summary.not_submitted })}
             </Badge>
           )}
         </div>

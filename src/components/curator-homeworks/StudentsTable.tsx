@@ -12,6 +12,8 @@ import { Eye } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import type { StudentProgress, AssignmentData, StatusFilter } from './types';
 import { formatDateTime } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/curatorHomeworks';
 
 interface StudentsTableProps {
   students: StudentProgress[];
@@ -33,6 +35,7 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
   statusFilter,
   onViewStudent,
 }) => {
+  const t = useT();
   const filteredStudents = students.filter((student) => {
     const matchesSearch =
       student.student_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -45,8 +48,8 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
     return (
       <div className="text-center py-8 text-muted-foreground">
         {students.length === 0
-          ? 'В этом задании нет студентов'
-          : 'Нет студентов, подходящих под фильтры'}
+          ? t('curatorHomeworks.students.noneInAssignment')
+          : t('curatorHomeworks.students.noneMatch')}
       </div>
     );
   }
@@ -55,10 +58,10 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Студент</TableHead>
-          <TableHead>Сдано в</TableHead>
-          <TableHead>Статус</TableHead>
-          <TableHead className="text-right">Действия</TableHead>
+          <TableHead>{t('curatorHomeworks.students.student')}</TableHead>
+          <TableHead>{t('curatorHomeworks.students.submittedAt')}</TableHead>
+          <TableHead>{t('curatorHomeworks.students.status')}</TableHead>
+          <TableHead className="text-right">{t('curatorHomeworks.students.actions')}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -87,7 +90,7 @@ export const StudentsTable: React.FC<StudentsTableProps> = ({
                     onClick={() => onViewStudent(student)}
                   >
                     <Eye className="w-4 h-4 mr-1" />
-                    Смотреть
+                    {t('curatorHomeworks.students.view')}
                   </Button>
                 )}
               </div>
