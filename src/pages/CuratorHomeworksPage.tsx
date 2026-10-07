@@ -14,6 +14,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '../components/ui/table';
 import type { GroupData } from '../components/curator-homeworks';
+import { formatDateTime } from '../lib/i18n';
 
 interface GroupStat {
   group: GroupData;
@@ -32,9 +33,7 @@ interface GroupStat {
 
 const formatDueShort = (dateString: string | null): string => {
   if (!dateString) return '—';
-  return new Date(dateString).toLocaleString('ru-RU', {
-    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
-  });
+  return formatDateTime(dateString, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 };
 
 const CuratorHomeworksPage: React.FC = () => {

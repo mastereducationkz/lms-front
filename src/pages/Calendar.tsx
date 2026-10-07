@@ -28,7 +28,8 @@ import {
   buildMonthDays, buildWeekDays, eventsOnDay, minutesInAlmaty, MONTH_NAMES,
 } from '../components/calendar/calendarUtils';
 import { countLabel } from '../components/calendar/weekLayout';
-import { matchesRecordingFilter, recordingsLocale, type RecordingFilter } from '../lib/recordings';
+import { matchesRecordingFilter, type RecordingFilter } from '../lib/recordings';
+import { useLocale, useT } from '../lib/i18n/react';
 import { matchesMeetFilter, seesMeetMarks, type MeetFilter } from '../lib/meetLinks';
 import MeetMark from '../components/calendar/MeetMark';
 import { useNow } from '../components/meetAttendance/MeetSyncStatus';
@@ -40,6 +41,7 @@ import { todayInAlmaty } from '../lib/datetime';
 import SubscribeDialog from '../components/calendar/SubscribeDialog';
 import { getEventDetails } from '../services/api/events';
 import { eventIdFromSearch } from '../lib/calendarFeeds';
+import '@/lib/i18n/catalogs/calendar';
 
 type CalView = 'month' | 'week' | 'agenda';
 const VIEWS: { id: CalView; label: string }[] = [
@@ -51,6 +53,7 @@ const VIEWS: { id: CalView; label: string }[] = [
 export default function Calendar() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const t = useT();
 
   // The calendar opens on today in Kazakhstan, whatever zone the viewer's laptop is in.
   const [viewDate, setViewDate] = useState(() => todayInAlmaty());
@@ -243,7 +246,7 @@ export default function Calendar() {
     [dayPeek, filtered, user?.role, liveNow],
   );
   const liveStatuses = useRecordingStatuses(liveIds, !!dayPeek);
-  const peekLocale = recordingsLocale(user?.role);
+  const peekLocale = useLocale();
 
   if (loading && events.length === 0) {
     return <Loader size="xl" animation="spin" className="text-brand" />;
@@ -287,7 +290,7 @@ export default function Calendar() {
 
         <Button variant="outline" size="sm" onClick={() => setSubscribeOpen(true)} className="text-xs sm:text-sm">
           <CalendarPlus className="mr-1.5 h-4 w-4" />
-          Подписаться
+          {t('calendar.subscribe.button')}
         </Button>
 
         <div className="ml-auto flex flex-wrap items-center gap-2.5">
@@ -563,7 +566,7 @@ export default function Calendar() {
         meta={player}
         open={!!player}
         onOpenChange={(o) => !o && setPlayer(null)}
-        locale={recordingsLocale(user?.role)}
+        locale={peekLocale}
       />
 
       <SubscribeDialog open={subscribeOpen} onOpenChange={setSubscribeOpen} />

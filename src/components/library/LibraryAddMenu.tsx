@@ -165,7 +165,7 @@ export default function LibraryAddMenu({ sectionId, locale, onChanged }: Props) 
                     {t('retry', locale)}
                   </button>
                 )}
-                {entry.status === 'done' && <Check className="h-4 w-4 flex-none text-emerald-600 dark:text-emerald-400" aria-label="Uploaded" />}
+                {entry.status === 'done' && <Check className="h-4 w-4 flex-none text-emerald-600 dark:text-emerald-400" aria-label={t('uploaded', locale)} />}
               </div>
               {entry.status === 'error' && entry.error && <p className="break-words text-xs text-destructive">{entry.error}</p>}
               {(entry.status === 'pending' || entry.status === 'uploading') && <Progress value={entry.progress} className="h-1.5" />}

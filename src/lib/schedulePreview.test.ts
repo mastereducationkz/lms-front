@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
-  PREVIEW_CHANGE_TAGS,
   formatPreviewLessonRow,
+  previewChangeTag,
   previewSummary,
   schedulePreviewPayload,
   type SchedulePreview,
@@ -52,17 +52,17 @@ const preview = (overrides: Partial<SchedulePreview> = {}): SchedulePreview => (
 
 describe('previewSummary', () => {
   it('reads the three totals as the owner described them', () => {
-    const summary = previewSummary(preview());
+    const summary = previewSummary(preview(), 'ru');
     expect(summary.started).toBe('Прошло: 14 уроков · 14 ч');
     expect(summary.planned).toBe('Будет запланировано: 18 уроков · 22 ч 30 мин · 18.09–17.10');
     expect(summary.total).toBe('Итого по курсу: 32 урока · 36 ч 30 мин');
   });
 
   it('takes the Russian plural for the lesson count', () => {
-    const summary = previewSummary(preview({ started_lessons: 1, started_minutes: 90, total_lessons: 21 }));
+    const summary = previewSummary(preview({ started_lessons: 1, started_minutes: 90, total_lessons: 21 }), 'ru');
     expect(summary.started).toBe('Прошло: 1 урок · 1 ч 30 мин');
     expect(summary.total.startsWith('Итого по курсу: 21 урок ·')).toBe(true);
-    expect(previewSummary(preview({ started_lessons: 12, started_minutes: 45 })).started).toBe(
+    expect(previewSummary(preview({ started_lessons: 12, started_minutes: 45 }), 'ru').started).toBe(
       'Прошло: 12 уроков · 45 мин',
     );
   });
@@ -70,6 +70,7 @@ describe('previewSummary', () => {
   it('has no date range when nothing is planned, rather than a dash to nowhere', () => {
     const summary = previewSummary(
       preview({ planned_lessons: 0, planned_minutes: 0, first_start: null, last_end: null }),
+      'ru',
     );
     expect(summary.planned).toBe('Будет запланировано: 0 уроков · 0 ч');
   });
@@ -78,6 +79,7 @@ describe('previewSummary', () => {
     // 20:00 UTC on the 17th is 01:00 on the 18th in Almaty.
     const summary = previewSummary(
       preview({ first_start: '2026-09-17T20:00:00Z', last_end: '2026-10-16T19:30:00Z' }),
+      'ru',
     );
     expect(summary.planned.endsWith('· 18.09–17.10')).toBe(true);
   });
@@ -91,6 +93,7 @@ describe('previewSummary', () => {
           { event_id: 8, start: '2026-09-25T13:00:00Z', end: '2026-09-25T14:00:00Z' },
         ],
       }),
+      'ru',
     );
     expect(summary.changes).toBe(
       'Перенесено: 2 · изменена длительность: 1 · новых: 1 · отключено: 2 (18.09, 25.09)',
@@ -98,9 +101,17 @@ describe('previewSummary', () => {
   });
 
   it('shows a bare zero when nothing is switched off', () => {
-    expect(previewSummary(preview()).changes).toBe(
+    expect(previewSummary(preview(), 'ru').changes).toBe(
       'Перенесено: 0 · изменена длительность: 0 · новых: 0 · отключено: 0',
     );
+  });
+
+  it('reads in English for an English viewer', () => {
+    const summary = previewSummary(preview({ started_lessons: 1, started_minutes: 45, lessons: [lesson('move')] }), 'en');
+    expect(summary.started).toBe('Held so far: 1 lesson · 45 min');
+    expect(summary.planned).toBe('To be scheduled: 18 lessons · 22 h 30 min · 18/09–17/10');
+    expect(summary.total).toBe('Course total: 32 lessons · 36 h 30 min');
+    expect(summary.changes).toBe('Moved: 1 · length changed: 0 · new: 0 · switched off: 0');
   });
 
   it('cuts a long list of switched-off dates short instead of flooding the dialog', () => {
@@ -109,7 +120,7 @@ describe('previewSummary', () => {
       start: `2026-09-${String(10 + index).padStart(2, '0')}T13:00:00Z`,
       end: `2026-09-${String(10 + index).padStart(2, '0')}T14:00:00Z`,
     }));
-    expect(previewSummary(preview({ deactivated })).changes).toBe(
+    expect(previewSummary(preview({ deactivated }), 'ru').changes).toBe(
       'Перенесено: 0 · изменена длительность: 0 · новых: 0 · отключено: 8 (10.09, 11.09, 12.09, 13.09, 14.09, …)',
     );
   });
@@ -117,23 +128,29 @@ describe('previewSummary', () => {
 
 describe('formatPreviewLessonRow', () => {
   it('reads «пт 18.09 18:00–19:00» in Almaty time', () => {
-    expect(formatPreviewLessonRow('2026-09-18T13:00:00+00:00', '2026-09-18T14:00:00+00:00')).toBe(
+    expect(formatPreviewLessonRow('2026-09-18T13:00:00+00:00', '2026-09-18T14:00:00+00:00', 'ru')).toBe(
       'пт 18.09 18:00–19:00',
     );
   });
 
   it('reads an offset-less value as UTC, never as the viewer’s local time', () => {
-    expect(formatPreviewLessonRow('2026-09-19T14:00:00', '2026-09-19T15:30:00')).toBe('сб 19.09 19:00–20:30');
+    expect(formatPreviewLessonRow('2026-09-19T14:00:00', '2026-09-19T15:30:00', 'ru')).toBe('сб 19.09 19:00–20:30');
+  });
+
+  it('reads «Fri 18/09 18:00–19:00» for an English viewer', () => {
+    expect(formatPreviewLessonRow('2026-09-18T13:00:00Z', '2026-09-18T14:00:00Z', 'en')).toBe('Fri 18/09 18:00–19:00');
   });
 
   it('gives a lesson past Almaty midnight the next day and a 00 hour', () => {
-    expect(formatPreviewLessonRow('2026-09-17T19:30:00Z', '2026-09-17T20:30:00Z')).toBe('пт 18.09 00:30–01:30');
+    expect(formatPreviewLessonRow('2026-09-17T19:30:00Z', '2026-09-17T20:30:00Z', 'ru')).toBe('пт 18.09 00:30–01:30');
   });
 });
 
-describe('PREVIEW_CHANGE_TAGS', () => {
-  it('tags only a change', () => {
-    expect(PREVIEW_CHANGE_TAGS).toEqual({ keep: null, move: 'перенос', resize: 'длительность', create: 'новый' });
+describe('previewChangeTag', () => {
+  it('tags only a change, in the viewer’s language', () => {
+    const tags = (locale: 'en' | 'ru') => (['keep', 'move', 'resize', 'create'] as const).map((c) => previewChangeTag(c, locale));
+    expect(tags('ru')).toEqual([null, 'перенос', 'длительность', 'новый']);
+    expect(tags('en')).toEqual([null, 'moved', 'length', 'new']);
   });
 });
 

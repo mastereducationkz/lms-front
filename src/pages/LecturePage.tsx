@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { sanitizeHtml } from '../lib/safeHtml';
 import { useParams } from 'react-router-dom';
 import apiClient from '../services/api';
 import type { Lesson, Step } from '../types';
@@ -96,7 +97,7 @@ export default function LecturePage() {
             <div className="card p-6">
               <div className="prose dark:prose-invert max-w-none">
                 {contentText ? (
-                  <div dangerouslySetInnerHTML={{ __html: contentText }} />
+                  <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(contentText) }} />
                 ) : (
                   <p className="text-muted-foreground">No content available for this lesson</p>
                 )}

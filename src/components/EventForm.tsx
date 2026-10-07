@@ -42,6 +42,8 @@ import { EVENT_TYPE_LABELS } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { toDatetimeLocal, fromDatetimeLocalKZ } from '../lib/datetime';
 import { roleLabel } from '@/lib/roleLabel';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/adminTools';
 
 interface EventFormProps {
   event?: Event;
@@ -51,6 +53,7 @@ interface EventFormProps {
 
 export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
   const { user } = useAuth();
+  const t = useT();
   const [loading, setLoading] = useState(false);
   const [groups, setGroups] = useState<Group[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -285,7 +288,7 @@ export default function EventForm({ event, onSave, onCancel }: EventFormProps) {
 
       onSave(savedEvent);
     } catch (error: any) {
-      setError(error.message || 'Ошибка при сохранении события');
+      setError(error.message || t('adminTools.events.saveFailed'));
     } finally {
       setLoading(false);
     }

@@ -9,6 +9,8 @@ import StreakIcon from './StreakIcon';
 import { WhatsNewButton } from './PlatformUpdatesModal';
 import PointsDisplay from './gamification/PointsDisplay';
 import NotificationsBell from './NotificationsBell';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/shell';
 
 interface TopbarProps {
   onOpenSidebar: () => void;
@@ -16,6 +18,7 @@ interface TopbarProps {
 
 export default function Topbar({ onOpenSidebar }: TopbarProps) {
   const { user, logout } = useAuth();
+  const t = useT();
   const [unreadCount, setUnreadCount] = useState(0);
   // Sticky page headers (the lesson page's) sit just below this bar: publish its height.
   const bar = useRef<HTMLDivElement>(null);
@@ -71,7 +74,7 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
   return (
     <div ref={bar} className="sticky top-0 z-10 bg-gray-50/80 dark:bg-card/80 backdrop-blur border-b border-border px-4 sm:px-5 md:px-6 py-3 sm:py-3.5 flex items-center justify-between gap-3">
       <div className="min-w-0">
-        <div className="truncate text-sm sm:text-[14px] text-muted-foreground">{['curator', 'head_curator'].includes(user?.role || '') ? 'С возвращением' : 'Welcome back'}</div>
+        <div className="truncate text-sm sm:text-[14px] text-muted-foreground">{t('shell.topbar.welcomeBack')}</div>
         <div className="truncate text-[16px] sm:text-xl font-semibold text-foreground">{user?.name}!</div>
       </div>
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
@@ -88,7 +91,7 @@ export default function Topbar({ onOpenSidebar }: TopbarProps) {
         )}
         {user?.role !== 'parent' && <NotificationsBell />}
         <ThemeMenu />
-        <button className="lg:hidden w-10 h-10 rounded-lg bg-card border flex items-center justify-center text-gray-700 dark:text-foreground" onClick={onOpenSidebar} aria-label="Open menu" data-tour="mobile-menu"><Menu className="w-5 h-5" aria-hidden="true" /></button>
+        <button className="lg:hidden w-10 h-10 rounded-lg bg-card border flex items-center justify-center text-gray-700 dark:text-foreground" onClick={onOpenSidebar} aria-label={t('shell.topbar.openMenu')} data-tour="mobile-menu"><Menu className="w-5 h-5" aria-hidden="true" /></button>
       </div>
     </div>
   );

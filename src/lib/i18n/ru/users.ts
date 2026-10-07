@@ -1,0 +1,98 @@
+import type { users as en } from '../en/users';
+import type { RuTable } from '../types';
+
+export const users: RuTable<typeof en> = {
+  'users.bulk.selected': 'выбрано',
+  'users.bulk.clear': 'Снять выбор',
+  'users.bulk.addToGroup': 'Добавить в группу',
+  'users.bulk.activate': 'Активировать',
+  'users.bulk.deactivate': 'Деактивировать',
+  'users.bulk.activated': 'Активировано: {count}',
+  'users.bulk.deactivated': 'Деактивировано: {count}',
+  'users.bulk.partial': 'Готово: {ok}, с ошибкой: {failed}',
+
+  'users.addToGroup.done': {
+    one: '{count} ученик добавлен в «{group}»',
+    few: '{count} ученика добавлено в «{group}»',
+    many: '{count} учеников добавлено в «{group}»',
+    other: '{count} ученика добавлено в «{group}»',
+  },
+  'users.addToGroup.failed': 'Не удалось добавить в группу',
+  'users.addToGroup.selected': 'Выбрано учеников: {count}',
+  'users.addToGroup.chooseGroup': 'Выберите группу',
+  'users.addToGroup.adding': 'Добавление',
+  'users.addToGroup.add': 'Добавить',
+
+  'users.table.selectAll': 'Выбрать всех на странице',
+  'users.table.selectOne': 'Выбрать {name}',
+  'users.table.user': 'Пользователь',
+  'users.table.role': 'Роль',
+  'users.table.groups': 'Группы',
+  'users.table.status': 'Статус',
+  'users.table.actions': 'Действия',
+  'users.table.teacher': 'Преподаватель',
+  'users.table.curator': 'Куратор',
+  'users.table.noGroup': 'Без группы',
+  'users.table.trial': 'Пробный',
+  'users.table.active': 'Активен',
+  'users.table.inactive': 'Неактивен',
+  'users.table.hiddenFromAnalytics': 'Скрыт из аналитики',
+  'users.table.createPlatformAccount': 'Создать аккаунт на платформе (SAT/IELTS)',
+  'users.table.createAccount': 'Создать аккаунт',
+  'users.table.showInAnalytics': 'Показать в аналитике',
+  'users.table.hideFromAnalytics': 'Скрыть из аналитики',
+  'users.table.editUser': 'Редактировать пользователя',
+  'users.table.deactivateUser': 'Деактивировать пользователя',
+
+  'users.filter.label': 'Фильтры:',
+  'users.filter.clearAll': 'Сбросить всё',
+  'users.filter.search': 'Поиск: «{query}»',
+  'users.filter.role': 'Роль: {role}',
+  'users.filter.group': 'Группа: {group}',
+  'users.filter.statusActive': 'Статус: активные',
+  'users.filter.statusInactive': 'Статус: неактивные',
+  'users.filter.trialOnly': 'Только пробные',
+
+  'users.form.selectedCount': 'Выбрано: {count}',
+  'users.form.remove': 'Убрать {name}',
+  'users.form.searchGroup': 'Поиск группы…',
+  'users.form.searchStudent': 'Поиск студента по имени или email…',
+  'users.form.nothingFound': 'Ничего не найдено',
+  'users.form.sendInvite': 'Отправить приглашение на почту (логин и пароль)',
+
+  'users.analytics.hidden': '{name} скрыт из аналитики и дашборда',
+  'users.analytics.shown': '{name} снова виден в аналитике и дашборде',
+
+  'users.provision.created': '{platform}: аккаунт создан — {name}',
+  'users.provision.exists': '{platform}: аккаунт уже существует — {name}',
+  'users.provision.createdLinked': {
+    one: '{platform}: аккаунт создан, привязан к {count} группе — {name}',
+    few: '{platform}: аккаунт создан, привязан к {count} группам — {name}',
+    many: '{platform}: аккаунт создан, привязан к {count} группам — {name}',
+    other: '{platform}: аккаунт создан, привязан к {count} группам — {name}',
+  },
+  'users.provision.existsLinked': {
+    one: '{platform}: аккаунт уже существует, привязан к {count} группе — {name}',
+    few: '{platform}: аккаунт уже существует, привязан к {count} группам — {name}',
+    many: '{platform}: аккаунт уже существует, привязан к {count} группам — {name}',
+    other: '{platform}: аккаунт уже существует, привязан к {count} группам — {name}',
+  },
+  'users.provision.failed': 'Не удалось создать аккаунт {platform}',
+
+  'users.groups.programFilter': 'Программа (поиск в БД)',
+  'users.groups.allPrograms': 'Все программы',
+  'users.groups.program': 'Программа',
+
+  'users.bulkSchedule.placeholder': 'February 5 2026\tStudent Name\tTeacher Name\tSAT 4 months\t48\tпн ср пт 20 00',
+
+  'users.bulkText.example': 'Ибрагим Саида Асланкызы\t87756486372\tноябрь, декабрь\tDecember 3 2025\tibragim.saida@mail.ru\nКокорев Руслан Владимирович\t87077492110\tмарт\tDecember 3 2025\trkokorev73@gmail.com',
+  'users.bulkText.sendInvites': 'Отправить приглашения на почту (логин и пароль каждому студенту)',
+  'users.bulkText.copiedAll': 'Скопировано! Формат: Имя, Email, Пароль (через Tab)',
+  'users.bulkText.copyAll': 'Копировать все',
+  'users.bulkText.clickToCopy': 'Нажмите чтобы скопировать',
+
+  'users.search.placeholder': 'Найти студента: имя или email…',
+  'users.search.searching': 'Ищем…',
+  'users.search.empty': 'Студенты не найдены',
+  'users.search.deactivated': 'деактивирован',
+};

@@ -21,6 +21,7 @@ import { Textarea } from '../ui/textarea';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { CheckCircle, Trash2 } from 'lucide-react';
+import { formatDate } from '../../lib/i18n';
 
 export default function GradingQueue() {
   const [attempts, setAttempts] = useState<any[]>([]);
@@ -150,7 +151,7 @@ export default function GradingQueue() {
                     <div className="text-xs text-gray-500">{attempt.course_title} - {attempt.lesson_title}</div>
                   </TableCell>
                   <TableCell>
-                    {new Date(attempt.created_at).toLocaleDateString()}
+                    {formatDate(new Date(attempt.created_at))}
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-2">

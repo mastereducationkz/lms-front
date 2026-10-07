@@ -19,6 +19,7 @@ import { fetchParentStudentFacts, type ParentStudentResponse } from '../services
 import { backendBase, safeUploadUrl } from '../lib/mediaUrl';
 import { checkpointLabel, lessonsLabel } from '../lib/completion';
 import { ArrowLeft, ArrowRight, Check, Paperclip, X } from 'lucide-react';
+import { formatDate } from '@/lib/i18n';
 
 /**
  * Полный отчёт об успеваемости студента для куратора / хэд-куратора /
@@ -31,8 +32,7 @@ import { ArrowLeft, ArrowRight, Check, Paperclip, X } from 'lucide-react';
 
 const fmtDate = (iso: string | null | undefined): string => {
   if (!iso) return '—';
-  const d = new Date(iso);
-  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  return formatDate(iso, { day: 'numeric', month: 'long', year: 'numeric' }) || '—';
 };
 
 const fmtPct = (v: number | null | undefined): string =>
@@ -601,9 +601,9 @@ export default function StudentReportPage() {
               {courses.map(c => (
                 <tr key={c.course_id} className="border-b border-border/50">
                   <td className="py-2 pr-3 text-foreground">{c.course_title}</td>
-                  <td className="py-2 pr-3">{lessonsLabel(c.lessons_done, c.lessons_total) || '—'}</td>
+                  <td className="py-2 pr-3">{lessonsLabel(c.lessons_done, c.lessons_total, 'ru') || '—'}</td>
                   <td className="py-2 pr-3 font-medium">{Math.trunc(c.completion_pct)}%</td>
-                  <td className="py-2 pr-3">{checkpointLabel(c.checkpoints).replace('Чекпоинты: ', '') || '—'}</td>
+                  <td className="py-2 pr-3">{checkpointLabel(c.checkpoints, 'ru').replace('Чекпоинты: ', '') || '—'}</td>
                   <td className="py-2 pr-3">{Math.floor(c.time_spent_minutes / 60)} ч {c.time_spent_minutes % 60} мин</td>
                   <td className="py-2 pr-3">{fmtDate(c.last_activity_at)}</td>
                 </tr>

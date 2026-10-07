@@ -4,6 +4,10 @@
  * this card only says it: what is in the total, what an accountant will check, and what is not
  * paid and why — never a webinar that silently vanished.
  */
+import { formatDate, formatNumber } from '../../lib/i18n'
+import { useT } from '../../lib/i18n/react'
+import '@/lib/i18n/catalogs/teacher';
+
 export interface WebinarPayLine {
   event_id: number
   title: string
@@ -24,24 +28,22 @@ export interface WebinarPay {
   unpaid: WebinarPayLine[]
 }
 
-const dayMonth = (iso: string) => {
-  const [, month, day] = iso.split('-')
-  return `${day}.${month}`
-}
+const dayMonth = (iso: string) => formatDate(iso, { day: '2-digit', month: '2-digit' })
 
-const hours = (minutes: number) => (Math.round((minutes / 60) * 10) / 10).toString().replace('.', ',')
+const hours = (minutes: number) => formatNumber(Math.round((minutes / 60) * 10) / 10, { maximumFractionDigits: 1 })
 
 export function WebinarPayCard({ webinars }: { webinars?: WebinarPay | null }) {
+  const t = useT()
   if (!webinars || (webinars.count === 0 && webinars.unpaid.length === 0)) return null
   const flagged = webinars.items.filter((i) => i.evidence !== 'meet')
   return (
     <div className="rounded-md border border-border p-3 text-sm">
       {webinars.count > 0 && (
         <div className="text-foreground">
-          Вебинары и office hours: <span className="font-semibold">{webinars.count}</span> · {hours(webinars.minutes)} ч ·{' '}
-          <span className="font-semibold">{webinars.amount.toLocaleString()} тг</span>
+          {t('teacher.webinars.label')} <span className="font-semibold">{webinars.count}</span> · {t('teacher.webinars.hours', { hours: hours(webinars.minutes) })} ·{' '}
+          <span className="font-semibold">{t('teacher.payslip.amount', { amount: formatNumber(webinars.amount) })}</span>
           <span className="ml-1 text-xs text-muted-foreground">
-            ({webinars.rate_per_hour} ₸/час, независимо от уровня)
+            {t('teacher.webinars.rate', { rate: webinars.rate_per_hour })}
           </span>
         </div>
       )}
@@ -49,7 +51,7 @@ export function WebinarPayCard({ webinars }: { webinars?: WebinarPay | null }) {
         <ul className="mt-1 space-y-0.5 text-xs text-muted-foreground">
           {webinars.items.map((i) => (
             <li key={i.event_id}>
-              {dayMonth(i.day)} · {i.title} · {hours(i.minutes)} ч
+              {dayMonth(i.day)} · {i.title} · {t('teacher.webinars.hours', { hours: hours(i.minutes) })}
               {i.evidence !== 'meet' && <span className="text-amber-700 dark:text-amber-400"> · {i.evidence_label}</span>}
             </li>
           ))}
@@ -57,12 +59,12 @@ export function WebinarPayCard({ webinars }: { webinars?: WebinarPay | null }) {
       )}
       {flagged.length > 0 && (
         <p className="mt-1 text-xs text-muted-foreground">
-          Без подтверждения из Google Meet — оплачиваются, бухгалтер их проверит.
+          {t('teacher.webinars.unconfirmed')}
         </p>
       )}
       {webinars.unpaid.length > 0 && (
         <div className="mt-2 text-xs">
-          <div className="font-medium text-foreground">Вне расчёта:</div>
+          <div className="font-medium text-foreground">{t('teacher.webinars.unpaid')}</div>
           <ul className="space-y-0.5 text-muted-foreground">
             {webinars.unpaid.map((i) => (
               <li key={i.event_id}>

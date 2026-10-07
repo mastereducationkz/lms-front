@@ -6,6 +6,7 @@ import { Card, CardContent } from '../ui/card'
 import { Button } from '../ui/button'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { renderTextWithLatex } from '../../utils/latex'
+import { sanitizeHtml } from '../../lib/safeHtml'
 import { getExpectedAnswers, getGapSourceText } from '../lesson/quiz/scoring'
 import { EN, format, questionTypeLabel } from './strings'
 import { questionAttachment } from './reviewMedia'
@@ -233,7 +234,7 @@ export const ReviewQuestionView: React.FC<Props> = ({
         )}
 
         {/* renderTextWithLatex returns an HTML string (KaTeX + markdown), so every use of it
-            goes through dangerouslySetInnerHTML — the same way ChoiceQuestion uses it. This
+            goes through sanitizeHtml + dangerouslySetInnerHTML — the same way ChoiceQuestion uses it. This
             content is always author-authored (the question source, or its blanked/stepped
             form for gap questions), never something a student typed — see ReviewOptionBars
             for the one place that distinction matters. */}
@@ -242,14 +243,14 @@ export const ReviewQuestionView: React.FC<Props> = ({
               <div
                 className="rounded-lg border-l-4 border-border bg-muted dark:bg-secondary p-4 text-base leading-relaxed text-foreground"
                 dangerouslySetInnerHTML={{
-                  __html: renderTextWithLatex(gapStep!.html),
+                  __html: sanitizeHtml(renderTextWithLatex(gapStep!.html)),
                 }}
               />
             )
           : passage && (
               <div
                 className="rounded-lg border-l-4 border-border bg-muted dark:bg-secondary p-4 text-base leading-relaxed text-foreground"
-                dangerouslySetInnerHTML={{ __html: renderTextWithLatex(displayText(question.question_type, passage)) }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(displayText(question.question_type, passage))) }}
               />
             )}
 
@@ -326,7 +327,7 @@ export const ReviewQuestionView: React.FC<Props> = ({
         {!gapInHeadingOnly && (
           <h2
             className="text-2xl font-semibold leading-snug text-foreground"
-            dangerouslySetInnerHTML={{ __html: renderTextWithLatex(blankHeading(question.question_text)) }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(blankHeading(question.question_text))) }}
           />
         )}
 
@@ -352,7 +353,7 @@ export const ReviewQuestionView: React.FC<Props> = ({
                   <div className="min-w-0 flex-1">
                     <span
                       className="block text-sm text-foreground"
-                      dangerouslySetInnerHTML={{ __html: renderTextWithLatex(String(option?.text ?? '')) }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(String(option?.text ?? ''))) }}
                     />
                     {/* An option can be a picture (ChoiceQuestion.tsx draws option.image_url under its text). */}
                     {imageUrl && (
@@ -394,7 +395,7 @@ export const ReviewQuestionView: React.FC<Props> = ({
         {wholeQuestionRevealed(isGap, gapIndex, gapTotal, revealed) && question.explanation && (
           <div className="rounded-lg border border-border bg-muted dark:bg-secondary p-3 text-sm text-foreground">
             <span className="font-semibold text-foreground">{EN.explanation}: </span>
-            <span dangerouslySetInnerHTML={{ __html: renderTextWithLatex(String(question.explanation)) }} />
+            <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(String(question.explanation))) }} />
           </div>
         )}
       </CardContent>

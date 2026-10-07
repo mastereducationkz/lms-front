@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Bell, Loader2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { bellPollDelayMs, materialsLocale, relativeTime, t } from '../lib/classMaterials';
+import { bellPollDelayMs, relativeTime, t } from '../lib/classMaterials';
+import { useLocale } from '../lib/i18n/react';
 import { lessonPath } from '../lib/lessonLinks';
 import { libraryNotificationPath } from '../lib/library';
 import { ACHIEVEMENT_NOTIFICATION_TYPE, ACHIEVEMENTS_CHECK_EVENT, achievementNotificationPath } from '../lib/achievements';
@@ -32,7 +33,7 @@ const LIST_LIMIT = 20;
 export default function NotificationsBell() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const locale = materialsLocale(user?.role);
+  const locale = useLocale();
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<AppNotification[]>([]);

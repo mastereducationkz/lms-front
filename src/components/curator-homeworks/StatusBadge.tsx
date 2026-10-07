@@ -1,5 +1,7 @@
 import { Badge } from '../ui/badge';
 import { CheckCircle, Clock, AlertCircle, MinusCircle } from 'lucide-react';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/attendance';
 
 interface StatusBadgeProps {
   status: string;
@@ -11,17 +13,20 @@ interface StatusBadgeProps {
 }
 
 // Wraps a badge with an optional "Поздно" label below it (late but submitted).
-const WithLate: React.FC<{ late?: boolean; children: React.ReactNode }> = ({ late, children }) =>
-  late ? (
+const WithLate: React.FC<{ late?: boolean; children: React.ReactNode }> = ({ late, children }) => {
+  const t = useT();
+  return late ? (
     <span className="inline-flex flex-col items-end gap-0.5">
       {children}
-      <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">Поздно</span>
+      <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">{t('attendance.hwStatus.late')}</span>
     </span>
   ) : (
     <>{children}</>
   );
+};
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, score, maxScore, late }) => {
+  const t = useT();
   if (status === 'graded' && score !== null) {
     return (
       <WithLate late={late}>
@@ -38,7 +43,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, score, maxScor
       <WithLate late={late}>
         <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
           <Clock className="w-3 h-3 mr-1" />
-          На проверке
+          {t('attendance.hwStatus.inReview')}
         </Badge>
       </WithLate>
     );
@@ -48,7 +53,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, score, maxScor
     return (
       <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
         <AlertCircle className="w-3 h-3 mr-1" />
-        Просрочено
+        {t('attendance.hwStatus.overdue')}
       </Badge>
     );
   }
@@ -56,7 +61,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, score, maxScor
   return (
     <Badge className="bg-muted text-foreground">
       <MinusCircle className="w-3 h-3 mr-1" />
-      Не сдано
+      {t('attendance.hwStatus.notSubmitted')}
     </Badge>
   );
 };

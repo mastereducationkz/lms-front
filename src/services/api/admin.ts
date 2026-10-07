@@ -8,6 +8,8 @@ import type {
   ManualLessonUnlockListResponse,
 } from '../../types';
 import { api } from './client';
+import { t } from '../../lib/i18n';
+import '@/lib/i18n/catalogs/shell';
 
 export async function getDashboardStats(groupId?: number, startDate?: string, endDate?: string): Promise<DashboardStats> {
   try {
@@ -391,6 +393,6 @@ export async function provisionUserToPlatform(
     const response = await api.post(`/admin/users/${userId}/provision-platform`, { platform });
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Не удалось создать аккаунт на платформе');
+    throw new Error(error.response?.data?.detail || t('shell.errors.platformAccountFailed'));
   }
 }

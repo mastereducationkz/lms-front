@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
+import { sanitizeHtml } from '../lib/safeHtml';
 import { Link, useNavigate } from 'react-router-dom';
 import { WebinarPayCard, type WebinarPay } from '../components/teacher/WebinarPayCard';
 import { lessonPath } from '../lib/lessonLinks';
@@ -6,6 +7,8 @@ import apiClient from '../services/api';
 import type { TeacherTodayHomework } from '../services/api';
 import { toast } from '../components/Toast';
 import { useAuth } from '../contexts/AuthContext';
+import { formatDate, formatDateTime, formatNumber } from '../lib/i18n';
+import { useT } from '../lib/i18n/react';
 import { 
   BookOpen, 
   Users, 
@@ -51,6 +54,7 @@ import { WeeklyAwardsHub } from '../components/gamification/WeeklyAwardsHub';
 import TodayLessons from '../components/dashboard/TodayLessons';
 import { CompletionMeta } from '../components/progress/CompletionMeta';
 import type { CheckpointSummary } from '../lib/completion';
+import '@/lib/i18n/catalogs/teacher';
 
 interface TeacherStats {
   total_courses: number;
@@ -185,6 +189,7 @@ interface SalaryBreakdownResult {
 export default function TeacherDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const t = useT();
   const [stats, setStats] = useState<TeacherStats | null>(null);
   const [pendingSubmissions, setPendingSubmissions] = useState<Submission[]>([]);
   const [recentSubmissions, setRecentSubmissions] = useState<Submission[]>([]);
@@ -464,7 +469,7 @@ export default function TeacherDashboard() {
 
   const handleGenerateSalaryBreakdown = async () => {
     if (!salaryPeriodStart || !salaryPeriodEnd) {
-      toast('Выберите период', 'error');
+      toast(t('teacher.payslip.selectPeriod'), 'error');
       return;
     }
     setIsSalaryLoading(true);
@@ -487,9 +492,9 @@ export default function TeacherDashboard() {
     if (!salaryResult?.message_text) return;
     try {
       await navigator.clipboard.writeText(salaryResult.message_text);
-      toast('Текст скопирован', 'success');
+      toast(t('teacher.payslip.copied'), 'success');
     } catch {
-      toast('Не удалось скопировать текст', 'error');
+      toast(t('teacher.payslip.copyFailed'), 'error');
     }
   };
 
@@ -1143,9 +1148,7 @@ export default function TeacherDashboard() {
                       </td>
                       <td className="px-6 py-3 text-muted-foreground  whitespace-nowrap">
                         {g.last_assigned_at
-                          ? new Date(g.last_assigned_at).toLocaleDateString(undefined, {
-                              month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-                            })
+                          ? formatDateTime(new Date(g.last_assigned_at))
                           : '—'}
                       </td>
                     </tr>
@@ -1202,9 +1205,9 @@ export default function TeacherDashboard() {
                       <td className="px-6 py-3 text-muted-foreground  whitespace-nowrap">
                         {g.oldest && g.oldestEventId ? (
                           <Link to={lessonPath(g.oldestEventId, 'register')} onClick={(e) => e.stopPropagation()} className="hover:text-primary hover:underline" title="Open lesson">
-                            {new Date(g.oldest).toLocaleDateString()}
+                            {formatDate(new Date(g.oldest))}
                           </Link>
-                        ) : g.oldest ? new Date(g.oldest).toLocaleDateString() : '—'}
+                        ) : g.oldest ? formatDate(new Date(g.oldest)) : '—'}
                       </td>
                       <td className="px-6 py-3 text-right text-rose-600 dark:text-rose-400 font-medium">Mark</td>
                     </tr>
@@ -1312,9 +1315,7 @@ export default function TeacherDashboard() {
                       <td className="px-6 py-4 text-muted-foreground">
                         <div className="flex items-center">
                           <Clock className="w-3 h-3 mr-1.5 text-muted-foreground" />
-                          {new Date(submission.submitted_at).toLocaleDateString(undefined, {
-                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                          })}
+                          {formatDateTime(new Date(submission.submitted_at))}
                         </div>
                       </td>
                       <td className="px-6 py-4 font-medium">
@@ -1568,9 +1569,7 @@ export default function TeacherDashboard() {
                       </td>
                       <td className="px-6 py-4 text-muted-foreground">
                         {student.last_activity 
-                          ? new Date(student.last_activity).toLocaleDateString(undefined, {
-                            month: 'short', day: 'numeric'
-                          })
+                          ? formatDate(new Date(student.last_activity), { month: 'short', day: 'numeric' })
                           : <span className="text-muted-foreground">Never</span>
                         }
                       </td>
@@ -1679,7 +1678,7 @@ export default function TeacherDashboard() {
                     // Default/Text fallback
                     <div 
                       className="prose prose-sm dark:prose-invert max-w-none text-foreground"
-                      dangerouslySetInnerHTML={{ __html: selectedQuizAttempt.quiz_media_url }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(selectedQuizAttempt.quiz_media_url) }}
                     />
                   )}
                 </div>
@@ -1718,7 +1717,7 @@ export default function TeacherDashboard() {
                             <p className="text-[14px] font-semibold text-foreground  mb-1">Passage</p>
                             <div 
                               className="text-foreground  prose prose-sm max-w-none text-[14px]"
-                              dangerouslySetInnerHTML={{ __html: item.content_text }}
+                              dangerouslySetInnerHTML={{ __html: sanitizeHtml(item.content_text) }}
                             />
                           </div>
                         )}
@@ -1827,7 +1826,7 @@ export default function TeacherDashboard() {
                   {selectedSubmission.student_name || selectedSubmission.user_name || 'Student'}
                   {selectedSubmission.submitted_at && (
                     <span className="ml-2 text-xs">
-                      · {new Date(selectedSubmission.submitted_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      · {formatDateTime(new Date(selectedSubmission.submitted_at))}
                     </span>
                   )}
                 </p>
@@ -1999,19 +1998,19 @@ export default function TeacherDashboard() {
       <Dialog open={isSalaryDialogOpen} onOpenChange={setIsSalaryDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Salary Breakdown Generator</DialogTitle>
+            <DialogTitle>{t('teacher.payslip.title')}</DialogTitle>
             <DialogDescription>
-              Сформируйте расшифровку по урокам за период и сразу скопируйте текст для Telegram.
+              {t('teacher.payslip.description')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="salary-month">Месяц</Label>
+              <Label htmlFor="salary-month">{t('teacher.payslip.month')}</Label>
               <Input id="salary-month" type="month" value={salaryMonth} onChange={(e) => setSalaryMonth(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="salary-interval">Интервал</Label>
+              <Label htmlFor="salary-interval">{t('teacher.payslip.interval')}</Label>
               <Select
                 value={salaryInterval}
                 onValueChange={(v: 'first_half' | 'second_half' | 'custom') => setSalaryInterval(v)}
@@ -2021,13 +2020,13 @@ export default function TeacherDashboard() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="first_half">1 - 15</SelectItem>
-                  <SelectItem value="second_half">16 - конец месяца</SelectItem>
-                  <SelectItem value="custom">Свой период</SelectItem>
+                  <SelectItem value="second_half">{t('teacher.payslip.secondHalf')}</SelectItem>
+                  <SelectItem value="custom">{t('teacher.payslip.customPeriod')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="salary-period-start">Дата начала</Label>
+              <Label htmlFor="salary-period-start">{t('teacher.payslip.startDate')}</Label>
               <Input
                 id="salary-period-start"
                 type="date"
@@ -2036,7 +2035,7 @@ export default function TeacherDashboard() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="salary-period-end">Дата конца</Label>
+              <Label htmlFor="salary-period-end">{t('teacher.payslip.endDate')}</Label>
               <Input
                 id="salary-period-end"
                 type="date"
@@ -2045,12 +2044,12 @@ export default function TeacherDashboard() {
               />
             </div>
             <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="salary-rate">Ставка за урок (тг)</Label>
+              <Label htmlFor="salary-rate">{t('teacher.payslip.lessonRate')}</Label>
               <Input
                 id="salary-rate"
                 type="number"
                 min={0}
-                placeholder="Моя ставка (из CRM)"
+                placeholder={t('teacher.payslip.ratePlaceholder')}
                 value={salaryRate}
                 onChange={(e) => {
                   const raw = e.target.value;
@@ -2060,16 +2059,18 @@ export default function TeacherDashboard() {
               <p className="text-xs text-muted-foreground">
                 {salaryResult?.rate_source === 'crm' ? (
                   <>
-                    Ставка по уровню{salaryResult.level ? ` (${salaryResult.level}` : ''}
-                    {salaryResult.level && salaryResult.group_band ? `, ${salaryResult.group_band}` : ''}
-                    {salaryResult.level ? ')' : ''}: группа {salaryResult.lesson_rate} тг
-                    {salaryResult.individual_rate ? `, индивидуально ${salaryResult.individual_rate} тг` : ''}.
-                    Оставьте поле пустым, чтобы использовать её.
+                    {t(salaryResult.individual_rate ? 'teacher.payslip.crmRateWithIndividual' : 'teacher.payslip.crmRate', {
+                      level: salaryResult.level
+                        ? ` (${salaryResult.level}${salaryResult.group_band ? `, ${salaryResult.group_band}` : ''})`
+                        : '',
+                      group: salaryResult.lesson_rate,
+                      individual: salaryResult.individual_rate ?? '',
+                    })}
                   </>
                 ) : salaryResult?.rate_source === 'override' ? (
-                  <>Указана вручную. Очистите поле, чтобы вернуться к ставке из CRM.</>
+                  <>{t('teacher.payslip.rateOverride')}</>
                 ) : (
-                  <>Оставьте пустым — подставится ваша ставка из CRM.</>
+                  <>{t('teacher.payslip.rateEmptyHint')}</>
                 )}
               </p>
             </div>
@@ -2077,20 +2078,20 @@ export default function TeacherDashboard() {
 
           <div className="flex gap-2">
             <Button onClick={handleGenerateSalaryBreakdown} disabled={isSalaryLoading}>
-              {isSalaryLoading ? 'Генерация...' : 'Сгенерировать'}
+              {isSalaryLoading ? t('teacher.payslip.generating') : t('teacher.payslip.generate')}
             </Button>
             <Button variant="outline" onClick={handleCopySalaryMessage} disabled={!salaryResult?.message_text}>
               <Copy className="w-4 h-4 mr-2" />
-              Копировать текст
+              {t('teacher.payslip.copyText')}
             </Button>
           </div>
 
           {salaryResult && (
             <div className="space-y-3">
               <div className="text-sm text-muted-foreground">
-                Уроков: <span className="font-semibold">{salaryResult.total_lessons}</span> ·{' '}
-                {(salaryResult.fines_tenge ?? 0) > 0 ? 'Начислено' : 'Итого'}:{' '}
-                <span className="font-semibold">{salaryResult.total_amount_tenge.toLocaleString()} тг</span>
+                {t('teacher.payslip.lessons')} <span className="font-semibold">{salaryResult.total_lessons}</span> ·{' '}
+                {(salaryResult.fines_tenge ?? 0) > 0 ? t('teacher.payslip.accrued') : t('teacher.payslip.total')}{' '}
+                <span className="font-semibold">{t('teacher.payslip.amount', { amount: formatNumber(salaryResult.total_amount_tenge) })}</span>
               </div>
               <WebinarPayCard webinars={salaryResult.webinars} />
               {/* The deduction is its own line under the pay, never folded into it. A teacher
@@ -2099,68 +2100,71 @@ export default function TeacherDashboard() {
               {(salaryResult.fines_tenge ?? 0) > 0 && (
                 <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm dark:border-amber-900/50 dark:bg-amber-950/30">
                   <div className="text-amber-900 dark:text-amber-300">
-                    Удержано по дисциплине:{' '}
-                    <span className="font-semibold">−{(salaryResult.fines_tenge ?? 0).toLocaleString()} тг</span>
+                    {t('teacher.payslip.finesWithheld')}{' '}
+                    <span className="font-semibold">−{t('teacher.payslip.amount', { amount: formatNumber(salaryResult.fines_tenge ?? 0) })}</span>
                     {salaryResult.fines_final === false && (
                       <span className="ml-2 text-xs font-normal text-amber-700 dark:text-amber-400">
-                        полумесяц не закрыт — сумма может измениться
+                        {t('teacher.payslip.finesNotFinal')}
                       </span>
                     )}
                   </div>
                   <div className="mt-1 text-xs text-amber-800 dark:text-amber-400">
                     {[
                       salaryResult.fines_late_minutes
-                        ? `опоздания ${salaryResult.fines_late_minutes} мин${
-                            salaryResult.fines_made_up_minutes
-                              ? `, из них ${salaryResult.fines_made_up_minutes} отработано`
-                              : ''
-                          }`
+                        ? salaryResult.fines_made_up_minutes
+                          ? t('teacher.payslip.finesLateMadeUp', {
+                              minutes: salaryResult.fines_late_minutes,
+                              madeUp: salaryResult.fines_made_up_minutes,
+                            })
+                          : t('teacher.payslip.finesLate', { minutes: salaryResult.fines_late_minutes })
                         : null,
                       salaryResult.fines_early_minutes
-                        ? `ранний уход ${salaryResult.fines_early_minutes} мин`
+                        ? t('teacher.payslip.finesEarly', { minutes: salaryResult.fines_early_minutes })
                         : null,
-                      salaryResult.fines_misses ? `не проведено уроков: ${salaryResult.fines_misses}` : null,
+                      salaryResult.fines_misses ? t('teacher.payslip.finesMisses', { count: salaryResult.fines_misses }) : null,
                     ]
                       .filter(Boolean)
-                      .join(' · ') || 'по решению завуча'}
-                    {' · '}200 ₸ за полную минуту
+                      .join(' · ') || t('teacher.payslip.finesByHeadTeacher')}
+                    {' · '}{t('teacher.payslip.finesRate')}
                   </div>
                   <div className="mt-2 font-semibold text-foreground">
-                    К выплате: {(salaryResult.net_amount_tenge ?? salaryResult.total_amount_tenge).toLocaleString()} тг
+                    {t('teacher.payslip.netPay', { amount: formatNumber(salaryResult.net_amount_tenge ?? salaryResult.total_amount_tenge) })}
                   </div>
                 </div>
               )}
               {/* A miss nobody has priced is not a zero — say it is still being decided. */}
               {(salaryResult.fines_unpriced ?? 0) > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  Ещё {salaryResult.fines_unpriced} нарушение(я) ждёт решения завуча — сумма по ним пока не назначена.
+                  {t('teacher.payslip.finesUnpriced', { count: salaryResult.fines_unpriced ?? 0 })}
                 </p>
               )}
               <div className="rounded-md border border-border bg-muted/40 p-3 text-sm space-y-1">
                 <div>
-                  Индивидуальный урок — {salaryResult.individual_rate} ₸/час
+                  {t('teacher.payslip.individualRate', { rate: salaryResult.individual_rate ?? '' })}
                   {salaryResult.group_band ? ` (${salaryResult.group_band})` : ''}
                 </div>
                 <div>
-                  Групповой урок — {salaryResult.lesson_rate} ₸/час
+                  {t('teacher.payslip.groupRate', { rate: salaryResult.lesson_rate })}
                   {salaryResult.group_band ? ` (${salaryResult.group_band})` : ''}
                 </div>
                 {salaryResult.reference_rates && (
                   <>
                     <div>
-                      Вебинар — {salaryResult.reference_rates.webinar_hourly} ₸/час · Office Hours —{' '}
-                      {salaryResult.reference_rates.office_hours_hourly} ₸/час · Пробный урок —{' '}
-                      {salaryResult.reference_rates.trial_hourly} ₸/час
+                      {t('teacher.payslip.referenceRates', {
+                        webinar: salaryResult.reference_rates.webinar_hourly,
+                        officeHours: salaryResult.reference_rates.office_hours_hourly,
+                        trial: salaryResult.reference_rates.trial_hourly,
+                      })}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Вебинары и Office Hours считаются автоматически; пробные уроки добавляются менеджером вручную.
+                      {t('teacher.payslip.referenceNote')}
                     </p>
                   </>
                 )}
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button variant="outline" size="sm" onClick={handleOpenTelegramWithText}>
-                  Открыть чат в Telegram
+                  {t('teacher.payslip.openTelegram')}
                 </Button>
               </div>
               <Textarea value={salaryResult.message_text} readOnly rows={18} className="font-mono text-xs" />
@@ -2225,7 +2229,7 @@ export default function TeacherDashboard() {
                             <td className="px-3 py-2 text-foreground">{item.assignment_title}</td>
                             <td className="px-3 py-2 text-foreground">{item.student_name}</td>
                             <td className="px-3 py-2 text-muted-foreground">
-                              {new Date(item.submitted_at).toLocaleString()}
+                              {formatDateTime(new Date(item.submitted_at))}
                             </td>
                             <td className="px-3 py-2 text-emerald-700 dark:text-emerald-400 font-medium">
                               {item.target_score}/{item.target_score}

@@ -6,10 +6,11 @@ import {
   formatDuration,
   percent,
   talkGrid,
-  type TalkLocale,
 } from '../../lib/meetTalk';
+import { t, type Locale, type MessageKey, type Params } from '../../lib/i18n';
 import { columnAt } from '../../lib/transcriptFollow';
 import type { TalkRecord, TalkRole } from '../../services/api/meetTalk';
+import '@/lib/i18n/catalogs/meet';
 
 /** One block picked in the grid: a person's (or, with key null, the class's) five minutes. */
 export interface TalkFocus {
@@ -20,35 +21,6 @@ export interface TalkFocus {
   /** "20:15–20:20" on the Almaty clock. */
   label: string;
 }
-
-const TEXT = {
-  en: {
-    person: 'Person', total: 'Total', everyone: 'Whole class',
-    teacher: 'teacher', students: 'students', silence: 'silence',
-    legend: (minutes: number) => `Each block is ${minutes} minutes; the darker it is, the longer that person spoke in it.`,
-    classKey: 'Whole class:', rest: 'the rest is silence',
-    pick: 'Click a block to read what was said then.',
-    pickPlay: 'Click a block to play it and read what was said.',
-    now: 'the video is here',
-    few: 'a few words', long: '2½ min or more',
-    said: (name: string, range: string, time: string) => `${name} · ${range} · spoke ${time}`,
-    quiet: (name: string, range: string) => `${name} · ${range} · said nothing`,
-    class: (range: string, t: string, s: string, q: string) => `${range} · teacher ${t}, students ${s}, silence ${q}`,
-  },
-  ru: {
-    person: 'Кто', total: 'Всего', everyone: 'Весь класс',
-    teacher: 'преподаватель', students: 'ученики', silence: 'тишина',
-    legend: (minutes: number) => `Каждый блок — ${minutes} минут; чем темнее, тем дольше человек говорил в нём.`,
-    classKey: 'Весь класс:', rest: 'остальное — тишина',
-    pick: 'Нажмите на блок, чтобы прочитать, что было сказано.',
-    pickPlay: 'Нажмите на блок, чтобы включить его и прочитать, что было сказано.',
-    now: 'видео здесь',
-    few: 'пара слов', long: '2½ мин и больше',
-    said: (name: string, range: string, time: string) => `${name} · ${range} · говорил ${time}`,
-    quiet: (name: string, range: string) => `${name} · ${range} · ничего не сказал`,
-    class: (range: string, t: string, s: string, q: string) => `${range} · преподаватель ${t}, ученики ${s}, тишина ${q}`,
-  },
-} as const;
 
 // Five shades per role, lightest to darkest. Written out whole so Tailwind keeps every class.
 const SHADE: Record<TalkRole, string[]> = {
@@ -78,7 +50,7 @@ const DOT: Record<TalkRole, string> = {
 
 interface Props {
   talk: TalkRecord;
-  locale: TalkLocale;
+  locale: Locale;
   /** The block whose words the transcript is showing, if any. */
   focus?: TalkFocus | null;
   /** When given, blocks are buttons: picking one shows what was said in it. */
@@ -97,7 +69,8 @@ interface Props {
  * teacher and students against the silence. The exact stretches are one toggle away.
  */
 export function TalkGrid({ talk, locale, focus, onPick, playhead, plays = false, dense = false }: Props) {
-  const t = TEXT[locale];
+  const say = (key: MessageKey, params?: Params) => t(key, params, locale);
+  const everyone = say('meet.grid.everyone');
   const grid = useMemo(() => talkGrid(talk), [talk]);
   const n = grid.columns.length;
   const nowColumn = columnAt(grid.columns, playhead);
@@ -142,11 +115,11 @@ export function TalkGrid({ talk, locale, focus, onPick, playhead, plays = false,
   return (
     <div className="flex flex-col gap-2">
       <div className="overflow-x-auto">
-        <div role="table" aria-label={t.everyone} className={cn('grid items-center gap-y-1', dense ? 'min-w-[20rem] gap-x-0.5' : 'min-w-[36rem] gap-x-1')} style={{ gridTemplateColumns: template }}>
+        <div role="table" aria-label={everyone} className={cn('grid items-center gap-y-1', dense ? 'min-w-[20rem] gap-x-0.5' : 'min-w-[36rem] gap-x-1')} style={{ gridTemplateColumns: template }}>
           <div role="row" className="contents">
-            <span role="columnheader" className={cn(sticky, 'flex items-center text-[11px] font-medium uppercase tracking-wide text-muted-foreground')}>{t.person}</span>
+            <span role="columnheader" className={cn(sticky, 'flex items-center text-[11px] font-medium uppercase tracking-wide text-muted-foreground')}>{say('meet.grid.person')}</span>
             {grid.columns.map((c, i) => (
-              <span key={c.from} role="columnheader" title={i === nowColumn ? t.now : undefined}
+              <span key={c.from} role="columnheader" title={i === nowColumn ? say('meet.grid.now') : undefined}
                 className={cn('text-[10px] tabular-nums', labelled(i),
                   // Slim side-panel columns: a label starts at its block and runs over the unlabelled ones after it.
                   dense ? 'whitespace-nowrap text-left' : 'text-center',
@@ -154,21 +127,23 @@ export function TalkGrid({ talk, locale, focus, onPick, playhead, plays = false,
                 {c.label}
               </span>
             ))}
-            <span role="columnheader" className="pl-2 text-right text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{t.total}</span>
+            <span role="columnheader" className="pl-2 text-right text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{say('meet.grid.total')}</span>
           </div>
 
           {/* The whole class: teacher over students; the rest of the block is silence. */}
           <div role="row" className="contents">
-            <span role="rowheader" className={cn(sticky, 'flex items-center truncate pr-1 text-xs font-semibold text-foreground')}>{t.everyone}</span>
+            <span role="rowheader" className={cn(sticky, 'flex items-center truncate pr-1 text-xs font-semibold text-foreground')}>{everyone}</span>
             {grid.teacher.map((teacher, i) => {
               const students = grid.students[i];
               const quiet = Math.max(0, grid.binSeconds - teacher - students);
-              return cell(null, t.everyone, i, (
+              return cell(null, everyone, i, (
                 <span className="absolute inset-0.5 flex flex-col justify-end overflow-hidden rounded-[4px] bg-muted/60">
                   <span className="bg-emerald-500 dark:bg-emerald-400" style={{ height: `${Math.min(100, (students / grid.binSeconds) * 100)}%` }} />
                   <span className="bg-violet-500 dark:bg-violet-400" style={{ height: `${Math.min(100, (teacher / grid.binSeconds) * 100)}%` }} />
                 </span>
-              ), t.class(range(i), formatDuration(teacher, locale), formatDuration(students, locale), formatDuration(quiet, locale)), '');
+              ), say('meet.grid.class', {
+                range: range(i), teacher: formatDuration(teacher, locale), students: formatDuration(students, locale), silence: formatDuration(quiet, locale),
+              }), '');
             })}
             <span className="pl-2 text-right text-[11px] tabular-nums text-muted-foreground">
               {percent(talk.teacher_share)} / {percent(talk.students_share)}
@@ -185,7 +160,9 @@ export function TalkGrid({ talk, locale, focus, onPick, playhead, plays = false,
                 const shade = blockShade(seconds, grid.binSeconds);
                 return cell(person.key, person.name, i,
                   shade > 0 && !dense && <span className="hidden sm:inline">{blockTime(seconds)}</span>,
-                  seconds > 0 ? t.said(person.name, range(i), blockTime(seconds)) : t.quiet(person.name, range(i)),
+                  seconds > 0
+                    ? say('meet.grid.said', { name: person.name, range: range(i), time: blockTime(seconds) })
+                    : say('meet.grid.quiet', { name: person.name, range: range(i) }),
                   cn(shade > 0 ? SHADE[person.role][shade] : 'bg-muted/30',
                     shade >= 4 ? 'text-white dark:text-muted-foreground' : INK[person.role]));
               })}
@@ -199,19 +176,19 @@ export function TalkGrid({ talk, locale, focus, onPick, playhead, plays = false,
       </div>
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-        <span>{t.legend(grid.binSeconds / 60)}</span>
+        <span>{say('meet.grid.legend', { minutes: grid.binSeconds / 60 })}</span>
         <span className="inline-flex items-center gap-1" aria-hidden>
-          {t.few}
+          {say('meet.grid.few')}
           {[1, 2, 3, 4, 5].map((s) => <span key={s} className={cn('h-3 w-4 rounded-[3px]', SHADE.student[s])} />)}
-          {t.long}
+          {say('meet.grid.long')}
         </span>
         <span className="inline-flex items-center gap-1" aria-hidden>
-          {t.classKey}
-          <span className="h-2.5 w-2.5 rounded-sm bg-violet-500 dark:bg-violet-400" /> {t.teacher}
-          <span className="ml-1 h-2.5 w-2.5 rounded-sm bg-emerald-500 dark:bg-emerald-400" /> {t.students},
-          <span>{t.rest}</span>
+          {say('meet.grid.classKey')}
+          <span className="h-2.5 w-2.5 rounded-sm bg-violet-500 dark:bg-violet-400" /> {say('meet.grid.teacher')}
+          <span className="ml-1 h-2.5 w-2.5 rounded-sm bg-emerald-500 dark:bg-emerald-400" /> {say('meet.grid.students')},
+          <span>{say('meet.grid.rest')}</span>
         </span>
-        {onPick && <span>{plays ? t.pickPlay : t.pick}</span>}
+        {onPick && <span>{say(plays ? 'meet.grid.pickPlay' : 'meet.grid.pick')}</span>}
       </div>
     </div>
   );

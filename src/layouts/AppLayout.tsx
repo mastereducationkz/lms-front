@@ -8,6 +8,8 @@ import UnlockCelebration from '../components/achievements/UnlockCelebration';
 import { useAuth } from '../contexts/AuthContext.tsx';
 import apiClient from '../services/api';
 import { hideReferral, readReferralHidden, useAttention } from '../lib/attention';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/shell';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -15,6 +17,7 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const { user } = useAuth();
+  const t = useT();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isReferralModalOpen, setIsReferralModalOpen] = useState(false);
   const queue = useAttention(user);
@@ -83,20 +86,20 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <button
               onClick={handleCloseReferralBanner}
               className="absolute right-2 top-2 z-10 rounded-md p-1 text-emerald-700/80 transition-colors hover:bg-emerald-100 hover:text-emerald-900 dark:text-emerald-200 dark:hover:bg-emerald-900/60"
-              aria-label="Скрыть реферальный баннер"
+              aria-label={t('shell.referral.hideBanner')}
             >
               <X className="h-4 w-4" aria-hidden="true" />
             </button>
             <button
               onClick={() => setIsReferralModalOpen(true)}
               className="block w-full px-3 py-2.5 pr-10 text-left sm:px-4 sm:py-2.5"
-              aria-label="Открыть подробную информацию о реферальной системе"
+              aria-label={t('shell.referral.openDetails')}
             >
               <p className="text-xs font-medium sm:text-sm">
-                Узнай о нашей реферальной системе - приведи друга и получи 15 000 ₸
+                {t('shell.referral.bannerTitle')}
               </p>
               <p className="mt-0.5 text-[11px] text-emerald-800/90 sm:text-xs dark:text-emerald-200/90">
-                Нажми, чтобы посмотреть детали
+                {t('shell.referral.bannerHint')}
               </p>
             </button>
           </section>
@@ -106,7 +109,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
             role="dialog"
             aria-modal="true"
-            aria-label="Информация о реферальной системе"
+            aria-label={t('shell.referral.dialogLabel')}
             onClick={() => setIsReferralModalOpen(false)}
           >
             <div
@@ -116,29 +119,29 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <button
                 onClick={() => setIsReferralModalOpen(false)}
                 className="absolute right-2 top-2 rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-gray-800 dark:hover:text-foreground"
-                aria-label="Закрыть окно с подробной информацией"
+                aria-label={t('shell.referral.closeDialog')}
               >
                 <X className="h-4 w-4" aria-hidden="true" />
               </button>
               <h2 className="pr-7 text-base font-semibold sm:text-lg">
-                Узнай о нашей реферальной системе!
+                {t('shell.referral.dialogTitle')}
               </h2>
               <p className="mt-1 text-sm font-medium sm:text-base">
-                Приведи друга - получи 15 000 ₸!
+                {t('shell.referral.dialogLead')}
               </p>
               <p className="mt-2.5 text-sm sm:text-[15px]">
-                Знаешь кого-то, кто готовится к SAT или IELTS? Порекомендуй нас - и получи 15 000 ₸ за каждого нового ученика, который начнёт заниматься.
+                {t('shell.referral.dialogBody')}
               </p>
               <div className="mt-3 text-sm sm:text-[15px]">
-                <p className="font-medium">Как это работает:</p>
+                <p className="font-medium">{t('shell.referral.howItWorks')}</p>
                 <ol className="mt-1 list-decimal space-y-1 pl-5">
-                  <li>Отправь контакт друга своему куратору</li>
-                  <li>Мы свяжемся с ним и всё расскажем</li>
-                  <li>Как только он начнет обучение - ты получаешь 15 000 ₸</li>
+                  <li>{t('shell.referral.step1')}</li>
+                  <li>{t('shell.referral.step2')}</li>
+                  <li>{t('shell.referral.step3')}</li>
                 </ol>
               </div>
               <p className="mt-3 text-sm font-medium sm:text-[15px]">
-                Без ограничений по количеству. Чем больше друзей, тем больше бонус.
+                {t('shell.referral.noLimit')}
               </p>
             </div>
           </div>

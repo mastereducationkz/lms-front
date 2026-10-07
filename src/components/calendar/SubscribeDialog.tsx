@@ -13,6 +13,8 @@ import {
   getCalendarSubscriptions, rotatePersonalFeed, type CalendarSubscriptions,
 } from '../../services/api/calendarFeeds';
 import { canAddToGoogle, sortGroupCalendars, webcalUrl } from '../../lib/calendarFeeds';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/calendar';
 
 /**
  * «Подписаться» on the Calendar page: add a group's calendar to Google (a real Google Calendar
@@ -25,6 +27,7 @@ export default function SubscribeDialog({ open, onOpenChange }: { open: boolean;
   const [failed, setFailed] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const t = useT();
 
   useEffect(() => {
     if (!open) return;
@@ -40,8 +43,8 @@ export default function SubscribeDialog({ open, onOpenChange }: { open: boolean;
 
   const copy = (url: string) => {
     navigator.clipboard.writeText(webcalUrl(url)).then(
-      () => toast.success('Ссылка скопирована', { description: 'Вставьте её в «Добавить календарь по URL».' }),
-      () => toast.error('Не удалось скопировать ссылку'),
+      () => toast.success(t('calendar.subscribe.copied'), { description: t('calendar.subscribe.copiedHint') }),
+      () => toast.error(t('calendar.subscribe.copyFailed')),
     );
   };
 
@@ -50,9 +53,9 @@ export default function SubscribeDialog({ open, onOpenChange }: { open: boolean;
     try {
       const personal = await rotatePersonalFeed();
       setData((prev) => (prev ? { ...prev, personal } : prev));
-      toast.success('Ссылка обновлена', { description: 'Старые подписки на личный календарь больше не работают.' });
+      toast.success(t('calendar.subscribe.linkReset'), { description: t('calendar.subscribe.linkResetHint') });
     } catch {
-      toast.error('Не удалось сбросить ссылку');
+      toast.error(t('calendar.subscribe.resetFailed'));
     } finally {
       setResetting(false);
       setConfirmReset(false);
@@ -68,10 +71,10 @@ export default function SubscribeDialog({ open, onOpenChange }: { open: boolean;
           <DialogHeader className="flex-shrink-0 pb-3">
             <DialogTitle className="flex items-center gap-2">
               <CalendarPlus className="h-5 w-5 text-primary" />
-              Подписаться на календарь
+              {t('calendar.subscribe.title')}
             </DialogTitle>
             <DialogDescription>
-              Google Календарь обновляется сразу. Apple/Outlook обновляют подписку по своему расписанию.
+              {t('calendar.subscribe.description')}
             </DialogDescription>
           </DialogHeader>
 
@@ -82,14 +85,14 @@ export default function SubscribeDialog({ open, onOpenChange }: { open: boolean;
               </div>
             )}
             {failed && !loading && (
-              <p className="py-6 text-center text-sm text-destructive">Не удалось загрузить календари. Попробуйте ещё раз.</p>
+              <p className="py-6 text-center text-sm text-destructive">{t('calendar.subscribe.loadFailed')}</p>
             )}
 
             {data && !loading && (
               <div className="space-y-5">
                 <section className="space-y-2">
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Календари групп</h3>
-                  {groups.length === 0 && <p className="text-sm text-muted-foreground">Групп пока нет.</p>}
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('calendar.subscribe.groupCalendars')}</h3>
+                  {groups.length === 0 && <p className="text-sm text-muted-foreground">{t('calendar.subscribe.noGroups')}</p>}
                   {groups.map((row) => (
                     <div key={row.group_id} className="rounded-xl border border-border p-3">
                       <div className="text-sm font-medium">{row.group_name}</div>
@@ -97,11 +100,11 @@ export default function SubscribeDialog({ open, onOpenChange }: { open: boolean;
                         {canAddToGoogle(row) ? (
                           <Button size="sm" asChild>
                             <a href={row.google_url ?? undefined} target="_blank" rel="noopener noreferrer">
-                              Добавить в Google Календарь
+                              {t('calendar.subscribe.addToGoogle')}
                             </a>
                           </Button>
                         ) : (
-                          <span className="text-xs text-muted-foreground">Google-календарь готовится</span>
+                          <span className="text-xs text-muted-foreground">{t('calendar.subscribe.googlePending')}</span>
                         )}
                         <Button size="sm" variant="outline" onClick={() => copy(row.webcal_url || row.ics_url)}>
                           <Copy className="mr-1.5 h-3.5 w-3.5" />
@@ -113,18 +116,18 @@ export default function SubscribeDialog({ open, onOpenChange }: { open: boolean;
                 </section>
 
                 <section className="space-y-2">
-                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Мой календарь</h3>
+                  <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('calendar.subscribe.myCalendar')}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Все ваши уроки и дедлайны в одной подписке. Ссылка личная — не пересылайте её.
+                    {t('calendar.subscribe.myCalendarHint')}
                   </p>
                   <div className="flex flex-wrap items-center gap-2">
                     <Button size="sm" variant="outline" onClick={() => copy(data.personal.webcal_url || data.personal.ics_url)}>
                       <Copy className="mr-1.5 h-3.5 w-3.5" />
-                      Скопировать ссылку
+                      {t('calendar.subscribe.copyLink')}
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => setConfirmReset(true)} disabled={resetting}>
                       <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                      Сбросить ссылку
+                      {t('calendar.subscribe.resetLink')}
                     </Button>
                   </div>
                 </section>
@@ -137,15 +140,15 @@ export default function SubscribeDialog({ open, onOpenChange }: { open: boolean;
       <AlertDialog open={confirmReset} onOpenChange={setConfirmReset}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Сбросить ссылку на личный календарь?</AlertDialogTitle>
+            <AlertDialogTitle>{t('calendar.subscribe.resetConfirmTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Все уже добавленные подписки по старой ссылке перестанут обновляться. Новую ссылку нужно будет добавить заново.
+              {t('calendar.subscribe.resetConfirmBody')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={resetting}>Отмена</AlertDialogCancel>
+            <AlertDialogCancel disabled={resetting}>{t('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={(e) => { e.preventDefault(); void reset(); }} disabled={resetting}>
-              Сбросить
+              {t('calendar.subscribe.reset')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

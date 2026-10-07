@@ -22,6 +22,7 @@ import ConfirmDialog from '../components/ConfirmDialog.tsx';
 import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning';
 import UnsavedChangesDialog from '../components/UnsavedChangesDialog';
 import { canManageCourseAccess } from '../lib/courseAccess';
+import { DATE, formatDate, formatDateTime } from '../lib/i18n';
 
 interface SelectedModule {
   module: CourseModule;
@@ -1267,7 +1268,7 @@ export default function CourseBuilderPage() {
                   <div>
                     <label className="block text-sm font-medium text-foreground/80">Created</label>
                     <p className="mt-1 text-muted-foreground">
-                      {course.created_at ? new Date(course.created_at).toLocaleDateString() : 'Unknown'}
+                      {course.created_at ? formatDate(new Date(course.created_at)) : 'Unknown'}
                     </p>
                   </div>
                 </div>
@@ -1390,7 +1391,7 @@ export default function CourseBuilderPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Course Description</h1>
         <span className="text-xs text-muted-foreground">
-          {course?.updated_at ? `Last updated: ${new Date((course as any).updated_at).toLocaleString()}` : ''}
+          {course?.updated_at ? `Last updated: ${formatDateTime(new Date((course as any).updated_at), { ...DATE, hour: '2-digit', minute: '2-digit' })}` : ''}
         </span>
       </div>
       

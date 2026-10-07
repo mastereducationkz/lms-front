@@ -95,7 +95,7 @@ export function todayInAlmaty(): Date {
  * Kazakhstan — so it keeps its own zone. A real moment that happens to fall on the viewer's
  * local midnight is the rare case this gives up, and it then reads exactly as it did before.
  */
-function isCivilDate(d: Date): boolean {
+export function isCivilDate(d: Date): boolean {
   return !Number.isNaN(d.getTime())
     && d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0 && d.getMilliseconds() === 0;
 }

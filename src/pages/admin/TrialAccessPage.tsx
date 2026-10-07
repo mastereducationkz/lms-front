@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import apiClient from '../../services/api'
 import { parseAsUTC } from '../../lib/datetime'
+import { DATE, TIME, formatDateTime } from '../../lib/i18n'
 import { toast } from '../../components/Toast'
 import Loader from '../../components/Loader'
 import { Button } from '../../components/ui/button'
@@ -587,7 +588,7 @@ export default function TrialAccessPage() {
                       <TableCell>{trial.course_title}</TableCell>
                       <TableCell>{trial.lesson_ids.length}</TableCell>
                       <TableCell>
-                        <p className="whitespace-nowrap">{parseAsUTC(trial.expires_at).toLocaleString()}</p>
+                        <p className="whitespace-nowrap">{formatDateTime(trial.expires_at, { ...DATE, ...TIME })}</p>
                         {trial.status === 'active' && (
                           <p className="text-xs text-muted-foreground">{formatCountdown(trial.expires_at, now)}</p>
                         )}

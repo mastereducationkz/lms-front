@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { renderTextWithLatex } from '../../utils/latex';
+import { sanitizeHtml } from '../../lib/safeHtml';
 import { applyHighlightsToDOM } from '../../utils/highlightUtils';
 import type { GapMark } from './quiz/scoring';
 
@@ -70,7 +71,7 @@ export const TextCompletionRenderer: React.FC<TextCompletionRendererProps> = ({
         }).join('');
 
         // Set HTML content (without highlights initially)
-        containerRef.current.innerHTML = htmlContent;
+        containerRef.current.innerHTML = sanitizeHtml(htmlContent);
 
         // Find all gap containers and store references
         const updatedGaps = gapData.map(gap => {

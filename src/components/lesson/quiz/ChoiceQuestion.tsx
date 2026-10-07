@@ -1,6 +1,7 @@
 import React from 'react'
 import { Check, X } from 'lucide-react'
 import { renderTextWithLatex } from '../../../utils/latex'
+import { sanitizeHtml } from '../../../lib/safeHtml'
 
 interface ChoiceQuestionProps {
   question: any
@@ -153,7 +154,7 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
                                 : 'text-foreground/70'
                             : 'text-foreground'
                       }`}
-                      dangerouslySetInnerHTML={{ __html: renderTextWithLatex(option.text) }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(option.text)) }}
                     />
                   )}
 

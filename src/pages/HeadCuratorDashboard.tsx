@@ -39,6 +39,7 @@ import { format, subDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { cn } from '../lib/utils';
 import StudentSearchBox from '../components/StudentSearchBox';
+import { formatDate } from '../lib/i18n';
 
 export default function HeadCuratorDashboard() {
   const { user } = useAuth();
@@ -249,7 +250,7 @@ export default function HeadCuratorDashboard() {
                     {reminder.title}
                   </Link>
                   <p className="text-[11px] text-yellow-700 dark:text-yellow-400">
-                    {reminder.group_name} • {new Date(reminder.event_date).toLocaleDateString('ru-RU')}
+                    {reminder.group_name} • {formatDate(reminder.event_date, { day: '2-digit', month: '2-digit', year: 'numeric' })}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -342,8 +343,7 @@ export default function HeadCuratorDashboard() {
                   <XAxis 
                     dataKey="date" 
                     tickFormatter={(val) => {
-                      const d = new Date(val);
-                      return `${d.getDate()} ${d.toLocaleDateString('ru-RU', { month: 'short' }).replace('.', '')}`;
+                      return formatDate(val, { day: 'numeric', month: 'short' }).replace('.', '');
                     }}
                     axisLine={false}
                     tickLine={false}
