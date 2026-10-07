@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { chunkReloadGuardFired, isChunkReloadUnderway, pickRegisterSW, registerPwa, shouldReloadOnPreloadError, updateToastCopy } from './pwa';
+import { chunkReloadGuardFired, isChunkReloadUnderway, pickRegisterSW, registerPwa, shouldReloadOnPreloadError } from './pwa';
+import { t } from '../lib/i18n';
 
 // This repo's vitest runs in a plain Node environment (no jsdom, no `window`/`sessionStorage`
 // — see vitest.config.ts), so the `vite:preloadError` listener itself can't be dispatched
@@ -80,13 +81,9 @@ describe('pickRegisterSW (LMS-FRONT-4)', () => {
   });
 });
 
-describe('updateToastCopy', () => {
-  it('English for students and teachers, Russian for curators', () => {
-    expect(updateToastCopy('en')).toEqual({
-      title: 'A new version is ready',
-      description: 'It switches in by itself when you open another page. Or update now.',
-      action: 'Update',
-    });
-    expect(updateToastCopy('ru').action).toBe('Обновить');
+describe('the update toast', () => {
+  it('reads from the shell catalog: English, Russian for curators', () => {
+    expect(t('shell.pwa.updateTitle', undefined, 'en')).toBe('A new version is ready');
+    expect(t('shell.pwa.updateAction', undefined, 'ru')).toBe('Обновить');
   });
 });

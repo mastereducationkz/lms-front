@@ -24,7 +24,6 @@ import {
   type NudgeState,
 } from '../lib/installNudge';
 import { APP_TIMEZONE } from '../lib/datetime';
-import { langForRole, type Lang } from '../lib/achievementsAnalytics';
 import { addSentryBreadcrumb, setSentryTag } from '../lib/sentry';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -158,11 +157,6 @@ export function setPwaUser(user: PwaUser | null): void {
   const visited = recordVisit(nudge, dayString(Date.now()));
   if (snapshot.displayMode === 'standalone') save(recordInstalled(visited, Date.now()));
   else if (visited !== nudge || !same) save(visited);
-}
-
-/** The interface language for PWA copy: Russian for curators, English for everyone else. */
-export function pwaLang(): Lang {
-  return langForRole(snapshot.user?.role);
 }
 
 /** Called after a homework submission succeeds: the second trigger for the install card. */

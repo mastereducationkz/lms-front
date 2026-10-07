@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { langForRole } from '../../lib/achievementsAnalytics';
+import { useLocale } from '../../lib/i18n/react';
 import { markInstalledByHand, promptInstall, trackPwa, usePwaInstall, type InstallSurface, type PwaInstallSnapshot } from '../../services/pwaInstall';
 import InstallSheet, { sheetKindFor } from './InstallSheet';
 import { installCopy, type InstallCopy } from './installCopy';
@@ -18,7 +18,7 @@ export interface InstallFlow {
 /** One install action for every surface (dashboard card, Settings): prompt or instructions. */
 export function useInstallFlow(surface: InstallSurface): InstallFlow {
   const snapshot = usePwaInstall();
-  const t = installCopy(langForRole(snapshot.user?.role));
+  const t = installCopy(useLocale());
   const [open, setOpen] = useState(false);
   const kind = snapshot.canPrompt ? null : sheetKindFor(snapshot.platform);
 

@@ -9,8 +9,8 @@ export const shell = {
   'shell.errorBoundary.clearCache': 'Clear cache and reload',
   'shell.errorBoundary.details': 'Technical details (send us a screenshot of this block)',
 
-  'shell.pwa.updateTitle': 'A new version is available',
-  'shell.pwa.updateBody': 'The update will apply automatically. Click to apply it now.',
+  'shell.pwa.updateTitle': 'A new version is ready',
+  'shell.pwa.updateBody': 'It switches in by itself when you open another page. Or update now.',
   'shell.pwa.updateAction': 'Update',
 
   'shell.nav.sectionPrimary': 'MAIN',

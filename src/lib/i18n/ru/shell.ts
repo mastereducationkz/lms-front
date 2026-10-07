@@ -10,7 +10,7 @@ export const shell: RuTable<typeof en> = {
   'shell.errorBoundary.details': 'Технические детали (пришлите скриншот этого блока)',
 
   'shell.pwa.updateTitle': 'Доступна новая версия',
-  'shell.pwa.updateBody': 'Обновление применится автоматически. Нажмите, чтобы применить сейчас.',
+  'shell.pwa.updateBody': 'Обновление применится само при переходе на другую страницу. Можно обновить сейчас.',
   'shell.pwa.updateAction': 'Обновить',
 
   'shell.nav.sectionPrimary': 'ОСНОВНОЕ',
