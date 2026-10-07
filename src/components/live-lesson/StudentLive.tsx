@@ -10,7 +10,8 @@ import Confetti from '../achievements/Confetti';
 import { LiveAvatar } from './orcas';
 import { ReactionLayer, Recap } from './funScreens';
 import { HandAndLost, ReactionBar } from './StudentFun';
-import type { LiveSocket } from '../../lib/liveLesson/useLiveLesson';
+import type { LiveAct, LiveSocket, WriteOptions } from '../../lib/liveLesson/useLiveLesson';
+import { ConnectionNote, LiveConnectionContext, useWriteFailure, type LiveConnection } from './connection';
 import type { Person } from '../../lib/liveLesson/types';
 import { CloudView, Countdown, OptionRows, QuestionBody } from './parts';
 
@@ -18,8 +19,10 @@ interface Props {
   state: LiveState;
   api: LiveApi;
   seconds: number | null;
-  act: <T>(write: () => Promise<T>) => Promise<T>;
+  act: LiveAct;
   socket?: LiveSocket | null;
+  /** Reconnecting / offline, and when the last good refresh started (useLiveLesson). */
+  connection?: LiveConnection;
 }
 
 /**
@@ -30,13 +33,16 @@ interface Props {
  */
 const MeContext = createContext<Person | null>(null);
 
-export default function StudentLive({ state, api, seconds, act, socket }: Props) {
+export default function StudentLive({ state, api, seconds, act, socket, connection }: Props) {
   const activity = state.activity;
   const { user } = useAuth();
   const me: Person | null = user ? { user_id: Number(user.id), name: user.name ?? null, mascot: user.mascot ?? null, avatar_url: user.avatar_url ?? null } : null;
+  const live = connection ?? { reconnecting: false, error: null, syncedAt: 0 };
   return (
+    <LiveConnectionContext.Provider value={live}>
     <MeContext.Provider value={me}>
     <div className="space-y-4">
+      <ConnectionNote reconnecting={live.reconnecting} error={live.error} />
       <div className="flex items-center justify-between gap-2">
         <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
           {me ? <LiveAvatar person={me} size={32} /> : <Radio className="h-3.5 w-3.5" aria-hidden />}Live lesson
@@ -78,6 +84,7 @@ export default function StudentLive({ state, api, seconds, act, socket }: Props)
       <HandAndLost state={state} api={api} />
     </div>
     </MeContext.Provider>
+    </LiveConnectionContext.Provider>
   );
 }
 
@@ -124,25 +131,38 @@ function Waiting() {
 
 function useSend(act: Props['act']) {
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const send = async (write: () => Promise<unknown>) => {
+  const failure = useWriteFailure();
+  const send = async (write: () => Promise<unknown>, options?: WriteOptions) => {
     setBusy(true);
-    setError(null);
+    failure.clear();
     try {
-      await act(write);
+      await act(write, options);
     } catch (e) {
-      setError((e as Error).message || 'Could not send. Try again.');
+      failure.fail(e);
     } finally {
       setBusy(false);
     }
   };
-  return { busy, error, send };
+  return { busy, error: failure.text, send };
+}
+
+/** Did this answer land already? A poll or mistake answer just replaces the last one; a word-cloud
+ *  entry or a pop-check answer would be a second one, so look before sending again. */
+function answerLanded(activity: ActivityView, item?: number): WriteOptions | undefined {
+  if (activity.kind === 'cloud') {
+    const before = Array.isArray(activity.mine) ? activity.mine.length : 0;
+    return { landed: (fresh) => fresh.activity?.id === activity.id && Array.isArray(fresh.activity.mine) && fresh.activity.mine.length > before };
+  }
+  if (activity.kind === 'popcheck' && item !== undefined) {
+    return { landed: (fresh) => fresh.activity?.id === activity.id && mineAt(fresh.activity.mine, item) !== undefined };
+  }
+  return undefined;
 }
 
 function ActivityBody({ activity, lessonId, api, act }: { activity: ActivityView; lessonId: number; api: LiveApi; act: Props['act'] }) {
   const open = activity.status === 'open';
   const { busy, error, send } = useSend(act);
-  const answer = (value: unknown, item?: number) => send(() => api.answer(lessonId, activity.id, value, item));
+  const answer = (value: unknown, item?: number) => send(() => api.answer(lessonId, activity.id, value, item), answerLanded(activity, item));
   const footer = error ? <p className="mt-2 text-sm text-rose-600 dark:text-rose-400">{error}</p> : null;
 
   if (activity.kind === 'poll') {

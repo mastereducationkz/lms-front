@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import { CalendarClock, Loader2, MonitorPlay } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import StudentLive from '../components/live-lesson/StudentLive';
+import { ConnectionNote } from '../components/live-lesson/connection';
 import { useCountdown, useLiveLesson } from '../lib/liveLesson/useLiveLesson';
+import { liveErrorText, withReconnect } from '../lib/liveLesson/resilience';
 import type { CurrentLive } from '../lib/liveLesson/types';
 import { live } from '../services/api/liveLesson';
 import { connectSocket } from '../services/socket';
@@ -21,9 +23,10 @@ export default function LiveLessonPage() {
   useEffect(() => {
     if (!student) return;
     let alive = true;
-    const find = () => live.current()
-      .then((found) => { if (alive) { setCurrent(found); setFailed(null); } })
-      .catch((e: Error) => { if (alive) setFailed(e.message); });
+    // A blip (a deploy) is waited out; only a lasting failure is said, in plain words.
+    const find = () => withReconnect(() => live.current())
+      .then((found) => { if (alive && found) { setCurrent(found); setFailed(null); } })
+      .catch((e: unknown) => { if (alive) setFailed(liveErrorText(e)); });
     void find();
     // Opened before the lesson: pick it up as soon as it is on.
     const tick = window.setInterval(() => { if (document.visibilityState === 'visible') void find(); }, 30_000);
@@ -54,18 +57,18 @@ export default function LiveLessonPage() {
 
 function LiveLesson({ eventId, title }: { eventId: number; title: string }) {
   const socket = useMemo(() => connectSocket(), []);
-  const { state, error, now, act } = useLiveLesson({ eventId, api: live, socket, heartbeat: true });
+  const { state, error, now, act, reconnecting, syncedAt } = useLiveLesson({ eventId, api: live, socket, heartbeat: true });
   const seconds = useCountdown(state, now);
   return (
     <div className="mx-auto w-full max-w-xl px-4 pb-16 pt-4">
       <h1 className="mb-3 text-lg font-semibold text-foreground">{state?.lesson.title ?? title}</h1>
-      {error && !state && <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>}
+      {!state && <ConnectionNote reconnecting={reconnecting} error={error} className="mb-2" />}
       {!state ? (
         <div className="flex justify-center py-16"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : state.mode === 'off' ? (
         <Centered title="Live lessons are switched off">Your teacher will tell you when to come back.</Centered>
       ) : (
-        <StudentLive state={state} api={live} seconds={seconds} act={act} socket={socket} />
+        <StudentLive state={state} api={live} seconds={seconds} act={act} socket={socket} connection={{ reconnecting, error, syncedAt }} />
       )}
     </div>
   );

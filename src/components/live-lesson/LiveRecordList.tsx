@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CheckCircle2, Crown, Dices, Loader2, XCircle, Zap } from 'lucide-react';
 import type { LiveApi } from '../../lib/liveLesson/api';
+import { liveErrorText } from '../../lib/liveLesson/resilience';
 import { activityLabel, correctIndices, mineAt, optionLabel } from '../../lib/liveLesson/logic';
 import type { ActivityView, LiveRecord } from '../../lib/liveLesson/types';
 import { stampKz } from '../../lib/classLessonPage';
@@ -18,7 +19,7 @@ export default function LiveRecordList({ eventId, api, refreshKey }: { eventId: 
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     let alive = true;
-    api.record(eventId).then((r) => { if (alive) setRecord(r); }).catch((e: Error) => { if (alive) setError(e.message); });
+    api.record(eventId).then((r) => { if (alive) setRecord(r); }).catch((e: unknown) => { if (alive) setError(liveErrorText(e)); });
     return () => { alive = false; };
   }, [api, eventId, refreshKey]);
   if (error) return <p className="text-sm text-muted-foreground">{error}</p>;

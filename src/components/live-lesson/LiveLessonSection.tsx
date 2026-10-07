@@ -5,6 +5,7 @@ import type { LessonView } from '../../services/api/classLessons';
 import { live } from '../../services/api/liveLesson';
 import { connectSocket } from '../../services/socket';
 import LiveControls from './LiveControls';
+import { ConnectionNote } from './connection';
 import LiveRecordList from './LiveRecordList';
 import { StarOfWeekDialog } from '../achievements/StarOfWeekDialog';
 
@@ -19,15 +20,16 @@ export default function LiveLessonSection({ view }: { view: LessonView }) {
 
 function Driver({ eventId }: { eventId: number }) {
   const socket = useMemo(() => connectSocket(), []);
-  const { state, error, now, act } = useLiveLesson({ eventId, api: live, socket });
+  const { state, error, now, act, reconnecting, syncedAt } = useLiveLesson({ eventId, api: live, socket });
   const seconds = useCountdown(state, now);
   if (!state) {
-    return error ? <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>
+    return reconnecting || error ? <ConnectionNote reconnecting={reconnecting} error={error} />
       : <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>;
   }
   return (
     <div className="space-y-4">
       <LiveControls state={state} api={live} seconds={seconds} act={act} presenterUrl={`/live/present/${eventId}`} socket={socket}
+        connection={{ reconnecting, error, syncedAt }}
         renderStar={(student, groupId, close) => (
           <StarOfWeekDialog groupId={groupId} onClose={close} initialStudentId={student.user_id}
             students={(state.room ?? [student]).map((p) => ({ id: p.user_id, name: p.name ?? '' }))} />

@@ -12,14 +12,17 @@ import StaffActivity from './StaffActivity';
 import { Countdown } from './parts';
 import { LiveAvatar } from './orcas';
 import StaffFun, { type RenderStar } from './StaffFun';
-import type { LiveSocket } from '../../lib/liveLesson/useLiveLesson';
+import type { LiveAct, LiveSocket, WriteOptions } from '../../lib/liveLesson/useLiveLesson';
+import { ConnectionNote, LiveConnectionContext, useWriteFailure, type LiveConnection } from './connection';
 
 interface Props {
   state: LiveState;
   api: LiveApi;
   seconds: number | null;
-  act: <T>(write: () => Promise<T>) => Promise<T>;
+  act: LiveAct;
   presenterUrl: string;
+  /** Reconnecting / offline, and when the last good refresh started (useLiveLesson). */
+  connection?: LiveConnection;
   /** For the live reaction counter and the «lost» signal (owner, 2026-10-04). */
   socket?: LiveSocket | null;
   /** The lesson page's Star of the Week dialog; the Meet panel has none. */
@@ -31,25 +34,53 @@ interface Props {
  * page: the link for the Meet chat, who is here, the timer, the random picker, the question that is
  * open (close, «Show»), and a new question. Two drivers share one state; the last tap wins.
  */
-export default function LiveControls({ state, api, seconds, act, presenterUrl, socket, renderStar }: Props) {
+export default function LiveControls(props: Props) {
+  const connection = props.connection ?? { reconnecting: false, error: null, syncedAt: 0 };
+  return (
+    <LiveConnectionContext.Provider value={connection}>
+      <Controls {...props} connection={connection} />
+    </LiveConnectionContext.Provider>
+  );
+}
+
+function Controls({ state, api, seconds, act, presenterUrl, socket, renderStar, connection }: Props & { connection: LiveConnection }) {
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const failure = useWriteFailure();
   const id = state.lesson.id;
-  const run = async (write: () => Promise<unknown>): Promise<boolean> => {
+  // A blip is waited out quietly (act); what still fails is said plainly and clears on the next
+  // good refresh. Writes that aren't safe to send twice say how to see that they landed.
+  const run = async (write: () => Promise<unknown>, options?: WriteOptions): Promise<boolean> => {
     setBusy(true);
-    setError(null);
+    failure.clear();
     try {
-      await act(write);
+      await act(write, options);
       return true;
     } catch (e) {
-      setError((e as Error).message || 'That did not work. Try again.');
+      failure.fail(e);
       return false;
     } finally {
       setBusy(false);
     }
   };
   const activity = state.activity;
-  const start = (data: StartActivity) => run(() => api.start(id, data));
+  const before = { activity: activity?.id ?? null, pick: state.pick?.id ?? null, timer: state.timer };
+  // A new question closes the open one: a second send would reopen it as yet another.
+  const start = (data: StartActivity) => run(() => api.start(id, data), {
+    landed: (fresh) => fresh.activity != null && fresh.activity.id !== before.activity && fresh.activity.kind === data.kind,
+  });
+  const timer = (action: 'start' | 'pause' | 'resume' | 'add' | 'stop', secs?: number, attach?: boolean) => {
+    // Pause, resume and stop are the same twice over; a start restarts the clock and +30 s adds again.
+    const landed: WriteOptions['landed'] = action === 'start'
+      ? (fresh) => fresh.timer != null && fresh.timer.total === secs && fresh.timer.ends_at !== (before.timer?.ends_at ?? null)
+      : action === 'add'
+        ? (fresh) => (fresh.timer?.total ?? 0) >= (before.timer?.total ?? 0) + 30
+        : undefined;
+    return run(() => api.timer(id, action, secs, attach), { landed });
+  };
+  // Every pick is a turn (and a skip picks again): a second send would pick a second student.
+  const pick = () => run(() => api.pick(id), { landed: (fresh) => fresh.pick != null && fresh.pick.id !== before.pick });
+  const outcome = (pickId: number, value: 'answered' | 'no_answer' | 'skipped') => run(() => api.pickOutcome(id, pickId, value),
+    value === 'skipped' ? { landed: (fresh) => fresh.pick == null || fresh.pick.id !== pickId } : undefined);
 
   return (
     <div className="space-y-3 text-foreground">
@@ -60,13 +91,13 @@ export default function LiveControls({ state, api, seconds, act, presenterUrl, s
           <span><b className="text-foreground">{state.presence.here}</b> of {state.presence.roster} here · {state.presence.in_meet} in Meet · {state.presence.on_page} on the live page</span>
         </p>
       )}
-      {error && <p className="rounded-lg bg-rose-50 px-2 py-1.5 text-xs text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">{error}</p>}
+      <ConnectionNote reconnecting={connection.reconnecting} error={failure.text ?? connection.error} />
 
       <TimerBlock state={state} seconds={seconds} busy={busy}
-        onTimer={(action, secs, attach) => void run(() => api.timer(id, action, secs, attach))} />
+        onTimer={(action, secs, attach) => void timer(action, secs, attach)} />
 
-      <PickerBlock state={state} busy={busy} onPick={() => void run(() => api.pick(id))}
-        onOutcome={(outcome) => state.pick && void run(() => api.pickOutcome(id, state.pick!.id, outcome))} />
+      <PickerBlock state={state} busy={busy} onPick={() => void pick()}
+        onOutcome={(value) => state.pick && void outcome(state.pick.id, value)} />
 
       <StaffFun state={state} api={api} act={act} socket={socket} renderStar={renderStar} />
 
