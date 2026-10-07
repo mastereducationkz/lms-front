@@ -1,0 +1,116 @@
+import type { MessageTable } from '../types';
+
+/** The curator's student journal (/curator/students) and student card (/curator/students/:id). */
+export const studentCard = {
+  // Assignment Zero status (journal badge + card stat)
+  'studentCard.az.submitted': 'Submitted',
+  'studentCard.az.draft': 'Draft',
+  'studentCard.az.notStarted': 'Not started',
+
+  // Journal
+  'studentCard.journal.title': 'Students',
+  'studentCard.journal.total': { one: '{count} student', other: '{count} students' },
+  'studentCard.journal.searchPlaceholder': 'Search by name or email…',
+  'studentCard.journal.allGroups': 'All groups',
+  'studentCard.journal.archivedGroup': '{name} (archived)',
+  'studentCard.journal.showArchived': 'Archived groups',
+  'studentCard.journal.showInactive': 'Deactivated',
+  'studentCard.journal.column.student': 'Student',
+  'studentCard.journal.column.group': 'Group',
+  'studentCard.journal.column.attendance': 'Attendance',
+  'studentCard.journal.column.homework': 'Homework',
+  'studentCard.journal.column.activity': 'Last active',
+  'studentCard.journal.noMatches': 'No students found',
+  'studentCard.journal.empty': 'No students yet',
+  'studentCard.journal.deactivated': 'deactivated',
+  'studentCard.journal.hwSubmitted': '{count} submitted',
+  'studentCard.journal.hwSubmittedWithAverage': '{count} submitted · {average} pts',
+  'studentCard.journal.showing': 'Showing {from}–{to} of {total}',
+  'studentCard.journal.previous': 'Previous',
+  'studentCard.journal.next': 'Next',
+  'studentCard.journal.page': 'Page {page} of {pages}',
+
+  // Card header
+  'studentCard.profile.loadError': 'Couldn’t load the student',
+  'studentCard.profile.notFound': 'Student not found',
+  'studentCard.profile.backToJournal': 'Back to students',
+  'studentCard.profile.report': 'Progress report',
+  'studentCard.profile.streak': 'Streak:',
+  'studentCard.profile.streakDays': { one: '{count} day', other: '{count} days' },
+  'studentCard.profile.lastActive': 'Last active:',
+  'studentCard.profile.joined': 'Joined:',
+
+  // Tabs
+  'studentCard.tabs.overview': 'Overview',
+  'studentCard.tabs.attendance': 'Attendance ({attended}/{total})',
+  'studentCard.tabs.homework': 'Homework ({count})',
+  'studentCard.tabs.lms': 'LMS progress',
+
+  // Quick stats
+  'studentCard.stats.attendance': 'Attendance',
+  'studentCard.stats.attendedOf': '{attended} of {total}',
+  'studentCard.stats.courses': { one: '{count} course', other: '{count} courses' },
+  'studentCard.stats.homework': 'Homework submitted',
+  'studentCard.stats.averageScore': 'Avg. score: {score}',
+  'studentCard.stats.noGrades': 'No grades yet',
+
+  // Overview: Assignment Zero answers
+  'studentCard.overview.azEmpty': 'Assignment Zero hasn’t been filled in',
+  'studentCard.overview.personal': 'Personal details',
+  'studentCard.overview.fullName': 'Full name',
+  'studentCard.overview.phone': 'Phone',
+  'studentCard.overview.parentPhone': 'Parent’s phone',
+  'studentCard.overview.birthday': 'Date of birth',
+  'studentCard.overview.city': 'City',
+  'studentCard.overview.schoolType': 'School type',
+  'studentCard.overview.group': 'Group',
+  'studentCard.overview.satTitle': 'SAT details',
+  'studentCard.overview.ieltsTitle': 'IELTS details',
+  'studentCard.overview.examDate': 'Exam date',
+  'studentCard.overview.takenBefore': 'Taken before',
+  'studentCard.overview.previousScore': 'Previous score',
+  'studentCard.overview.latestPractice': 'Latest practice test',
+  'studentCard.overview.targetScore': 'Target score',
+  'studentCard.overview.noData': 'No data',
+  'studentCard.overview.selfAssessment': 'Self-assessment (1–5)',
+  'studentCard.overview.punctuation': 'Punctuation',
+  'studentCard.overview.verbForms': 'Verb forms',
+  'studentCard.overview.textStructure': 'Text structure',
+
+  // Attendance tab
+  'studentCard.attendance.empty': 'No attendance records',
+  'studentCard.attendance.event': 'Lesson / event',
+  'studentCard.attendance.date': 'Date',
+  'studentCard.attendance.status': 'Status',
+  'studentCard.attendance.activity': 'Activity',
+  'studentCard.attendance.attended': 'Present',
+  'studentCard.attendance.late': 'Late',
+  'studentCard.attendance.missed': 'Missed',
+  'studentCard.attendance.absent': 'Absent',
+  'studentCard.attendance.registered': 'Registered',
+
+  // Homework tab
+  'studentCard.homework.empty': 'No homework submitted yet',
+  'studentCard.homework.assignment': 'Assignment',
+  'studentCard.homework.score': 'Score',
+  'studentCard.homework.submitted': 'Submitted',
+  'studentCard.homework.status': 'Status',
+  'studentCard.homework.feedback': 'Feedback',
+  'studentCard.homework.notGraded': 'Not graded',
+  'studentCard.homework.late': '(late)',
+  'studentCard.homework.graded': 'Graded',
+  'studentCard.homework.pending': 'Pending',
+
+  // LMS tab
+  'studentCard.lms.empty': 'No progress data',
+  'studentCard.lms.course': 'Course {id}',
+  'studentCard.lms.statusLine': 'Status: {status}',
+  'studentCard.lms.completed': 'Completed',
+  'studentCard.lms.inProgress': 'In progress',
+  'studentCard.lms.notStarted': 'Not started',
+  'studentCard.lms.lesson': 'Lesson',
+  'studentCard.lms.status': 'Status',
+  'studentCard.lms.progress': 'Progress',
+  'studentCard.lms.lastOpened': 'Last opened',
+  'studentCard.lms.lessonFallback': 'Lesson {id}',
+} as const satisfies MessageTable;

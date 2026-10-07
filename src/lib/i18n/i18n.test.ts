@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { en, EN_NAMESPACES } from './en';
 import { ru, RU_NAMESPACES } from './ru';
 import type { Message } from './types';
+import './catalogs/curatorPages';
 import {
   formatDate, formatDateTime, formatNumber, formatTime, intlLocale, localeForUser, plural, setActiveLocale, t, uiLocale,
 } from './index';
@@ -70,6 +71,22 @@ describe('catalogs', () => {
     }
   });
 
+  // A Russian plural whose forms are all the same reads «Выбрано 1 учеников» for one of them.
+  // Only wordings that never inflect may do it: the count after a colon, «видео», abbreviations.
+  const RU_INVARIANT = new Set([
+    'teacher.today.needYou', 'teacher.today.chips.scoresMissing', 'recordings.folders.videos',
+    'achievements.analytics.badges', 'achievements.student.streak', 'studentReport.talk.summary',
+    'studentReport.talk.summaryQuestions', 'studentReport.viewer.points', 'studentCard.profile.streakDays',
+  ]);
+
+  it('inflects every Russian plural (1 урок, 2 урока, 5 уроков)', () => {
+    const flat = Object.entries(ru)
+      .filter((entry): entry is [string, Exclude<Message, string>] => typeof entry[1] !== 'string')
+      .filter(([key, forms]) => forms.one === forms.few && forms.few === forms.many && !RU_INVARIANT.has(key))
+      .map(([key]) => key);
+    expect(flat, 'give these one/few/many forms, or list them in RU_INVARIANT').toEqual([]);
+  });
+
   it('has no empty messages', () => {
     for (const [key, msg] of Object.entries({ ...en, ...ru }) as [string, Message][]) {
       const texts = typeof msg === 'string' ? [msg] : Object.values(msg);
@@ -94,6 +111,20 @@ describe('t and plural', () => {
     expect([1, 2, 5, 11, 21, 22, 25].map((count) => t('common.lessons', { count }, 'ru'))).toEqual([
       '1 урок', '2 урока', '5 уроков', '11 уроков', '21 урок', '22 урока', '25 уроков',
     ]);
+  });
+
+  it('counts on the curator pages in proper Russian (1, 2, 5, 21)', () => {
+    const counts = [1, 2, 5, 21];
+    expect(counts.map((count) => t('curatorPages.roster.selected', { count }, 'ru'))).toEqual([
+      'Выбран 1 ученик', 'Выбрано 2 ученика', 'Выбрано 5 учеников', 'Выбран 21 ученик',
+    ]);
+    expect(counts.map((count) => t('curatorPages.curatorDetail.inGroups', { count }, 'ru'))).toEqual([
+      'В 1 группе', 'В 2 группах', 'В 5 группах', 'В 21 группе',
+    ]);
+    expect(counts.map((count) => t('curatorPages.curatorDetail.studentCount', { count }, 'ru'))).toEqual([
+      '1 студент', '2 студента', '5 студентов', '21 студент',
+    ]);
+    expect(t('curatorPages.roster.selected', { count: 1 }, 'en')).toBe('1 student selected');
   });
 
   it('uses Intl.PluralRules for ad-hoc forms', () => {
