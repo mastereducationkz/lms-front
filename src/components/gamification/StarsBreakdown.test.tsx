@@ -25,7 +25,7 @@ const RULES: Breakdown['rules'] = [
   { key: 'daily_questions', label: 'Finish the daily questions', min: 10, max: 26, note: 'Once a day. More correct answers earn more.' },
   { key: 'teacher_bonus', label: 'Teacher bonus', min: 1, max: 50, note: 'For great work.' },
 ];
-const STREAK = { starts_at_days: 5, start_multiplier: 1.1, step: 0.1, step_days: 2 };
+const STREAK = { starts_at_days: 5, start_multiplier: 1.1, step: 0.1, step_days: 2, max_multiplier: 2.5 };
 
 const BREAKDOWN: Breakdown = {
   total: 68,
