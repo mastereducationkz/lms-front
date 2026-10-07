@@ -1,5 +1,7 @@
 import type { Event, EventType } from '../../types';
 import { almatyCivilDate, todayInAlmaty } from '../../lib/datetime';
+import { activeLocale, formatDate, t, type Locale, type MessageKey } from '../../lib/i18n';
+import '@/lib/i18n/catalogs/chatLive';
 
 // Kazakhstan timezone — backend stores UTC, we display/position in Almaty time.
 export const ALMATY_TZ = 'Asia/Almaty';
@@ -8,7 +10,11 @@ export const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
-export const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+/** Monday-first short weekday names: «Mon»…«Sun» / «пн»…«вс». */
+export function dayNames(locale: Locale = activeLocale()): string[] {
+  // 5–11 Jan 2026 is a Monday-to-Sunday week.
+  return [5, 6, 7, 8, 9, 10, 11].map((day) => formatDate(`2026-01-${String(day).padStart(2, '0')}`, { weekday: 'short' }, locale));
+}
 
 /** Tiny classNames helper (avoids a hard dependency on the app's cn util). */
 export function cx(...parts: Array<string | false | null | undefined>): string {
@@ -249,8 +255,16 @@ export function styleFor(type: EventType): TypeStyle {
   return TYPE_STYLES[type] || TYPE_STYLES.class;
 }
 
-export function typeLabel(type: EventType): string {
-  return TYPE_STYLES[type]?.label || 'Event';
+const TYPE_LABEL_KEYS: Record<EventType, MessageKey> = {
+  class: 'chatLive.calendar.type.class',
+  weekly_test: 'chatLive.calendar.type.weeklyTest',
+  webinar: 'chatLive.calendar.type.webinar',
+  assignment: 'chatLive.calendar.type.assignment',
+};
+
+/** «Class», «Weekly Test»… / «Урок», «Еженедельный тест»… (TypeStyle.label is the English name). */
+export function typeLabel(type: EventType, locale: Locale = activeLocale()): string {
+  return t(TYPE_LABEL_KEYS[type] ?? 'chatLive.calendar.type.event', undefined, locale);
 }
 
 /**

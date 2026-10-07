@@ -1,5 +1,7 @@
 import { ClipboardList } from 'lucide-react';
 import { Button } from './ui/button';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/studentHome';
 
 interface DailyQuestionsEmptyStateProps {
   onDismiss: () => void;
@@ -14,16 +16,17 @@ interface DailyQuestionsEmptyStateProps {
  * same pattern.
  */
 export function DailyQuestionsEmptyState({ onDismiss }: DailyQuestionsEmptyStateProps) {
+  const t = useT();
   return (
     <div className="p-8 text-center">
       <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
         <ClipboardList className="h-7 w-7 text-muted-foreground" aria-hidden="true" />
       </div>
-      <h3 className="text-lg font-semibold text-foreground mb-2">No daily questions yet</h3>
+      <h3 className="text-lg font-semibold text-foreground mb-2">{t('studentHome.dailyQuestions.emptyTitle')}</h3>
       <p className="text-muted-foreground mb-6">
-        You haven't completed any Weekly Tests yet. Complete a test first to get personalized daily questions!
+        {t('studentHome.dailyQuestions.emptyText')}
       </p>
-      <Button variant="outline" onClick={onDismiss}>Close</Button>
+      <Button variant="outline" onClick={onDismiss}>{t('common.close')}</Button>
     </div>
   );
 }

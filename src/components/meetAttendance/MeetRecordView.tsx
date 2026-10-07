@@ -15,10 +15,23 @@ import {
 import { lessonReviewing, type FlagReviewing } from './FlagReview';
 import { MeetTimeline, type TimelineRow } from './MeetTimeline';
 import { WhoIsThis } from './WhoIsThis';
+import { activeLocale, t as translate, type Locale, type MessageKey } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/meet';
+import '@/lib/i18n/catalogs/meetViews';
+
+const ROLE: Record<string, MessageKey> = {
+  curator: 'meet.webinar.roleCurator',
+  head_curator: 'meet.webinar.roleHeadCurator',
+  teacher: 'meet.webinar.roleTeacher',
+  head_teacher: 'meet.webinar.roleHeadTeacher',
+  admin: 'meet.webinar.roleAdmin',
+};
 
 /** Loads a lesson's record and saves confirmations and reviews; shared by the lesson card and the review dialog. */
 export function useMeetRecord(eventId: number | null, enabled = true) {
   const { user } = useAuth();
+  const t = useT();
   const [record, setRecord] = useState<MeetRecord | null>(null);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -63,28 +76,28 @@ export function useMeetRecord(eventId: number | null, enabled = true) {
         setRecord(await confirmMeetAccount(item.participantId, item.identity));
         saved += 1;
       }
-      toast.success(`Saved ${saved}`, { description: 'Recognised from now on in every lesson they join.' });
+      toast.success(t('meetViews.record.savedCount', { count: saved }), { description: t('meetViews.record.recognisedMany') });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not save who this is', {
-        description: saved ? `${saved} of ${items.length} were saved.` : undefined,
+      toast.error(e instanceof Error ? e.message : t('meetViews.record.saveFailed'), {
+        description: saved ? t('meetViews.record.partlySaved', { saved, count: items.length }) : undefined,
       });
     } finally {
       setBusyId(null);
     }
-  }, []);
+  }, [t]);
 
   const confirm = useCallback(async (participantId: number, identity: MeetIdentity) => {
     setBusyId(participantId);
     try {
       const next = await confirmMeetAccount(participantId, identity);
       setRecord(next);
-      if (identity.user_id) toast.success('Saved', { description: 'Recognised from now on in every lesson it joins.' });
+      if (identity.user_id) toast.success(t('meetViews.record.saved'), { description: t('meetViews.record.recognisedOne') });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not save who this is');
+      toast.error(e instanceof Error ? e.message : t('meetViews.record.saveFailed'));
     } finally {
       setBusyId(null);
     }
-  }, []);
+  }, [t]);
 
   const options = record?.review_options;
   const reviewing = useMemo(
@@ -101,17 +114,24 @@ export function useMeetRecord(eventId: number | null, enabled = true) {
       try {
         const next = await applyMeetVerdicts(eventId);
         setRecord(next);
-        toast.success('Marks saved from Meet', { description: 'Only students who had no mark. Change any of them in the journal.' });
+        toast.success(t('meetViews.record.applied'), { description: t('meetViews.record.appliedHint') });
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : 'Could not apply Meet’s verdicts');
+        toast.error(e instanceof Error ? e.message : t('meetViews.record.applyFailed'));
       } finally {
         setApplying(false);
       }
     };
-  }, [eventId, user?.role]);
+  }, [eventId, user?.role, t]);
 
   return { record, loading, failed, busyId, confirm, confirmMany, reload, reviewing, applyVerdicts, applying };
 }
+
+/** Meet's verdicts for unmarked students, counted: «2 present, 1 late». */
+const VERDICT_COUNT: Record<'present' | 'late' | 'absent', MessageKey> = {
+  present: 'meet.count.present',
+  late: 'meet.count.late',
+  absent: 'meet.count.absent',
+};
 
 function personRow(p: MeetPerson, kind: TimelineRow['kind'], note?: string): TimelineRow {
   return {
@@ -149,15 +169,16 @@ interface Props {
 }
 
 /** "This lesson: 19:04–19:52, 36 of 48 min needed" — what the verdicts below were judged on. */
-function clockText(record: MeetRecord): string | null {
+function clockText(record: MeetRecord, locale: Locale = activeLocale()): string | null {
   const c = record.clock;
   if (!c) return null;
-  const how = c.follows_teacher ? '' : ' — by the timetable, the teacher wasn’t in the lesson';
-  return `This lesson: ${clock(c.start)}–${clock(c.end)}, ${c.required_minutes} of ${c.held_minutes} min needed${how}.`;
+  const params = { from: clock(c.start), to: clock(c.end), required: c.required_minutes, held: c.held_minutes };
+  return translate(c.follows_teacher ? 'meetViews.record.clock' : 'meetViews.record.clockTimetable', params, locale);
 }
 
 /** A finished lesson's Meet record: the headline numbers, the accounts to confirm, the timeline. */
 export function MeetRecordView({ record, busyId, onConfirm, onConfirmMany, compact = false, reviewing, onApplyVerdicts, applying = false }: Props) {
+  const t = useT();
   const [showHidden, setShowHidden] = useState(false);
   const students = useMemo(() => record.students ?? [], [record.students]);
   const joined = students.filter((s) => s.sessions.length > 0).length;
@@ -170,14 +191,15 @@ export function MeetRecordView({ record, busyId, onConfirm, onConfirmMany, compa
     ...students.map((s) => personRow(s, 'student')),
     // Unconfirmed accounts are still real time in the room: shown, marked "?", until named.
     ...unknown.map((u): TimelineRow => ({
-      key: `p${u.participant_id}`, name: u.display_name || 'No name shown', kind: 'unknown',
-      presence: u, flags: [], accounts: [], note: u.kind === 'signed_in' ? 'Google account, not confirmed' : 'Guest, not confirmed',
+      key: `p${u.participant_id}`, name: u.display_name || t('meetViews.shared.noName'), kind: 'unknown',
+      presence: u, flags: [], accounts: [], note: t(u.kind === 'signed_in' ? 'meetViews.record.googleUnconfirmed' : 'meetViews.record.guestUnconfirmed'),
     })),
-    ...(record.others ?? []).map((o) => personRow(o, 'other', o.role === 'student' ? 'Student of another group' : o.role.replace('_', ' '))),
-  ], [teacher, students, unknown, record.others]);
+    ...(record.others ?? []).map((o) => personRow(o, 'other', o.role === 'student' ? t('meetViews.record.otherGroup')
+      : ROLE[o.role] ? t(ROLE[o.role]) : o.role.replace('_', ' '))),
+  ], [teacher, students, unknown, record.others, t]);
   const hiddenRows: TimelineRow[] = notTracked.map((n) => ({
-    key: `p${n.participant_id}`, name: n.display_name || 'No name shown', kind: 'not_tracked',
-    presence: n, flags: [], accounts: [n], note: 'Not a student',
+    key: `p${n.participant_id}`, name: n.display_name || t('meetViews.shared.noName'), kind: 'not_tracked',
+    presence: n, flags: [], accounts: [n], note: t('meetViews.shared.notStudent'),
   }));
   const axis = useMemo(
     () => buildAxis(record, [...rows.map((r) => r.presence), ...notTracked]),
@@ -189,53 +211,53 @@ export function MeetRecordView({ record, busyId, onConfirm, onConfirmMany, compa
 
   const teacherValue = teacher?.first_join
     ? `${clock(teacher.first_join)} → ${clock(teacher.last_leave)}`
-    : record.held_back ? 'Not confirmed yet' : 'Not in the room';
+    : t(record.held_back ? 'meetViews.shared.notConfirmedYet' : 'meet.participants.notInRoom');
 
   // Unmarked students Meet can already judge: what «Apply» would write, counted by verdict.
   const applicable = students.filter((s) => s.mark == null && s.verdict?.verdict);
   const applyCounts = (['present', 'late', 'absent'] as const)
     .map((v) => [v, applicable.filter((s) => s.verdict?.verdict === v).length] as const)
     .filter(([, n]) => n > 0)
-    .map(([v, n]) => `${n} ${v}`)
+    .map(([v, n]) => t(VERDICT_COUNT[v], { count: n }))
     .join(', ');
   const legend = compact ? null : [rulesText(record.rules), clockText(record)].filter(Boolean).join(' ');
 
   return (
     <div className="flex flex-col gap-4">
       <div className={cn('grid gap-3', compact ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-4')}>
-        <Stat label="Teacher" value={teacherValue}
+        <Stat label={t('meet.participants.teacher')} value={teacherValue}
           tone={teacher && !teacher.first_join ? (record.held_back ? 'warn' : 'bad') : undefined} />
-        <Stat label="Students in the room" value={`${joined} of ${students.length}${unknown.length ? ' confirmed' : ''}`} />
-        <Stat label="Marks disagree"
-          value={`${record.mismatches ?? 0}${answered ? ` · ${answered} answered` : ''}`}
+        <Stat label={t('meetViews.record.studentsInRoom')}
+          value={t(unknown.length ? 'meetViews.record.joinedOfConfirmed' : 'meetViews.record.joinedOf', { joined, count: students.length })} />
+        <Stat label={t('meet.issue.marksDisagree')}
+          value={`${record.mismatches ?? 0}${answered ? ` · ${t('meetViews.record.answered', { count: answered })}` : ''}`}
           tone={record.mismatches ? 'bad' : undefined} />
-        <Stat label="To confirm" value={String(unknown.length)} tone={unknown.length ? 'warn' : undefined} />
+        <Stat label={t('meet.issue.toConfirm')} value={String(unknown.length)} tone={unknown.length ? 'warn' : undefined} />
       </div>
 
       {record.held_back && (
         <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
-          Someone in the room isn&apos;t confirmed yet, so nobody is flagged as &ldquo;never joined&rdquo;, and Meet&apos;s
-          &ldquo;absent&rdquo; and &ldquo;late&rdquo; wait, until they are.
+          {t('meetViews.record.heldBack')}
         </p>
       )}
       {record.partial && (
-        <p className="text-xs text-muted-foreground">Part of this lesson hasn&apos;t come through from Google yet; more may appear.</p>
+        <p className="text-xs text-muted-foreground">{t('meetViews.record.partial')}</p>
       )}
       {legend && <p className="text-xs text-muted-foreground">{legend}</p>}
       {onApplyVerdicts && applicable.length > 0 && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-200">
           <span className="min-w-0 flex-1">
-            {applicable.length} {applicable.length === 1 ? 'student has' : 'students have'} no mark yet — Meet says {applyCounts}.
+            {t('meetViews.record.applyBanner', { count: applicable.length, verdicts: applyCounts })}
           </span>
           <button
             type="button"
             onClick={onApplyVerdicts}
             disabled={applying}
-            title="Writes these marks into the journal. Students who already have a mark are left alone."
+            title={t('meetViews.record.applyHint')}
             className="inline-flex items-center gap-1.5 rounded-md border border-sky-300 bg-card px-2.5 py-1 font-medium text-sky-900 transition hover:bg-sky-100 disabled:opacity-60 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-100 dark:hover:bg-sky-900"
           >
             {applying && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />}
-            Apply Meet&apos;s verdicts ({applicable.length})
+            {t('meetViews.record.apply', { count: applicable.length })}
           </button>
         </div>
       )}
@@ -258,7 +280,7 @@ export function MeetRecordView({ record, busyId, onConfirm, onConfirmMany, compa
           onClick={() => setShowHidden((v) => !v)}
           className="w-fit text-xs font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
         >
-          {showHidden ? 'Hide' : 'Show'} {notTracked.length} not a student
+          {t(showHidden ? 'meetViews.record.hideNotStudents' : 'meetViews.record.showNotStudents', { count: notTracked.length })}
         </button>
       )}
     </div>
@@ -266,11 +288,11 @@ export function MeetRecordView({ record, busyId, onConfirm, onConfirmMany, compa
 }
 
 /** What to say instead of a record: the lesson has not finished, or there is nothing to show. */
-export function recordStateText(record: MeetRecord | null): string | null {
+export function recordStateText(record: MeetRecord | null, locale: Locale = activeLocale()): string | null {
   if (!record) return null;
   switch (record.state) {
-    case 'waiting': return 'Waiting for Google Meet to hand over the lesson’s call.';
-    case 'none': return 'No one joined this lesson’s Meet room, or it wasn’t held in an LMS Meet room.';
+    case 'waiting': return translate('meet.participants.stageAwaitingGoogle', undefined, locale);
+    case 'none': return translate('meetViews.record.noneJoined', undefined, locale);
     default: return null;
   }
 }

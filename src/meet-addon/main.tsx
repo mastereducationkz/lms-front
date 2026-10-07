@@ -4,10 +4,13 @@ import '../index.css';
 import { installAppTimeZone } from '../lib/datetime';
 import App from './App';
 import { isDarkChoice } from '../lib/theme';
+import { deviceLocale, setActiveLocale } from '../lib/i18n/locale';
 
 // The Google Meet side panel's own entry (`/meet-addon.html`). Deliberately none of the main app's
 // router, providers, service worker or Sentry: Meet waits at most 10 seconds for the panel.
 installAppTimeZone();
+// Until the lesson names its viewer (LessonPanel), speak this device's last LMS language.
+setActiveLocale(deviceLocale() ?? 'en');
 
 // The panel has no ThemeProvider. Follow the LMS's saved choice when the frame can read it, else
 // the system (Meet itself is dark by default), and keep following the system until one is saved.

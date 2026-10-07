@@ -1,7 +1,11 @@
 import type { Event } from '../../types';
 import {
-  cx, formatTime, eventStyle, eventTitle, typeLabel, isSubstitutedForTeacher, startOfDay, isSameDay,
+  cx, formatTime, eventStyle, eventTitle, isSubstitutedForTeacher, startOfDay, isSameDay,
 } from './calendarUtils';
+import { eventTypeName } from './calendarText';
+import { formatDate, t as tr, type Locale } from '../../lib/i18n';
+import { useLocale, useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/chatLive';
 import { almatyCivilDate, todayInAlmaty } from '../../lib/datetime';
 import { ArrowRight, CalendarDays } from 'lucide-react';
 import MeetMark from './MeetMark';
@@ -40,14 +44,16 @@ function groupUpcoming(events: Event[]): DayGroup[] {
   return groups;
 }
 
-function dayLabel(date: Date, today: Date): string {
+function dayLabel(date: Date, today: Date, locale: Locale): string {
   const diff = Math.round((startOfDay(date).getTime() - startOfDay(today).getTime()) / 86400000);
-  if (diff === 0) return 'Today';
-  if (diff === 1) return 'Tomorrow';
-  return date.toLocaleDateString('en-US', { weekday: 'long' });
+  if (diff === 0) return tr('chatLive.calendar.today', undefined, locale);
+  if (diff === 1) return tr('chatLive.calendar.tomorrow', undefined, locale);
+  return formatDate(date, { weekday: 'long' }, locale);
 }
 
 export default function AgendaView({ events, user, onEventClick }: Props) {
+  const t = useT();
+  const locale = useLocale();
   // Days are Almaty days: "Today" is today in Kazakhstan, wherever the viewer is.
   const now = todayInAlmaty();
   const groups = groupUpcoming(events);
@@ -57,7 +63,7 @@ export default function AgendaView({ events, user, onEventClick }: Props) {
     return (
       <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-card py-20 text-muted-foreground shadow-sm">
         <CalendarDays className="mb-3 h-10 w-10 opacity-20" />
-        <p className="text-sm">No upcoming events.</p>
+        <p className="text-sm">{t('chatLive.calendar.noUpcoming')}</p>
       </div>
     );
   }
@@ -70,14 +76,14 @@ export default function AgendaView({ events, user, onEventClick }: Props) {
           <div key={gi}>
             <div className="flex items-baseline gap-2.5 px-4 pb-1 pt-4">
               <span className="text-[15px] font-bold tracking-tight text-foreground">
-                {dayLabel(g.date, now)}
+                {dayLabel(g.date, now, locale)}
               </span>
               <span className="text-[13px] text-muted-foreground">
-                {g.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                {formatDate(g.date, { month: 'short', day: 'numeric' }, locale)}
               </span>
               {isToday && (
                 <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground dark:bg-brand-subtle dark:text-brand-subtle-foreground">
-                  Today
+                  {t('chatLive.calendar.today')}
                 </span>
               )}
             </div>
@@ -109,7 +115,7 @@ export default function AgendaView({ events, user, onEventClick }: Props) {
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[14px] font-medium text-foreground">
                       {eventTitle(event)}
-                      {sub && <span className={cx('ml-2 text-[10px] font-bold', s.time)}>SUB</span>}
+                      {sub && <span className={cx('ml-2 text-[10px] font-bold', s.time)}>{t('chatLive.calendar.substitute')}</span>}
                       <RecordingMark event={event} role={user?.role} className="h-3 w-3 text-muted-foreground"
                         wrapperClassName="ml-2 align-[-1px]" />
                       <span className="ml-2 inline-flex align-[-2px]">
@@ -118,7 +124,7 @@ export default function AgendaView({ events, user, onEventClick }: Props) {
                     </span>
                     <span className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-muted-foreground">
                       <span className={cx('text-[10.5px] font-semibold uppercase tracking-wide', s.time)}>
-                        {typeLabel(event.event_type)}
+                        {eventTypeName(event.event_type, locale)}
                       </span>
                       {event.event_type !== 'class' && event.groups && event.groups.length > 0 && (
                         <>
@@ -136,7 +142,7 @@ export default function AgendaView({ events, user, onEventClick }: Props) {
                   </span>
                   {(online || isAssignment) && (
                     <span className="flex flex-none items-center gap-1 text-[12px] font-semibold text-primary">
-                      {isAssignment ? 'Open' : 'Join'}
+                      {isAssignment ? t('chatLive.calendar.open') : t('chatLive.calendar.join')}
                       <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                     </span>
                   )}

@@ -58,6 +58,14 @@ describe('the grid cell', () => {
     expect(cellTitle(cell({ lessons: 2, unmeasurable: 2, state: 'unmeasurable' })))
       .toBe('2 lessons · no Meet room, nothing to judge');
   });
+
+  it('explains itself in Russian for a reader who picked Русский', () => {
+    expect(cellTitle(cell({ late_minutes: 3, fine: 900, lessons: 1, state: 'late' }), 'ru'))
+      .toBe('1 урок · опоздание 3 мин · 900 ₸');
+    expect(cellTitle(cell({ misses: 1, lessons: 5, unpriced: 1, state: 'miss' }), 'ru'))
+      .toBe('5 уроков · пропущено: 1 · сумма ещё не указана');
+    expect(cellTitle(cell(), 'ru')).toBe('нет уроков');
+  });
 });
 
 describe('money and labels', () => {

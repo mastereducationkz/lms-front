@@ -7,6 +7,8 @@ import { lessons, pickLesson, type LessonChoice } from './lessons';
 import SignIn from './components/SignIn';
 import LessonPanel from './components/LessonPanel';
 import LessonPicker from './components/LessonPicker';
+import { t } from '../lib/i18n';
+import '@/lib/i18n/catalogs/classLesson';
 
 type Phase =
   | { kind: 'connecting' }
@@ -70,18 +72,18 @@ export default function App() {
     <div className="flex min-h-screen flex-col bg-card text-foreground">
       {source?.kind === 'preview' && (
         <div className="bg-amber-50 dark:bg-amber-500/15 px-3 py-1.5 text-center text-[11px] font-medium text-amber-800 dark:text-amber-300">
-          Preview — outside Meet · {source.meetingCode}
+          {t('classLesson.addon.preview', { code: source.meetingCode })}
         </div>
       )}
       <main className="flex-1 px-3 pb-4 pt-3">
-        {phase.kind === 'connecting' && <Centered><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /><span>Connecting to Meet…</span></Centered>}
+        {phase.kind === 'connecting' && <Centered><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /><span>{t('classLesson.addon.connecting')}</span></Centered>}
         {phase.kind === 'nowhere' && <Nowhere source={phase.source} />}
         {phase.kind === 'signin' && meetingCode && <SignIn meetingCode={meetingCode} onSignedIn={() => void find()} />}
-        {phase.kind === 'finding' && <Centered><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /><span>Finding this Meet's lesson…</span></Centered>}
+        {phase.kind === 'finding' && <Centered><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /><span>{t('classLesson.addon.finding')}</span></Centered>}
         {phase.kind === 'error' && (
           <Centered>
             <p className="text-sm text-foreground">{phase.message}</p>
-            <button type="button" onClick={() => void find()} className="mt-2 rounded-full border border-border px-4 py-1.5 text-sm font-medium hover:bg-muted">Try again</button>
+            <button type="button" onClick={() => void find()} className="mt-2 rounded-full border border-border px-4 py-1.5 text-sm font-medium hover:bg-muted">{t('classLesson.addon.retry')}</button>
           </Centered>
         )}
         {lessonId != null ? (
@@ -97,7 +99,7 @@ export default function App() {
       {(phase.kind === 'ready' || phase.kind === 'error') && (
         <footer className="border-t border-border px-3 py-2 text-right">
           <button type="button" onClick={signOut} className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground">
-            <LogOut className="h-3 w-3" aria-hidden />Sign out of the panel
+            <LogOut className="h-3 w-3" aria-hidden />{t('classLesson.addon.signOut')}
           </button>
         </footer>
       )}
@@ -113,10 +115,8 @@ function Nowhere({ source }: { source: MeetingSource }) {
   return (
     <Centered>
       <MonitorPlay className="h-8 w-8 text-muted-foreground" aria-hidden />
-      <p className="text-base font-semibold text-foreground">Open this panel from Google Meet</p>
-      <p className="max-w-[18rem] text-sm text-muted-foreground">
-        In a lesson's Meet, click <b>Activities</b> → <b>Master LMS</b>. The panel shows that lesson: who is in the room, scores, notes and materials.
-      </p>
+      <p className="text-base font-semibold text-foreground">{t('classLesson.addon.nowhereTitle')}</p>
+      <p className="max-w-[18rem] text-sm text-muted-foreground">{t('classLesson.addon.nowhereBody')}</p>
       {source.kind === 'unavailable' && <p className="mt-2 text-[11px] text-muted-foreground">{source.reason}</p>}
     </Centered>
   );

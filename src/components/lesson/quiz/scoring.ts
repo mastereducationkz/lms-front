@@ -1,4 +1,6 @@
 import { parseGap } from '../../../utils/gapParser'
+import { activeLocale, t, type Locale } from '../../../lib/i18n'
+import '@/lib/i18n/catalogs/lessonPlayer'
 
 /** ``unscored``: nothing to score (an image block, a gap question with no gaps) — never «Incorrect». */
 export type QuestionStatusKey = 'correct' | 'incorrect' | 'partial' | 'review' | 'unscored'
@@ -254,13 +256,14 @@ export const getQuestionStatus = (
   question: any,
   answer: unknown,
   gapAnswer: string[] | undefined,
-  options: GradeQuestionOptions = {}
+  options: GradeQuestionOptions = {},
+  locale: Locale = activeLocale()
 ): QuestionStatus => {
   const result = gradeQuestion(question, answer, gapAnswer, options)
   if (result.isReview) {
     return {
       key: 'review',
-      label: 'Needs review',
+      label: t('lessonPlayer.status.review', undefined, locale),
       className: REVIEW_CLASS,
       correctParts: 0,
       totalParts: 1
@@ -271,7 +274,7 @@ export const getQuestionStatus = (
     // never «Incorrect» — before 2026-09-17 image blocks turned the navigator square red.
     return {
       key: 'unscored',
-      label: 'Not scored',
+      label: t('lessonPlayer.status.unscored', undefined, locale),
       className: REVIEW_CLASS,
       correctParts: 0,
       totalParts: 0
@@ -280,7 +283,7 @@ export const getQuestionStatus = (
   if (result.isCorrect) {
     return {
       key: 'correct',
-      label: 'Correct',
+      label: t('lessonPlayer.status.correct', undefined, locale),
       className: SUCCESS_CLASS,
       correctParts: result.correctParts,
       totalParts: result.totalParts
@@ -293,15 +296,17 @@ export const getQuestionStatus = (
     return {
       key: 'incorrect',
       label: question?.question_type === 'matching'
-        ? `Incorrect · ${result.correctParts}/${result.totalParts} pairs`
-        : 'Incorrect',
+        ? t('lessonPlayer.status.incorrectPairs', { correct: result.correctParts, total: result.totalParts }, locale)
+        : t('lessonPlayer.status.incorrect', undefined, locale),
       className: ERROR_CLASS,
       correctParts: result.correctParts,
       totalParts: result.totalParts
     }
   }
   if (result.correctParts > 0) {
-    const labelTotal = result.totalParts > 1 ? `${result.correctParts}/${result.totalParts} correct` : 'Partially correct'
+    const labelTotal = result.totalParts > 1
+      ? t('lessonPlayer.status.partCount', { correct: result.correctParts, total: result.totalParts }, locale)
+      : t('lessonPlayer.status.partial', undefined, locale)
     return {
       key: 'partial',
       label: labelTotal,
@@ -312,7 +317,7 @@ export const getQuestionStatus = (
   }
   return {
     key: 'incorrect',
-    label: 'Incorrect',
+    label: t('lessonPlayer.status.incorrect', undefined, locale),
     className: ERROR_CLASS,
     correctParts: 0,
     totalParts: result.totalParts

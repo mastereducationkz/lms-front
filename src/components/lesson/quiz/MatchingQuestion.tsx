@@ -2,6 +2,8 @@ import { useState, useMemo } from 'react';
 import { renderTextWithLatex } from '../../../utils/latex';
 import { sanitizeHtml } from '../../../lib/safeHtml';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { useT } from '../../../lib/i18n/react';
+import '@/lib/i18n/catalogs/lessonPlayer';
 
 interface MatchingPair {
   left: string;
@@ -40,6 +42,7 @@ export const MatchingQuestion = ({
     return indices;
   }, [pairs.length]);
 
+  const t = useT();
   const [selectedLeft, setSelectedLeft] = useState<number | null>(null);
   
   // Convert value to Map if it's a plain object or ensure it's a Map
@@ -140,7 +143,7 @@ export const MatchingQuestion = ({
         <div className="space-y-2">
           <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
             <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">1</span>
-            Left
+            {t('lessonPlayer.matching.left')}
           </div>
           {pairs.map((pair, leftIdx) => {
             const status = getLeftStatus(leftIdx);
@@ -172,7 +175,11 @@ export const MatchingQuestion = ({
                 role="button"
                 tabIndex={disabled ? -1 : 0}
                 aria-pressed={status === 'selected'}
-                aria-label={`Left item ${leftIdx + 1}${isMatched ? `, matched to ${displayLetter}` : ''}${status === 'selected' ? ', selected' : ''}`}
+                aria-label={[
+                  t('lessonPlayer.matching.leftItem', { number: leftIdx + 1 }),
+                  isMatched && t('lessonPlayer.matching.matchedTo', { target: displayLetter ?? '' }),
+                  status === 'selected' && t('lessonPlayer.matching.selected'),
+                ].filter(Boolean).join(', ')}
                 onClick={() => handleLeftClick(leftIdx)}
                 onKeyDown={(e) => {
                   if (disabled) return
@@ -208,7 +215,7 @@ export const MatchingQuestion = ({
         <div className="space-y-2">
           <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
             <span className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs">2</span>
-            Right
+            {t('lessonPlayer.matching.right')}
           </div>
           {shuffledRightIndices.map((originalIdx, displayIdx) => {
             const pair = pairs[originalIdx];
@@ -240,7 +247,10 @@ export const MatchingQuestion = ({
                 role="button"
                 tabIndex={isInteractive ? 0 : -1}
                 aria-disabled={!isInteractive}
-                aria-label={`Right item ${displayLetter}${isMatched && matchedLeft !== undefined ? `, matched to ${matchedLeft + 1}` : ''}`}
+                aria-label={[
+                  t('lessonPlayer.matching.rightItem', { letter: displayLetter }),
+                  isMatched && matchedLeft !== undefined && t('lessonPlayer.matching.matchedTo', { target: matchedLeft + 1 }),
+                ].filter(Boolean).join(', ')}
                 onClick={() => handleRightClick(originalIdx)}
                 onKeyDown={(e) => {
                   if (!isInteractive) return

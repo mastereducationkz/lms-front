@@ -5,17 +5,21 @@ import { Button } from '../components/ui/button';
 import { ChevronRight, Play, FileText, HelpCircle, Clock, Users, CheckCircle, Lock, ClipboardCheck } from 'lucide-react';
 import apiClient from '../services/api';
 import type { Course, Lesson } from '../types';
-import { deadlineCountdown, formatDeadline, getMyCheckpoints, type StudentCheckpointItem } from '../services/api/checkpoints';
+import { formatDeadline, formatDuration as formatTimeLeft, getMyCheckpoints, type StudentCheckpointItem } from '../services/api/checkpoints';
 import { buildCheckpointHints, firstOpenCheckpoint, type CheckpointHints } from '../lib/checkpointHints';
 import { unitStepProgress } from '../lib/unitProgress';
 
 import { Progress } from '../components/ui/progress';
 import { CompletionMeta } from '../components/progress/CompletionMeta';
 import type { CourseCompletion } from '../types';
+import type { MessageKey } from '../lib/i18n';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/lessonPlayer';
 
 // Short chip labels/colors for a checkpoint quiz row — mirrors LessonPage's sidebar chips.
-const CHECKPOINT_CHIP_LABEL: Record<StudentCheckpointItem['status'], string> = {
-  locked: 'Locked', available: 'Open', completed: 'Done', overdue: 'Overdue', reopened: 'Open',
+const CHECKPOINT_CHIP_LABEL: Record<StudentCheckpointItem['status'], MessageKey> = {
+  locked: 'lessonPlayer.chip.locked', available: 'lessonPlayer.chip.open', completed: 'lessonPlayer.chip.done',
+  overdue: 'lessonPlayer.chip.overdue', reopened: 'lessonPlayer.chip.open',
 };
 const CHECKPOINT_CHIP_CLASS: Record<StudentCheckpointItem['status'], string> = {
   locked: 'bg-muted text-muted-foreground',
@@ -28,6 +32,7 @@ const CHECKPOINT_CHIP_CLASS: Record<StudentCheckpointItem['status'], string> = {
 export default function CourseOverviewPage() {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
+  const t = useT();
 
   const [course, setCourse] = useState<Course | null>(null);
   const [modules, setModules] = useState<any[]>([]);
@@ -41,14 +46,14 @@ export default function CourseOverviewPage() {
 
   const formatDuration = (minutes: number): string => {
     if (minutes < 60) {
-      return `${minutes} minutes`;
+      return t('lessonPlayer.common.minutesLong', { count: minutes });
     }
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
     if (remainingMinutes === 0) {
-      return `${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+      return t('lessonPlayer.common.hours', { count: hours });
     }
-    return `${hours} ${hours === 1 ? 'hour' : 'hours'} ${remainingMinutes} minutes`;
+    return `${t('lessonPlayer.common.hours', { count: hours })} ${t('lessonPlayer.common.minutesLong', { count: remainingMinutes })}`;
   };
 
   // The course number comes from the backend — the same value every other screen shows
@@ -84,7 +89,7 @@ export default function CourseOverviewPage() {
 
     } catch (error) {
       console.error('Failed to load course data:', error);
-      setError('Failed to load course data');
+      setError(t('lessonPlayer.lesson.courseLoadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -125,7 +130,7 @@ export default function CourseOverviewPage() {
     const isAccessible = (lesson as any).is_accessible !== false;
     
     if (!isAccessible) {
-      alert('Complete previous lessons first to unlock this lesson');
+      alert(t('lessonPlayer.overview.lockedAlert'));
       return;
     }
     
@@ -144,10 +149,10 @@ export default function CourseOverviewPage() {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-foreground mb-2">Error</h2>
-          <p className="text-muted-foreground">{error || 'Course not found'}</p>
+          <h2 className="text-xl font-semibold text-foreground mb-2">{t('lessonPlayer.error.title')}</h2>
+          <p className="text-muted-foreground">{error || t('lessonPlayer.overview.notFound')}</p>
           <Button onClick={() => navigate('/courses')} className="mt-4">
-            Back to Courses
+            {t('lessonPlayer.overview.backToCourses')}
           </Button>
         </div>
       </div>
@@ -166,7 +171,7 @@ export default function CourseOverviewPage() {
             {/* Progress Bar */}
             <div className="mt-6 max-w-xl">
               <div className="flex justify-between text-sm text-muted-foreground mb-2">
-                <span className="font-medium">Course Progress</span>
+                <span className="font-medium">{t('lessonPlayer.overview.progress')}</span>
                 <span className="font-medium">{courseProgress}%</span>
               </div>
               <Progress value={courseProgress} className="h-2" />
@@ -190,7 +195,7 @@ export default function CourseOverviewPage() {
               <div className="flex items-center space-x-1">
                 <Users className="w-4 h-4 text-gray-400 dark:text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">
-                  {modules.length} modules
+                  {t('lessonPlayer.common.modules', { count: modules.length })}
                 </span>
               </div>
             </div>
@@ -204,19 +209,23 @@ export default function CourseOverviewPage() {
           {openCheckpoint && (
             <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-800 dark:bg-emerald-950/30" role="status">
               <p className="font-semibold text-foreground">
-                Checkpoint {openCheckpoint.number} is open — take it whenever you’re ready
+                {t('lessonPlayer.overview.checkpointOpen', { number: openCheckpoint.number })}
               </p>
               <p className="mt-0.5 text-sm text-foreground/80">
                 {openCheckpoint.status === 'overdue'
-                  ? `${openCheckpoint.total_questions} questions · the deadline has passed, but you can still take it — it’ll just be marked late.`
-                  : `${openCheckpoint.total_questions} questions · due ${formatDeadline(openCheckpoint.deadline)} (${deadlineCountdown(openCheckpoint.deadline).replace(/^due /, '')}). It’s optional — your course keeps going either way.`}
+                  ? t('lessonPlayer.overview.checkpointLate', { questions: t('lessonPlayer.common.questions', { count: openCheckpoint.total_questions }) })
+                  : t('lessonPlayer.overview.checkpointDue', {
+                      questions: t('lessonPlayer.common.questions', { count: openCheckpoint.total_questions }),
+                      deadline: formatDeadline(openCheckpoint.deadline),
+                      left: openCheckpoint.deadline ? formatTimeLeft((new Date(openCheckpoint.deadline).getTime() - Date.now()) / 60000) : '',
+                    })}
               </p>
               {openCheckpoint.quiz && (
                 <Button
                   className="mt-2"
                   onClick={() => navigate(`/course/${openCheckpoint.quiz!.course_id}/lesson/${openCheckpoint.quiz!.lesson_id}`)}
                 >
-                  Take Checkpoint {openCheckpoint.number}
+                  {t('lessonPlayer.overview.takeCheckpoint', { number: openCheckpoint.number })}
                 </Button>
               )}
             </div>
@@ -231,7 +240,7 @@ export default function CourseOverviewPage() {
                       {module.is_completed && (
                         <span className="flex items-center text-xs font-medium text-green-600 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
                           <CheckCircle className="w-3 h-3 mr-1" />
-                          Completed
+                          {t('lessonPlayer.overview.moduleCompleted')}
                         </span>
                       )}
                     </div>
@@ -240,7 +249,7 @@ export default function CourseOverviewPage() {
                     )}
                   </div>
                   <span className="px-2 py-1 rounded-full text-xs font-medium bg-muted text-foreground">
-                    {module.total_lessons} lessons
+                    {t('common.lessons', { count: module.total_lessons })}
                   </span>
                 </CardTitle>
               </CardHeader>
@@ -261,8 +270,8 @@ export default function CourseOverviewPage() {
                         data-tip={isCheckpointLesson ? 'checkpoint-row' : undefined}
                         title={!isAccessible
                           ? (isCheckpointLesson && checkpointItem
-                              ? (checkpointItem.locked_reason || 'This checkpoint is not open yet')
-                              : "Complete previous lessons to unlock")
+                              ? (checkpointItem.locked_reason || t('lessonPlayer.checkpoint.notOpenTooltip'))
+                              : t('lessonPlayer.lessonLockedTooltip'))
                           : progress.title}
                         className={`relative overflow-hidden w-full flex items-center justify-between p-4 rounded-lg border transition-colors text-left ${
                           !isAccessible
@@ -302,7 +311,7 @@ export default function CourseOverviewPage() {
                               </h3>
                               {isCheckpointLesson && checkpointItem ? (
                                 <span className={`h-5 px-2 inline-flex items-center rounded text-[10px] font-medium shrink-0 ${CHECKPOINT_CHIP_CLASS[checkpointItem.status]}`}>
-                                  {CHECKPOINT_CHIP_LABEL[checkpointItem.status]}
+                                  {t(CHECKPOINT_CHIP_LABEL[checkpointItem.status])}
                                 </span>
                               ) : null}
                             </div>
@@ -313,7 +322,7 @@ export default function CourseOverviewPage() {
                             )}
                             {lesson.steps && lesson.steps.length > 0 && (
                               <p className={`text-xs mt-1 ${lesson.is_completed ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-muted-foreground'}`}>
-                                {lesson.steps.length} steps
+                                {t('lessonPlayer.common.steps', { count: lesson.steps.length })}
                               </p>
                             )}
                           </div>
@@ -324,7 +333,7 @@ export default function CourseOverviewPage() {
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-muted-foreground">No lessons in this module yet.</p>
+                    <p className="text-muted-foreground">{t('lessonPlayer.overview.noLessons')}</p>
                   </div>
                 )}
               </CardContent>

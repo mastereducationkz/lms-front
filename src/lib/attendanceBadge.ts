@@ -1,3 +1,6 @@
+import { activeLocale, t, type Locale } from './i18n';
+import '@/lib/i18n/catalogs/meetViews';
+
 export interface AttendanceDue {
   /** Registers this person still owes. */
   total: number;
@@ -20,16 +23,16 @@ export type AttendanceBadgeTone = 'none' | 'waiting' | 'action';
  * `waiting` exceeding `total` should not happen, but if the two counts are ever read a moment apart
  * the quiet answer is the safe one: never invent urgency out of a rounding race.
  */
-export function attendanceBadge(due?: AttendanceDue): { count: number; tone: AttendanceBadgeTone; title: string | null } {
+export function attendanceBadge(due?: AttendanceDue, locale: Locale = activeLocale()): { count: number; tone: AttendanceBadgeTone; title: string | null } {
   const total = Math.max(0, due?.total ?? 0);
   const scores = Math.max(0, due?.scores ?? 0);
   if (total + scores <= 0) return { count: 0, tone: 'none', title: null };
   const waiting = Math.min(Math.max(0, due?.waiting ?? 0), total);
   const toMark = total - waiting;
   const title = [
-    toMark > 0 ? `${toMark} to mark` : null,
-    waiting > 0 ? `${waiting} waiting on Meet` : null,
-    scores > 0 ? `${scores} need activity scores` : null,
+    toMark > 0 ? t('meetViews.badge.toMark', { count: toMark }, locale) : null,
+    waiting > 0 ? t('meetViews.badge.waiting', { count: waiting }, locale) : null,
+    scores > 0 ? t('meetViews.badge.scores', { count: scores }, locale) : null,
   ].filter(Boolean).join(' · ');
   return { count: total + scores, tone: toMark === 0 && scores === 0 ? 'waiting' : 'action', title };
 }

@@ -32,7 +32,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
-          <ThinkingLoader state="connecting" size={64} label="Signing you in…" />
+          <ThinkingLoader state="connecting" size={64} label={t('shell.signingIn')} />
         </div>
       </div>
     );

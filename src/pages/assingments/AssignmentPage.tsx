@@ -31,11 +31,26 @@ import { formatAssignmentStatus } from '../../lib/assignmentStatus';
 import { UploadFailedError } from '../../lib/uploadFailure';
 import { safeLinkUrl, safeUploadUrl } from '../../lib/mediaUrl';
 import { lessonPath } from '../../lib/lessonLinks';
-import { formatDate, formatDateTime, formatTime } from '../../lib/i18n';
+import { formatDate, formatDateTime, formatTime, type MessageKey } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/homework';
+
+/** API status → label key; anything else falls back to formatAssignmentStatus. */
+const STATUS_KEYS: Record<string, MessageKey> = {
+  not_started: 'homework.status.notStarted',
+  not_submitted: 'homework.status.notSubmitted',
+  submitted: 'homework.status.submitted',
+  graded: 'homework.status.graded',
+  overdue: 'homework.status.overdue',
+  needs_revision: 'homework.status.needsRevision',
+  draft: 'homework.status.draft',
+  in_progress: 'homework.status.inProgress',
+};
 
 export default function AssignmentPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
+  const t = useT();
   const navigate = useNavigate();
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [status, setStatus] = useState<AssignmentStatus | null>(null);
@@ -87,8 +102,8 @@ export default function AssignmentPage() {
       }
     } catch (err) {
       console.error('Failed to load assignment:', err);
-      toast('Failed to load assignment', 'error');
-      setError('Failed to load assignment.');
+      toast(t('homework.shared.loadFailed'), 'error');
+      setError(t('homework.shared.loadFailed'));
     }
   };
 
@@ -152,7 +167,7 @@ export default function AssignmentPage() {
 
   const answerKeyPanel = answerKeys.length === 0 ? null : (
     <Card className="border-brand-border">
-      <CardHeader><CardTitle className="text-base">Check your work</CardTitle><CardDescription>Answer keys and worked examples released by your teacher.</CardDescription></CardHeader>
+      <CardHeader><CardTitle className="text-base">{t('homework.assignment.checkWork')}</CardTitle><CardDescription>{t('homework.assignment.checkWorkHint')}</CardDescription></CardHeader>
       <CardContent className="space-y-4">{answerKeys.flatMap((task: any) => task.answer_keys.map((key: any) => (
         <div key={`${task.task_id}-${key.id}`} className="rounded-md border p-3 space-y-2">
           <div className="font-medium">{key.title}</div>
@@ -161,14 +176,14 @@ export default function AssignmentPage() {
               return <p key={resource.id} className="whitespace-pre-wrap text-sm">{resource.body}</p>;
             }
             const href = safeLinkUrl(resource.file_url);
-            const label = resource.file_name || 'Open answer-key file';
+            const label = resource.file_name || t('homework.assignment.answerKeyFile');
             return href ? (
               <a key={resource.id} className="block text-brand hover:underline" href={href} target="_blank" rel="noreferrer">{label}</a>
             ) : (
               <p key={resource.id} className="text-sm text-muted-foreground">{label}</p>
             );
           })}
-          {!key.acknowledged ? <Button size="sm" variant="outline" onClick={async () => { await apiClient.acknowledgeAnswerKey(id!, task.task_id, key.id); setAnswerKeys(prev => prev.map((item: any) => item.task_id !== task.task_id ? item : { ...item, answer_keys: item.answer_keys.map((candidate: any) => candidate.id === key.id ? { ...candidate, acknowledged: true } : candidate) })); }}>I checked my work</Button> : <span className="text-sm text-green-700 dark:text-green-400">Checked</span>}
+          {!key.acknowledged ? <Button size="sm" variant="outline" onClick={async () => { await apiClient.acknowledgeAnswerKey(id!, task.task_id, key.id); setAnswerKeys(prev => prev.map((item: any) => item.task_id !== task.task_id ? item : { ...item, answer_keys: item.answer_keys.map((candidate: any) => candidate.id === key.id ? { ...candidate, acknowledged: true } : candidate) })); }}>{t('homework.assignment.markChecked')}</Button> : <span className="text-sm text-green-700 dark:text-green-400">{t('homework.assignment.checked')}</span>}
         </div>
       )))}</CardContent>
     </Card>
@@ -227,18 +242,18 @@ export default function AssignmentPage() {
         submitted_file_name: fileName // Top-level legacy column
       });
       
-      toast(submitted.is_late ? 'Assignment submitted late.' : 'Assignment submitted successfully!', 'success');
+      toast(submitted.is_late ? t('homework.shared.submittedLate') : t('homework.shared.submittedOk'), 'success');
       
       // Reload submission to show updated status
       await loadSubmission(id);
     } catch (err: any) {
       if (err?.response?.status === 409) {
-        toast(err.response.data?.detail || 'Complete the linked units first', 'error');
+        toast(err.response.data?.detail || t('homework.shared.unitsFirst'), 'error');
       } else if (err instanceof UploadFailedError) {
         toast(err.message, 'error');
       } else {
         console.error('Assignment submission error:', err);
-        toast('Failed to submit assignment', 'error');
+        toast(t('homework.shared.submitFailed'), 'error');
       }
     } finally {
       setSubmitting(false);
@@ -255,7 +270,7 @@ export default function AssignmentPage() {
             const originalFile = e.target.files[i];
              // Check if it's an image
             if (originalFile.type.startsWith('image/')) {
-                toast(`Compressing image ${i + 1}/${e.target.files.length}...`, 'info');
+                toast(t('homework.shared.compressingImage', { current: i + 1, total: e.target.files.length }), 'info');
                 const compressedFile = await compressImage(originalFile);
                 newFiles.push(compressedFile);
             } else {
@@ -293,17 +308,17 @@ export default function AssignmentPage() {
         submitted_file_name: null
       });
       
-      toast(submitted.is_late ? 'Assignment submitted late.' : 'Assignment submitted successfully!', 'success');
+      toast(submitted.is_late ? t('homework.shared.submittedLate') : t('homework.shared.submittedOk'), 'success');
       
       // Reload submission to show updated status
       await loadSubmission(assignment.id.toString());
     } catch (err: any) {
       if (err?.response?.status === 409) {
-        toast(err.response.data?.detail || 'Complete the linked units first', 'error');
+        toast(err.response.data?.detail || t('homework.shared.unitsFirst'), 'error');
       } else {
         console.error('Failed to submit assignment:', err);
-        toast('Failed to submit assignment', 'error');
-        setError('Failed to submit assignment. Please try again.');
+        toast(t('homework.shared.submitFailed'), 'error');
+        setError(t('homework.assignment.submitFailedRetry'));
       }
     } finally {
       setSubmitting(false);
@@ -358,24 +373,24 @@ export default function AssignmentPage() {
                   {submission.status === 'graded' ? (
                     <>
                       <Award className="w-5 h-5 text-green-600 dark:text-green-400" />
-                      <span className="text-green-800 dark:text-green-300">Graded</span>
+                      <span className="text-green-800 dark:text-green-300">{t('homework.status.graded')}</span>
                     </>
                   ) : (
                     <>
-                      <span className="text-foreground">Submitted</span>
+                      <span className="text-foreground">{t('homework.status.submitted')}</span>
                     </>
                   )}
                 </CardTitle>
                 <CardDescription>
-                  Submitted: {formatDateTime(new Date(submission.submitted_at))}
-                  {(status as any)?.late && <span className="ml-2 font-medium text-amber-700 dark:text-amber-300">Late submission</span>}
+                  {t('homework.assignment.submittedAt', { date: formatDateTime(new Date(submission.submitted_at)) })}
+                  {(status as any)?.late && <span className="ml-2 font-medium text-amber-700 dark:text-amber-300">{t('homework.assignment.lateSubmission')}</span>}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Score Display */}
                 <div className="flex items-center justify-between p-4 bg-card rounded-lg border dark:border-border">
                   <div>
-                    <div className="text-sm text-muted-foreground">Your Score</div>
+                    <div className="text-sm text-muted-foreground">{t('homework.assignment.yourScore')}</div>
                     <div className="text-3xl font-bold">
                       {submission.status === 'graded' ? (
                         <span className={(submission.score || 0) >= (effectiveMaxScore * 0.6) ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
@@ -389,7 +404,7 @@ export default function AssignmentPage() {
                   </div>
                   {submission.status === 'graded' && (
                     <div className="text-right">
-                      <div className="text-sm text-muted-foreground">Percentage</div>
+                      <div className="text-sm text-muted-foreground">{t('homework.assignment.percentage')}</div>
                       <div className={`text-2xl font-bold ${(submission.score || 0) >= (effectiveMaxScore * 0.6) ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                         {Math.round(((submission.score || 0) / effectiveMaxScore) * 100)}%
                       </div>
@@ -400,21 +415,22 @@ export default function AssignmentPage() {
                 {/* Teacher Feedback */}
                 <div className="p-4 bg-card rounded-lg border dark:border-border">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="font-medium text-foreground">Teacher Feedback</span>
+                    <span className="font-medium text-foreground">{t('homework.assignment.teacherFeedback')}</span>
                   </div>
                   {submission.feedback ? (
                     <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">{submission.feedback}</p>
                   ) : (
-                    <p className="text-muted-foreground italic">No feedback provided yet</p>
+                    <p className="text-muted-foreground italic">{t('homework.assignment.noFeedback')}</p>
                   )}
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-sm text-muted-foreground">
-                    Attempt {(status as any)?.attempts_used || 1}
-                    {(status as any)?.max_attempts == null ? ' of unlimited' : ` of ${(status as any).max_attempts}`}
+                    {(status as any)?.max_attempts == null
+                      ? t('homework.assignment.attemptOfUnlimited', { used: (status as any)?.attempts_used || 1 })
+                      : t('homework.assignment.attemptOf', { used: (status as any)?.attempts_used || 1, max: (status as any).max_attempts })}
                   </span>
                   {(status as any)?.can_resubmit && (
-                    <Button variant="outline" onClick={startReplacement}>Submit replacement</Button>
+                    <Button variant="outline" onClick={startReplacement}>{t('homework.assignment.submitReplacement')}</Button>
                   )}
                 </div>
 
@@ -425,18 +441,18 @@ export default function AssignmentPage() {
                       className="w-full justify-between"
                       onClick={() => setShowPreviousAttempts((visible) => !visible)}
                     >
-                      {showPreviousAttempts ? 'Hide previous attempts' : `Show previous attempts (${previousAttempts.length})`}
+                      {showPreviousAttempts ? t('homework.assignment.hidePrevious') : t('homework.assignment.showPrevious', { count: previousAttempts.length })}
                     </Button>
                     {showPreviousAttempts && (
                       <div className="border-t border-border divide-y divide-border">
                         {previousAttempts.map((attempt) => (
                           <div key={attempt.id} className="flex items-center justify-between gap-3 p-3">
                             <div>
-                              <div className="font-medium text-sm">Attempt {attempt.attempt_number || 1}</div>
-                              <div className="text-xs text-muted-foreground">Submitted {formatDateTime(new Date(attempt.submitted_at))}</div>
+                              <div className="font-medium text-sm">{t('homework.assignment.attemptNumber', { number: attempt.attempt_number || 1 })}</div>
+                              <div className="text-xs text-muted-foreground">{t('homework.assignment.submittedOn', { date: formatDateTime(new Date(attempt.submitted_at)) })}</div>
                               {attempt.is_graded
-                                ? <div className="text-sm mt-1">Historical score: {attempt.score ?? 0}/{attempt.max_score}</div>
-                                : <div className="text-sm mt-1 text-muted-foreground">Not graded</div>}
+                                ? <div className="text-sm mt-1">{t('homework.assignment.historicalScore', { score: attempt.score ?? 0, max: attempt.max_score })}</div>
+                                : <div className="text-sm mt-1 text-muted-foreground">{t('homework.assignment.notGraded')}</div>}
                             </div>
                             <Button
                               variant="outline"
@@ -446,7 +462,7 @@ export default function AssignmentPage() {
                                 setViewMode('details');
                               }}
                             >
-                              View attempt
+                              {t('homework.assignment.viewAttempt')}
                             </Button>
                           </div>
                         ))}
@@ -462,7 +478,7 @@ export default function AssignmentPage() {
                   className="w-full"
                 >
                   <FileText className="w-4 h-4 mr-2" />
-                  View My Submission
+                  {t('homework.assignment.viewMySubmission')}
                 </Button>
               </CardContent>
             </Card>
@@ -487,7 +503,7 @@ export default function AssignmentPage() {
             className="mb-2"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-            Back to Results
+            {t('homework.assignment.backToResults')}
           </Button>
           
           {assignment.assignment_type === 'multi_task' ? (
@@ -501,7 +517,7 @@ export default function AssignmentPage() {
           ) : assignment.assignment_type === 'audio' ? (
             <Card>
               <CardHeader>
-                <CardTitle>Your Submission</CardTitle>
+                <CardTitle>{t('homework.assignment.yourSubmission')}</CardTitle>
               </CardHeader>
               <CardContent>
                 {(() => {
@@ -509,7 +525,7 @@ export default function AssignmentPage() {
                   return audioHref ? (
                     <AudioPlayer src={audioHref} />
                   ) : (
-                    <div className="text-muted-foreground italic">No recording found.</div>
+                    <div className="text-muted-foreground italic">{t('homework.assignment.noRecording')}</div>
                   );
                 })()}
               </CardContent>
@@ -517,7 +533,7 @@ export default function AssignmentPage() {
           ) : (
             <Card>
               <CardHeader>
-                <CardTitle>Your Submission</CardTitle>
+                <CardTitle>{t('homework.assignment.yourSubmission')}</CardTitle>
               </CardHeader>
               <CardContent>
                 {submittedFiles.length > 0 && (
@@ -528,7 +544,7 @@ export default function AssignmentPage() {
                         <div key={index} className="flex items-center justify-between gap-3 p-3 bg-muted rounded border dark:border-border">
                             <div className="flex min-w-0 items-center">
                             <FileText className="w-5 h-5 shrink-0 text-muted-foreground mr-3" />
-                            <span className="min-w-0 break-all">{file.file_name || file.submitted_file_name || 'File'}</span>
+                            <span className="min-w-0 break-all">{file.file_name || file.submitted_file_name || t('homework.shared.file')}</span>
                             </div>
                             {href && (
                               <div className="flex gap-2">
@@ -567,7 +583,7 @@ export default function AssignmentPage() {
                       rel="noopener noreferrer"
                       className="text-foreground hover:underline"
                     >
-                      Download
+                      {t('homework.shared.download')}
                     </a>
                     )}
                   </div>
@@ -593,21 +609,23 @@ export default function AssignmentPage() {
         <Card className="border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-950/20">
           <CardContent className="p-6 text-sm text-amber-900 dark:text-amber-200">
             {(status as any)?.late
-              ? 'The deadline has passed. Ask your teacher to reopen this homework before submitting.'
-              : 'No attempts remain for this homework.'}
+              ? t('homework.assignment.deadlinePassedClosed')
+              : t('homework.assignment.noAttemptsLeft')}
           </CardContent>
         </Card>
       );
     }
 
+    // The bold «not submitted» sits inside the translated sentence at its {notSubmitted} slot.
+    const [draftBefore, draftAfter = ''] = t('homework.assignment.draftRestored').split('{notSubmitted}');
     const readinessBanner = !submission && (status as any)?.unit_gate && (status as any).unit_gate.total > 0 && (
       (status as any).unit_gate.ready ? (
         <div className="mb-3 rounded-md border border-green-300 dark:border-green-800/60 bg-green-50 dark:bg-green-950/30 px-3 py-2 text-sm text-green-800 dark:text-green-200">
-          All units completed — ready to submit
+          {t('homework.assignment.unitsReady')}
         </div>
       ) : (
         <div className="mb-3 rounded-md border border-slate-300 dark:border-border bg-muted px-3 py-2 text-sm text-slate-700 dark:text-foreground">
-          To submit, complete these units: {(status as any).unit_gate.missing.map((m: any) => m.title).join(', ')}
+          {t('homework.assignment.unitsMissing', { units: (status as any).unit_gate.missing.map((m: any) => m.title).join(', ') })}
         </div>
       )
     );
@@ -618,7 +636,7 @@ export default function AssignmentPage() {
           {readinessBanner}
           {!submission && (status as any)?.draft?.answers && (
             <div className="mb-3 rounded-md border border-amber-300 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
-              Draft restored. Work is <b>not submitted</b> yet.
+              {draftBefore}<b>{t('homework.assignment.draftNotSubmitted')}</b>{draftAfter}
             </div>
           )}
           <MultiTaskSubmission
@@ -642,7 +660,7 @@ export default function AssignmentPage() {
           {readinessBanner}
           <Card>
           <CardHeader>
-            <CardTitle>Instructions</CardTitle>
+            <CardTitle>{t('homework.shared.instructions')}</CardTitle>
             <CardDescription>
               {assignment.content?.question || assignment.description}
             </CardDescription>
@@ -654,7 +672,7 @@ export default function AssignmentPage() {
               className="w-full sm:w-auto"
             >
               <Mic className="w-4 h-4 mr-2" />
-              Record Audio
+              {t('homework.assignment.recordAudio')}
             </Button>
           </CardContent>
           </Card>
@@ -668,14 +686,14 @@ export default function AssignmentPage() {
         <div className="space-y-6">
           {readinessBanner}
           <div className="prose dark:prose-invert max-w-none">
-            <h3 className="text-lg font-medium mb-2">Instructions</h3>
+            <h3 className="text-lg font-medium mb-2">{t('homework.shared.instructions')}</h3>
             <p className="text-gray-700 dark:text-foreground whitespace-pre-wrap">
               {assignment.content?.question || assignment.description}
             </p>
 
             {assignment.content?.teacher_file_url && (
               <div className="mt-4 p-4 bg-secondary/50 dark:bg-secondary rounded-lg border border-border">
-                <h4 className="text-sm font-medium text-foreground mb-2">Reference Material</h4>
+                <h4 className="text-sm font-medium text-foreground mb-2">{t('homework.assignment.referenceMaterial')}</h4>
                 <a
                   href={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + assignment.content.teacher_file_url}
                   target="_blank"
@@ -683,7 +701,7 @@ export default function AssignmentPage() {
                   className="flex items-center text-foreground hover:underline"
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  {assignment.content.teacher_file_name || 'Download File'}
+                  {assignment.content.teacher_file_name || t('homework.assignment.downloadFile')}
                 </a>
               </div>
             )}
@@ -693,7 +711,7 @@ export default function AssignmentPage() {
         
             <Card>
               <CardHeader>
-                <CardTitle>Your Submission</CardTitle>
+                <CardTitle>{t('homework.assignment.yourSubmission')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="border-2 border-dashed border-gray-300 dark:border-input rounded-lg p-8 text-center">
@@ -717,13 +735,13 @@ export default function AssignmentPage() {
                   >
                     <Upload className="w-12 h-12 text-muted-foreground mb-3" />
                     <span className="text-lg font-medium text-foreground mb-1">
-                      {files.length > 0 ? 'Add more files' : 'Drop your files here or click to upload'}
+                      {files.length > 0 ? t('homework.assignment.addMoreFiles') : t('homework.assignment.dropOrClick')}
                     </span>
                     <span className="text-sm text-muted-foreground">
-                      Allowed types: {assignment.allowed_file_types?.join(', ') || 'All files'}
+                      {t('homework.assignment.allowedTypes', { types: assignment.allowed_file_types?.join(', ') || t('homework.assignment.allFiles') })}
                     </span>
                     <span className="text-sm text-muted-foreground mt-1">
-                      Max size: {assignment.max_file_size_mb}MB
+                      {t('homework.assignment.maxSize', { size: assignment.max_file_size_mb ?? '' })}
                     </span>
                   </label>
                 </div>
@@ -737,7 +755,7 @@ export default function AssignmentPage() {
                             <div className="min-w-0">
                                 <span className="font-medium text-foreground block break-all">{file.name}</span>
                                 <span className="text-xs text-muted-foreground">
-                                Size: {(file.size / 1024 / 1024).toFixed(2)} MB
+                                {t('homework.assignment.fileSize', { size: (file.size / 1024 / 1024).toFixed(2) })}
                                 </span>
                             </div>
                             </div>
@@ -758,9 +776,9 @@ export default function AssignmentPage() {
                 {assignment.content?.answer_fields && assignment.content.answer_fields.length > 0 && (
                   <div className="pt-4 border-t space-y-4">
                     <div>
-                      <Label className="text-sm font-semibold">Enter Your Answers</Label>
+                      <Label className="text-sm font-semibold">{t('homework.assignment.enterAnswers')}</Label>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Fill in your answers below. They will be auto-checked.
+                        {t('homework.assignment.enterAnswersHint')}
                       </p>
                     </div>
                     <div className="space-y-3">
@@ -775,7 +793,7 @@ export default function AssignmentPage() {
                               [field.id]: e.target.value
                             }))}
                             className="w-full px-3 py-2 border rounded-md text-sm font-mono bg-background dark:bg-card dark:border-border focus:outline-none focus:ring-2 focus:ring-ring"
-                            placeholder="Enter your answer..."
+                            placeholder={t('homework.shared.enterAnswer')}
                           />
                         </div>
                       ))}
@@ -788,7 +806,7 @@ export default function AssignmentPage() {
                   disabled={files.length === 0 || submitting || isCompressing}
                   className="w-full"
                 >
-                  {isCompressing ? 'Compressing Images...' : (submitting ? 'Submitting...' : 'Submit Assignment')}
+                  {isCompressing ? t('homework.assignment.compressingImages') : (submitting ? t('homework.shared.submitting') : t('homework.shared.submitAssignment'))}
                 </Button>
               </CardContent>
             </Card>
@@ -802,25 +820,25 @@ export default function AssignmentPage() {
         {readinessBanner}
         <Card>
         <CardHeader>
-          <CardTitle>Submit Your Work</CardTitle>
+          <CardTitle>{t('homework.assignment.submitYourWork')}</CardTitle>
           <CardDescription>
-            Type your answer below.
+            {t('homework.assignment.typeBelow')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="answer">Your Answer</Label>
+              <Label htmlFor="answer">{t('homework.assignment.yourAnswer')}</Label>
               <Textarea
                 id="answer"
-                placeholder="Type your answer here..."
+                placeholder={t('homework.shared.typeAnswer')}
                 className="min-h-[200px]"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
               />
             </div>
             <Button onClick={handleSubmit} disabled={submitting || !text}>
-              {submitting ? 'Submitting...' : 'Submit Assignment'}
+              {submitting ? t('homework.shared.submitting') : t('homework.shared.submitAssignment')}
             </Button>
           </div>
         </CardContent>
@@ -834,7 +852,7 @@ export default function AssignmentPage() {
 
   if (!assignment) return (
     <div className="flex items-center justify-center min-h-[400px]">
-      <div className="text-muted-foreground text-lg">Loading assignment...</div>
+      <div className="text-muted-foreground text-lg">{t('homework.shared.loadingAssignment')}</div>
     </div>
   );
 
@@ -858,9 +876,9 @@ export default function AssignmentPage() {
       )}
       {isReadOnlyPrevious && (
         <div className="bg-muted border border-border rounded-lg p-4 text-sm text-slate-700 dark:text-foreground">
-          This homework is from a previous group
-          {status?.previous_group_name ? ` (${status.previous_group_name})` : ''}.
-          You can view your submission and grade here, but cannot submit again.
+          {status?.previous_group_name
+            ? t('homework.assignment.previousGroupNamed', { group: status.previous_group_name })
+            : t('homework.assignment.previousGroup')}
         </div>
       )}
       <Card>
@@ -874,7 +892,7 @@ export default function AssignmentPage() {
                     <div className="flex items-center space-x-2 ">
                       <Award className="w-4 h-4 text-yellow-600 dark:text-yellow-500" />
                       <span className="text-sm font-medium text-gray-700 dark:text-foreground whitespace-nowrap">
-                        Score: {submission.score}/{assignment.max_score}
+                        {t('homework.assignment.score', { score: submission.score ?? 0, max: assignment.max_score })}
                       </span>
                     </div>
                   )}
@@ -887,12 +905,12 @@ export default function AssignmentPage() {
             <div className="flex flex-wrap items-center gap-2 sm:flex-col sm:items-end sm:text-right">
               {status && (
                 <Badge variant={getStatusBadgeVariant()} className="text-sm">
-                  {formatAssignmentStatus(status.status)}
+                  {STATUS_KEYS[status.status.trim().toLowerCase()] ? t(STATUS_KEYS[status.status.trim().toLowerCase()]) : formatAssignmentStatus(status.status)}
                 </Badge>
               )}
               {!submission && isOverdue && (
                 <span className="text-sm text-amber-700 dark:text-amber-300">
-                  Deadline passed — submissions are accepted and marked late
+                  {t('homework.assignment.deadlinePassedLate')}
                 </span>
               )}
             </div>
@@ -903,7 +921,7 @@ export default function AssignmentPage() {
             {assignment.due_date && (
               <div className={`flex items-center space-x-2 ${isOverdue ? 'text-red-600 dark:text-red-400' : ''}`} data-tip="homework-due">
                 <Calendar className="w-4 h-4" />
-                <span>Due: {formatDate(new Date(assignment.due_date))}</span>
+                <span>{t('homework.assignment.due', { date: formatDate(new Date(assignment.due_date)) })}</span>
                 {isOverdue && <AlertCircle className="w-4 h-4" />}
               </div>
             )}
@@ -911,14 +929,14 @@ export default function AssignmentPage() {
             {assignment.event_id ? (
               <Link to={lessonPath(assignment.event_id, 'homework')} className="flex items-center space-x-1 font-medium text-primary hover:underline">
                 <ArrowUpRight className="w-4 h-4" aria-hidden />
-                <span>Open lesson</span>
+                <span>{t('homework.assignment.openLesson')}</span>
               </Link>
             ) : null}
             {extension && (
               <div className="flex items-center space-x-2 text-green-600 dark:text-green-400">
                 <Calendar className="w-4 h-4" />
                 <span className="font-semibold">
-                  Extended Deadline: {formatDate(new Date(extension.extended_deadline))} {formatTime(new Date(extension.extended_deadline))}
+                  {t('homework.assignment.extendedDeadline', { date: formatDate(new Date(extension.extended_deadline)), time: formatTime(new Date(extension.extended_deadline)) })}
                 </span>
                 {extension.reason && (
                   <span className="text-xs text-muted-foreground">({extension.reason})</span>
@@ -928,11 +946,11 @@ export default function AssignmentPage() {
             {assignment.time_limit_minutes && (
               <div className="flex items-center space-x-2">
                 <Clock className="w-4 h-4" />
-                <span>Time Limit: {assignment.time_limit_minutes} minutes</span>
+                <span>{t('homework.assignment.timeLimit', { minutes: assignment.time_limit_minutes })}</span>
               </div>
             )}
             <div className="flex items-center space-x-2">
-              <span>Created: {formatDate(new Date(assignment.created_at))}</span>
+              <span>{t('homework.assignment.created', { date: formatDate(new Date(assignment.created_at)) })}</span>
             </div>
           </div>
         </CardContent>
@@ -951,8 +969,8 @@ export default function AssignmentPage() {
                   <Download className="w-5 h-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-foreground">Assignment File</p>
-                  <p className="text-xs text-muted-foreground">Download the assignment file to get started</p>
+                  <p className="text-sm font-medium text-foreground">{t('homework.assignment.assignmentFile')}</p>
+                  <p className="text-xs text-muted-foreground">{t('homework.assignment.assignmentFileHint')}</p>
                 </div>
               </div>
               <Button
@@ -967,7 +985,7 @@ export default function AssignmentPage() {
                   className="flex items-center space-x-2"
                 >
                   <Download className="w-4 h-4" />
-                  <span>Download</span>
+                  <span>{t('homework.shared.download')}</span>
                 </a>
               </Button>
             </div>

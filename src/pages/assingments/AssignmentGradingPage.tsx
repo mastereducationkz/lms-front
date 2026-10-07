@@ -16,6 +16,8 @@ import { SubmissionFileDownloadLink } from '../../components/assignments/Submiss
 import { AudioPlayer } from '../../components/AudioPlayer';
 import { safeUploadUrl } from '../../lib/mediaUrl';
 import { formatDate, formatDateTime } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/homeworkStaff';
 
 const AUDIO_FILE_EXTENSIONS = ['webm', 'ogg', 'mp4', 'm4a', 'mp3', 'mpeg', 'wav', 'x-m4a', 'aac'];
 
@@ -45,6 +47,7 @@ function unplayedTaskRecordings(assignment: Assignment | null, submission: Submi
 export default function AssignmentGradingPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const t = useT();
   const [assignment, setAssignment] = useState<Assignment | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [extensions, setExtensions] = useState<AssignmentExtension[]>([]);
@@ -86,7 +89,7 @@ export default function AssignmentGradingPage() {
       setSubmissions(submissionsData);
       setExtensions(extensionsData);
     } catch (error) {
-      toast('Failed to load data', 'error');
+      toast(t('homeworkStaff.grading.loadError'), 'error');
     } finally {
       setLoading(false);
     }
@@ -117,11 +120,11 @@ export default function AssignmentGradingPage() {
     try {
       setIsSubmitting(true);
       await apiClient.grantExtension(id, extensionStudentId, extensionDeadline, extensionReason);
-      toast('Extension granted successfully', 'success');
+      toast(t('homeworkStaff.extension.granted'), 'success');
       setIsExtensionModalOpen(false);
       loadData(); // Reload to get updated extensions
     } catch (error) {
-      toast('Failed to grant extension', 'error');
+      toast(t('homeworkStaff.extension.grantFailed'), 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -130,14 +133,14 @@ export default function AssignmentGradingPage() {
   const handleRevokeExtension = async (studentId: number) => {
     if (!id) return;
     
-    if (!confirm('Are you sure you want to revoke this extension?')) return;
+    if (!confirm(t('homeworkStaff.extension.revokeConfirm'))) return;
 
     try {
       await apiClient.revokeExtension(id, studentId);
-      toast('Extension revoked successfully', 'success');
+      toast(t('homeworkStaff.extension.revoked'), 'success');
       loadData(); // Reload to get updated extensions
     } catch (error) {
-      toast('Failed to revoke extension', 'error');
+      toast(t('homeworkStaff.extension.revokeFailed'), 'error');
     }
   };
 
@@ -151,7 +154,7 @@ export default function AssignmentGradingPage() {
   const handleAllowResubmission = async () => {
     if (!resubmissionSubmission) return;
     if (resubmissionMode === 'until_expiry' && !resubmissionExpiry) {
-      toast('Choose an expiry for repeated replacements', 'error');
+      toast(t('homeworkStaff.attempt.chooseExpiry'), 'error');
       return;
     }
     try {
@@ -160,10 +163,10 @@ export default function AssignmentGradingPage() {
         mode: resubmissionMode,
         ...(resubmissionMode === 'until_expiry' ? { expires_at: new Date(resubmissionExpiry).toISOString() } : {}),
       });
-      toast(resubmissionMode === 'one_extra' ? 'One extra attempt allowed' : 'Repeated replacements allowed until the selected expiry', 'success');
+      toast(resubmissionMode === 'one_extra' ? t('homeworkStaff.attempt.oneExtraAllowed') : t('homeworkStaff.attempt.untilExpiryAllowed'), 'success');
       setIsResubmissionModalOpen(false);
     } catch (error) {
-      toast('Failed to allow another attempt', 'error');
+      toast(t('homeworkStaff.attempt.allowFailed'), 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -175,18 +178,18 @@ export default function AssignmentGradingPage() {
     
     // Validation: Score must be present
     if (gradingScore === '' || gradingScore === null || gradingScore === undefined) {
-      toast('Please enter a grade score', 'error');
+      toast(t('homeworkStaff.grade.enterScore'), 'error');
       return;
     }
     
     setIsSubmitting(true);
     try {
       await apiClient.gradeSubmission(id, selectedSubmission.id.toString(), Number(gradingScore), gradingFeedback);
-      toast('Submission graded successfully', 'success');
+      toast(t('homeworkStaff.grade.saved'), 'success');
       setIsGradingModalOpen(false);
       await loadData();
     } catch (error) {
-      toast('Failed to grade submission', 'error');
+      toast(t('homeworkStaff.grade.failed'), 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -194,7 +197,7 @@ export default function AssignmentGradingPage() {
 
   const openGradingModal = (submission: Submission) => {
     if (!submission.is_current) {
-      toast('Only the latest attempt can be graded.', 'error');
+      toast(t('homeworkStaff.grade.onlyLatest'), 'error');
       return;
     }
     setSelectedSubmission(submission);
@@ -225,7 +228,7 @@ export default function AssignmentGradingPage() {
   ));
 
   if (loading) {
-    return <div className="text-center py-8 text-muted-foreground">Loading...</div>;
+    return <div className="text-center py-8 text-muted-foreground">{t('common.loading')}</div>;
   }
 
   // Computed once so the audio-submission branch below can both test it and render it
@@ -239,22 +242,22 @@ export default function AssignmentGradingPage() {
       <div className="flex items-center space-x-4">
         <Button variant="outline" onClick={() => navigate('/homework')}>
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
+          {t('common.back')}
         </Button>
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Grade Submissions</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t('homeworkStaff.grading.title')}</h1>
           <p className="text-muted-foreground">{assignment?.title}</p>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Submission History ({submissionGroups.length} students)</CardTitle>
+          <CardTitle>{t('homeworkStaff.grading.history', { count: submissionGroups.length })}</CardTitle>
         </CardHeader>
         <CardContent>
           {submissions.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No submissions yet.
+              {t('homeworkStaff.grading.noSubmissions')}
             </div>
           ) : (
             submissionGroups.map((studentSubmissions) => {
@@ -270,19 +273,19 @@ export default function AssignmentGradingPage() {
               <div key={currentSubmission.user_id} className="border dark:border-border rounded-lg p-4 mb-4 space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="font-medium text-lg text-foreground">{currentSubmission.user_name || `User ${currentSubmission.user_id}`}</div>
-                    <div className="text-sm text-muted-foreground">{studentSubmissions.length} attempt{studentSubmissions.length === 1 ? '' : 's'}</div>
-                    {studentExtension && <div className="text-sm text-green-600 dark:text-green-400 flex items-center mt-1"><Calendar className="w-3 h-3 mr-1" />Extended Deadline: {formatDate(new Date(studentExtension.extended_deadline))}{studentExtension.reason && ` - ${studentExtension.reason}`}</div>}
+                    <div className="font-medium text-lg text-foreground">{currentSubmission.user_name || t('homeworkStaff.grading.userFallback', { id: currentSubmission.user_id })}</div>
+                    <div className="text-sm text-muted-foreground">{t('homeworkStaff.grading.attempts', { count: studentSubmissions.length })}</div>
+                    {studentExtension && <div className="text-sm text-green-600 dark:text-green-400 flex items-center mt-1"><Calendar className="w-3 h-3 mr-1" />{t('homeworkStaff.grading.extendedDeadline', { date: formatDate(new Date(studentExtension.extended_deadline)) })}{studentExtension.reason && ` - ${studentExtension.reason}`}</div>}
                   </div>
                 </div>
                 {visibleAttempts.map((submission) => (
                   <div key={submission.id} className="rounded-md border border-border p-3 flex items-center justify-between gap-3">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2"><Badge variant={submission.is_current ? 'default' : 'secondary'}>Attempt {submission.attempt_number || 1}{submission.is_current ? ' · Current' : ' · Previous'}</Badge>{submission.is_graded ? <Badge variant={(submission.score || 0) >= (submission.max_score * 0.6) ? 'default' : 'destructive'}>{submission.is_grade_superseded ? 'Superseded score' : 'Score'}: {submission.score || 0}/{submission.max_score}</Badge> : <Badge variant="secondary">Pending Grading</Badge>}</div>
-                      <div className="text-sm text-muted-foreground  flex items-center mt-2"><Clock className="w-3 h-3 mr-1" />Submitted: {formatDateTime(new Date(submission.submitted_at))}</div>
-                      {submission.is_late && <div className="text-sm text-amber-600 dark:text-amber-400 flex items-center mt-1 font-medium"><AlertCircle className="w-3 h-3 mr-1" />Late Submission</div>}
+                      <div className="flex items-center gap-2"><Badge variant={submission.is_current ? 'default' : 'secondary'}>{t(submission.is_current ? 'homeworkStaff.grading.attemptCurrent' : 'homeworkStaff.grading.attemptPrevious', { number: submission.attempt_number || 1 })}</Badge>{submission.is_graded ? <Badge variant={(submission.score || 0) >= (submission.max_score * 0.6) ? 'default' : 'destructive'}>{t(submission.is_grade_superseded ? 'homeworkStaff.grading.supersededScore' : 'homeworkStaff.grading.score', { score: submission.score || 0, max: submission.max_score })}</Badge> : <Badge variant="secondary">{t('homeworkStaff.grading.pending')}</Badge>}</div>
+                      <div className="text-sm text-muted-foreground  flex items-center mt-2"><Clock className="w-3 h-3 mr-1" />{t('homeworkStaff.grade.submittedAt', { date: formatDateTime(new Date(submission.submitted_at)) })}</div>
+                      {submission.is_late && <div className="text-sm text-amber-600 dark:text-amber-400 flex items-center mt-1 font-medium"><AlertCircle className="w-3 h-3 mr-1" />{t('homeworkStaff.grading.lateSubmission')}</div>}
                     </div>
-                    {submission.is_current ? <div className="flex items-center gap-2"><Button variant="outline" size="sm" onClick={() => openExtensionModal(submission)}>{studentExtension ? 'Edit Extension' : 'Grant Extension'}</Button>{submission.is_graded && <Button variant="outline" size="sm" onClick={() => openResubmissionModal(submission)} data-tip="allow-attempt"><RotateCcw className="w-4 h-4 mr-1" />Allow another attempt</Button>}<Button onClick={() => openGradingModal(submission)}>{submission.is_graded ? 'Update Grade' : 'Grade'}</Button></div> : <Button variant="outline" onClick={() => openAttemptPreview(submission)}>View attempt</Button>}
+                    {submission.is_current ? <div className="flex items-center gap-2"><Button variant="outline" size="sm" onClick={() => openExtensionModal(submission)}>{studentExtension ? t('homeworkStaff.extension.edit') : t('homeworkStaff.extension.grant')}</Button>{submission.is_graded && <Button variant="outline" size="sm" onClick={() => openResubmissionModal(submission)} data-tip="allow-attempt"><RotateCcw className="w-4 h-4 mr-1" />{t('homeworkStaff.attempt.allow')}</Button>}<Button onClick={() => openGradingModal(submission)}>{submission.is_graded ? t('homeworkStaff.grade.update') : t('homeworkStaff.grade.grade')}</Button></div> : <Button variant="outline" onClick={() => openAttemptPreview(submission)}>{t('homeworkStaff.grading.viewAttempt')}</Button>}
                   </div>
                 ))}
                 {previousAttempts.length > 0 && (
@@ -295,8 +298,8 @@ export default function AssignmentGradingPage() {
                     }))}
                   >
                     {expandedPreviousAttempts[studentKey]
-                      ? 'Hide previous attempts'
-                      : `Show previous attempts (${previousAttempts.length})`}
+                      ? t('homeworkStaff.grading.hidePrevious')
+                      : t('homeworkStaff.grading.showPreviousCount', { count: previousAttempts.length })}
                   </Button>
                 )}
               </div>
@@ -309,11 +312,11 @@ export default function AssignmentGradingPage() {
       <Dialog open={isGradingModalOpen} onOpenChange={setIsGradingModalOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{isViewingPreviousAttempt ? 'Previous Attempt' : 'Grade Submission'}</DialogTitle>
+            <DialogTitle>{isViewingPreviousAttempt ? t('homeworkStaff.grading.previousAttempt') : t('homeworkStaff.grade.dialogTitle')}</DialogTitle>
             <DialogDescription>
               {isViewingPreviousAttempt
-                ? 'This earlier attempt is preserved for reference and cannot be graded.'
-                : 'Review the student\'s work and provide a score and feedback.'}
+                ? t('homeworkStaff.grading.previousAttemptHint')
+                : t('homeworkStaff.grading.reviewHint')}
             </DialogDescription>
           </DialogHeader>
           
@@ -322,7 +325,7 @@ export default function AssignmentGradingPage() {
             <div className="rounded-lg border border-border bg-muted dark:bg-secondary p-6 text-foreground">
               <h3 className="mb-4 flex items-center font-semibold text-foreground">
                 <FileText className="mr-2 h-4 w-4" />
-                Student's Work
+                {t('homeworkStaff.grade.studentWork')}
               </h3>
               
               {assignment?.assignment_type === 'multi_task' && selectedSubmission ? (
@@ -339,12 +342,12 @@ export default function AssignmentGradingPage() {
                     return (
                       <div key={index} className="space-y-2">
                         <div className="text-xs font-medium text-muted-foreground">
-                          Recording from a removed task:
+                          {t('homeworkStaff.grading.removedTaskRecording')}
                         </div>
                         {safeUrl ? (
                           <AudioPlayer src={safeUrl} />
                         ) : (
-                          <div className="text-sm italic text-muted-foreground">Recording unavailable.</div>
+                          <div className="text-sm italic text-muted-foreground">{t('homeworkStaff.grading.recordingUnavailable')}</div>
                         )}
                       </div>
                     );
@@ -360,7 +363,7 @@ export default function AssignmentGradingPage() {
                     <div className="flex items-center rounded border border-border bg-card p-3">
                       <FileText className="mr-3 h-5 w-5 text-brand" />
                       <div className="flex-1">
-                        <div className="font-medium text-foreground">{selectedSubmission.submitted_file_name || 'Attached File'}</div>
+                        <div className="font-medium text-foreground">{selectedSubmission.submitted_file_name || t('homeworkStaff.grading.attachedFile')}</div>
                       </div>
                       <SubmissionFileDownloadLink
                         fileUrl={selectedSubmission.file_url}
@@ -376,7 +379,7 @@ export default function AssignmentGradingPage() {
                   )}
                   
                   {!selectedSubmission?.file_url && !selectedSubmission?.answers?.text && (
-                    <div className="italic text-muted-foreground">No content to display.</div>
+                    <div className="italic text-muted-foreground">{t('homeworkStaff.grading.noContent')}</div>
                   )}
                 </div>
               )}
@@ -388,14 +391,18 @@ export default function AssignmentGradingPage() {
                 <div className="@2xl:col-span-2 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded text-sm text-amber-800 dark:text-amber-200 flex items-start">
                    <AlertCircle className="w-5 h-5 mr-2 text-amber-600 dark:text-amber-400 flex-shrink-0" />
                    <div>
-                     <p className="font-semibold">Late Submission Penalty</p>
-                     <p> This submission was late. A penalty multiplier of <strong>{assignment.late_penalty_multiplier}x</strong> is enabled for this assignment.</p>
-                     <p className="mt-1 text-xs">If auto-graded, the penalty was already applied. For manual grading, please consider this penalty.</p>
+                     <p className="font-semibold">{t('homeworkStaff.grading.latePenaltyTitle')}</p>
+                     <p>{(() => {
+                       // One message; the multiplier stays bold wherever the language puts it.
+                       const [before, after = ''] = t('homeworkStaff.grading.latePenaltyBody', { multiplier: '\u0000' }).split('\u0000');
+                       return <>{before}<strong>{assignment.late_penalty_multiplier}x</strong>{after}</>;
+                     })()}</p>
+                     <p className="mt-1 text-xs">{t('homeworkStaff.grading.latePenaltyNote')}</p>
                    </div>
                 </div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="score">Score (Max: {assignment?.max_score})</Label>
+                <Label htmlFor="score">{t('homeworkStaff.grading.scoreMax', { max: assignment?.max_score ?? '' })}</Label>
                 <Input
                   id="score"
                   type="number"
@@ -410,16 +417,16 @@ export default function AssignmentGradingPage() {
                       setGradingScore(Math.min(parseInt(val) || 0, assignment?.max_score || 100));
                     }
                   }}
-                  placeholder="Enter score"
+                  placeholder={t('homeworkStaff.grading.scorePlaceholder')}
                 />
               </div>
               <div className="space-y-2 @2xl:col-span-2">
-                <Label htmlFor="feedback">Feedback</Label>
+                <Label htmlFor="feedback">{t('homeworkStaff.grade.feedback')}</Label>
                 <Textarea
                   id="feedback"
                   value={gradingFeedback}
                   onChange={(e) => setGradingFeedback(e.target.value)}
-                  placeholder="Provide feedback to the student..."
+                  placeholder={t('homeworkStaff.grading.feedbackPlaceholder')}
                   className="min-h-[100px]"
                 />
               </div>
@@ -428,10 +435,10 @@ export default function AssignmentGradingPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsGradingModalOpen(false)}>
-              {isViewingPreviousAttempt ? 'Close' : 'Cancel'}
+              {isViewingPreviousAttempt ? t('common.close') : t('common.cancel')}
             </Button>
             {!isViewingPreviousAttempt && <Button onClick={handleGradeSubmission} disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save Grade'}
+              {isSubmitting ? t('homeworkStaff.grade.saving') : t('homeworkStaff.grade.save')}
             </Button>}
           </DialogFooter>
         </DialogContent>
@@ -440,25 +447,25 @@ export default function AssignmentGradingPage() {
       <Dialog open={isResubmissionModalOpen} onOpenChange={setIsResubmissionModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Allow another attempt</DialogTitle>
+            <DialogTitle>{t('homeworkStaff.attempt.allow')}</DialogTitle>
             <DialogDescription>
-              The current grade will remain visible in history but will be superseded when the student submits a replacement. Its grade points will be reversed until the new attempt is graded.
+              {t('homeworkStaff.attempt.dialogHint')}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <label className="flex gap-3 rounded-lg border border-border p-3 cursor-pointer">
               <input type="radio" checked={resubmissionMode === 'one_extra'} onChange={() => setResubmissionMode('one_extra')} />
-              <span><span className="font-medium block">One extra attempt</span><span className="text-sm text-muted-foreground">Default. It works even after the deadline or attempt limit, then closes automatically.</span></span>
+              <span><span className="font-medium block">{t('homeworkStaff.attempt.oneExtra')}</span><span className="text-sm text-muted-foreground">{t('homeworkStaff.attempt.oneExtraHint')}</span></span>
             </label>
             <label className="flex gap-3 rounded-lg border border-border p-3 cursor-pointer">
               <input type="radio" checked={resubmissionMode === 'until_expiry'} onChange={() => setResubmissionMode('until_expiry')} />
-              <span><span className="font-medium block">Allow replacements until a chosen time</span><span className="text-sm text-muted-foreground">Overrides the normal attempt limit only through the expiry you set.</span></span>
+              <span><span className="font-medium block">{t('homeworkStaff.attempt.untilExpiry')}</span><span className="text-sm text-muted-foreground">{t('homeworkStaff.attempt.untilExpiryHint')}</span></span>
             </label>
-            {resubmissionMode === 'until_expiry' && <div className="space-y-2"><Label htmlFor="resubmission-expiry">Replacement window ends</Label><Input id="resubmission-expiry" type="datetime-local" value={resubmissionExpiry} onChange={(event) => setResubmissionExpiry(event.target.value)} min={new Date().toISOString().slice(0, 16)} /></div>}
+            {resubmissionMode === 'until_expiry' && <div className="space-y-2"><Label htmlFor="resubmission-expiry">{t('homeworkStaff.attempt.windowEnds')}</Label><Input id="resubmission-expiry" type="datetime-local" value={resubmissionExpiry} onChange={(event) => setResubmissionExpiry(event.target.value)} min={new Date().toISOString().slice(0, 16)} /></div>}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsResubmissionModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleAllowResubmission} disabled={isSubmitting}>{isSubmitting ? 'Allowing...' : 'Allow attempt'}</Button>
+            <Button variant="outline" onClick={() => setIsResubmissionModalOpen(false)}>{t('common.cancel')}</Button>
+            <Button onClick={handleAllowResubmission} disabled={isSubmitting}>{isSubmitting ? t('homeworkStaff.attempt.allowing') : t('homeworkStaff.attempt.allowButton')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -467,15 +474,15 @@ export default function AssignmentGradingPage() {
       <Dialog open={isExtensionModalOpen} onOpenChange={setIsExtensionModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Grant Deadline Extension</DialogTitle>
+            <DialogTitle>{t('homeworkStaff.extension.dialogTitle')}</DialogTitle>
             <DialogDescription>
-              Set a new deadline for this student to submit their work.
+              {t('homeworkStaff.extension.dialogHint')}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="extension-deadline">Extended Deadline</Label>
+              <Label htmlFor="extension-deadline">{t('homeworkStaff.extension.deadline')}</Label>
               <Input
                 id="extension-deadline"
                 type="datetime-local"
@@ -484,18 +491,18 @@ export default function AssignmentGradingPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="extension-reason">Reason (Optional)</Label>
+              <Label htmlFor="extension-reason">{t('homeworkStaff.extension.reason')}</Label>
               <Textarea
                 id="extension-reason"
                 value={extensionReason}
                 onChange={(e) => setExtensionReason(e.target.value)}
-                placeholder="Reason for the extension..."
+                placeholder={t('homeworkStaff.extension.reasonPlaceholder')}
                 className="min-h-[80px]"
               />
             </div>
             {extensionStudentId && extensions.find(ext => ext.student_id === extensionStudentId) && (
               <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-950/40 dark:border dark:border-yellow-800 rounded-lg">
-                <span className="text-sm text-yellow-800 dark:text-yellow-200">This student already has an extension</span>
+                <span className="text-sm text-yellow-800 dark:text-yellow-200">{t('homeworkStaff.extension.alreadyHas')}</span>
                 <Button
                   variant="destructive"
                   size="sm"
@@ -504,7 +511,7 @@ export default function AssignmentGradingPage() {
                     setIsExtensionModalOpen(false);
                   }}
                 >
-                  Revoke
+                  {t('homeworkStaff.extension.revoke')}
                 </Button>
               </div>
             )}
@@ -512,10 +519,10 @@ export default function AssignmentGradingPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsExtensionModalOpen(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleGrantExtension} disabled={isSubmitting || !extensionDeadline}>
-              {isSubmitting ? 'Saving...' : 'Grant Extension'}
+              {isSubmitting ? t('homeworkStaff.grade.saving') : t('homeworkStaff.extension.grant')}
             </Button>
           </DialogFooter>
         </DialogContent>

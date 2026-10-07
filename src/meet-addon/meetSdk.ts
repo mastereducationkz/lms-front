@@ -1,4 +1,6 @@
 import { meet } from '@googleworkspace/meet-addons/meet.addons';
+import { t } from '../lib/i18n';
+import '@/lib/i18n/catalogs/classLesson';
 
 /**
  * Where the panel is running, and for which meeting.
@@ -44,7 +46,7 @@ export interface ResolveOptions {
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('Meet did not answer in time')), ms);
+    const timer = setTimeout(() => reject(new Error(t('classLesson.addon.noAnswerInTime'))), ms);
     promise.then(
       (value) => { clearTimeout(timer); resolve(value); },
       (error) => { clearTimeout(timer); reject(error); },
@@ -54,7 +56,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 
 export async function resolveMeeting(options: ResolveOptions): Promise<MeetingSource> {
   const preview = normaliseMeetingCode(new URLSearchParams(options.search).get('meetingCode'));
-  let reason = 'This panel was opened outside Google Meet.';
+  let reason = t('classLesson.addon.outsideMeet');
   if (options.framed && options.projectNumber) {
     try {
       const sdk = options.sdk ?? (meet as unknown as SdkLike);
@@ -66,12 +68,12 @@ export async function resolveMeeting(options: ResolveOptions): Promise<MeetingSo
       })(), options.timeoutMs ?? 8000);
       const meetingCode = normaliseMeetingCode(code);
       if (meetingCode) return { kind: 'meet', meetingCode };
-      reason = 'Meet did not say which meeting this is.';
+      reason = t('classLesson.addon.noMeetingCode');
     } catch (error) {
-      reason = error instanceof Error && error.message ? error.message : 'Meet did not answer.';
+      reason = error instanceof Error && error.message ? error.message : t('classLesson.addon.noAnswer');
     }
   } else if (options.framed) {
-    reason = 'The add-on is not configured yet (no Cloud project number).';
+    reason = t('classLesson.addon.notConfigured');
   }
   if (preview) return { kind: 'preview', meetingCode: preview };
   return options.framed ? { kind: 'unavailable', reason } : { kind: 'outside' };

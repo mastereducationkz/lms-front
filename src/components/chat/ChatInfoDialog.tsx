@@ -5,6 +5,8 @@ import { Button } from '../ui/button';
 import { Bell, BellOff } from 'lucide-react';
 import { getSharedMedia } from '../../services/api';
 import { SharedMediaList, type SharedMediaItem } from './SharedMediaList';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/chatLive';
 
 interface ChatInfoDialogProps {
   open: boolean;
@@ -25,6 +27,7 @@ function getInitials(name: string) {
 export function ChatInfoDialog({
   open, onOpenChange, partnerId, name, role, avatarUrl, isMuted, onToggleMute,
 }: ChatInfoDialogProps) {
+  const t = useT();
   const [media, setMedia] = useState<SharedMediaItem[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -42,7 +45,7 @@ export function ChatInfoDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Chat info</DialogTitle>
+          <DialogTitle>{t('chatLive.chat.info')}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col items-center text-center py-2">
@@ -51,7 +54,7 @@ export function ChatInfoDialog({
             <AvatarFallback className="text-xl">{getInitials(name)}</AvatarFallback>
           </Avatar>
           <p className="mt-3 text-lg font-semibold">{name}</p>
-          {role && <p className="text-sm text-muted-foreground capitalize">{role}</p>}
+          {role && <p className="text-sm text-muted-foreground">{role}</p>}
         </div>
 
         <Button
@@ -60,17 +63,17 @@ export function ChatInfoDialog({
           className="w-full justify-center gap-2"
         >
           {isMuted ? <BellOff className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-          {isMuted ? 'Unmute notifications' : 'Mute notifications'}
+          {isMuted ? t('chatLive.chat.unmute') : t('chatLive.chat.mute')}
         </Button>
 
         <div className="mt-2">
           <p className="text-sm font-semibold text-gray-700 dark:text-foreground mb-2">
-            Shared media &amp; files
+            {t('chatLive.chat.sharedMedia')}
           </p>
           {loading ? (
-            <p className="text-sm text-gray-400 dark:text-muted-foreground py-4 text-center">Loading…</p>
+            <p className="text-sm text-gray-400 dark:text-muted-foreground py-4 text-center">{t('common.loading')}</p>
           ) : media.length === 0 ? (
-            <p className="text-sm text-gray-400 dark:text-muted-foreground py-4 text-center">No shared media yet</p>
+            <p className="text-sm text-gray-400 dark:text-muted-foreground py-4 text-center">{t('chatLive.chat.noSharedMedia')}</p>
           ) : (
             <SharedMediaList media={media} />
           )}

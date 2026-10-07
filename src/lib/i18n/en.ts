@@ -34,6 +34,20 @@ import { profile } from './en/profile';
 import { stars } from './en/stars';
 import { guide } from './en/guide';
 import { curatorDashboard } from './en/curatorDashboard';
+import { lessonPlayer } from './en/lessonPlayer';
+import { homework } from './en/homework';
+import { homeworkStaff } from './en/homeworkStaff';
+import { studentHome } from './en/studentHome';
+import { publicPages } from './en/publicPages';
+import { chatLive } from './en/chatLive';
+import { meetViews } from './en/meetViews';
+import { teacherDesk } from './en/teacherDesk';
+import { teacherInsights } from './en/teacherInsights';
+import { courseAuthoring } from './en/courseAuthoring';
+import { adminUsers } from './en/adminUsers';
+import { adminPages } from './en/adminPages';
+import { quizReview } from './en/quizReview';
+import { sharedUi } from './en/sharedUi';
 
 export const EN_NAMESPACES = {
   common,
@@ -68,6 +82,20 @@ export const EN_NAMESPACES = {
   stars,
   guide,
   curatorDashboard,
+  lessonPlayer,
+  homework,
+  homeworkStaff,
+  studentHome,
+  publicPages,
+  chatLive,
+  meetViews,
+  teacherDesk,
+  teacherInsights,
+  courseAuthoring,
+  adminUsers,
+  adminPages,
+  quizReview,
+  sharedUi,
 } as const;
 
 export const en = {
@@ -103,6 +131,20 @@ export const en = {
   ...stars,
   ...guide,
   ...curatorDashboard,
+  ...lessonPlayer,
+  ...homework,
+  ...homeworkStaff,
+  ...studentHome,
+  ...publicPages,
+  ...chatLive,
+  ...meetViews,
+  ...teacherDesk,
+  ...teacherInsights,
+  ...courseAuthoring,
+  ...adminUsers,
+  ...adminPages,
+  ...quizReview,
+  ...sharedUi,
 } as const;
 
 export type MessageKey = keyof typeof en;

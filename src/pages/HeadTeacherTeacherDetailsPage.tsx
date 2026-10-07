@@ -47,6 +47,8 @@ import { cn } from '../lib/utils';
 import { isAttendanceLockedLesson } from '../lib/attendance';
 import { parseAsUTC } from '../lib/datetime';
 import { formatDate } from '../lib/i18n';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/teacherInsights';
 
 interface MissedAttendanceItem {
   event_id: number;
@@ -131,6 +133,7 @@ interface AttendanceData {
 export default function HeadTeacherTeacherDetailsPage() {
   const { courseId, teacherId } = useParams<{ courseId: string; teacherId: string }>();
   const navigate = useNavigate();
+  const t = useT();
   
   const [teacherDetails, setTeacherDetails] = useState<TeacherDetails | null>(null);
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
@@ -252,21 +255,21 @@ export default function HeadTeacherTeacherDetailsPage() {
   };
 
   const getAttendanceStatusLabel = (status: string, excused = false) => {
-    if ((status === 'missed' || status === 'absent') && excused) return 'Exc.';
+    if ((status === 'missed' || status === 'absent') && excused) return t('teacherInsights.teacherDetails.status.excusedShort');
     switch (status) {
-      case 'attended': return 'Present';
-      case 'late': return 'Late';
+      case 'attended': return t('teacherInsights.teacherDetails.status.present');
+      case 'late': return t('teacherInsights.teacherDetails.status.late');
       case 'missed':
-      case 'absent': return 'Absent';
+      case 'absent': return t('teacherInsights.teacherDetails.status.absent');
       case 'pending': return '-';
-      default: return 'None';
+      default: return t('teacherInsights.teacherDetails.status.none');
     }
   };
 
   if (loadingDetails) {
     return (
       <div className="p-8 flex justify-center items-center">
-        <div className="animate-pulse text-muted-foreground">Loading teacher details...</div>
+        <div className="animate-pulse text-muted-foreground">{t('teacherInsights.teacherDetails.loading')}</div>
       </div>
     );
   }
@@ -274,7 +277,7 @@ export default function HeadTeacherTeacherDetailsPage() {
   if (!teacherDetails) {
     return (
       <div className="p-8 text-center text-muted-foreground">
-        Teacher not found
+        {t('teacherInsights.teacherDetails.notFound')}
       </div>
     );
   }
@@ -288,7 +291,7 @@ export default function HeadTeacherTeacherDetailsPage() {
           onClick={() => navigate('/dashboard')} 
           className="w-fit pl-0 mb-2 hover:bg-muted -ml-2 text-muted-foreground"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
+          <ArrowLeft className="mr-2 h-4 w-4" /> {t('teacherInsights.teacherDetails.backToDashboard')}
         </Button>
         <div className="flex items-center justify-between">
           <div>
@@ -302,27 +305,27 @@ export default function HeadTeacherTeacherDetailsPage() {
       <div className="grid grid-cols-1 @2xl:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Students</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('teacherInsights.teacherDetails.students')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{teacherDetails.students_count}</div>
-            <p className="text-xs text-muted-foreground mt-1">Across {teacherDetails.groups_count} groups</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('teacherInsights.teacherDetails.acrossGroups', { count: teacherDetails.groups_count })}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Feedbacks</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('teacherInsights.teacherDetails.totalFeedbacks')}</CardTitle>
           </CardHeader>
           <CardContent>
              <div className="text-2xl font-bold text-brand">{teacherDetails.total_feedbacks}</div>
-             <p className="text-xs text-muted-foreground mt-1">Written comments</p>
+             <p className="text-xs text-muted-foreground mt-1">{t('teacherInsights.shared.writtenComments')}</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Avg Score Given</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('teacherInsights.teacherDetails.avgScoreGiven')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${
@@ -331,20 +334,20 @@ export default function HeadTeacherTeacherDetailsPage() {
             }`}>
               {teacherDetails.avg_score_given !== null ? teacherDetails.avg_score_given.toFixed(1) : '-'}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Average points</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('teacherInsights.teacherDetails.averagePoints')}</p>
           </CardContent>
         </Card>
 
         <Card>
            <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Missed Attendance</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('teacherInsights.teacherDetails.missedAttendance')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${(teacherDetails.missed_attendance_count || 0) > 0 ? 'text-red-600 dark:text-red-300' : 'text-emerald-600 dark:text-emerald-300'}`}>
               {teacherDetails.missed_attendance_count || 0}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Total times forgot • {teacherDetails.missed_attendance_details?.length || 0} pending
+              {t('teacherInsights.teacherDetails.missedAttendanceHint', { pending: teacherDetails.missed_attendance_details?.length || 0 })}
             </p>
           </CardContent>
         </Card>
@@ -357,11 +360,11 @@ export default function HeadTeacherTeacherDetailsPage() {
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-500" />
               <CardTitle className="text-base text-red-900 dark:text-red-300">
-                Missing Attendance Records ({teacherDetails.missed_attendance_details?.length})
+                {t('teacherInsights.teacherDetails.missingRecords', { count: teacherDetails.missed_attendance_details?.length ?? 0 })}
               </CardTitle>
             </div>
             <CardDescription className="text-red-700 dark:text-red-300">
-              These classes still need attendance to be recorded
+              {t('teacherInsights.teacherDetails.missingRecordsHint')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -378,7 +381,7 @@ export default function HeadTeacherTeacherDetailsPage() {
                     </p>
                   </div>
                   <Badge variant="secondary" className="bg-red-100 dark:bg-red-500/15 text-red-700 dark:text-red-300 border-red-200 dark:border-red-500/30">
-                    {item.recorded_count}/{item.expected_count} recorded
+                    {t('teacherInsights.teacherDetails.recordedOf', { recorded: item.recorded_count, expected: item.expected_count })}
                   </Badge>
                 </div>
               ))}
@@ -391,16 +394,16 @@ export default function HeadTeacherTeacherDetailsPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4 mb-8 max-w-2xl">
           <TabsTrigger value="overview" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" /> Overview
+            <BarChart3 className="h-4 w-4" /> {t('teacherInsights.teacherDetails.tabs.overview')}
           </TabsTrigger>
           <TabsTrigger value="feedbacks" className="flex items-center gap-2">
-             <MessageSquare className="h-4 w-4" /> Feedbacks
+             <MessageSquare className="h-4 w-4" /> {t('teacherInsights.teacherDetails.tabs.feedbacks')}
           </TabsTrigger>
           <TabsTrigger value="assignments" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" /> Assignments
+            <FileText className="h-4 w-4" /> {t('teacherInsights.teacherDetails.tabs.assignments')}
           </TabsTrigger>
           <TabsTrigger value="attendance" className="flex items-center gap-2">
-            <ClipboardCheck className="h-4 w-4" /> Attendance
+            <ClipboardCheck className="h-4 w-4" /> {t('teacherInsights.teacherDetails.tabs.attendance')}
           </TabsTrigger>
         </TabsList>
 
@@ -410,8 +413,8 @@ export default function HeadTeacherTeacherDetailsPage() {
             {/* Grade Distribution Chart */}
             <Card className="border-border shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-lg">Grade Distribution</CardTitle>
-                  <CardDescription>How grades are distributed across assignments</CardDescription>
+                  <CardTitle className="text-lg">{t('teacherInsights.teacherDetails.gradeDistribution')}</CardTitle>
+                  <CardDescription>{t('teacherInsights.teacherDetails.gradeDistributionHint')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="h-[300px] w-full">
@@ -434,7 +437,7 @@ export default function HeadTeacherTeacherDetailsPage() {
                              cursor={{ fill: 'transparent' }}
                              contentStyle={chartTooltipStyle}
                           />
-                          <Bar dataKey="count" name="Students" radius={[4, 4, 0, 0]}>
+                          <Bar dataKey="count" name={t('teacherInsights.teacherDetails.students')} radius={[4, 4, 0, 0]}>
                             {teacherDetails.grade_distribution.map((_, index) => (
                               <Cell key={`cell-${index}`} fill={index > 2 ? '#10b981' : index === 2 ? '#f59e0b' : '#ef4444'} />
                             ))}
@@ -448,8 +451,8 @@ export default function HeadTeacherTeacherDetailsPage() {
             {/* Activity History Chart */}
              <Card className="border-border shadow-sm">
                 <CardHeader>
-                  <CardTitle className="text-lg">Recent Activity</CardTitle>
-                  <CardDescription>Grading volume over the last 30 days</CardDescription>
+                  <CardTitle className="text-lg">{t('teacherInsights.teacherDetails.recentActivity')}</CardTitle>
+                  <CardDescription>{t('teacherInsights.teacherDetails.recentActivityHint')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="h-[300px] w-full">
@@ -496,10 +499,10 @@ export default function HeadTeacherTeacherDetailsPage() {
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <div>
-                   <CardTitle className="text-lg">Recent Feedbacks</CardTitle>
-                   <CardDescription>History of feedback given to students</CardDescription>
+                   <CardTitle className="text-lg">{t('teacherInsights.teacherDetails.recentFeedbacks')}</CardTitle>
+                   <CardDescription>{t('teacherInsights.teacherDetails.recentFeedbacksHint')}</CardDescription>
                 </div>
-                {feedbacks.length > 0 && <Badge variant="outline" className="bg-slate-50 dark:bg-muted text-muted-foreground">{feedbacks.length} items</Badge>}
+                {feedbacks.length > 0 && <Badge variant="outline" className="bg-slate-50 dark:bg-muted text-muted-foreground">{t('teacherInsights.teacherDetails.itemsCount', { count: feedbacks.length })}</Badge>}
               </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -510,7 +513,7 @@ export default function HeadTeacherTeacherDetailsPage() {
               ) : feedbacks.length === 0 ? (
                 <div className="p-12 text-center text-muted-foreground bg-slate-50/50 dark:bg-muted/40 border-t border-border">
                   <MessageSquare className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-                  No feedbacks found in the recent history.
+                  {t('teacherInsights.teacherDetails.noFeedbacks')}
                 </div>
               ) : (
                 <div className="space-y-0 divide-y divide-border">
@@ -536,7 +539,7 @@ export default function HeadTeacherTeacherDetailsPage() {
                        
                        <div className="flex items-center gap-2 mt-2">
                           <Badge variant="secondary" className="bg-brand-surface text-brand-subtle-foreground hover:bg-brand-subtle border-brand-border">
-                             Score: {item.score}/{item.max_score}
+                             {t('teacherInsights.teacherDetails.score', { score: item.score ?? '—', max: item.max_score })}
                           </Badge>
                        </div>
                      </div>
@@ -554,10 +557,10 @@ export default function HeadTeacherTeacherDetailsPage() {
              <CardHeader className="pb-3">
                <div className="flex items-center justify-between">
                 <div>
-                   <CardTitle className="text-lg">Assignments Management</CardTitle>
-                   <CardDescription>Overview of assignments managed by this teacher</CardDescription>
+                   <CardTitle className="text-lg">{t('teacherInsights.teacherDetails.assignmentsManagement')}</CardTitle>
+                   <CardDescription>{t('teacherInsights.teacherDetails.assignmentsHint')}</CardDescription>
                 </div>
-                {assignments.length > 0 && <Badge variant="outline" className="bg-slate-50 dark:bg-muted text-muted-foreground">{assignments.length} assignments</Badge>}
+                {assignments.length > 0 && <Badge variant="outline" className="bg-slate-50 dark:bg-muted text-muted-foreground">{t('teacherInsights.teacherDetails.assignmentsCount', { count: assignments.length })}</Badge>}
                </div>
              </CardHeader>
              <CardContent className="p-0">
@@ -568,17 +571,17 @@ export default function HeadTeacherTeacherDetailsPage() {
                ) : assignments.length === 0 ? (
                  <div className="p-12 text-center text-muted-foreground bg-slate-50/50 dark:bg-muted/40 border-t border-border">
                    <FileText className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-                   No assignments found.
+                   {t('teacherInsights.teacherDetails.noAssignments')}
                  </div>
                ) : (
                  <Table>
                    <TableHeader>
                      <TableRow className="bg-slate-50/80 dark:bg-muted/40 hover:bg-muted/60">
-                       <TableHead className="font-semibold text-foreground">Assignment</TableHead>
-                       <TableHead className="font-semibold text-foreground">Group</TableHead>
-                       <TableHead className="text-center font-semibold text-foreground">Completion</TableHead>
-                       <TableHead className="text-center font-semibold text-foreground">Grading Status</TableHead>
-                       <TableHead className="text-right font-semibold text-foreground">Due Date</TableHead>
+                       <TableHead className="font-semibold text-foreground">{t('teacherInsights.teacherDetails.col.assignment')}</TableHead>
+                       <TableHead className="font-semibold text-foreground">{t('teacherInsights.teacherDetails.col.group')}</TableHead>
+                       <TableHead className="text-center font-semibold text-foreground">{t('teacherInsights.teacherDetails.col.completion')}</TableHead>
+                       <TableHead className="text-center font-semibold text-foreground">{t('teacherInsights.teacherDetails.col.gradingStatus')}</TableHead>
+                       <TableHead className="text-right font-semibold text-foreground">{t('teacherInsights.teacherDetails.col.dueDate')}</TableHead>
                      </TableRow>
                    </TableHeader>
                    <TableBody>
@@ -600,13 +603,13 @@ export default function HeadTeacherTeacherDetailsPage() {
                            </TableCell>
                            <TableCell className="text-center">
                              <div className="flex flex-col items-center gap-1">
-                               <span className="text-sm font-medium">{assignment.total_submissions} submissions</span>
+                               <span className="text-sm font-medium">{t('teacherInsights.teacherDetails.submissionsCount', { count: assignment.total_submissions })}</span>
                              </div>
                            </TableCell>
                            <TableCell className="text-center">
                               <div className="w-full max-w-[120px] mx-auto">
                                 <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
-                                  <span>{assignment.graded_submissions} graded</span>
+                                  <span>{t('teacherInsights.teacherDetails.gradedCount', { count: assignment.graded_submissions })}</span>
                                   <span>{Math.round(gradingProgress)}%</span>
                                 </div>
                                 <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
@@ -644,15 +647,15 @@ export default function HeadTeacherTeacherDetailsPage() {
             <CardHeader className="pb-3">
               <div className="flex flex-col @xl:flex-row sm:items-center gap-4">
                 <div>
-                  <CardTitle className="text-lg">Attendance Records</CardTitle>
-                  <CardDescription>View how this teacher marks attendance by group</CardDescription>
+                  <CardTitle className="text-lg">{t('teacherInsights.teacherDetails.attendanceRecords')}</CardTitle>
+                  <CardDescription>{t('teacherInsights.teacherDetails.attendanceHint')}</CardDescription>
                 </div>
                 <Select
                   value={selectedAttendanceGroupId?.toString() ?? ''}
                   onValueChange={(v) => setSelectedAttendanceGroupId(v ? Number(v) : null)}
                 >
                   <SelectTrigger className="w-full sm:w-[240px]">
-                    <SelectValue placeholder="Select group" />
+                    <SelectValue placeholder={t('teacherInsights.teacherDetails.selectGroup')} />
                   </SelectTrigger>
                   <SelectContent>
                     {(teacherDetails.groups ?? []).map((g) => (
@@ -668,11 +671,11 @@ export default function HeadTeacherTeacherDetailsPage() {
               {!teacherDetails.groups?.length ? (
                 <div className="p-12 text-center text-muted-foreground bg-slate-50/50 dark:bg-muted/40 border-t border-border">
                   <ClipboardCheck className="h-12 w-12 mx-auto mb-3 text-muted-foreground/50" />
-                  No groups found for this teacher.
+                  {t('teacherInsights.teacherDetails.noGroupsForTeacher')}
                 </div>
               ) : !selectedAttendanceGroupId ? (
                 <div className="p-12 text-center text-muted-foreground bg-slate-50/50 dark:bg-muted/40 border-t border-border">
-                  Select a group to view attendance
+                  {t('teacherInsights.teacherDetails.selectGroupToView')}
                 </div>
               ) : loadingAttendance ? (
                 <div className="p-12 flex justify-center">
@@ -680,7 +683,7 @@ export default function HeadTeacherTeacherDetailsPage() {
                 </div>
               ) : !attendanceData || attendanceData.lessons.length === 0 ? (
                 <div className="py-24 text-center text-muted-foreground font-medium">
-                  No lessons available for this group.
+                  {t('teacherInsights.teacherDetails.noLessons')}
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -688,7 +691,7 @@ export default function HeadTeacherTeacherDetailsPage() {
                     <TableHeader>
                       <TableRow className="bg-slate-50/80 dark:bg-muted/40 hover:bg-muted/60">
                         <TableHead className="sticky left-0 z-40 bg-slate-50 dark:bg-muted border-r border-border px-3 py-3 min-w-[140px]">
-                          <span className="text-sm font-semibold text-muted-foreground">Student</span>
+                          <span className="text-sm font-semibold text-muted-foreground">{t('teacherInsights.teacherDetails.col.student')}</span>
                         </TableHead>
                         {attendanceData.lessons.map((lesson) => (
                           <TableHead
@@ -729,7 +732,7 @@ export default function HeadTeacherTeacherDetailsPage() {
                             return (
                               <TableCell
                                 key={`${student.student_id}-${lesson.event_id}`}
-                                title={!isFuture && excused ? `Excused absence${excuseNote ? `: ${excuseNote}` : ''}` : undefined}
+                                title={!isFuture && excused ? (excuseNote ? t('teacherInsights.teacherDetails.excusedAbsenceWithNote', { note: excuseNote }) : t('teacherInsights.teacherDetails.excusedAbsence')) : undefined}
                                 className={cn(
                                   'p-2 text-center border-r border-border min-w-[100px]',
                                   isFuture ? 'bg-slate-50/30 dark:bg-muted/40' : getAttendanceStatusColor(status, excused)

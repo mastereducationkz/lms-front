@@ -6,6 +6,8 @@ import { Button } from '../ui/button';
 import { Play, HelpCircle, Layers, Trophy, FileText, Trash2, Bookmark, BookOpen } from 'lucide-react';
 import { toast } from '../Toast';
 import Loader from '../Loader';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/lessonPlayer';
 
 function getStepTypeIcon(contentType: string) {
   switch (contentType) {
@@ -22,6 +24,7 @@ export default function FavoriteStepsList() {
   const [items, setItems] = useState<FavoriteStepItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const t = useT();
 
   useEffect(() => { load(); }, []);
 
@@ -30,7 +33,7 @@ export default function FavoriteStepsList() {
       setIsLoading(true);
       setItems(await getFavoriteSteps());
     } catch (error: any) {
-      toast(error.message || 'Failed to load saved pages', 'error');
+      toast(error.message || t('lessonPlayer.favorites.pagesLoadFailed'), 'error');
     } finally {
       setIsLoading(false);
     }
@@ -41,9 +44,9 @@ export default function FavoriteStepsList() {
     try {
       await removeFavoriteStep(stepId);
       setItems((prev) => prev.filter((i) => i.step_id !== stepId));
-      toast('Removed from favorites', 'success');
+      toast(t('lessonPlayer.favorites.removed'), 'success');
     } catch (error: any) {
-      toast(error.message || 'Failed to remove favorite', 'error');
+      toast(error.message || t('lessonPlayer.favorites.removeFailed'), 'error');
     }
   };
 
@@ -58,14 +61,14 @@ export default function FavoriteStepsList() {
         <CardContent className="p-12 text-center">
           <Bookmark className="h-16 w-16 text-gray-300 dark:text-muted-foreground mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-700 dark:text-foreground mb-2">
-            No saved pages yet
+            {t('lessonPlayer.favorites.emptyPages')}
           </h3>
           <p className="text-muted-foreground mb-6">
-            Tap the star on a lesson page to save it here.
+            {t('lessonPlayer.favorites.emptyPagesHint')}
           </p>
           <Button onClick={() => navigate('/courses')}>
             <BookOpen className="h-4 w-4 mr-2" />
-            Browse Courses
+            {t('lessonPlayer.favorites.browseCourses')}
           </Button>
         </CardContent>
       </Card>
@@ -84,7 +87,7 @@ export default function FavoriteStepsList() {
             <div className="text-primary shrink-0">{getStepTypeIcon(i.content_type)}</div>
             <div className="min-w-0 flex-1">
               <div className="font-semibold text-foreground truncate">
-                {i.lesson_title} — Step {i.order_index}
+                {t('lessonPlayer.favorites.pageStep', { lesson: i.lesson_title, number: i.order_index })}
               </div>
               {i.step_title && (
                 <div className="text-sm text-muted-foreground truncate">{i.step_title}</div>
@@ -96,7 +99,7 @@ export default function FavoriteStepsList() {
               size="sm"
               onClick={(e) => handleRemove(i.step_id, e)}
               className="shrink-0 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 opacity-0 group-hover:opacity-100 transition-opacity"
-              aria-label="Remove from favorites"
+              aria-label={t('lessonPlayer.favorites.remove')}
             >
               <Trash2 className="h-4 w-4" />
             </Button>

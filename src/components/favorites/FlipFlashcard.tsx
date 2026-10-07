@@ -46,7 +46,7 @@ function ContextSentence({ text, word, clamp }: { text: string; word: string; cl
   } else {
     parts.push(text);
   }
-  return <p className={`text-sm italic leading-relaxed text-muted-foreground ${clamp ? 'line-clamp-2' : ''}`}>&ldquo;{parts}&rdquo;</p>;
+  return <p className={`text-sm italic leading-relaxed text-muted-foreground ${clamp ? 'line-clamp-2' : ''}`}>“{parts}”</p>;
 }
 
 /** Definition + example sentence of a Look Up card (clamped on the small card); nothing for a plain card. */

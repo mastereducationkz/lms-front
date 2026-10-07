@@ -1,5 +1,7 @@
 import type { AxiosError } from 'axios';
 import { api } from './client';
+import { t } from '../../lib/i18n';
+import '@/lib/i18n/catalogs/sharedUi';
 
 const parseDetail = (detail: unknown): string | null => {
   if (typeof detail === 'string' && detail.trim()) return detail;
@@ -21,15 +23,15 @@ const getUploadScreenshotErrorMessage = (error: unknown): string => {
   const fromBody = parseDetail(ax.response?.data?.detail);
   if (fromBody) return fromBody;
   if (ax.code === 'ECONNABORTED' || ax.message?.toLowerCase().includes('timeout')) {
-    return 'Request timed out while uploading. Try a smaller image or a faster network.';
+    return t('sharedUi.upload.timedOut');
   }
   if (!ax.response) {
-    return 'No response from server (network, timeout, or upload blocked). Try a smaller file or again later.';
+    return t('sharedUi.upload.noResponse');
   }
   if (ax.response.status === 413) {
-    return 'File is too large for the server (413).';
+    return t('sharedUi.upload.tooLarge');
   }
-  return 'Failed to upload screenshot';
+  return t('sharedUi.upload.screenshotFailed');
 };
 
 export async function getAssignmentZeroStatus(): Promise<{
@@ -310,7 +312,7 @@ export async function submitAssignmentZero(data: {
     const response = await api.post('/assignment-zero/submit', data);
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Failed to submit Assignment Zero');
+    throw new Error(error.response?.data?.detail || t('sharedUi.assignmentZero.submitFailed'));
   }
 }
 

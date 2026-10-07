@@ -1,25 +1,28 @@
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Video, FileText, MessageCircle, Calendar, TrendingUp, Users2, Settings, Award } from "lucide-react";
+import { useT } from "../../lib/i18n/react";
+import '@/lib/i18n/catalogs/publicPages';
 
 export function FeaturesSection() {
+  const t = useT();
   const features = [
-    { icon: Video, title: "Video Lessons", description: "High-quality videos with interactive elements" },
-    { icon: FileText, title: "Assignments & Tests", description: "Automatic checking and detailed feedback" },
-    { icon: MessageCircle, title: "Chat with Teachers", description: "Instant communication and real-time support" },
-    { icon: Calendar, title: "Event Calendar", description: "Schedule classes and important deadlines" },
-    { icon: TrendingUp, title: "Progress Tracking", description: "Visualize achievements and areas for improvement" },
-    { icon: Users2, title: "Group Management", description: "Organize students and collaborative work" },
-    { icon: Settings, title: "Course Builder", description: "Easy creation and editing of learning materials" },
-    { icon: Award, title: "Grading System", description: "Flexible assessment and certification system" },
+    { icon: Video, title: t('publicPages.landing.features.videoTitle'), description: t('publicPages.landing.features.videoText') },
+    { icon: FileText, title: t('publicPages.landing.features.assignmentsTitle'), description: t('publicPages.landing.features.assignmentsText') },
+    { icon: MessageCircle, title: t('publicPages.landing.features.chatTitle'), description: t('publicPages.landing.features.chatText') },
+    { icon: Calendar, title: t('publicPages.landing.features.calendarTitle'), description: t('publicPages.landing.features.calendarText') },
+    { icon: TrendingUp, title: t('publicPages.landing.features.progressTitle'), description: t('publicPages.landing.features.progressText') },
+    { icon: Users2, title: t('publicPages.landing.features.groupsTitle'), description: t('publicPages.landing.features.groupsText') },
+    { icon: Settings, title: t('publicPages.landing.features.builderTitle'), description: t('publicPages.landing.features.builderText') },
+    { icon: Award, title: t('publicPages.landing.features.gradingTitle'), description: t('publicPages.landing.features.gradingText') },
   ];
 
   return (
     <section id="features" className="py-20">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-balance mb-6">Platform Features</h2>
+          <h2 className="text-3xl md:text-4xl font-bold text-balance mb-6">{t('publicPages.landing.features.title')}</h2>
           <p className="text-lg text-muted-foreground text-balance leading-relaxed">
-            All the tools needed for effective online learning, gathered in one convenient platform.
+            {t('publicPages.landing.features.intro')}
           </p>
         </div>
 

@@ -307,8 +307,8 @@ export default function StudentProfilePage() {
                     [t('studentCard.overview.phone'), az.phone_number],
                     [t('studentCard.overview.parentPhone'), az.parent_phone_number],
                     ['Telegram', az.telegram_id],
-                    ['Email', az.email],
-                    ['College Board account', az.college_board_email],
+                    [t('studentCard.overview.email'), az.email],
+                    [t('studentCard.overview.collegeBoardAccount'), az.college_board_email],
                   ].filter(([, v]) => v).map(([label, value]) => (
                     <div key={label as string} className="flex gap-2">
                       <dt className="text-muted-foreground w-32 shrink-0">{label}</dt>
@@ -324,7 +324,7 @@ export default function StudentProfilePage() {
                     CAN_REVEAL_DEFAULT,
                   ) !== 'hidden_no_access' && (
                     <div className="flex gap-2">
-                      <dt className="text-muted-foreground w-32 shrink-0">College Board password</dt>
+                      <dt className="text-muted-foreground w-32 shrink-0">{t('studentCard.overview.collegeBoardPassword')}</dt>
                       <dd className="text-foreground font-medium break-all">
                         <CollegeBoardPasswordReveal
                           userId={student.id}

@@ -4,6 +4,8 @@ import FileUploadArea from '../FileUploadArea';
 import { Checkbox } from '../ui/checkbox';
 import apiClient from '../../services/api';
 import type { StepAttachment } from '../../types';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/courseAuthoring';
 
 export interface TextLessonEditorProps {
   content: string;
@@ -22,6 +24,7 @@ export default function TextLessonEditor({
   onAttachmentsChange,
   onTempFilesChange 
 }: TextLessonEditorProps) {
+  const t = useT();
   const [currentAttachments, setCurrentAttachments] = useState<StepAttachment[]>([]);
   const [tempFiles, setTempFiles] = useState<File[]>([]);
 
@@ -102,7 +105,7 @@ export default function TextLessonEditor({
     <div className="space-y-6">
       <div>
         <label className="block text-sm font-medium text-foreground/80 mb-2">
-          Lesson Content
+          {t('courseAuthoring.step.lessonContent')}
         </label>
         <div className="flex items-center space-x-2 mb-4">
           <Checkbox 
@@ -122,19 +125,19 @@ export default function TextLessonEditor({
             htmlFor="explanation-mode" 
             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
           >
-            Add "Read explanation" text
+            {t('courseAuthoring.step.addReadExplanation')}
           </label>
         </div>
         <RichTextEditor
           value={content}
           onChange={onContentChange}
-          placeholder="Start writing lesson content..."
+          placeholder={t('courseAuthoring.step.textPlaceholder')}
         />
       </div>
 
       <div>
         <label className="block text-sm font-medium text-foreground/80 mb-2">
-          File Attachments
+          {t('courseAuthoring.step.attachments')}
         </label>
         <FileUploadArea
           attachments={stepId ? currentAttachments : tempFiles.map((file, index) => ({

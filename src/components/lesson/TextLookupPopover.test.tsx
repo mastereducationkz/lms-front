@@ -7,9 +7,14 @@ import type { LookupEvent, LookupLang } from '../../services/api/lookup';
 // Mounted in jsdom because Look Up is all interaction: a selection settling, a new one replacing
 // it, Escape, the language toggle. The network is a scripted streamLookup.
 vi.mock('../../services/api/client', () => ({ api: {} }));
-vi.mock('../../contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 7, role: 'student', ui_state: null }, updateUser: vi.fn() }),
-}));
+// LookupCard reads the UI language from AuthContext's default export (signed out = English here).
+vi.mock('../../contexts/AuthContext', async () => {
+  const { createContext } = await vi.importActual<typeof import('react')>('react');
+  return {
+    default: createContext(undefined),
+    useAuth: () => ({ user: { id: 7, role: 'student', ui_state: null }, updateUser: vi.fn() }),
+  };
+});
 vi.mock('../../contexts/SettingsContext', () => ({ useSettings: () => ({ isLookUpEnabled: true }) }));
 vi.mock('../../services/api', () => ({ quickCreateFlashcard: vi.fn(async () => ({ success: true })) }));
 vi.mock('../../services/api/uiState', () => ({ saveLookupLang: vi.fn(async () => ({ tour_version_seen: 0, tips: {} })) }));

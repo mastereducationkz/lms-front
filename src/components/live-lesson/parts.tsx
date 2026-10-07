@@ -4,8 +4,23 @@ import { cn } from '../../lib/utils';
 import { renderTextWithLatex } from '../../utils/latex';
 import { sanitizeHtml } from '../../lib/safeHtml';
 import { LETTERS, cloudSize, formatSeconds, percents } from '../../lib/liveLesson/logic';
-import type { CloudGroup, LiveOption, Person, PublicQuestion } from '../../lib/liveLesson/types';
+import type { ActivityView, CloudGroup, LiveOption, Person, PublicQuestion } from '../../lib/liveLesson/types';
+import type { MessageKey } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/chatLive';
 import { OrcaStack } from './orcas';
+
+const KIND_KEYS: Record<ActivityView['kind'], MessageKey> = {
+  poll: 'chatLive.live.kind.poll',
+  cloud: 'chatLive.live.kind.cloud',
+  popcheck: 'chatLive.live.kind.popcheck',
+  mistake: 'chatLive.live.kind.mistake',
+};
+
+/** How an activity reads in one line («Poll», «Word cloud»…) — logic.activityLabel in the user's language. */
+export function activityKindKey(kind: ActivityView['kind']): MessageKey {
+  return KIND_KEYS[kind];
+}
 
 const GAP = '{{gap}}';
 const BLANK = '▁▁▁▁';
@@ -17,6 +32,7 @@ export function RichText({ text, className }: { text: string; className?: string
 
 /** A quiz question as a student sees it: passage (folded when long), text, image. */
 export function QuestionBody({ question, gapText, large }: { question: PublicQuestion; gapText?: string | null; large?: boolean }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const fill = (s: string) => s.split(GAP).join(gapText ? `**${gapText}**` : BLANK);
   const passage = question.passage ? fill(question.passage) : null;
@@ -29,7 +45,7 @@ export function QuestionBody({ question, gapText, large }: { question: PublicQue
           {long && (
             <button type="button" onClick={() => setOpen((v) => !v)} className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary">
               {open ? <ChevronUp className="h-3 w-3" aria-hidden /> : <ChevronDown className="h-3 w-3" aria-hidden />}
-              {open ? 'Show less' : 'Show the whole text'}
+              {open ? t('chatLive.live.showLess') : t('chatLive.live.showWholeText')}
             </button>
           )}
         </div>
@@ -112,7 +128,8 @@ export function OptionRows({ options, selected = [], onPick, disabled, correct, 
 
 /** The visible word cloud: bigger for more students, wrapping on a phone. */
 export function CloudView({ groups, large }: { groups: CloudGroup[]; large?: boolean }) {
-  if (!groups.length) return <p className="text-sm text-muted-foreground">No answers yet.</p>;
+  const t = useT();
+  if (!groups.length) return <p className="text-sm text-muted-foreground">{t('chatLive.live.noAnswersYet')}</p>;
   const max = Math.max(...groups.map((g) => g.count));
   const palette = ['text-primary', 'text-emerald-600 dark:text-emerald-400', 'text-amber-600 dark:text-amber-400',
     'text-sky-600 dark:text-sky-400', 'text-rose-600 dark:text-rose-400'];
@@ -130,6 +147,7 @@ export function CloudView({ groups, large }: { groups: CloudGroup[]; large?: boo
 
 /** A countdown that calls `onEnd` once when it reaches zero while running. */
 export function Countdown({ seconds, paused, large, onEnd }: { seconds: number | null; paused?: boolean; large?: boolean; onEnd?: () => void }) {
+  const t = useT();
   const ended = useRef(false);
   useEffect(() => {
     if (seconds == null || seconds > 0) { ended.current = false; return; }
@@ -146,8 +164,8 @@ export function Countdown({ seconds, paused, large, onEnd }: { seconds: number |
         large ? 'px-5 py-2 text-5xl' : 'px-2.5 py-0.5 text-sm',
         up ? 'bg-rose-600 text-white' : seconds <= 10 ? 'bg-amber-500 text-white' : 'bg-muted text-foreground')}>
       <Timer className={large ? 'h-9 w-9' : 'h-3.5 w-3.5'} aria-hidden />
-      {up ? "Time's up" : formatSeconds(seconds)}
-      {paused && !up && <span className={cn('font-medium', large ? 'text-2xl' : 'text-[11px]')}>paused</span>}
+      {up ? t('chatLive.live.timesUp') : formatSeconds(seconds)}
+      {paused && !up && <span className={cn('font-medium', large ? 'text-2xl' : 'text-[11px]')}>{t('chatLive.live.paused')}</span>}
     </span>
   );
 }

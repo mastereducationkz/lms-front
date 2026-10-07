@@ -8,6 +8,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import StarsBreakdown, { type BreakdownState } from './StarsBreakdown';
 import './PointsDisplay.css';
 import { formatNumber } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/studentHome';
 
 interface GamificationStatus {
   activity_points: number;
@@ -51,6 +53,7 @@ export const PointsDisplay: React.FC = () => {
   const request = useRef(0);
   const narrow = useNarrowScreen();
   const titleId = useId();
+  const t = useT();
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -103,7 +106,7 @@ export const PointsDisplay: React.FC = () => {
       type="button"
       className="points-item"
       data-tour="stars-pill"
-      aria-label={`${total.toLocaleString('en-US')} ${total === 1 ? 'star' : 'stars'}. Show where they came from`}
+      aria-label={t('studentHome.stars.pillLabel', { count: total, total: formatNumber(total) })}
     >
       <svg className="points-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
@@ -123,11 +126,11 @@ export const PointsDisplay: React.FC = () => {
               aria-describedby={undefined}
               className="stars-sheet fixed inset-x-0 bottom-0 z-50 max-h-[88dvh] overflow-y-auto rounded-t-2xl border-t border-border bg-popover px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-3 text-popover-foreground shadow-2xl outline-none duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom"
             >
-              <SheetPrimitive.Title className="sr-only">Your stars</SheetPrimitive.Title>
+              <SheetPrimitive.Title className="sr-only">{t('studentHome.stars.yourStars')}</SheetPrimitive.Title>
               <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border" aria-hidden />
               <SheetPrimitive.Close
                 className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label="Close"
+                aria-label={t('common.close')}
               >
                 <X className="h-4 w-4" aria-hidden />
               </SheetPrimitive.Close>

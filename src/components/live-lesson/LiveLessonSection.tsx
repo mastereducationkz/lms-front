@@ -7,6 +7,8 @@ import { connectSocket } from '../../services/socket';
 import LiveControls from './LiveControls';
 import LiveRecordList from './LiveRecordList';
 import { StarOfWeekDialog } from '../achievements/StarOfWeekDialog';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/chatLive';
 
 /**
  * «Activities» on `/lessons/:id`: while the lesson is on, whoever may run it gets the same controls as
@@ -18,6 +20,7 @@ export default function LiveLessonSection({ view }: { view: LessonView }) {
 }
 
 function Driver({ eventId }: { eventId: number }) {
+  const t = useT();
   const socket = useMemo(() => connectSocket(), []);
   const { state, error, now, act } = useLiveLesson({ eventId, api: live, socket });
   const seconds = useCountdown(state, now);
@@ -33,7 +36,7 @@ function Driver({ eventId }: { eventId: number }) {
             students={(state.room ?? [student]).map((p) => ({ id: p.user_id, name: p.name ?? '' }))} />
         )} />
       <details className="rounded-xl border border-border p-3">
-        <summary className="cursor-pointer text-sm font-semibold text-foreground">Everything in this lesson so far</summary>
+        <summary className="cursor-pointer text-sm font-semibold text-foreground">{t('chatLive.live.lessonSoFar')}</summary>
         <div className="mt-3"><LiveRecordList eventId={eventId} api={live} refreshKey={state.version} /></div>
       </details>
     </div>

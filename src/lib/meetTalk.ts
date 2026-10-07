@@ -1,5 +1,5 @@
 import { APP_TIMEZONE } from './datetime';
-import { activeLocale, formatDate, t, type Locale } from './i18n';
+import { activeLocale, formatDate, t, type Locale, type MessageKey } from './i18n';
 import { clock } from './meetAttendance';
 import type { MeetLessonSummary } from '../services/api/meetAttendance';
 import type {
@@ -18,6 +18,7 @@ import type {
   TranscriptLine,
 } from '../services/api/meetTalk';
 import '@/lib/i18n/catalogs/meet';
+import '@/lib/i18n/catalogs/meetViews';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -491,30 +492,35 @@ const minutes = (seconds: number) => (seconds / 60).toFixed(1);
 const blank = (value: number | null | undefined) => (value == null ? '' : value);
 const csv = (rows: (string | number)[][]) => '\uFEFF' + rows.map((r) => r.map(csvCell).join(',')).join('\r\n');
 
-function almatyDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: APP_TIMEZONE });
+function almatyDate(iso: string, locale: Locale): string {
+  return formatDate(iso, { day: '2-digit', month: '2-digit', year: 'numeric' }, locale);
 }
 
-const LESSON_HEADER = ['Date', 'Start', 'Lesson', 'Groups', 'Teacher', 'Teacher share', 'Students share', 'Speech (min)',
-  'Longest teacher stretch (min)', 'Teacher questions', 'Answered', 'Answered %', 'Student questions',
-  'Median wait (s)', 'Students in the room', 'Didn’t speak', 'Names from voices'];
+const header = (keys: MessageKey[], locale: Locale) => keys.map((key) => t(key, undefined, locale));
 
-function lessonCells(l: GroupTalkLesson): (string | number)[] {
+const LESSON_HEADER: MessageKey[] = ['meetViews.csv.date', 'meetViews.csv.start', 'meetViews.csv.lesson', 'meetViews.csv.groups',
+  'meetViews.csv.teacher', 'meetViews.csv.teacherShare', 'meetViews.csv.studentsShare', 'meetViews.csv.speechMin',
+  'meetViews.csv.longestMin', 'meetViews.csv.teacherQuestions', 'meetViews.csv.answered', 'meetViews.csv.answeredPct',
+  'meetViews.csv.studentQuestions', 'meetViews.csv.medianWait', 'meetViews.csv.studentsInRoom', 'meetViews.csv.didntSpeak',
+  'meetViews.csv.namesFromVoices'];
+
+function lessonCells(l: GroupTalkLesson, locale: Locale): (string | number)[] {
   return [
-    almatyDate(l.start), clock(l.start), l.title, (l.groups ?? []).map((g) => g.name).join(', '), l.teacher_name ?? '',
+    almatyDate(l.start, locale), clock(l.start), l.title, (l.groups ?? []).map((g) => g.name).join(', '), l.teacher_name ?? '',
     percent(l.teacher_share), percent(l.students_share), minutes(l.speech_seconds),
     l.longest_stretch_seconds == null ? '' : minutes(l.longest_stretch_seconds),
     blank(l.teacher_questions), blank(l.answered),
     l.teacher_questions ? percent((l.answered ?? 0) / l.teacher_questions) : '',
     blank(l.student_questions), blank(l.median_wait_seconds), l.students_in_room, l.silent,
-    l.source === 'voices' ? 'yes' : '',
+    l.source === 'voices' ? t('meetViews.csv.yes', undefined, locale) : '',
   ];
 }
 
-const TALLY_HEADER = ['Lessons', 'Groups', 'Teacher share (avg)', 'Students share (avg)', 'Teacher spoke (min)',
-  'Students spoke (min)', 'Longest teacher stretch, avg (min)', 'Teacher questions', 'Answered %',
-  'Teacher questions per lesson', 'Student questions', 'Student questions per lesson', 'Silent students per lesson',
-  'Students in the room per lesson'];
+const TALLY_HEADER: MessageKey[] = ['meetViews.csv.lessonCount', 'meetViews.csv.groupCount', 'meetViews.csv.teacherShareAvg',
+  'meetViews.csv.studentsShareAvg', 'meetViews.csv.teacherSpokeMin', 'meetViews.csv.studentsSpokeMin',
+  'meetViews.csv.longestAvgMin', 'meetViews.csv.teacherQuestions', 'meetViews.csv.answeredPct',
+  'meetViews.csv.teacherQuestionsPerLesson', 'meetViews.csv.studentQuestions', 'meetViews.csv.studentQuestionsPerLesson',
+  'meetViews.csv.silentPerLesson', 'meetViews.csv.inRoomPerLesson'];
 
 function tallyCells(t: TalkTally): (string | number)[] {
   const q = t.questions;
@@ -528,50 +534,55 @@ function tallyCells(t: TalkTally): (string | number)[] {
   ];
 }
 
-const STATE_CSV: Record<StudentLessonState, string> = { spoke: 'spoke', silent: 'silent', present: 'brief', absent: 'absent' };
+const STATE_CSV: Record<StudentLessonState, MessageKey> = {
+  spoke: 'meetViews.csv.stateSpoke', silent: 'meetViews.csv.stateSilent', present: 'meetViews.csv.stateBrief', absent: 'meetViews.csv.stateAbsent',
+};
 
 /**
  * A group's talk time as a spreadsheet: the students, then the lessons. UTF-8 with a BOM so
- * Excel keeps Cyrillic names; dates and times are Almaty; durations in minutes.
+ * Excel keeps Cyrillic names; dates and times are Almaty; durations in minutes. Headers and words
+ * are in the downloader's language (Settings → Language).
  */
-export function groupTalkCsv(data: GroupTalk): string {
+export function groupTalkCsv(data: GroupTalk, locale: Locale = activeLocale()): string {
   return csv([
-    ['Group', data.group.name, 'From', almatyDate(data.from), 'To', almatyDate(data.to)],
+    [t('meetViews.csv.group', undefined, locale), data.group.name, t('meetViews.csv.from', undefined, locale), almatyDate(data.from, locale),
+      t('meetViews.csv.to', undefined, locale), almatyDate(data.to, locale)],
     [],
-    ['Student', 'Lessons with talk time', 'In the room', 'Spoke in', 'Silent in', 'Total (min)',
-      'Average per lesson (min)', 'Share of student talk', 'Questions asked', 'Teacher questions answered',
-      'Lesson by lesson (oldest first)'],
+    header(['meetViews.csv.student', 'meetViews.csv.lessonsWithTalk', 'meetViews.csv.inRoom', 'meetViews.csv.spokeIn',
+      'meetViews.csv.silentIn', 'meetViews.csv.totalMin', 'meetViews.csv.avgMin', 'meetViews.csv.shareOfStudentTalk',
+      'meetViews.csv.questionsAsked', 'meetViews.csv.questionsAnswered', 'meetViews.csv.byLesson'], locale),
     ...data.students.map((s) => [
       s.name, s.lessons?.length ?? s.lessons_in_room, s.lessons_in_room, s.lessons_spoke, s.silent_lessons,
       minutes(s.total_seconds), minutes(s.avg_seconds), percent(s.share_of_student_talk), blank(s.questions),
-      blank(s.answers), (s.lessons ?? []).map((m) => STATE_CSV[m.state]).join(' '),
+      blank(s.answers), (s.lessons ?? []).map((m) => t(STATE_CSV[m.state], undefined, locale)).join(' '),
     ]),
     [],
-    LESSON_HEADER,
-    ...data.lessons.map(lessonCells),
+    header(LESSON_HEADER, locale),
+    ...data.lessons.map((l) => lessonCells(l, locale)),
   ]);
 }
 
 /** Every teacher, one row each. */
-export function teachersCsv(data: TeachersTalk): string {
+export function teachersCsv(data: TeachersTalk, locale: Locale = activeLocale()): string {
   return csv([
-    ['From', almatyDate(data.from), 'To', almatyDate(data.to)],
+    [t('meetViews.csv.from', undefined, locale), almatyDate(data.from, locale), t('meetViews.csv.to', undefined, locale), almatyDate(data.to, locale)],
     [],
-    ['Teacher', ...TALLY_HEADER],
-    ...data.teachers.map((t) => [t.name, ...tallyCells(t)]),
+    header(['meetViews.csv.teacher', ...TALLY_HEADER], locale),
+    ...data.teachers.map((row) => [row.name, ...tallyCells(row)]),
   ]);
 }
 
 /** One teacher: all groups together, each group, each lesson. */
-export function teacherTalkCsv(data: TeacherTalk): string {
+export function teacherTalkCsv(data: TeacherTalk, locale: Locale = activeLocale()): string {
   return csv([
-    ['Teacher', data.teacher.name, 'From', almatyDate(data.from), 'To', almatyDate(data.to)],
+    [t('meetViews.csv.teacher', undefined, locale), data.teacher.name, t('meetViews.csv.from', undefined, locale), almatyDate(data.from, locale),
+      t('meetViews.csv.to', undefined, locale), almatyDate(data.to, locale)],
     [],
-    ['', ...TALLY_HEADER],
-    ['All groups', ...tallyCells(data.teacher)],
-    ...data.groups.map((g) => [g.name ?? 'No group', ...tallyCells(g)]),
+    ['', ...header(TALLY_HEADER, locale)],
+    [t('meetViews.csv.allGroups', undefined, locale), ...tallyCells(data.teacher)],
+    ...data.groups.map((g) => [g.name ?? t('meetViews.teacherTalk.noGroup', undefined, locale), ...tallyCells(g)]),
     [],
-    LESSON_HEADER,
-    ...data.lessons.map(lessonCells),
+    header(LESSON_HEADER, locale),
+    ...data.lessons.map((l) => lessonCells(l, locale)),
   ]);
 }

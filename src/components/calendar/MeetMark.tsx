@@ -2,6 +2,8 @@ import { Link2, Link2Off } from 'lucide-react';
 import type { Event } from '../../types';
 import { isMeetLink, seesMeetMarks } from '../../lib/meetLinks';
 import { cx } from './calendarUtils';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/sharedUi';
 
 interface Props {
   event: Event;
@@ -17,9 +19,10 @@ interface Props {
  * teacher's to set up. Nothing for webinars, tests or assignments.
  */
 export default function MeetMark({ event, role, className }: Props) {
+  const t = useT();
   if (event.event_type !== 'class' || !seesMeetMarks(role)) return null;
   const has = isMeetLink(event.meeting_url);
-  const label = has ? 'Google Meet link' : 'No Google Meet link';
+  const label = has ? t('sharedUi.meetMark.has') : t('sharedUi.meetMark.missing');
   const Icon = has ? Link2 : Link2Off;
   return (
     <span role="img" aria-label={label} title={label} className="inline-flex flex-none items-center">

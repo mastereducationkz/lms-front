@@ -58,6 +58,9 @@ import { useUnsavedChangesWarning } from '../hooks/useUnsavedChangesWarning';
 import UnsavedChangesDialog from '../components/UnsavedChangesDialog';
 import { useAuth } from '../contexts/AuthContext';
 import { canEditCourseContent } from '../lib/courseAccess';
+import { useT } from '@/lib/i18n/react';
+import type { MessageKey } from '@/lib/i18n';
+import '@/lib/i18n/catalogs/courseAuthoring';
 
 interface LessonSidebarProps {
   course: Course | null;
@@ -143,7 +146,16 @@ const buildVideoStepContent = (content: string, videoUrlEn: string) => {
 
 
 
+const STEP_TYPE_LABELS: Record<string, MessageKey> = {
+  text: 'courseAuthoring.lesson.typeText',
+  video_text: 'courseAuthoring.lesson.typeVideoText',
+  quiz: 'courseAuthoring.lesson.typeQuiz',
+  flashcard: 'courseAuthoring.lesson.typeFlashcard',
+  summary: 'courseAuthoring.lesson.typeSummary',
+};
+
 const LessonSidebar = ({ course, modules, courseLessons, selectedLessonId, onLessonSelect }: LessonSidebarProps) => {
+  const t = useT();
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
   const moduleLectures = useMemo(() => groupLessonsByModule(courseLessons), [courseLessons]);
 
@@ -184,7 +196,7 @@ const LessonSidebar = ({ course, modules, courseLessons, selectedLessonId, onLes
       <div className="p-4 border-b bg-muted/20 flex-shrink-0">
         <div className="flex items-center gap-2">
           <BookOpen className="w-5 h-5 text-primary" />
-          <h2 className="font-semibold text-lg truncate">{course?.title || 'Course'}</h2>
+          <h2 className="font-semibold text-lg truncate">{course?.title || t('courseAuthoring.courses.colCourse')}</h2>
         </div>
       </div>
       
@@ -215,12 +227,12 @@ const LessonSidebar = ({ course, modules, courseLessons, selectedLessonId, onLes
                         </span>
                         <div className="flex flex-col items-start">
                           <span className="text-sm font-medium text-foreground">{module.title}</span>
-                          <span className="text-xs text-muted-foreground">{lectures.length} lesson{lectures.length !== 1 ? 's' : ''}</span>
+                          <span className="text-xs text-muted-foreground">{t('common.lessons', { count: lectures.length })}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground group-hover:text-foreground transition-colors">
-                          {isExpanded ? 'Collapse' : 'Expand'}
+                          {isExpanded ? t('courseAuthoring.lesson.collapse') : t('courseAuthoring.lesson.expand')}
                         </span>
                         {isExpanded ? 
                           <ChevronUp className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" /> : 
@@ -286,7 +298,7 @@ const LessonSidebar = ({ course, modules, courseLessons, selectedLessonId, onLes
                                   <div className="flex items-center gap-2 mt-1">
                                     {isSelected && (
                                       <span className="text-xs text-primary-foreground/80">
-                                        Currently editing
+                                        {t('courseAuthoring.lesson.currentlyEditing')}
                                       </span>
                                     )}
                                   </div>
@@ -317,6 +329,7 @@ interface SortableStepItemProps {
 }
 
 const SortableStepItem = ({ step, isSelected, onSelect }: SortableStepItemProps) => {
+  const t = useT();
   const {
     attributes,
     listeners,
@@ -377,7 +390,7 @@ const SortableStepItem = ({ step, isSelected, onSelect }: SortableStepItemProps)
         {...attributes}
         {...listeners}
         className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-green-600 hover:bg-green-700 flex items-center justify-center text-white shadow-md cursor-grab active:cursor-grabbing z-10 opacity-0 group-hover:opacity-100 transition-opacity"
-        title="Drag to reorder"
+        title={t('courseAuthoring.lesson.dragToReorder')}
       >
         <GripVertical className="w-3 h-3" />
       </div>
@@ -390,6 +403,7 @@ export default function LessonEditPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const t = useT();
   const [course, setCourse] = useState<Course | null>(null);
   const [modules, setModules] = useState<CourseModule[]>([]);
   const [lesson, setLesson] = useState<Lesson | null>(null);
@@ -596,7 +610,7 @@ export default function LessonEditPage() {
   // Unsaved changes warning - block navigation if there are unsaved changes
   const { confirmLeave, cancelLeave, isBlocked } = useUnsavedChangesWarning({
     hasUnsavedChanges,
-    message: 'You have unsaved changes in this lesson. Save this step before continuing!',
+    message: t('courseAuthoring.lesson.unsavedLeave'),
     onConfirmLeave: () => {
       setHasUnsavedChanges(false);
     }
@@ -848,14 +862,14 @@ export default function LessonEditPage() {
     const sortedSteps = [...steps].sort((a, b) => a.order_index - b.order_index);
     const stepIndex = sortedSteps.findIndex(s => s.id === stepId);
     if (stepIndex < 0 || stepIndex >= sortedSteps.length - 1) {
-      alert('Cannot split: this must not be the last step.');
+      alert(t('courseAuthoring.lesson.cannotSplit'));
       return;
     }
     const stepsAfter = sortedSteps.length - stepIndex - 1;
-    if (!confirm(`Split lesson after step ${stepIndex + 1}? ${stepsAfter} step(s) will be moved to a new lesson.`)) return;
+    if (!confirm(t('courseAuthoring.lesson.splitConfirm', { step: stepIndex + 1, count: stepsAfter }))) return;
     try {
       const result = await apiClient.splitLesson(courseId, lessonId, stepIndex);
-      alert(`Lesson split! New lesson "${result.new_lesson_title}" created with ${result.steps_moved} step(s).`);
+      alert(t('courseAuthoring.lesson.splitDone', { title: result.new_lesson_title, count: result.steps_moved }));
       // Reload current lesson (now shorter)
       const stepsData = await apiClient.getLessonSteps(lessonId, false);
       setSteps(stepsData);
@@ -866,7 +880,7 @@ export default function LessonEditPage() {
       }
     } catch (error) {
       console.error('Failed to split lesson:', error);
-      alert('Failed to split lesson. Please try again.');
+      alert(t('courseAuthoring.lesson.splitFailed'));
     }
   };
 
@@ -908,7 +922,7 @@ export default function LessonEditPage() {
       // Revert on error - reload from backend
       const stepsData = await apiClient.getLessonSteps(lessonId!, false);
       setSteps(stepsData);
-      alert('Failed to reorder steps. Please try again.');
+      alert(t('courseAuthoring.lesson.reorderFailed'));
     } finally {
       setIsReordering(false);
     }
@@ -1145,7 +1159,7 @@ export default function LessonEditPage() {
     const isValid = isValidYouTubeUrl(url);
     
     if (!isValid && url.trim() !== '') {
-      setVideoError('Please enter a valid YouTube URL');
+      setVideoError(t('courseAuthoring.lesson.invalidYoutube'));
     }
   };
 
@@ -1233,7 +1247,7 @@ export default function LessonEditPage() {
   if (!lesson) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <div className="text-lg text-red-600 dark:text-red-400">Lesson not found</div>
+        <div className="text-lg text-red-600 dark:text-red-400">{t('courseAuthoring.lesson.notFound')}</div>
       </div>
     );
   }
@@ -1261,9 +1275,9 @@ export default function LessonEditPage() {
               <div className="flex items-center gap-3">
                 <Settings className="w-5 h-5 text-primary" />
                 <div>
-                  <CardTitle className="text-lg">Lesson Settings</CardTitle>
+                  <CardTitle className="text-lg">{t('courseAuthoring.lesson.settings')}</CardTitle>
                   <CardDescription>
-                    Configure your lesson content and settings
+                    {t('courseAuthoring.lesson.settingsHint')}
                   </CardDescription>
                 </div>
               </div>
@@ -1278,23 +1292,23 @@ export default function LessonEditPage() {
                         `/course/${courseId}/lesson/${lessonId}${params ? `?${params}` : ''}`
                       )
                     }}
-                    title="View lesson as student"
-                    aria-label="View lesson"
+                    title={t('courseAuthoring.lesson.viewAsStudent')}
+                    aria-label={t('courseAuthoring.lesson.viewLesson')}
                   >
                     <Eye className="w-4 h-4 mr-1" />
-                    View
+                    {t('courseAuthoring.lesson.view')}
                   </Button>
                 )}
                 {showSaveSuccess && (
                   <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-md border border-green-200 dark:bg-green-950/40 dark:text-green-300 dark:border-green-800/60">
                     <CheckCircle className="w-4 h-4" />
-                    <span className="text-sm font-medium">Lesson saved</span>
+                    <span className="text-sm font-medium">{t('courseAuthoring.lesson.saved')}</span>
                   </div>
                 )}
                 {autoSaveStatus === 'saving' && (
                   <div className="flex items-center gap-2 px-3 py-1 bg-brand-surface text-brand-subtle-foreground rounded-md border border-brand-border">
                     <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
-                    <span className="text-sm font-medium">Saving...</span>
+                    <span className="text-sm font-medium">{t('courseAuthoring.lesson.saving')}</span>
                   </div>
                 )}
               </div>
@@ -1310,15 +1324,15 @@ export default function LessonEditPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Edit3 className="w-5 h-5" />
-                  Lesson Settings
+                  {t('courseAuthoring.lesson.settings')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="lesson-title">Title</Label>
+                    <Label htmlFor="lesson-title">{t('courseAuthoring.create.titleLabel')}</Label>
                     <span className="text-sm text-muted-foreground">
-                      {remainingChars} characters remaining
+                      {t('courseAuthoring.lesson.charsRemaining', { count: remainingChars })}
                     </span>
                   </div>
                   <Input
@@ -1336,12 +1350,12 @@ export default function LessonEditPage() {
                       }
                     }}
                     maxLength={100}
-                    placeholder="Enter lesson title"
+                    placeholder={t('courseAuthoring.lesson.titlePlaceholder')}
                   />
                 </div>
                 {/* Next Lesson Selector */}
                 <div className="space-y-2">
-                  <Label>Next lesson (optional)</Label>
+                  <Label>{t('courseAuthoring.lesson.nextLesson')}</Label>
                   <Select
                     value={nextLessonId ? String(nextLessonId) : 'none'}
                     onValueChange={(value) => {
@@ -1349,16 +1363,16 @@ export default function LessonEditPage() {
                     }}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="None (follow default order)" />
+                      <SelectValue placeholder={t('courseAuthoring.lesson.nextNone')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">None (follow default order)</SelectItem>
+                      <SelectItem value="none">{t('courseAuthoring.lesson.nextNone')}</SelectItem>
                       {modules
                         .slice()
                         .sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
                         .map((m) => (
                           <SelectGroup key={m.id}>
-                            <SelectLabel>{`Section ${m.order_index+1}: ${m.title}`}</SelectLabel>
+                            <SelectLabel>{t('courseAuthoring.lesson.section', { n: m.order_index + 1, title: m.title })}</SelectLabel>
                             {courseLessons
                               .filter((l) => String(l.module_id) === String(m.id))
                               .slice()
@@ -1379,7 +1393,7 @@ export default function LessonEditPage() {
             {/* Steps (blue tiles) */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <h3 className="text-base font-medium text-foreground">Lesson Content</h3>
+                <h3 className="text-base font-medium text-foreground">{t('courseAuthoring.step.lessonContent')}</h3>
               </div>
               <DndContext
                 sensors={sensors}
@@ -1415,14 +1429,14 @@ export default function LessonEditPage() {
             </div>
                          <div className="flex-1 overflow-y-auto mt-4">
                {isLoadingStep ? (
-                 <div className="flex items-center justify-center py-16" aria-busy="true" aria-label="Loading step content">
+                 <div className="flex items-center justify-center py-16" aria-busy="true" aria-label={t('courseAuthoring.lesson.loadingStep')}>
                    <Loader size="lg" animation="spin" color="hsl(var(--brand))" />
                  </div>
                ) : selectedStepId && (
                  <div className="space-y-2">
                    <div className="flex items-center gap-2 pb-2 font-medium text-foreground text-lg">
                      <h3>
-                       Step {steps.find(s => s.id === selectedStepId)?.order_index}: {stepContentType === 'video_text' ? 'Video + Text' : stepContentType.charAt(0).toUpperCase() + stepContentType.slice(1)}
+                       {t('courseAuthoring.lesson.stepHeading', { n: steps.find(s => s.id === selectedStepId)?.order_index ?? '', type: STEP_TYPE_LABELS[stepContentType] ? t(STEP_TYPE_LABELS[stepContentType]) : stepContentType })}
                      </h3>
                      <div className="flex items-center gap-1 ml-auto">
                        <Button 
@@ -1430,7 +1444,7 @@ export default function LessonEditPage() {
                          size="icon"
                          onClick={() => splitLessonAtStep(selectedStepId)}
                          className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-indigo-950/40"
-                         title="Split lesson after this step"
+                         title={t('courseAuthoring.lesson.splitHere')}
                        >
                          <Scissors className="w-4 h-4" />
                        </Button>
@@ -1457,7 +1471,7 @@ export default function LessonEditPage() {
                         htmlFor="is-optional" 
                         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                       >
-                        Optional Step (students can skip this step)
+                        {t('courseAuthoring.lesson.optionalStep')}
                       </label>
                     </div>
                     <div>
@@ -1590,7 +1604,7 @@ export default function LessonEditPage() {
                   className="flex items-center gap-2"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Return to Course
+                  {t('courseAuthoring.lesson.returnToCourse')}
                 </Button>
                 <Button
                   onClick={handleSave}
@@ -1598,14 +1612,14 @@ export default function LessonEditPage() {
                   className="flex items-center gap-2"
                 >
                   <Save className="w-4 h-4" />
-                  {isSaving ? 'Saving...' : 'Save Lesson'}
+                  {isSaving ? t('courseAuthoring.lesson.saving') : t('courseAuthoring.lesson.save')}
                 </Button>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 {hasUnsavedChanges && (
                   <div className="flex items-center gap-1">
                     <AlertCircle className="w-4 h-4" />
-                    <span>Unsaved changes</span>
+                    <span>{t('courseAuthoring.lesson.unsaved')}</span>
                   </div>
                 )}
               </div>
@@ -1619,8 +1633,8 @@ export default function LessonEditPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-card rounded-lg p-6 w-full max-w-md">
             <div className="mb-6">
-              <h2 className="text-xl font-semibold mb-2">Add New Step</h2>
-              <p className="text-muted-foreground">Choose the content type for your new step</p>
+              <h2 className="text-xl font-semibold mb-2">{t('courseAuthoring.lesson.addStep')}</h2>
+              <p className="text-muted-foreground">{t('courseAuthoring.lesson.addStepHint')}</p>
             </div>
             
             <div className="space-y-4 mb-6">
@@ -1637,8 +1651,8 @@ export default function LessonEditPage() {
                     <FileText className="w-5 h-5 text-brand" />
                   </div>
                   <div>
-                    <h3 className="font-medium">Text</h3>
-                    <p className="text-sm text-muted-foreground">Rich text content with formatting</p>
+                    <h3 className="font-medium">{t('courseAuthoring.lesson.typeText')}</h3>
+                    <p className="text-sm text-muted-foreground">{t('courseAuthoring.lesson.typeTextHint')}</p>
                   </div>
                 </div>
               </div>
@@ -1656,8 +1670,8 @@ export default function LessonEditPage() {
                     <Video className="w-5 h-5 text-brand" />
                   </div>
                   <div>
-                    <h3 className="font-medium">Video + Text</h3>
-                    <p className="text-sm text-muted-foreground">YouTube video with additional text</p>
+                    <h3 className="font-medium">{t('courseAuthoring.lesson.typeVideoText')}</h3>
+                    <p className="text-sm text-muted-foreground">{t('courseAuthoring.lesson.typeVideoTextHint')}</p>
                   </div>
                 </div>
               </div>
@@ -1675,8 +1689,8 @@ export default function LessonEditPage() {
                     <QuizIcon className="w-5 h-5 text-brand" />
                   </div>
                   <div>
-                    <h3 className="font-medium">Quiz</h3>
-                    <p className="text-sm text-muted-foreground">Interactive quiz with questions</p>
+                    <h3 className="font-medium">{t('courseAuthoring.lesson.typeQuiz')}</h3>
+                    <p className="text-sm text-muted-foreground">{t('courseAuthoring.lesson.typeQuizHint')}</p>
                   </div>
                 </div>
               </div>
@@ -1694,8 +1708,8 @@ export default function LessonEditPage() {
                     <BookOpen className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div>
-                    <h3 className="font-medium">Flashcards</h3>
-                    <p className="text-sm text-muted-foreground">Interactive flashcards for vocabulary learning</p>
+                    <h3 className="font-medium">{t('courseAuthoring.flashcards.title')}</h3>
+                    <p className="text-sm text-muted-foreground">{t('courseAuthoring.lesson.typeFlashcardHint')}</p>
                   </div>
                 </div>
               </div>
@@ -1713,8 +1727,8 @@ export default function LessonEditPage() {
                     <Trophy className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
                   </div>
                   <div>
-                    <h3 className="font-medium">Summary</h3>
-                    <p className="text-sm text-muted-foreground">Lesson quiz summary with statistics</p>
+                    <h3 className="font-medium">{t('courseAuthoring.lesson.typeSummary')}</h3>
+                    <p className="text-sm text-muted-foreground">{t('courseAuthoring.lesson.typeSummaryHint')}</p>
                   </div>
                 </div>
               </div>
@@ -1728,10 +1742,10 @@ export default function LessonEditPage() {
                   setNewStepType('text');
                 }}
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button onClick={createStep} className="bg-brand-solid hover:bg-brand-solid-hover">
-                Create Step
+                {t('courseAuthoring.lesson.createStep')}
               </Button>
             </div>
           </div>
@@ -1744,8 +1758,8 @@ export default function LessonEditPage() {
         open={isBlocked}
         onConfirm={confirmLeave}
         onCancel={cancelLeave}
-        title="Save This Step!"
-        description="You have unsaved changes in this step. Please save before moving to the next step or lesson to avoid losing your work."
+        title={t('courseAuthoring.lesson.saveStepTitle')}
+        description={t('courseAuthoring.lesson.saveStepBeforeLeave')}
       />
 
       {/* Step Switch Warning Dialog - for switching between steps */}
@@ -1763,8 +1777,8 @@ export default function LessonEditPage() {
           setPendingStepToSwitch(null);
           setShowStepSwitchDialog(false);
         }}
-        title="Save This Step!"
-        description="You have unsaved changes in this step. Please save before switching to another step to avoid losing your work."
+        title={t('courseAuthoring.lesson.saveStepTitle')}
+        description={t('courseAuthoring.lesson.saveStepBeforeSwitch')}
       />
     </div>
   );

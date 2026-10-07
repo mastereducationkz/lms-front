@@ -10,6 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../ui/dialog';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/announcements';
 
 interface ConfirmSendDialogProps {
   open: boolean;
@@ -20,10 +22,6 @@ interface ConfirmSendDialogProps {
   sending: boolean;
   onConfirm: () => void;
 }
-
-const CONFIRM_WORD = 'SEND';
-
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 /**
  * The last gate before a broadcast. It names the exact recipient count — the
@@ -40,6 +38,9 @@ export function ConfirmSendDialog({
   sending,
   onConfirm,
 }: ConfirmSendDialogProps) {
+  const t = useT();
+  // The word to type follows the reader's language (SEND / ОТПРАВИТЬ).
+  const confirmWord = t('announcements.confirm.word');
   const [typed, setTyped] = useState('');
 
   // Every opening starts empty, so a previous confirmation can't carry over.
@@ -48,32 +49,34 @@ export function ConfirmSendDialog({
   }, [open]);
 
   const total = groupCount + studentCount;
+  const reach = [
+    t('announcements.confirm.reach', { count: total }),
+    groupCount > 0 ? t('announcements.count.groups', { count: groupCount }) : null,
+    studentCount > 0 ? t('announcements.count.students', { count: studentCount }) : null,
+  ].filter(Boolean).join(' — ');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{scheduled ? 'Schedule this announcement?' : 'Send this announcement?'}</DialogTitle>
+          <DialogTitle>{scheduled ? t('announcements.confirm.titleSchedule') : t('announcements.confirm.titleSend')}</DialogTitle>
           <DialogDescription>
-            This will reach {plural(total, 'recipient')}
-            {groupCount > 0 && ` — ${plural(groupCount, 'group')}`}
-            {studentCount > 0 && ` — ${plural(studentCount, 'student')}`}. Type {CONFIRM_WORD} to
-            confirm.
+            {t('announcements.confirm.description', { reach, word: confirmWord })}
           </DialogDescription>
         </DialogHeader>
         <Input
           value={typed}
           onChange={(event) => setTyped(event.target.value)}
-          placeholder={CONFIRM_WORD}
+          placeholder={confirmWord}
           autoFocus
         />
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
-            Cancel
+            {t('common.cancel')}
           </Button>
-          <Button onClick={onConfirm} disabled={sending || typed.trim() !== CONFIRM_WORD}>
+          <Button onClick={onConfirm} disabled={sending || typed.trim() !== confirmWord}>
             {sending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {scheduled ? 'Schedule' : 'Send'}
+            {scheduled ? t('announcements.confirm.schedule') : t('announcements.confirm.send')}
           </Button>
         </DialogFooter>
       </DialogContent>

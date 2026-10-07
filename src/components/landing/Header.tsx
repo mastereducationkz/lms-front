@@ -3,16 +3,19 @@ import { Menu, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { cn } from "../../lib/utils";
 import LogoIcon from '../../assets/masteredlogo-ico.ico';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/publicPages';
 
 export function Header() {
+  const t = useT();
   const [menuState, setMenuState] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
 
   const menuItems = [
-    { name: "About Platform", href: "#about" },
-    { name: "Features", href: "#features" },
-    { name: "For Whom", href: "#audience" },
-    { name: "Benefits", href: "#benefits" },
+    { name: t('publicPages.landing.nav.about'), href: "#about" },
+    { name: t('publicPages.landing.nav.features'), href: "#features" },
+    { name: t('publicPages.landing.nav.audience'), href: "#audience" },
+    { name: t('publicPages.landing.nav.benefits'), href: "#benefits" },
   ];
 
   React.useEffect(() => {
@@ -34,7 +37,7 @@ export function Header() {
             <div className="flex w-full justify-between lg:w-auto">
               <a
                 href="/"
-                aria-label="home"
+                aria-label={t('publicPages.landing.nav.home')}
                 className="flex items-center space-x-2"
               >
                 <div className="h-10 w-10 rounded-lg flex items-center justify-center overflow-hidden">
@@ -45,7 +48,7 @@ export function Header() {
 
               <button
                 onClick={() => setMenuState(!menuState)}
-                aria-label={menuState ? 'Close Menu' : 'Open Menu'}
+                aria-label={menuState ? t('publicPages.landing.nav.closeMenu') : t('publicPages.landing.nav.openMenu')}
                 className="relative z-20 -m-2.5 -mr-4 block cursor-pointer p-2.5 lg:hidden"
               >
                 <Menu className={cn(
@@ -100,21 +103,21 @@ export function Header() {
                   size="sm"
                   className={cn(isScrolled && 'lg:hidden')}
                 >
-                  <a href="/login">Sign In</a>
+                  <a href="/login">{t('publicPages.landing.signIn')}</a>
                 </Button>
                 <Button
                   asChild
                   size="sm"
                   className={cn('bg-primary text-primary-foreground', isScrolled && 'lg:hidden')}
                 >
-                  <a href="/login">Start Learning</a>
+                  <a href="/login">{t('publicPages.landing.startLearning')}</a>
                 </Button>
                 <Button
                   asChild
                   size="sm"
                   className={cn('bg-primary text-primary-foreground', isScrolled ? 'lg:inline-flex' : 'hidden')}
                 >
-                  <a href="/login">Get Started</a>
+                  <a href="/login">{t('publicPages.landing.getStarted')}</a>
                 </Button>
               </div>
             </div>

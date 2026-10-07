@@ -1,5 +1,7 @@
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import type { MessageReaction } from '../../types';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/chatLive';
 
 interface MessageReactionsProps {
   reactions: MessageReaction[];
@@ -29,6 +31,7 @@ function group(reactions: MessageReaction[], currentUserId: number | null): Grou
 
 /** Reaction chips under a bubble. Tap a chip to see who reacted and to toggle your own. */
 export function MessageReactions({ reactions, currentUserId, onToggle, align = 'start' }: MessageReactionsProps) {
+  const t = useT();
   if (!reactions || reactions.length === 0) return null;
   const groups = group(reactions, currentUserId);
 
@@ -44,7 +47,7 @@ export function MessageReactions({ reactions, currentUserId, onToggle, align = '
                   ? 'bg-brand-subtle border-blue-300 dark:border-brand-border'
                   : 'bg-muted border-border'
               }`}
-              aria-label={`${g.count} reacted with ${g.emoji}`}
+              aria-label={t('chatLive.chat.reactedWith', { count: g.count, emoji: g.emoji })}
             >
               <span className="leading-none">{g.emoji}</span>
               <span className="text-muted-foreground">{g.count}</span>
@@ -59,8 +62,8 @@ export function MessageReactions({ reactions, currentUserId, onToggle, align = '
               {g.users.map((u) => (
                 <div key={u.user_id} className="flex items-center justify-between text-sm">
                   <span className="truncate">
-                    {u.user_name || `User ${u.user_id}`}
-                    {u.user_id === currentUserId ? ' (you)' : ''}
+                    {u.user_name || t('chatLive.chat.userNumber', { id: u.user_id })}
+                    {u.user_id === currentUserId ? ` ${t('chatLive.chat.youMark')}` : ''}
                   </span>
                   <span>{u.emoji}</span>
                 </div>
@@ -71,7 +74,7 @@ export function MessageReactions({ reactions, currentUserId, onToggle, align = '
               onClick={() => onToggle(g.emoji)}
               className="w-full mt-2 text-xs text-brand hover:underline"
             >
-              {g.mine ? 'Remove my reaction' : `React with ${g.emoji}`}
+              {g.mine ? t('chatLive.chat.removeReaction') : t('chatLive.chat.reactWithEmoji', { emoji: g.emoji })}
             </button>
           </PopoverContent>
         </Popover>

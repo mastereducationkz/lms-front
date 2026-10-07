@@ -1,6 +1,9 @@
 import { Bold, Code, EyeOff, Italic, Link2, Quote, Strikethrough, Underline } from 'lucide-react';
 import { toast } from '../Toast';
 import type { MarkupTag } from './telegramText';
+import { t, type MessageKey } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/announcements';
 
 /**
  * Telegram's markup, inserted as literal tags into a plain textarea.
@@ -13,17 +16,17 @@ import type { MarkupTag } from './telegramText';
  */
 const FORMAT_ACTIONS: {
   tag: MarkupTag;
-  label: string;
+  label: MessageKey;
   icon: typeof Bold;
   shortcut?: string;
 }[] = [
-  { tag: 'b', label: 'Bold', icon: Bold, shortcut: '⌘B' },
-  { tag: 'i', label: 'Italic', icon: Italic, shortcut: '⌘I' },
-  { tag: 'u', label: 'Underline', icon: Underline, shortcut: '⌘U' },
-  { tag: 's', label: 'Strikethrough', icon: Strikethrough },
-  { tag: 'code', label: 'Monospace', icon: Code },
-  { tag: 'blockquote', label: 'Quote', icon: Quote },
-  { tag: 'tg-spoiler', label: 'Spoiler', icon: EyeOff },
+  { tag: 'b', label: 'announcements.format.bold', icon: Bold, shortcut: '⌘B' },
+  { tag: 'i', label: 'announcements.format.italic', icon: Italic, shortcut: '⌘I' },
+  { tag: 'u', label: 'announcements.format.underline', icon: Underline, shortcut: '⌘U' },
+  { tag: 's', label: 'announcements.format.strikethrough', icon: Strikethrough },
+  { tag: 'code', label: 'announcements.format.monospace', icon: Code },
+  { tag: 'blockquote', label: 'announcements.format.quote', icon: Quote },
+  { tag: 'tg-spoiler', label: 'announcements.format.spoiler', icon: EyeOff },
 ];
 
 /**
@@ -59,16 +62,16 @@ export function insertLink(
   onChange: (next: string) => void,
 ) {
   const hasSelection = !!el && (el.selectionEnd ?? 0) > (el.selectionStart ?? 0);
-  const url = window.prompt('Link URL', 'https://');
+  const url = window.prompt(t('announcements.format.linkPrompt'), 'https://');
   if (!url) return;
   // The server only keeps http(s) links; refusing here beats a link that
   // silently disappears between the preview and the chat.
   if (!/^https?:\/\//i.test(url)) {
-    toast('Only http:// and https:// links can be sent', 'error');
+    toast(t('announcements.format.httpOnly'), 'error');
     return;
   }
   wrapSelection(el, value, `<a href="${url}">`, '</a>', onChange);
-  if (!hasSelection) toast('Type the link text between the tags', 'info');
+  if (!hasSelection) toast(t('announcements.format.typeLinkText'), 'info');
 }
 
 interface FormatToolbarProps {
@@ -78,11 +81,14 @@ interface FormatToolbarProps {
 }
 
 export function FormatToolbar({ textareaRef, value, onChange }: FormatToolbarProps) {
+  const tr = useT();
   const buttonClass =
     'rounded p-1.5 text-muted-foreground transition-colors hover:bg-background hover:text-foreground';
   return (
     <div className="flex flex-wrap items-center gap-1 rounded-md border border-border bg-muted/40 p-1">
-      {FORMAT_ACTIONS.map(({ tag, label, icon: Icon, shortcut }) => (
+      {FORMAT_ACTIONS.map(({ tag, label: labelKey, icon: Icon, shortcut }) => {
+        const label = tr(labelKey);
+        return (
         <button
           key={tag}
           type="button"
@@ -93,17 +99,18 @@ export function FormatToolbar({ textareaRef, value, onChange }: FormatToolbarPro
         >
           <Icon className="h-4 w-4" />
         </button>
-      ))}
+        );
+      })}
       <button
         type="button"
         onClick={() => insertLink(textareaRef.current, value, onChange)}
-        title="Link (⌘K)"
-        aria-label="Link"
+        title={tr('announcements.format.linkShortcut')}
+        aria-label={tr('announcements.format.link')}
         className={buttonClass}
       >
         <Link2 className="h-4 w-4" />
       </button>
-      <span className="ml-auto pr-1 text-[11px] text-muted-foreground">Telegram formatting</span>
+      <span className="ml-auto pr-1 text-[11px] text-muted-foreground">{tr('announcements.format.telegramFormatting')}</span>
     </div>
   );
 }

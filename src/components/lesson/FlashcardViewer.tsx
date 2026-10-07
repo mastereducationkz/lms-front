@@ -8,8 +8,16 @@ import type { FlashcardSet } from '../../types';
 import { addFavoriteFlashcard, removeFavoriteByCardId, checkIsFavorite } from '../../services/api';
 import { toast } from '../Toast';
 import { useT } from '../../lib/i18n/react';
+import type { MessageKey } from '../../lib/i18n';
 import '@/lib/i18n/catalogs/learning';
+import '@/lib/i18n/catalogs/lessonPlayer';
 import { useStillLearningSave } from './useStillLearningSave';
+
+const DIFFICULTY_LABEL: Record<string, MessageKey> = {
+  easy: 'lessonPlayer.flashcards.difficultyEasy',
+  normal: 'lessonPlayer.flashcards.difficultyNormal',
+  hard: 'lessonPlayer.flashcards.difficultyHard',
+};
 
 interface FlashcardViewerProps {
   flashcardSet: FlashcardSet;
@@ -67,7 +75,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
 
   const handleToggleFavorite = async () => {
     if (!stepId || !currentCard) {
-      toast('Cannot add to favorites: missing required data', 'error');
+      toast(t('lessonPlayer.flashcards.missingData'), 'error');
       return;
     }
 
@@ -78,7 +86,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
         await removeFavoriteByCardId(stepId, currentCard.id);
         setIsFavorite(false);
         stillLearning.remember(currentCard.id, false);
-        toast('Removed from favorites', 'success');
+        toast(t('lessonPlayer.favorites.removed'), 'success');
       } else {
         // Add to favorites
         await addFavoriteFlashcard({
@@ -90,11 +98,11 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
         });
         setIsFavorite(true);
         stillLearning.remember(currentCard.id, true);
-        toast('Added to favorites', 'success');
+        toast(t('lessonPlayer.favorites.added'), 'success');
       }
     } catch (error: any) {
       console.error('Failed to toggle favorite:', error);
-      toast(error.message || 'Failed to update favorites', 'error');
+      toast(error.message || t('lessonPlayer.favorites.updateFailed'), 'error');
     } finally {
       setIsLoadingFavorite(false);
     }
@@ -178,8 +186,8 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
   if (!currentCard) {
     return (
       <div className="text-center py-8">
-        <h3 className="text-lg font-semibold mb-4">No flashcards available</h3>
-        <Button onClick={onComplete}>Continue</Button>
+        <h3 className="text-lg font-semibold mb-4">{t('lessonPlayer.flashcards.empty')}</h3>
+        <Button onClick={onComplete}>{t('lessonPlayer.common.continue')}</Button>
       </div>
     );
   }
@@ -198,8 +206,8 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
       {flashcardSet?.show_progress && cards.length > 0 && (
         <div className="space-y-2">
           <div className="flex justify-between text-sm text-muted-foreground">
-            <span>Progress: {completedCards.size} / {cards.length}</span>
-            <span>{Math.round(progress)}% complete</span>
+            <span>{t('lessonPlayer.flashcards.progress', { done: completedCards.size, total: cards.length })}</span>
+            <span>{t('lessonPlayer.flashcards.percentComplete', { percent: Math.round(progress) })}</span>
           </div>
           <Progress value={progress} className="h-2" />
         </div>
@@ -209,7 +217,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
       {cards.length > 0 && (
         <div className="flex justify-between items-center">
           <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-            <span>Card {currentCardIndex + 1} of {cards.length}</span>
+            <span>{t('lessonPlayer.flashcards.cardOf', { number: currentCardIndex + 1, total: cards.length })}</span>
             {/* A quiet note, not a toast: the round goes on underneath it. */}
             <span aria-live="polite" className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400">
               {stillLearning.saved && (
@@ -230,11 +238,11 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
                 className={`flex items-center gap-1 ${isFavorite ? 'bg-red-500 hover:bg-red-600' : ''}`}
               >
                 <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
-                {isFavorite ? 'Saved' : 'Save'}
+                {isFavorite ? t('lessonPlayer.save.saved') : t('common.save')}
               </Button>
             )}
             <Badge className={getDifficultyColor(currentCard.difficulty)}>
-              {currentCard.difficulty}
+              {DIFFICULTY_LABEL[currentCard.difficulty] ? t(DIFFICULTY_LABEL[currentCard.difficulty]) : currentCard.difficulty}
             </Badge>
             {currentCard.tags && currentCard.tags.map(tag => (
               <Badge key={tag} variant="outline" className="text-xs">
@@ -257,7 +265,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
           }}
           role="button"
           tabIndex={0}
-          aria-label={showingAnswer ? 'Hide answer' : 'Show answer'}
+          aria-label={showingAnswer ? t('lessonPlayer.flashcards.hideAnswer') : t('lessonPlayer.flashcards.showAnswer')}
         >
           <CardContent className="p-0 min-h-[300px]" style={{ perspective: '1200px', WebkitPerspective: '1200px' }}>
             <div
@@ -280,11 +288,11 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
                 }}
               >
                 <div className="space-y-4">
-                  <div className="text-sm text-muted-foreground mb-4">Question</div>
+                  <div className="text-sm text-muted-foreground mb-4">{t('lessonPlayer.flashcards.question')}</div>
                   {currentCard.front_image_url && (
                     <img
                       src={currentCard.front_image_url}
-                      alt="Front"
+                      alt={t('learning.flashcards.frontImage')}
                       className="max-w-full max-h-80 object-contain rounded mb-4"
                     />
                   )}
@@ -307,11 +315,11 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
                 }}
               >
                 <div className="space-y-4">
-                  <div className="text-sm text-muted-foreground mb-4">Answer</div>
+                  <div className="text-sm text-muted-foreground mb-4">{t('lessonPlayer.flashcards.answer')}</div>
                   {currentCard.back_image_url && (
                     <img
                       src={currentCard.back_image_url}
-                      alt="Back"
+                      alt={t('learning.flashcards.backImage')}
                       className="max-w-full max-h-80 object-contain rounded mb-4"
                     />
                   )}
@@ -360,7 +368,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
             className="flex items-center gap-2"
           >
             <ChevronLeft className="w-4 h-4" />
-            Previous
+            {t('lessonPlayer.nav.previous')}
           </Button>
 
           <Button 
@@ -369,7 +377,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
             className="flex items-center gap-2"
           >
             <RotateCcw className="w-4 h-4" />
-            Reset
+            {t('lessonPlayer.flashcards.reset')}
           </Button>
 
           <Button 
@@ -378,7 +386,7 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
             disabled={currentCardIndex === cards.length - 1 && incorrectCards.size === 0}
             className="flex items-center gap-2"
           >
-            Next
+            {t('lessonPlayer.nav.next')}
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
@@ -388,11 +396,11 @@ export default function FlashcardViewer({ flashcardSet, onComplete, onProgress, 
       {cards.length > 0 && completedCards.size === cards.length && (
         <div className="text-center py-4 bg-green-50 rounded-lg border border-green-200 dark:bg-green-950/30 dark:border-green-900">
           <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
-          <h3 className="text-lg font-semibold text-green-800 dark:text-green-200">Great job!</h3>
-          <p className="text-green-600 dark:text-green-300">You've completed all flashcards in this set.</p>
+          <h3 className="text-lg font-semibold text-green-800 dark:text-green-200">{t('lessonPlayer.flashcards.doneTitle')}</h3>
+          <p className="text-green-600 dark:text-green-300">{t('lessonPlayer.flashcards.doneBody')}</p>
           {incorrectCards.size > 0 && (
             <p className="text-sm text-green-600 dark:text-green-300 mt-1">
-              Review the {incorrectCards.size} cards you found challenging.
+              {t('lessonPlayer.flashcards.reviewHard', { count: incorrectCards.size })}
             </p>
           )}
         </div>

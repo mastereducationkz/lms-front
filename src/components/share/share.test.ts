@@ -5,7 +5,7 @@ import {
   crownText,
   formatShareName,
   isIOSDevice,
-  PROUD_LINES,
+  proudLine,
   saveMethod,
   shareButtons,
   shareErrorMessage,
@@ -34,9 +34,14 @@ describe('the name on the card', () => {
 });
 
 describe('card wording', () => {
-  it('has a first-person proud line for every achievement in the catalogue', () => {
-    for (const key of CATALOG_KEYS) expect(PROUD_LINES[key], key).toMatch(/\.$/);
-    for (const line of Object.values(PROUD_LINES)) expect(line).not.toMatch(/\byou\b/i);
+  it('has a first-person proud line for every achievement in the catalogue, in both languages', () => {
+    for (const key of CATALOG_KEYS) {
+      expect(proudLine(key, 'en'), key).toMatch(/\.$/);
+      expect(proudLine(key, 'en'), key).not.toMatch(/\byou\b/i);
+      expect(proudLine(key, 'ru'), key).toMatch(/[а-яё].*\.$/i);
+      expect(proudLine(key, 'ru'), key).not.toMatch(/(^|[^а-яё])(вы|вас|ваш[а-я]*)([^а-яё]|$)/i);
+    }
+    expect(proudLine('something_new', 'en')).toBeNull();
   });
 
   it('picks the pill, lead and colourway from the tier', () => {
@@ -48,6 +53,17 @@ describe('card wording', () => {
     expect(achievementText(ach({ key: 'graduate_gold', tier: 'legendary' })).pill).toBe('Legendary achievement');
     expect(achievementText(ach({ key: 'nauryz', tier: 'seasonal' })).accent).toBe('emerald');
     expect(achievementText(ach({ key: 'something_new', description: 'A new badge.' })).line).toBe('A new badge.');
+  });
+
+  it('speaks Russian on a Russian card, achievement title included', () => {
+    expect(achievementText(ach(), 'ru')).toEqual({
+      pill: 'Редкое достижение', lead: 'Только что получено', title: 'Без промахов',
+      line: 'Все домашки вовремя — четыре недели подряд.', accent: 'blue',
+    });
+    expect(starText({ reason: 'Сдала все домашки!', awarded_by_role: 'curator' }, 'ru'))
+      .toMatchObject({ pill: 'Выбор моего куратора', title: 'Звезда недели', line: '«Сдала все домашки»' });
+    expect(crownText({ lesson_title: 'L', lesson_date: '2026-10-03' }, 'ru'))
+      .toMatchObject({ pill: 'Живой урок · 3 окт.', lead: 'Преподаватель выбрал меня', title: 'Касатик урока' });
   });
 
   it('quotes the reason on a Star of the Week and names who chose it', () => {
@@ -105,5 +121,7 @@ describe('sharing fallbacks', () => {
     expect(shareErrorMessage({ name: 'NotAllowedError' })).toMatch(/blocked/);
     expect(shareErrorMessage(new TypeError('boom'))).toMatch(/Download/);
     expect(shareErrorMessage(new TypeError('boom'))).not.toMatch(/cancel/i);
+    expect(shareErrorMessage({ name: 'NotAllowedError' }, 'ru')).toMatch(/заблокировал/);
+    expect(shareErrorMessage(new TypeError('boom'), 'ru')).toMatch(/сохраните картинку/);
   });
 });

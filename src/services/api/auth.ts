@@ -1,6 +1,8 @@
 import axios from 'axios';
 import type { User } from '../../types';
 import { api, tokenManager, API_BASE_URL, CookieUtils, setLogoutHandler, clearCache } from './client';
+import { t } from '../../lib/i18n';
+import '@/lib/i18n/catalogs/sharedUi';
 
 let currentUser: User | null = getCurrentUserFromStorage();
 
@@ -47,7 +49,7 @@ export async function login(email: string, password: string): Promise<{ success:
 
     return { success: true, user };
   } catch (error: any) {
-    throw new Error(error.response?.data?.detail || 'Login failed');
+    throw new Error(error.response?.data?.detail || t('sharedUi.auth.loginFailed'));
   }
 }
 

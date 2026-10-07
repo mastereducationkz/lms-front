@@ -5,9 +5,12 @@ import apiClient from '../services/api';
 import type { Lesson, Step } from '../types';
 import Tabs from '../components/Tabs';
 import Loader from '../components/Loader';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/lessonPlayer';
 
 export default function LecturePage() {
   const { lessonId } = useParams<{ lessonId: string }>();
+  const t = useT();
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [steps, setSteps] = useState<Step[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
@@ -51,8 +54,8 @@ export default function LecturePage() {
   if (!lesson) {
     return (
       <div className="text-center py-8">
-        <h2 className="text-xl font-semibold text-foreground">Lesson not found</h2>
-        <p className="text-muted-foreground mt-2">The lesson you're looking for doesn't exist or you don't have access to it.</p>
+        <h2 className="text-xl font-semibold text-foreground">{t('lessonPlayer.lecture.notFound')}</h2>
+        <p className="text-muted-foreground mt-2">{t('lessonPlayer.lecture.notFoundHint')}</p>
       </div>
     );
   }
@@ -75,7 +78,7 @@ export default function LecturePage() {
       </div>
 
       <div className="flex items-center justify-between">
-        <Tabs tabs={["Content", "Assignments"]} value={tab} onChange={setTab} />
+        <Tabs tabs={[t('lessonPlayer.lecture.tabContent'), t('lessonPlayer.lecture.tabAssignments')]} value={tab} onChange={setTab} />
       </div>
 
       {tab === 0 && (
@@ -99,7 +102,7 @@ export default function LecturePage() {
                 {contentText ? (
                   <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(contentText) }} />
                 ) : (
-                  <p className="text-muted-foreground">No content available for this lesson</p>
+                  <p className="text-muted-foreground">{t('lessonPlayer.lecture.noContent')}</p>
                 )}
               </div>
             </div>
@@ -109,9 +112,9 @@ export default function LecturePage() {
 
       {tab === 1 && (
         <div className="card p-5">
-          <div className="font-semibold mb-3">Assignments</div>
+          <div className="font-semibold mb-3">{t('lessonPlayer.lecture.tabAssignments')}</div>
           {assignments.length === 0 ? (
-            <div className="text-muted-foreground text-sm">No assignments for this lesson</div>
+            <div className="text-muted-foreground text-sm">{t('lessonPlayer.lecture.noAssignments')}</div>
           ) : (
             <ul className="space-y-3">
               {assignments.map(assignment => (
@@ -120,9 +123,9 @@ export default function LecturePage() {
                     <div className="font-medium">{assignment.title}</div>
                     <div className="text-sm text-muted-foreground">{assignment.description}</div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      Type: {assignment.assignment_type} • Max Score: {assignment.max_score}
+                      {t('lessonPlayer.lecture.meta', { type: assignment.assignment_type, score: assignment.max_score })}
                       {assignment.time_limit_minutes && (
-                        <span> • Time Limit: {assignment.time_limit_minutes} minutes</span>
+                        <span> {t('lessonPlayer.lecture.timeLimit', { minutes: assignment.time_limit_minutes })}</span>
                       )}
                     </div>
                   </div>
@@ -130,7 +133,7 @@ export default function LecturePage() {
                     href={`/assignment/${assignment.id}`} 
                     className="btn-primary text-sm"
                   >
-                    {user?.role === 'student' ? 'Start Assignment' : 'View Assignment'}
+                    {user?.role === 'student' ? t('lessonPlayer.lecture.start') : t('lessonPlayer.lecture.view')}
                   </a>
                 </li>
               ))}

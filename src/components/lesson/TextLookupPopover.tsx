@@ -19,6 +19,8 @@ import { useLookupLang } from './lookup/lookupLang';
 import { cleanSelection, selectionKind } from './lookup/selection';
 import { useLookupStream } from './lookup/useLookupStream';
 import { useSelectionSettle, type SettledSelection } from './lookup/useSelectionSettle';
+import { t } from '../../lib/i18n';
+import '@/lib/i18n/catalogs/lessonPlayer';
 
 interface Target extends SettledSelection {
   kind: 'word' | 'phrase' | 'too_long';
@@ -224,7 +226,7 @@ export const TextLookupPopover: React.FC<TextLookupPopoverProps> = ({ containerR
           className="relative inline-flex h-10 items-center gap-2 rounded-full border border-border bg-popover px-4 text-sm font-medium text-popover-foreground shadow-lg after:absolute after:-inset-1.5 after:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring animate-in fade-in-0 zoom-in-95 duration-150 motion-reduce:animate-none"
         >
           <Search className="h-4 w-4 text-brand" aria-hidden />
-          Look up
+          {t('lessonPlayer.lookup.button')}
         </button>
       )}
     </div>,

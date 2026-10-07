@@ -30,6 +30,9 @@ import { lessonPath } from '../lib/lessonLinks';
 import LiveNowTile from '../components/dashboard/LiveNowTile';
 import InstallAppCard from '../components/pwa/InstallAppCard';
 import { AchievementsTile } from '@/components/achievements/AchievementsTile';
+import { formatDate as fmtDate, formatDateTime as fmtDateTime, formatTime, hasMessage } from '@/lib/i18n';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/studentHome';
 
 interface StudentDashboardProps {
   firstName: string;
@@ -44,6 +47,7 @@ export default function StudentDashboard({
   onContinueCourse,
   onGoToAllCourses,
 }: StudentDashboardProps) {
+  const t = useT();
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -187,7 +191,7 @@ export default function StudentDashboard({
       setIeltsPromptMessage('')
     } catch (error) {
       console.error('Failed to update IELTS prompt touch state:', error)
-      setIeltsPromptMessage('Could not update reminder status. Please try again.')
+      setIeltsPromptMessage(t('studentHome.dashboard.ielts.reminderFailed'))
     } finally {
       setIsSavingIeltsPrompt(false)
     }
@@ -201,7 +205,7 @@ export default function StudentDashboard({
       setShowIeltsPrompt(false)
     } catch (error) {
       console.error('Failed to confirm IELTS date:', error)
-      setIeltsPromptMessage('Could not confirm IELTS date. Please try again.')
+      setIeltsPromptMessage(t('studentHome.dashboard.ielts.confirmFailed'))
     } finally {
       setIsSavingIeltsPrompt(false)
     }
@@ -209,7 +213,7 @@ export default function StudentDashboard({
 
   const handleIeltsPromptSaveDate = async () => {
     if (!ieltsPromptDate) {
-      setIeltsPromptMessage('Please select your IELTS test date.')
+      setIeltsPromptMessage(t('studentHome.dashboard.ielts.selectDate'))
       return
     }
 
@@ -227,9 +231,9 @@ export default function StudentDashboard({
       console.error('Failed to save IELTS planned date:', error)
       const statusCode = (error as { response?: { status?: number } })?.response?.status
       if (statusCode === 404) {
-        setIeltsPromptMessage('Please complete Assignment Zero first, then set your IELTS date.')
+        setIeltsPromptMessage(t('studentHome.dashboard.ielts.needsAssignmentZero'))
       } else {
-        setIeltsPromptMessage('Could not save IELTS date. Please try again.')
+        setIeltsPromptMessage(t('studentHome.dashboard.ielts.saveFailed'))
       }
     } finally {
       setIsSavingIeltsPrompt(false)
@@ -262,7 +266,7 @@ export default function StudentDashboard({
               course_id: parseInt(course.id.toString()),
               course_title: course.title,
               teacher_id: parseInt(course.teacher_id?.toString() || '0'),
-              teacher_name: course.teacher_name || 'Unknown',
+              teacher_name: course.teacher_name || t('studentHome.dashboard.unknownTeacher'),
               cover_image_url: course.cover_image_url,
               completion_percentage: 0,
               total_lessons: 0,
@@ -375,39 +379,27 @@ export default function StudentDashboard({
     }
   };
 
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  const formatDateTime = (dateString: string) => fmtDateTime(dateString);
+  /** A todo badge: the catalog's word for a status / event type, else the raw value made readable. */
+  const labelOr = (key: string, raw: string) => (hasMessage(key) ? t(key) : raw.replace('_', ' '));
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  const formatDate = (dateString: string) => fmtDate(dateString, { month: 'short', day: 'numeric' });
 
   // Deadline urgency for an assignment that's ready to submit (never overdue-graded —
   // these are always unsubmitted by definition), mirrors getAssignmentStatus's colors.
   const getDueUrgency = (dueDate: string | null) => {
     if (!dueDate) {
-      return { icon: FileText, label: 'No due date', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' };
+      return { icon: FileText, label: t('studentHome.dashboard.due.none'), color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200' };
     }
     const now = new Date();
     const due = new Date(dueDate);
     if (due < now) {
-      return { icon: AlertCircle, label: `Overdue since ${formatDate(dueDate)}`, color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' };
+      return { icon: AlertCircle, label: t('studentHome.dashboard.due.overdueSince', { date: formatDate(dueDate) }), color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' };
     }
     if (due.getTime() - now.getTime() < 24 * 60 * 60 * 1000) {
-      return { icon: Clock, label: `Due ${formatDateTime(dueDate)}`, color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' };
+      return { icon: Clock, label: t('studentHome.dashboard.due.on', { date: formatDateTime(dueDate) }), color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' };
     }
-    return { icon: Calendar, label: `Due ${formatDate(dueDate)}`, color: 'bg-brand-subtle text-blue-800 dark:text-brand-subtle-foreground' };
+    return { icon: Calendar, label: t('studentHome.dashboard.due.on', { date: formatDate(dueDate) }), color: 'bg-brand-subtle text-blue-800 dark:text-brand-subtle-foreground' };
   };
 
   // Get current and relevant assignments (due soon, overdue, or recent)
@@ -528,13 +520,8 @@ export default function StudentDashboard({
   }, [webinars]);
 
   const formatWebinarSlot = (ev: Event) => {
-    const start = new Date(ev.start_datetime);
-    const end = new Date(ev.end_datetime);
-    const tz = { timeZone: 'Asia/Almaty' } as const;
-    const weekday = start.toLocaleDateString('en-US', { weekday: 'short', ...tz });
-    const t = (d: Date) =>
-      d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false, ...tz });
-    return `${weekday} ${t(start)}–${t(end)}`;
+    const weekday = fmtDate(ev.start_datetime, { weekday: 'short' });
+    return `${weekday} ${formatTime(ev.start_datetime)}–${formatTime(ev.end_datetime)}`;
   };
 
   return (
@@ -547,7 +534,7 @@ export default function StudentDashboard({
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-              Ready to Submit
+              {t('studentHome.dashboard.readyToSubmit')}
               <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
                 {readyToSubmit.length}
               </Badge>
@@ -568,7 +555,7 @@ export default function StudentDashboard({
                       <div className="font-medium text-sm truncate">{a.title}</div>
                       <div className="text-xs text-muted-foreground">{due.label}</div>
                     </div>
-                    <Badge className={`text-xs ${due.color}`}>Ready</Badge>
+                    <Badge className={`text-xs ${due.color}`}>{t('studentHome.dashboard.ready')}</Badge>
                   </div>
                 );
               })}
@@ -582,7 +569,7 @@ export default function StudentDashboard({
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-2">
                 <GraduationCap className="h-5 w-5 text-primary" />
-                <CardTitle className="text-base">New weekly sessions</CardTitle>
+                <CardTitle className="text-base">{t('studentHome.dashboard.webinars.title')}</CardTitle>
               </div>
               <Button
                 variant="ghost"
@@ -590,11 +577,11 @@ export default function StudentDashboard({
                 className="h-7 px-2 text-xs"
                 onClick={dismissWebinarAnnouncement}
               >
-                Hide
+                {t('studentHome.dashboard.webinars.hide')}
               </Button>
             </div>
             <CardDescription>
-              Free weekly office hours and speaking clubs are now on your calendar — join live using the links below.
+              {t('studentHome.dashboard.webinars.description')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -613,7 +600,7 @@ export default function StudentDashboard({
                 {safeLinkUrl(ev.meeting_url) && (
                   <Button asChild size="sm" variant="secondary">
                     <a href={safeLinkUrl(ev.meeting_url)!} target="_blank" rel="noopener noreferrer">
-                      <Video className="mr-1.5 h-4 w-4" /> Join
+                      <Video className="mr-1.5 h-4 w-4" /> {t('studentHome.dashboard.webinars.join')}
                     </a>
                   </Button>
                 )}
@@ -626,7 +613,7 @@ export default function StudentDashboard({
                 className="h-auto p-0 text-xs"
                 onClick={() => navigate('/calendar')}
               >
-                View full calendar
+                {t('studentHome.dashboard.webinars.calendar')}
                 <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden="true" />
               </Button>
             </div>
@@ -645,7 +632,7 @@ export default function StudentDashboard({
               <div className="flex items-center gap-2">
                 <GraduationCap className="h-5 w-5 text-primary" />
                 <CardTitle className="text-base flex items-center">
-                  New weekly sessions
+                  {t('studentHome.dashboard.webinars.title')}
                   <SampleBadge />
                 </CardTitle>
               </div>
@@ -655,11 +642,11 @@ export default function StudentDashboard({
                 className="h-7 px-2 text-xs"
                 onClick={dismissWebinarAnnouncement}
               >
-                Hide
+                {t('studentHome.dashboard.webinars.hide')}
               </Button>
             </div>
             <CardDescription>
-              Free weekly office hours and speaking clubs are available to enrolled students — here's a preview of what's on the calendar.
+              {t('studentHome.dashboard.webinars.trialDescription')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -684,27 +671,27 @@ export default function StudentDashboard({
       {!isLoadingIeltsPrompt && showIeltsPrompt && (
         <Card className="border-amber-300 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/30">
           <CardHeader>
-            <CardTitle className="text-base">IELTS date check-in</CardTitle>
+            <CardTitle className="text-base">{t('studentHome.dashboard.ielts.title')}</CardTitle>
             <CardDescription>
-              We ask this every two weeks to keep your IELTS plan up to date.
+              {t('studentHome.dashboard.ielts.subtitle')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {ieltsCurrentExactDate ? (
               <div className="rounded-md border border-amber-200 bg-white/70 dark:bg-card/60 px-3 py-2 text-sm">
                 <span className="text-gray-600 dark:text-gray-400">
-                  {ieltsDateHasPassed ? 'That date has passed:' : 'Current exact date:'}
+                  {ieltsDateHasPassed ? t('studentHome.dashboard.ielts.datePassed') : t('studentHome.dashboard.ielts.currentDate')}
                 </span>{' '}
-                <span className="font-semibold">{ieltsCurrentExactDate}</span>
+                <span className="font-semibold">{fmtDate(ieltsCurrentExactDate) || ieltsCurrentExactDate}</span>
                 {ieltsDateHasPassed && (
                   <p className="mt-1 text-gray-600 dark:text-gray-400">
-                    If you have rebooked, set the new date below.
+                    {t('studentHome.dashboard.ielts.rebooked')}
                   </p>
                 )}
               </div>
             ) : (
               <p className="text-sm text-gray-700 dark:text-gray-300">
-                We do not have your exact IELTS date yet. Please set it now.
+                {t('studentHome.dashboard.ielts.noDate')}
               </p>
             )}
             <Input
@@ -717,15 +704,15 @@ export default function StudentDashboard({
             )}
             <div className="flex flex-wrap gap-2">
               <Button onClick={handleIeltsPromptSaveDate} disabled={isSavingIeltsPrompt}>
-                Save exact date
+                {t('studentHome.dashboard.ielts.saveDate')}
               </Button>
               {ieltsCurrentExactDate && (
                 <Button variant="secondary" onClick={handleIeltsPromptConfirmDate} disabled={isSavingIeltsPrompt}>
-                  Yes, this date is correct
+                  {t('studentHome.dashboard.ielts.confirmDate')}
                 </Button>
               )}
               <Button variant="outline" onClick={handleIeltsPromptDismiss} disabled={isSavingIeltsPrompt}>
-                Ask me again in 2 weeks
+                {t('studentHome.dashboard.ielts.askLater')}
               </Button>
             </div>
           </CardContent>
@@ -767,10 +754,10 @@ export default function StudentDashboard({
             </div>
             <div>
               <div className="text-3xl font-bold">{coursesCount}</div>
-              <div className="text-muted-foreground text-sm">My courses</div>
+              <div className="text-muted-foreground text-sm">{t('studentHome.dashboard.stats.courses')}</div>
               {progressData && (
                 <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                  {progressData.completed_lessons}/{progressData.total_lessons} lessons completed
+                  {t('studentHome.dashboard.stats.lessonsCompleted', { done: progressData.completed_lessons, total: progressData.total_lessons })}
                 </div>
               )}
             </div>
@@ -783,11 +770,11 @@ export default function StudentDashboard({
               <Clock className="h-6 w-6" />
             </div>
             <div>
-              <div className="text-3xl font-bold">{totalStudyHours}h</div>
-              <div className="text-muted-foreground text-sm">Study time</div>
+              <div className="text-3xl font-bold">{t('studentHome.dashboard.stats.hours', { hours: totalStudyHours })}</div>
+              <div className="text-muted-foreground text-sm">{t('studentHome.dashboard.stats.studyTime')}</div>
               {progressData && (
                 <div className="text-xs text-brand mt-1">
-                  {progressData.total_time_spent_minutes} minutes total
+                  {t('studentHome.dashboard.stats.minutesTotal', { count: progressData.total_time_spent_minutes })}
                 </div>
               )}
             </div>
@@ -802,10 +789,10 @@ export default function StudentDashboard({
             </div>
             <div className="flex-1">
               <div className="text-3xl font-bold">{overallProgress}%</div>
-              <div className="text-muted-foreground text-sm">Progress Overview</div>
+              <div className="text-muted-foreground text-sm">{t('studentHome.dashboard.stats.progress')}</div>
               {progressData && (
                 <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
-                  {progressData.completed_steps}/{progressData.total_steps} steps completed
+                  {t('studentHome.dashboard.stats.stepsCompleted', { done: progressData.completed_steps, total: progressData.total_steps })}
                 </div>
               )}
             </div>
@@ -848,7 +835,7 @@ export default function StudentDashboard({
               <CardHeader>
                 <CardTitle className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
                   <div className="flex items-center gap-2">
-                    Todo list
+                    {t('studentHome.dashboard.todo.title')}
                     {user?.is_trial &&
                       !isLoadingTodo &&
                       relevantAssignments.length === 0 &&
@@ -864,14 +851,14 @@ export default function StudentDashboard({
                       htmlFor="show-completed"
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
-                      Show completed tasks
+                      {t('studentHome.dashboard.todo.showCompleted')}
                     </label>
                   </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {isLoadingTodo ? (
-                  <div className="text-center py-4 text-muted-foreground">Loading deadlines...</div>
+                  <div className="text-center py-4 text-muted-foreground">{t('studentHome.dashboard.todo.loading')}</div>
                 ) : (
                   <div className="max-h-[19.5rem] overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
                     {/* Combined assignments and events */}
@@ -923,11 +910,11 @@ export default function StudentDashboard({
                                 <div className="flex-1 min-w-0">
                                   <div className="font-medium text-sm truncate">{deadline.title}</div>
                                   <div className="text-xs text-muted-foreground">
-                                    Due {formatDate(deadline.date!)}
+                                    {t('studentHome.dashboard.due.on', { date: formatDate(deadline.date!) })}
                                   </div>
                                 </div>
                                 <Badge className={`text-xs ${deadline.status.color}`}>
-                                  {deadline.status.status.replace('_', ' ')}
+                                  {labelOr(`studentHome.dashboard.todo.status.${deadline.status.status}`, deadline.status.status)}
                                 </Badge>
                               </>
                             ) : (
@@ -943,7 +930,7 @@ export default function StudentDashboard({
                                   </div>
                                 </div>
                                 <Badge className={`text-xs ${getEventColor(deadline.eventType)}`}>
-                                  {deadline.eventType.replace('_', ' ')}
+                                  {labelOr(`studentHome.dashboard.todo.event.${deadline.eventType}`, deadline.eventType)}
                                 </Badge>
                               </>
                             )}
@@ -970,7 +957,7 @@ export default function StudentDashboard({
                         ))
                       ) : (
                         <div className="text-center py-4 text-muted-foreground text-sm">
-                          No current tasks
+                          {t('studentHome.dashboard.todo.empty')}
                         </div>
                       )
                     })()}
@@ -984,7 +971,7 @@ export default function StudentDashboard({
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    Your Teacher
+                    {t('studentHome.dashboard.teacher.title')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -1000,7 +987,7 @@ export default function StudentDashboard({
                                 </div>
                                 <div>
                                   <div className="font-medium text-sm">{teacher.name}</div>
-                                  <div className="text-xs text-muted-foreground">Group Teacher</div>
+                                  <div className="text-xs text-muted-foreground">{t('studentHome.dashboard.teacher.groupTeacher')}</div>
                                 </div>
                               </div>
                               <Button
@@ -1012,7 +999,7 @@ export default function StudentDashboard({
                                 className="flex items-center gap-1"
                               >
                                 <MessageCircle className="h-4 w-4" />
-                                Contact
+                                {t('studentHome.dashboard.teacher.contact')}
                               </Button>
                             </div>
                           ))}
@@ -1040,7 +1027,7 @@ export default function StudentDashboard({
                               <div>
                                 <div className="font-medium text-sm">{teacher.name}</div>
                                 <div className="text-xs text-muted-foreground">
-                                  {progressData.courses.filter(c => c.teacher_id === teacher.id).length} course(s)
+                                  {t('studentHome.dashboard.teacher.courses', { count: progressData.courses.filter(c => c.teacher_id === teacher.id).length })}
                                 </div>
                               </div>
                             </div>
@@ -1053,14 +1040,14 @@ export default function StudentDashboard({
                               className="flex items-center gap-1"
                             >
                               <MessageCircle className="h-4 w-4" />
-                              Contact
+                              {t('studentHome.dashboard.teacher.contact')}
                             </Button>
                           </div>
                         ))}
                       </div>
                     ) : (
                       <div className="text-center py-4 text-muted-foreground text-sm">
-                        No teacher information available
+                        {t('studentHome.dashboard.teacher.none')}
                       </div>
                     )
                   })()}
@@ -1081,14 +1068,14 @@ export default function StudentDashboard({
                   className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"
                 >
                   <BookOpen className="h-4 w-4" />
-                  Courses
+                  {t('studentHome.dashboard.tabs.courses')}
                 </TabsTrigger>
                 <TabsTrigger 
                   value="activity" 
                   className="flex items-center gap-2 text-sm font-medium data-[state=active]:bg-white data-[state=active]:shadow-sm"
                 >
                   <LineChart className="h-4 w-4" />
-                  Activity
+                  {t('studentHome.dashboard.tabs.activity')}
                 </TabsTrigger>
               </TabsList>
             )}
@@ -1097,9 +1084,9 @@ export default function StudentDashboard({
           {isLoadingProgress ? (
             <Card className="border-dashed">
               <CardHeader>
-                <CardTitle>Loading progress...</CardTitle>
+                <CardTitle>{t('studentHome.dashboard.courses.loadingTitle')}</CardTitle>
                 <CardDescription>
-                  Loading your course progress information.
+                  {t('studentHome.dashboard.courses.loadingText')}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -1118,7 +1105,7 @@ export default function StudentDashboard({
                     lessonsTotal={course.lessons_total ?? course.total_lessons}
                     checkpoints={course.checkpoints}
                     nextLesson={course.next_lesson}
-                    actionLabel={course.completion_percentage === 100 ? 'Course completed' : 'Continue learning'}
+                    actionLabel={course.completion_percentage === 100 ? t('studentHome.dashboard.courses.completed') : t('studentHome.dashboard.courses.continue')}
                     actionIcon={course.completion_percentage === 100
                       ? <CheckCircle className="w-4 h-4 mr-2" />
                       : undefined}
@@ -1132,13 +1119,13 @@ export default function StudentDashboard({
           ) : (
             <Card className="border-dashed">
               <CardHeader>
-                <CardTitle>No available courses</CardTitle>
+                <CardTitle>{t('studentHome.dashboard.courses.emptyTitle')}</CardTitle>
                 <CardDescription>
-                  It looks like you don't have any courses yet. Go to the catalog to start learning.
+                  {t('studentHome.dashboard.courses.emptyText')}
                 </CardDescription>
               </CardHeader>
               <CardFooter>
-                <Button onClick={onGoToAllCourses}>Find course</Button>
+                <Button onClick={onGoToAllCourses}>{t('studentHome.dashboard.courses.find')}</Button>
               </CardFooter>
             </Card>
           )}
@@ -1149,9 +1136,9 @@ export default function StudentDashboard({
           {isLoadingProgress ? (
             <Card className="border-dashed">
               <CardHeader>
-                <CardTitle>Loading activity...</CardTitle>
+                <CardTitle>{t('studentHome.dashboard.activity.loadingTitle')}</CardTitle>
                 <CardDescription>
-                  Loading your activity information.
+                  {t('studentHome.dashboard.activity.loadingText')}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -1161,18 +1148,18 @@ export default function StudentDashboard({
               {/* Course Progress Table */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Detailed course progress</CardTitle>
+                  <CardTitle>{t('studentHome.dashboard.activity.tableTitle')}</CardTitle>
                 </CardHeader>
                 <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                        <TableHead>Course</TableHead>
-                        <TableHead>Progress</TableHead>
-                        <TableHead>Lessons</TableHead>
+                        <TableHead>{t('studentHome.dashboard.activity.course')}</TableHead>
+                        <TableHead>{t('studentHome.dashboard.activity.progress')}</TableHead>
+                        <TableHead>{t('studentHome.dashboard.activity.lessons')}</TableHead>
                         {/* Steps and time only once the column can hold them without a sideways scroll. */}
-                        <TableHead className="hidden @lg:table-cell">Steps</TableHead>
-                        <TableHead className="hidden @lg:table-cell">Time</TableHead>
+                        <TableHead className="hidden @lg:table-cell">{t('studentHome.dashboard.activity.steps')}</TableHead>
+                        <TableHead className="hidden @lg:table-cell">{t('studentHome.dashboard.activity.time')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1202,7 +1189,7 @@ export default function StudentDashboard({
                           </TableCell>
                           <TableCell className="hidden @lg:table-cell">
                             <span className="text-sm text-gray-600 dark:text-muted-foreground">
-                              {course.time_spent_minutes} min
+                              {t('common.minutes', { count: course.time_spent_minutes })}
                             </span>
                           </TableCell>
                   </TableRow>
@@ -1215,13 +1202,13 @@ export default function StudentDashboard({
           ) : (
             <Card className="border-dashed">
               <CardHeader>
-                <CardTitle>No activity yet</CardTitle>
+                <CardTitle>{t('studentHome.dashboard.activity.emptyTitle')}</CardTitle>
                 <CardDescription>
-                  Your recent activity will be displayed here: completed lessons, submitted assignments, etc.
+                  {t('studentHome.dashboard.activity.emptyText')}
                 </CardDescription>
               </CardHeader>
               <CardFooter>
-                <Button variant="outline" onClick={onGoToAllCourses}>Go to courses</Button>
+                <Button variant="outline" onClick={onGoToAllCourses}>{t('studentHome.hero.goToCourses')}</Button>
               </CardFooter>
             </Card>
           )}

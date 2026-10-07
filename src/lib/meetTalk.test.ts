@@ -162,6 +162,13 @@ describe('the group spreadsheet', () => {
     expect(csv).toContain('"Шыңғыс, ""Шока""","4","4","3","1","25.0","6.3","41%","5","",""');
     expect(csv).toContain('"10/09/2026","19:00","Lesson 7","","Гульзада","72%","28%","50.0","","","","","","","9","2",""');
   });
+
+  it('speaks the downloader’s language: headers, dates and words', () => {
+    const csv = groupTalkCsv(data, 'ru');
+    expect(csv.startsWith('\uFEFF"Группа","August 19 SAT - Gulzada","С","12.08.2026","По","11.09.2026"')).toBe(true);
+    expect(csv).toContain('"Ученик","Уроков со временем речи"');
+    expect(csv).toContain('"10.09.2026","19:00","Lesson 7"');
+  });
 });
 
 describe('the group table', () => {
@@ -335,6 +342,10 @@ describe('every teacher side by side', () => {
     expect(one).toContain('"All groups","10","2","70%"');
     expect(one).toContain('"July 23 SAT","10","2","70%"');
     expect(one).toContain('"10/09/2026","19:00","Lesson 7","July 23 SAT","Gulzada","50%","50%","40.0","4.0","43","21","49%","35","5.3","10","2","yes"');
+    const ru = teacherTalkCsv({ from: '2026-08-12T00:00:00Z', to: '2026-09-11T00:00:00Z', teacher: rows[0], groups: [{ ...tally, group_id: null, name: null, teacher_share: 0.7, questions: null, silent_per_lesson: 1 }], lessons: [] }, 'ru');
+    expect(ru).toContain('"Все группы","10","2","70%"');
+    expect(ru).toContain('"Без группы","10"');
+    expect(teachersCsv({ from: '2026-08-12T00:00:00Z', to: '2026-09-11T00:00:00Z', teachers: rows }, 'ru')).toContain('"Преподаватель","Уроков","Групп"');
   });
 });
 

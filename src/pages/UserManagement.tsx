@@ -7,9 +7,9 @@ import { getRecordingTeacher } from '../services/api/recordingsAdmin';
 import { toast } from '../components/Toast';
 import type { User, CreateUserRequest, UpdateUserRequest, UpdateGroupRequest, Group, Course, GroupType, CourseType } from '../types';
 
-const GROUP_TYPE_LABELS: Record<GroupType, string> = {
-  group: 'Group',
-  individual: 'Individual',
+const GROUP_TYPE_LABELS: Record<GroupType, MessageKey> = {
+  group: 'adminUsers.groupType.group',
+  individual: 'adminUsers.groupType.individual',
 }
 
 const COURSE_TYPE_LABELS: Record<CourseType, string> = {
@@ -87,7 +87,13 @@ import { teacherGroupTail } from '../lib/groupNames';
 import { passwordHint, passwordPolicyError } from '../lib/passwordPolicy';
 import { roleLabel } from '../lib/roleLabel';
 import { useT } from '../lib/i18n/react';
+import type { MessageKey } from '../lib/i18n';
 import '@/lib/i18n/catalogs/users';
+import '@/lib/i18n/catalogs/adminUsers';
+
+/** A translated sentence with its <b>…</b> spans shown in bold. */
+const withBold = (message: string) =>
+  message.split(/<\/?b>/).map((part, i) => (i % 2 ? <strong key={i}>{part}</strong> : part));
 
 interface UserFormData {
   name: string;
@@ -215,25 +221,25 @@ export default function UserManagement() {
 
   const handleBulkScheduleUpload = async () => {
     if (!bulkScheduleText.trim()) {
-      toast('Please enter some data', 'error');
+      toast(t('adminUsers.bulkSchedule.empty'), 'error');
       return;
     }
 
     setIsBulkScheduleLoading(true);
     try {
       const result = await apiClient.bulkScheduleUpload(bulkScheduleText);
-      toast(`Created ${result.created_groups.length} groups/schedules`, 'success');
+      toast(t('adminUsers.bulkSchedule.created', { count: result.created_groups.length }), 'success');
       if (result.failed_lines.length > 0) {
         console.error('Bulk upload failed lines:', result.failed_lines);
         // Show failed lines in a toast or modal
-        const failedMessages = result.failed_lines.map((f: any) => `Line ${f.line_num}: ${f.error}`).join('\n');
-        toast(`Created ${result.created_groups.length} groups. Failed lines:\n${failedMessages}`, 'error');
+        const failedMessages = result.failed_lines.map((f: any) => t('adminUsers.bulkSchedule.line', { line: f.line_num, error: f.error })).join('\n');
+        toast(t('adminUsers.bulkSchedule.partial', { count: result.created_groups.length, lines: failedMessages }), 'error');
       }
       setShowBulkScheduleModal(false);
       setBulkScheduleText('');
       loadGroups();
     } catch (e: any) {
-      toast(e.message || 'Failed to bulk upload schedules', 'error');
+      toast(e.message || t('adminUsers.bulkSchedule.failed'), 'error');
     } finally {
       setIsBulkScheduleLoading(false);
     }
@@ -241,29 +247,29 @@ export default function UserManagement() {
 
   const handleBulkAddStudents = async () => {
     if (!bulkAddFormData.groupId) {
-      toast('Please select a group', 'error');
+      toast(t('adminUsers.bulkAdd.selectGroup'), 'error');
       return;
     }
     if (bulkAddFormData.studentIds.length === 0) {
-      toast('Please select at least one student', 'error');
+      toast(t('adminUsers.bulkAdd.selectStudent'), 'error');
       return;
     }
 
     try {
       await apiClient.bulkAddStudentsToGroup(bulkAddFormData.groupId, bulkAddFormData.studentIds);
-      toast('Students added successfully', 'success');
+      toast(t('adminUsers.bulkAdd.done'), 'success');
       setShowBulkAddModal(false);
       setBulkAddFormData({ groupId: null, studentIds: [] });
       loadGroups(); // Refresh groups to show updated counts
     } catch (error) {
       console.error('Failed to bulk add students:', error);
-      toast('Failed to add students to group', 'error');
+      toast(t('adminUsers.bulkAdd.failed'), 'error');
     }
   };
 
   const handleBulkTextUpload = async () => {
     if (!bulkTextFormData.text.trim()) {
-      toast('Please paste student data', 'error');
+      toast(t('adminUsers.bulkText.empty'), 'error');
       return;
     }
 
@@ -284,17 +290,17 @@ export default function UserManagement() {
       });
 
       if (result.created_users.length > 0) {
-        toast(`Successfully created ${result.created_users.length} students`, 'success');
+        toast(t('adminUsers.bulkText.created', { count: result.created_users.length }), 'success');
         loadUsers();
         loadGroups();
       }
       
       if (result.failed_users.length > 0 && result.created_users.length === 0) {
-        toast('Failed to create students. Check the results below.', 'error');
+        toast(t('adminUsers.bulkText.allFailed'), 'error');
       }
     } catch (error: any) {
       console.error('Failed to bulk create students:', error);
-      toast(error.message || 'Failed to create students', 'error');
+      toast(error.message || t('adminUsers.bulkText.failed'), 'error');
     } finally {
       setIsBulkTextLoading(false);
     }
@@ -431,10 +437,10 @@ export default function UserManagement() {
       setTotalUsers(response.total || usersData.length);
     } catch (error) {
       console.error('Failed to load users:', error);
-      setError('Failed to load users');
+      setError(t('adminUsers.list.loadFailed'));
       setUsers([]);
       setTotalUsers(0);
-      toast('Failed to load users', 'error');
+      toast(t('adminUsers.list.loadFailed'), 'error');
     } finally {
       setIsLoading(false);
     }
@@ -583,15 +589,15 @@ export default function UserManagement() {
     const errors: { [key: string]: string } = {};
     
     if (!formData.name.trim()) {
-      errors.name = 'Name is required';
+      errors.name = t('adminUsers.form.nameRequired');
     }
     if (!formData.email.trim()) {
-      errors.email = 'Email is required';
+      errors.email = t('adminUsers.form.emailRequired');
     } else {
       // Простая валидация email
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.email.trim())) {
-        errors.email = 'Please enter a valid email address';
+        errors.email = t('adminUsers.form.emailInvalid');
       }
     }
 
@@ -604,7 +610,7 @@ export default function UserManagement() {
 
     const workspaceEmail = (formData.workspace_email || '').trim();
     if (workspaceEmail && !workspaceEmail.endsWith('@mastereducation.kz')) {
-      errors.workspace_email = 'Must end with @mastereducation.kz';
+      errors.workspace_email = t('adminUsers.form.workspaceDomain');
     }
 
     return errors;
@@ -614,20 +620,20 @@ export default function UserManagement() {
     const errors: { [key: string]: string } = {};
 
     if (!data.name.trim()) {
-      errors.name = 'Group name is required';
+      errors.name = t('adminUsers.groupForm.nameRequired');
     }
     if (!data.course_id) {
-      errors.course_id = 'Course is required';
+      errors.course_id = t('adminUsers.groupForm.courseRequired');
     }
     if (data.is_special) {
       if (!data.curator_id) {
-        errors.curator_id = 'Curator is required for special groups';
+        errors.curator_id = t('adminUsers.groupForm.curatorRequired');
       }
       if (data.course_id && data.max_open_lessons < 1) {
-        errors.max_open_lessons = 'Must be at least 1';
+        errors.max_open_lessons = t('adminUsers.groupForm.minOne');
       }
     } else if (!data.teacher_id) {
-      errors.teacher_id = 'Teacher is required';
+      errors.teacher_id = t('adminUsers.groupForm.teacherRequired');
     }
 
     return errors;
@@ -637,17 +643,17 @@ export default function UserManagement() {
     const errors: { [key: string]: string } = {};
     
     if (!editGroupFormData.name.trim()) {
-      errors.name = 'Group name is required';
+      errors.name = t('adminUsers.groupForm.nameRequired');
     }
     if (editGroupFormData.is_special) {
       if (!editGroupFormData.curator_id) {
-        errors.curator_id = 'Curator is required for special groups';
+        errors.curator_id = t('adminUsers.groupForm.curatorRequired');
       }
       if (editGroupFormData.course_id && editGroupFormData.max_open_lessons < 1) {
-        errors.max_open_lessons = 'Must be at least 1';
+        errors.max_open_lessons = t('adminUsers.groupForm.minOne');
       }
     } else if (!editGroupFormData.teacher_id) {
-      errors.teacher_id = 'Teacher is required';
+      errors.teacher_id = t('adminUsers.groupForm.teacherRequired');
     }
     
     return errors;
@@ -657,7 +663,7 @@ export default function UserManagement() {
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
-      toast('Please fix the form errors', 'error');
+      toast(t('adminUsers.form.fixErrors'), 'error');
       return;
     }
     setFormErrors({});
@@ -677,7 +683,7 @@ export default function UserManagement() {
       };
 
       const newUser = await apiClient.createUser(userData);
-      toast('User created successfully', 'success');
+      toast(t('adminUsers.user.created'), 'success');
       
       setShowCreateModal(false);
       resetForm();
@@ -691,7 +697,7 @@ export default function UserManagement() {
       loadUsers();
     } catch (error) {
       console.error('Failed to create user:', error);
-      toast('Failed to create user', 'error');
+      toast(t('adminUsers.user.createFailed'), 'error');
     }
   };
 
@@ -701,7 +707,7 @@ export default function UserManagement() {
     const errors = validateForm();
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
-      toast('Please fix the form errors', 'error');
+      toast(t('adminUsers.form.fixErrors'), 'error');
       return;
     }
     setFormErrors({});
@@ -742,7 +748,7 @@ export default function UserManagement() {
         await Promise.all(removed.map((sid) => apiClient.unlinkParentChild(pid, sid)));
       }
 
-      toast('User updated successfully', 'success');
+      toast(t('adminUsers.user.updated'), 'success');
 
       setShowEditModal(false);
       resetForm();
@@ -750,7 +756,7 @@ export default function UserManagement() {
     } catch (error: any) {
       console.error('Failed to update user:', error);
       const detail = error?.response?.data?.detail;
-      toast(typeof detail === 'string' && detail ? detail : 'Failed to update user', 'error');
+      toast(typeof detail === 'string' && detail ? detail : t('adminUsers.user.updateFailed'), 'error');
     }
   };
 
@@ -759,13 +765,13 @@ export default function UserManagement() {
     
     try {
       await apiClient.deactivateUser(Number(selectedUser.id));
-      toast('User deactivated successfully', 'success');
+      toast(t('adminUsers.user.deactivated'), 'success');
       setShowDeleteModal(false);
       setSelectedUser(null);
       loadUsers();
     } catch (error: any) {
       console.error('Failed to deactivate user:', error);
-      const errorMessage = error.response?.data?.detail || 'Failed to deactivate user';
+      const errorMessage = error.response?.data?.detail || t('adminUsers.user.deactivateFailed');
       toast(errorMessage, 'error');
     }
   };
@@ -781,7 +787,7 @@ export default function UserManagement() {
         'success'
       )
     } catch (error: any) {
-      toast(error.message || 'Failed to toggle curator visibility', 'error')
+      toast(error.message || t('adminUsers.user.analyticsToggleFailed'), 'error')
     }
   }
 
@@ -814,14 +820,14 @@ export default function UserManagement() {
     try {
       // Instead of deleting, deactivate the group
       await apiClient.updateGroup(selectedGroup.id, { is_active: false });
-      toast('Group deactivated successfully', 'success');
+      toast(t('adminUsers.group.deactivated'), 'success');
       setShowDeleteModal(false);
       setSelectedGroup(null);
       loadGroups();
       loadUsers(); // Reload users to update group information
     } catch (error) {
       console.error('Failed to deactivate group:', error);
-      toast('Failed to deactivate group', 'error');
+      toast(t('adminUsers.group.deactivateFailed'), 'error');
     }
   };
 
@@ -829,7 +835,7 @@ export default function UserManagement() {
     const errors = validateCreateGroupForm(groupFormData);
     if (Object.keys(errors).length > 0) {
       setGroupFormErrors(errors);
-      toast('Please fix the form errors', 'error');
+      toast(t('adminUsers.form.fixErrors'), 'error');
       return;
     }
     setGroupFormErrors({});
@@ -854,16 +860,16 @@ export default function UserManagement() {
       };
       
       const newGroup = await apiClient.createGroup(groupData);
-      toast('Group created successfully', 'success');
+      toast(t('adminUsers.group.created'), 'success');
       
       // Add students to the group if any are selected
       if (groupFormData.student_ids.length > 0) {
         try {
           await apiClient.bulkAddStudentsToGroup(newGroup.id, groupFormData.student_ids);
-          toast(`Group created and ${groupFormData.student_ids.length} students added`, 'success');
+          toast(t('adminUsers.group.createdWithStudents', { count: groupFormData.student_ids.length }), 'success');
         } catch (error) {
           console.error('Failed to add students to group:', error);
-          toast('Group created but failed to add students', 'error');
+          toast(t('adminUsers.group.studentsAddFailed'), 'error');
         }
       }
       
@@ -877,7 +883,7 @@ export default function UserManagement() {
       setShowScheduleModal(true);
     } catch (error) {
       console.error('Failed to create group:', error);
-      toast('Failed to create group', 'error');
+      toast(t('adminUsers.group.createFailed'), 'error');
     }
   };
 
@@ -885,7 +891,7 @@ export default function UserManagement() {
     const errors = validateCreateGroupForm(specialGroupFormData);
     if (Object.keys(errors).length > 0) {
       setSpecialGroupFormErrors(errors);
-      toast('Please fix the form errors', 'error');
+      toast(t('adminUsers.form.fixErrors'), 'error');
       return;
     }
     setSpecialGroupFormErrors({});
@@ -907,15 +913,15 @@ export default function UserManagement() {
       };
 
       const newGroup = await apiClient.createGroup(groupData);
-      toast('Special group created successfully', 'success');
+      toast(t('adminUsers.group.specialCreated'), 'success');
 
       if (specialGroupFormData.student_ids.length > 0) {
         try {
           await apiClient.bulkAddStudentsToGroup(newGroup.id, specialGroupFormData.student_ids);
-          toast(`Added ${specialGroupFormData.student_ids.length} students to the group`, 'success');
+          toast(t('adminUsers.group.studentsAdded', { count: specialGroupFormData.student_ids.length }), 'success');
         } catch (error) {
           console.error('Failed to add students to group:', error);
-          toast('Group created but failed to add students', 'error');
+          toast(t('adminUsers.group.studentsAddFailed'), 'error');
         }
       }
 
@@ -928,7 +934,7 @@ export default function UserManagement() {
       setShowScheduleModal(true);
     } catch (error) {
       console.error('Failed to create special group:', error);
-      toast('Failed to create special group', 'error');
+      toast(t('adminUsers.group.specialCreateFailed'), 'error');
     }
   };
 
@@ -938,7 +944,7 @@ export default function UserManagement() {
     const errors = validateEditGroupForm();
     if (Object.keys(errors).length > 0) {
       setEditGroupFormErrors(errors);
-      toast('Please fix the form errors', 'error');
+      toast(t('adminUsers.form.fixErrors'), 'error');
       return;
     }
     setEditGroupFormErrors({});
@@ -967,7 +973,7 @@ export default function UserManagement() {
       }
       
       await apiClient.updateGroup(selectedGroup.id, groupData);
-      toast('Group updated successfully', 'success');
+      toast(t('adminUsers.group.updated'), 'success');
       
       setShowEditGroupModal(false);
       resetEditGroupForm();
@@ -975,7 +981,7 @@ export default function UserManagement() {
       loadUsers(); // Reload users to update group information
     } catch (error) {
       console.error('Failed to update group:', error);
-      toast('Failed to update group', 'error');
+      toast(t('adminUsers.group.updateFailed'), 'error');
     }
   };
 
@@ -1141,32 +1147,32 @@ export default function UserManagement() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground dark:text-foreground flex items-center">
-            User Management
+            {t('adminUsers.page.title')}
           </h1>
-          <p className="text-muted-foreground mt-1">Manage system users and permissions</p>
+          <p className="text-muted-foreground mt-1">{t('adminUsers.page.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button className="flex items-center gap-2 w-full sm:w-auto">
                 <Plus className="w-4 h-4" />
-                Add
+                {t('adminUsers.page.add')}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-[220px]">
               <DropdownMenuItem onClick={() => setShowCreateModal(true)}>
                 <UserPlus className="mr-2 h-4 w-4" />
-                {isHeadCurator ? 'Add Curator' : 'Add User'}
+                {isHeadCurator ? t('adminUsers.page.addCurator') : t('adminUsers.page.addUser')}
               </DropdownMenuItem>
               {!isHeadCurator && (
                 <>
                   <DropdownMenuItem onClick={() => setShowBulkAddModal(true)}>
                     <Users className="mr-2 h-4 w-4" />
-                    Bulk Add Students
+                    {t('adminUsers.page.bulkAddStudents')}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setShowBulkTextModal(true)}>
                     <Upload className="mr-2 h-4 w-4" />
-                    Import from Text
+                    {t('adminUsers.page.importFromText')}
                   </DropdownMenuItem>
                 </>
               )}
@@ -1180,13 +1186,13 @@ export default function UserManagement() {
         <CardContent className="p-6">
           <div className="grid grid-cols-1 @lg:grid-cols-2 @3xl:grid-cols-3 @5xl:grid-cols-5 gap-4">
             <div>
-              <Label htmlFor="search" className="text-sm font-medium">Search</Label>
+              <Label htmlFor="search" className="text-sm font-medium">{t('common.search')}</Label>
               <div className="relative mt-2">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="search"
                   type="text"
-                  placeholder="Search users"
+                  placeholder={t('adminUsers.filters.searchPlaceholder')}
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -1198,7 +1204,7 @@ export default function UserManagement() {
             </div>
             
             <div>
-              <Label htmlFor="role" className="text-sm font-medium">Role</Label>
+              <Label htmlFor="role" className="text-sm font-medium">{t('adminUsers.fields.role')}</Label>
               <Select
                 value={roleFilter}
                 onValueChange={(value) => {
@@ -1207,19 +1213,19 @@ export default function UserManagement() {
                 }}
               >
                 <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="All Roles" />
+                  <SelectValue placeholder={t('adminUsers.filters.allRoles')} />
                 </SelectTrigger>
                 <SelectContent>
                   {isHeadCurator ? (
-                    <SelectItem value="curator">Curator</SelectItem>
+                    <SelectItem value="curator">{roleLabel('curator')}</SelectItem>
                   ) : (
                     <>
-                      <SelectItem value="all">All Roles</SelectItem>
-                      <SelectItem value="student">Student</SelectItem>
-                      <SelectItem value="teacher">Teacher</SelectItem>
-                      <SelectItem value="head_curator">Head Curator</SelectItem>
-                      <SelectItem value="curator">Curator</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="all">{t('adminUsers.filters.allRoles')}</SelectItem>
+                      <SelectItem value="student">{roleLabel('student')}</SelectItem>
+                      <SelectItem value="teacher">{roleLabel('teacher')}</SelectItem>
+                      <SelectItem value="head_curator">{roleLabel('head_curator')}</SelectItem>
+                      <SelectItem value="curator">{roleLabel('curator')}</SelectItem>
+                      <SelectItem value="admin">{roleLabel('admin')}</SelectItem>
                     </>
                   )}
                 </SelectContent>
@@ -1227,7 +1233,7 @@ export default function UserManagement() {
             </div>
             
             <div>
-              <Label htmlFor="group" className="text-sm font-medium">Group</Label>
+              <Label htmlFor="group" className="text-sm font-medium">{t('adminUsers.filters.group')}</Label>
               <Select
                 value={groupFilter}
                 onValueChange={(value) => {
@@ -1236,10 +1242,10 @@ export default function UserManagement() {
                 }}
               >
                 <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="All Groups" />
+                  <SelectValue placeholder={t('adminUsers.filters.allGroups')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Groups</SelectItem>
+                  <SelectItem value="all">{t('adminUsers.filters.allGroups')}</SelectItem>
                   {groups?.map((group) => (
                     <SelectItem key={group.id} value={group.id.toString()}>
                       {group.name}
@@ -1250,7 +1256,7 @@ export default function UserManagement() {
             </div>
             
             <div>
-              <Label htmlFor="status" className="text-sm font-medium">Status</Label>
+              <Label htmlFor="status" className="text-sm font-medium">{t('adminUsers.filters.status')}</Label>
               <Select
                 value={statusFilter}
                 onValueChange={(value) => {
@@ -1259,18 +1265,18 @@ export default function UserManagement() {
                 }}
               >
                 <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="All Status" />
+                  <SelectValue placeholder={t('adminUsers.filters.allStatuses')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="true">Active</SelectItem>
-                  <SelectItem value="false">Inactive</SelectItem>
+                  <SelectItem value="all">{t('adminUsers.filters.allStatuses')}</SelectItem>
+                  <SelectItem value="true">{t('adminUsers.filters.active')}</SelectItem>
+                  <SelectItem value="false">{t('adminUsers.filters.inactive')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label htmlFor="trial" className="text-sm font-medium">Trial</Label>
+              <Label htmlFor="trial" className="text-sm font-medium">{t('adminUsers.filters.trial')}</Label>
               <Select
                 value={trialFilter}
                 onValueChange={(value) => {
@@ -1279,11 +1285,11 @@ export default function UserManagement() {
                 }}
               >
                 <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="All Users" />
+                  <SelectValue placeholder={t('adminUsers.filters.allUsers')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Users</SelectItem>
-                  <SelectItem value="true">Trial Only</SelectItem>
+                  <SelectItem value="all">{t('adminUsers.filters.allUsers')}</SelectItem>
+                  <SelectItem value="true">{t('adminUsers.filters.trialOnly')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1320,8 +1326,8 @@ export default function UserManagement() {
         className="w-full"
       >
         <TabsList className={`grid w-full ${isHeadCurator ? 'grid-cols-1' : 'grid-cols-2'}`}>
-          <TabsTrigger value="0">Users</TabsTrigger>
-          {!isHeadCurator && <TabsTrigger value="1">Groups</TabsTrigger>}
+          <TabsTrigger value="0">{t('adminUsers.tabs.users')}</TabsTrigger>
+          {!isHeadCurator && <TabsTrigger value="1">{t('adminUsers.tabs.groups')}</TabsTrigger>}
         </TabsList>
         <TabsContent value="0">
           {/* Users Tab Content */}
@@ -1330,8 +1336,8 @@ export default function UserManagement() {
             <div className="flex items-center justify-between">
               <CardTitle>
                 {roleFilter === 'student' ? 
-                  `Students` : 
-                  `Users (${totalUsers})`
+                  t('adminUsers.list.students') : 
+                  t('adminUsers.list.usersCount', { count: totalUsers })
                 }
               </CardTitle>
               <div className="flex items-center gap-2">
@@ -1353,13 +1359,13 @@ export default function UserManagement() {
           ) : error ? (
             <div className="p-6 text-center">
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                <h3 className="font-semibold text-red-800 dark:text-red-400">Error loading users</h3>
+                <h3 className="font-semibold text-red-800 dark:text-red-400">{t('adminUsers.list.loadErrorTitle')}</h3>
                 <p className="text-red-600 dark:text-red-400">{error}</p>
                 <button 
                   onClick={loadUsers}
                   className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
                 >
-                  Retry
+                  {t('common.retry')}
                 </button>
               </div>
             </div>
@@ -1395,7 +1401,7 @@ export default function UserManagement() {
                 <div className="px-6 py-3 border-t dark:border-border bg-muted dark:bg-secondary">
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-foreground/80">
-                      {`Showing ${((currentPage - 1) * pageSize) + 1} to ${Math.min(currentPage * pageSize, totalUsers)} of ${totalUsers} results`}
+                      {t('adminUsers.list.showing', { from: ((currentPage - 1) * pageSize) + 1, to: Math.min(currentPage * pageSize, totalUsers), total: totalUsers })}
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
@@ -1404,10 +1410,10 @@ export default function UserManagement() {
                         variant="outline"
                         size="sm"
                       >
-                        Previous
+                        {t('adminUsers.list.previous')}
                       </Button>
                       <span className="px-3 py-1 text-sm">
-                        Page {currentPage} of {totalPages}
+                        {t('adminUsers.list.page', { page: currentPage, total: totalPages })}
                       </span>
                       <Button
                         onClick={() => setCurrentPage(currentPage + 1)}
@@ -1415,7 +1421,7 @@ export default function UserManagement() {
                         variant="outline"
                         size="sm"
                       >
-                        Next
+                        {t('adminUsers.list.next')}
                       </Button>
                     </div>
                   </div>
@@ -1431,7 +1437,7 @@ export default function UserManagement() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center">
-                  Groups Management ({groups.length})
+                  {t('adminUsers.groups.title', { count: groups.length })}
                 </CardTitle>
                 <div className="flex items-center gap-2">
                   <Button
@@ -1449,18 +1455,18 @@ export default function UserManagement() {
                     className="flex items-center gap-2"
                   >
                     <Plus className="w-4 h-4" />
-                    Create Group
+                    {t('adminUsers.groups.create')}
                   </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="icon" aria-label="More group actions">
+                      <Button variant="outline" size="icon" aria-label={t('adminUsers.groups.moreActions')}>
                         <MoreHorizontal className="w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="min-w-[220px]">
                       <DropdownMenuItem onClick={() => setShowBulkScheduleModal(true)}>
                         <Upload className="mr-2 h-4 w-4" />
-                        Bulk Schedule
+                        {t('adminUsers.groups.bulkSchedule')}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => {
@@ -1469,7 +1475,7 @@ export default function UserManagement() {
                         }}
                       >
                         <Plus className="mr-2 h-4 w-4" />
-                        Create Special Group
+                        {t('adminUsers.groups.createSpecial')}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -1478,28 +1484,28 @@ export default function UserManagement() {
               {/* Group Status + program filters */}
               <div className="mt-4 flex flex-wrap items-end gap-6">
                 <div>
-                  <Label htmlFor="group-search" className="text-sm font-medium">Search</Label>
+                  <Label htmlFor="group-search" className="text-sm font-medium">{t('common.search')}</Label>
                   <Input
                     id="group-search"
                     value={groupSearch}
                     onChange={(e) => setGroupSearch(e.target.value)}
-                    placeholder="Group name…"
+                    placeholder={t('adminUsers.groups.searchPlaceholder')}
                     className="w-52"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="group-status" className="text-sm font-medium">Group Status</Label>
+                  <Label htmlFor="group-status" className="text-sm font-medium">{t('adminUsers.groups.statusFilter')}</Label>
                   <Select
                     value={groupStatusFilter}
                     onValueChange={(value: 'all' | 'true' | 'false') => setGroupStatusFilter(value)}
                   >
                     <SelectTrigger id="group-status" className="mt-2 w-48">
-                      <SelectValue placeholder="Filter by status" />
+                      <SelectValue placeholder={t('adminUsers.groups.statusPlaceholder')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Groups</SelectItem>
-                      <SelectItem value="true">Active</SelectItem>
-                      <SelectItem value="false">Inactive</SelectItem>
+                      <SelectItem value="all">{t('adminUsers.filters.allGroups')}</SelectItem>
+                      <SelectItem value="true">{t('adminUsers.filters.active')}</SelectItem>
+                      <SelectItem value="false">{t('adminUsers.filters.inactive')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1516,7 +1522,7 @@ export default function UserManagement() {
                       <SelectItem value="all">{t('users.groups.allPrograms')}</SelectItem>
                       <SelectItem value="sat">SAT</SelectItem>
                       <SelectItem value="ielts">IELTS</SelectItem>
-                      <SelectItem value="general_english">General English</SelectItem>
+                      <SelectItem value="general_english">{COURSE_TYPE_LABELS.general_english}</SelectItem>
                       <SelectItem value="nuet">NUET</SelectItem>
                     </SelectContent>
                   </Select>
@@ -1529,28 +1535,28 @@ export default function UserManagement() {
 <thead className="bg-muted dark:bg-secondary">
                 <tr>
                     <th className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Group Name
+                      {t('adminUsers.groups.colName')}
                     </th>
                     <th className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Group Type
+                      {t('adminUsers.groups.colType')}
                     </th>
                     <th className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       {t('users.groups.program')}
                     </th>
                     <th className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Teacher
+                      {t('adminUsers.groups.colTeacher')}
                     </th>
                     <th className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Curator
+                      {t('adminUsers.groups.colCurator')}
                     </th>
                     <th className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Students
+                      {t('adminUsers.groups.colStudents')}
                     </th>
                     <th className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Status
+                      {t('adminUsers.groups.colStatus')}
                     </th>
                     <th className="px-3 @4xl:px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Actions
+                      {t('adminUsers.groups.colActions')}
                     </th>
                   </tr>
                 </thead>
@@ -1567,7 +1573,7 @@ export default function UserManagement() {
                       </td>
                       <td className="px-3 @4xl:px-6 py-4 whitespace-nowrap">
                         <span className="px-2 py-1 text-xs rounded-full bg-muted text-foreground/80">
-                          {GROUP_TYPE_LABELS[(group.group_type as GroupType) || 'group']}
+                          {t(GROUP_TYPE_LABELS[(group.group_type as GroupType) || 'group'])}
                         </span>
                       </td>
                       <td className="px-3 @4xl:px-6 py-4 whitespace-nowrap">
@@ -1577,7 +1583,7 @@ export default function UserManagement() {
                       </td>
                       <td className="px-3 @4xl:px-6 py-4 whitespace-nowrap">
                         <span className="px-2 py-1 text-xs rounded-full bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400 text-purple-700">
-                          {group.teacher_name || 'No Teacher'}
+                          {group.teacher_name || t('adminUsers.groups.noTeacher')}
                         </span>
                       </td>
                       <td className="px-3 @4xl:px-6 py-4 whitespace-nowrap">
@@ -1586,19 +1592,19 @@ export default function UserManagement() {
                             {group.curator_name}
                           </span>
                         ) : (
-                          <span className="text-sm text-muted-foreground">No Curator</span>
+                          <span className="text-sm text-muted-foreground">{t('adminUsers.groups.noCurator')}</span>
                         )}
                       </td>
                       <td className="px-3 @4xl:px-6 py-4 whitespace-nowrap">
                         <span className="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700">
-                          {group.student_count || 0} students
+                          {t('common.students', { count: group.student_count || 0 })}
                         </span>
                       </td>
                       <td className="px-3 @4xl:px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs rounded-full ${
                           group.is_active ? 'bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-green-700' : 'bg-muted text-foreground/80'
                         }`}>
-                          {group.is_active ? 'Active' : 'Inactive'}
+                          {group.is_active ? t('adminUsers.groups.active') : t('adminUsers.groups.inactive')}
                         </span>
                       </td>
                       <td className="px-3 @4xl:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -1607,7 +1613,7 @@ export default function UserManagement() {
                             onClick={() => { void openEditGroupModal(group) }}
                             variant="ghost"
                             size="sm"
-                            title="Edit Group"
+                            title={t('adminUsers.groups.edit')}
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -1618,7 +1624,7 @@ export default function UserManagement() {
                             }}
                             variant="ghost"
                             size="sm"
-                            title="Manage Schedule"
+                            title={t('adminUsers.groups.schedule')}
                           >
                             <CalendarIcon className="w-4 h-4" />
                           </Button>
@@ -1629,7 +1635,7 @@ export default function UserManagement() {
                             }}
                             variant="ghost"
                             size="sm"
-                            title="Deactivate Group"
+                            title={t('adminUsers.groups.deactivate')}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -1648,9 +1654,9 @@ export default function UserManagement() {
       <Modal
         open={showCreateModal}
         onClose={() => setShowCreateModal(false)}
-        title="Create New User"
+        title={t('adminUsers.modal.createUser')}
         onSubmit={handleCreateUser}
-        submitText="Create User"
+        submitText={t('adminUsers.modal.createUserSubmit')}
         submitDisabled={!!formData.password && !!passwordPolicyError(formData.password)}
       >
         <UserForm
@@ -1674,9 +1680,9 @@ export default function UserManagement() {
       <Modal
         open={showEditModal}
         onClose={() => setShowEditModal(false)}
-        title="Edit User"
+        title={t('adminUsers.modal.editUser')}
         onSubmit={handleUpdateUser}
-        submitText="Update User"
+        submitText={t('adminUsers.modal.updateUserSubmit')}
         submitDisabled={!!formData.password && !!passwordPolicyError(formData.password)}
       >
         <UserForm
@@ -1696,19 +1702,19 @@ export default function UserManagement() {
       <Modal
         open={showPasswordModal}
         onClose={() => setShowPasswordModal(false)}
-        title="User Created Successfully"
+        title={t('adminUsers.password.title')}
         onSubmit={() => setShowPasswordModal(false)}
-        submitText="Done"
+        submitText={t('adminUsers.password.done')}
       >
         <div className="space-y-4">
           <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
             <p className="text-green-800 dark:text-green-400 text-sm">
-              The user has been created with an auto-generated password.
+              {t('adminUsers.password.intro')}
             </p>
           </div>
           
           <div>
-            <Label className="text-sm font-medium mb-1.5 block">Generated Password</Label>
+            <Label className="text-sm font-medium mb-1.5 block">{t('adminUsers.password.label')}</Label>
             <div className="flex items-center gap-2">
               <div className="bg-muted dark:bg-secondary border border-border dark:border-border rounded-md p-3 flex-1 font-mono text-lg tracking-wider text-center select-all">
                 {generatedPassword}
@@ -1720,10 +1726,10 @@ export default function UserManagement() {
                 onClick={() => {
                   if (generatedPassword) {
                     navigator.clipboard.writeText(generatedPassword);
-                    toast('Password copied to clipboard', 'success');
+                    toast(t('adminUsers.password.copied'), 'success');
                   }
                 }}
-                title="Copy Password"
+                title={t('adminUsers.password.copy')}
               >
                 <Copy className="h-5 w-5" />
               </Button>
@@ -1731,7 +1737,7 @@ export default function UserManagement() {
           </div>
           
 <p className="text-xs text-muted-foreground mt-2">
-          Please copy and share this password with the user. It will not be shown again.
+          {t('adminUsers.password.hint')}
         </p>
         </div>
       </Modal>
@@ -1740,9 +1746,9 @@ export default function UserManagement() {
       <Modal
         open={showCreateGroupModal}
         onClose={() => setShowCreateGroupModal(false)}
-        title="Create New Group"
+        title={t('adminUsers.modal.createGroup')}
         onSubmit={handleCreateGroup}
-        submitText="Create Group"
+        submitText={t('adminUsers.groups.create')}
       >
         <GroupForm
           formData={groupFormData}
@@ -1763,9 +1769,9 @@ export default function UserManagement() {
           setShowCreateSpecialGroupModal(false);
           resetSpecialGroupForm();
         }}
-        title="Create Special Group"
+        title={t('adminUsers.groups.createSpecial')}
         onSubmit={handleCreateSpecialGroup}
-        submitText="Create Special Group"
+        submitText={t('adminUsers.groups.createSpecial')}
       >
         <GroupForm
           formData={specialGroupFormData}
@@ -1786,9 +1792,9 @@ export default function UserManagement() {
           setShowEditGroupModal(false);
           resetEditGroupForm();
         }}
-        title="Edit Group"
+        title={t('adminUsers.modal.editGroup')}
         onSubmit={handleUpdateGroup}
-        submitText="Update Group"
+        submitText={t('adminUsers.modal.updateGroupSubmit')}
       >
         <GroupForm
           formData={editGroupFormData}
@@ -1810,16 +1816,16 @@ export default function UserManagement() {
           setSelectedUser(null);
           setSelectedGroup(null);
         }}
-        title={selectedUser ? "Deactivate User" : "Deactivate Group"}
+        title={selectedUser ? t('adminUsers.deactivate.userTitle') : t('adminUsers.deactivate.groupTitle')}
         onSubmit={selectedUser ? handleDeleteUser : handleDeleteGroup}
-        submitText="Deactivate"
+        submitText={t('adminUsers.deactivate.submit')}
       >
         <div>
           <p className="text-muted-foreground mb-4">
             {selectedUser ? (
-              <>Are you sure you want to deactivate <strong>{selectedUser.name}</strong>? This action can be undone later.</>
+              <>{withBold(t('adminUsers.deactivate.userConfirm', { name: selectedUser.name ?? '' }))}</>
             ) : (
-              <>Are you sure you want to deactivate <strong>{selectedGroup?.name}</strong>? This action can be undone later by reactivating the group.</>
+              <>{withBold(t('adminUsers.deactivate.groupConfirm', { name: selectedGroup?.name ?? '' }))}</>
             )}
           </p>
         </div>
@@ -1829,9 +1835,9 @@ export default function UserManagement() {
       <Modal
         open={showBulkAddModal}
         onClose={() => setShowBulkAddModal(false)}
-        title="Bulk Add Students to Group"
+        title={t('adminUsers.bulkAdd.title')}
         onSubmit={handleBulkAddStudents}
-        submitText="Add Students"
+        submitText={t('adminUsers.bulkAdd.submit')}
       >
         <BulkAddStudentsForm
           formData={bulkAddFormData}
@@ -1848,9 +1854,9 @@ export default function UserManagement() {
           setShowBulkTextModal(false);
           resetBulkTextForm();
         }}
-        title="Import Students from Text"
+        title={t('adminUsers.bulkText.title')}
         onSubmit={handleBulkTextUpload}
-        submitText={isBulkTextLoading ? "Importing..." : "Import Students"}
+        submitText={isBulkTextLoading ? t('adminUsers.bulkText.importing') : t('adminUsers.bulkText.submit')}
       >
         <BulkTextUploadForm
           formData={bulkTextFormData}
@@ -1866,7 +1872,7 @@ export default function UserManagement() {
           groupId={scheduleGroupId}
           open={showScheduleModal}
           onOpenChange={setShowScheduleModal}
-          onSuccess={() => toast('Schedule updated successfully', 'success')}
+          onSuccess={() => toast(t('adminUsers.schedule.updated'), 'success')}
       />
 
       <AddToGroupDialog
@@ -1883,15 +1889,15 @@ export default function UserManagement() {
       <Modal
         open={showBulkScheduleModal}
         onClose={() => setShowBulkScheduleModal(false)}
-        title="Bulk Schedule Upload"
+        title={t('adminUsers.bulkSchedule.title')}
         onSubmit={handleBulkScheduleUpload}
-        submitText={isBulkScheduleLoading ? "Uploading..." : "Upload Schedules"}
+        submitText={isBulkScheduleLoading ? t('adminUsers.bulkSchedule.uploading') : t('adminUsers.bulkSchedule.submit')}
       >
         <div className="space-y-4">
           <div className="p-1">
-            <Label className="text-sm font-medium">Schedule Data (TSV Format)</Label>
+            <Label className="text-sm font-medium">{t('adminUsers.bulkSchedule.dataLabel')}</Label>
             <p className="text-xs text-muted-foreground mt-1 mb-2">
-              Format: Date [tab] Student [tab] Teacher [tab] Course [tab] Lessons [tab] Shorthand
+              {t('adminUsers.bulkSchedule.format')}
             </p>
             <textarea
               value={bulkScheduleText}
@@ -1902,7 +1908,7 @@ export default function UserManagement() {
             />
             <div className="flex justify-between items-center mt-1">
               <p className="text-xs text-muted-foreground">
-                {bulkScheduleText.trim().split('\n').filter(l => l.trim()).length} lines detected
+                {t('adminUsers.import.linesDetected', { count: bulkScheduleText.trim().split('\n').filter(l => l.trim()).length })}
               </p>
               <Button
                 variant="ghost"
@@ -1912,7 +1918,7 @@ export default function UserManagement() {
                 type="button"
                 disabled={isBulkScheduleLoading}
               >
-                Clear
+                {t('adminUsers.import.clear')}
               </Button>
             </div>
           </div>
@@ -1974,7 +1980,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="p-1">
-          <Label htmlFor="name" className="text-sm font-medium">Name</Label>
+          <Label htmlFor="name" className="text-sm font-medium">{t('adminUsers.fields.name')}</Label>
           <Input
             id="name"
             type="text"
@@ -1989,7 +1995,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
         </div>
         
         <div className="p-1">
-          <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+          <Label htmlFor="email" className="text-sm font-medium">{t('adminUsers.fields.email')}</Label>
           <Input
             id="email"
             type="email"
@@ -2005,7 +2011,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
       </div>
       
         <div className="p-1">
-          <Label htmlFor="role" className="text-sm font-medium">Role</Label>
+          <Label htmlFor="role" className="text-sm font-medium">{t('adminUsers.fields.role')}</Label>
           <Select
             value={formData.role}
             onValueChange={(value) => {
@@ -2021,20 +2027,20 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
             }}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select role" />
+              <SelectValue placeholder={t('adminUsers.fields.rolePlaceholder')} />
             </SelectTrigger>
             <SelectContent className="z-[1100]">
               {isHeadCurator ? (
-                <SelectItem value="curator">Curator</SelectItem>
+                <SelectItem value="curator">{roleLabel('curator')}</SelectItem>
               ) : (
                 <>
-                  <SelectItem value="student">Student</SelectItem>
-                  <SelectItem value="teacher">Teacher</SelectItem>
-                  <SelectItem value="head_teacher">Head Teacher</SelectItem>
-                  <SelectItem value="head_curator">Head Curator</SelectItem>
-                  <SelectItem value="curator">Curator</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="parent">Parent</SelectItem>
+                  <SelectItem value="student">{roleLabel('student')}</SelectItem>
+                  <SelectItem value="teacher">{roleLabel('teacher')}</SelectItem>
+                  <SelectItem value="head_teacher">{roleLabel('head_teacher')}</SelectItem>
+                  <SelectItem value="head_curator">{roleLabel('head_curator')}</SelectItem>
+                  <SelectItem value="curator">{roleLabel('curator')}</SelectItem>
+                  <SelectItem value="admin">{roleLabel('admin')}</SelectItem>
+                  <SelectItem value="parent">{roleLabel('parent')}</SelectItem>
                 </>
               )}
             </SelectContent>
@@ -2046,7 +2052,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
         {isEdit && (formData.role === 'teacher' || formData.role === 'head_teacher') && (
           <div className="p-1">
             <Label htmlFor="workspace_email" className="text-sm font-medium">
-              Workspace email (recordings)
+              {t('adminUsers.fields.workspaceEmail')}
             </Label>
             <Input
               id="workspace_email"
@@ -2060,9 +2066,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
               <p className="text-red-500 text-xs mt-1 dark:text-red-400">{errors.workspace_email}</p>
             )}
             <p className="text-xs text-muted-foreground mt-1">
-              Connecting gives this teacher's lessons Meet rooms, recordings and Telegram
-              invitations. The account must already exist in the Workspace users list uploaded
-              on Admin → Recordings Rollout. Clear the field to disconnect.
+              {t('adminUsers.fields.workspaceHelp')}
             </p>
           </div>
         )}
@@ -2071,7 +2075,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
         {formData.role === 'student' && (
           <div className="p-1">
             <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Groups</Label>
+              <Label className="text-sm font-medium">{t('adminUsers.fields.groups')}</Label>
               <span className="text-xs text-muted-foreground">{t('users.form.selectedCount', { count: formData.group_ids.length })}</span>
             </div>
             {selectedGroups.length > 0 && (
@@ -2108,7 +2112,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
                 ))
               ) : (
                 <p className="text-sm text-muted-foreground px-2 py-1.5">
-                  {groups && groups.length > 0 ? t('users.form.nothingFound') : 'No groups available'}
+                  {groups && groups.length > 0 ? t('users.form.nothingFound') : t('adminUsers.fields.noGroups')}
                 </p>
               )}
             </div>
@@ -2118,7 +2122,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
         {/* Courses field - checkboxes for multiple selection (head_teacher only) */}
         {formData.role === 'head_teacher' && (
           <div className="p-1">
-            <Label className="text-sm font-medium">Assigned Courses</Label>
+            <Label className="text-sm font-medium">{t('adminUsers.fields.assignedCourses')}</Label>
             <div className="mt-2 max-h-40 overflow-y-auto space-y-2 border rounded-md p-3">
               {courses && courses.length > 0 ? (
                 courses.map((course) => (
@@ -2147,12 +2151,12 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-muted-foreground">No courses available</p>
+                <p className="text-sm text-muted-foreground">{t('adminUsers.fields.noCourses')}</p>
               )}
             </div>
             {formData.course_ids.length > 0 && (
               <p className="text-xs text-muted-foreground mt-1">
-                Selected: {formData.course_ids.length} course(s)
+                {t('adminUsers.fields.coursesSelected', { count: formData.course_ids.length })}
               </p>
             )}
           </div>
@@ -2162,7 +2166,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
         {formData.role === 'parent' && (
           <div className="p-1">
             <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Children (students)</Label>
+              <Label className="text-sm font-medium">{t('adminUsers.fields.children')}</Label>
               <span className="text-xs text-muted-foreground">{t('users.form.selectedCount', { count: formData.child_ids.length })}</span>
             </div>
             {selectedChildren.length > 0 && (
@@ -2202,7 +2206,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
                 })
               ) : (
                 <p className="text-sm text-muted-foreground px-2 py-1.5">
-                  {students && students.length > 0 ? t('users.form.nothingFound') : 'No students available'}
+                  {students && students.length > 0 ? t('users.form.nothingFound') : t('adminUsers.fields.noStudents')}
                 </p>
               )}
             </div>
@@ -2211,26 +2215,26 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
 
       {formData.role === 'student' && (
         <div className="p-1">
-          <Label htmlFor="student_id" className="text-sm font-medium">Student ID</Label>
+          <Label htmlFor="student_id" className="text-sm font-medium">{t('adminUsers.fields.studentId')}</Label>
           <Input
             id="student_id"
             type="text"
             value={formData.student_id || ''}
             onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
-            placeholder="Optional"
+            placeholder={t('adminUsers.fields.optional')}
           />
         </div>
       )}
 
       <div className="p-1">
-        <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+        <Label htmlFor="password" className="text-sm font-medium">{t('adminUsers.fields.password')}</Label>
         {isEdit && !changePassword ? (
           <button
             type="button"
             className="mt-1 block text-sm text-brand hover:underline"
             onClick={() => setChangePassword(true)}
           >
-            Set a new password
+            {t('adminUsers.fields.setNewPassword')}
           </button>
         ) : (
           <>
@@ -2241,7 +2245,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
               autoFocus={isEdit}
               value={formData.password || ''}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              placeholder={isEdit ? passwordHint() : 'Leave empty for auto-generation'}
+              placeholder={isEdit ? passwordHint() : t('adminUsers.fields.passwordAuto')}
             />
             {isEdit && (
               <button
@@ -2249,7 +2253,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
                 className="mt-1 block text-xs text-muted-foreground hover:underline"
                 onClick={() => { setChangePassword(false); setFormData({ ...formData, password: '' }); }}
               >
-                Cancel password change
+                {t('adminUsers.fields.cancelPasswordChange')}
               </button>
             )}
           </>
@@ -2266,7 +2270,7 @@ function UserForm({ formData, setFormData, groups, courses, students, errors = {
           onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked as boolean })}
         />
         <Label htmlFor="is_active" className="text-sm">
-          Active
+          {t('adminUsers.fields.userActive')}
         </Label>
       </div>
     </div>
@@ -2296,6 +2300,7 @@ function GroupForm({
   errors = {},
   purpose = 'standard'
 }: GroupFormProps) {
+  const t = useT();
   const [studentSearchQuery, setStudentSearchQuery] = useState('');
 
   // Функция для генерации названия группы. Curators keep their first word; a teacher's name is
@@ -2371,8 +2376,7 @@ function GroupForm({
     <div className="space-y-4">
       {purpose === 'special-only' ? (
         <div className="rounded-lg border border-amber-200/80 bg-amber-50/80 px-3 py-2.5 text-sm text-amber-950 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-100">
-          Special groups use a <strong>curator</strong> instead of a required teacher, have <strong>no homework</strong> for students
-          who only belong to such groups, and can <strong>limit visible lessons</strong> when a course is linked.
+          {withBold(t('adminUsers.groupForm.specialHelp'))}
         </div>
       ) : null}
 
@@ -2380,7 +2384,7 @@ function GroupForm({
       <div className="grid grid-cols-2 gap-4">
         <div className="p-1">
           <Label htmlFor="teacher" className="text-sm font-medium">
-            {formData.is_special ? 'Teacher (optional)' : 'Teacher'}
+            {formData.is_special ? t('adminUsers.groupForm.teacherOptional') : t('adminUsers.groupForm.teacher')}
           </Label>
           <Select
             value={
@@ -2396,10 +2400,10 @@ function GroupForm({
             }
           >
             <SelectTrigger className={errors.teacher_id ? 'border-red-500' : ''}>
-              <SelectValue placeholder={formData.is_special ? 'No teacher' : 'Select teacher'} />
+              <SelectValue placeholder={formData.is_special ? t('adminUsers.groupForm.noTeacher') : t('adminUsers.groupForm.selectTeacher')} />
             </SelectTrigger>
             <SelectContent className="z-[1100]">
-              {formData.is_special && <SelectItem value="none">No teacher</SelectItem>}
+              {formData.is_special && <SelectItem value="none">{t('adminUsers.groupForm.noTeacher')}</SelectItem>}
               {teachers.map((teacher) => (
                 <SelectItem key={teacher.id} value={teacher.id.toString()}>
                   {teacher.name || teacher.full_name}
@@ -2414,17 +2418,17 @@ function GroupForm({
         
         <div className="p-1">
           <Label htmlFor="curator" className="text-sm font-medium">
-            Curator{formData.is_special ? ' (required)' : ''}
+            {formData.is_special ? t('adminUsers.groupForm.curatorRequiredLabel') : t('adminUsers.groupForm.curator')}
           </Label>
           <Select
             value={formData.curator_id?.toString() || 'none'}
             onValueChange={(value) => setFormData({ ...formData, curator_id: value && value !== 'none' ? parseInt(value) : undefined })}
           >
             <SelectTrigger className={errors.curator_id ? 'border-red-500' : ''}>
-              <SelectValue placeholder="No curator" />
+              <SelectValue placeholder={t('adminUsers.groupForm.noCurator')} />
             </SelectTrigger>
             <SelectContent className="z-[1100]">
-              <SelectItem value="none">No curator</SelectItem>
+              <SelectItem value="none">{t('adminUsers.groupForm.noCurator')}</SelectItem>
               {curators.map((curator) => (
                 <SelectItem key={curator.id} value={curator.id.toString()}>
                   {curator.name || curator.full_name}
@@ -2441,17 +2445,17 @@ function GroupForm({
       {/* Выбор курса */}
       <div className="p-1">
         <Label htmlFor="course" className="text-sm font-medium">
-          {courseRequired ? 'Course' : 'Course (Optional)'}
+          {courseRequired ? t('adminUsers.groupForm.course') : t('adminUsers.groupForm.courseOptional')}
         </Label>
         <Select
           value={formData.course_id?.toString() || 'none'}
           onValueChange={(value) => setFormData({ ...formData, course_id: value && value !== 'none' ? parseInt(value) : undefined })}
         >
           <SelectTrigger className={errors.course_id ? 'border-red-500' : ''}>
-            <SelectValue placeholder={courseRequired ? 'Select a course' : 'No course'} />
+            <SelectValue placeholder={courseRequired ? t('adminUsers.groupForm.selectCourse') : t('adminUsers.groupForm.noCourse')} />
           </SelectTrigger>
           <SelectContent className="z-[1100]">
-            {!courseRequired && <SelectItem value="none">No course</SelectItem>}
+            {!courseRequired && <SelectItem value="none">{t('adminUsers.groupForm.noCourse')}</SelectItem>}
             {courses.map((course) => (
               <SelectItem key={course.id} value={String(course.id)}>
                 {formatCourseOptionLabel(course)}
@@ -2463,7 +2467,7 @@ function GroupForm({
           <p className="text-red-500 text-xs mt-1 dark:text-red-400">{errors.course_id}</p>
         ) : (
           <p className="text-xs text-muted-foreground mt-1">
-            Select a course to automatically grant this group access
+            {t('adminUsers.groupForm.courseHelp')}
           </p>
         )}
       </div>
@@ -2471,7 +2475,7 @@ function GroupForm({
       {formData.is_special && formData.course_id ? (
         <div className="p-1">
           <Label htmlFor="max_open_lessons" className="text-sm font-medium">
-            Open lessons per module (first N units in each module)
+            {t('adminUsers.groupForm.openLessons')}
           </Label>
           <Input
             id="max_open_lessons"
@@ -2491,14 +2495,14 @@ function GroupForm({
             <p className="text-red-500 text-xs mt-1 dark:text-red-400">{errors.max_open_lessons}</p>
           )}
           <p className="text-xs text-muted-foreground mt-1">
-            In each module, only the first N lessons (by order) are available—the same limit applies separately in every module. No homework for students who only have special access.
+            {t('adminUsers.groupForm.openLessonsHelp')}
           </p>
         </div>
       ) : null}
       
       {/* Затем название группы с автогенерацией */}
       <div className="p-1">
-        <Label htmlFor="group_name" className="text-sm font-medium">Group Name</Label>
+        <Label htmlFor="group_name" className="text-sm font-medium">{t('adminUsers.groupForm.name')}</Label>
         <Input
           id="group_name"
           type="text"
@@ -2508,35 +2512,35 @@ function GroupForm({
           className={errors.name ? 'border-red-500' : ''}
           placeholder={
             purpose === 'special-only'
-              ? 'Auto-filled from curator (you can edit)'
-              : 'Group name will be auto-generated when teacher is selected'
+              ? t('adminUsers.groupForm.namePlaceholderSpecial')
+              : t('adminUsers.groupForm.namePlaceholder')
           }
         />
         {errors.name && (
           <p className="text-red-500 text-xs mt-1 dark:text-red-400">{errors.name}</p>
         )}
         <p className="text-xs text-muted-foreground mt-1">
-          Format: "First Name - Description". You can edit this field.
+          {t('adminUsers.groupForm.nameHelp')}
         </p>
       </div>
       
       {/* Описание группы */}
       <div className="p-1">
-        <Label htmlFor="description" className="text-sm font-medium">Description</Label>
+        <Label htmlFor="description" className="text-sm font-medium">{t('adminUsers.groupForm.description')}</Label>
         <Input
           id="description"
           type="text"
           value={formData.description || ''}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          placeholder="Optional description (will be used in group name)"
+          placeholder={t('adminUsers.groupForm.descriptionPlaceholder')}
         />
         <p className="text-xs text-muted-foreground mt-1">
-          This description will be used in the group name format: "Teacher - Description"
+          {t('adminUsers.groupForm.descriptionHelp')}
         </p>
       </div>
 
       <div className="p-1">
-        <Label htmlFor="group_type" className="text-sm font-medium">Group Type</Label>
+        <Label htmlFor="group_type" className="text-sm font-medium">{t('adminUsers.groupForm.type')}</Label>
         <Select
           value={formData.group_type}
           onValueChange={(value: GroupType) => setFormData({ ...formData, group_type: value })}
@@ -2545,29 +2549,29 @@ function GroupForm({
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="z-[1100]">
-            <SelectItem value="group">{GROUP_TYPE_LABELS.group}</SelectItem>
-            <SelectItem value="individual">{GROUP_TYPE_LABELS.individual}</SelectItem>
+            <SelectItem value="group">{t(GROUP_TYPE_LABELS.group)}</SelectItem>
+            <SelectItem value="individual">{t(GROUP_TYPE_LABELS.individual)}</SelectItem>
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground mt-1">
-          By default, groups are set to Group; use Individual for one-on-one classes.
+          {t('adminUsers.groupForm.typeHelp')}
         </p>
       </div>
       
       <div className="p-1">
-        <Label className="text-sm font-medium">Students (Optional)</Label>
+        <Label className="text-sm font-medium">{t('adminUsers.groupForm.students')}</Label>
         <Input
           type="text"
           value={studentSearchQuery}
           onChange={(e) => setStudentSearchQuery(e.target.value)}
-          placeholder="Search student by name or email"
+          placeholder={t('adminUsers.groupForm.searchStudent')}
           className="mt-2"
         />
         <div className="mt-2 max-h-40 overflow-y-auto border rounded-md p-2 space-y-2">
           {students.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No students available</p>
+            <p className="text-muted-foreground text-sm">{t('adminUsers.fields.noStudents')}</p>
           ) : displayedStudents.length === 0 ? (
-            <p className="text-muted-foreground text-sm">No students found</p>
+            <p className="text-muted-foreground text-sm">{t('adminUsers.fields.noStudentsFound')}</p>
           ) : (
             displayedStudents.map((student) => (
               <div key={student.id} className="flex items-center space-x-2">
@@ -2598,7 +2602,7 @@ function GroupForm({
         </div>
         {formData.student_ids.length > 0 && (
           <p className="text-sm text-muted-foreground mt-1">
-            Selected: {formData.student_ids.length} student(s)
+            {t('adminUsers.fields.studentsSelected', { count: formData.student_ids.length })}
           </p>
         )}
       </div>
@@ -2610,7 +2614,7 @@ function GroupForm({
           onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked as boolean })}
         />
         <Label htmlFor="group_is_active" className="text-sm">
-          Active
+          {t('adminUsers.groupForm.active')}
         </Label>
       </div>
 
@@ -2628,6 +2632,7 @@ interface BulkAddStudentsFormProps {
 }
 
 function BulkAddStudentsForm({ formData, setFormData, groups, students, errors = {} }: BulkAddStudentsFormProps) {
+  const t = useT();
   const [searchTerm, setSearchTerm] = useState("");
   
   const filteredStudents = React.useMemo(
@@ -2695,13 +2700,13 @@ function BulkAddStudentsForm({ formData, setFormData, groups, students, errors =
   return (
     <div className="space-y-4">
       <div className="p-1">
-        <Label htmlFor="group" className="text-sm font-medium">Select Group</Label>
+        <Label htmlFor="group" className="text-sm font-medium">{t('adminUsers.bulkAdd.group')}</Label>
         <Select
           value={formData.groupId?.toString() || ''}
           onValueChange={(value) => setFormData({ ...formData, groupId: parseInt(value) })}
         >
           <SelectTrigger className={errors.groupId ? 'border-red-500' : ''}>
-            <SelectValue placeholder="Select a group" />
+            <SelectValue placeholder={t('adminUsers.bulkAdd.groupPlaceholder')} />
           </SelectTrigger>
           <SelectContent className="z-[1100]">
             {groups.map((group) => (
@@ -2718,7 +2723,7 @@ function BulkAddStudentsForm({ formData, setFormData, groups, students, errors =
 
       <div className="p-1">
         <div className="flex items-center justify-between mb-2">
-          <Label className="text-sm font-medium">Select Students</Label>
+          <Label className="text-sm font-medium">{t('adminUsers.bulkAdd.students')}</Label>
           <div className="flex gap-2">
             <Button 
               variant="ghost" 
@@ -2727,7 +2732,7 @@ function BulkAddStudentsForm({ formData, setFormData, groups, students, errors =
               className="h-6 text-xs"
               type="button"
             >
-              Select All
+              {t('adminUsers.bulkAdd.selectAll')}
             </Button>
             <Button 
               variant="ghost" 
@@ -2736,13 +2741,13 @@ function BulkAddStudentsForm({ formData, setFormData, groups, students, errors =
               className="h-6 text-xs"
               type="button"
             >
-              Deselect All
+              {t('adminUsers.bulkAdd.deselectAll')}
             </Button>
           </div>
         </div>
         
         <Input
-          placeholder="Search students..."
+          placeholder={t('adminUsers.bulkAdd.search')}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="mb-2"
@@ -2750,7 +2755,7 @@ function BulkAddStudentsForm({ formData, setFormData, groups, students, errors =
 
         <div className="mt-2 max-h-60 overflow-y-auto border rounded-md p-2 space-y-2">
           {displayedBulkStudents.length === 0 ? (
-            <p className="text-muted-foreground text-sm text-center py-4">No students found</p>
+            <p className="text-muted-foreground text-sm text-center py-4">{t('adminUsers.fields.noStudentsFound')}</p>
           ) : (
             displayedBulkStudents.map((student) => (
               <div key={student.id} className="flex items-center space-x-2 hover:bg-muted dark:hover:bg-secondary p-1 rounded">
@@ -2770,7 +2775,7 @@ function BulkAddStudentsForm({ formData, setFormData, groups, students, errors =
         
         <div className="flex justify-between items-center mt-2">
           <p className="text-sm text-muted-foreground">
-            Selected: {formData.studentIds.length} student(s)
+            {t('adminUsers.fields.studentsSelected', { count: formData.studentIds.length })}
           </p>
           {errors.studentIds && (
             <p className="text-red-500 text-xs dark:text-red-400">{errors.studentIds}</p>
@@ -2800,9 +2805,9 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
   return (
     <div className="space-y-4">
       <div className="p-1">
-        <Label className="text-sm font-medium">Student Data (Tab-separated)</Label>
+        <Label className="text-sm font-medium">{t('adminUsers.bulkText.dataLabel')}</Label>
         <p className="text-xs text-muted-foreground mt-1 mb-2">
-          Paste data with columns: Name, Phone, Months, Date, Email (separated by tabs)
+          {t('adminUsers.bulkText.format')}
         </p>
         <textarea
           value={formData.text}
@@ -2813,7 +2818,7 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
         />
         <div className="flex justify-between items-center mt-1">
           <p className="text-xs text-muted-foreground">
-            {formData.text.trim().split('\n').filter(l => l.trim()).length} lines detected
+            {t('adminUsers.import.linesDetected', { count: formData.text.trim().split('\n').filter(l => l.trim()).length })}
           </p>
           <Button
             variant="ghost"
@@ -2823,7 +2828,7 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
             type="button"
             disabled={isLoading}
           >
-            Clear
+            {t('adminUsers.import.clear')}
           </Button>
         </div>
       </div>
@@ -2838,7 +2843,7 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
       </label>
 
       <div className="p-1">
-        <Label className="text-sm font-medium">Assign to Groups (Optional)</Label>
+        <Label className="text-sm font-medium">{t('adminUsers.bulkText.groups')}</Label>
         <div className="mt-2 max-h-32 overflow-y-auto space-y-2 border rounded-md p-3">
           {groups && groups.length > 0 ? (
             groups.map((group) => (
@@ -2867,12 +2872,12 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
               </div>
             ))
           ) : (
-            <p className="text-sm text-muted-foreground">No groups available</p>
+            <p className="text-sm text-muted-foreground">{t('adminUsers.fields.noGroups')}</p>
           )}
         </div>
         {formData.groupIds.length > 0 && (
           <p className="text-xs text-muted-foreground mt-1">
-            Selected: {formData.groupIds.length} group(s)
+            {t('adminUsers.fields.groupsSelected', { count: formData.groupIds.length })}
           </p>
         )}
       </div>
@@ -2880,14 +2885,14 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
       {/* Results Section */}
       {results && (
         <div className="space-y-3 border-t pt-4">
-          <h4 className="font-medium text-sm">Import Results</h4>
+          <h4 className="font-medium text-sm">{t('adminUsers.bulkText.results')}</h4>
           
           {results.created.length > 0 && (
             <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md p-3">
               <div className="flex justify-between items-center mb-2">
                 <h5 className="flex items-center gap-1.5 text-green-800 dark:text-green-400 font-medium text-sm">
                   <Check className="h-4 w-4" aria-hidden="true" />
-                  Successfully created ({results.created.length})
+                  {t('adminUsers.bulkText.createdCount', { count: results.created.length })}
                 </h5>
                 <Button
                   variant="outline"
@@ -2930,7 +2935,7 @@ function BulkTextUploadForm({ formData, setFormData, groups, results, isLoading 
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
               <h5 className="flex items-center gap-1.5 text-red-800 dark:text-red-400 font-medium text-sm mb-2">
                 <X className="h-4 w-4" aria-hidden="true" />
-                Failed ({results.failed.length})
+                {t('adminUsers.bulkText.failedCount', { count: results.failed.length })}
               </h5>
               <div className="max-h-40 overflow-y-auto space-y-1">
                 {results.failed.map((item, idx) => (

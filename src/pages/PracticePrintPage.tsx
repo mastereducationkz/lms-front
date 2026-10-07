@@ -6,6 +6,8 @@ import { renderTextWithLatex } from '../utils/latex';
 import { sanitizeHtml } from '../lib/safeHtml';
 import { parseGap } from '../utils/gapParser';
 import type { Lesson, Step, Question, QuestionOption, QuizData } from '../types';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/lessonPlayer';
 
 const BACKEND = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
@@ -294,6 +296,7 @@ export default function PracticePrintPage() {
   const { lessonId } = useParams<{ courseId: string; lessonId: string }>();
   const [searchParams] = useSearchParams();
   const stepId = searchParams.get('step');
+  const t = useT();
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [steps, setSteps] = useState<Step[]>([]);
   const [loading, setLoading] = useState(true);
@@ -318,7 +321,7 @@ export default function PracticePrintPage() {
         setLesson(lessonData);
         setSteps(stepsData);
       } catch (e) {
-        if (active) setError('Failed to load the practice. Please refresh the page.');
+        if (active) setError(t('lessonPlayer.print.loadFailed'));
       } finally {
         if (active) setLoading(false);
       }
@@ -395,21 +398,21 @@ export default function PracticePrintPage() {
       {/* Screen-only toolbar (hidden when printing) */}
       <div className="no-print toolbar">
         <button className="print-btn" onClick={triggerPrint}>
-          <Printer size={16} /> Print / Save as PDF
+          <Printer size={16} /> {t('lessonPlayer.print.button')}
         </button>
-        <span className="toolbar-hint">In the print dialog, choose “Save as PDF”.</span>
+        <span className="toolbar-hint">{t('lessonPlayer.print.hint')}</span>
       </div>
 
-      {loading && <div className="status">Loading practice…</div>}
+      {loading && <div className="status">{t('lessonPlayer.print.loading')}</div>}
       {error && <div className="status">{error}</div>}
       {!loading && !error && questions.length === 0 && (
-        <div className="status">This unit has no practice questions.</div>
+        <div className="status">{t('lessonPlayer.print.empty')}</div>
       )}
 
       {!loading && !error && questions.length > 0 && (
         <>
           <header className="sheet-header">
-            <h1>{(stepId && steps[0]?.title) || lesson?.title || 'Practice'}</h1>
+            <h1>{(stepId && steps[0]?.title) || lesson?.title || t('lessonPlayer.print.fallbackTitle')}</h1>
             {stepId && steps[0]?.title && lesson?.title && (
               <div className="sheet-sub">{lesson.title}</div>
             )}
@@ -422,7 +425,7 @@ export default function PracticePrintPage() {
           </section>
 
           <section className="answer-key">
-            <h2>Answer Key &amp; Explanations</h2>
+            <h2>{t('lessonPlayer.print.answerKey')}</h2>
             {questions.map((item) => (
               <AnswerKeyRow key={item.n} item={item} />
             ))}

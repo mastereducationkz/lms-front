@@ -3,6 +3,8 @@ import type {
   AnnouncementStatus,
   GroupStatus,
 } from '../../services/api/announcements';
+import { formatDateTime as formatAppDateTime, type MessageKey } from '../../lib/i18n';
+import '@/lib/i18n/catalogs/announcements';
 
 /** The message to show for a failed call, preferring the backend's own reason. */
 export function errorMessage(error: unknown, fallback: string): string {
@@ -11,7 +13,7 @@ export function errorMessage(error: unknown, fallback: string): string {
 
 export function formatDateTime(value: string | null): string {
   if (!value) return '—';
-  return new Date(value).toLocaleString('en-GB', {
+  return formatAppDateTime(value, {
     day: '2-digit',
     month: 'short',
     hour: '2-digit',
@@ -29,14 +31,30 @@ export const STATUS_STYLES: Record<AnnouncementStatus, string> = {
   recalled: 'bg-rose-100 text-rose-800 dark:bg-rose-950/50 dark:text-rose-300',
 };
 
-export const STATUS_LABELS: Record<AnnouncementStatus, string> = {
-  draft: 'Draft',
-  scheduled: 'Scheduled',
-  sending: 'Sending',
-  sent: 'Sent',
-  partially_failed: 'Partly failed',
-  canceled: 'Canceled',
-  recalled: 'Recalled',
+/** Message keys: show with t(STATUS_LABELS[status]). */
+export const STATUS_LABELS: Record<AnnouncementStatus, MessageKey> = {
+  draft: 'announcements.status.draft',
+  scheduled: 'announcements.status.scheduled',
+  sending: 'announcements.status.sending',
+  sent: 'announcements.status.sent',
+  partially_failed: 'announcements.status.partiallyFailed',
+  canceled: 'announcements.status.canceled',
+  recalled: 'announcements.status.recalled',
+};
+
+/** A group's approval state, as a message key. */
+export const GROUP_STATUS_LABELS: Record<GroupStatus, MessageKey> = {
+  pending: 'announcements.groupStatus.pending',
+  approved: 'announcements.groupStatus.approved',
+  rejected: 'announcements.groupStatus.rejected',
+};
+
+/** One delivery's state (a recipient of an announcement, or a lesson invitation), as a message key. */
+export const DELIVERY_STATUS_LABELS: Record<string, MessageKey> = {
+  pending: 'announcements.delivery.pending',
+  sent: 'announcements.delivery.sent',
+  failed: 'announcements.delivery.failed',
+  skipped: 'announcements.delivery.skipped',
 };
 
 /** A group's approval state, in the same palette as announcement states. */

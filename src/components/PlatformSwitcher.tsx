@@ -1,5 +1,7 @@
 import { ExternalLink } from 'lucide-react';
 import { PLATFORM_URLS } from '../lib/platformLinks';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/publicPages';
 
 /**
  * Links to the sibling Master Education platforms.
@@ -20,9 +22,10 @@ const PLATFORMS: { key: keyof typeof PLATFORM_URLS; label: string }[] = [
 ];
 
 export function PlatformSwitcher({ className = '' }: { className?: string }) {
+  const t = useT();
   return (
-    <nav aria-label="Other Master Education platforms" className={className}>
-      <p className="text-xs text-muted-foreground mb-2">Other Master Education platforms</p>
+    <nav aria-label={t('publicPages.platforms.label')} className={className}>
+      <p className="text-xs text-muted-foreground mb-2">{t('publicPages.platforms.label')}</p>
       <ul className="flex flex-wrap items-center gap-2">
         {PLATFORMS.map((p) => (
           <li key={p.key}>
@@ -34,7 +37,7 @@ export function PlatformSwitcher({ className = '' }: { className?: string }) {
             >
               {p.label}
               <ExternalLink className="h-3 w-3" aria-hidden="true" />
-              <span className="sr-only">(opens in a new tab)</span>
+              <span className="sr-only">{t('publicPages.platforms.newTab')}</span>
             </a>
           </li>
         ))}

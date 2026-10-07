@@ -9,6 +9,8 @@ import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { canEditCourseContent } from '../lib/courseAccess';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/courseAuthoring';
 
 interface CourseWithStats {
   id: number;
@@ -28,6 +30,7 @@ interface CourseWithStats {
 
 export default function TeacherCoursesPage() {
   const { user } = useAuth();
+  const t = useT();
   const [courses, setCourses] = useState<CourseWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
@@ -112,7 +115,7 @@ export default function TeacherCoursesPage() {
 
       setCourses(coursesWithStats);
     } catch (err) {
-      setError('Failed to load courses');
+      setError(t('courseAuthoring.courses.loadFailed'));
       console.error('Failed to load courses:', err);
     } finally {
       setLoading(false);
@@ -141,18 +144,18 @@ export default function TeacherCoursesPage() {
   if (error) {
     return (
       <div className="space-y-6 p-6">
-        <h1 className="text-3xl font-bold">My Courses</h1>
+        <h1 className="text-3xl font-bold">{t('courseAuthoring.courses.title')}</h1>
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
           <div className="flex items-center">
             <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mr-2" />
-            <h3 className="font-semibold text-red-800 dark:text-red-400">Error</h3>
+            <h3 className="font-semibold text-red-800 dark:text-red-400">{t('courseAuthoring.courses.error')}</h3>
           </div>
           <p className="text-red-600 dark:text-red-400 mt-1">{error}</p>
           <button 
             onClick={loadCourses}
             className="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
           >
-            Try Again
+            {t('common.retry')}
           </button>
         </div>
       </div>
@@ -164,7 +167,7 @@ export default function TeacherCoursesPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold flex items-center">
           <BookOpen className="w-8 h-8 mr-3 text-brand" />
-          My Courses
+          {t('courseAuthoring.courses.title')}
         </h1>
         {canEditCourseContent(user?.role) && (
           <div className="flex gap-3">
@@ -174,7 +177,7 @@ export default function TeacherCoursesPage() {
               className="flex items-center gap-2 px-4 py-2 rounded-lg"
             >
               <Plus className="w-4 h-4 mr-2" />
-              New Course
+              {t('courseAuthoring.courses.new')}
             </Button>
           </div>
         )}
@@ -186,7 +189,7 @@ export default function TeacherCoursesPage() {
           <div className="flex items-center">
             <BookOpen className="w-6 h-6 text-brand mr-2" />
             <div>
-              <div className="text-sm text-muted-foreground">Total Courses</div>
+              <div className="text-sm text-muted-foreground">{t('courseAuthoring.courses.totalCourses')}</div>
               <div className="text-xl font-bold">{courses.length}</div>
             </div>
           </div>
@@ -196,7 +199,7 @@ export default function TeacherCoursesPage() {
           <div className="flex items-center">
             <Users className="w-6 h-6 text-green-600 dark:text-green-400 mr-2" />
             <div>
-              <div className="text-sm text-muted-foreground">Total Students</div>
+              <div className="text-sm text-muted-foreground">{t('courseAuthoring.courses.totalStudents')}</div>
               <div className="text-xl font-bold">
                 {courses.reduce((sum, course) => sum + (course.students_count || 0), 0)}
               </div>
@@ -208,7 +211,7 @@ export default function TeacherCoursesPage() {
           <div className="flex items-center">
             <Settings className="w-6 h-6 text-purple-600 mr-2 dark:text-purple-400" />
             <div>
-              <div className="text-sm text-muted-foreground">Total Modules</div>
+              <div className="text-sm text-muted-foreground">{t('courseAuthoring.courses.totalModules')}</div>
               <div className="text-xl font-bold">
                 {courses.reduce((sum, course) => sum + (course.modules_count || 0), 0)}
               </div>
@@ -219,26 +222,26 @@ export default function TeacherCoursesPage() {
 
       {courses.length === 0 ? (
         <EmptyState 
-          title="No courses yet" 
-          subtitle="Create your first course to start teaching"
+          title={t('courseAuthoring.courses.empty')}
+          subtitle={t('courseAuthoring.courses.emptyHint')}
         />
       ) : (
         <Card className="rounded-2xl-top shadow-card overflow-hidden">
           <CardHeader className="p-6">
-            <CardTitle className="text-lg">Course Management</CardTitle>
-            <CardDescription>Manage your courses and track progress</CardDescription>
+            <CardTitle className="text-lg">{t('courseAuthoring.courses.manageTitle')}</CardTitle>
+            <CardDescription>{t('courseAuthoring.courses.manageHint')}</CardDescription>
           </CardHeader>
           <CardContent className="p-0 pt-0">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted">
-                  <TableHead className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Course</TableHead>
-                  <TableHead className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Modules</TableHead>
-                  <TableHead className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Students</TableHead>
-                  <TableHead className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Completed</TableHead>
-                  <TableHead className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Avg Progress</TableHead>
-                  <TableHead className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</TableHead>
-                  <TableHead className="px-3 @4xl:px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</TableHead>
+                  <TableHead className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('courseAuthoring.courses.colCourse')}</TableHead>
+                  <TableHead className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('courseAuthoring.courses.colModules')}</TableHead>
+                  <TableHead className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('courseAuthoring.courses.colStudents')}</TableHead>
+                  <TableHead className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('courseAuthoring.courses.colCompleted')}</TableHead>
+                  <TableHead className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('courseAuthoring.courses.colAvgProgress')}</TableHead>
+                  <TableHead className="px-3 @4xl:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('courseAuthoring.courses.colStatus')}</TableHead>
+                  <TableHead className="px-3 @4xl:px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">{t('courseAuthoring.courses.colActions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -276,7 +279,7 @@ export default function TeacherCoursesPage() {
                           ? 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400'
                           : 'bg-muted text-foreground'
                       }`}>
-                        {course.status || 'Active'}
+                        {course.status === 'draft' ? t('courseAuthoring.status.draft') : course.status === 'archived' ? t('courseAuthoring.status.archived') : t('courseAuthoring.status.active')}
                       </span>
                     </TableCell>
                     <TableCell className="px-3 @4xl:px-6 py-4 whitespace-nowrap text-right">
@@ -285,8 +288,8 @@ export default function TeacherCoursesPage() {
                           variant="ghost"
                           size="sm"
                           asChild
-                          title="View course"
-                          aria-label="View course"
+                          title={t('courseAuthoring.courses.view')}
+                          aria-label={t('courseAuthoring.courses.view')}
                         >
                           <Link to={`/course/${course.id}`}>
                             <Eye className="w-4 h-4" />
@@ -297,8 +300,8 @@ export default function TeacherCoursesPage() {
                             variant="ghost"
                             size="sm"
                             asChild
-                            title="Edit course"
-                            aria-label="Edit course"
+                            title={t('courseAuthoring.courses.edit')}
+                            aria-label={t('courseAuthoring.courses.edit')}
                           >
                             <Link to={`/teacher/course/${course.id}`}>
                               <Pencil className="w-4 h-4" />

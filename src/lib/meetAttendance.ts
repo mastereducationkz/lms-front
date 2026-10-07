@@ -1,5 +1,5 @@
 import { APP_TIMEZONE } from './datetime';
-import { activeLocale, LOCALES, t, type Locale, type MessageKey } from './i18n';
+import { activeLocale, formatDate, LOCALES, t, type Locale, type MessageKey } from './i18n';
 import { formatDurationWords } from './recordings';
 import type { LessonRecordingStatus } from '../services/api/recordings';
 import type {
@@ -19,6 +19,7 @@ import type {
   MeetVerdictSummary,
 } from '../services/api/meetAttendance';
 import '@/lib/i18n/catalogs/meet';
+import '@/lib/i18n/catalogs/meetViews';
 
 const MINUTE = 60_000;
 const MIN_BAR = 0.6; // percent
@@ -411,71 +412,84 @@ export function tallyByTeacher(items: MeetLessonSummary[]): TeacherTally[] {
   return [...rows.values()].sort((a, b) => weight(b) - weight(a) || a.name.localeCompare(b.name));
 }
 
-function almatyDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: APP_TIMEZONE });
+function almatyDate(iso: string, locale: Locale): string {
+  return formatDate(iso, { day: '2-digit', month: '2-digit', year: 'numeric' }, locale);
 }
 
 const csvCell = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
 
 /**
- * A flag for the spreadsheet: what happened and, once reviewed, the answer. The spreadsheet is
- * English whoever downloads it — its columns are data people build formulas on.
+ * A flag for the spreadsheet: what happened and, once reviewed, the answer — in the language of
+ * whoever downloads it (Settings → Language), like the page it comes from.
  */
-function flagCell(flag: MeetFlag): string {
-  if (!flag.review) return flagText(flag, 'en');
-  return `${flagText(flag, 'en')}; reviewed: ${reasonText(flag.review) ?? 'no reason given'}`;
+function flagCell(flag: MeetFlag, locale: Locale): string {
+  if (!flag.review) return flagText(flag, locale);
+  return t('meetViews.csv.flagReviewed', {
+    flag: flagText(flag, locale), reason: reasonText(flag.review) ?? t('meet.register.noReason', undefined, locale),
+  }, locale);
 }
 
-const who = (item: MeetLessonSummary, ...codes: MeetFlagCode[]) =>
-  item.flags.filter((f) => codes.includes(f.code)).map((f) => `${f.name} (${flagCell(f)})`).join('; ');
+const who = (locale: Locale, item: MeetLessonSummary, ...codes: MeetFlagCode[]) =>
+  item.flags.filter((f) => codes.includes(f.code)).map((f) => `${f.name} (${flagCell(f, locale)})`).join('; ');
 
-const RECORDING_CSV: Record<LessonRecordingStatus, string> = {
-  ready: 'Ready', pending: 'Processing', waiting: 'Waiting for Google Meet', failed: 'Failed', removed: 'Removed', missing: 'None',
+const RECORDING_CSV: Record<LessonRecordingStatus, MessageKey> = {
+  ready: 'meetViews.csv.recordingReady', pending: 'meetViews.csv.recordingPending', waiting: 'meetViews.sync.waiting',
+  failed: 'meetViews.csv.recordingFailed', removed: 'meetViews.csv.recordingRemoved', missing: 'meetViews.csv.recordingNone',
 };
 
 /** "Ready · 58 min", "Processing", "None" — empty when the server said nothing about it. */
-function recordingCell(item: MeetLessonSummary): string {
+function recordingCell(item: MeetLessonSummary, locale: Locale): string {
   const recording = item.recording;
   if (!recording) return '';
-  const length = recording.status === 'ready' ? formatDurationWords(recording.duration_seconds) : null;
-  return length ? `${RECORDING_CSV.ready} · ${length}` : RECORDING_CSV[recording.status] ?? recording.status;
+  const length = recording.status === 'ready' ? formatDurationWords(recording.duration_seconds, locale) : null;
+  const key = RECORDING_CSV[recording.status];
+  if (length) return `${t(RECORDING_CSV.ready, undefined, locale)} · ${length}`;
+  return key ? t(key, undefined, locale) : recording.status;
 }
 
 /** Counts by verdict, not marked, and "agree of compared" — blank for a lesson without verdicts. */
-function verdictCells(summary: MeetVerdictSummary | null | undefined): (string | number)[] {
+function verdictCells(summary: MeetVerdictSummary | null | undefined, locale: Locale): (string | number)[] {
   if (!summary) return ['', '', '', '', '', ''];
   return [summary.present, summary.late, summary.absent, summary.held_back, summary.unmarked,
-    summary.compared ? `${summary.agree} of ${summary.compared}` : ''];
+    summary.compared ? t('meetViews.csv.agreeOf', { agree: summary.agree, compared: summary.compared }, locale) : ''];
 }
+
+const REPORT_HEADER: MessageKey[] = ['meetViews.csv.date', 'meetViews.csv.start', 'meetViews.csv.end', 'meetViews.csv.lesson',
+  'meetViews.csv.groups', 'meetViews.csv.teacher', 'meetViews.csv.teacherJoined', 'meetViews.csv.teacherLeft',
+  'meetViews.csv.teacherIssues', 'meetViews.csv.studentsJoined', 'meetViews.csv.students', 'meetViews.csv.marksDisagree',
+  'meetViews.csv.studentsLate', 'meetViews.csv.studentsLeftEarly', 'meetViews.csv.toConfirm', 'meetViews.csv.meetPresent',
+  'meetViews.csv.meetLate', 'meetViews.csv.meetAbsent', 'meetViews.csv.meetUnknown', 'meetViews.csv.notMarked',
+  'meetViews.csv.marksAgree', 'meetViews.csv.teacherTalkShare', 'meetViews.csv.silentStudents', 'meetViews.csv.meetWrote',
+  'meetViews.csv.changedAfterMeet', 'meetViews.csv.recording'];
 
 /**
  * The review list as a spreadsheet, for reporting. Opens correctly in Excel (UTF-8 with BOM, so
- * Cyrillic names survive); dates and times are Almaty.
+ * Cyrillic names survive); dates and times are Almaty; headers in the downloader's language.
  */
-export function reportCsv(items: MeetLessonSummary[]): string {
-  const header = ['Date', 'Start', 'End', 'Lesson', 'Groups', 'Teacher', 'Teacher joined', 'Teacher left',
-    'Teacher issues', 'Students joined', 'Students', 'Marks disagree', 'Students late', 'Students left early',
-    'Accounts to confirm', 'Meet: present', 'Meet: late', 'Meet: absent', 'Meet: not known yet', 'Not marked',
-    'Marks agree with Meet', 'Teacher talk share', 'Students who didn’t speak', 'Meet wrote', 'Changed after Meet', 'Recording'];
+export function reportCsv(items: MeetLessonSummary[], locale: Locale = activeLocale()): string {
+  const header = REPORT_HEADER.map((key) => t(key, undefined, locale));
   const rows = items.map((item) => {
-    const lesson = [almatyDate(item.start), clock(item.start), clock(item.end), item.title,
+    const lesson = [almatyDate(item.start, locale), clock(item.start), clock(item.end), item.title,
       item.groups.map((g) => g.name).join(', '), item.teacher?.name ?? ''];
     // Zeros here would read as "nobody came"; the lesson's call simply hasn't come through yet.
     // The recording is its own news and is known either way.
-    if (stillLoading(item)) return [...lesson, 'Loading', ...Array(header.length - lesson.length - 2).fill(''), recordingCell(item)];
+    if (stillLoading(item)) {
+      return [...lesson, t('meetViews.csv.loading', undefined, locale), ...Array(header.length - lesson.length - 2).fill(''), recordingCell(item, locale)];
+    }
     return [...lesson,
       item.teacher?.first_join ? clock(item.teacher.first_join) : '', item.teacher?.last_leave ? clock(item.teacher.last_leave) : '',
-      item.flags.filter((f) => f.role === 'teacher').map(flagCell).join('; '),
+      item.flags.filter((f) => f.role === 'teacher').map((f) => flagCell(f, locale)).join('; '),
       item.joined, item.students,
-      who(item, 'marked_present_not_joined', 'marked_present_too_short', 'marked_absent_was_in_room'), who(item, 'late'), who(item, 'left_early'),
+      who(locale, item, 'marked_present_not_joined', 'marked_present_too_short', 'marked_absent_was_in_room'), who(locale, item, 'late'),
+      who(locale, item, 'left_early'),
       item.unknown,
-      ...verdictCells(item.verdict_summary),
+      ...verdictCells(item.verdict_summary, locale),
       item.talk?.teacher_share != null ? `${Math.round(item.talk.teacher_share * 100)}%` : '',
       item.talk ? item.talk.silent.length : '',
       // Marks Meet wrote, even if a person changed one since — the backend report's rule.
       (item.verdicts ?? []).filter((v) => v.register?.written === true).length,
       (item.verdicts ?? []).filter((v) => v.register?.state === 'override').length,
-      recordingCell(item),
+      recordingCell(item, locale),
     ];
   });
   return '﻿' + [header, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n');

@@ -1,4 +1,6 @@
 import type { InvitationChat, InvitationGroupRow, InvitationGroupStatus, InvitationLinks } from '../../services/api/announcements';
+import { activeLocale, t, type Locale, type MessageKey } from '../../lib/i18n';
+import '@/lib/i18n/catalogs/announcements';
 
 export interface ChatRow {
   chat: InvitationChat;
@@ -14,10 +16,11 @@ export function chatRows(data: InvitationLinks): ChatRow[] {
 
 const STATUS_ORDER: Record<InvitationGroupStatus, number> = { running: 0, not_started: 1, stopped: 2, finished: 3 };
 
-export const GROUP_STATUS_LABEL: Record<Exclude<InvitationGroupStatus, 'running'>, string> = {
-  not_started: 'Not started',
-  stopped: 'Stopped',
-  finished: 'Finished',
+/** Message keys: show with t(GROUP_STATUS_LABEL[status]). */
+export const GROUP_STATUS_LABEL: Record<Exclude<InvitationGroupStatus, 'running'>, MessageKey> = {
+  not_started: 'announcements.groupState.notStarted',
+  stopped: 'announcements.groupState.stopped',
+  finished: 'announcements.groupState.finished',
 };
 
 /** Hidden from the groups table unless asked for: nothing left to invite them to. */
@@ -30,13 +33,14 @@ export function isInactive(group: Pick<InvitationGroupRow, 'status'>): boolean {
  * yet (a new group's chat can be linked before its first student), then stopped and finished.
  * The hint says which, and which chat a group already has — picking it moves that link.
  */
-export function groupOptionsFor(groups: InvitationGroupRow[]) {
+export function groupOptionsFor(groups: InvitationGroupRow[], locale: Locale = activeLocale()) {
   return [...groups]
     .sort((a, b) => (STATUS_ORDER[a.status ?? 'running'] - STATUS_ORDER[b.status ?? 'running'])
       || a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }))
     .map((g) => {
-      const state = g.status && g.status !== 'running' ? GROUP_STATUS_LABEL[g.status].toLowerCase() : null;
-      const now = g.link ? `now: ${g.link.chat_title ?? `chat ${g.link.chat_id}`}` : null;
+      const state = g.status && g.status !== 'running' ? t(GROUP_STATUS_LABEL[g.status], undefined, locale).toLowerCase() : null;
+      const chat = g.link ? g.link.chat_title ?? t('announcements.chats.hintChat', { id: g.link.chat_id }, locale) : null;
+      const now = chat !== null ? t('announcements.chats.hintNow', { chat }, locale) : null;
       return { value: String(g.id), label: g.name, hint: [state, now].filter(Boolean).join(' · ') || undefined };
     });
 }

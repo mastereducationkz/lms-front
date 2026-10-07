@@ -208,6 +208,7 @@ export const attendance: RuTable<typeof en> = {
   'attendance.submission.file': 'Файл',
   'attendance.submission.student': 'Студент',
   'attendance.submission.assignment': 'Задание',
+  'attendance.submission.email': 'Почта',
   'attendance.submission.course': 'Курс',
   'attendance.submission.submittedAt': 'Сдано в',
   'attendance.submission.status': 'Статус',

@@ -1,5 +1,7 @@
 import { useEffect, useCallback, useState, useContext } from 'react';
 import { useNavigate, UNSAFE_NavigationContext } from 'react-router-dom';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/sharedUi';
 
 interface UseUnsavedChangesWarningOptions {
   hasUnsavedChanges: boolean;
@@ -18,10 +20,12 @@ interface UseUnsavedChangesWarningOptions {
  */
 export function useUnsavedChangesWarning({
   hasUnsavedChanges,
-  message = 'You have unsaved changes. Are you sure you want to leave?',
+  message: customMessage,
   onConfirmLeave,
   shouldBlockNavigation
 }: UseUnsavedChangesWarningOptions) {
+  const t = useT();
+  const message = customMessage ?? t('sharedUi.unsavedChanges.leave');
   const [showPrompt, setShowPrompt] = useState(false);
   const [confirmedNavigation, setConfirmedNavigation] = useState(false);
   const [lastLocation, setLastLocation] = useState<any>(null);

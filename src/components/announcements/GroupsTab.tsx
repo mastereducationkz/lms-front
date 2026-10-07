@@ -5,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { toast } from '../Toast';
 import { GroupFilterBar, ProgramBadges, useGroupFilters } from './GroupFilters';
-import { GROUP_STATUS_STYLES, errorMessage } from './shared';
+import { GROUP_STATUS_LABELS, GROUP_STATUS_STYLES, errorMessage } from './shared';
 import { setGroupStatus } from '../../services/api/announcements';
 import type { TelegramGroup } from '../../services/api/announcements';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/announcements';
 
 interface GroupsTabProps {
   groups: TelegramGroup[];
@@ -16,11 +18,12 @@ interface GroupsTabProps {
 }
 
 function BotMembership({ group }: { group: TelegramGroup }) {
-  if (!group.is_active) return <span className="text-rose-600">removed</span>;
-  if (group.bot_is_admin) return <span className="text-muted-foreground">admin</span>;
+  const t = useT();
+  if (!group.is_active) return <span className="text-rose-600">{t('announcements.groups.removed')}</span>;
+  if (group.bot_is_admin) return <span className="text-muted-foreground">{t('announcements.groups.admin')}</span>;
   return (
-    <span className="text-muted-foreground" title="Cannot pin messages">
-      member
+    <span className="text-muted-foreground" title={t('announcements.groups.cannotPin')}>
+      {t('announcements.groups.member')}
     </span>
   );
 }
@@ -33,6 +36,7 @@ function BotMembership({ group }: { group: TelegramGroup }) {
  * approve works the same way as finding one to send to.
  */
 export function GroupsTab({ groups, loading, onChanged }: GroupsTabProps) {
+  const t = useT();
   const [busyId, setBusyId] = useState<number | null>(null);
   const filters = useGroupFilters(groups);
   const { visibleGroups } = filters;
@@ -41,10 +45,10 @@ export function GroupsTab({ groups, loading, onChanged }: GroupsTabProps) {
     setBusyId(group.id);
     try {
       await setGroupStatus(group.id, status);
-      toast(status === 'approved' ? 'Group approved' : 'Group rejected', 'success');
+      toast(status === 'approved' ? t('announcements.groups.approved') : t('announcements.groups.rejected'), 'success');
       onChanged();
     } catch (error) {
-      toast(errorMessage(error, 'Failed to update the group'), 'error');
+      toast(errorMessage(error, t('announcements.groups.updateFailed')), 'error');
     } finally {
       setBusyId(null);
     }
@@ -61,11 +65,9 @@ export function GroupsTab({ groups, loading, onChanged }: GroupsTabProps) {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Groups the bot belongs to</CardTitle>
+        <CardTitle className="text-base">{t('announcements.groups.title')}</CardTitle>
         <p className="text-sm text-muted-foreground">
-          Telegram cannot list a bot's chats, so a group appears here only after the bot is added to
-          it — or after someone posts <code>/register</code> in a group it is already in. A group
-          receives nothing until you approve it.
+          {t('announcements.groups.introBefore')} <code>/register</code> {t('announcements.groups.introAfter')}
         </p>
         {groups.length > 0 && (
           <div className="pt-3">
@@ -78,28 +80,28 @@ export function GroupsTab({ groups, loading, onChanged }: GroupsTabProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Group</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Bot</TableHead>
-                <TableHead>Approved by</TableHead>
+                <TableHead>{t('announcements.groups.colGroup')}</TableHead>
+                <TableHead>{t('announcements.groups.colStatus')}</TableHead>
+                <TableHead>{t('announcements.groups.colBot')}</TableHead>
+                <TableHead>{t('announcements.groups.colApprovedBy')}</TableHead>
                 <TableHead />
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading && groups.length === 0
-                ? messageRow('Loading…')
+                ? messageRow(t('common.loading'))
                 : groups.length === 0
-                  ? messageRow('No groups discovered yet. Add the bot to a group to get started.')
+                  ? messageRow(t('announcements.groups.empty'))
                   : visibleGroups.length === 0
                     ? messageRow(
                         <>
-                          No groups match these filters.{' '}
+                          {t('announcements.filters.noMatch')}{' '}
                           <button
                             type="button"
                             onClick={filters.clearFilters}
                             className="font-medium text-primary hover:underline"
                           >
-                            Clear filters
+                            {t('announcements.filters.clear')}
                           </button>
                         </>,
                       )
@@ -108,7 +110,7 @@ export function GroupsTab({ groups, loading, onChanged }: GroupsTabProps) {
                           <TableCell>
                             <div className="flex flex-wrap items-center gap-1.5">
                               <span className="font-medium text-foreground">
-                                {group.title || 'Untitled group'}
+                                {group.title || t('announcements.groups.untitled')}
                               </span>
                               <ProgramBadges programs={filters.programsOf(group)} />
                             </div>
@@ -116,7 +118,7 @@ export function GroupsTab({ groups, loading, onChanged }: GroupsTabProps) {
                           </TableCell>
                           <TableCell>
                             <Badge variant="secondary" className={GROUP_STATUS_STYLES[group.status]}>
-                              {group.status}
+                              {t(GROUP_STATUS_LABELS[group.status])}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-sm">
@@ -136,7 +138,7 @@ export function GroupsTab({ groups, loading, onChanged }: GroupsTabProps) {
                                 // would promise a recipient that doesn't exist.
                                 disabled={busyId === group.id || !group.is_active}
                               >
-                                Approve
+                                {t('announcements.groups.approve')}
                               </Button>
                             )}
                             {group.status !== 'rejected' && (
@@ -146,7 +148,7 @@ export function GroupsTab({ groups, loading, onChanged }: GroupsTabProps) {
                                 onClick={() => update(group, 'rejected')}
                                 disabled={busyId === group.id}
                               >
-                                Reject
+                                {t('announcements.groups.reject')}
                               </Button>
                             )}
                           </TableCell>

@@ -1,4 +1,6 @@
 import React from 'react';
+import { useT } from '../../../lib/i18n/react';
+import '@/lib/i18n/catalogs/lessonPlayer';
 
 interface LongTextQuestionProps {
   question: any;
@@ -13,6 +15,7 @@ export const LongTextQuestion: React.FC<LongTextQuestionProps> = ({
   onChange,
   disabled
 }) => {
+  const t = useT();
   const currentLength = (value || '').length;
 
   return (
@@ -20,18 +23,18 @@ export const LongTextQuestion: React.FC<LongTextQuestionProps> = ({
       <textarea
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Enter your detailed answer here..."
+        placeholder={t('lessonPlayer.longText.placeholder')}
         className="w-full h-48 p-4 bg-background border-2 border-input rounded-lg focus:border-primary focus:outline-none resize-vertical text-foreground"
         disabled={disabled}
       />
       {/* expected_length is a guideline for the student, NOT a hard cap — do not block typing */}
       {question.expected_length ? (
         <div className="text-sm text-muted-foreground text-right">
-          {currentLength} characters (suggested ~{question.expected_length})
+          {t('lessonPlayer.longText.countSuggested', { count: currentLength, suggested: question.expected_length })}
         </div>
       ) : (
         <div className="text-sm text-muted-foreground text-right">
-          {currentLength} characters
+          {t('lessonPlayer.longText.count', { count: currentLength })}
         </div>
       )}
     </div>

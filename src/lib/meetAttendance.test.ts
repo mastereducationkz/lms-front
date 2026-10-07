@@ -467,10 +467,15 @@ describe('one language per viewer (2026-10-07)', () => {
     expect(flagText({ code: 'left_early', minutes: 12 })).toBe('Ушёл на 12 мин раньше');
   });
 
-  it('keeps the spreadsheet in English whoever downloads it', () => {
-    setActiveLocale('ru');
+  it('writes the spreadsheet in the language of whoever downloads it (Settings → Language)', () => {
     const items = [{ ...lessonForCsv(), flags: [{ code: 'marked_present_not_joined' as const, user_id: 1, name: 'Аяулым', role: 'student' as const }] }];
     expect(reportCsv(items as never)).toContain('Аяулым (Marked present, never joined)');
+    setActiveLocale('ru');
+    const csv = reportCsv(items as never);
+    expect(csv.startsWith('\uFEFF"Дата","Начало","Конец","Урок"')).toBe(true);
+    expect(csv).toContain('"10.09.2026","19:00","20:00","SAT"');
+    expect(csv).toContain('Аяулым (Отмечен, но не заходил)');
+    expect(reportCsv([{ ...lessonForCsv(), state: 'waiting' }] as never, 'en')).toContain('"Loading"');
   });
 
   it('drops the «Other» preset’s label in either language', () => {

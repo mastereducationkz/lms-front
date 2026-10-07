@@ -4,6 +4,9 @@ import { CheckCircle2, ChevronRight, Circle, Clock } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { formatAlmaty, getWeeklyTestsMe, type PlatformTestProgress } from '../../services/api/platformTests';
 import { openPlatformPage, type PlatformTrack } from '../../lib/platformLinks';
+import type { TFunction } from '@/lib/i18n';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/studentHome';
 
 /**
  * Student dashboard: the current weekly platform test with its countdown and one checkmark per
@@ -20,22 +23,23 @@ const LABEL: Record<string, string> = { listening: 'Listening', reading: 'Readin
 const trackOf = (item: PlatformTestProgress): PlatformTrack =>
   (((item as { track?: string }).track ?? item.platform ?? 'ielts') as PlatformTrack);
 
-const platformLabel = (item: PlatformTestProgress): string => ((item as { track?: string }).track ?? item.platform ?? '').toUpperCase() || 'Platform';
+const platformLabel = (item: PlatformTestProgress, t: TFunction): string => ((item as { track?: string }).track ?? item.platform ?? '').toUpperCase() || t('studentHome.weeklyTest.platform');
 
-function headlineFor(item: PlatformTestProgress): string {
+function headlineFor(item: PlatformTestProgress, t: TFunction): string {
   const days = item.days_left;
   const speaking = item.modules.find((m) => m.module === 'speaking');
   const onlySpeakingLeft =
     !!speaking && speaking.state !== 'done' && item.modules.every((m) => m.module === 'speaking' || m.state === 'done');
-  if (days == null) return 'Weekly test';
-  if (onlySpeakingLeft) return days >= 0 ? `Speaking closes in ${days} day${days === 1 ? '' : 's'}` : 'Speaking window closed';
-  if (days > 1) return `Due in ${days} days`;
-  if (days === 1) return 'Due tomorrow';
-  if (days === 0) return 'Due today';
-  return 'Past due — still open';
+  if (days == null) return t('studentHome.weeklyTest.headline');
+  if (onlySpeakingLeft) return days >= 0 ? t('studentHome.weeklyTest.speakingClosesIn', { count: days }) : t('studentHome.weeklyTest.speakingClosed');
+  if (days > 1) return t('studentHome.weeklyTest.dueIn', { count: days });
+  if (days === 1) return t('studentHome.weeklyTest.dueTomorrow');
+  if (days === 0) return t('studentHome.weeklyTest.dueToday');
+  return t('studentHome.weeklyTest.pastDue');
 }
 
 export function WeeklyTestCountdown() {
+  const t = useT();
   const navigate = useNavigate();
   const openItem = (item: PlatformTestProgress) => {
     if (item.assignment_id) navigate(`/homework/${item.assignment_id}`);
@@ -67,26 +71,26 @@ export function WeeklyTestCountdown() {
           type="button"
           className="w-full text-left"
           onClick={() => openItem(item)}
-          aria-label={`Open ${item.title}`}
+          aria-label={t('studentHome.dashboard.openTitle', { title: item.title })}
         >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{platformLabel(item)} weekly test</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('studentHome.weeklyTest.kicker', { platform: platformLabel(item, t) })}</p>
               <p className="font-medium truncate">{item.set_title ?? item.title}</p>
-              <p className="mt-1 text-lg font-semibold text-primary">{headlineFor(item)}</p>
+              <p className="mt-1 text-lg font-semibold text-primary">{headlineFor(item, t)}</p>
               {item.date_to && (
                 <p className="text-xs text-muted-foreground">
-                  Until {formatAlmaty(item.date_to)} (Almaty) · {done}/{item.modules.length} done
+                  {t('studentHome.weeklyTest.until', { date: formatAlmaty(item.date_to), done, total: item.modules.length })}
                 </p>
               )}
             </div>
             <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
           </div>
-          <ul className="mt-3 flex flex-wrap gap-2" aria-label="Parts">
+          <ul className="mt-3 flex flex-wrap gap-2" aria-label={t('studentHome.weeklyTest.parts')}>
             {item.modules.map((m) => (
               <li
                 key={m.module}
-                title={`${LABEL[m.module] ?? m.module}: ${m.state.replace('_', ' ')}`}
+                title={t('studentHome.weeklyTest.partState', { part: LABEL[m.module] ?? m.module, state: t(`studentHome.weeklyTest.state.${m.state}`) })}
                 className={
                   'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ' +
                   (m.state === 'done'

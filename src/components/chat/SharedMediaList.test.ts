@@ -1,6 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+
+// useT() reads AuthContext, whose module pulls the API client in (localStorage at module scope).
+vi.mock('../../contexts/AuthContext', async () => {
+  const { createContext } = await import('react');
+  return { default: createContext(undefined) };
+});
+
 import { SharedMediaList, type SharedMediaItem } from './SharedMediaList';
 import { backendBase } from '../../lib/mediaUrl';
 

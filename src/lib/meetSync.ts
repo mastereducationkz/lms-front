@@ -4,6 +4,7 @@
  * call over and the worker's next check, and both can be said exactly — without promising a time
  * nobody controls.
  */
+import { activeLocale, t, type Locale, type MessageKey } from './i18n';
 import { clock } from './meetAttendance';
 import type {
   MeetSync,
@@ -12,51 +13,77 @@ import type {
   MeetWaitingCall,
   MeetWaitingStage,
 } from '../services/api/meetAttendance';
+import '@/lib/i18n/catalogs/meetViews';
 
 const MINUTE = 60_000;
 
 /** How long, never a clock: "less than a minute", "12 min", "1 h 5 min". */
-export function spanText(ms: number): string {
+export function spanText(ms: number, locale: Locale = activeLocale()): string {
   const minutes = Math.floor(Math.max(0, ms) / MINUTE);
-  if (minutes < 1) return 'less than a minute';
+  if (minutes < 1) return t('meetViews.sync.lessThanMinute', undefined, locale);
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
-  if (!hours) return `${rest} min`;
-  return rest ? `${hours} h ${rest} min` : `${hours} h`;
+  if (!hours) return t('meetViews.sync.spanMinutes', { minutes: rest }, locale);
+  return rest
+    ? t('meetViews.sync.spanHoursMinutes', { hours, minutes: rest }, locale)
+    : t('meetViews.sync.spanHours', { hours }, locale);
 }
 
-export function agoText(iso: string, now: number): string {
+export function agoText(iso: string, now: number, locale: Locale = activeLocale()): string {
   const ms = now - new Date(iso).getTime();
-  return ms < MINUTE ? 'just now' : `${spanText(ms)} ago`;
+  return ms < MINUTE ? t('meetViews.sync.justNow', undefined, locale) : t('meetViews.sync.ago', { span: spanText(ms, locale) }, locale);
 }
 
-export const STEP_LABEL: Record<MeetSyncStep, string> = {
-  links: 'Preparing rooms for upcoming lessons',
-  rooms: 'Updating room settings',
-  claimed: 'Looking for new recordings',
-  attendance: 'Saving who joined',
-  register: 'Taking the register',
-  speech: 'Reading who spoke',
-  ingested: 'Saving recordings',
-  transcribed: 'Transcribing lessons',
-  missing: 'Checking for missing recordings',
+const STEP_KEY: Record<MeetSyncStep, MessageKey> = {
+  links: 'meetViews.sync.stepLinks',
+  rooms: 'meetViews.sync.stepRooms',
+  claimed: 'meetViews.sync.stepClaimed',
+  attendance: 'meetViews.sync.savingWhoJoined',
+  register: 'meetViews.sync.stepRegister',
+  speech: 'meetViews.sync.stepSpeech',
+  ingested: 'meetViews.sync.stepIngested',
+  transcribed: 'meetViews.sync.stepTranscribed',
+  missing: 'meetViews.sync.stepMissing',
 };
 
-export const STAGE_TITLE: Record<MeetWaitingStage, string> = {
-  lesson_running: 'Lesson in progress',
-  call_open: 'Call still open in Meet',
-  collecting: 'Saving who joined',
-  awaiting_google: 'Waiting for Google Meet',
-  settling: 'Almost ready',
+const STAGE_KEY: Record<MeetWaitingStage, MessageKey> = {
+  lesson_running: 'meetViews.sync.lessonRunning',
+  call_open: 'meetViews.sync.callOpen',
+  collecting: 'meetViews.sync.savingWhoJoined',
+  awaiting_google: 'meetViews.sync.waiting',
+  settling: 'meetViews.sync.almostReady',
 };
 
-// The banner's words per stage, in the order a lesson moves through them.
-const BANNER_STAGE: [MeetWaitingStage, (n: number) => string][] = [
-  ['lesson_running', () => 'in progress'],
-  ['call_open', (n) => `with ${n === 1 ? 'its call' : 'their calls'} still open in Google Meet`],
-  ['awaiting_google', (n) => `waiting for Google Meet to hand over ${n === 1 ? 'its call' : 'their calls'}`],
-  ['collecting', () => 'saving who joined'],
-  ['settling', () => 'almost ready'],
+/** What the worker is doing, in words: "Saving who joined". */
+export function stepLabel(step: MeetSyncStep, locale: Locale = activeLocale()): string {
+  return t(STEP_KEY[step], undefined, locale);
+}
+
+/** A waiting lesson's stage as a title: "Lesson in progress". */
+export function stageTitle(stage: MeetWaitingStage, locale: Locale = activeLocale()): string {
+  return t(STAGE_KEY[stage], undefined, locale);
+}
+
+/** The worker's steps in the signed-in user's language, for code that reads them as a table. */
+export const STEP_LABEL: Readonly<Record<MeetSyncStep, string>> = Object.defineProperties(
+  {} as Record<MeetSyncStep, string>,
+  Object.fromEntries((Object.keys(STEP_KEY) as MeetSyncStep[]).map((step) => [step, { get: () => stepLabel(step), enumerable: true }])),
+);
+
+/** The stages in the signed-in user's language, for code that reads them as a table. */
+export const STAGE_TITLE: Readonly<Record<MeetWaitingStage, string>> = Object.defineProperties(
+  {} as Record<MeetWaitingStage, string>,
+  Object.fromEntries((Object.keys(STAGE_KEY) as MeetWaitingStage[]).map((stage) => [stage, { get: () => stageTitle(stage), enumerable: true }])),
+);
+
+// The banner's words per stage, in the order a lesson moves through them: the whole sentence when
+// every lesson is at that stage, and the part when stages are mixed.
+const BANNER_STAGE: [MeetWaitingStage, { whole: MessageKey; part: MessageKey }][] = [
+  ['lesson_running', { whole: 'meetViews.sync.bannerRunning', part: 'meetViews.sync.partRunning' }],
+  ['call_open', { whole: 'meetViews.sync.bannerCallOpen', part: 'meetViews.sync.partCallOpen' }],
+  ['awaiting_google', { whole: 'meetViews.sync.bannerAwaiting', part: 'meetViews.sync.partAwaiting' }],
+  ['collecting', { whole: 'meetViews.sync.bannerCollecting', part: 'meetViews.sync.partCollecting' }],
+  ['settling', { whole: 'meetViews.sync.bannerSettling', part: 'meetViews.sync.partSettling' }],
 ];
 
 /**
@@ -65,58 +92,55 @@ const BANNER_STAGE: [MeetWaitingStage, (n: number) => string][] = [
  * «1 lesson in progress»; «2 lessons not final yet: 1 in progress · 1 waiting for Google Meet to hand
  * over its call». A lesson without a stage is counted as waiting for Google Meet.
  */
-export function waitingBannerText(lessons: (MeetWaiting | null | undefined)[]): string {
+export function waitingBannerText(lessons: (MeetWaiting | null | undefined)[], locale: Locale = activeLocale()): string {
   const total = lessons.length;
-  if (total === 0) return 'Syncing with Google Meet';
+  if (total === 0) return t('meetViews.sync.syncing', undefined, locale);
   const counts = new Map<MeetWaitingStage, number>();
   for (const waiting of lessons) {
     const stage = waiting?.stage ?? 'awaiting_google';
     counts.set(stage, (counts.get(stage) ?? 0) + 1);
   }
   const present = BANNER_STAGE.filter(([stage]) => counts.has(stage));
-  const noun = (n: number) => `${n} lesson${n === 1 ? '' : 's'}`;
-  if (present.length === 1) {
-    const [stage, words] = present[0];
-    return `${noun(total)}${stage === 'collecting' ? ': ' : ' '}${words(total)}`;
-  }
-  return `${noun(total)} not final yet: ${present.map(([stage, words]) => `${counts.get(stage)} ${words(counts.get(stage)!)}`).join(' · ')}`;
+  if (present.length === 1) return t(present[0][1].whole, { count: total }, locale);
+  const parts = present.map(([stage, keys]) => t(keys.part, { count: counts.get(stage)! }, locale)).join(' · ');
+  return t('meetViews.sync.bannerMixed', { count: total, parts }, locale);
 }
 
 const roomChecks = (calls: MeetWaitingCall[]) => calls.filter((c) => !c.lesson_call && c.started_at);
 
 /** One sentence: what the lesson is waiting for right now. */
-export function stageText(waiting: MeetWaiting): string {
+export function stageText(waiting: MeetWaiting, locale: Locale = activeLocale()): string {
   switch (waiting.stage) {
     case 'lesson_running':
-      return `Who joined is read after the lesson ends at ${clock(waiting.ended_at)}.`;
+      return t('meetViews.sync.stageRunning', { time: clock(waiting.ended_at) }, locale);
     case 'call_open':
-      return 'Google Meet still shows the call as open. Who joined is read once everyone has left.';
+      return t('meetViews.sync.stageCallOpen', undefined, locale);
     case 'collecting':
-      return 'Google Meet has handed over the call. The LMS is saving who joined and when.';
+      return t('meetViews.sync.stageCollecting', undefined, locale);
     case 'awaiting_google': {
       const checks = roomChecks(waiting.calls).length;
       return checks
-        ? `Google Meet hasn’t handed over the lesson’s call yet — so far only ${checks} short room check${checks === 1 ? '' : 's'}.`
-        : 'Google Meet hasn’t handed over the lesson’s call yet.';
+        ? t('meetViews.sync.stageAwaitingChecks', { count: checks }, locale)
+        : t('meetViews.sync.stageAwaiting', undefined, locale);
     }
     case 'settling':
-      return `The lesson’s call is saved. It is compared with the marks at ${clock(waiting.ready_at)}, in case anyone rejoins.`;
+      return t('meetViews.sync.stageSettling', { time: clock(waiting.ready_at) }, locale);
     default:
-      return 'Waiting for Google Meet.';
+      return t('meetViews.sync.stageUnknown', undefined, locale);
   }
 }
 
 /** "Lesson ended 20:00 · waiting 1 h 25 min"; while the lesson is on, when it ends. */
-export function waitedText(waiting: MeetWaiting, now: number): string {
+export function waitedText(waiting: MeetWaiting, now: number, locale: Locale = activeLocale()): string {
   const ended = new Date(waiting.ended_at).getTime();
-  if (now < ended) return `Ends at ${clock(waiting.ended_at)}`;
-  return `Lesson ended ${clock(waiting.ended_at)} · waiting ${spanText(now - ended)}`;
+  if (now < ended) return t('meetViews.sync.endsAt', { time: clock(waiting.ended_at) }, locale);
+  return t('meetViews.sync.endedWaiting', { time: clock(waiting.ended_at), span: spanText(now - ended, locale) }, locale);
 }
 
 /** Only while Google may never hand the call over: when the lesson is judged on what there is. */
-export function judgeText(waiting: MeetWaiting): string | null {
+export function judgeText(waiting: MeetWaiting, locale: Locale = activeLocale()): string | null {
   if (waiting.stage !== 'awaiting_google' && waiting.stage !== 'call_open') return null;
-  return `If the call never comes through, the lesson is checked with what there is at ${clock(waiting.judge_at)}.`;
+  return t('meetViews.sync.judge', { time: clock(waiting.judge_at) }, locale);
 }
 
 export type StepStatus = 'done' | 'active' | 'todo';
@@ -128,24 +152,27 @@ export interface WaitingStep {
   detail: string | null;
 }
 
-function callSpan(calls: MeetWaitingCall[]): string | null {
+function callSpan(calls: MeetWaitingCall[], locale: Locale): string | null {
   const lesson = calls.filter((c) => c.lesson_call && c.started_at);
   if (!lesson.length) return null;
   const last = lesson[lesson.length - 1].ended_at;
-  return `Call ${clock(lesson[0].started_at)}–${last ? clock(last) : 'still open'}`;
+  const from = clock(lesson[0].started_at);
+  return last ? t('meetViews.sync.callSpan', { from, to: clock(last) }, locale) : t('meetViews.sync.callSpanOpen', { from }, locale);
 }
 
-function nextCheckText(sync: MeetSync | null | undefined, now: number): string {
+function nextCheckText(sync: MeetSync | null | undefined, now: number, locale: Locale): string {
   if (sync?.running) {
-    if (sync.step === 'attendance' && sync.progress?.total) return `${sync.progress.done} of ${sync.progress.total} calls saved`;
-    return 'In the check under way';
+    if (sync.step === 'attendance' && sync.progress?.total) {
+      return t('meetViews.sync.callsSaved', { done: sync.progress.done, total: sync.progress.total }, locale);
+    }
+    return t('meetViews.sync.inThisCheck', undefined, locale);
   }
-  if (sync?.next_at && new Date(sync.next_at).getTime() > now) return `In the next check, at ${clock(sync.next_at)}`;
-  return 'In the next check';
+  if (sync?.next_at && new Date(sync.next_at).getTime() > now) return t('meetViews.sync.inNextCheckAt', { time: clock(sync.next_at) }, locale);
+  return t('meetViews.sync.inNextCheck', undefined, locale);
 }
 
 /** The four steps between a lesson ending and its record opening, each done, under way or still to come. */
-export function waitingSteps(waiting: MeetWaiting, sync: MeetSync | null | undefined, now: number): WaitingStep[] {
+export function waitingSteps(waiting: MeetWaiting, sync: MeetSync | null | undefined, now: number, locale: Locale = activeLocale()): WaitingStep[] {
   const { stage } = waiting;
   const running = stage === 'lesson_running';
   const handedOver = stage === 'collecting' || stage === 'settling';
@@ -153,22 +180,24 @@ export function waitingSteps(waiting: MeetWaiting, sync: MeetSync | null | undef
   const ended = new Date(waiting.ended_at).getTime();
 
   let handoverDetail: string | null = null;
-  if (handedOver) handoverDetail = callSpan(waiting.calls);
-  else if (stage === 'call_open') handoverDetail = 'The call is still open in Meet';
+  if (handedOver) handoverDetail = callSpan(waiting.calls, locale);
+  else if (stage === 'call_open') handoverDetail = t('meetViews.sync.callStillOpen', undefined, locale);
   else if (stage === 'awaiting_google') {
-    handoverDetail = `Waiting ${spanText(now - ended)}`;
-    if (checks.length) handoverDetail += ` · room checks at ${checks.map((c) => clock(c.started_at)).join(', ')}`;
+    const span = spanText(now - ended, locale);
+    handoverDetail = checks.length
+      ? t('meetViews.sync.waitingForChecks', { span, times: checks.map((c) => clock(c.started_at)).join(', ') }, locale)
+      : t('meetViews.sync.waitingFor', { span }, locale);
   }
 
   return [
-    { key: 'ended', label: running ? 'Lesson in progress' : 'Lesson ended', status: running ? 'active' : 'done',
-      detail: running ? `Ends at ${clock(waiting.ended_at)}` : clock(waiting.ended_at) },
-    { key: 'handed_over', label: 'Google Meet hands over the call', status: handedOver ? 'done' : running ? 'todo' : 'active',
+    { key: 'ended', label: t(running ? 'meetViews.sync.lessonRunning' : 'meetViews.sync.lessonEnded', undefined, locale), status: running ? 'active' : 'done',
+      detail: running ? t('meetViews.sync.endsAt', { time: clock(waiting.ended_at) }, locale) : clock(waiting.ended_at) },
+    { key: 'handed_over', label: t('meetViews.sync.handsOver', undefined, locale), status: handedOver ? 'done' : running ? 'todo' : 'active',
       detail: handoverDetail },
-    { key: 'saved', label: 'Who joined is saved', status: stage === 'settling' ? 'done' : stage === 'collecting' ? 'active' : 'todo',
-      detail: stage === 'collecting' ? nextCheckText(sync, now) : null },
-    { key: 'compared', label: 'Compared with the marks', status: stage === 'settling' ? 'active' : 'todo',
-      detail: stage === 'settling' ? `At ${clock(waiting.ready_at)}` : null },
+    { key: 'saved', label: t('meetViews.sync.whoJoinedSaved', undefined, locale), status: stage === 'settling' ? 'done' : stage === 'collecting' ? 'active' : 'todo',
+      detail: stage === 'collecting' ? nextCheckText(sync, now, locale) : null },
+    { key: 'compared', label: t('meetViews.sync.compared', undefined, locale), status: stage === 'settling' ? 'active' : 'todo',
+      detail: stage === 'settling' ? t('meetViews.sync.at', { time: clock(waiting.ready_at) }, locale) : null },
   ];
 }
 
@@ -178,19 +207,27 @@ export interface SyncStatus {
 }
 
 /** The LMS's check with Google Meet, in one line: under way (which step, how far), or when it last ran and runs next. */
-export function syncStatus(sync: MeetSync | null | undefined, now: number): SyncStatus | null {
+export function syncStatus(sync: MeetSync | null | undefined, now: number, locale: Locale = activeLocale()): SyncStatus | null {
   if (!sync) return null;
   if (sync.running) {
     if (sync.slow && sync.started_at) {
-      return { tone: 'slow', text: `Checking Google Meet since ${clock(sync.started_at)} — taking longer than usual` };
+      return { tone: 'slow', text: t('meetViews.sync.slow', { time: clock(sync.started_at) }, locale) };
     }
-    const step = sync.step ? ` · ${STEP_LABEL[sync.step]}` : '';
-    const progress = sync.step === 'attendance' && sync.progress?.total
-      ? ` · ${sync.progress.done} of ${sync.progress.total} calls` : '';
-    return { tone: 'active', text: `Checking Google Meet now${step}${progress}` };
+    const parts = [t('meetViews.sync.checkingNow', undefined, locale)];
+    if (sync.step) parts.push(stepLabel(sync.step, locale));
+    if (sync.step === 'attendance' && sync.progress?.total) {
+      parts.push(t('meetViews.sync.callsProgress', { done: sync.progress.done, total: sync.progress.total }, locale));
+    }
+    return { tone: 'active', text: parts.join(' · ') };
   }
   const last = sync.attendance_at ?? sync.finished_at;
-  const parts = [last ? `Last checked with Google Meet at ${clock(last)} (${agoText(last, now)})` : 'Not checked with Google Meet yet'];
-  if (sync.next_at) parts.push(new Date(sync.next_at).getTime() > now ? `next check at ${clock(sync.next_at)}` : 'next check starting');
+  const parts = [last
+    ? t('meetViews.sync.lastChecked', { time: clock(last), ago: agoText(last, now, locale) }, locale)
+    : t('meetViews.sync.neverChecked', undefined, locale)];
+  if (sync.next_at) {
+    parts.push(new Date(sync.next_at).getTime() > now
+      ? t('meetViews.sync.nextCheckAt', { time: clock(sync.next_at) }, locale)
+      : t('meetViews.sync.nextCheckStarting', undefined, locale));
+  }
   return { tone: 'idle', text: parts.join(' · ') };
 }

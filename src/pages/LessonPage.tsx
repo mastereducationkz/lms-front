@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { Fragment, useState, useEffect, useCallback, useRef, useMemo, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Card, CardContent } from '../components/ui/card';
@@ -29,7 +29,9 @@ import { getAnswerKey, scoreQuiz } from '../components/lesson/quiz/scoring';
 import { isQuizScorePassing, resolveQuizPassingScorePercent } from '../utils/quizPassingScore';
 import { canEditCourseContent, isStaffPreview, seesCorrectAnswers } from '../lib/courseAccess';
 import { useT } from '../lib/i18n/react';
+import type { MessageKey } from '../lib/i18n';
 import '@/lib/i18n/catalogs/learning';
+import '@/lib/i18n/catalogs/lessonPlayer';
 
 // Utility function to extract correct answers from gap text
 // If an option ends with *, it's the correct answer (without the *)
@@ -182,8 +184,9 @@ const stripVideoLanguageMeta = (content?: string) => {
 
 // Short chip labels/colors for a checkpoint quiz row in the sidebar/overview (distinct
 // from the fuller STATUS_LABEL/STATUS_CLASS used on the checkpoint screens themselves).
-const CHECKPOINT_CHIP_LABEL: Record<StudentCheckpointItem['status'], string> = {
-  locked: 'Locked', available: 'Open', completed: 'Done', overdue: 'Overdue', reopened: 'Open',
+const CHECKPOINT_CHIP_LABEL: Record<StudentCheckpointItem['status'], MessageKey> = {
+  locked: 'lessonPlayer.chip.locked', available: 'lessonPlayer.chip.open', completed: 'lessonPlayer.chip.done',
+  overdue: 'lessonPlayer.chip.overdue', reopened: 'lessonPlayer.chip.open',
 };
 const CHECKPOINT_CHIP_CLASS: Record<StudentCheckpointItem['status'], string> = {
   locked: 'bg-muted text-muted-foreground',
@@ -192,6 +195,13 @@ const CHECKPOINT_CHIP_CLASS: Record<StudentCheckpointItem['status'], string> = {
   overdue: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
   reopened: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
 };
+
+/** Fills a translated sentence's `{name}` slots with elements, so a bold part keeps its place in either language. */
+const withSlots = (text: string, slots: Record<string, ReactNode>): ReactNode[] =>
+  text.split(/(\{\w+\})/).map((part, i) => {
+    const name = /^\{(\w+)\}$/.exec(part)?.[1];
+    return name && name in slots ? <Fragment key={i}>{slots[name]}</Fragment> : part;
+  });
 
 interface LessonSidebarProps {
   course: Course | null;
@@ -204,6 +214,7 @@ interface LessonSidebarProps {
 }
 
 const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCollapsed = false, onToggle, checkpointHints }: LessonSidebarProps) => {
+  const t = useT();
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
 
   // Update expanded modules when modules are loaded
@@ -256,8 +267,8 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
               <img src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + (course?.cover_image_url || '')} alt={course?.title} className="w-10 h-10 rounded-lg object-cover" />
             </div>
             <div className="min-w-0">
-              <h2 className="font-semibold truncate text-sm">{course?.title || 'Course'}</h2>
-              <p className="text-xs text-muted-foreground truncate">Lesson navigation</p>
+              <h2 className="font-semibold truncate text-sm">{course?.title || t('lessonPlayer.sidebar.courseFallback')}</h2>
+              <p className="text-xs text-muted-foreground truncate">{t('lessonPlayer.sidebar.subtitle')}</p>
             </div>
           </div>
         )}
@@ -268,7 +279,7 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
         )}
         
         {onToggle && !isCollapsed && (
-          <Button variant="ghost" size="icon" onClick={onToggle} title="Collapse Sidebar">
+          <Button variant="ghost" size="icon" onClick={onToggle} title={t('lessonPlayer.sidebar.collapse')}>
             <PanelLeftClose className="w-4 h-4" />
           </Button>
         )}
@@ -299,7 +310,7 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                       <div className="flex items-center gap-3">
                         <div className="flex flex-col items-start">
                           <span className="text-sm font-medium text-foreground">{module.title}</span>
-                          <span className="text-xs text-muted-foreground">{completedInModule}/{lectures.length} lessons</span>
+                          <span className="text-xs text-muted-foreground">{t('lessonPlayer.sidebar.moduleLessons', { done: completedInModule, count: lectures.length })}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
@@ -345,8 +356,8 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                                 disabled={!isAccessible}
                                 title={!isAccessible
                                   ? (isCheckpointLesson && checkpointItem
-                                      ? (checkpointItem.locked_reason || 'This checkpoint is not open yet')
-                                      : "Complete previous lessons to unlock")
+                                      ? (checkpointItem.locked_reason || t('lessonPlayer.checkpoint.notOpenTooltip'))
+                                      : t('lessonPlayer.lessonLockedTooltip'))
                                   : progress.title}
                                 className={`relative w-full justify-start pl-12 pr-4 py-3 h-auto rounded-none border-b border-border/30 border-l-4 flex items-center gap-3 text-left text-sm ${
                                   isSelected
@@ -375,7 +386,7 @@ const LessonSidebar = ({ course, modules, selectedLessonId, onLessonSelect, isCo
                                   <span className="flex items-center gap-1 ml-2 shrink-0">
                                     {isCheckpointLesson && checkpointItem ? (
                                       <span className={`h-5 px-2 inline-flex items-center rounded text-[10px] font-medium ${CHECKPOINT_CHIP_CLASS[checkpointItem.status]}`}>
-                                        {CHECKPOINT_CHIP_LABEL[checkpointItem.status]}
+                                        {t(CHECKPOINT_CHIP_LABEL[checkpointItem.status])}
                                       </span>
                                     ) : null}
                                   </span>
@@ -725,7 +736,7 @@ export default function LessonPage() {
       setModules(modulesData);
     } catch (error) {
       console.error('Failed to load course data:', error);
-      setError('Failed to load course data');
+      setError(t('lessonPlayer.lesson.courseLoadFailed'));
     } finally {
       if (showLoader) {
         setIsCourseLoading(false);
@@ -998,9 +1009,9 @@ export default function LessonPage() {
       else await apiClient.removeFavoriteStep(stepId);
     } catch (e) {
       setIsCurrentStepFavorite(!next); // revert on failure
-      toast('Failed to update favorite', 'error');
+      toast(t('lessonPlayer.lesson.favoriteFailed'), 'error');
     }
-  }, [currentStep?.id, isCurrentStepFavorite]);
+  }, [currentStep?.id, isCurrentStepFavorite, t]);
 
   // Check if step is completed based on content type
   const isStepCompleted = useCallback((step: Step): boolean => {
@@ -1140,7 +1151,7 @@ export default function LessonPage() {
                 devLog('Quiz content changed since last attempt — invalidating old answers');
                 localStorage.removeItem(`quiz_answers_${currentStep.id}`);
                 localStorage.removeItem(`gap_answers_${currentStep.id}`);
-                toast('This quiz was updated. Your previous answers were cleared.', 'info');
+                toast(t('lessonPlayer.lesson.quizUpdated'), 'info');
                 // Continue with fresh state
               } else {
                 // Quiz unchanged or no hash (legacy attempt), restore answers
@@ -1398,7 +1409,7 @@ export default function LessonPage() {
   // Compute proceed reason (or null when allowed)
   const getProceedBlockReason = useCallback((): string | null => {
     if (staffPreview) return null;
-    if (!currentStep) return 'No active step';
+    if (!currentStep) return t('lessonPlayer.proceed.noStep');
     if (currentStep.is_optional) return null;
 
     const stepId = currentStep.id.toString();
@@ -1409,19 +1420,19 @@ export default function LessonPage() {
       const progress = videoProgress.get(stepId) || 0;
       if (progress >= 0.9) return null;
       const pct = Math.round(progress * 100);
-      return `Watch the video to at least 90% to continue (${pct}% watched)`;
+      return t('lessonPlayer.proceed.watchVideo', { percent: pct });
     }
     if (currentStep.content_type === 'quiz') {
-      return quizCompleted.get(stepId) ? null : 'Complete the quiz to continue';
+      return quizCompleted.get(stepId) ? null : t('lessonPlayer.proceed.finishQuiz');
     }
     return null;
-  }, [staffPreview, currentStep, stepsProgress, videoProgress, quizCompleted]);
+  }, [staffPreview, currentStep, stepsProgress, videoProgress, quizCompleted, t]);
 
   const canProceedToNext = useCallback((): boolean => getProceedBlockReason() === null, [getProceedBlockReason]);
 
   const goToStep = useCallback((index: number) => {
     if (index > currentStepIndex && currentStep && !canProceedToNext()) {
-      const reason = getProceedBlockReason() || 'Please complete the current step first';
+      const reason = getProceedBlockReason() || t('lessonPlayer.proceed.finishStep');
       toast(reason, 'info');
       return;
     }
@@ -1439,11 +1450,11 @@ export default function LessonPage() {
     const newSearchParams = new URLSearchParams(searchParams);
     newSearchParams.set('step', (index + 1).toString());
     setSearchParams(newSearchParams);
-  }, [currentStepIndex, currentStep, canProceedToNext, getProceedBlockReason, markStepAsVisited, isStepCompleted, searchParams, setSearchParams]);
+  }, [currentStepIndex, currentStep, canProceedToNext, getProceedBlockReason, markStepAsVisited, isStepCompleted, searchParams, setSearchParams, t]);
 
   const goToNextStep = useCallback(async () => {
     if (currentStep && !canProceedToNext()) {
-      const reason = getProceedBlockReason() || 'Please complete the current step first';
+      const reason = getProceedBlockReason() || t('lessonPlayer.proceed.finishStep');
       toast(reason, 'info');
       return;
     }
@@ -1480,7 +1491,7 @@ export default function LessonPage() {
 
       proceed();
     }
-  }, [currentStep, canProceedToNext, getProceedBlockReason, currentStepIndex, orderedSteps.length, nextLessonId, goToStep, isStepCompleted, markStepAsVisited, navigate, courseId, lesson, fetchCheckpoints]);
+  }, [currentStep, canProceedToNext, getProceedBlockReason, currentStepIndex, orderedSteps.length, nextLessonId, goToStep, isStepCompleted, markStepAsVisited, navigate, courseId, lesson, fetchCheckpoints, t]);
 
   const goToPreviousStep = useCallback(() => {
     if (currentStepIndex > 0) {
@@ -1495,24 +1506,24 @@ export default function LessonPage() {
       navigate(nextLessonId ? `/course/${courseId}/lesson/${nextLessonId}` : `/course/${courseId}`);
       return;
     }
-    if (!confirm('Are you sure you want to skip this lesson? It will be marked as completed.')) return;
+    if (!confirm(t('lessonPlayer.skip.confirm'))) return;
 
     try {
       const _res = await apiClient.markLessonComplete(lesson.id.toString(), 0);
       maybeShowReadyPopup(lesson.id, _res);
       loadLessonData();
       loadCourseData(false);
-      toast('Lesson skipped', 'success');
+      toast(t('lessonPlayer.skip.done'), 'success');
     } catch (err) {
       console.error('Failed to skip lesson:', err);
-      toast('Failed to skip lesson', 'error');
+      toast(t('lessonPlayer.skip.failed'), 'error');
     }
   };
 
   const autoCompleteAllSteps = async () => {
     if (!lesson || !orderedSteps.length) return;
 
-    const confirmMsg = `DEV MODE: Auto-complete all ${orderedSteps.length} steps?\n\nThis is for development/testing only.`;
+    const confirmMsg = t('lessonPlayer.dev.autoCompleteConfirm', { count: orderedSteps.length });
     if (!confirm(confirmMsg)) return;
 
     try {
@@ -1532,25 +1543,25 @@ export default function LessonPage() {
       await loadLessonData();
       await loadCourseData(false);
 
-      toast('All steps completed! Lesson marked as done.', 'success');
+      toast(t('lessonPlayer.dev.autoCompleteDone'), 'success');
     } catch (err) {
       console.error('Failed to auto-complete steps:', err);
-      toast('Failed to auto-complete steps', 'error');
+      toast(t('lessonPlayer.dev.autoCompleteFailed'), 'error');
     }
   };
 
   const handleSkipVideoStepDueToError = useCallback(async () => {
     if (!currentStep || currentStep.content_type !== 'video_text') return;
 
-    const confirmed = confirm('Video has a technical issue. Skip this video step and mark it as completed?')
+    const confirmed = confirm(t('lessonPlayer.video.skipConfirm'))
     if (!confirmed) return;
 
     const stepId = currentStep.id.toString()
     videoMarkedRef.current.add(currentStep.id)
     setVideoProgress(prev => new Map(prev).set(stepId, 1))
     await markStepAsVisited(stepId, 0)
-    toast('Video step skipped due to technical issue', 'success')
-  }, [currentStep, markStepAsVisited])
+    toast(t('lessonPlayer.video.skipped'), 'success')
+  }, [currentStep, markStepAsVisited, t])
 
   const getStepIcon = (step: Step) => {
     switch (step.content_type) {
@@ -1740,7 +1751,7 @@ export default function LessonPage() {
           const correctAnswers = extractCorrectAnswersFromGaps(text, separator);
           newGapAnswers.set(key, correctAnswers);
         } else if (question.question_type === 'long_text') {
-          newQuizAnswers.set(key, 'Sample answer for development testing');
+          newQuizAnswers.set(key, t('lessonPlayer.dev.sampleAnswer'));
         } else if (question.question_type === 'matching') {
           const pairs = question.matching_pairs || [];
           const map = new Map<number, number>();
@@ -1850,7 +1861,7 @@ export default function LessonPage() {
       if ((status === 403 || status === 409) && typeof detail === 'string') {
         toast(detail, 'error');
       } else {
-        toast('Failed to save quiz attempt. Please try again.', 'error');
+        toast(t('lessonPlayer.lesson.quizSaveFailed'), 'error');
       }
     }
   };
@@ -1884,7 +1895,7 @@ export default function LessonPage() {
                   <iframe
                     src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${attachment.file_url}#toolbar=0&navpanes=0&scrollbar=1`}
                     className="w-full h-96 sm:h-[500px] lg:h-[600px] border-0"
-                    title={`Preview of ${attachment.filename}`}
+                    title={t('lessonPlayer.lesson.attachmentPreview', { name: attachment.filename })}
                     referrerPolicy="strict-origin-when-cross-origin"
                   />
                 )}
@@ -1921,7 +1932,7 @@ export default function LessonPage() {
 
     if (isStepContentLoading || !loadedStepIds.has(currentStep.id)) {
       return (
-        <div className="space-y-4" aria-busy="true" aria-label="Loading step content">
+        <div className="space-y-4" aria-busy="true" aria-label={t('lessonPlayer.lesson.loadingStep')}>
           <Skeleton className="h-6 w-2/3" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-11/12" />
@@ -1936,11 +1947,11 @@ export default function LessonPage() {
     const optionalBanner = currentStep.is_optional ? (
       <div className="bg-brand-surface border border-brand-border rounded-md p-3 mb-4 flex items-start gap-3">
          <div>
-            <h4 className="text-sm font-medium text-brand-subtle-foreground">Optional Step</h4>
+            <h4 className="text-sm font-medium text-brand-subtle-foreground">{t('lessonPlayer.optional.title')}</h4>
             <p className="text-xs text-brand mt-1">
               {currentStep.content_type === 'quiz'
-                ? `You can skip this quiz, but to mark it complete you need at least ${resolveQuizPassingScorePercent(quizData, true)}%.`
-                : 'You can skip this step and proceed to the next one without completing it.'}
+                ? t('lessonPlayer.optional.quiz', { percent: resolveQuizPassingScorePercent(quizData, true) })
+                : t('lessonPlayer.optional.step')}
             </p>
          </div>
       </div>
@@ -1957,7 +1968,7 @@ export default function LessonPage() {
               {/* Special "Read explanation" text above everything */}
               {currentStep.content_text && currentStep.content_text.includes("Read the explanation and make notes.") && (
                 <div className="mb-4 p-4 bg-brand-surface border-l-4 border-blue-500 dark:border-brand text-brand-subtle-foreground">
-                  <p className="font-medium">Read the explanation and make notes.</p>
+                  <p className="font-medium">{t('lessonPlayer.content.readNotes')}</p>
                 </div>
               )}
   
@@ -2010,7 +2021,7 @@ export default function LessonPage() {
               {/* Special "Watch explanations" text above video */}
               {currentStep.content_text && currentStep.content_text.includes("Watch the explanations for the previous questions") && (
                 <div className="mb-4 p-4 bg-brand-surface border-l-4 border-blue-500 dark:border-brand text-brand-subtle-foreground">
-                  <p className="font-medium">Watch the explanations for the previous questions</p>
+                  <p className="font-medium">{t('lessonPlayer.content.watchExplanations')}</p>
                 </div>
               )}
   
@@ -2018,7 +2029,7 @@ export default function LessonPage() {
                 <div className="bg-muted rounded-lg overflow-hidden">
                   {hasRuVideo && hasEnVideo && (
                     <div className="flex items-center justify-end gap-2 p-3 border-b border-border bg-white/80 dark:bg-background">
-                      <span className="text-xs text-muted-foreground">Video language</span>
+                      <span className="text-xs text-muted-foreground">{t('lessonPlayer.video.language')}</span>
                       <Button
                         variant={selectedVideoLanguage === 'ru' ? 'default' : 'outline'}
                         size="sm"
@@ -2039,7 +2050,7 @@ export default function LessonPage() {
                     <HlsVideoPlayer
                       key={`${currentStep.id}-${selectedVideoLanguage}`}
                       url={activeHlsUrl}
-                      title={currentStep.title || 'Lesson Video'}
+                      title={currentStep.title || t('lessonPlayer.video.fallbackTitle')}
                       className="w-full"
                       onError={handleVideoError}
                       onProgress={handleVideoProgress}
@@ -2048,7 +2059,7 @@ export default function LessonPage() {
                     <YouTubeVideoPlayer
                       key={`${currentStep.id}-${selectedVideoLanguage}`}
                       url={activeVideoUrl}
-                      title={currentStep.title || 'Lesson Video'}
+                      title={currentStep.title || t('lessonPlayer.video.fallbackTitle')}
                       className="w-full"
                       onError={handleVideoError}
                       onProgress={handleVideoProgress}
@@ -2058,11 +2069,11 @@ export default function LessonPage() {
               )}
               {currentVideoStepError && (
                 <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200">
-                  <p className="font-medium">Video technical issue detected</p>
+                  <p className="font-medium">{t('lessonPlayer.video.issueTitle')}</p>
                   <p className="mt-1">{currentVideoStepError}</p>
                   <div className="mt-3">
                     <Button variant="outline" size="sm" onClick={handleSkipVideoStepDueToError}>
-                      Skip this video step
+                      {t('lessonPlayer.video.skipStep')}
                     </Button>
                   </div>
                 </div>
@@ -2084,7 +2095,7 @@ export default function LessonPage() {
         case 'quiz':
           if (!isQuizReady) {
             return (
-              <div className="space-y-4" aria-busy="true" aria-label="Loading quiz">
+              <div className="space-y-4" aria-busy="true" aria-label={t('lessonPlayer.lesson.loadingQuiz')}>
                 <Skeleton className="h-8 w-1/2" />
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-32 w-full" />
@@ -2106,8 +2117,8 @@ export default function LessonPage() {
                 continueAction={
                   lesson?.kind === 'checkpoint'
                     ? {
-                        note: 'Done — your result is saved. Well done for taking it!',
-                        label: 'Continue the course',
+                        note: t('lessonPlayer.checkpoint.continueNote'),
+                        label: t('lessonPlayer.checkpoint.continueCourse'),
                         onClick: () => navigate(`/course/${courseId}`),
                       }
                     : undefined
@@ -2180,7 +2191,7 @@ export default function LessonPage() {
             );
           } catch (error) {
             console.error('Failed to parse flashcard data:', error);
-            return <div>Error loading flashcards</div>;
+            return <div>{t('lessonPlayer.lesson.flashcardsFailed')}</div>;
           }
   
         case 'summary':
@@ -2192,7 +2203,7 @@ export default function LessonPage() {
           );
   
         default:
-          return <div>Unsupported content type</div>;
+          return <div>{t('lessonPlayer.lesson.unsupported')}</div>;
       }
     })();
 
@@ -2285,11 +2296,11 @@ export default function LessonPage() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center max-w-md px-6">
-          <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">Error</h2>
+          <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-2">{t('lessonPlayer.error.title')}</h2>
           <p className="text-muted-foreground">{error}</p>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <Button onClick={() => window.location.reload()}>Retry</Button>
-            <Button variant="outline" onClick={() => navigate(`/course/${courseId}`)}>Back to course</Button>
+            <Button onClick={() => window.location.reload()}>{t('lessonPlayer.error.retry')}</Button>
+            <Button variant="outline" onClick={() => navigate(`/course/${courseId}`)}>{t('learning.lesson.back')}</Button>
           </div>
         </div>
       </div>
@@ -2328,7 +2339,7 @@ export default function LessonPage() {
               lesson list opens from its own icon on the right. */}
           <div className="flex flex-1 items-center gap-2 sm:gap-3 min-w-0">
             {isSidebarCollapsed && (
-              <Button variant="ghost" size="icon" className="hidden md:flex" onClick={() => setIsSidebarCollapsed(false)} title="Expand Sidebar">
+              <Button variant="ghost" size="icon" className="hidden md:flex" onClick={() => setIsSidebarCollapsed(false)} title={t('lessonPlayer.sidebar.expand')}>
                 <PanelLeftOpen className="w-5 h-5" />
               </Button>
             )}
@@ -2344,7 +2355,7 @@ export default function LessonPage() {
               if (requiredByCheckpoint) {
                 return (
                   <span className="h-5 min-w-0 truncate px-2 inline-block leading-5 rounded bg-muted text-muted-foreground border border-border text-[10px] font-medium">
-                    Counts toward Checkpoint {requiredByCheckpoint.number}
+                    {t('lessonPlayer.checkpoint.countsToward', { number: requiredByCheckpoint.number })}
                   </span>
                 );
               }
@@ -2352,10 +2363,10 @@ export default function LessonPage() {
                 return (
                   <span className={`h-5 min-w-0 truncate px-2 inline-block leading-5 rounded text-[10px] font-medium ${CHECKPOINT_CHIP_CLASS[asCheckpointQuiz.status]}`}>
                     {asCheckpointQuiz.status === 'overdue'
-                      ? `Overdue · ${deadlineCountdown(asCheckpointQuiz.deadline)} · you can still submit — it’ll just be marked late`
+                      ? t('lessonPlayer.checkpoint.chipOverdue', { countdown: deadlineCountdown(asCheckpointQuiz.deadline) })
                       : asCheckpointQuiz.deadline && asCheckpointQuiz.status !== 'completed'
-                        ? `Due ${formatDeadline(asCheckpointQuiz.deadline)} · ${deadlineCountdown(asCheckpointQuiz.deadline)}`
-                        : CHECKPOINT_CHIP_LABEL[asCheckpointQuiz.status]}
+                        ? t('lessonPlayer.checkpoint.chipDue', { deadline: formatDeadline(asCheckpointQuiz.deadline), countdown: deadlineCountdown(asCheckpointQuiz.deadline) })
+                        : t(CHECKPOINT_CHIP_LABEL[asCheckpointQuiz.status])}
                   </span>
                 );
               }
@@ -2387,11 +2398,11 @@ export default function LessonPage() {
                 variant="ghost" 
                 size="sm" 
                 onClick={autoCompleteAllSteps} 
-                title="DEV: Auto-complete all steps"
+                title={t('lessonPlayer.dev.autoCompleteTitle')}
                 className="ml-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 font-mono text-xs"
               >
                 <Wrench className="h-3.5 w-3.5 sm:mr-1" aria-hidden="true" />
-                <span className="hidden sm:inline">Auto-Complete</span>
+                <span className="hidden sm:inline">{t('lessonPlayer.dev.autoComplete')}</span>
               </Button>
             )}
           </div>
@@ -2406,11 +2417,11 @@ export default function LessonPage() {
                     '_blank'
                   )
                 }
-                title="Download practice (PDF)"
-                aria-label="Download practice as PDF"
+                title={t('lessonPlayer.header.practiceTitle')}
+                aria-label={t('lessonPlayer.header.practiceAria')}
               >
                 <Printer className="w-4 h-4 mr-1" />
-                <span className="hidden sm:inline">Practice PDF</span>
+                <span className="hidden sm:inline">{t('lessonPlayer.header.practice')}</span>
               </Button>
             )}
             {canEditCourseContent(user?.role) && (
@@ -2423,11 +2434,11 @@ export default function LessonPage() {
                     `/course/${courseId}/lesson/${lessonId}/edit${params ? `?${params}` : ''}`
                   )
                 }}
-                title="Edit lesson"
-                aria-label="Edit lesson"
+                title={t('lessonPlayer.header.editLesson')}
+                aria-label={t('lessonPlayer.header.editLesson')}
               >
                 <Pencil className="w-4 h-4 mr-1" />
-                Edit
+                {t('common.edit')}
               </Button>
             )}
             {/* Favorite (bookmark) current step */}
@@ -2441,8 +2452,8 @@ export default function LessonPage() {
                     ? 'text-yellow-500 bg-yellow-500/10 border-yellow-500/30 hover:bg-yellow-500/15'
                     : 'bg-background text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground'
                 }`}
-                title={isCurrentStepFavorite ? 'Saved to favorites' : 'Save this page'}
-                aria-label={isCurrentStepFavorite ? 'Remove from favorites' : 'Save to favorites'}
+                title={isCurrentStepFavorite ? t('lessonPlayer.header.savedPage') : t('lessonPlayer.header.savePage')}
+                aria-label={isCurrentStepFavorite ? t('lessonPlayer.favorites.remove') : t('lessonPlayer.header.favorite')}
               >
                 <Star className={`w-5 h-5 ${isCurrentStepFavorite ? 'fill-current' : ''}`} />
               </Button>
@@ -2458,7 +2469,7 @@ export default function LessonPage() {
                     ? 'text-primary bg-primary/10 border-primary/30 hover:bg-primary/15' 
                     : 'bg-background text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground'
                 }`}
-                title={isLookUpEnabled ? 'Disable Look Up' : 'Enable Look Up'}
+                title={isLookUpEnabled ? t('lessonPlayer.header.lookupOff') : t('lessonPlayer.header.lookupOn')}
               >
                 <Languages className="w-5 h-5" />
               </Button>
@@ -2481,7 +2492,7 @@ export default function LessonPage() {
         <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth custom-scrollbar">
           <div className="max-w-4xl mx-auto pb-20">
             {isLessonLoading ? (
-              <div className="space-y-4" aria-busy="true" aria-label="Loading lesson">
+              <div className="space-y-4" aria-busy="true" aria-label={t('lessonPlayer.lesson.loadingLesson')}>
                 <div className="grid gap-2 grid-cols-6 sm:grid-cols-10 lg:grid-cols-15">
                   {Array.from({ length: 15 }).map((_, i) => (
                     <Skeleton key={i} className="aspect-square" />
@@ -2499,15 +2510,15 @@ export default function LessonPage() {
                     <span className="min-w-0 text-muted-foreground">
                       {openCheckpointBanner.status === 'overdue' ? (
                         <>
-                          <span className="font-semibold text-foreground">Checkpoint {openCheckpointBanner.number} is still open.</span>
-                          {' '}The deadline has passed, but you can still take it — it’ll just be marked late.
+                          <span className="font-semibold text-foreground">{t('lessonPlayer.banner.stillOpen', { number: openCheckpointBanner.number })}</span>
+                          {' '}{t('lessonPlayer.checkpoint.lateBody')}
                         </>
                       ) : (
                         <>
-                          <span className="font-semibold text-foreground">Checkpoint {openCheckpointBanner.number} is open.</span>
-                          {' '}Take it whenever you’re ready; it’s optional. Due{' '}
-                          <span className="text-foreground">{formatDeadline(openCheckpointBanner.deadline)}</span>
-                          {', '}{deadlineCountdown(openCheckpointBanner.deadline)}.
+                          <span className="font-semibold text-foreground">{t('lessonPlayer.banner.open', { number: openCheckpointBanner.number })}</span>
+                          {' '}{withSlots(t('lessonPlayer.banner.openBody', { countdown: deadlineCountdown(openCheckpointBanner.deadline) }), {
+                            deadline: <span className="text-foreground">{formatDeadline(openCheckpointBanner.deadline)}</span>,
+                          })}
                         </>
                       )}
                     </span>
@@ -2519,14 +2530,14 @@ export default function LessonPage() {
                           if (quiz) navigate(`/course/${quiz.course_id}/lesson/${quiz.lesson_id}`);
                         }}
                       >
-                        {openCheckpointBanner.status === 'overdue' ? 'Submit late' : 'Start'}
+                        {openCheckpointBanner.status === 'overdue' ? t('lessonPlayer.checkpoint.submitLate') : t('lessonPlayer.common.start')}
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7 text-muted-foreground hover:text-foreground"
                         onClick={() => setDismissedCheckpointIds((prev) => new Set(prev).add(openCheckpointBanner.checkpoint_id))}
-                        aria-label="Dismiss checkpoint reminder"
+                        aria-label={t('lessonPlayer.banner.dismiss')}
                       >
                         ×
                       </Button>
@@ -2540,7 +2551,7 @@ export default function LessonPage() {
                 <div className="mb-6">
                   <div
                     role="tablist"
-                    aria-label="Lesson steps"
+                    aria-label={t('lessonPlayer.steps.aria')}
                     className="grid gap-2 [grid-template-columns:repeat(6,minmax(0,1fr))] sm:[grid-template-columns:repeat(10,minmax(0,1fr))] lg:[grid-template-columns:repeat(15,minmax(0,1fr))]"
                   >
                     {orderedSteps.map((step, index) => {
@@ -2590,12 +2601,17 @@ export default function LessonPage() {
                           role="tab"
                           aria-current={isActive ? 'step' : undefined}
                           aria-selected={isActive}
-                          aria-label={`Step ${step.order_index}${step.title ? `: ${step.title}` : ''}${step.is_optional ? ' (optional)' : ''}${isCompleted ? ' (completed)' : step.is_optional ? ' (not completed)' : ''}${!isClickable ? ' (locked)' : ''}`}
+                          aria-label={[
+                            step.title ? t('lessonPlayer.steps.stepTitled', { number: step.order_index, title: step.title }) : t('lessonPlayer.steps.step', { number: step.order_index }),
+                            step.is_optional && t('lessonPlayer.steps.tagOptional'),
+                            isCompleted ? t('lessonPlayer.steps.tagCompleted') : step.is_optional && t('lessonPlayer.steps.tagNotCompleted'),
+                            !isClickable && t('lessonPlayer.steps.tagLocked'),
+                          ].filter(Boolean).join(' ')}
                           tabIndex={isActive ? 0 : -1}
                           onClick={() => isClickable && goToStep(index)}
                           onKeyDown={handleStepKeyDown}
                           disabled={!isClickable}
-                          title={!isClickable ? 'Complete previous steps to unlock' : step.title || `Step ${step.order_index}`}
+                          title={!isClickable ? t('lessonPlayer.steps.lockedTooltip') : step.title || t('lessonPlayer.steps.step', { number: step.order_index })}
                           className={`aspect-square rounded-md p-1 relative shadow-sm transition-all min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                             isClickable ? 'hover:shadow-md cursor-pointer' : 'cursor-not-allowed opacity-50'
                           } ${
@@ -2650,7 +2666,7 @@ export default function LessonPage() {
                       </div>
                     ) : (
                       <div className="text-center py-12 border-none">
-                        <p className="text-muted-foreground">No steps available for this lesson.</p>
+                        <p className="text-muted-foreground">{t('lessonPlayer.lesson.noSteps')}</p>
                       </div>
                     )}
                   </CardContent>
@@ -2663,7 +2679,7 @@ export default function LessonPage() {
                   <div className="mt-6 flex justify-center">
                     <Button variant="outline" onClick={() => navigate(`/course/${courseId}`)} className="min-h-[44px]">
                       <ChevronLeft className="w-4 h-4 mr-2" aria-hidden="true" />
-                      Back to course
+                      {t('learning.lesson.back')}
                     </Button>
                   </div>
                 ) : (
@@ -2675,25 +2691,25 @@ export default function LessonPage() {
                     className="w-full sm:w-auto min-h-[44px]"
                   >
                     <ChevronLeft className="w-4 h-4 mr-2" aria-hidden="true" />
-                    Previous
+                    {t('lessonPlayer.nav.previous')}
                   </Button>
                   <div className="flex flex-col items-center gap-1 order-[-1] sm:order-none">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>Step {currentStep?.order_index ?? currentStepIndex + 1} of {orderedSteps.length}</span>
+                      <span>{t('lessonPlayer.nav.stepOf', { number: currentStep?.order_index ?? currentStepIndex + 1, total: orderedSteps.length })}</span>
                       <span className="hidden sm:inline">•</span>
-                      <span>Lesson {lesson.module_id}.{lesson.order_index}</span>
+                      <span>{t('lessonPlayer.nav.lessonNumber', { module: lesson.module_id, order: lesson.order_index })}</span>
                       {currentStep?.is_optional && (
                         <>
                           <span className="hidden sm:inline">•</span>
-                          <span className="text-brand font-medium">(Optional)</span>
+                          <span className="text-brand font-medium">{t('lessonPlayer.nav.optional')}</span>
                         </>
                       )}
                     </div>
                     {currentStep?.content_type === 'quiz' && saveStatus !== 'idle' && (
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground" aria-live="polite">
-                        {saveStatus === 'saving' && (<><Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /><span>Saving…</span></>)}
-                        {saveStatus === 'saved' && (<><Cloud className="w-3 h-3 text-emerald-500 dark:text-emerald-400" aria-hidden="true" /><span>Saved</span></>)}
-                        {saveStatus === 'error' && (<><CloudOff className="w-3 h-3 text-rose-500 dark:text-rose-400" aria-hidden="true" /><span>Save failed</span></>)}
+                        {saveStatus === 'saving' && (<><Loader2 className="w-3 h-3 animate-spin" aria-hidden="true" /><span>{t('lessonPlayer.save.saving')}</span></>)}
+                        {saveStatus === 'saved' && (<><Cloud className="w-3 h-3 text-emerald-500 dark:text-emerald-400" aria-hidden="true" /><span>{t('lessonPlayer.save.saved')}</span></>)}
+                        {saveStatus === 'error' && (<><CloudOff className="w-3 h-3 text-rose-500 dark:text-rose-400" aria-hidden="true" /><span>{t('lessonPlayer.save.failed')}</span></>)}
                       </div>
                     )}
                     {!canProceedToNext() && getProceedBlockReason() && (
@@ -2707,7 +2723,7 @@ export default function LessonPage() {
                     className="w-full sm:w-auto min-h-[44px]"
                     disabled={!canProceedToNext()}
                   >
-                    {currentStepIndex < orderedSteps.length - 1 ? 'Next' : (nextLessonId ? 'Next Lesson' : 'Next')}
+                    {currentStepIndex < orderedSteps.length - 1 ? t('lessonPlayer.nav.next') : (nextLessonId ? t('lessonPlayer.nav.nextLesson') : t('lessonPlayer.nav.next'))}
                     <ChevronRight className="w-4 h-4 ml-2" aria-hidden="true" />
                   </Button>
                 </div>
@@ -2740,16 +2756,17 @@ export default function LessonPage() {
       <Dialog open={!!readyPopup && !checkpointDialog} onOpenChange={(o) => !o && setReadyPopup(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Ready to submit</DialogTitle>
+            <DialogTitle>{t('lessonPlayer.ready.title')}</DialogTitle>
           </DialogHeader>
           <div className="mb-4 text-sm text-muted-foreground">
-            <span className="font-semibold text-foreground">{readyPopup?.title}</span> is ready to submit.
-            You have completed the required units.
+            {withSlots(t('lessonPlayer.ready.body'), {
+              title: <span className="font-semibold text-foreground">{readyPopup?.title}</span>,
+            })}
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setReadyPopup(null)}>Later</Button>
+            <Button variant="ghost" onClick={() => setReadyPopup(null)}>{t('lessonPlayer.ready.later')}</Button>
             <Button onClick={() => { const id = readyPopup?.id; setReadyPopup(null); if (id) navigate(`/homework/${id}`); }}>
-              Go to assignment
+              {t('lessonPlayer.ready.open')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2758,23 +2775,25 @@ export default function LessonPage() {
       <Dialog open={!!checkpointDialog} onOpenChange={(o) => !o && setCheckpointDialog(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Checkpoint {checkpointDialog?.item.number} is open</DialogTitle>
+            <DialogTitle>{t('lessonPlayer.checkpointDialog.title', { number: checkpointDialog?.item.number ?? '' })}</DialogTitle>
           </DialogHeader>
           {checkpointDialog && (
             <div className="mb-4 space-y-2 text-sm text-muted-foreground">
               <p>
-                Great work — you’ve finished every unit in this block!{' '}
-                <span className="font-semibold text-foreground">Checkpoint {checkpointDialog.item.number}</span> is
-                ready whenever you are: a quick way to see how much you’ve learned. Your next units are already open.
+                {withSlots(t('lessonPlayer.checkpointDialog.body'), {
+                  checkpoint: <span className="font-semibold text-foreground">{t('lessonPlayer.checkpoint.name', { number: checkpointDialog.item.number })}</span>,
+                })}
               </p>
               <p>
-                Covers <span className="text-foreground">{coversLabel(checkpointDialog.item.covers)}</span>
-                {' · '}<span className="text-foreground">{checkpointDialog.item.total_questions} questions</span>
+                {withSlots(t('lessonPlayer.checkpointDialog.covers'), {
+                  covers: <span className="text-foreground">{coversLabel(checkpointDialog.item.covers)}</span>,
+                  questions: <span className="text-foreground">{t('lessonPlayer.common.questions', { count: checkpointDialog.item.total_questions })}</span>,
+                })}
               </p>
               <p>
-                Due <span className="font-semibold text-foreground">{formatDeadline(checkpointDialog.item.deadline)}</span>{' '}
-                ({deadlineCountdown(checkpointDialog.item.deadline)}). You can still take it after that;
-                it’ll just be marked late.
+                {withSlots(t('lessonPlayer.checkpointDialog.due', { countdown: deadlineCountdown(checkpointDialog.item.deadline) }), {
+                  deadline: <span className="font-semibold text-foreground">{formatDeadline(checkpointDialog.item.deadline)}</span>,
+                })}
               </p>
             </div>
           )}
@@ -2788,10 +2807,10 @@ export default function LessonPage() {
                   cont?.();
                 }}
               >
-                Continue to next unit
+                {t('lessonPlayer.checkpointDialog.continue')}
               </Button>
             ) : (
-              <Button variant="ghost" onClick={() => setCheckpointDialog(null)}>Not now</Button>
+              <Button variant="ghost" onClick={() => setCheckpointDialog(null)}>{t('lessonPlayer.checkpointDialog.notNow')}</Button>
             )}
             <Button
               onClick={() => {
@@ -2800,7 +2819,7 @@ export default function LessonPage() {
                 if (quiz) navigate(`/course/${quiz.course_id}/lesson/${quiz.lesson_id}`);
               }}
             >
-              Take Checkpoint {checkpointDialog?.item.number} now
+              {t('lessonPlayer.checkpointDialog.take', { number: checkpointDialog?.item.number ?? '' })}
             </Button>
           </DialogFooter>
         </DialogContent>

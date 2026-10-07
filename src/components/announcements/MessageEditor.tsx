@@ -13,6 +13,8 @@ import {
   visibleLength,
   visibleText,
 } from './telegramText';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/announcements';
 
 interface MessageEditorProps {
   body: string;
@@ -26,6 +28,7 @@ const SHORTCUT_TAGS: Record<string, string> = { b: 'b', i: 'i', u: 'u' };
 
 /** The Message card: formatting toolbar, body, live preview and photos. */
 export function MessageEditor({ body, onBodyChange, images, onImagesChange }: MessageEditorProps) {
+  const t = useT();
   const bodyRef = useRef<HTMLTextAreaElement>(null);
 
   /**
@@ -62,7 +65,7 @@ export function MessageEditor({ body, onBodyChange, images, onImagesChange }: Me
     <div className="space-y-6">
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Message</CardTitle>
+          <CardTitle className="text-base">{t('announcements.editor.title')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
         <div className="space-y-1.5">
@@ -72,7 +75,7 @@ export function MessageEditor({ body, onBodyChange, images, onImagesChange }: Me
             value={body}
             onChange={(event) => onBodyChange(event.target.value)}
             onKeyDown={handleShortcut}
-            placeholder="What should the students know?"
+            placeholder={t('announcements.editor.placeholder')}
             className="min-h-[160px] font-mono text-sm"
           />
           <div className="flex items-center justify-between gap-4 text-xs">
@@ -81,8 +84,7 @@ export function MessageEditor({ body, onBodyChange, images, onImagesChange }: Me
             </span>
             {splitsIntoTwoMessages && (
               <span className="text-right text-muted-foreground">
-                Over {CAPTION_LIMIT} characters — the text will arrive as a separate message below
-                the photos.
+                {t('announcements.editor.splitsIntoTwo', { limit: CAPTION_LIMIT })}
               </span>
             )}
           </div>
@@ -91,12 +93,12 @@ export function MessageEditor({ body, onBodyChange, images, onImagesChange }: Me
         {/* The preview is what makes showing raw tags acceptable: the sender
             always has the rendered result in front of them. */}
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Preview</Label>
+          <Label className="text-xs text-muted-foreground">{t('announcements.editor.preview')}</Label>
           <div className="min-h-[64px] rounded-md border border-border bg-muted/30 p-3 text-sm leading-relaxed text-foreground [&_a]:text-primary [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-3 [&_code]:rounded [&_code]:bg-muted [&_code]:px-1 [&_code]:font-mono">
             {visibleText(body).trim() ? (
               <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderPreviewHtml(body)) }} />
             ) : (
-              <span className="text-muted-foreground">Nothing to preview yet.</span>
+              <span className="text-muted-foreground">{t('announcements.editor.nothingToPreview')}</span>
             )}
           </div>
         </div>

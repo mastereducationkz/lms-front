@@ -16,6 +16,10 @@ import {
   nextSort,
   spokeFor,
 } from './TalkReportParts';
+import type { MessageKey } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/meet';
+import '@/lib/i18n/catalogs/meetViews';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -32,14 +36,14 @@ interface Props {
   onOpenLesson: (eventId: number) => void;
 }
 
-const COLUMNS: { key: GroupStudentSort; label: string; hint?: string; left?: boolean }[] = [
-  { key: 'name', label: 'Student', left: true },
-  { key: 'lessons_spoke', label: 'Lessons', hint: 'One bar per lesson with talk time, oldest first — the taller, the longer they spoke; sorted by how many they spoke in', left: true },
-  { key: 'total_seconds', label: 'Spoke, total' },
-  { key: 'avg_seconds', label: 'Avg / lesson', hint: 'Average over the lessons they were in the room for' },
-  { key: 'share_of_student_talk', label: 'Share', hint: 'Of all the students’ talk in these lessons' },
-  { key: 'questions', label: 'Asked', hint: 'Questions they asked in class (lines ending in a question mark). Needs transcripts.' },
-  { key: 'answers', label: 'Answered', hint: 'Teacher questions they answered first, within 20 seconds. Needs transcripts.' },
+const COLUMNS: { key: GroupStudentSort; label: MessageKey; hint?: MessageKey; left?: boolean }[] = [
+  { key: 'name', label: 'meet.participants.student', left: true },
+  { key: 'lessons_spoke', label: 'meetViews.shared.lessons', hint: 'meetViews.groupTalk.lessonsHint', left: true },
+  { key: 'total_seconds', label: 'meetViews.groupTalk.total' },
+  { key: 'avg_seconds', label: 'meetViews.groupTalk.avg', hint: 'meetViews.groupTalk.avgHint' },
+  { key: 'share_of_student_talk', label: 'meetViews.groupTalk.share', hint: 'meetViews.groupTalk.shareHint' },
+  { key: 'questions', label: 'meetViews.groupTalk.asked', hint: 'meetViews.groupTalk.askedHint' },
+  { key: 'answers', label: 'meetViews.groupTalk.answered', hint: 'meetViews.groupTalk.answeredHint' },
 ];
 
 /**
@@ -48,6 +52,7 @@ const COLUMNS: { key: GroupStudentSort; label: string; hint?: string; left?: boo
  * a student answered, and the students' own.
  */
 export function GroupTalkView({ groups, periodDays, groupId, onGroupChange, talkEnabled, onOpenLesson }: Props) {
+  const t = useT();
   const [data, setData] = useState<GroupTalk | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<'off' | 'failed' | null>(null);
@@ -95,60 +100,62 @@ export function GroupTalkView({ groups, periodDays, groupId, onGroupChange, talk
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2.5">
-        <SearchableSelect options={groups} value={groupId} onChange={onGroupChange} placeholder="Choose a group"
-          searchPlaceholder="Search groups…" emptyText="No group matches" className="h-9 w-64 text-sm" />
+        <SearchableSelect options={groups} value={groupId} onChange={onGroupChange} placeholder={t('meetViews.groupTalk.chooseGroup')}
+          searchPlaceholder={t('meetViews.shared.searchGroups')} emptyText={t('meetViews.shared.noGroupMatches')} className="h-9 w-64 text-sm" />
         <span className="text-xs text-muted-foreground">
-          Last {periodDays} days{data ? ` · ${data.totals.lessons} lesson${data.totals.lessons === 1 ? '' : 's'}` : ''} · times are Almaty
+          {[
+            t('meetViews.shared.lastDays', { count: periodDays }),
+            data ? t('common.lessons', { count: data.totals.lessons }) : null,
+            t('meetViews.shared.timesAlmaty'),
+          ].filter(Boolean).join(' · ')}
         </span>
         <button
           type="button"
           onClick={exportCsv}
           disabled={!data || data.lessons.length === 0}
-          title="This group’s talk time, as a spreadsheet"
+          title={t('meetViews.groupTalk.exportHint')}
           className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-[13px] font-medium text-foreground transition hover:bg-muted disabled:opacity-50"
         >
-          <Download className="h-3.5 w-3.5" aria-hidden /> Export CSV
+          <Download className="h-3.5 w-3.5" aria-hidden /> {t('meetViews.shared.exportCsv')}
         </button>
       </div>
 
       {!groupId && (
         <div className="rounded-2xl border border-dashed border-border bg-card/60 px-6 py-14 text-center text-sm text-muted-foreground">
-          {groups.length === 0
-            ? 'No groups with lessons in LMS Meet rooms in this period.'
-            : 'Choose a group to see who speaks in its lessons, who doesn’t, how much of each lesson is the teacher, and the questions asked.'}
+          {t(groups.length === 0 ? 'meetViews.groupTalk.noGroups' : 'meetViews.groupTalk.chooseHint')}
         </div>
       )}
 
       {groupId && loading && (
         <div className="flex items-center gap-2 px-1 py-10 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading talk time…
+          <Loader2 className="h-4 w-4 animate-spin" /> {t('meet.dialog.loadingTalk')}
         </div>
       )}
 
       {groupId && error === 'off' && (
         <p className="rounded-2xl border border-dashed border-border bg-card/60 px-6 py-14 text-center text-sm text-muted-foreground">
-          Talk time is switched off.
+          {t('meet.talkPanel.stateOff')}
         </p>
       )}
 
       {groupId && error === 'failed' && (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card px-6 py-12 text-center shadow-sm">
-          <p className="text-sm text-muted-foreground">Couldn&apos;t load the group&apos;s talk time.</p>
+          <p className="text-sm text-muted-foreground">{t('meetViews.groupTalk.failed')}</p>
           <button type="button" onClick={() => setRetry((n) => n + 1)} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted">
-            <RotateCcw className="h-4 w-4" /> Try again
+            <RotateCcw className="h-4 w-4" /> {t('common.retry')}
           </button>
         </div>
       )}
 
       {groupId && !loading && !error && data === null && (
-        <p className="px-1 py-6 text-sm text-muted-foreground">This group&apos;s talk time isn&apos;t available to you.</p>
+        <p className="px-1 py-6 text-sm text-muted-foreground">{t('meetViews.groupTalk.unavailable')}</p>
       )}
 
       {data && data.lessons.length === 0 && (
         <div className="rounded-2xl border border-dashed border-border bg-card/60 px-6 py-14 text-center text-sm text-muted-foreground">
           {talkEnabled
-            ? `No lessons of ${data.group.name} with talk time in the last ${periodDays} days. Talk time appears about half an hour after each lesson.`
-            : 'Talk time is switched off, and nothing was saved for this group in this period.'}
+            ? t('meetViews.groupTalk.empty', { group: data.group.name, count: periodDays })
+            : t('meetViews.groupTalk.offEmpty')}
         </div>
       )}
 
@@ -161,24 +168,26 @@ export function GroupTalkView({ groups, periodDays, groupId, onGroupChange, talk
               studentSeconds={data.totals.student_seconds}
               teacherShare={data.teacher.avg_share}
               studentsShare={data.teacher.avg_share == null ? null : 1 - data.teacher.avg_share}
-              note={`${data.totals.lessons} lesson${data.totals.lessons === 1 ? '' : 's'}${voices ? ` · ${voices} named by voice` : ''}`}
+              note={`${t('common.lessons', { count: data.totals.lessons })}${voices ? ` · ${t('meetViews.groupTalk.namedByVoice', { count: voices })}` : ''}`}
             />
             <QuestionCards questions={data.questions} lessons={data.totals.lessons} />
             <Card
-              label="Didn’t speak"
-              hint="Times a student was in the room 10+ minutes and never spoke."
-              value={silentTimes ? `${silentTimes} time${silentTimes === 1 ? '' : 's'}` : 'Nobody'}
+              label={t('meet.talkPanel.didntSpeak')}
+              hint={t('meetViews.groupTalk.silentHint')}
+              value={silentTimes ? t('meetViews.groupTalk.silentTimes', { count: silentTimes }) : t('meetViews.groupTalk.nobody')}
               tone={silentTimes ? 'warn' : undefined}
-              sub={silentTimes ? `${silentStudents} of ${students.length} students, at least once` : 'Every student in the room said something'}
+              sub={silentTimes
+                ? t('meetViews.groupTalk.silentStudents', { silent: silentStudents, count: students.length })
+                : t('meetViews.groupTalk.everyoneSpoke')}
             />
           </div>
 
-          <section className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm" aria-label="Students">
+          <section className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm" aria-label={t('meet.talkPanel.students')}>
             <table className="w-full min-w-[860px] text-sm">
               <thead>
                 <tr className="border-b border-border text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                   {COLUMNS.map((c) => (
-                    <SortHeader key={c.key} label={c.label} hint={c.hint} column={c.key} sort={sort} onSort={onSort}
+                    <SortHeader key={c.key} label={t(c.label)} hint={c.hint && t(c.hint)} column={c.key} sort={sort} onSort={onSort}
                       align={c.left ? 'left' : 'right'} className={c.key === 'name' ? 'pl-4' : undefined} />
                   ))}
                 </tr>
@@ -194,12 +203,12 @@ export function GroupTalkView({ groups, periodDays, groupId, onGroupChange, talk
                         <span className="font-medium text-foreground">{s.name}</span>
                         {neverSpoke && (
                           <span className="ml-2 rounded-full bg-amber-100 px-2 py-px text-[10px] font-semibold uppercase tracking-wide text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-                            Silent
+                            {t('meetViews.groupTalk.silent')}
                           </span>
                         )}
                         {neverThere && (
                           <span className="ml-2 rounded-full bg-muted px-2 py-px text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                            Not in the room
+                            {t('meet.participants.notInRoom')}
                           </span>
                         )}
                       </td>
@@ -210,7 +219,7 @@ export function GroupTalkView({ groups, periodDays, groupId, onGroupChange, talk
                             <span className="text-[11px] text-muted-foreground">{spokeInText(marks)}</span>
                           </div>
                         ) : (
-                          <span className="text-xs text-muted-foreground">spoke in {s.lessons_spoke} of {s.lessons_in_room}</span>
+                          <span className="text-xs text-muted-foreground">{t('meet.talk.spokeIn', { spoke: s.lessons_spoke, total: s.lessons_in_room })}</span>
                         )}
                       </td>
                       <td className={cn('px-3 py-2 text-right tabular-nums', s.total_seconds ? 'font-semibold text-foreground' : 'text-muted-foreground/60')}>
@@ -231,14 +240,13 @@ export function GroupTalkView({ groups, periodDays, groupId, onGroupChange, talk
           <DotsLegend />
           {data.questions == null && (
             <p className="px-1 text-[11px] text-muted-foreground">
-              Asked and Answered need lesson transcripts; none of these lessons has one yet.
+              {t('meetViews.groupTalk.needTranscripts')}
             </p>
           )}
 
           <TalkLessonsTable lessons={data.lessons} onOpenLesson={onOpenLesson} show="teacher" />
           <p className="px-1 text-[11px] text-muted-foreground">
-            Teacher&apos;s share is of all speech in the lesson ({percent(data.teacher.avg_share)} on average here).
-            Answered: a student spoke within 20 seconds of the teacher&apos;s question.
+            {t('meetViews.groupTalk.footnote', { share: percent(data.teacher.avg_share) })}
           </p>
         </>
       )}

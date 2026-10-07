@@ -14,6 +14,8 @@ import ReactionOrca from '../mascot/ReactionOrca';
 import { ReactionGlyph } from './reactionIcons';
 import Confetti from '../achievements/Confetti';
 import { LiveAvatar, reducedMotion } from './orcas';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/chatLive';
 
 /** The presenter's content column (max-w-5xl) — reactions never rise over it. */
 export const CONTENT_PX = 1024;
@@ -73,6 +75,7 @@ function BubbleFace({ bubble, size }: { bubble: BubbleState['bubbles'][number]; 
 export function ReactionLayer({ socket, eventId, size = 64, placement = 'presenter' }: {
   socket?: LiveSocket | null; eventId: number; size?: number; placement?: 'presenter' | 'inline';
 }) {
+  const t = useT();
   const state = useBubbles(socket, eventId);
   const viewport = useViewport();
   const { mode, lanes, laneWidth } = reactionLanes(viewport, size, placement);
@@ -110,7 +113,7 @@ export function ReactionLayer({ socket, eventId, size = 64, placement = 'present
             </div>
           ))}
           {lane === 'right' && more && (
-            <span className="absolute bottom-1 right-1 rounded-full bg-black/60 px-3 py-1 text-sm font-semibold text-white">{more} reactions</span>
+            <span className="absolute bottom-1 right-1 rounded-full bg-black/60 px-3 py-1 text-sm font-semibold text-white">{t('chatLive.live.moreReactions', { count: state.overflow })}</span>
           )}
         </div>
       ))}
@@ -173,26 +176,27 @@ function Stat({ value, label, big }: { value: ReactNode; label: string; big?: bo
 
 /** The closing recap: what the class did, the energy, the top participants and the crown. */
 export function Recap({ recap, big = false }: { recap: LiveRecap; big?: boolean }) {
+  const t = useT();
   const energy = recap.energy;
   return (
     <div className={cn('flex flex-col items-center text-center', big ? 'gap-7' : 'gap-5')}>
       <Confetti pieces={big ? 160 : 90} durationMs={big ? 3200 : 2200} />
-      <h2 className={cn('font-bold', big ? 'text-6xl' : 'text-2xl')}><span className="inline-flex items-center gap-3">What a lesson!<PartyPopper className={big ? 'h-14 w-14' : 'h-6 w-6'} aria-hidden /></span></h2>
+      <h2 className={cn('font-bold', big ? 'text-6xl' : 'text-2xl')}><span className="inline-flex items-center gap-3">{t('chatLive.live.whatALesson')}<PartyPopper className={big ? 'h-14 w-14' : 'h-6 w-6'} aria-hidden /></span></h2>
       <div className={cn('flex flex-wrap justify-center', big ? 'gap-16' : 'gap-8')}>
-        <Stat big={big} value={recap.activities} label="activities" />
-        <Stat big={big} value={recap.answers} label="answers" />
-        <Stat big={big} value={<>{energy.total || 0}{energy.total && energy.top ? <> <ReactionGlyph kind={energy.top} className={big ? 'h-10 w-10' : 'h-5 w-5'} /></> : null}</>} label="reactions" />
+        <Stat big={big} value={recap.activities} label={t('chatLive.live.activitiesWord', { count: recap.activities })} />
+        <Stat big={big} value={recap.answers} label={t('chatLive.live.answersWord', { count: recap.answers })} />
+        <Stat big={big} value={<>{energy.total || 0}{energy.total && energy.top ? <> <ReactionGlyph kind={energy.top} className={big ? 'h-10 w-10' : 'h-5 w-5'} /></> : null}</>} label={t('chatLive.live.reactionsWord', { count: energy.total || 0 })} />
       </div>
       {recap.crowned && (
         <div className="flex flex-col items-center gap-3">
-          <p className={cn('font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400', big ? 'text-2xl' : 'text-sm')}>Kasatik of the lesson</p>
+          <p className={cn('font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400', big ? 'text-2xl' : 'text-sm')}>{t('chatLive.live.crown')}</p>
           <CrownedOrca person={recap.crowned} size={big ? 168 : 104} />
         </div>
       )}
       {recap.top.length > 0 && (
         <div className="flex flex-col items-center gap-3">
           <p className={cn('inline-flex items-center gap-2 font-semibold text-muted-foreground', big ? 'text-xl' : 'text-sm')}>
-            <Trophy className={big ? 'h-6 w-6' : 'h-4 w-4'} aria-hidden />Most active
+            <Trophy className={big ? 'h-6 w-6' : 'h-4 w-4'} aria-hidden />{t('chatLive.live.mostActive')}
           </p>
           <div className={cn('flex flex-wrap justify-center', big ? 'gap-10' : 'gap-5')}>
             {recap.top.map((p) => (

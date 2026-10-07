@@ -9,6 +9,9 @@ import { Input } from '../../components/ui/input';
 import StudentHomeworkCards from '../../components/assignments/StudentHomeworkCards';
 import { Group } from '../../types';
 import { filterNonCompletedGroups, sortGroupEntriesByLessonTime, sortGroupsByLessonTime } from '../../lib/groupList';
+import { formatDateTime, type MessageKey } from '@/lib/i18n';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/homework';
 
 interface AssignmentStats {
   total_students: number;
@@ -35,19 +38,18 @@ interface MonitorGroupRaw {
   assignments: { summary: MonitorAssignmentSummary }[];
 }
 
-// Helper to format UTC datetime string to Kazakhstan time
+// Helper to format UTC datetime string to Kazakhstan time (a naive string is read as UTC)
 const formatToKZTime = (dateStr: string | undefined) => {
   if (!dateStr) return '-';
-  // Ensure UTC is properly interpreted by adding Z if not present
-  const utcDateStr = dateStr.endsWith('Z') ? dateStr : dateStr + 'Z';
-  return new Date(utcDateStr).toLocaleDateString('en-US', { 
-    month: 'short', 
-    day: 'numeric', 
-    hour: '2-digit', 
-    minute: '2-digit', 
-    hour12: false, 
-    timeZone: 'Asia/Almaty' 
-  });
+  return formatDateTime(dateStr) || '-';
+};
+
+/** Empty-state copy per status tab (unknown tabs read as "all"). */
+const EMPTY_TAB_COPY: Record<string, [MessageKey, MessageKey]> = {
+  pending: ['homework.list.emptyPendingTitle', 'homework.list.emptyPendingBody'],
+  submitted: ['homework.list.emptySubmittedTitle', 'homework.list.emptySubmittedBody'],
+  graded: ['homework.list.emptyGradedTitle', 'homework.list.emptyGradedBody'],
+  overdue: ['homework.list.emptyOverdueTitle', 'homework.list.emptyOverdueBody'],
 };
 
 interface AssignmentWithStatus {
@@ -83,6 +85,7 @@ const isSubmittedLike = (assignment: AssignmentWithStatus) => {
 
 export default function AssignmentsPage() {
   const { user } = useAuth();
+  const t = useT();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [assignments, setAssignments] = useState<AssignmentWithStatus[]>([]);
@@ -360,7 +363,7 @@ export default function AssignmentsPage() {
       setPreviousHomework(previousData);
     } catch (err) {
       console.error('Failed to load assignments:', err);
-      setError('Failed to load assignments');
+      setError(t('homework.list.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -400,7 +403,7 @@ export default function AssignmentsPage() {
     const byGroup = new Map<string | number, { id: string; name: string; assignments: AssignmentWithStatus[]; is_over?: boolean }>();
     const getGroupKey = (a: AssignmentWithStatus) => a.group_id ?? 'ungrouped';
     const getGroupName = (a: AssignmentWithStatus) =>
-      a.group_name || groups.find(g => g.id === a.group_id)?.name || `Group #${a.group_id || 'Unknown'}`;
+      a.group_name || groups.find(g => g.id === a.group_id)?.name || t('homework.list.groupNumber', { id: a.group_id || '?' });
 
     for (const group of groupsInHomeworkScope) {
       byGroup.set(group.id, {
@@ -413,7 +416,7 @@ export default function AssignmentsPage() {
 
     for (const a of assignmentsByHidden) {
       const key = getGroupKey(a);
-      const name = key === 'ungrouped' ? 'Ungrouped' : getGroupName(a);
+      const name = key === 'ungrouped' ? t('homework.list.ungrouped') : getGroupName(a);
       const id = String(key);
       if (!byGroup.has(key)) {
         byGroup.set(key, { id, name, assignments: [] });
@@ -421,7 +424,7 @@ export default function AssignmentsPage() {
       byGroup.get(key)!.assignments.push(a);
     }
     return sortGroupEntriesByLessonTime(Array.from(byGroup.values()), groupsInHomeworkScope);
-  }, [assignmentsByHidden, groupsInHomeworkScope, groups]);
+  }, [assignmentsByHidden, groupsInHomeworkScope, groups, t]);
 
   const isHeadCuratorMonitor = user?.role === 'head_curator';
 
@@ -537,25 +540,25 @@ export default function AssignmentsPage() {
       case 'graded':
         return (
           <span className={`${baseClasses} bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800`}>
-            Graded
+            {t('homework.status.graded')}
           </span>
         );
       case 'submitted':
         return (
           <span className={`${baseClasses} bg-brand-surface text-brand-subtle-foreground border border-brand-border`}>
-            Submitted
+            {t('homework.status.submitted')}
           </span>
         );
       case 'overdue':
         return (
           <span className={`${baseClasses} bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800`}>
-            Overdue
+            {t('homework.status.overdue')}
           </span>
         );
       default:
         return (
           <span className={`${baseClasses} bg-muted text-muted-foreground border border-border`}>
-            Not Submitted
+            {t('homework.status.notSubmitted')}
           </span>
         );
     }
@@ -585,11 +588,11 @@ export default function AssignmentsPage() {
   if (error) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold">Homework</h1>
+        <h1 className="text-3xl font-bold">{t('homework.list.title')}</h1>
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
           <div className="flex items-center">
             <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 mr-2" />
-            <h3 className="font-semibold text-red-800 dark:text-red-400">Error</h3>
+            <h3 className="font-semibold text-red-800 dark:text-red-400">{t('homework.list.errorTitle')}</h3>
           </div>
           <p className="text-red-600 dark:text-red-400 mt-1">{error}</p>
           <Button 
@@ -597,7 +600,7 @@ export default function AssignmentsPage() {
             variant="outline"
             className="mt-3 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
           >
-            Try Again
+            {t('homework.shared.tryAgain')}
           </Button>
         </div>
       </div>
@@ -611,7 +614,7 @@ export default function AssignmentsPage() {
       : 0;
     return (
       <div className="p-8 space-y-6 max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground uppercase">Homework</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground uppercase">{t('homework.list.title')}</h1>
 
         {monitorRaw === null ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -625,23 +628,23 @@ export default function AssignmentsPage() {
             <div className="flex flex-wrap items-center gap-x-7 gap-y-2 rounded-lg border border-border bg-card px-5 py-3">
               <div className="flex items-baseline gap-1.5">
                 <span className="text-xl font-bold text-foreground tabular-nums">{monitorRollup.groups}</span>
-                <span className="text-xs text-muted-foreground">groups</span>
+                <span className="text-xs text-muted-foreground">{t('homework.monitor.groupsUnit', { count: monitorRollup.groups })}</span>
               </div>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-xl font-bold text-foreground tabular-nums">{monitorRollup.assignments}</span>
-                <span className="text-xs text-muted-foreground">assignments</span>
+                <span className="text-xs text-muted-foreground">{t('homework.monitor.assignmentsUnit', { count: monitorRollup.assignments })}</span>
               </div>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-xl font-bold text-brand tabular-nums">{rollupRate}%</span>
-                <span className="text-xs text-muted-foreground">submitted</span>
+                <span className="text-xs text-muted-foreground">{t('homework.monitor.submittedUnit')}</span>
               </div>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">{monitorRollup.notSubmitted}</span>
-                <span className="text-xs text-muted-foreground">not submitted</span>
+                <span className="text-xs text-muted-foreground">{t('homework.monitor.notSubmittedUnit')}</span>
               </div>
               <div className="flex items-baseline gap-1.5">
                 <span className="text-xl font-bold text-red-600 dark:text-red-400 tabular-nums">{monitorRollup.overdue}</span>
-                <span className="text-xs text-muted-foreground">overdue</span>
+                <span className="text-xs text-muted-foreground">{t('homework.monitor.overdueUnit')}</span>
               </div>
             </div>
 
@@ -650,7 +653,7 @@ export default function AssignmentsPage() {
               <div className="relative w-full max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-muted-foreground" />
                 <Input
-                  placeholder="Search groups..."
+                  placeholder={t('homework.list.searchGroups')}
                   value={groupSearch}
                   onChange={(e) => setGroupSearch(e.target.value)}
                   className="pl-9 bg-card"
@@ -666,7 +669,7 @@ export default function AssignmentsPage() {
                 }`}
               >
                 <AlertCircle className="w-4 h-4" />
-                Needs attention
+                {t('homework.monitor.needsAttention')}
               </button>
               <div className="flex items-center gap-2 ml-auto">
                 <Checkbox
@@ -675,7 +678,7 @@ export default function AssignmentsPage() {
                   onCheckedChange={(checked) => setShowCompletedGroups(checked === true)}
                 />
                 <label htmlFor="show-completed-monitor" className="text-sm text-muted-foreground cursor-pointer select-none">
-                  Show completed groups
+                  {t('homework.list.showCompletedGroups')}
                 </label>
               </div>
             </div>
@@ -685,12 +688,12 @@ export default function AssignmentsPage() {
               <div className="bg-card rounded-xl shadow-sm border border-border p-12 text-center">
                 <ClipboardList className="w-12 h-12 text-gray-400 dark:text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-foreground mb-2">
-                  {needsAttentionOnly ? 'Everything is on track' : 'No homework yet'}
+                  {needsAttentionOnly ? t('homework.monitor.onTrack') : t('homework.list.noHomework')}
                 </h3>
                 <p className="text-muted-foreground">
                   {needsAttentionOnly
-                    ? 'No groups have overdue or unsubmitted homework right now.'
-                    : 'Homework will appear here once teachers create it.'}
+                    ? t('homework.monitor.onTrackBody')
+                    : t('homework.monitor.emptyBody')}
                 </p>
               </div>
             ) : (
@@ -709,12 +712,12 @@ export default function AssignmentsPage() {
                         <h3 className="font-bold text-foreground truncate">{g.name}</h3>
                         {g.isOver && (
                           <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border border-slate-300 dark:border-input text-muted-foreground shrink-0">
-                            Completed
+                            {t('homework.list.groupCompleted')}
                           </span>
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground mb-2.5">
-                        {g.assignmentsCount} assignment{g.assignmentsCount !== 1 ? 's' : ''}
+                        {t('homework.list.assignmentCount', { count: g.assignmentsCount })}
                       </div>
                       <div className="flex items-center gap-2 mb-1">
                         <div className="flex-1 bg-gray-200 dark:bg-secondary rounded-full h-1.5">
@@ -723,17 +726,17 @@ export default function AssignmentsPage() {
                         <span className="text-xs font-medium text-muted-foreground tabular-nums whitespace-nowrap">{pct}%</span>
                       </div>
                       <div className="text-[11px] text-muted-foreground mb-2.5 tabular-nums">
-                        {g.submitted}/{g.expected} submitted
+                        {t('homework.monitor.submittedOf', { submitted: g.submitted, expected: g.expected })}
                       </div>
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
                         {g.overdue > 0 && (
-                          <span className="font-semibold text-red-600 dark:text-red-400">{g.overdue} overdue</span>
+                          <span className="font-semibold text-red-600 dark:text-red-400">{t('homework.monitor.overdueCount', { count: g.overdue })}</span>
                         )}
                         {g.notSubmitted > 0 && (
-                          <span className="font-medium text-amber-600 dark:text-amber-400">{g.notSubmitted} not submitted</span>
+                          <span className="font-medium text-amber-600 dark:text-amber-400">{t('homework.monitor.notSubmittedCount', { count: g.notSubmitted })}</span>
                         )}
                         {g.overdue === 0 && g.notSubmitted === 0 && (
-                          <span className="inline-flex items-center gap-1 font-medium text-green-700 dark:text-green-400"><Check className="h-3.5 w-3.5" aria-hidden="true" />All in</span>
+                          <span className="inline-flex items-center gap-1 font-medium text-green-700 dark:text-green-400"><Check className="h-3.5 w-3.5" aria-hidden="true" />{t('homework.monitor.allIn')}</span>
                         )}
                       </div>
                     </button>
@@ -774,7 +777,7 @@ export default function AssignmentsPage() {
           <div className="flex items-center text-green-600 dark:text-green-400">
             <Calendar className="w-4 h-4 mr-1 text-green-400 dark:text-green-500" />
             <span className="font-medium">{formatToKZTime(assignment.extended_deadline)}</span>
-            <span className="ml-1 text-[9px] bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 px-1 rounded border border-green-100 dark:border-green-800 font-bold uppercase tracking-tight">Ext</span>
+            <span className="ml-1 text-[9px] bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 px-1 rounded border border-green-100 dark:border-green-800 font-bold uppercase tracking-tight">{t('homework.list.extended')}</span>
           </div>
         ) : assignment.due_date ? (
           <div className={`flex items-center ${isOverdue(assignment.due_date) && assignment.status === 'not_submitted' ? 'text-red-600 dark:text-red-400' : ''}`}>
@@ -824,13 +827,13 @@ export default function AssignmentsPage() {
             {/* Lesson */}
             <td className="px-6 py-4 text-muted-foreground text-sm">
               {assignment.lesson_number != null
-                ? <span className="font-medium text-slate-700 dark:text-foreground">Lesson {assignment.lesson_number}</span>
+                ? <span className="font-medium text-slate-700 dark:text-foreground">{t('homework.list.lessonNumber', { number: assignment.lesson_number })}</span>
                 : <span className="text-gray-300 dark:text-muted-foreground">—</span>
               }
             </td>
             {/* Points */}
             <td className="px-6 py-4">
-              <span className="text-sm font-medium text-slate-700 dark:text-foreground">{assignment.max_score ?? 100} pts</span>
+              <span className="text-sm font-medium text-slate-700 dark:text-foreground">{t('homework.list.points', { count: assignment.max_score ?? 100 })}</span>
             </td>
             {/* Submission stats */}
             <td className="px-6 py-4">
@@ -853,16 +856,16 @@ export default function AssignmentsPage() {
                   <div className="flex gap-2 text-[11px]">
                     {stats.graded > 0 && (
                       <span className="flex items-center gap-0.5 text-green-600 dark:text-green-400">
-                        {stats.graded} graded
+                        {t('homework.list.gradedCount', { count: stats.graded })}
                       </span>
                     )}
                     {stats.submitted > 0 && (
                       <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-400">
-                        {stats.submitted} to grade
+                        {t('homework.list.toGrade', { count: stats.submitted })}
                                   </span>
                     )}
                     {stats.graded === 0 && stats.submitted === 0 && (
-                      <span className="text-gray-400 dark:text-muted-foreground">No submissions</span>
+                      <span className="text-gray-400 dark:text-muted-foreground">{t('homework.list.noSubmissions')}</span>
                     )}
                   </div>
                                 </div>
@@ -893,15 +896,15 @@ export default function AssignmentsPage() {
                               <div className="flex items-center justify-end gap-1">
             {isManagerView ? (
               <>
-                <Button onClick={() => navigate(`/homework/${assignment.id}/progress`)} variant="ghost" size="icon" title="View Progress" className="h-8 w-8 text-slate-400 dark:text-muted-foreground hover:text-brand">
+                <Button onClick={() => navigate(`/homework/${assignment.id}/progress`)} variant="ghost" size="icon" title={t('homework.list.viewProgress')} className="h-8 w-8 text-slate-400 dark:text-muted-foreground hover:text-brand">
                                       <Eye className="w-4 h-4" />
                                     </Button>
                 {canEdit && (
                   <>
-                    <Button onClick={() => navigate(`/homework/new?copyFrom=${assignment.id}`)} variant="ghost" size="icon" title="Copy Assignment" className="h-8 w-8 text-slate-400 dark:text-muted-foreground hover:text-brand">
+                    <Button onClick={() => navigate(`/homework/new?copyFrom=${assignment.id}`)} variant="ghost" size="icon" title={t('homework.list.copyAssignment')} className="h-8 w-8 text-slate-400 dark:text-muted-foreground hover:text-brand">
                                       <Copy className="w-4 h-4" />
                                     </Button>
-                    <Button onClick={() => navigate(`/homework/${assignment.id}/edit`)} variant="ghost" size="icon" title="Edit Assignment" className="h-8 w-8 text-slate-400 dark:text-muted-foreground hover:text-brand">
+                    <Button onClick={() => navigate(`/homework/${assignment.id}/edit`)} variant="ghost" size="icon" title={t('homework.list.editAssignment')} className="h-8 w-8 text-slate-400 dark:text-muted-foreground hover:text-brand">
                                       <Edit className="w-4 h-4" />
                                     </Button>
                                     <Button
@@ -915,7 +918,7 @@ export default function AssignmentsPage() {
                                       }}
                                       variant="ghost"
                                       size="icon"
-                                      title={assignment.is_hidden ? "Restore" : "Archive"}
+                                      title={assignment.is_hidden ? t('homework.list.restore') : t('homework.list.archive')}
                                       className={`h-8 w-8 ${assignment.is_hidden ? "text-orange-500 dark:text-orange-400 hover:text-orange-600 dark:hover:text-orange-400" : "text-slate-400 dark:text-muted-foreground hover:text-slate-600 dark:hover:text-gray-400"}`}
                                     >
                                       {assignment.is_hidden ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
@@ -930,7 +933,7 @@ export default function AssignmentsPage() {
                                     variant="ghost"
                                     className="text-brand hover:text-brand-subtle-foreground hover:bg-brand-surface font-bold uppercase tracking-widest text-[10px]"
                                   >
-                                    {assignment.status === 'graded' || assignment.status === 'submitted' ? 'View' : 'Submit'}
+                                    {assignment.status === 'graded' || assignment.status === 'submitted' ? t('homework.list.view') : t('homework.list.submit')}
                                   </Button>
                                 )}
                               </div>
@@ -943,11 +946,11 @@ export default function AssignmentsPage() {
     <div className="space-y-6 @2xl:space-y-8 @2xl:p-8 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight text-foreground uppercase">
-          Homework
+          {t('homework.list.title')}
         </h1>
         {canEdit ? (
           <Button onClick={() => navigate('/homework/new')} variant="default" size="sm">
-            Create Homework
+            {t('homework.list.create')}
           </Button>
         ) : null}
       </div>
@@ -956,11 +959,11 @@ export default function AssignmentsPage() {
       <div style={{ top: 'var(--topbar-h, 0px)' }} className="sticky z-[9] bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-2 -mx-4 px-4 sm:-mx-6 sm:px-6 @2xl:-mx-8 @2xl:px-8 flex flex-wrap items-center gap-4">
         <div className="bg-card rounded-lg p-1 shadow-sm border border-border flex flex-wrap max-w-full">
           {[
-            { key: 'all', label: 'All' },
-            { key: 'pending', label: 'Pending' },
-            { key: 'submitted', label: 'Submitted' },
-            { key: 'graded', label: 'Graded' },
-            { key: 'overdue', label: 'Overdue' }
+            { key: 'all', label: t('homework.list.tabAll') },
+            { key: 'pending', label: t('homework.list.tabPending') },
+            { key: 'submitted', label: t('homework.status.submitted') },
+            { key: 'graded', label: t('homework.status.graded') },
+            { key: 'overdue', label: t('homework.status.overdue') }
           ].map(tab => (
             <button
               key={tab.key}
@@ -977,7 +980,7 @@ export default function AssignmentsPage() {
         {!effectiveOverviewMode && selectedGroup && isManagerView && (
           <Button variant="outline" size="sm" onClick={() => setGroupId('all')} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Back to groups
+            {t('homework.list.backToGroups')}
           </Button>
         )}
 
@@ -990,12 +993,12 @@ export default function AssignmentsPage() {
                 onCheckedChange={(checked) => setShowCompletedGroups(checked === true)}
               />
               <label htmlFor="show-completed-groups" className="text-sm text-muted-foreground cursor-pointer select-none">
-                Show completed groups
+                {t('homework.list.showCompletedGroups')}
               </label>
             </div>
             <div className="flex items-center gap-2">
               <Checkbox id="show-hidden" checked={includeHidden} onCheckedChange={(checked) => setIncludeHidden(checked === true)} />
-              <label htmlFor="show-hidden" className="text-sm text-muted-foreground cursor-pointer select-none">Show archived</label>
+              <label htmlFor="show-hidden" className="text-sm text-muted-foreground cursor-pointer select-none">{t('homework.list.showArchived')}</label>
             </div>
           </div>
         )}
@@ -1007,7 +1010,7 @@ export default function AssignmentsPage() {
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-muted-foreground" />
             <Input
-              placeholder="Search groups..."
+              placeholder={t('homework.list.searchGroups')}
               value={groupSearch}
               onChange={(e) => setGroupSearch(e.target.value)}
               className="pl-9 bg-card"
@@ -1017,8 +1020,8 @@ export default function AssignmentsPage() {
           {filteredGroupsForOverview.length === 0 ? (
             <div className="bg-card rounded-xl shadow-sm border border-border p-12 text-center">
               <ClipboardList className="w-12 h-12 text-gray-400 dark:text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">No homework yet</h3>
-              <p className="text-muted-foreground">Homework will appear here when they are created by your teachers.</p>
+              <h3 className="text-lg font-medium text-foreground mb-2">{t('homework.list.noHomework')}</h3>
+              <p className="text-muted-foreground">{t('homework.list.noHomeworkBody')}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -1053,24 +1056,24 @@ export default function AssignmentsPage() {
                       <h3 className="font-bold text-foreground truncate">{g.name}</h3>
                       {g.is_over && (
                         <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border border-slate-300 dark:border-input text-muted-foreground shrink-0">
-                          Completed
+                          {t('homework.list.groupCompleted')}
                         </span>
                       )}
                     </div>
-                    <div className="text-xs text-muted-foreground mb-2">{total} assignment{total !== 1 ? 's' : ''}</div>
+                    <div className="text-xs text-muted-foreground mb-2">{t('homework.list.assignmentCount', { count: total })}</div>
                     {isManagerView ? (
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
                         <span className={`flex items-center gap-1 font-medium ${toGradeCount > 0 ? "text-amber-600 dark:text-amber-400" : "text-gray-400 dark:text-muted-foreground"}`}>
-                          {toGradeCount} to grade
+                          {t('homework.list.toGrade', { count: toGradeCount })}
                         </span>
                       </div>
                     ) : (
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
-                        {pending > 0 && <span className="text-amber-600 dark:text-amber-400">{pending} pending</span>}
-                        {submitted > 0 && <span className="text-brand">{submitted} submitted</span>}
-                        {graded > 0 && <span className="text-green-600 dark:text-green-400">{graded} graded</span>}
+                        {pending > 0 && <span className="text-amber-600 dark:text-amber-400">{t('homework.list.pendingCount', { count: pending })}</span>}
+                        {submitted > 0 && <span className="text-brand">{t('homework.list.submittedCount', { count: submitted })}</span>}
+                        {graded > 0 && <span className="text-green-600 dark:text-green-400">{t('homework.list.gradedCount', { count: graded })}</span>}
                         {pending === 0 && submitted === 0 && graded === 0 && (
-                          <span className="text-gray-400 dark:text-muted-foreground">All done</span>
+                          <span className="text-gray-400 dark:text-muted-foreground">{t('homework.list.allDone')}</span>
                         )}
                       </div>
                     )}
@@ -1086,10 +1089,10 @@ export default function AssignmentsPage() {
             <div className="bg-card rounded-xl shadow-sm border border-border p-12 text-center">
               <ClipboardList className="w-12 h-12 text-gray-400 dark:text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-medium text-foreground mb-2">
-                {filter === 'all' ? 'No homework in this group' : `No ${filter} homework in this group`}
+                {t(EMPTY_TAB_COPY[filter]?.[0] ?? 'homework.list.emptyAllTitle')}
               </h3>
               <p className="text-muted-foreground">
-                {filter === 'all' ? 'Select another group or create new homework.' : `You don't have any ${filter} homework in this group.`}
+                {t(EMPTY_TAB_COPY[filter]?.[1] ?? 'homework.list.emptyAllBody')}
               </p>
             </div>
           ) : (
@@ -1103,21 +1106,21 @@ export default function AssignmentsPage() {
                   <table className="w-full min-w-[640px] text-sm">
                     <thead className="bg-card text-muted-foreground border-b border-border">
                       <tr>
-                        <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Homework</th>
-                        <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Due Date</th>
+                        <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">{t('homework.list.colHomework')}</th>
+                        <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">{t('homework.list.colDueDate')}</th>
                         {isManagerView ? (
                           <>
-                            <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Lesson</th>
-                            <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Points</th>
-                            <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Submissions</th>
+                            <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">{t('homework.list.colLesson')}</th>
+                            <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">{t('homework.list.colPoints')}</th>
+                            <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">{t('homework.list.colSubmissions')}</th>
                           </>
                         ) : (
                           <>
-                            <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Status</th>
-                            <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Grade</th>
+                            <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">{t('homework.list.colStatus')}</th>
+                            <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">{t('homework.list.colGrade')}</th>
                           </>
                         )}
-                        <th className="text-right px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Action</th>
+                        <th className="text-right px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">{t('homework.list.colAction')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -1130,14 +1133,14 @@ export default function AssignmentsPage() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">
-                    Showing {(page - 1) * PAGE_SIZE + 1}-{Math.min(page * PAGE_SIZE, filteredAssignments.length)} of {filteredAssignments.length}
+                    {t('homework.list.showing', { from: (page - 1) * PAGE_SIZE + 1, to: Math.min(page * PAGE_SIZE, filteredAssignments.length), total: filteredAssignments.length })}
                   </span>
                   <div className="flex gap-2">
                     <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>
-                      Previous
+                      {t('homework.list.previous')}
                     </Button>
                     <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>
-                      Next
+                      {t('homework.list.next')}
                     </Button>
                   </div>
                 </div>
@@ -1150,9 +1153,9 @@ export default function AssignmentsPage() {
               <div className="flex items-center gap-2 pt-2">
                 <Archive className="w-5 h-5 text-slate-400 dark:text-muted-foreground" />
                 <div>
-                  <h2 className="text-lg font-semibold text-foreground">Previous homework</h2>
+                  <h2 className="text-lg font-semibold text-foreground">{t('homework.list.previousHomework')}</h2>
                   <p className="text-sm text-muted-foreground">
-                    Homework from groups you were in before. View only — you cannot submit here anymore.
+                    {t('homework.list.previousHomeworkHint')}
                   </p>
                 </div>
               </div>
@@ -1163,11 +1166,11 @@ export default function AssignmentsPage() {
                   <table className="w-full min-w-[640px] text-sm">
                     <thead className="bg-card text-muted-foreground border-b border-border">
                       <tr>
-                        <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Homework</th>
-                        <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Due Date</th>
-                        <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Status</th>
-                        <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Grade</th>
-                        <th className="text-right px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">Action</th>
+                        <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">{t('homework.list.colHomework')}</th>
+                        <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">{t('homework.list.colDueDate')}</th>
+                        <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">{t('homework.list.colStatus')}</th>
+                        <th className="text-left px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">{t('homework.list.colGrade')}</th>
+                        <th className="text-right px-6 py-3 font-semibold uppercase tracking-wider text-[10px]">{t('homework.list.colAction')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">

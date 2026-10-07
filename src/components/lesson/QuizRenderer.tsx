@@ -37,21 +37,26 @@ import { LineChart, Line, XAxis, YAxis, ReferenceLine, ResponsiveContainer, Tool
 import apiClient from '../../services/api';
 import api from '../../services/api';
 import { toast } from '../Toast';
-import { useT } from '../../lib/i18n/react';
+import { useLocale, useT } from '../../lib/i18n/react';
+import { formatDate as formatDay } from '../../lib/i18n';
 import {
   getAnswerKey,
   getQuestionStatus,
   isAnswerComplete
 } from './quiz/scoring';
 import '@/lib/i18n/catalogs/learning';
+import '@/lib/i18n/catalogs/lessonPlayer';
 
 // Exam mode badge component
-const ExamModeBadge = ({ maxPlays }: { maxPlays: number }) => (
-  <div className="flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-lg text-sm font-medium mt-2">
-    <LockIcon className="w-3.5 h-3.5" aria-hidden="true" />
-    <span>Exam mode · {maxPlays} plays allowed · No pause or rewind</span>
-  </div>
-);
+const ExamModeBadge = ({ maxPlays }: { maxPlays: number }) => {
+  const t = useT();
+  return (
+    <div className="flex items-center justify-center gap-1.5 px-3 py-2 bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 rounded-lg text-sm font-medium mt-2">
+      <LockIcon className="w-3.5 h-3.5" aria-hidden="true" />
+      <span>{t('lessonPlayer.quiz.examMode', { count: maxPlays })}</span>
+    </div>
+  );
+};
 
 
 // Helper to check if content text has visible content
@@ -121,6 +126,7 @@ interface QuizRendererProps {
 
 const QuizRenderer = (props: QuizRendererProps) => {
   const t = useT();
+  const locale = useLocale();
   const {
     quizState,
     quizData,
@@ -220,7 +226,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
         .catch(() => {
           if (cancelled) return;
           setAttemptsHistory([]);
-          toast('Failed to load attempt history', 'error');
+          toast(t('lessonPlayer.quiz.historyFailed'), 'error');
         });
       return () => { cancelled = true; };
     }
@@ -487,19 +493,19 @@ const QuizRenderer = (props: QuizRendererProps) => {
           type="button"
           onClick={() => handleHighlightColorPick('yellow')}
           className="h-6 w-6 rounded-sm bg-amber-300 hover:bg-amber-400 ring-1 ring-black/10 dark:ring-white/15"
-          aria-label="Highlight text with yellow"
+          aria-label={t('lessonPlayer.quiz.highlightYellow')}
         />
         <button
           type="button"
           onClick={() => handleHighlightColorPick('pink')}
           className="h-6 w-6 rounded-sm bg-pink-300 hover:bg-pink-400 ring-1 ring-black/10 dark:ring-white/15"
-          aria-label="Highlight text with pink"
+          aria-label={t('lessonPlayer.quiz.highlightPink')}
         />
         <button
           type="button"
           onClick={() => handleHighlightColorPick('blue')}
           className="h-6 w-6 rounded-sm bg-sky-300 hover:bg-sky-400 ring-1 ring-black/10 dark:ring-white/15"
-          aria-label="Highlight text with blue"
+          aria-label={t('lessonPlayer.quiz.highlightBlue')}
         />
       </div>
     );
@@ -535,7 +541,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
       setReportModalOpen(false);
       setReportMessage('');
       setReportSuggestedAnswer('');
-      toast('Report submitted. Thank you!', 'success');
+      toast(t('lessonPlayer.report.sent'), 'success');
     } catch (error) {
       console.error('Failed to submit error report:', error);
       // The server refuses a report for reasons the student can act on (too short to act on,
@@ -566,6 +572,12 @@ const QuizRenderer = (props: QuizRendererProps) => {
   };
 
   const totalQuestionCount = getTotalQuestionCount();
+
+  // "Question 3 of 12", or "Questions 3-5 of 12" for a question with several gaps.
+  const questionCounter = (from: number, gaps: number) =>
+    gaps > 1
+      ? t('lessonPlayer.quiz.questionsOf', { from, to: from + gaps - 1, total: totalQuestionCount })
+      : t('lessonPlayer.quiz.questionOf', { number: from, total: totalQuestionCount });
 
   // All render functions will be moved here from LessonPage.tsx
   // For now, this is a placeholder.
@@ -629,9 +641,9 @@ const QuizRenderer = (props: QuizRendererProps) => {
               <Button
                 onClick={autoFillCorrectAnswers}
                 className="px-4 py-2 bg-brand-solid hover:bg-brand-solid-hover text-brand-solid-foreground rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
-                title={isTeacher ? "Show Correct Answers" : "Development only: Auto-fill correct answers"}
+                title={isTeacher ? t('lessonPlayer.quiz.showAnswers') : t('lessonPlayer.quiz.devFillTitle')}
               >
-                {isTeacher ? "Show Correct Answers" : "Dev: Fill Answers"}
+                {isTeacher ? t('lessonPlayer.quiz.showAnswers') : t('lessonPlayer.quiz.devFill')}
               </Button>
               {clearAllAnswers && (
                 <Button
@@ -639,9 +651,9 @@ const QuizRenderer = (props: QuizRendererProps) => {
                   variant="outline"
                   className="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
                   disabled={quizAnswers.size === 0 && gapAnswers.size === 0}
-                  title="Clear all answers in this quiz"
+                  title={t('lessonPlayer.quiz.clearAllTitle')}
                 >
-                  Clear All
+                  {t('lessonPlayer.quiz.clearAll')}
                 </Button>
               )}
             </div>
@@ -671,7 +683,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
               quizData.quiz_media_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
                 <ZoomableImage
                   src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${quizData.quiz_media_url}`}
-                  alt="Reference material"
+                  alt={t('lessonPlayer.quiz.referenceMaterial')}
                 />
               ) : (
                 <div className="border border-border rounded-lg bg-muted/50">
@@ -679,7 +691,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                     <iframe
                       src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${quizData.quiz_media_url}#toolbar=0&navpanes=0&scrollbar=1`}
                       className="w-full h-full"
-                      title="Question PDF"
+                      title={t('lessonPlayer.quiz.questionPdf')}
                     />
                   </div>
                 </div>
@@ -708,7 +720,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                     {q.media_url && (
                       <img
                         src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${q.media_url}`}
-                        alt={q.question_text || "Reference image"}
+                        alt={q.question_text || t('lessonPlayer.quiz.referenceImage')}
                         className="max-w-full max-h-[80vh] w-auto h-auto object-contain rounded-lg"
                       />
                     )}
@@ -735,13 +747,13 @@ const QuizRenderer = (props: QuizRendererProps) => {
                   {showUnansweredError && (
                     <div className="mb-3 flex items-center gap-2 text-sm font-medium text-red-600 dark:text-red-400">
                       <AlertCircle className="w-4 h-4" />
-                      <span>Please answer this question</span>
+                      <span>{t('lessonPlayer.quiz.answerThis')}</span>
                     </div>
                   )}
                   {/* Question Number Badge */}
                   <div className="flex items-center gap-3 mb-4">
                     <span className="text-sm font-medium text-muted-foreground">
-                      Question{questionGaps > 1 ? 's' : ''} {displayNumber}{questionGaps > 1 ? `-${displayNumber + questionGaps - 1}` : ''} of {totalQuestionCount}
+                      {questionCounter(displayNumber, questionGaps)}
                     </span>
                   </div>
 
@@ -752,12 +764,12 @@ const QuizRenderer = (props: QuizRendererProps) => {
                         <iframe
                           src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${q.media_url}#toolbar=0&navpanes=0&scrollbar=1`}
                           className="w-full h-64 border border-border rounded-lg"
-                          title="Question PDF"
+                          title={t('lessonPlayer.quiz.questionPdf')}
                         />
                       ) : (
                         <ZoomableImage
                           src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${q.media_url}`}
-                          alt="Question media"
+                          alt={t('lessonPlayer.quiz.questionMedia')}
                         />
                       )}
                     </div>
@@ -854,7 +866,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                   {feedChecked && q.explanation && (
                     <div className="mt-4 space-y-3">
                       <div className="bg-brand-surface border border-brand-border rounded-lg p-4">
-                        <p className="text-sm font-medium text-brand-subtle-foreground mb-1">Explanation:</p>
+                        <p className="text-sm font-medium text-brand-subtle-foreground mb-1">{t('lessonPlayer.quiz.explanationLabel')}</p>
                         <div className="text-brand-subtle-foreground dark:text-brand-surface-foreground text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(q.explanation)) }} />
                       </div>
                     </div>
@@ -865,14 +877,14 @@ const QuizRenderer = (props: QuizRendererProps) => {
                     <button
                       onClick={() => openReportModal(q.id.toString())}
                       disabled={reportedQuestions.has(q.id.toString())}
-                      aria-label={reportedQuestions.has(q.id.toString()) ? 'Already reported' : 'Report an error in this question'}
+                      aria-label={reportedQuestions.has(q.id.toString()) ? t('lessonPlayer.report.alreadyAria') : t('lessonPlayer.report.aria')}
                       className={`inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] text-xs font-medium rounded-lg transition-colors ${
                         reportedQuestions.has(q.id.toString())
                           ? 'bg-muted text-gray-400 dark:text-muted-foreground cursor-not-allowed'
                           : 'text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:text-orange-700 dark:hover:text-orange-400'
                       }`}
                     >
-                      {reportedQuestions.has(q.id.toString()) ? 'Reported' : 'Report'}
+                      {reportedQuestions.has(q.id.toString()) ? t('lessonPlayer.report.reported') : t('lessonPlayer.report.button')}
                     </button>
                   </div>
                 </div>
@@ -891,7 +903,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
               title={isQuizIncomplete ? t('learning.quiz.answerAll', { answered: answeredCount, total: answerableQuestions.length }) : undefined}
               className="px-8 py-3 rounded-lg text-lg font-semibold min-h-[44px] bg-brand-solid hover:bg-brand-solid-hover text-brand-solid-foreground"
             >
-              Check Answers
+              {t('lessonPlayer.quiz.checkAnswers')}
             </Button>
           </div>
         )}
@@ -913,22 +925,22 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center">
                   <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400" aria-hidden="true" />
                 </div>
-                Report an Error
+                {t('lessonPlayer.report.title')}
               </DialogTitle>
               <DialogDescription>
-                Found a mistake in this question? Please describe the error and suggest the correct answer.
+                {t('lessonPlayer.report.description')}
               </DialogDescription>
             </DialogHeader>
 
             <div className="mb-4">
               <label htmlFor="report-message" className="block text-sm font-medium text-foreground mb-1">
-                What&apos;s wrong? <span className="text-red-500 dark:text-red-400">*</span>
+                {t('lessonPlayer.report.whatsWrong')} <span className="text-red-500 dark:text-red-400">*</span>
               </label>
               <textarea
                 id="report-message"
                 value={reportMessage}
                 onChange={(e) => setReportMessage(e.target.value)}
-                placeholder="Describe the error (e.g., the marked answer is incorrect, there's a typo, the question is unclear)..."
+                placeholder={t('lessonPlayer.report.placeholder')}
                 className="w-full h-24 p-3 border border-input rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-background text-foreground"
                 aria-required="true"
               />
@@ -936,7 +948,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
             <div className="mb-4">
               <label className="block text-sm font-medium text-foreground mb-1">
-                What should be the correct answer?
+                {t('lessonPlayer.report.correctLabel')}
               </label>
               {(() => {
                 const reportedQ = getReportedQuestion();
@@ -944,7 +956,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
                 if (reportedQ.question_type === 'single_choice' || reportedQ.question_type === 'media_question') {
                   return (
-                    <div className="space-y-2" role="radiogroup" aria-label="Suggested correct answer">
+                    <div className="space-y-2" role="radiogroup" aria-label={t('lessonPlayer.report.suggestedAria')}>
                       {(reportedQ.options || []).map((opt: any, idx: number) => (
                         <label
                           key={idx}
@@ -972,7 +984,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 if (reportedQ.question_type === 'multiple_choice') {
                   const selectedAnswers = reportSuggestedAnswer ? reportSuggestedAnswer.split('|') : [];
                   return (
-                    <div className="space-y-2" role="group" aria-label="Suggested correct answers">
+                    <div className="space-y-2" role="group" aria-label={t('lessonPlayer.report.suggestedAriaMany')}>
                       {(reportedQ.options || []).map((opt: any, idx: number) => {
                         const optText = opt.text || opt;
                         const isSelected = selectedAnswers.includes(optText);
@@ -1010,12 +1022,12 @@ const QuizRenderer = (props: QuizRendererProps) => {
                     type="text"
                     value={reportSuggestedAnswer}
                     onChange={(e) => setReportSuggestedAnswer(e.target.value)}
-                    placeholder="Enter the correct answer..."
+                    placeholder={t('lessonPlayer.report.correctPlaceholder')}
                     className="w-full p-3 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-background text-foreground"
                   />
                 );
               })()}
-              <p className="text-xs text-muted-foreground mt-1">Optional but helpful for review</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('lessonPlayer.report.optionalHint')}</p>
             </div>
 
             <DialogFooter>
@@ -1028,14 +1040,14 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 }}
                 className="min-h-[44px]"
               >
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button
                 onClick={submitErrorReport}
                 disabled={!reportMessage.trim() || reportSubmitting}
                 className="bg-orange-600 hover:bg-orange-700 text-white min-h-[44px]"
               >
-                {reportSubmitting ? 'Submitting...' : 'Submit Report'}
+                {reportSubmitting ? t('lessonPlayer.report.submitting') : t('lessonPlayer.report.submit')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -1044,15 +1056,15 @@ const QuizRenderer = (props: QuizRendererProps) => {
         <AlertDialog open={isSubmitConfirmOpen} onOpenChange={setIsSubmitConfirmOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Submit task for teacher review?</AlertDialogTitle>
+              <AlertDialogTitle>{t('lessonPlayer.review.confirmTitle')}</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to submit this task? After submission, it will be sent to your teacher for review.
+                {t('lessonPlayer.review.confirmBody')}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
               <AlertDialogAction onClick={handleDialogConfirmSubmission}>
-                Submit task
+                {t('lessonPlayer.review.confirm')}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -1066,11 +1078,11 @@ const QuizRenderer = (props: QuizRendererProps) => {
                   <button
                     type="button"
                     onClick={() => setIsQuizNavCollapsed(false)}
-                    title="Show question navigator"
+                    title={t('lessonPlayer.navigator.show')}
                     className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <ChevronUp className="w-3.5 h-3.5" />
-                    {answeredCount}/{answerableQuestions.length} answered
+                    {t('lessonPlayer.navigator.answeredCount', { answered: answeredCount, total: answerableQuestions.length })}
                   </button>
                 </div>
               ) : (
@@ -1079,7 +1091,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                     <button
                       type="button"
                       onClick={() => setIsQuizNavCollapsed(true)}
-                      title="Hide question navigator"
+                      title={t('lessonPlayer.navigator.hide')}
                       className="shrink-0 p-1 text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <ChevronDown className="w-4 h-4" />
@@ -1102,7 +1114,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                               document.getElementById(`question-${q.id}`)
                                 ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                             }}
-                            title={answered ? `Question ${i + 1} — answered` : `Question ${i + 1} — not answered`}
+                            title={answered ? t('lessonPlayer.navigator.answered', { number: i + 1 }) : t('lessonPlayer.navigator.unanswered', { number: i + 1 })}
                             className={`shrink-0 w-9 h-9 rounded-md text-sm font-semibold flex items-center justify-center border transition-colors ${
                               answered
                                 ? 'bg-brand-solid border-brand text-brand-solid-foreground hover:bg-brand-solid-hover'
@@ -1126,7 +1138,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                       title={isQuizIncomplete ? t('learning.quiz.answerAll', { answered: answeredCount, total: answerableQuestions.length }) : undefined}
                       className="shrink-0 whitespace-nowrap text-xs sm:text-sm font-medium border-brand text-brand hover:bg-brand-surface"
                     >
-                      Check Answers
+                      {t('lessonPlayer.quiz.checkAnswers')}
                     </Button>
                   </div>
                 </div>
@@ -1146,13 +1158,13 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 {!isPassed && (
                   <div className="p-4 bg-red-100 dark:bg-red-900/20 border border-red-300 dark:border-red-800 rounded-lg mb-4">
                     <p className="text-red-900 dark:text-red-400 font-semibold text-center">
-                      Score: {Math.round(scorePercentage)}% (minimum {passingScorePercent}% required to continue)
+                      {t('lessonPlayer.quiz.belowPass', { score: Math.round(scorePercentage), passing: passingScorePercent })}
                     </p>
                     <p className="text-red-800 dark:text-red-400 text-sm mt-2 text-center">
-                      Please try again to improve your score
+                      {t('lessonPlayer.quiz.tryAgain')}
                     </p>
                     <p className="text-red-800 dark:text-red-400 text-sm mt-2 text-center">
-                      Correct answers unlock once you pass. Red marks your answer.
+                      {t('lessonPlayer.quiz.answersLocked')}
                     </p>
                   </div>
                 )}
@@ -1174,7 +1186,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                     }}
                     className="bg-green-600 hover:bg-green-700 text-white transition-all text-lg font-semibold items-center content-center px-10"
                   >
-                    {isPassed ? 'Continue to Next Step' : 'Retry Quiz'}
+                    {isPassed ? t('lessonPlayer.quiz.continueStep') : t('lessonPlayer.quiz.retry')}
                   </Button>
 
                   {(!isPassed && (import.meta.env.DEV || isTeacher)) && (
@@ -1183,7 +1195,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                       variant="outline"
                       className="border-green-600 dark:border-green-500 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 text-lg font-semibold"
                     >
-                      Show Correct Answers
+                      {t('lessonPlayer.quiz.showAnswers')}
                     </Button>
                   )}
                 </div>
@@ -1214,10 +1226,10 @@ const QuizRenderer = (props: QuizRendererProps) => {
           {/* Title */}
           <div className="space-y-3">
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white dark:text-brand-surface-foreground leading-tight">
-              {quizData?.title || 'Quiz incoming!'}
+              {quizData?.title || t('lessonPlayer.titleScreen.fallback')}
             </h1>
             <p className="text-[15px] md:text-[18px] text-blue-100 dark:text-muted-foreground font-light">
-              it's your time to shine
+              {t('lessonPlayer.titleScreen.tagline')}
             </p>
           </div>
 
@@ -1226,22 +1238,22 @@ const QuizRenderer = (props: QuizRendererProps) => {
               onClick={startQuiz}
               className="px-10 py-4 bg-card text-foreground border border-border text-lg font-bold hover:bg-accent dark:bg-brand-solid dark:text-brand-solid-foreground dark:border-transparent dark:hover:bg-brand-solid-hover relative z-20"
             >
-              Start Practice
+              {t('lessonPlayer.titleScreen.start')}
             </Button>
 
             <div className="inline-flex flex-wrap items-center justify-center gap-x-2 text-white dark:text-brand-surface-foreground text-base md:text-lg">
-              <span className="font-medium">{totalQuestionCount} question{totalQuestionCount !== 1 ? 's' : ''}</span>
-              <span className="text-blue-200 dark:text-muted-foreground">• pass {passingScorePercent}%+</span>
+              <span className="font-medium">{t('lessonPlayer.common.questions', { count: totalQuestionCount })}</span>
+              <span className="text-blue-200 dark:text-muted-foreground">{t('lessonPlayer.titleScreen.pass', { percent: passingScorePercent })}</span>
             </div>
             {(import.meta.env.DEV || isTeacher) && (
               <Button
                 onClick={autoFillCorrectAnswers}
                 variant="ghost"
                 className="text-white dark:text-muted-foreground hover:bg-white/10 mt-2 flex items-center gap-2"
-                title={isTeacher ? "Show Correct Answers" : "Development only: Auto-fill correct answers"}
+                title={isTeacher ? t('lessonPlayer.quiz.showAnswers') : t('lessonPlayer.quiz.devFillTitle')}
               >
                 {isTeacher ? <HelpCircle className="w-4 h-4" aria-hidden="true" /> : <Wrench className="w-4 h-4" aria-hidden="true" />} 
-                {isTeacher ? "Show Correct Answers" : "Dev: Fill Answers"}
+                {isTeacher ? t('lessonPlayer.quiz.showAnswers') : t('lessonPlayer.quiz.devFill')}
               </Button>
             )}
           </div>
@@ -1256,12 +1268,12 @@ const QuizRenderer = (props: QuizRendererProps) => {
   const renderQuestionMap = () => {
     if (!questions || questions.length <= 1) return null;
     return (
-      <div className="pt-8 flex flex-wrap justify-center gap-1.5" aria-label="Question overview">
+      <div className="pt-8 flex flex-wrap justify-center gap-1.5" aria-label={t('lessonPlayer.map.aria')}>
         {questions.map((mapQuestion: any, i: number) => {
           const key = getAnswerKey(mapQuestion);
           const isCurrent = i === currentQuestionIndex;
           let tone = 'bg-muted text-muted-foreground';
-          let label = 'not answered yet';
+          let label = t('lessonPlayer.map.notAnswered');
           if (i < currentQuestionIndex) {
             const status = getQuestionStatus(
               mapQuestion,
@@ -1270,21 +1282,21 @@ const QuizRenderer = (props: QuizRendererProps) => {
               { isSpecialGroupStudent }
             );
             if (status.key === 'correct') {
-              tone = 'bg-green-600 text-white'; label = 'correct';
+              tone = 'bg-green-600 text-white'; label = t('lessonPlayer.map.correct');
             } else if (status.key === 'incorrect') {
-              tone = 'bg-red-500 text-white'; label = 'incorrect';
+              tone = 'bg-red-500 text-white'; label = t('lessonPlayer.map.incorrect');
             } else if (status.key === 'partial') {
-              tone = 'bg-amber-500 text-white'; label = 'partly correct';
+              tone = 'bg-amber-500 text-white'; label = t('lessonPlayer.map.partial');
             } else if (status.key === 'unscored') {
-              label = 'not scored'; // an image block: no point, never red
+              label = t('lessonPlayer.map.unscored'); // an image block: no point, never red
             } else {
-              tone = 'bg-muted-foreground/40 text-white'; label = 'needs review';
+              tone = 'bg-muted-foreground/40 text-white'; label = t('lessonPlayer.map.review');
             }
           }
           return (
             <span
               key={mapQuestion.id ?? i}
-              title={`Question ${i + 1} — ${isCurrent ? 'current' : label}`}
+              title={t('lessonPlayer.map.item', { number: i + 1, state: isCurrent ? t('lessonPlayer.map.current') : label })}
               className={`h-6 w-6 rounded text-[10px] font-medium flex items-center justify-center ${tone} ${
                 isCurrent ? 'ring-2 ring-primary ring-offset-1 ring-offset-background' : ''
               }`}
@@ -1342,7 +1354,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
               {q.media_url && (
                 <img
                   src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${q.media_url}`}
-                  alt={q.question_text || "Reference image"}
+                  alt={q.question_text || t('lessonPlayer.quiz.referenceImage')}
                   className="max-w-full max-h-[80vh] w-auto h-auto object-contain rounded-lg"
                 />
               )}
@@ -1358,7 +1370,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
               onClick={nextQuestion}
               className="px-8 py-3 bg-brand-solid hover:bg-brand-solid-hover text-brand-solid-foreground rounded-lg text-lg font-semibold transition-all duration-200"
             >
-              Continue
+              {t('lessonPlayer.common.continue')}
               <ChevronRight className="w-5 h-5 ml-2" />
             </Button>
           </div>
@@ -1381,7 +1393,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
             renders, so answering changes the answer area and nothing else. */}
         <div className="space-y-4">
           <div className="text-sm text-muted-foreground">
-            Question{questionGaps > 1 ? 's' : ''} {displayNumber}{questionGaps > 1 ? `-${displayNumber + questionGaps - 1}` : ''} of {totalQuestionCount}
+            {questionCounter(displayNumber, questionGaps)}
           </div>
 
           {(import.meta.env.DEV || isTeacher) && (
@@ -1391,10 +1403,10 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 variant="outline"
                 size="sm"
                 className="text-primary border-primary/30 hover:bg-primary/10 flex items-center gap-2"
-                title={isTeacher ? "Show Correct Answers" : "Development only: Auto-fill correct answers"}
+                title={isTeacher ? t('lessonPlayer.quiz.showAnswers') : t('lessonPlayer.quiz.devFillTitle')}
               >
                 {isTeacher ? <HelpCircle className="w-3 h-3" aria-hidden="true" /> : <Wrench className="w-3 h-3" aria-hidden="true" />}
-                {isTeacher ? "Show Correct Answers" : "Dev: Fill Answers"}
+                {isTeacher ? t('lessonPlayer.quiz.showAnswers') : t('lessonPlayer.quiz.devFill')}
               </Button>
               {clearAllAnswers && (
                 <Button
@@ -1402,9 +1414,9 @@ const QuizRenderer = (props: QuizRendererProps) => {
                   variant="outline"
                   size="sm"
                   disabled={quizAnswers.size === 0 && gapAnswers.size === 0}
-                  title="Clear all answers in this quiz"
+                  title={t('lessonPlayer.quiz.clearAllTitle')}
                 >
-                  Clear All
+                  {t('lessonPlayer.quiz.clearAll')}
                 </Button>
               )}
             </div>
@@ -1434,7 +1446,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
               quizData.quiz_media_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
                 <ZoomableImage
                   src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${quizData.quiz_media_url}`}
-                  alt="Reference material"
+                  alt={t('lessonPlayer.quiz.referenceMaterial')}
                 />
               ) : (
                 <div className="border border-border rounded-lg bg-muted/50">
@@ -1442,7 +1454,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                     <iframe
                       src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${quizData.quiz_media_url}#toolbar=0&navpanes=0&scrollbar=1`}
                       className="w-full h-full"
-                      title="Question PDF"
+                      title={t('lessonPlayer.quiz.questionPdf')}
                     />
                   </div>
                 </div>
@@ -1466,12 +1478,12 @@ const QuizRenderer = (props: QuizRendererProps) => {
                   <iframe
                     src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${q.media_url}#toolbar=0&navpanes=0&scrollbar=1`}
                     className="w-full h-64 border border-border rounded-lg"
-                    title="Question PDF"
+                    title={t('lessonPlayer.quiz.questionPdf')}
                   />
                 ) : (
                   <ZoomableImage
                     src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${q.media_url}`}
-                    alt="Question media"
+                    alt={t('lessonPlayer.quiz.questionMedia')}
                   />
                 )}
               </div>
@@ -1503,7 +1515,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 />
                 {isSpecialGroupStudent && (
                   <p className="mt-2 text-sm text-amber-700 dark:text-amber-400">
-                    This question requires teacher review. Your answer will be saved without grading.
+                    {t('lessonPlayer.quiz.teacherReview')}
                   </p>
                 )}
               </>
@@ -1575,8 +1587,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
             className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
           >
             {q.question_type === 'short_answer' || q.question_type === 'media_open_question' || q.question_type === 'long_text'
-              ? 'Submit to Teacher'
-              : 'Check Answer'}
+              ? t('lessonPlayer.quiz.submitToTeacher')
+              : t('lessonPlayer.quiz.checkAnswer')}
           </Button>
         </div>
 
@@ -1596,13 +1608,12 @@ const QuizRenderer = (props: QuizRendererProps) => {
     const questionGaps = (question.question_type === 'fill_blank' || question.question_type === 'text_completion')
       ? (question.content_text || question.question_text || '').match(/\[\[(.*?)\]\]/g)?.length || 1
       : 1;
-    const currentEndNumber = displayNumber + questionGaps - 1;
 
     return (
       <div className="w-full md:max-w-4xl md:mx-auto space-y-4 md:space-y-8 md:p-6">
         {/* Counter only — no progress bar, matching the question view. */}
         <div className="text-sm text-muted-foreground">
-          Question{questionGaps > 1 ? 's' : ''} {displayNumber}{questionGaps > 1 ? `-${currentEndNumber}` : ''} of {totalQuestionCount}
+          {questionCounter(displayNumber, questionGaps)}
         </div>
 
         {/* Exam mode badge - shown outside audio player */}
@@ -1628,7 +1639,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
               quizData.quiz_media_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
                 <ZoomableImage
                   src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${quizData.quiz_media_url}`}
-                  alt="Reference material"
+                  alt={t('lessonPlayer.quiz.referenceMaterial')}
                 />
               ) : (
                 <div className="border border-border rounded-lg bg-muted/50">
@@ -1636,7 +1647,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                     <iframe
                       src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${quizData.quiz_media_url}#toolbar=0&navpanes=0&scrollbar=1`}
                       className="w-full h-full"
-                      title="Question PDF"
+                      title={t('lessonPlayer.quiz.questionPdf')}
                     />
                   </div>
                 </div>
@@ -1655,12 +1666,12 @@ const QuizRenderer = (props: QuizRendererProps) => {
                   <iframe
                     src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${question.media_url}#toolbar=0&navpanes=0&scrollbar=1`}
                     className="w-full h-64 border border-border rounded-lg"
-                    title="Question PDF"
+                    title={t('lessonPlayer.quiz.questionPdf')}
                   />
                 ) : (
                   <ZoomableImage
                     src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${question.media_url}`}
-                    alt="Question media"
+                    alt={t('lessonPlayer.quiz.questionMedia')}
                   />
                 )}
               </div>
@@ -1745,7 +1756,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                               ? 'bg-green-200 dark:bg-green-900/30 text-green-800 dark:text-green-400 border-2 border-green-300 dark:border-green-700'
                               : 'bg-red-200 dark:bg-red-900/30 text-red-800 dark:text-red-400 border-2 border-red-300 dark:border-red-700'
                               }`}>
-                              {userAnswer || `[Gap ${idx + 1}]`}
+                              {userAnswer || t('lessonPlayer.quiz.gap', { number: idx + 1 })}
                               {/* Correct answer hidden */}
                             </span>
                           );
@@ -1761,7 +1772,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 rather than a jump. Respects prefers-reduced-motion via motion-safe. */}
             {question.explanation && (
               <div className="mt-8 p-6 bg-muted/40 rounded-xl border border-border motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300">
-                <h5 className="text-sm font-semibold text-foreground mb-2">Explanation</h5>
+                <h5 className="text-sm font-semibold text-foreground mb-2">{t('lessonPlayer.quiz.explanation')}</h5>
                 <div className="text-foreground/80 leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(question.explanation)) }} />
               </div>
             )}
@@ -1775,7 +1786,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
             className="group btn-primary"
           >
             <span className="flex items-center gap-3">
-              {currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'Finish Quiz'}
+              {currentQuestionIndex < questions.length - 1 ? t('lessonPlayer.quiz.nextQuestion') : t('lessonPlayer.quiz.finish')}
               <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform duration-300" />
             </span>
           </Button>
@@ -1800,19 +1811,18 @@ const QuizRenderer = (props: QuizRendererProps) => {
       return (
         <div className="w-full md:max-w-2xl md:mx-auto text-center space-y-6 md:p-6">
           <h1 className="text-3xl font-bold text-foreground">
-            Submission Received
+            {t('lessonPlayer.pending.title')}
           </h1>
           <div className="p-4 md:p-8 rounded-2xl border bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
              <ClipboardList className="mx-auto mb-4 h-12 w-12 text-yellow-700 dark:text-yellow-400" strokeWidth={1.5} aria-hidden="true" />
-             <h2 className="text-xl font-bold text-yellow-800 dark:text-yellow-400 mb-2">Pending Teacher Review</h2>
+             <h2 className="text-xl font-bold text-yellow-800 dark:text-yellow-400 mb-2">{t('lessonPlayer.pending.subtitle')}</h2>
              <p className="text-yellow-700 dark:text-yellow-400">
-               Your quiz includes long text questions that require manual grading. 
-               Your score will be updated once the teacher reviews your answers.
+               {t('lessonPlayer.pending.body')}
              </p>
           </div>
           <div className="flex justify-center">
              <Button onClick={goToNextStep} className="bg-brand-solid hover:bg-brand-solid-hover text-brand-solid-foreground">
-               Continue to Next Step
+               {t('lessonPlayer.quiz.continueStep')}
              </Button>
           </div>
         </div>
@@ -1852,7 +1862,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
         q,
         quizAnswers.get(key),
         gapAnswers.get(key),
-        { isSpecialGroupStudent }
+        { isSpecialGroupStudent },
+        locale
       );
       return { key: status.key as ReviewStatusKey, label: status.label, className: status.className };
     };
@@ -1862,8 +1873,8 @@ const QuizRenderer = (props: QuizRendererProps) => {
         <div className="w-full md:max-w-4xl md:mx-auto space-y-4 md:space-y-6 md:p-4">
           <div className="rounded-xl border border-border/60 bg-background/60 px-4 py-4 mb-2">
             <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold text-foreground">Correct Answers</h2>
-              <p className="text-muted-foreground">Review your answers below</p>
+              <h2 className="text-2xl font-bold text-foreground">{t('lessonPlayer.answers.title')}</h2>
+              <p className="text-muted-foreground">{t('lessonPlayer.answers.subtitle')}</p>
             </div>
             <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
               <Button
@@ -1871,14 +1882,14 @@ const QuizRenderer = (props: QuizRendererProps) => {
                 variant="outline"
                 className="px-4 py-2 text-sm"
               >
-                Back to Results
+                {t('lessonPlayer.answers.back')}
               </Button>
               {!hasLongText && !singleAttempt && (
                 <Button
                   onClick={resetQuiz}
                   className="px-4 py-2 text-sm"
                 >
-                  Retake Quiz
+                  {t('lessonPlayer.quiz.retake')}
                 </Button>
               )}
             </div>
@@ -1901,7 +1912,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                     {/* Question Number Badge */}
                     <div className="flex items-center justify-between gap-3 mb-4">
                       <span className="text-sm font-medium text-muted-foreground">
-                        Question{questionGaps > 1 ? 's' : ''} {displayNumber}{questionGaps > 1 ? `-${displayNumber + questionGaps - 1}` : ''} of {totalQuestionCount}
+                        {questionCounter(displayNumber, questionGaps)}
                       </span>
                       <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${reviewStatus.className}`}>
                         {reviewStatus.label}
@@ -1915,12 +1926,12 @@ const QuizRenderer = (props: QuizRendererProps) => {
                           <iframe
                             src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${q.media_url}#toolbar=0&navpanes=0&scrollbar=1`}
                             className="w-full h-64 border rounded-lg"
-                            title="Question PDF"
+                            title={t('lessonPlayer.quiz.questionPdf')}
                           />
                         ) : (
                           <ZoomableImage
                             src={`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000'}${q.media_url}`}
-                            alt="Question media"
+                            alt={t('lessonPlayer.quiz.questionMedia')}
                           />
                         )}
                       </div>
@@ -1995,7 +2006,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
                     {q.explanation && (
                       <div className="mt-4 space-y-3">
                         <div className="bg-brand-surface border border-brand-border rounded-lg p-4">
-                          <p className="text-sm font-medium text-brand-subtle-foreground mb-1">Explanation:</p>
+                          <p className="text-sm font-medium text-brand-subtle-foreground mb-1">{t('lessonPlayer.quiz.explanationLabel')}</p>
                           <div className="text-brand-subtle-foreground dark:text-brand-surface-foreground text-sm prose prose-sm dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(q.explanation)) }} />
                         </div>
                       </div>
@@ -2015,10 +2026,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
     const previousAttempt = previousAttempts.length > 0 ? previousAttempts[previousAttempts.length - 1] : null;
     const scoreDiff = previousAttempt ? percentage - Math.round(previousAttempt.score_percentage) : null;
 
-    const formatDate = (dateStr: string) => {
-      const d = new Date(dateStr);
-      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    };
+    const formatDate = (dateStr: string) => formatDay(dateStr, { month: 'short', day: 'numeric' }, locale);
 
     const chartData = attemptsHistory.map((a: any, i: number) => ({
       attempt: i + 1,
@@ -2030,10 +2038,10 @@ const QuizRenderer = (props: QuizRendererProps) => {
       <div className="w-full max-w-3xl mx-auto text-center space-y-4 py-6 md:py-10">
         {isPassed && <QuizConfetti />}
         <h2 className="text-3xl font-bold text-foreground">
-          {isPassed ? 'Nice work!' : 'Keep going!'}
+          {isPassed ? t('lessonPlayer.result.passed') : t('lessonPlayer.result.notPassed')}
         </h2>
         <p className="text-base text-muted-foreground">
-          {isPassed ? 'You passed the quiz' : "You're making progress — try again"}
+          {isPassed ? t('lessonPlayer.result.passedSub') : t('lessonPlayer.result.notPassedSub')}
         </p>
 
         <div className="w-full p-6 md:p-8 rounded-2xl bg-card border border-border/70">
@@ -2046,66 +2054,66 @@ const QuizRenderer = (props: QuizRendererProps) => {
               </div>
               <p className="text-lg text-muted-foreground">
                 {hasTeacherScore
-                  ? 'Graded by teacher'
-                  : `${displayedCorrectItems} out of ${totalItems} ${totalItems === 1 ? 'answer' : 'answers'} correct`}
+                  ? t('lessonPlayer.result.graded')
+                  : t('lessonPlayer.result.correctOf', { correct: displayedCorrectItems, count: totalItems })}
               </p>
 
               {scoreDiff !== null && scoreDiff > 0 && (
                 <p className="text-base font-medium text-green-600 dark:text-green-400">
-                  +{scoreDiff}% from last attempt
+                  {t('lessonPlayer.result.better', { diff: scoreDiff })}
                 </p>
               )}
               {scoreDiff !== null && scoreDiff < 0 && (
                 <p className="text-base font-medium text-muted-foreground">
-                  {scoreDiff}% from last attempt
+                  {t('lessonPlayer.result.worse', { diff: scoreDiff })}
                 </p>
               )}
               {scoreDiff !== null && scoreDiff === 0 && (
                 <p className="text-base text-muted-foreground">
-                  Same score as last time
+                  {t('lessonPlayer.result.same')}
                 </p>
               )}
 
               {!isPassed && (
                 <p className="text-base text-muted-foreground">
-                  Score at least {passingScorePercent}% to continue
+                  {t('lessonPlayer.result.needAtLeast', { percent: passingScorePercent })}
                 </p>
               )}
             </div>
 
             {hasTeacherScore ? (
               <div className="rounded-lg p-4 bg-muted/50 text-center max-w-sm mx-auto">
-                <div className="text-base text-muted-foreground">Graded by teacher</div>
+                <div className="text-base text-muted-foreground">{t('lessonPlayer.result.graded')}</div>
                 <div className="text-2xl font-bold text-foreground mt-1">{percentage}%</div>
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto">
                 <div className="rounded-lg p-3 bg-muted/50 text-center">
                   <div className="text-2xl font-bold text-green-600 dark:text-green-400">{displayedCorrectItems}</div>
-                  <div className="text-base text-muted-foreground">Correct</div>
+                  <div className="text-base text-muted-foreground">{t('lessonPlayer.result.correct')}</div>
                 </div>
                 <div className="rounded-lg p-3 bg-muted/50 text-center">
                   <div className="text-2xl font-bold text-red-500 dark:text-red-400">{displayedIncorrectItems}</div>
-                  <div className="text-base text-muted-foreground">Incorrect</div>
+                  <div className="text-base text-muted-foreground">{t('lessonPlayer.result.incorrect')}</div>
                 </div>
                 <div className="rounded-lg p-3 bg-muted/50 text-center">
                   <div className="text-2xl font-bold text-foreground">{totalItems}</div>
-                  <div className="text-base text-muted-foreground">Total</div>
+                  <div className="text-base text-muted-foreground">{t('lessonPlayer.result.total')}</div>
                 </div>
               </div>
             )}
 
             {chartData.length === 1 && (
-              <p className="text-base text-muted-foreground text-center">This is your first attempt</p>
+              <p className="text-base text-muted-foreground text-center">{t('lessonPlayer.result.firstAttempt')}</p>
             )}
 
             {chartData.length > 1 && (
               <div>
-                <h3 className="text-base font-semibold text-foreground mb-3 text-left">Your attempts</h3>
+                <h3 className="text-base font-semibold text-foreground mb-3 text-left">{t('lessonPlayer.result.attempts')}</h3>
                 <table className="sr-only">
-                  <caption>Score history across attempts</caption>
+                  <caption>{t('lessonPlayer.result.historyCaption')}</caption>
                   <thead>
-                    <tr><th>Attempt</th><th>Date</th><th>Score (%)</th></tr>
+                    <tr><th>{t('lessonPlayer.result.colAttempt')}</th><th>{t('lessonPlayer.result.colDate')}</th><th>{t('lessonPlayer.result.colScore')}</th></tr>
                   </thead>
                   <tbody>
                     {chartData.map((row: any) => (
@@ -2135,10 +2143,10 @@ const QuizRenderer = (props: QuizRendererProps) => {
                       className="fill-muted-foreground"
                     />
                     <Tooltip
-                      formatter={(value: number) => [`${value}%`, 'Score']}
+                      formatter={(value: number) => [`${value}%`, t('lessonPlayer.result.tooltipScore')]}
                       labelFormatter={(_label: string, payload: readonly any[]) => {
                         if (payload && payload[0]) {
-                          return `Attempt ${payload[0].payload.attempt} — ${payload[0].payload.date}`;
+                          return t('lessonPlayer.result.tooltipLabel', { number: payload[0].payload.attempt, date: payload[0].payload.date });
                         }
                         return '';
                       }}
@@ -2173,7 +2181,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
         {quizAttempt && quizAttempt.feedback && (
           <div className="w-full p-5 rounded-2xl bg-card border border-border/70 text-left">
-            <h3 className="text-sm font-semibold text-foreground mb-1">Teacher Feedback</h3>
+            <h3 className="text-sm font-semibold text-foreground mb-1">{t('lessonPlayer.result.feedback')}</h3>
             <div className="text-sm text-muted-foreground prose dark:prose-invert max-w-none">
               <p>{quizAttempt.feedback}</p>
             </div>
@@ -2191,7 +2199,7 @@ const QuizRenderer = (props: QuizRendererProps) => {
 
         <div className="flex flex-col sm:flex-row justify-center gap-3 flex-wrap pt-2">
           <Button onClick={reviewQuiz} variant="outline" className="min-h-[44px]">
-            Review Answers
+            {t('lessonPlayer.result.review')}
           </Button>
 
           {canRevealCorrectAnswers(isPassed) && (
@@ -2199,13 +2207,13 @@ const QuizRenderer = (props: QuizRendererProps) => {
               onClick={() => setShowAllAnswers(true)}
               className="bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700 text-white min-h-[44px]"
             >
-              Show Correct Answers
+              {t('lessonPlayer.quiz.showAnswers')}
             </Button>
           )}
 
           {!hasLongText && !singleAttempt && (
             <Button onClick={resetQuiz} variant="outline">
-              Retake Quiz
+              {t('lessonPlayer.quiz.retake')}
             </Button>
           )}
         </div>

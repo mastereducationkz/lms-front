@@ -8,6 +8,8 @@ import {
   DialogTitle,
 } from './ui/dialog';
 import { Button } from './ui/button';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/lessonPlayer';
 
 interface UnsavedChangesDialogProps {
   open: boolean;
@@ -21,9 +23,10 @@ export function UnsavedChangesDialog({
   open,
   onConfirm,
   onCancel,
-  title = 'Unsaved Changes',
-  description = 'You have unsaved changes. Are you sure you want to leave this page? Your changes will be lost.'
+  title,
+  description
 }: UnsavedChangesDialogProps) {
+  const t = useT();
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onCancel()}>
       <DialogContent className="sm:max-w-[500px]">
@@ -32,10 +35,10 @@ export function UnsavedChangesDialog({
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-yellow-100 dark:bg-yellow-900/40">
               <AlertTriangle className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
             </div>
-            <DialogTitle className="text-xl font-semibold">{title}</DialogTitle>
+            <DialogTitle className="text-xl font-semibold">{title ?? t('lessonPlayer.unsaved.title')}</DialogTitle>
           </div>
           <DialogDescription className="pt-4 text-base text-gray-700 dark:text-foreground">
-            {description}
+            {description ?? t('lessonPlayer.unsaved.body')}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex gap-3 sm:gap-3 pt-4">
@@ -45,7 +48,7 @@ export function UnsavedChangesDialog({
             onClick={onCancel}
             className="flex-1"
           >
-            Go Back & Save
+            {t('lessonPlayer.unsaved.back')}
           </Button>
           <Button
             type="button"
@@ -53,7 +56,7 @@ export function UnsavedChangesDialog({
             onClick={onConfirm}
             className="flex-1"
           >
-            Discard Changes
+            {t('lessonPlayer.unsaved.discard')}
           </Button>
         </DialogFooter>
       </DialogContent>

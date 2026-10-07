@@ -1,4 +1,6 @@
+import { activeLocale, t, type Locale } from '../i18n';
 import type { ActivityView, LiveTimer, QuestionKey } from './types';
+import '@/lib/i18n/catalogs/chatLive';
 
 /** The fixed link students open; the QR and «Copy for chat» carry it. */
 export const LIVE_LINK = 'https://lms.mastereducation.kz/live';
@@ -52,8 +54,8 @@ export function correctIndices(correct: QuestionKey['correct'] | number | number
 }
 
 /** How a finished activity reads in one line, for the record and the panel's header. */
-export function activityLabel(kind: ActivityView['kind']): string {
-  return { poll: 'Poll', cloud: 'Word cloud', popcheck: 'Pop-check', mistake: 'Mistake of the day' }[kind];
+export function activityLabel(kind: ActivityView['kind'], locale: Locale = activeLocale()): string {
+  return t(`chatLive.live.kind.${kind}`, undefined, locale);
 }
 
 /** Word-cloud font size: the most common entry is largest, a single entry is readable. */

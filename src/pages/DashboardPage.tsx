@@ -5,6 +5,8 @@ import apiClient from "../services/api";
 import Skeleton from '../components/Skeleton.tsx';
 import type { DashboardStats, Course, User } from '../types';
 import { lazyRoute } from '../lib/lazyRoute';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/adminUsers';
 
 // Each role dashboard is lazy so a user only downloads the chunk for their own
 // role (TeacherDashboard/AdminDashboard/HeadCuratorDashboard pull in recharts —
@@ -51,6 +53,7 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const { user, isTeacher } = useAuth();
   const navigate = useNavigate();
+  const t = useT();
 
   // Role-based dashboards - Return early BEFORE loading generic student stats
   if (user?.role === 'admin') {
@@ -112,7 +115,7 @@ export default function DashboardPage() {
 
 
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load dashboard';
+      const errorMessage = err instanceof Error ? err.message : t('adminUsers.dashboard.loadFailed');
       setError(errorMessage);
       console.error('Failed to load dashboard:', err);
     } finally {
@@ -158,20 +161,20 @@ export default function DashboardPage() {
     return (
       <div>
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-4">
-          <h3 className="font-semibold text-red-800 dark:text-red-300">Error loading dashboard</h3>
+          <h3 className="font-semibold text-red-800 dark:text-red-300">{t('adminUsers.dashboard.loadErrorTitle')}</h3>
           <p className="text-red-600 dark:text-red-400">{error}</p>
           <button 
             onClick={loadDashboardData}
             className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
           >
-            Retry
+            {t('common.retry')}
           </button>
         </div>
       </div>
     );
   }
 
-  const firstName = dashboardData?.user?.name || user?.name?.split(' ')[0] || 'User';
+  const firstName = dashboardData?.user?.name || user?.name?.split(' ')[0] || t('adminUsers.dashboard.userFallback');
   const stats = dashboardData?.stats || {} as DashboardStats;
 
   return (

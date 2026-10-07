@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { format, parseISO } from 'date-fns'
 import {
   Area,
   AreaChart,
@@ -19,12 +18,15 @@ import Loader from '../../components/Loader'
 import { Button } from '../../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import StudentSearchBox from '../../components/StudentSearchBox'
+import { formatDate, formatNumber } from '../../lib/i18n'
+import { useT } from '../../lib/i18n/react'
+import '@/lib/i18n/catalogs/adminUsers'
 
 const chartMargin = { top: 8, right: 8, left: -8, bottom: 0 }
 
 const tickDay = (v: string) => {
   try {
-    return format(parseISO(v), 'd MMM')
+    return formatDate(v, { day: 'numeric', month: 'short' })
   } catch {
     return v
   }
@@ -37,6 +39,7 @@ const statCardClass =
 const chartCardClass = 'rounded-md border border-border bg-card shadow-sm overflow-hidden'
 
 export default function AdminDashboard() {
+  const t = useT()
   const navigate = useNavigate()
   const [dashboard, setDashboard] = useState<AdminDashboardType | null>(null)
   const [charts, setCharts] = useState<AdminDashboardCharts | null>(null)
@@ -60,7 +63,7 @@ export default function AdminDashboard() {
       } else {
         console.error(dashRes.reason)
         setDashboard(null)
-        setError('Failed to load dashboard')
+        setError(t('adminUsers.dashboard.loadFailed'))
       }
       if (chartRes.status === 'fulfilled') {
         setCharts(chartRes.value)
@@ -71,7 +74,7 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     load()
@@ -88,9 +91,9 @@ export default function AdminDashboard() {
   if (error || !dashboard) {
     return (
       <div className="max-w-lg mx-auto py-16 text-center text-muted-foreground">
-        <p>{error || 'No data'}</p>
+        <p>{error || t('adminUsers.dashboard.noData')}</p>
         <Button variant="outline" className="mt-4" onClick={load}>
-          Retry
+          {t('common.retry')}
         </Button>
       </div>
     )
@@ -120,61 +123,61 @@ export default function AdminDashboard() {
 
   const platformKpis = [
     {
-      label: 'Total users',
+      label: t('adminUsers.dashboard.totalUsers'),
       value: stats.total_users,
-      hint: `${stats.total_students} students`,
+      hint: t('common.students', { count: stats.total_students }),
     },
     {
-      label: 'Teachers',
+      label: t('adminUsers.dashboard.teachers'),
       value: stats.total_teachers,
-      hint: `${stats.total_curators} curators`,
+      hint: t('adminUsers.dashboard.curatorsCount', { count: stats.total_curators }),
     },
     {
-      label: 'Courses',
+      label: t('adminUsers.dashboard.courses'),
       value: stats.total_courses,
-      hint: `${stats.total_active_enrollments} active enrollments`,
+      hint: t('adminUsers.dashboard.activeEnrollments', { count: stats.total_active_enrollments }),
     },
     {
-      label: 'New users (7d)',
+      label: t('adminUsers.dashboard.newUsers7d'),
       value: s(stats.recent_registrations),
-      hint: 'Last 7 days',
+      hint: t('adminUsers.dashboard.last7Days'),
     },
   ]
 
   const queueWidgets = [
     {
-      label: 'To grade',
-      sub: 'Homework pending',
+      label: t('adminUsers.dashboard.toGrade'),
+      sub: t('adminUsers.dashboard.homeworkPending'),
       value: s(stats.pending_homework_to_grade),
       path: '/homework',
-      ariaLabel: 'Open homework: submissions awaiting grading',
+      ariaLabel: t('adminUsers.dashboard.openHomework'),
     },
     {
-      label: 'Events',
-      sub: 'Next 7 days',
+      label: t('adminUsers.dashboard.events'),
+      sub: t('adminUsers.dashboard.next7Days'),
       value: s(stats.events_in_next_7_days),
       path: '/admin/events',
-      ariaLabel: 'Open events: scheduled in the next 7 days',
+      ariaLabel: t('adminUsers.dashboard.openEvents'),
     },
     {
-      label: 'Lesson requests',
-      sub: 'Pending',
+      label: t('adminUsers.dashboard.lessonRequests'),
+      sub: t('adminUsers.dashboard.pending'),
       value: s(stats.pending_lesson_requests),
       path: '/admin/lesson-requests',
-      ariaLabel: 'Open lesson requests',
+      ariaLabel: t('adminUsers.dashboard.openLessonRequests'),
     },
   ]
 
   const teacherEfficiencyData = [
-    { label: 'Total', value: stats.total_teachers },
-    { label: 'Active 7d', value: teacherActive7d },
-    { label: 'Active 30d', value: teacherActive30d },
-    { label: 'Grading 7d', value: teacherGrading7d },
+    { label: t('adminUsers.dashboard.total'), value: stats.total_teachers },
+    { label: t('adminUsers.dashboard.active7d'), value: teacherActive7d },
+    { label: t('adminUsers.dashboard.active30d'), value: teacherActive30d },
+    { label: t('adminUsers.dashboard.grading7d'), value: teacherGrading7d },
   ]
 
   const operationsLoadData = [
-    { name: 'To grade', value: s(stats.pending_homework_to_grade) },
-    { name: 'Lesson requests', value: s(stats.pending_lesson_requests) },
+    { name: t('adminUsers.dashboard.toGrade'), value: s(stats.pending_homework_to_grade) },
+    { name: t('adminUsers.dashboard.lessonRequests'), value: s(stats.pending_lesson_requests) },
   ]
   const queueMax = Math.max(...queueWidgets.map((w) => w.value), 1)
 
@@ -196,9 +199,9 @@ export default function AdminDashboard() {
       <div className="grid lg:grid-cols-3 gap-4">
         <Card className={chartCardClass}>
           <CardHeader className="px-5 pt-5 pb-2 space-y-1">
-            <CardTitle className="text-base font-medium">Teacher efficiency</CardTitle>
+            <CardTitle className="text-base font-medium">{t('adminUsers.dashboard.teacherEfficiency')}</CardTitle>
             <CardDescription className="text-sm">
-              Active 7d: <span className="font-semibold text-foreground tabular-nums">{teacherActive7d}</span> / {stats.total_teachers}
+              {t('adminUsers.dashboard.active7dLabel')} <span className="font-semibold text-foreground tabular-nums">{teacherActive7d}</span> / {stats.total_teachers}
             </CardDescription>
           </CardHeader>
           <CardContent className="px-5 pb-5 pt-2 h-[220px]">
@@ -219,7 +222,7 @@ export default function AdminDashboard() {
                   tickLine={false}
                 />
                 <Tooltip
-                  formatter={(value) => `${value} teachers`}
+                  formatter={(value) => t('adminUsers.dashboard.teachersCount', { count: Number(value) })}
                   contentStyle={{
                     borderRadius: 8,
                     border: '1px solid hsl(var(--border))',
@@ -234,9 +237,9 @@ export default function AdminDashboard() {
 
         <Card className={chartCardClass}>
           <CardHeader className="px-5 pt-5 pb-2 space-y-1">
-            <CardTitle className="text-base font-medium">Operational load</CardTitle>
+            <CardTitle className="text-base font-medium">{t('adminUsers.dashboard.operationalLoad')}</CardTitle>
             <CardDescription className="text-sm">
-              Pending now: <span className="font-semibold text-foreground tabular-nums">{pendingOpsTotal}</span>
+              {t('adminUsers.dashboard.pendingNow')} <span className="font-semibold text-foreground tabular-nums">{pendingOpsTotal}</span>
             </CardDescription>
           </CardHeader>
           <CardContent className="px-5 pb-5 pt-2 h-[220px]">
@@ -271,9 +274,9 @@ export default function AdminDashboard() {
 
         <Card className={chartCardClass}>
           <CardHeader className="px-5 pt-5 pb-2 space-y-1">
-            <CardTitle className="text-base font-medium">Homework checks</CardTitle>
+            <CardTitle className="text-base font-medium">{t('adminUsers.dashboard.homeworkChecks')}</CardTitle>
             <CardDescription className="text-sm">
-              Avg checks/active teacher: <span className="font-semibold text-foreground tabular-nums">{avgTeacherGrading7d.toFixed(1)}</span>
+              {t('adminUsers.dashboard.avgChecks')} <span className="font-semibold text-foreground tabular-nums">{formatNumber(avgTeacherGrading7d, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
             </CardDescription>
           </CardHeader>
           <CardContent className="px-5 pb-5 pt-2 h-[220px]">
@@ -345,8 +348,8 @@ export default function AdminDashboard() {
       <div className="grid lg:grid-cols-2 gap-4">
         <Card className={chartCardClass}>
           <CardHeader className="px-5 pt-5 pb-2 space-y-1">
-            <CardTitle className="text-base font-medium">New registrations</CardTitle>
-            <CardDescription className="text-sm">Accounts created per day · last 14 days</CardDescription>
+            <CardTitle className="text-base font-medium">{t('adminUsers.dashboard.newRegistrations')}</CardTitle>
+            <CardDescription className="text-sm">{t('adminUsers.dashboard.newRegistrationsHint')}</CardDescription>
           </CardHeader>
           <CardContent className="px-5 pb-5 pt-2 h-[260px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -388,8 +391,8 @@ export default function AdminDashboard() {
 
         <Card className={chartCardClass}>
           <CardHeader className="px-5 pt-5 pb-2 space-y-1">
-            <CardTitle className="text-base font-medium">Homework submissions</CardTitle>
-            <CardDescription className="text-sm">Submissions received per day · last 14 days</CardDescription>
+            <CardTitle className="text-base font-medium">{t('adminUsers.dashboard.homeworkSubmissions')}</CardTitle>
+            <CardDescription className="text-sm">{t('adminUsers.dashboard.homeworkSubmissionsHint')}</CardDescription>
           </CardHeader>
           <CardContent className="px-5 pb-5 pt-2 h-[260px]">
             <ResponsiveContainer width="100%" height="100%">

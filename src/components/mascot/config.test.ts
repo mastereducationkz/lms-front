@@ -1,6 +1,7 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import { hasMessage, t } from '../../lib/i18n';
 import Orca from './Orca';
 import UserAvatar, { initialsOf } from './UserAvatar';
 import {
@@ -11,8 +12,10 @@ import {
   isRewardPart,
   makeRng,
   parseMascot,
+  partLabel,
   randomMascot,
   resolveMascot,
+  rewardLabel,
   seedMascot,
   REWARD_PARTS,
   serializeMascot,
@@ -107,9 +110,10 @@ describe('automatic orcas', () => {
 describe('presets', () => {
   it('are all valid, named once, and distinct looks', () => {
     expect(PRESETS.length).toBeGreaterThanOrEqual(40);
-    const names = new Set(PRESETS.map((p) => p.name));
     const codes = new Set(PRESETS.map((p) => serializeMascot(p.config)));
-    expect(names.size).toBe(PRESETS.length);
+    for (const locale of ['en', 'ru'] as const) {
+      expect(new Set(PRESETS.map((p) => t(p.nameKey, undefined, locale))).size).toBe(PRESETS.length);
+    }
     expect(codes.size).toBe(PRESETS.length);
     PRESETS.forEach((p) => expect(parseMascot(serializeMascot(p.config))).toEqual(p.config));
   });
@@ -119,6 +123,26 @@ describe('presets', () => {
       expect(usesLockedPart(p.config, null)).toBe(false);
       expect(p.config.frame).toBe(0);
     });
+  });
+});
+
+describe('wardrobe names', () => {
+  it('names every part in both languages', () => {
+    (Object.keys(CATEGORY_PARTS) as MascotCategory[]).forEach((cat) => {
+      CATEGORY_PARTS[cat].forEach((part, i) => {
+        expect(hasMessage(part.labelKey), part.labelKey).toBe(true);
+        expect(partLabel(cat, i, 'ru')).not.toBe(partLabel(cat, i, 'en'));
+      });
+    });
+    expect(partLabel('hat', 5, 'en')).toBe('Crown');
+    expect(partLabel('hat', 5, 'ru')).toBe('Корона');
+    expect(partLabel('hat', 99, 'en')).toBe('');
+  });
+
+  it('names a reward by the part it puts on, falling back to the server name', () => {
+    expect(rewardLabel({ layer: 'h', index: 18, name: 'Diamond crown' }, 'ru')).toBe('Бриллиантовая корона');
+    expect(rewardLabel({ layer: 'p', index: 20, name: 'Golden clock' }, 'en')).toBe('Golden clock');
+    expect(rewardLabel({ layer: 'h', index: 99, name: 'Future hat' }, 'ru')).toBe('Future hat');
   });
 });
 
@@ -178,7 +202,7 @@ describe('Master Education branding', () => {
   });
 
   it('opens the presets with Master Kasatik: hoodie, laptop, Master blue', () => {
-    expect(PRESETS[0].name).toBe('Master Kasatik');
+    expect(t(PRESETS[0].nameKey, undefined, 'en')).toBe('Master Kasatik');
     expect(PRESETS[0].config).toEqual({ hat: 16, eyewear: 0, expression: 0, prop: 1, background: 10, frame: 0 });
   });
 

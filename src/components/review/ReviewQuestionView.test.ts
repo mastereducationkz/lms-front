@@ -3,7 +3,15 @@
 // (all 15 prior tests in this package are aggregation tests over reviewStats.ts); every
 // assertion here is written against the *rendered* span sequence, in source order, so a
 // future regression at this boundary fails a test instead of shipping to a projector.
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+// ReviewMaterial's ZoomableImage and quiz audio player read the UI language from AuthContext;
+// stand the context in without the API client behind it (which needs a browser's localStorage).
+vi.mock('../../contexts/AuthContext', async () => {
+  const { createContext } = await vi.importActual<typeof import('react')>('react')
+  return { default: createContext(undefined), useAuth: () => ({ user: null }) }
+})
+
 import { gapStepHtml } from './ReviewQuestionView'
 import { getExpectedAnswers } from '../lesson/quiz/scoring'
 

@@ -1,6 +1,5 @@
 import { ArrowDown, ArrowUp, ChevronRight, Info } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { APP_TIMEZONE } from '../../lib/datetime';
 import { clock } from '../../lib/meetAttendance';
 import {
   answeredShare,
@@ -13,6 +12,10 @@ import {
   perLesson,
 } from '../../lib/meetTalk';
 import type { GroupTalkLesson, StudentLessonMark, TalkQuestions } from '../../services/api/meetTalk';
+import { formatDate } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/meet';
+import '@/lib/i18n/catalogs/meetViews';
 
 /**
  * The pieces the Talk time reports share: the summary cards, sortable headers, share bars, a
@@ -20,7 +23,7 @@ import type { GroupTalkLesson, StudentLessonMark, TalkQuestions } from '../../se
  */
 
 export function dayLabel(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: APP_TIMEZONE });
+  return formatDate(iso, { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
 /** Seconds as words, or a dash for nothing said — "0 s" read like a measurement. */
@@ -63,13 +66,14 @@ export function SplitCard({ teacherSeconds, studentSeconds, teacherShare, studen
   note?: string;
   className?: string;
 }) {
+  const tr = useT();
   const t = Math.max(0, Math.min(1, teacherShare ?? 0));
   const s = Math.max(0, Math.min(1 - t, studentsShare ?? 0));
   return (
-    <Card label="Who did the talking" hint="Minutes each side spoke over the period; the shares are each lesson's, averaged." className={className}>
+    <Card label={tr('meetViews.talkParts.whoTalked')} hint={tr('meetViews.talkParts.whoTalkedHint')} className={className}>
       <div className="mt-1 flex items-baseline justify-between gap-3 text-sm font-semibold">
-        <span className="text-violet-700 dark:text-violet-300">Teacher {percent(teacherShare)}</span>
-        <span className="text-right text-emerald-700 dark:text-emerald-300">Students {percent(studentsShare)}</span>
+        <span className="text-violet-700 dark:text-violet-300">{tr('meet.talk.teacherShare', { share: percent(teacherShare) })}</span>
+        <span className="text-right text-emerald-700 dark:text-emerald-300">{tr('meetViews.talkParts.studentsShare', { share: percent(studentsShare) })}</span>
       </div>
       <div className="mt-1 flex h-2.5 overflow-hidden rounded-full bg-muted" aria-hidden>
         <div className="bg-violet-500 dark:bg-violet-400" style={{ width: `${t * 100}%` }} />
@@ -86,29 +90,31 @@ export function SplitCard({ teacherSeconds, studentSeconds, teacherShare, studen
 
 /** "Teacher asked" and "Students asked", from questions added up over lessons with a transcript. */
 export function QuestionCards({ questions, lessons }: { questions: TalkQuestions | null | undefined; lessons: number }) {
+  const t = useT();
   if (!questions) {
     return (
       <>
-        <Card label="Teacher asked" value="—" sub="Needs lesson transcripts" />
-        <Card label="Students asked" value="—" sub="Needs lesson transcripts" />
+        <Card label={t('meetViews.talkParts.teacherAsked')} value="—" sub={t('meetViews.talkParts.needsTranscripts')} />
+        <Card label={t('meetViews.talkParts.studentsAsked')} value="—" sub={t('meetViews.talkParts.needsTranscripts')} />
       </>
     );
   }
   const share = answeredShare(questions);
-  const partial = questions.lessons_with_transcript < lessons ? ` · ${questions.lessons_with_transcript} of ${lessons} lessons` : '';
+  const partial = questions.lessons_with_transcript < lessons
+    ? ` · ${t('meetViews.talkParts.partial', { with: questions.lessons_with_transcript, count: lessons })}` : '';
   return (
     <>
       <Card
-        label="Teacher asked"
-        hint="Teacher lines ending in a question mark; answered = a student spoke within 20 seconds."
+        label={t('meetViews.talkParts.teacherAsked')}
+        hint={t('meetViews.talkParts.teacherAskedHint')}
         value={String(questions.teacher_questions)}
-        sub={`${questions.answered} answered${share == null ? '' : ` · ${percent(share)}`}${partial}`}
+        sub={`${t('meetViews.talkParts.answered', { count: questions.answered })}${share == null ? '' : ` · ${percent(share)}`}${partial}`}
       />
       <Card
-        label="Students asked"
-        hint="Student lines ending in a question mark."
+        label={t('meetViews.talkParts.studentsAsked')}
+        hint={t('meetViews.talkParts.studentsAskedHint')}
         value={String(questions.student_questions)}
-        sub={`${perLesson(questions.student_questions, questions.lessons_with_transcript) ?? 0} per lesson${partial}`}
+        sub={`${t('meetViews.talkParts.perLesson', { value: perLesson(questions.student_questions, questions.lessons_with_transcript) ?? 0 })}${partial}`}
       />
     </>
   );
@@ -198,29 +204,31 @@ function LessonBar({ mark, peakSeconds }: { mark: StudentLessonMark; peakSeconds
 
 /** What the bars mean, once, under the table. */
 export function DotsLegend() {
+  const t = useT();
   const swatch = (className: string, height: number) => (
     <span className="flex h-3 w-2 flex-col justify-end"><span className={cn('w-full', className)} style={{ height }} /></span>
   );
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-[11px] text-muted-foreground">
-      <span>Each bar is one lesson, oldest first:</span>
+      <span>{t('meetViews.talkParts.legendBars')}</span>
       <span className="inline-flex items-center gap-1.5">
         <span className="flex items-end gap-px">{swatch('rounded-t-[1px] bg-emerald-500', 5)}{swatch('rounded-t-[1px] bg-emerald-500', 12)}</span>
-        spoke — the taller, the longer
+        {t('meetViews.talkParts.legendSpoke')}
       </span>
-      <span className="inline-flex items-center gap-1.5">{swatch('rounded-t-[1px] bg-amber-400', 3)}silent (in the room 10+ min, no words)</span>
-      <span className="inline-flex items-center gap-1.5">{swatch('h-1.5 rounded-[1px] ring-1 ring-inset ring-muted-foreground/50', 6)}in briefly, no words</span>
-      <span className="inline-flex items-center gap-1.5">{swatch('rounded-full bg-muted-foreground/40', 2)}not in the room</span>
-      <span>· up to 48 lessons are drawn; «+N» counts the earlier ones.</span>
+      <span className="inline-flex items-center gap-1.5">{swatch('rounded-t-[1px] bg-amber-400', 3)}{t('meetViews.talkParts.legendSilent')}</span>
+      <span className="inline-flex items-center gap-1.5">{swatch('h-1.5 rounded-[1px] ring-1 ring-inset ring-muted-foreground/50', 6)}{t('meetViews.talkParts.legendBrief')}</span>
+      <span className="inline-flex items-center gap-1.5">{swatch('rounded-full bg-muted-foreground/40', 2)}{t('meetViews.talkParts.legendAbsent')}</span>
+      <span>{t('meetViews.talkParts.legendCap')}</span>
     </div>
   );
 }
 
 function QuestionCell({ lesson }: { lesson: GroupTalkLesson }) {
+  const t = useT();
   if (lesson.teacher_questions == null) return <span className="text-muted-foreground/60">—</span>;
   const share = lesson.teacher_questions ? (lesson.answered ?? 0) / lesson.teacher_questions : null;
   return (
-    <span title={lesson.median_wait_seconds != null ? `Median wait before an answer: ${lesson.median_wait_seconds} s` : undefined}>
+    <span title={lesson.median_wait_seconds != null ? t('meetViews.talkParts.medianWait', { seconds: lesson.median_wait_seconds }) : undefined}>
       <span className="font-medium text-foreground">{lesson.teacher_questions}</span>
       <span className="text-muted-foreground"> · {share == null ? '—' : percent(share)}</span>
     </span>
@@ -234,20 +242,21 @@ export function TalkLessonsTable({ lessons, onOpenLesson, show }: {
   /** The group view names the teacher; a teacher's view names the group. */
   show: 'teacher' | 'groups';
 }) {
+  const t = useT();
   return (
-    <section className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm" aria-label="Lessons">
+    <section className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm" aria-label={t('meetViews.shared.lessons')}>
       <table className="w-full min-w-[900px] text-sm">
         <thead>
           <tr className="border-b border-border text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-            <th className="px-4 py-2.5">Lesson</th>
-            <th className="px-3 py-2.5">{show === 'teacher' ? 'Teacher' : 'Group'}</th>
-            <th className="px-3 py-2.5 text-right">Teacher’s share</th>
-            <th className="px-3 py-2.5 text-right">Speech</th>
-            <th className="px-3 py-2.5 text-right" title="Teacher questions · the share a student answered within 20 s">Teacher asked · answered</th>
-            <th className="px-3 py-2.5 text-right" title="Student lines ending in a question mark">Students asked</th>
-            <th className="px-3 py-2.5 text-right">In the room</th>
-            <th className="px-3 py-2.5 text-right" title="In the room 10+ minutes without a word">Didn’t speak</th>
-            <th className="w-10 px-2 py-2.5" aria-label="Open" />
+            <th className="px-4 py-2.5">{t('meet.dialog.lesson')}</th>
+            <th className="px-3 py-2.5">{t(show === 'teacher' ? 'meet.talkPanel.teacher' : 'meetViews.shared.group')}</th>
+            <th className="px-3 py-2.5 text-right">{t('meetViews.talkParts.teacherShare')}</th>
+            <th className="px-3 py-2.5 text-right">{t('meet.talkPanel.speech')}</th>
+            <th className="px-3 py-2.5 text-right" title={t('meetViews.talkParts.askedAnsweredHint')}>{t('meetViews.talkParts.askedAnswered')}</th>
+            <th className="px-3 py-2.5 text-right" title={t('meetViews.talkParts.studentQuestionsHint')}>{t('meetViews.talkParts.studentsAsked')}</th>
+            <th className="px-3 py-2.5 text-right">{t('meet.participants.room')}</th>
+            <th className="px-3 py-2.5 text-right" title={t('meetViews.talkParts.silentHint')}>{t('meet.talkPanel.didntSpeak')}</th>
+            <th className="w-10 px-2 py-2.5" aria-label={t('meetViews.shared.open')} />
           </tr>
         </thead>
         <tbody className="divide-y divide-border">
@@ -257,16 +266,16 @@ export function TalkLessonsTable({ lessons, onOpenLesson, show }: {
               onClick={() => onOpenLesson(l.event_id)}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenLesson(l.event_id); } }}
               tabIndex={0}
-              aria-label={`Open the talk time of ${l.title}`}
+              aria-label={t('meetViews.talkParts.openTalk', { title: l.title })}
               className="cursor-pointer transition hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none"
             >
               <td className="px-4 py-2.5">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="font-medium text-foreground">{l.title}</span>
                   {l.source === 'voices' && (
-                    <span title="Taught before talk time was on: names come from the recording's voices, some stay unnamed."
+                    <span title={t('meetViews.talkParts.voicesHint')}
                       className="rounded bg-amber-100 px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-                      voices
+                      {t('meetViews.talkParts.voices')}
                     </span>
                   )}
                 </div>

@@ -27,6 +27,8 @@ import { GiveBonusModal } from '../components/gamification/GiveBonusModal';
 import { WeeklyAwardsHub } from '../components/gamification/WeeklyAwardsHub';
 import { CompletionMeta } from '../components/progress/CompletionMeta';
 import { meanPct, type CheckpointSummary } from '../lib/completion';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/teacherDesk';
 
 interface TeacherGroup extends Group {
   students: User[];
@@ -79,6 +81,7 @@ interface StudentStats {
 
 export default function TeacherClassPage() {
   const navigate = useNavigate();
+  const t = useT();
   const [groups, setGroups] = useState<TeacherGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -106,7 +109,7 @@ export default function TeacherClassPage() {
   const handleOpenBonusModal = (student: User) => {
     setSelectedStudentForBonus({
       id: Number(student.id),
-      name: student.name || student.full_name || 'Student'
+      name: student.name || student.full_name || t('teacherDesk.studentFallback')
     });
     setBonusModalOpen(true);
   };
@@ -218,7 +221,7 @@ export default function TeacherClassPage() {
       setPendingArchived(archived);
     } catch (error) {
       console.error('Failed to load teacher groups:', error);
-      setError('Failed to load class data');
+      setError(t('teacherDesk.myClass.loadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -304,9 +307,9 @@ export default function TeacherClassPage() {
         <div>
           <h1 className="text-3xl font-bold text-foreground flex items-center">
             <GraduationCap className="w-8 h-8 mr-3 text-brand" />
-            My Class
+            {t('teacherDesk.myClass.title')}
           </h1>
-          <p className="text-muted-foreground  mt-1">Manage and monitor your students</p>
+          <p className="text-muted-foreground  mt-1">{t('teacherDesk.myClass.subtitle')}</p>
         </div>
         <div className="flex items-center gap-3">
           <Button
@@ -315,13 +318,13 @@ export default function TeacherClassPage() {
             className="border-border text-foreground hover:bg-muted dark:hover:bg-secondary"
           >
             <Trophy className="h-4 w-4" aria-hidden="true" />
-            Weekly Awards
+            {t('teacherDesk.awards.button')}
           </Button>
           <Button
             onClick={() => navigate('/courses')}
             variant="outline"
           >
-            Back to Courses
+            {t('teacherDesk.myClass.backToCourses')}
           </Button>
         </div>
       </div>
@@ -335,7 +338,7 @@ export default function TeacherClassPage() {
                 <Users className="w-6 h-6 text-brand" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-muted-foreground">Total Groups</p>
+                <p className="text-sm font-medium text-muted-foreground">{t('teacherDesk.myClass.totalGroups')}</p>
                 <p className="text-2xl font-bold text-foreground">{visibleGroups.length}</p>
               </div>
             </div>
@@ -349,7 +352,7 @@ export default function TeacherClassPage() {
                 <UserIcon className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-muted-foreground">Total Students</p>
+                <p className="text-sm font-medium text-muted-foreground">{t('teacherDesk.myClass.totalStudents')}</p>
                 <p className="text-2xl font-bold text-foreground">{totalStudents}</p>
               </div>
             </div>
@@ -363,7 +366,7 @@ export default function TeacherClassPage() {
                 <BookOpen className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-muted-foreground">Active Students</p>
+                <p className="text-sm font-medium text-muted-foreground">{t('teacherDesk.myClass.activeStudents')}</p>
                 <p className="text-2xl font-bold text-foreground">{totalActiveStudents}</p>
               </div>
             </div>
@@ -377,7 +380,7 @@ export default function TeacherClassPage() {
                 <TrendingUp className="w-6 h-6 text-orange-600 dark:text-orange-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-muted-foreground">Avg Progress</p>
+                <p className="text-sm font-medium text-muted-foreground">{t('teacherDesk.avgProgress')}</p>
                 <p className="text-2xl font-bold text-foreground">{overallAverageProgress}%</p>
               </div>
             </div>
@@ -392,7 +395,7 @@ export default function TeacherClassPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search groups or students..."
+              placeholder={t('teacherDesk.myClass.search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 bg-card"
@@ -406,7 +409,7 @@ export default function TeacherClassPage() {
                 onChange={(e) => setShowArchived(e.target.checked)}
                 className="rounded border-border"
               />
-              Show archived groups ({archivedCount})
+              {t('teacherDesk.myClass.showArchived', { count: archivedCount })}
               {archivedLoading && <Loader2 className="w-4 h-4 animate-spin text-brand" />}
             </label>
           )}
@@ -421,27 +424,27 @@ export default function TeacherClassPage() {
       ) : error ? (
         <div className="text-center py-12">
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <h3 className="font-semibold text-red-800 dark:text-red-400">Error loading class data</h3>
+            <h3 className="font-semibold text-red-800 dark:text-red-400">{t('teacherDesk.myClass.loadError')}</h3>
             <p className="text-red-600 dark:text-red-400">{error}</p>
             <Button
               onClick={loadTeacherGroups}
               variant="outline"
               className="mt-2 text-red-800 dark:text-red-400 border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/20"
             >
-              Retry
+              {t('teacherDesk.retry')}
             </Button>
           </div>
         </div>
       ) : filteredGroups.length === 0 ? (
         <div className="text-center py-12">
           <GraduationCap className="w-12 h-12 text-muted-foreground  mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">No groups found</h3>
+          <h3 className="text-lg font-medium text-foreground mb-2">{t('teacherDesk.noGroupsFound')}</h3>
           <p className="text-muted-foreground">
             {searchQuery
-              ? 'No groups or students match your search.'
+              ? t('teacherDesk.myClass.noSearchMatch')
               : !showArchived && archivedCount > 0
-                ? `No current groups. Turn on “Show archived groups” to see your ${archivedCount} archived.`
-                : 'You don\'t have any groups assigned yet.'}
+                ? t('teacherDesk.myClass.onlyArchived', { count: archivedCount })
+                : t('teacherDesk.myClass.noGroups')}
           </p>
         </div>
       ) : (
@@ -467,7 +470,7 @@ export default function TeacherClassPage() {
                       <CardTitle className="text-lg text-foreground flex items-center gap-2">
                         {group.name}
                         {group.is_active === false && (
-                          <Badge variant="outline" className="text-xs font-normal text-muted-foreground border-border">Archived</Badge>
+                          <Badge variant="outline" className="text-xs font-normal text-muted-foreground border-border">{t('teacherDesk.archived')}</Badge>
                         )}
                       </CardTitle>
                       {group.description && (
@@ -478,11 +481,11 @@ export default function TeacherClassPage() {
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Users className="w-4 h-4" />
-                      {group.total_students} students
+                      {t('teacherDesk.myClass.students', { count: group.total_students })}
                     </span>
                     <span className="flex items-center gap-1">
                       <TrendingUp className="w-4 h-4" />
-                      {group.average_progress}% avg
+                      {t('teacherDesk.myClass.avg', { percent: group.average_progress })}
                     </span>
                   </div>
                 </div>
@@ -499,7 +502,7 @@ export default function TeacherClassPage() {
                           : 'border-transparent text-muted-foreground hover:text-foreground'
                       }`}
                     >
-                      General Progress
+                      {t('teacherDesk.myClass.generalProgress')}
                     </button>
                     <button
                       onClick={() => handleTabChange(group.id, 'weekly')}
@@ -509,35 +512,35 @@ export default function TeacherClassPage() {
                           : 'border-transparent text-muted-foreground hover:text-foreground'
                       }`}
                     >
-                      Weekly Activity
+                      {t('teacherDesk.myClass.weeklyActivity')}
                     </button>
                   </div>
 
                   {(activeTab[group.id] || 'general') === 'general' ? (
                     group.students.length === 0 ? (
-                      <p className="text-muted-foreground  text-center py-4">No students in this group</p>
+                      <p className="text-muted-foreground  text-center py-4">{t('teacherDesk.noStudentsInGroup')}</p>
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="w-full">
                           <thead className="bg-muted dark:bg-secondary border-b border-border">
                             <tr>
                               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground  uppercase tracking-wider">
-                                Student
+                                {t('teacherDesk.col.student')}
                               </th>
                               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground  uppercase tracking-wider">
-                                Overall Progress
+                                {t('teacherDesk.myClass.overallProgress')}
                               </th>
                               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground  uppercase tracking-wider">
-                                Lessons
+                                {t('teacherDesk.myClass.lessons')}
                               </th>
                               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground  uppercase tracking-wider">
-                                Steps
+                                {t('teacherDesk.myClass.steps')}
                               </th>
                               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground  uppercase tracking-wider">
-                                Time Spent
+                                {t('teacherDesk.myClass.timeSpent')}
                               </th>
                               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground  uppercase tracking-wider">
-                                Status
+                                {t('teacherDesk.col.status')}
                               </th>
                             </tr>
                           </thead>
@@ -552,7 +555,7 @@ export default function TeacherClassPage() {
                                         type="button"
                                         onClick={() => navigate(`/analytics/student/${student.id}`)}
                                         className="text-sm font-medium text-foreground hover:text-brand hover:underline text-left"
-                                        title="Open student analytics"
+                                        title={t('teacherDesk.openStudentAnalytics')}
                                       >
                                         {student.name || student.full_name}
                                       </button>
@@ -573,7 +576,7 @@ export default function TeacherClassPage() {
                                       </span>
                                     </div>
                                     <div className="text-xs text-muted-foreground  mt-1">
-                                      {stats?.total_courses || 0} courses
+                                      {t('teacherDesk.myClass.courses', { count: stats?.total_courses || 0 })}
                                     </div>
                                   </td>
                                   <td className="px-4 py-4 whitespace-nowrap">
@@ -588,20 +591,20 @@ export default function TeacherClassPage() {
                                     <div className="text-sm text-foreground">
                                       {stats?.completed_steps || 0}/{stats?.total_steps || 0}
                                     </div>
-                                    <div className="text-xs text-muted-foreground">required steps</div>
+                                    <div className="text-xs text-muted-foreground">{t('teacherDesk.myClass.requiredSteps')}</div>
                                   </td>
                                   <td className="px-4 py-4 whitespace-nowrap">
                                     <div className="flex items-center gap-1 text-sm text-foreground">
                                       <Clock className="w-4 h-4 text-muted-foreground" />
-                                      {stats?.total_time_spent_minutes || 0} min
+                                      {t('common.minutes', { count: stats?.total_time_spent_minutes || 0 })}
                                     </div>
                                     <div className="text-xs text-muted-foreground">
-                                      {stats?.total_time_spent_minutes ? Math.floor(stats.total_time_spent_minutes / 60) : 0}h {stats?.total_time_spent_minutes ? stats.total_time_spent_minutes % 60 : 0}m
+                                      {t('teacherDesk.duration.hoursMinutes', { hours: stats?.total_time_spent_minutes ? Math.floor(stats.total_time_spent_minutes / 60) : 0, minutes: stats?.total_time_spent_minutes ? stats.total_time_spent_minutes % 60 : 0 })}
                                     </div>
                                   </td>
                                   <td className="px-4 py-4 whitespace-nowrap">
                                     <Badge variant={student.is_active ? "default" : "secondary"}>
-                                      {student.is_active ? 'Active' : 'Inactive'}
+                                      {student.is_active ? t('teacherDesk.myClass.active') : t('teacherDesk.myClass.inactive')}
                                     </Badge>
                                   </td>
                                 </tr>
@@ -621,7 +624,7 @@ export default function TeacherClassPage() {
                       ) : (!groupWeeklyLeaderboard[group.id] || groupWeeklyLeaderboard[group.id].length === 0) ? (
                         <div className="text-center py-8 bg-muted dark:bg-secondary rounded-lg">
                           <TrendingUp className="w-12 h-12 text-muted-foreground/50 mx-auto mb-2" />
-                          <p className="text-muted-foreground">No activity recorded for this week yet.</p>
+                          <p className="text-muted-foreground">{t('teacherDesk.myClass.noWeeklyActivity')}</p>
                         </div>
                       ) : (
                         <>
@@ -630,9 +633,9 @@ export default function TeacherClassPage() {
                             <table className="w-full">
                               <thead className="bg-muted/50 dark:bg-secondary border-b border-border">
                                 <tr>
-                                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground  uppercase tracking-wider w-16">Rank</th>
-                                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground  uppercase tracking-wider">Student</th>
-                                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground  uppercase tracking-wider">Weekly Points</th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground  uppercase tracking-wider w-16">{t('teacherDesk.col.rank')}</th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground  uppercase tracking-wider">{t('teacherDesk.col.student')}</th>
+                                  <th className="px-4 py-3 text-left text-xs font-semibold text-muted-foreground  uppercase tracking-wider">{t('teacherDesk.col.weeklyPoints')}</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-border">
@@ -660,10 +663,9 @@ export default function TeacherClassPage() {
                       <div className="bg-muted dark:bg-secondary p-4 rounded-lg flex items-start gap-3 border border-border">
                         <Target className="w-5 h-5 text-muted-foreground  mt-0.5" />
                         <div>
-                          <p className="text-sm font-medium text-foreground">Weekly Award Tip</p>
+                          <p className="text-sm font-medium text-foreground">{t('teacherDesk.myClass.tipTitle')}</p>
                           <p className="text-xs text-muted-foreground  mt-1">
-                            This view shows students ranked by points earned since last Monday. 
-                            You can reward top performers with extra bonus points to boost motivation!
+                            {t('teacherDesk.myClass.tipBody')}
                           </p>
                         </div>
                       </div>

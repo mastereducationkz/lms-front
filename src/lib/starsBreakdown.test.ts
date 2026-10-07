@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { setActiveLocale } from '@/lib/i18n';
 import type { StarsBreakdown, StarStreak } from '../services/api/gamification';
-import { barPercent, earlierLabel, isEmptyBreakdown, starRange, streakCopy } from './starsBreakdown';
+import { barPercent, earlierLabel, isEmptyBreakdown, ruleCopy, sourceLabel, starRange, streakCopy } from './starsBreakdown';
 
 const RULE = { starts_at_days: 5, start_multiplier: 1.1, step: 0.1, step_days: 2, max_multiplier: 2.5 };
 const streak = (days: number, multiplier: number, next_multiplier: number | null, next_at_days: number | null): StarStreak =>
@@ -73,5 +73,20 @@ describe('starsBreakdown helpers', () => {
   it('names the unexplained remainder by its sign', () => {
     expect(earlierLabel(7)).toBe('Earlier stars');
     expect(earlierLabel(-7)).toBe('Corrections');
+    expect(earlierLabel(7, 'ru')).toBe('Заработанные ранее');
+  });
+
+  it("keeps the server's English and gives Russian by key", () => {
+    const bar = { key: 'homework' as const, label: 'Homework handed in' };
+    expect(sourceLabel(bar, 'en')).toBe('Homework handed in');
+    expect(sourceLabel(bar, 'ru')).toBe('Сданные домашние задания');
+    const grades = { key: 'grades' as const, label: 'Get your homework graded', min: 10, max: 30,
+      note: "10 for the grade plus up to 20 more by your score. A new grade replaces the old one's stars." };
+    expect(ruleCopy(grades, 'en')).toEqual({ label: grades.label, note: grades.note });
+    expect(ruleCopy(grades, 'ru').note).toBe('10 за оценку и до 20 сверху — в зависимости от балла. Новая оценка заменяет звёзды за прежнюю.');
+    const bonus = { key: 'teacher_bonus' as const, label: 'Teacher bonus', min: 5, max: 20,
+      note: 'For great work. Each teacher has 100 a week to share across a group.' };
+    expect(ruleCopy(bonus, 'ru').note).toContain('100 звёзд в неделю');
+    expect(ruleCopy({ ...bonus, note: 'For great work.' }, 'ru').note).toBe('For great work.');
   });
 });

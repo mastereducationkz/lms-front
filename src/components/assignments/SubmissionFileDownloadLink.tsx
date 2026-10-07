@@ -1,5 +1,7 @@
 import { Download } from 'lucide-react';
 import { safeUploadUrl } from '../../lib/mediaUrl';
+import { t } from '../../lib/i18n';
+import '@/lib/i18n/catalogs/homeworkStaff';
 
 interface SubmissionFileDownloadLinkProps {
   /** The stored file reference on a submission — untrusted, student-supplied; the backend
@@ -20,7 +22,7 @@ export function SubmissionFileDownloadLink({ fileUrl, className }: SubmissionFil
   return (
     <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
       <Download className="w-4 h-4 mr-1" />
-      Download
+      {t('homeworkStaff.files.download')}
     </a>
   );
 }

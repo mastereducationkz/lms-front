@@ -14,6 +14,8 @@ import {
 import 'katex/dist/katex.min.css';
 import './rich-text-dark.css';
 import { InlineMath, BlockMath } from 'react-katex';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/courseAuthoring';
 
 // Функция для рендеринга контента с LaTeX
 const renderContentWithLatex = (content: string) => {
@@ -90,9 +92,11 @@ interface RichTextEditorProps {
 const RichTextEditor: React.FC<RichTextEditorProps> = ({
   value,
   onChange,
-  placeholder = "Start writing lesson content...",
+  placeholder: placeholderProp,
   className = ""
 }) => {
+  const t = useT();
+  const placeholder = placeholderProp ?? t('courseAuthoring.step.textPlaceholder');
   const quillRef = useRef<ReactQuill>(null);
   const [showLatexDialog, setShowLatexDialog] = useState(false);
   const [latexInput, setLatexInput] = useState('');
@@ -189,7 +193,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     if (!latexInput.trim()) {
       return (
         <div className="p-4 border border-dashed border-input rounded-lg bg-muted text-center text-muted-foreground">
-          Formula preview will appear here
+          {t('courseAuthoring.latex.previewEmpty')}
         </div>
       );
     }
@@ -209,10 +213,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         );
       }
     } catch (error) {
-      setLatexError('Invalid LaTeX formula');
+      setLatexError(t('courseAuthoring.latex.invalid'));
       return (
         <div className="p-4 border border-red-200 rounded-lg bg-red-50 text-red-600 dark:border-red-800/60 dark:bg-red-950/40 dark:text-red-400">
-          Invalid LaTeX formula
+          {t('courseAuthoring.latex.invalid')}
         </div>
       );
     }
@@ -277,7 +281,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     const latexButton = document.createElement('button');
     latexButton.innerHTML = '<p>LaTeX</p>';
     latexButton.className = 'ql-latex';
-    latexButton.title = 'LaTeX Formula';
+    latexButton.title = t('courseAuthoring.latex.button');
     latexButton.onclick = () => openLatexDialog();
     
     // Добавляем кнопку в toolbar
@@ -350,38 +354,38 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
               }}
             >
               <DialogHeader>
-                <DialogTitle>Insert LaTeX Formula</DialogTitle>
+                <DialogTitle>{t('courseAuthoring.latex.title')}</DialogTitle>
               </DialogHeader>
               
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Formula Type:</Label>
+                  <Label>{t('courseAuthoring.latex.type')}</Label>
                   <div className="flex gap-2">
                     <Button
                       variant={latexType === 'inline' ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setLatexType('inline')}
                     >
-                      Inline
+                      {t('courseAuthoring.latex.inline')}
                     </Button>
                     <Button
                       variant={latexType === 'block' ? 'default' : 'outline'}
                       size="sm"
                       onClick={() => setLatexType('block')}
                     >
-                      Block
+                      {t('courseAuthoring.latex.block')}
                     </Button>
                   </div>
                 </div>
 
                 {/* Formula Preview */}
                 <div className="space-y-2">
-                  <Label>Preview:</Label>
+                  <Label>{t('courseAuthoring.latex.preview')}</Label>
                   {renderPreview()}
                 </div>
 
                 <div className="space-y-2">
-                  <Label>LaTeX Code:</Label>
+                  <Label>{t('courseAuthoring.latex.code')}</Label>
                   <div className="flex gap-2">
                     <Input
                       ref={latexInputRef}
@@ -394,7 +398,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                         const target = e.target as HTMLInputElement;
                         setCursorPosition(target.selectionStart || 0);
                       }}
-                      placeholder="Enter LaTeX formula..."
+                      placeholder={t('courseAuthoring.latex.placeholder')}
                       className="font-mono flex-1"
                     />
                     <Button
@@ -403,7 +407,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                       onClick={() => setLatexInput('')}
                       className="px-3"
                     >
-                      Clear
+                      {t('courseAuthoring.video.clear')}
                     </Button>
                   </div>
                 </div>
@@ -412,19 +416,19 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
                 {/* Quick Formulas */}
                 <div className="space-y-2">
-                  <Label>Quick Formulas:</Label>
+                  <Label>{t('courseAuthoring.latex.quick')}</Label>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { label: 'System of Equations', latex: '\\begin{cases} x + y = 5 \\\\ 2x - y = 1 \\end{cases}' },
-                      { label: 'Inequality', latex: 'x > 5' },
-                      { label: 'Double Inequality', latex: '1 < x < 10' },
+                      { label: t('courseAuthoring.latex.system'), latex: '\\begin{cases} x + y = 5 \\\\ 2x - y = 1 \\end{cases}' },
+                      { label: t('courseAuthoring.latex.inequality'), latex: 'x > 5' },
+                      { label: t('courseAuthoring.latex.doubleInequality'), latex: '1 < x < 10' },
                       { label: 'sin', latex: '\\sin(x)' },
                       { label: 'cos', latex: '\\cos(x)' },
                       { label: 'tan', latex: '\\tan(x)' },
-                      { label: 'Quadratic Equation', latex: 'ax^2 + bx + c = 0' },
-                      { label: 'Fraction', latex: '\\frac{a}{b}' },
-                      { label: 'Square Root', latex: '\\sqrt{x}' },
-                      { label: 'Power', latex: 'x^n' }
+                      { label: t('courseAuthoring.latex.quadratic'), latex: 'ax^2 + bx + c = 0' },
+                      { label: t('courseAuthoring.latex.fraction'), latex: '\\frac{a}{b}' },
+                      { label: t('courseAuthoring.latex.sqrt'), latex: '\\sqrt{x}' },
+                      { label: t('courseAuthoring.latex.power'), latex: 'x^n' }
                     ].map((formula, index) => (
                       <Button
                         key={index}
@@ -441,7 +445,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
                 {/* Mathematical Symbols */}
                 <div className="space-y-2">
-                  <Label>Mathematical Symbols:</Label>
+                  <Label>{t('courseAuthoring.latex.symbols')}</Label>
                   <div className="grid grid-cols-4 gap-2">
                     {[
                       { label: '±', latex: '\\pm' },
@@ -475,10 +479,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
                     variant="outline"
                     onClick={handleCloseDialog}
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </Button>
                   <Button onClick={handleInsertLatex}>
-                    Insert
+                    {t('courseAuthoring.latex.insert')}
                   </Button>
                 </div>
               </div>

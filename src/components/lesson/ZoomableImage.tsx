@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { ZoomIn, ZoomOut, X, Maximize2, Minimize2 } from 'lucide-react';
 import { Button } from '../ui/button';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/lessonPlayer';
 
 interface ZoomableImageProps {
   src: string;
@@ -15,7 +17,9 @@ const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 3;
 const ZOOM_STEP = 0.25;
 
-export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onError }: ZoomableImageProps) => {
+export const ZoomableImage = ({ src, alt: altProp, className = '', caption, onError }: ZoomableImageProps) => {
+  const t = useT();
+  const alt = altProp ?? t('lessonPlayer.zoom.image');
   const [zoom, setZoom] = useState(1);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fullscreenZoom, setFullscreenZoom] = useState(1);
@@ -223,7 +227,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
         {/* Drag hint when zoomed */}
         {zoom > 1 && (
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-muted-foreground bg-white/90 dark:bg-popover/90 px-2 py-1 rounded-full shadow-sm">
-            Drag to pan • Ctrl+Scroll to zoom
+            {t('lessonPlayer.zoom.dragHint')}
           </div>
         )}
 
@@ -243,7 +247,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
             onClick={handleZoomOut}
             disabled={currentZoom <= MIN_ZOOM}
             className="h-8 w-8 p-0 hover:bg-muted disabled:opacity-40"
-            title="Zoom Out (−)"
+            title={t('lessonPlayer.zoom.out')}
           >
             <ZoomOut className="h-4 w-4" />
           </Button>
@@ -253,7 +257,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
             type="button"
             onClick={handleResetZoom}
             className="px-2 min-w-[50px] text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
-            title="Reset Zoom"
+            title={t('lessonPlayer.zoom.reset')}
           >
             {zoomPercentage}%
           </button>
@@ -266,7 +270,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
             onClick={handleZoomIn}
             disabled={currentZoom >= MAX_ZOOM}
             className="h-8 w-8 p-0 hover:bg-muted disabled:opacity-40"
-            title="Zoom In (+)"
+            title={t('lessonPlayer.zoom.in')}
           >
             <ZoomIn className="h-4 w-4" />
           </Button>
@@ -281,7 +285,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
             size="sm"
             onClick={openFullscreen}
             className="h-8 w-8 p-0 hover:bg-muted"
-            title="View Fullscreen"
+            title={t('lessonPlayer.zoom.fullscreen')}
           >
             <Maximize2 className="h-4 w-4" />
           </Button>
@@ -310,7 +314,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
               onClick={handleZoomOut}
               disabled={fullscreenZoom <= MIN_ZOOM}
               className="h-10 w-10 p-0 hover:bg-muted disabled:opacity-40"
-              title="Zoom Out (−)"
+              title={t('lessonPlayer.zoom.out')}
             >
               <ZoomOut className="h-5 w-5" />
             </Button>
@@ -320,7 +324,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
               type="button"
               onClick={handleResetZoom}
               className="px-3 min-w-[60px] text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg py-2 transition-colors"
-              title="Reset Zoom (Press 0)"
+              title={t('lessonPlayer.zoom.resetKey')}
             >
               {Math.round(fullscreenZoom * 100)}%
             </button>
@@ -333,7 +337,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
               onClick={handleZoomIn}
               disabled={fullscreenZoom >= MAX_ZOOM}
               className="h-10 w-10 p-0 hover:bg-muted disabled:opacity-40"
-              title="Zoom In (+)"
+              title={t('lessonPlayer.zoom.in')}
             >
               <ZoomIn className="h-5 w-5" />
             </Button>
@@ -348,7 +352,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
               size="sm"
               onClick={closeFullscreen}
               className="h-10 w-10 p-0 hover:bg-muted"
-              title="Exit Fullscreen (Esc)"
+              title={t('lessonPlayer.zoom.exitFullscreen')}
             >
               <Minimize2 className="h-5 w-5" />
             </Button>
@@ -360,7 +364,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
             variant="ghost"
             onClick={closeFullscreen}
             className="absolute top-4 right-4 h-12 w-12 p-0 bg-white/90 hover:bg-white dark:bg-popover/90 dark:hover:bg-popover dark:text-foreground rounded-full shadow-lg"
-            title="Close (Esc)"
+            title={t('lessonPlayer.zoom.close')}
           >
             <X className="h-6 w-6" />
           </Button>
@@ -389,7 +393,7 @@ export const ZoomableImage = ({ src, alt = 'Image', className = '', caption, onE
 
           {/* Instructions */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/70 text-sm bg-black/50 px-4 py-2 rounded-full">
-            Scroll to zoom • Drag to pan • Press Esc to close
+            {t('lessonPlayer.zoom.fullscreenHint')}
           </div>
         </div>
       )}

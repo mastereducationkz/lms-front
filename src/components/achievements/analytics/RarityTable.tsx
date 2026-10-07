@@ -2,6 +2,7 @@
 import { TIER_STYLE } from '@/components/achievements/tierStyle';
 import type { AnalyticsAchievement } from '@/services/api/achievementsAnalytics';
 import { barWidth, formatPct } from '@/lib/achievementsAnalytics';
+import { achievementField } from '@/lib/achievements';
 import { useT } from '@/lib/i18n/react';
 import { TierBadge } from './parts';
 import '@/lib/i18n/catalogs/achievements';
@@ -29,7 +30,7 @@ export default function RarityTable({ items }: { items: AnalyticsAchievement[] }
             <tr key={a.key}>
               <td className="py-2.5 pr-3">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-foreground">{a.title}</span>
+                  <span className="font-medium text-foreground">{achievementField(a, 'title')}</span>
                   {a.secret && <span className="text-[10px] text-muted-foreground">{t('achievements.rarity.secret')}</span>}
                 </div>
                 <div className="mt-1"><TierBadge tier={a.tier} /></div>
@@ -58,7 +59,7 @@ export default function RarityTable({ items }: { items: AnalyticsAchievement[] }
         <div className="flex flex-wrap gap-2">
           {notYet.map((a) => (
             <span key={a.key} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-2.5 py-1 text-xs text-foreground/80">
-              {a.title}
+              {achievementField(a, 'title')}
               <TierBadge tier={a.tier} />
             </span>
           ))}

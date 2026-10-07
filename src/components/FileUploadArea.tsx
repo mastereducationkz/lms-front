@@ -4,6 +4,11 @@ import { Button } from './ui/button';
 import PDFPreview from './PDFPreview';
 import type { StepAttachment } from '../types';
 import { MAX_FILE_SIZE_MB } from '../config/constants';
+import { useT } from '@/lib/i18n/react';
+import type { MessageKey } from '@/lib/i18n';
+import '@/lib/i18n/catalogs/courseAuthoring';
+
+const SIZE_KEYS: MessageKey[] = ['courseAuthoring.size.bytes', 'courseAuthoring.size.kb', 'courseAuthoring.size.mb', 'courseAuthoring.size.gb'];
 
 interface FileUploadAreaProps {
   attachments: StepAttachment[];
@@ -16,6 +21,7 @@ interface FileUploadAreaProps {
 }
 
 const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
+  const t = useT();
   const {
     attachments,
     onFileUpload,
@@ -68,14 +74,14 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
     // Validate file size
     const fileSizeMB = file.size / (1024 * 1024);
     if (fileSizeMB > maxFileSize) {
-      alert(`File size (${fileSizeMB.toFixed(1)}MB) exceeds maximum allowed size of ${maxFileSize}MB`);
+      alert(t('courseAuthoring.upload.tooLarge', { size: fileSizeMB.toFixed(1), max: maxFileSize }));
       return;
     }
 
     // Validate file type
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
     if (fileExtension && !allowedTypes.includes(fileExtension)) {
-      alert(`File type .${fileExtension} is not allowed. Allowed types: ${allowedTypes.join(', ')}`);
+      alert(t('courseAuthoring.upload.typeNotAllowed', { ext: fileExtension, types: allowedTypes.join(', ') }));
       return;
     }
 
@@ -84,7 +90,7 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
       await onFileUpload(file);
     } catch (error) {
       console.error('Failed to upload file:', error);
-      alert('Failed to upload file. Please try again.');
+      alert(t('courseAuthoring.upload.failed'));
     } finally {
       setIsUploading(false);
     }
@@ -132,11 +138,10 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
   };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return t('courseAuthoring.size.bytes', { size: 0 });
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return t(SIZE_KEYS[i], { size: parseFloat((bytes / Math.pow(k, i)).toFixed(2)) });
   };
 
   return (
@@ -156,7 +161,7 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
         onPaste={handlePaste}
         tabIndex={disabled ? -1 : 0}
         role="button"
-        aria-label="Upload files. Drag and drop, choose files, or paste an image with Ctrl+V."
+        aria-label={t('courseAuthoring.upload.areaAria')}
       >
         <input
           ref={fileInputRef}
@@ -171,11 +176,11 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
           <Upload className={`w-8 h-8 mx-auto ${disabled ? 'text-muted-foreground' : 'text-muted-foreground'}`} />
           <div>
             <p className={`text-sm ${disabled ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
-              {isUploading ? 'Uploading...' : 'Drag and drop files here, or'}
+              {isUploading ? t('courseAuthoring.upload.uploading') : t('courseAuthoring.upload.dragFilesOr')}
             </p>
             {!disabled && !isUploading && (
               <p className="text-xs text-muted-foreground">
-                Click here and press Ctrl+V to paste an image
+                {t('courseAuthoring.upload.pasteHint')}
               </p>
             )}
             <Button
@@ -186,11 +191,11 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
               disabled={disabled || isUploading}
               className="mt-2"
             >
-              Choose Files
+              {t('courseAuthoring.upload.chooseFiles')}
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Max {maxFileSize}MB • {allowedTypes.join(', ').toUpperCase()}
+            {t('courseAuthoring.upload.maxAndTypes', { max: maxFileSize, types: allowedTypes.join(', ').toUpperCase() })}
           </p>
         </div>
       </div>
@@ -198,7 +203,7 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
       {/* Uploaded Files List */}
       {attachments.length > 0 && (
         <div className="space-y-4">
-          <h4 className="text-sm font-medium text-foreground">Attached Files</h4>
+          <h4 className="text-sm font-medium text-foreground">{t('courseAuthoring.upload.attached')}</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {attachments.map((attachment) => (
               <div key={attachment.id} className="relative">
@@ -245,12 +250,12 @@ const FileUploadArea: React.FC<FileUploadAreaProps> = (props) => {
                           rel="noopener noreferrer"
                           className="text-sm text-brand hover:text-brand"
                         >
-                          Download
+                          {t('courseAuthoring.pdf.download')}
                         </a>
                       )}
                       {tempMode && (
                         <span className="text-sm text-muted-foreground">
-                          Ready to upload
+                          {t('courseAuthoring.upload.ready')}
                         </span>
                       )}
                       {!disabled && (

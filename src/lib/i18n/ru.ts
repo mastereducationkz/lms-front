@@ -32,6 +32,20 @@ import { profile } from './ru/profile';
 import { stars } from './ru/stars';
 import { guide } from './ru/guide';
 import { curatorDashboard } from './ru/curatorDashboard';
+import { lessonPlayer } from './ru/lessonPlayer';
+import { homework } from './ru/homework';
+import { homeworkStaff } from './ru/homeworkStaff';
+import { studentHome } from './ru/studentHome';
+import { publicPages } from './ru/publicPages';
+import { chatLive } from './ru/chatLive';
+import { meetViews } from './ru/meetViews';
+import { teacherDesk } from './ru/teacherDesk';
+import { teacherInsights } from './ru/teacherInsights';
+import { courseAuthoring } from './ru/courseAuthoring';
+import { adminUsers } from './ru/adminUsers';
+import { adminPages } from './ru/adminPages';
+import { quizReview } from './ru/quizReview';
+import { sharedUi } from './ru/sharedUi';
 
 export const RU_NAMESPACES = {
   common,
@@ -66,6 +80,20 @@ export const RU_NAMESPACES = {
   stars,
   guide,
   curatorDashboard,
+  lessonPlayer,
+  homework,
+  homeworkStaff,
+  studentHome,
+  publicPages,
+  chatLive,
+  meetViews,
+  teacherDesk,
+  teacherInsights,
+  courseAuthoring,
+  adminUsers,
+  adminPages,
+  quizReview,
+  sharedUi,
 } as const;
 
 export const ru: Readonly<Record<string, Message>> = {
@@ -101,4 +129,18 @@ export const ru: Readonly<Record<string, Message>> = {
   ...stars,
   ...guide,
   ...curatorDashboard,
+  ...lessonPlayer,
+  ...homework,
+  ...homeworkStaff,
+  ...studentHome,
+  ...publicPages,
+  ...chatLive,
+  ...meetViews,
+  ...teacherDesk,
+  ...teacherInsights,
+  ...courseAuthoring,
+  ...adminUsers,
+  ...adminPages,
+  ...quizReview,
+  ...sharedUi,
 };

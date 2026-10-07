@@ -3,6 +3,10 @@ import { HelpCircle } from 'lucide-react';
 import { SearchableSelect } from '../ui/searchable-select';
 import { clock } from '../../lib/meetAttendance';
 import type { MeetCandidate, MeetIdentity, MeetUnknownAccount } from '../../services/api/meetAttendance';
+import type { MessageKey } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/meet';
+import '@/lib/i18n/catalogs/meetViews';
 
 interface Props {
   accounts: MeetUnknownAccount[];
@@ -12,10 +16,10 @@ interface Props {
   onConfirmMany: (items: { participantId: number; identity: MeetIdentity }[]) => void;
 }
 
-const KIND: Record<MeetUnknownAccount['kind'], string> = {
-  signed_in: 'Google account',
-  guest: 'Guest (not signed in)',
-  phone: 'Phone',
+const KIND: Record<MeetUnknownAccount['kind'], MessageKey> = {
+  signed_in: 'meet.participants.google',
+  guest: 'meetViews.whoIsThis.guest',
+  phone: 'meetViews.whoIsThis.phone',
 };
 
 function AccountRow({ account, options, choice, onChoose, busy, onConfirm }: {
@@ -26,6 +30,7 @@ function AccountRow({ account, options, choice, onChoose, busy, onConfirm }: {
   busy: boolean;
   onConfirm: Props['onConfirm'];
 }) {
+  const t = useT();
   const suggested = account.suggestion && choice === String(account.suggestion.user_id);
 
   return (
@@ -34,10 +39,10 @@ function AccountRow({ account, options, choice, onChoose, busy, onConfirm }: {
         <HelpCircle className="mt-0.5 h-4 w-4 flex-none text-amber-600 dark:text-amber-400" aria-hidden />
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium text-foreground" title={account.display_name ?? undefined}>
-            {account.display_name || 'No name shown'}
+            {account.display_name || t('meetViews.shared.noName')}
           </div>
           <div className="text-xs text-muted-foreground">
-            {KIND[account.kind]} · {clock(account.first_join)}–{clock(account.last_leave)} · {account.minutes_in_lesson} min in the lesson
+            {t(KIND[account.kind])} · {clock(account.first_join)}–{clock(account.last_leave)} · {t('meetViews.whoIsThis.minutesIn', { minutes: account.minutes_in_lesson })}
           </div>
         </div>
       </div>
@@ -46,9 +51,9 @@ function AccountRow({ account, options, choice, onChoose, busy, onConfirm }: {
           options={options}
           value={choice}
           onChange={onChoose}
-          placeholder="Who is this?"
-          searchPlaceholder="Search this lesson's people…"
-          emptyText="No one matches"
+          placeholder={t('meetViews.whoIsThis.title')}
+          searchPlaceholder={t('meetViews.whoIsThis.search')}
+          emptyText={t('meetViews.whoIsThis.noMatch')}
           disabled={busy}
           className="h-8 w-52 text-xs"
         />
@@ -58,7 +63,7 @@ function AccountRow({ account, options, choice, onChoose, busy, onConfirm }: {
           onClick={() => choice && onConfirm(account.participant_id, { user_id: Number(choice) })}
           className="h-8 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
         >
-          Confirm
+          {t('meetViews.whoIsThis.confirm')}
         </button>
         <button
           type="button"
@@ -66,12 +71,12 @@ function AccountRow({ account, options, choice, onChoose, busy, onConfirm }: {
           onClick={() => onConfirm(account.participant_id, { not_a_student: true })}
           className="h-8 rounded-md px-2 text-xs font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-50"
         >
-          Not a student
+          {t('meetViews.shared.notStudent')}
         </button>
-        {suggested && <span className="text-[11px] text-amber-700 dark:text-amber-300">Suggested from the name</span>}
+        {suggested && <span className="text-[11px] text-amber-700 dark:text-amber-300">{t('meetViews.whoIsThis.suggested')}</span>}
       </div>
       {account.kind !== 'signed_in' && (
-        <p className="mt-1.5 pl-6 text-[11px] text-muted-foreground">Joined without signing in: matched for this lesson only.</p>
+        <p className="mt-1.5 pl-6 text-[11px] text-muted-foreground">{t('meetViews.whoIsThis.notSignedIn')}</p>
       )}
     </li>
   );
@@ -81,6 +86,7 @@ function AccountRow({ account, options, choice, onChoose, busy, onConfirm }: {
 const suggestedChoice = (a: MeetUnknownAccount) => (a.suggestion ? String(a.suggestion.user_id) : null);
 
 export function WhoIsThis({ accounts, candidates, busyId, onConfirm, onConfirmMany }: Props) {
+  const t = useT();
   // Each row's current pick, starting from the suggestion. Kept here so "confirm all" saves
   // what the rows show, including any pick a person changed.
   const [choices, setChoices] = useState<Record<number, string | null>>({});
@@ -92,18 +98,18 @@ export function WhoIsThis({ accounts, candidates, busyId, onConfirm, onConfirmMa
   const options = useMemo(() => candidates.map((c) => ({
     value: String(c.user_id),
     label: c.name,
-    hint: c.role === 'teacher' ? 'teacher' : undefined,
-  })), [candidates]);
+    hint: c.role === 'teacher' ? t('meet.webinar.roleTeacher') : undefined,
+  })), [candidates, t]);
 
   if (accounts.length === 0) return null;
   const chosen = accounts
     .map((a) => ({ a, pick: a.participant_id in choices ? choices[a.participant_id] : suggestedChoice(a) }))
     .filter((c): c is { a: MeetUnknownAccount; pick: string } => Boolean(c.pick));
   return (
-    <section aria-label="Accounts to confirm">
+    <section aria-label={t('meetViews.whoIsThis.section')}>
       <div className="mb-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
-          Who is this? · {accounts.length}
+          {t('meetViews.whoIsThis.title')} · {accounts.length}
         </h4>
         {chosen.length > 1 && (
           <button
@@ -115,12 +121,12 @@ export function WhoIsThis({ accounts, candidates, busyId, onConfirm, onConfirmMa
             })))}
             className="ml-auto rounded-md border border-amber-300 bg-card px-2.5 py-1 text-xs font-semibold text-amber-800 transition hover:bg-amber-50 disabled:opacity-50 dark:border-amber-800 dark:text-amber-300 dark:hover:bg-amber-950/40"
           >
-            Confirm all {chosen.length} shown
+            {t('meetViews.whoIsThis.confirmAll', { count: chosen.length })}
           </button>
         )}
       </div>
       <p className="mb-2 text-[11px] text-muted-foreground">
-        Meet shows Google names, not emails. Confirm each account once and it&apos;s recognised in every lesson after.
+        {t('meetViews.whoIsThis.hint')}
       </p>
       <ul className="flex flex-col gap-2">
         {accounts.map((a) => (

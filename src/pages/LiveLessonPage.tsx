@@ -7,6 +7,8 @@ import { useCountdown, useLiveLesson } from '../lib/liveLesson/useLiveLesson';
 import type { CurrentLive } from '../lib/liveLesson/types';
 import { live } from '../services/api/liveLesson';
 import { connectSocket } from '../services/socket';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/chatLive';
 
 /**
  * `/live` (owner, 2026-09-29): the one link a teacher puts in the Meet chat. It opens whatever
@@ -14,6 +16,7 @@ import { connectSocket } from '../services/socket';
  */
 export default function LiveLessonPage() {
   const { user } = useAuth();
+  const t = useT();
   const student = user?.role === 'student';
   const [current, setCurrent] = useState<CurrentLive | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
@@ -30,22 +33,22 @@ export default function LiveLessonPage() {
     return () => { alive = false; window.clearInterval(tick); };
   }, [student]);
 
-  useEffect(() => { document.title = 'Live lesson'; }, []);
+  useEffect(() => { document.title = t('chatLive.live.title'); }, [t]);
 
   if (!student) {
     return (
-      <Centered icon={<MonitorPlay className="h-8 w-8 text-muted-foreground" aria-hidden />} title="This page is for students">
-        Teachers run live activities from the Meet side panel or from the lesson's page.
-        <Link to="/calendar" className="mt-3 inline-block font-semibold text-primary underline underline-offset-2">Open the calendar</Link>
+      <Centered icon={<MonitorPlay className="h-8 w-8 text-muted-foreground" aria-hidden />} title={t('chatLive.live.page.forStudents')}>
+        {t('chatLive.live.page.forStudentsHint')}
+        <Link to="/calendar" className="mt-3 inline-block font-semibold text-primary underline underline-offset-2">{t('chatLive.live.page.openCalendar')}</Link>
       </Centered>
     );
   }
-  if (failed && !current) return <Centered title="Could not open the live lesson">{failed}</Centered>;
-  if (!current) return <Centered title="Finding your lesson…"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></Centered>;
+  if (failed && !current) return <Centered title={t('chatLive.live.page.openFailed')}>{failed}</Centered>;
+  if (!current) return <Centered title={t('chatLive.live.page.finding')}><Loader2 className="mx-auto h-5 w-5 animate-spin" /></Centered>;
   if (!current.lesson) {
     return (
-      <Centered icon={<CalendarClock className="h-8 w-8 text-muted-foreground" aria-hidden />} title="No live lesson right now">
-        This page opens your lesson from 15 minutes before it starts. Keep it open and it will appear.
+      <Centered icon={<CalendarClock className="h-8 w-8 text-muted-foreground" aria-hidden />} title={t('chatLive.live.page.none')}>
+        {t('chatLive.live.page.noneHint')}
       </Centered>
     );
   }
@@ -53,6 +56,7 @@ export default function LiveLessonPage() {
 }
 
 function LiveLesson({ eventId, title }: { eventId: number; title: string }) {
+  const t = useT();
   const socket = useMemo(() => connectSocket(), []);
   const { state, error, now, act } = useLiveLesson({ eventId, api: live, socket, heartbeat: true });
   const seconds = useCountdown(state, now);
@@ -63,7 +67,7 @@ function LiveLesson({ eventId, title }: { eventId: number; title: string }) {
       {!state ? (
         <div className="flex justify-center py-16"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : state.mode === 'off' ? (
-        <Centered title="Live lessons are switched off">Your teacher will tell you when to come back.</Centered>
+        <Centered title={t('chatLive.live.page.off')}>{t('chatLive.live.page.offHint')}</Centered>
       ) : (
         <StudentLive state={state} api={live} seconds={seconds} act={act} socket={socket} />
       )}

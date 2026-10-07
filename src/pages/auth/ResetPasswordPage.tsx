@@ -7,8 +7,11 @@ import { Input } from '../../components/ui/input';
 import { Button } from '../../components/ui/button';
 import { Label } from '../../components/ui/label';
 import { passwordHint, passwordPolicyError } from '../../lib/passwordPolicy';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/publicPages';
 
 export default function ResetPasswordPage() {
+  const t = useT();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const token = searchParams.get('token') || '';
@@ -27,16 +30,16 @@ export default function ResetPasswordPage() {
       return;
     }
     if (password !== confirm) {
-      toast("Passwords don't match", 'error');
+      toast(t('publicPages.auth.reset.mismatch'), 'error');
       return;
     }
     setLoading(true);
     try {
       await resetPassword(token, password);
-      toast('Password changed. Sign in with your new password.', 'success');
+      toast(t('publicPages.auth.reset.done'), 'success');
       navigate('/login', { replace: true });
     } catch (err: any) {
-      toast(err.message || 'Failed to reset password', 'error');
+      toast(err.message || t('publicPages.auth.reset.failed'), 'error');
     } finally {
       setLoading(false);
     }
@@ -47,24 +50,24 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-sm rounded-xl border border-border bg-card p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-1">
           <KeyRound className="w-5 h-5 text-brand" />
-          <h1 className="text-lg font-semibold text-foreground">Set a new password</h1>
+          <h1 className="text-lg font-semibold text-foreground">{t('publicPages.auth.reset.title')}</h1>
         </div>
 
         {!token ? (
           <>
             <p className="text-sm text-muted-foreground mt-2">
-              This link is invalid or has expired. Please request a new one.
+              {t('publicPages.auth.reset.invalidLink')}
             </p>
             <Link to="/forgot-password" className="inline-flex items-center gap-1.5 text-sm text-brand mt-5 hover:underline">
-              <ArrowLeft className="w-4 h-4" /> Request a new link
+              <ArrowLeft className="w-4 h-4" /> {t('publicPages.auth.reset.requestNew')}
             </Link>
           </>
         ) : (
           <>
-            <p className="text-sm text-muted-foreground mb-5">Choose a new password for your account.</p>
+            <p className="text-sm text-muted-foreground mb-5">{t('publicPages.auth.reset.intro')}</p>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="password" className="text-sm font-medium">New password</Label>
+                <Label htmlFor="password" className="text-sm font-medium">{t('publicPages.auth.reset.newPassword')}</Label>
                 <Input
                   id="password"
                   type="password"
@@ -81,7 +84,7 @@ export default function ResetPasswordPage() {
                 {password && policyError && <p id="password-error" className="mt-1 text-xs text-destructive">{policyError}</p>}
               </div>
               <div>
-                <Label htmlFor="confirm" className="text-sm font-medium">Confirm password</Label>
+                <Label htmlFor="confirm" className="text-sm font-medium">{t('publicPages.auth.reset.confirmPassword')}</Label>
                 <Input
                   id="confirm"
                   type="password"
@@ -93,14 +96,14 @@ export default function ResetPasswordPage() {
                   aria-describedby="confirm-error"
                   className="mt-1.5"
                 />
-                {mismatch && <p id="confirm-error" className="mt-1 text-xs text-destructive">Passwords don't match</p>}
+                {mismatch && <p id="confirm-error" className="mt-1 text-xs text-destructive">{t('publicPages.auth.reset.mismatch')}</p>}
               </div>
               <Button type="submit" className="w-full" disabled={loading || !!policyError || password !== confirm}>
-                {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Saving…</> : 'Reset password'}
+                {loading ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('publicPages.auth.reset.saving')}</> : t('publicPages.auth.reset.submit')}
               </Button>
             </form>
             <Link to="/login" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground mt-5 hover:text-foreground">
-              <ArrowLeft className="w-4 h-4" /> Back to sign in
+              <ArrowLeft className="w-4 h-4" /> {t('publicPages.auth.backToSignIn')}
             </Link>
           </>
         )}

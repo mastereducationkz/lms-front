@@ -4,6 +4,8 @@ import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { toast } from '../Toast';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/announcements';
 
 interface TestSendCardProps {
   testing: boolean;
@@ -16,6 +18,7 @@ interface TestSendCardProps {
  * is created. Nothing is recorded, which is also why it can't be recalled.
  */
 export function TestSendCard({ testing, onTestSend }: TestSendCardProps) {
+  const t = useT();
   const [chatId, setChatId] = useState('');
 
   const submit = () => {
@@ -23,7 +26,7 @@ export function TestSendCard({ testing, onTestSend }: TestSendCardProps) {
     // Group ids are negative (-100…), so this must be a real number check, not
     // a digits-only one.
     if (!chatId.trim() || !Number.isInteger(parsed)) {
-      toast('Enter the numeric chat ID of your staff test group', 'error');
+      toast(t('announcements.testSend.needChatId'), 'error');
       return;
     }
     onTestSend(parsed);
@@ -32,12 +35,11 @@ export function TestSendCard({ testing, onTestSend }: TestSendCardProps) {
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">Test send</CardTitle>
+        <CardTitle className="text-base">{t('announcements.testSend.title')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-xs text-muted-foreground">
-          Deliver this exact message to one chat first — your staff test group. Nothing is recorded
-          and it cannot be recalled.
+          {t('announcements.testSend.hint')}
         </p>
         <Input
           value={chatId}
@@ -47,11 +49,11 @@ export function TestSendCard({ testing, onTestSend }: TestSendCardProps) {
           }}
           // No inputMode="numeric": iOS's numeric keypad has no minus key, and
           // every group chat id is negative.
-          placeholder="Chat ID, e.g. -1001234567890"
+          placeholder={t('announcements.testSend.placeholder')}
         />
         <Button variant="outline" className="w-full" onClick={submit} disabled={testing}>
           {testing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-          Test send
+          {t('announcements.testSend.button')}
         </Button>
       </CardContent>
     </Card>

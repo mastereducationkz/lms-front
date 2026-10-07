@@ -2,6 +2,8 @@ import { Card, CardContent, CardHeader } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { BookOpen, Clock, User, Play, CheckCircle, ArrowRight } from "lucide-react";
+import { useT } from "@/lib/i18n/react";
+import "@/lib/i18n/catalogs/courseAuthoring";
 
 interface CourseCardData {
   id: string;
@@ -20,6 +22,7 @@ interface CourseCardProps {
 }
 
 export default function CourseCard({ course, onContinue }: CourseCardProps) {
+  const t = useT();
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
@@ -45,11 +48,24 @@ export default function CourseCard({ course, onContinue }: CourseCardProps) {
   const getButtonText = (status: string) => {
     switch (status) {
       case 'not-started':
-        return 'Start Learning';
+        return t('courseAuthoring.courseCard.start');
       case 'completed':
-        return 'Review Course';
+        return t('courseAuthoring.courseCard.review');
       default:
-        return 'Continue';
+        return t('courseAuthoring.courseCard.continue');
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'not-started':
+        return t('courseAuthoring.courseCard.notStarted');
+      case 'in-progress':
+        return t('courseAuthoring.courseCard.inProgress');
+      case 'completed':
+        return t('courseAuthoring.courseCard.completed');
+      default:
+        return status.replace('-', ' ');
     }
   };
 
@@ -84,7 +100,7 @@ export default function CourseCard({ course, onContinue }: CourseCardProps) {
             className={`${getStatusColor(course.status || 'not-started')} flex items-center gap-1`}
           >
             {getStatusIcon(course.status || 'not-started')}
-            {course.status?.replace('-', ' ') || 'not started'}
+            {getStatusLabel(course.status || 'not-started')}
           </Badge>
         </div>
       </div>
@@ -106,14 +122,14 @@ export default function CourseCard({ course, onContinue }: CourseCardProps) {
         <div className="flex items-center text-muted-foreground text-sm mb-4 space-x-3">
           <div className="flex items-center gap-1">
             <User className="h-4 w-4" />
-            <span>{course.teacher || 'Unknown Teacher'}</span>
+            <span>{course.teacher || t('courseAuthoring.courseCard.unknownTeacher')}</span>
           </div>
           {course.modulesCount && (
             <>
               <span className="text-gray-300 dark:text-muted-foreground">•</span>
               <div className="flex items-center gap-1">
                 <BookOpen className="h-4 w-4" />
-                <span>{course.modulesCount} modules</span>
+                <span>{t('courseAuthoring.courseCard.modules', { count: course.modulesCount })}</span>
               </div>
             </>
           )}
@@ -122,7 +138,7 @@ export default function CourseCard({ course, onContinue }: CourseCardProps) {
         {/* Progress Section */}
         <div className="space-y-3 mb-6">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700 dark:text-foreground">Progress</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-foreground">{t('courseAuthoring.courseCard.progress')}</span>
             <span className="text-sm font-semibold text-foreground">{course.progress}%</span>
           </div>
           <div className="relative">

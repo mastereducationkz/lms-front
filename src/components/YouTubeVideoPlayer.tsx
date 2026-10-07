@@ -3,6 +3,8 @@ import { ExternalLink, RotateCcw, TriangleAlert } from 'lucide-react';
 import { validateAndExtractYouTubeInfo } from '../utils/youtube';
 import { resumeSecond, youtubeWatchAt } from '../lib/youtubePlayback';
 import { Button } from './ui/button';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/lessonPlayer';
 
 interface YouTubeVideoPlayerProps {
   url: string;
@@ -14,11 +16,12 @@ interface YouTubeVideoPlayerProps {
 
 export default function YouTubeVideoPlayer({ 
   url, 
-  title = "YouTube Video", // Kept for prop interface compatibility, but marked as unused if needed
+  title, // Kept for prop interface compatibility, but marked as unused if needed
   className = "",
   onError,
   onProgress 
 }: YouTubeVideoPlayerProps) {
+  const t = useT();
   const [player, setPlayer] = useState<any>(null);
   const [isPlayerActive, setIsPlayerActive] = useState(false);
   // Bumped by «Reload video»: the player is rebuilt (a fresh decoder) and resumes at resumeAtRef.
@@ -33,7 +36,7 @@ export default function YouTubeVideoPlayer({
   const videoInfo = validateAndExtractYouTubeInfo(url);
 
   if (!videoInfo.is_valid || !videoInfo.video_id) {
-    const errorMessage = "Invalid YouTube URL";
+    const errorMessage = t('lessonPlayer.youtube.invalid');
     onError?.(errorMessage);
     return (
       <div className={`bg-muted rounded-lg p-4 text-center ${className}`}>
@@ -42,7 +45,7 @@ export default function YouTubeVideoPlayer({
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
           </svg>
           <p>{errorMessage}</p>
-          <p className="text-xs mt-1">Please enter a valid YouTube URL</p>
+          <p className="text-xs mt-1">{t('lessonPlayer.youtube.invalidHint')}</p>
         </div>
       </div>
     );
@@ -113,7 +116,7 @@ export default function YouTubeVideoPlayer({
           }
 
           playerReadyTimeoutRef.current = window.setTimeout(() => {
-            onError?.('Unable to initialize YouTube player. Please try opening the video in a new tab.');
+            onError?.(t('lessonPlayer.youtube.initFailed'));
           }, 12000);
 
           // The API swaps the element it is given for its iframe, so give it one React does not
@@ -182,7 +185,7 @@ export default function YouTubeVideoPlayer({
 
         } catch (error) {
           console.error('YouTubeVideoPlayer: Error creating player', error);
-          onError?.('Failed to load YouTube player. Please try again or open the video in a new tab.');
+          onError?.(t('lessonPlayer.youtube.loadFailed'));
         }
       } else {
       }
@@ -225,7 +228,7 @@ export default function YouTubeVideoPlayer({
             >
               <img 
                 src={videoInfo.thumbnail_url} 
-                alt={title} 
+                alt={title || t('lessonPlayer.youtube.alt')} 
                 className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
               />
               <div className="absolute inset-0 flex items-center justify-center">
@@ -263,30 +266,28 @@ export default function YouTubeVideoPlayer({
             className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-gray-800 dark:hover:text-foreground"
           >
             <TriangleAlert className="h-3.5 w-3.5" />
-            Video glitching or not playing?
+            {t('lessonPlayer.youtube.troubleToggle')}
           </button>
         </div>
         {troubleOpen && (
           <div className="mt-2 space-y-3 rounded-md border border-border bg-card p-3 text-gray-700 dark:text-foreground">
             <p>
-              Stripes, green or pink blocks, or a frozen picture come from how your computer's graphics
-              card plays YouTube video, not from the lesson itself.
+              {t('lessonPlayer.youtube.troubleBody')}
             </p>
             <div className="flex flex-wrap gap-2">
               {isPlayerActive && (
                 <Button variant="outline" size="sm" onClick={reloadPlayer}>
                   <RotateCcw className="mr-1.5 h-4 w-4" />
-                  Reload video
+                  {t('lessonPlayer.youtube.reload')}
                 </Button>
               )}
               <Button variant="outline" size="sm" onClick={openOnYouTube}>
                 <ExternalLink className="mr-1.5 h-4 w-4" />
-                Open on YouTube
+                {t('lessonPlayer.youtube.open')}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Still broken? Update Chrome and your graphics driver, or open Chrome's Settings → System,
-              turn off «Use graphics acceleration when available» and relaunch Chrome.
+              {t('lessonPlayer.youtube.stillBroken')}
             </p>
           </div>
         )}

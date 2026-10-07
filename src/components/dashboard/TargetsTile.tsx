@@ -11,6 +11,9 @@ import {
   type TargetsPayload,
   type TargetTrack,
 } from '../../services/api/targets';
+import type { TFunction } from '@/lib/i18n';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/studentHome';
 
 /**
  * Student home: target vs current level per exam track.
@@ -24,8 +27,8 @@ const MODULES: IeltsModule[] = ['listening', 'reading', 'writing', 'speaking'];
 const SHORT: Record<IeltsModule, string> = { listening: 'L', reading: 'R', writing: 'W', speaking: 'S' };
 const LABEL: Record<IeltsModule, string> = { listening: 'Listening', reading: 'Reading', writing: 'Writing', speaking: 'Speaking' };
 
-const sourceLabel = (source: string | undefined): string =>
-  source === 'staff' ? 'set by your curator' : source === 'assignment_zero' ? 'from Assignment Zero' : '';
+const sourceLabel = (source: string | undefined, t: TFunction): string =>
+  source === 'staff' ? t('studentHome.targets.source.staff') : source === 'assignment_zero' ? t('studentHome.targets.source.assignmentZero') : '';
 
 function NumberField({ label, value, onChange, step, min, max }: {
   label: string; value: string; onChange: (v: string) => void; step: number; min: number; max: number;
@@ -48,6 +51,7 @@ function NumberField({ label, value, onChange, step, min, max }: {
 }
 
 function IeltsBlock({ data, onSaved }: { data: TargetsPayload; onSaved: (next: TargetsPayload) => void }) {
+  const t = useT();
   const record = data.targets.ielts;
   const targets = record?.targets ?? {};
   const progress = data.progress.ielts;
@@ -73,7 +77,7 @@ function IeltsBlock({ data, onSaved }: { data: TargetsPayload; onSaved: (next: T
       payload[key] = Number(raw.replace(',', '.'));
     }
     if (!('overall' in payload)) {
-      setError('Set at least the overall band.');
+      setError(t('studentHome.targets.overallRequired'));
       return;
     }
     setSaving(true);
@@ -83,7 +87,7 @@ function IeltsBlock({ data, onSaved }: { data: TargetsPayload; onSaved: (next: T
       setEditing(false);
     } catch (err: unknown) {
       const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(typeof detail === 'string' ? detail : 'Could not save the target.');
+      setError(typeof detail === 'string' ? detail : t('studentHome.targets.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -96,19 +100,19 @@ function IeltsBlock({ data, onSaved }: { data: TargetsPayload; onSaved: (next: T
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">IELTS</p>
           <p className="text-lg font-semibold">
             {progress?.start?.overall != null && (
-              <span className="text-muted-foreground font-normal" title="Diagnostic entry band">start {band(progress.start.overall)} → </span>
+              <span className="text-muted-foreground font-normal" title={t('studentHome.targets.diagnosticEntry')}>{t('studentHome.targets.startArrow', { value: band(progress.start.overall) })} </span>
             )}
-            Target {band(targets.overall)} <span className="text-muted-foreground font-normal">·</span> now{' '}
+            {t('studentHome.targets.target', { value: band(targets.overall) })} <span className="text-muted-foreground font-normal">·</span> {t('studentHome.targets.now')}{' '}
             <span className={progress?.reached ? 'text-emerald-600 dark:text-emerald-400' : ''}>{band(progress?.overall_now)}</span>
-            {progress?.overall_best != null && <span className="ml-2 text-xs font-normal text-muted-foreground">best {band(progress.overall_best)}</span>}
+            {progress?.overall_best != null && <span className="ml-2 text-xs font-normal text-muted-foreground">{t('studentHome.targets.best', { value: band(progress.overall_best) })}</span>}
           </p>
           {progress && progress.overall_now == null && progress.overall_missing.length > 0 && progress.overall_missing.length < 4 && (
-            <p className="text-xs text-muted-foreground">Overall needs {progress.overall_missing.map((m) => LABEL[m]).join(', ')}</p>
+            <p className="text-xs text-muted-foreground">{t('studentHome.targets.overallNeeds', { modules: progress.overall_missing.map((m) => LABEL[m]).join(', ') })}</p>
           )}
-          {record && sourceLabel(record.source) && <p className="text-[11px] text-muted-foreground">{sourceLabel(record.source)}</p>}
+          {record && sourceLabel(record.source, t) && <p className="text-[11px] text-muted-foreground">{sourceLabel(record.source, t)}</p>}
         </div>
         {!editing && (
-          <Button size="sm" variant="ghost" onClick={startEdit} aria-label="Edit IELTS target">
+          <Button size="sm" variant="ghost" onClick={startEdit} aria-label={t('studentHome.targets.edit', { track: 'IELTS' })}>
             <Pencil className="h-4 w-4" aria-hidden="true" />
           </Button>
         )}
@@ -118,7 +122,7 @@ function IeltsBlock({ data, onSaved }: { data: TargetsPayload; onSaved: (next: T
           {MODULES.map((m) => {
             const mod = progress.modules[m];
             return (
-              <li key={m} className="rounded-lg border border-border p-2 text-center" title={`${LABEL[m]}: now ${band(mod.now)}, best ${band(mod.best)}`}>
+              <li key={m} className="rounded-lg border border-border p-2 text-center" title={t('studentHome.targets.moduleTitle', { module: LABEL[m], now: band(mod.now), best: band(mod.best) })}>
                 <p className="text-[11px] text-muted-foreground">{SHORT[m]}{targets[m] != null ? ` → ${band(targets[m])}` : ''}</p>
                 <p className="text-base font-semibold tabular-nums">
                   {band(mod.now)}
@@ -126,10 +130,10 @@ function IeltsBlock({ data, onSaved }: { data: TargetsPayload; onSaved: (next: T
                     <TrendIcon trend={mod.trend} className={'ml-0.5 inline h-3 w-3 align-[-1px] ' + (mod.trend > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400')} />
                   )}
                 </p>
-                <p className="text-[11px] text-muted-foreground">best {band(mod.best)}</p>
+                <p className="text-[11px] text-muted-foreground">{t('studentHome.targets.best', { value: band(mod.best) })}</p>
                 {m !== 'speaking' && progress.start?.[m] && (
-                  <p className="text-[11px] text-muted-foreground" title="Diagnostic entry band">
-                    start {progress.start[m]?.band != null ? band(progress.start[m]?.band) : 'taken'}
+                  <p className="text-[11px] text-muted-foreground" title={t('studentHome.targets.diagnosticEntry')}>
+                    {progress.start[m]?.band != null ? t('studentHome.targets.startValue', { value: band(progress.start[m]?.band) }) : t('studentHome.targets.startTaken')}
                   </p>
                 )}
               </li>
@@ -139,9 +143,9 @@ function IeltsBlock({ data, onSaved }: { data: TargetsPayload; onSaved: (next: T
       )}
       {editing && (
         <form onSubmit={submit} className="space-y-2 rounded-lg border border-border p-3">
-          <NumberField label="Overall band" value={form.overall ?? ''} onChange={(v) => setForm((f) => ({ ...f, overall: v }))} step={0.5} min={4} max={9} />
+          <NumberField label={t('studentHome.targets.overallBand')} value={form.overall ?? ''} onChange={(v) => setForm((f) => ({ ...f, overall: v }))} step={0.5} min={4} max={9} />
           <details>
-            <summary className="cursor-pointer text-xs text-muted-foreground">Per part (optional)</summary>
+            <summary className="cursor-pointer text-xs text-muted-foreground">{t('studentHome.targets.perPart')}</summary>
             <div className="mt-2 space-y-2">
               {MODULES.map((m) => (
                 <NumberField key={m} label={LABEL[m]} value={form[m] ?? ''} onChange={(v) => setForm((f) => ({ ...f, [m]: v }))} step={0.5} min={4} max={9} />
@@ -151,9 +155,9 @@ function IeltsBlock({ data, onSaved }: { data: TargetsPayload; onSaved: (next: T
           {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
           <div className="flex justify-end gap-2">
             <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)} disabled={saving}>
-              <X className="h-4 w-4" aria-hidden="true" /> Cancel
+              <X className="h-4 w-4" aria-hidden="true" /> {t('common.cancel')}
             </Button>
-            <Button type="submit" size="sm" disabled={saving}>{saving ? 'Saving…' : 'Save target'}</Button>
+            <Button type="submit" size="sm" disabled={saving}>{saving ? t('studentHome.targets.saving') : t('studentHome.targets.save')}</Button>
           </div>
         </form>
       )}
@@ -162,6 +166,7 @@ function IeltsBlock({ data, onSaved }: { data: TargetsPayload; onSaved: (next: T
 }
 
 function ScoreBlock({ track, data, onSaved }: { track: 'sat' | 'nuet'; data: TargetsPayload; onSaved: (next: TargetsPayload) => void }) {
+  const t = useT();
   const record = data.targets[track];
   const targets = record?.targets ?? {};
   const current = track === 'sat' ? data.progress.sat?.current ?? null : null;
@@ -171,8 +176,8 @@ function ScoreBlock({ track, data, onSaved }: { track: 'sat' | 'nuet'; data: Tar
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
   const fields = track === 'sat'
-    ? [{ key: 'total', label: 'Total', min: 400, max: 1600 }, { key: 'math', label: 'Math', min: 200, max: 800 }, { key: 'verbal', label: 'Verbal', min: 200, max: 800 }]
-    : [{ key: 'total', label: 'Total', min: 0, max: 120 }];
+    ? [{ key: 'total', label: t('studentHome.targets.total'), min: 400, max: 1600 }, { key: 'math', label: 'Math', min: 200, max: 800 }, { key: 'verbal', label: 'Verbal', min: 200, max: 800 }]
+    : [{ key: 'total', label: t('studentHome.targets.total'), min: 0, max: 120 }];
 
   const startEdit = () => {
     setForm(Object.fromEntries(fields.map((f) => [f.key, targets[f.key] != null ? String(targets[f.key]) : ''])));
@@ -185,7 +190,7 @@ function ScoreBlock({ track, data, onSaved }: { track: 'sat' | 'nuet'; data: Tar
     const payload: Record<string, number> = {};
     for (const [key, raw] of Object.entries(form)) if (raw.trim() !== '') payload[key] = Number(raw);
     if (!('total' in payload)) {
-      setError('Set at least the total.');
+      setError(t('studentHome.targets.totalRequired'));
       return;
     }
     setSaving(true);
@@ -195,7 +200,7 @@ function ScoreBlock({ track, data, onSaved }: { track: 'sat' | 'nuet'; data: Tar
       setEditing(false);
     } catch (err: unknown) {
       const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(typeof detail === 'string' ? detail : 'Could not save the target.');
+      setError(typeof detail === 'string' ? detail : t('studentHome.targets.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -207,10 +212,10 @@ function ScoreBlock({ track, data, onSaved }: { track: 'sat' | 'nuet'; data: Tar
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{track.toUpperCase()}</p>
           <p className="text-lg font-semibold">
-            Target {score(targets.total)}
+            {t('studentHome.targets.target', { value: score(targets.total) })}
             {track === 'sat' && (
               <>
-                <span className="text-muted-foreground font-normal"> · </span>now{' '}
+                <span className="text-muted-foreground font-normal"> · </span>{t('studentHome.targets.now')}{' '}
                 <span className={reached ? 'text-emerald-600 dark:text-emerald-400' : ''}>{score(current?.total)}</span>
               </>
             )}
@@ -219,28 +224,28 @@ function ScoreBlock({ track, data, onSaved }: { track: 'sat' | 'nuet'; data: Tar
             <>
               <p className="text-xs text-muted-foreground">
                 Math {score(current.math)}{targets.math != null ? ` → ${targets.math}` : ''}
-                {current.math_correct != null && current.math_total != null ? ` (${current.math_correct}/${current.math_total} correct)` : ''}
+                {current.math_correct != null && current.math_total != null ? ` ${t('studentHome.targets.correct', { correct: current.math_correct, total: current.math_total })}` : ''}
                 {' · '}Verbal {score(current.verbal)}{targets.verbal != null ? ` → ${targets.verbal}` : ''}
-                {current.verbal_correct != null && current.verbal_total != null ? ` (${current.verbal_correct}/${current.verbal_total} correct)` : ''}
+                {current.verbal_correct != null && current.verbal_total != null ? ` ${t('studentHome.targets.correct', { correct: current.verbal_correct, total: current.verbal_total })}` : ''}
                 {current.set_name ? ` · ${current.set_name}` : ''}
                 {current.trend != null && current.trend !== 0 ? (
                   <>
                     {' · '}
                     <TrendIcon trend={current.trend} className="inline h-3 w-3 align-[-2px]" />
-                    {` ${Math.abs(current.trend)} vs previous set`}
+                    {` ${t('studentHome.targets.vsPrevious', { delta: Math.abs(current.trend) })}`}
                   </>
                 ) : null}
               </p>
               <p className="text-[11px] text-muted-foreground italic">
-                {data.progress.sat?.note ?? 'Scaled scores are estimates predicted from the number of correct answers. They are not official scores.'}
+                {data.progress.sat?.note ?? t('studentHome.targets.scaledNote')}
               </p>
             </>
           )}
-          {track === 'sat' && !current && <p className="text-xs text-muted-foreground">No completed weekly set yet</p>}
-          {record && sourceLabel(record.source) && <p className="text-[11px] text-muted-foreground">{sourceLabel(record.source)}</p>}
+          {track === 'sat' && !current && <p className="text-xs text-muted-foreground">{t('studentHome.targets.noSet')}</p>}
+          {record && sourceLabel(record.source, t) && <p className="text-[11px] text-muted-foreground">{sourceLabel(record.source, t)}</p>}
         </div>
         {!editing && (
-          <Button size="sm" variant="ghost" onClick={startEdit} aria-label={`Edit ${track.toUpperCase()} target`}>
+          <Button size="sm" variant="ghost" onClick={startEdit} aria-label={t('studentHome.targets.edit', { track: track.toUpperCase() })}>
             <Pencil className="h-4 w-4" aria-hidden="true" />
           </Button>
         )}
@@ -253,9 +258,9 @@ function ScoreBlock({ track, data, onSaved }: { track: 'sat' | 'nuet'; data: Tar
           {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
           <div className="flex justify-end gap-2">
             <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)} disabled={saving}>
-              <X className="h-4 w-4" aria-hidden="true" /> Cancel
+              <X className="h-4 w-4" aria-hidden="true" /> {t('common.cancel')}
             </Button>
-            <Button type="submit" size="sm" disabled={saving}>{saving ? 'Saving…' : 'Save target'}</Button>
+            <Button type="submit" size="sm" disabled={saving}>{saving ? t('studentHome.targets.saving') : t('studentHome.targets.save')}</Button>
           </div>
         </form>
       )}
@@ -264,6 +269,7 @@ function ScoreBlock({ track, data, onSaved }: { track: 'sat' | 'nuet'; data: Tar
 }
 
 export function TargetsTile() {
+  const t = useT();
   const [data, setData] = useState<TargetsPayload | null>(null);
 
   useEffect(() => {
@@ -287,7 +293,7 @@ export function TargetsTile() {
     <Card className="mt-2">
       <CardContent className="p-5 space-y-4">
         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <Target className="h-4 w-4" aria-hidden="true" /> Your targets
+          <Target className="h-4 w-4" aria-hidden="true" /> {t('studentHome.targets.title')}
         </div>
         {tracks.map((t) =>
           t === 'ielts' ? <IeltsBlock key={t} data={data} onSaved={setData} /> : <ScoreBlock key={t} track={t} data={data} onSaved={setData} />,
@@ -301,6 +307,7 @@ export default TargetsTile;
 
 /** Up or down since the previous result, drawn rather than a ↑/↓ glyph. */
 function TrendIcon({ trend, className }: { trend: number; className?: string }) {
+  const t = useT();
   const Icon = trend > 0 ? ArrowUp : ArrowDown;
-  return <Icon className={className} role="img" aria-label={trend > 0 ? 'up' : 'down'} />;
+  return <Icon className={className} role="img" aria-label={trend > 0 ? t('studentHome.targets.up') : t('studentHome.targets.down')} />;
 }

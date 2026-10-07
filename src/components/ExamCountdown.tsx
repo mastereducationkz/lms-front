@@ -5,11 +5,14 @@ import { Button } from "./ui/button";
 import { GraduationCap } from "lucide-react";
 import "./ExamCountdown.css";
 import ExamDateDialog, { EXAM_LABEL } from "./exams/ExamDateDialog";
+import { formatDate as formatDay } from "../lib/i18n";
+import { useT } from "../lib/i18n/react";
+import "@/lib/i18n/catalogs/lessonPlayer";
 
 function formatDate(iso: string): string {
   const d = new Date(`${iso.slice(0, 10)}T00:00:00`);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
+  return formatDay(iso.slice(0, 10), { month: "short", day: "2-digit", year: "numeric" });
 }
 
 const DIGIT_RE = /^[0-9]$/;
@@ -229,6 +232,7 @@ function ExamPanel({
   onEdit: () => void;
   className?: string;
 }) {
+  const t = useT();
   const examLabel = EXAM_LABEL[kind];
   const targetMs = info?.target_date
     ? new Date(`${info.target_date.slice(0, 10)}T00:00:00`).getTime()
@@ -252,15 +256,15 @@ function ExamPanel({
       {hasCountdown ? (
         <>
           <div className="flex items-start justify-center gap-1.5 @lg:gap-2">
-            <TimeGroup value={dd} label="days" />
+            <TimeGroup value={dd} label={t('lessonPlayer.exam.days')} />
             <UnitSeparator />
-            <TimeGroup value={hh} label="hrs" />
+            <TimeGroup value={hh} label={t('lessonPlayer.exam.hours')} />
             {/* minutes & seconds only once the banner is @lg wide; phones show days : hrs */}
             <div className="hidden items-start gap-1.5 @lg:flex @lg:gap-2">
               <UnitSeparator />
-              <TimeGroup value={mm} label="min" />
+              <TimeGroup value={mm} label={t('lessonPlayer.exam.minutes')} />
               <UnitSeparator />
-              <TimeGroup value={ss} label="sec" />
+              <TimeGroup value={ss} label={t('lessonPlayer.exam.seconds')} />
             </div>
           </div>
           <div className="mt-2 text-[11px] font-semibold uppercase tracking-[0.13em] text-white/55">
@@ -271,33 +275,33 @@ function ExamPanel({
             onClick={onEdit}
             className="mt-1 inline-flex items-center gap-1 text-[11px] text-sky-300 underline-offset-2 hover:text-sky-200 hover:underline dark:text-brand dark:hover:text-brand-subtle-foreground"
           >
-            Change date
+            {t('lessonPlayer.exam.changeDate')}
           </button>
         </>
       ) : targetMs != null ? (
         <>
-          <div className="flex items-center gap-2 text-2xl font-extrabold text-white">Exam day! <GraduationCap className="h-6 w-6" aria-hidden="true" /></div>
+          <div className="flex items-center gap-2 text-2xl font-extrabold text-white">{t('lessonPlayer.exam.examDayBang')} <GraduationCap className="h-6 w-6" aria-hidden="true" /></div>
           <div className="mt-1 text-xs text-white/70">{formatDate(info!.target_date!)}</div>
           <button
             type="button"
             onClick={onEdit}
             className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-sky-300 underline-offset-2 hover:text-sky-200 hover:underline dark:text-brand dark:hover:text-brand-subtle-foreground"
           >
-            Change date
+            {t('lessonPlayer.exam.changeDate')}
           </button>
         </>
       ) : (
         <>
           <div className="text-sm font-medium leading-snug text-white">
-            Set your {examLabel} exam date
+            {t('lessonPlayer.exam.setYourDate', { exam: examLabel })}
           </div>
-          <div className="mt-0.5 text-[11px] text-white/60">Add it to see your countdown</div>
+          <div className="mt-0.5 text-[11px] text-white/60">{t('lessonPlayer.exam.addHint')}</div>
           <Button
             size="sm"
             className="mt-2 h-7 bg-sky-500 px-3 text-xs text-white hover:bg-sky-400 dark:bg-brand-solid dark:text-brand-solid-foreground dark:hover:bg-brand-solid-hover"
             onClick={onEdit}
           >
-            Set date
+            {t('lessonPlayer.exam.setDate')}
           </Button>
         </>
       )}
@@ -325,6 +329,7 @@ function SecondaryExam({
   now: number;
   onEdit: () => void;
 }) {
+  const t = useT();
   const label = EXAM_LABEL[kind];
   const target = info?.target_date
     ? new Date(`${info.target_date.slice(0, 10)}T00:00:00`).getTime()
@@ -338,19 +343,19 @@ function SecondaryExam({
         <>
           <span aria-hidden="true">·</span>
           <span className="font-semibold text-white">{days}</span>
-          <span>{days === 1 ? "day" : "days"}</span>
+          <span>{t('lessonPlayer.exam.dayWord', { count: days })}</span>
           <span aria-hidden="true">·</span>
           <span>{formatDate(info!.target_date!)}</span>
         </>
       ) : days != null && days <= 0 ? (
         <>
           <span aria-hidden="true">·</span>
-          <span className="inline-flex items-center gap-1 font-semibold text-white">Exam day <GraduationCap className="h-4 w-4" aria-hidden="true" /></span>
+          <span className="inline-flex items-center gap-1 font-semibold text-white">{t('lessonPlayer.exam.examDay')} <GraduationCap className="h-4 w-4" aria-hidden="true" /></span>
         </>
       ) : (
         <>
           <span aria-hidden="true">·</span>
-          <span>no date set</span>
+          <span>{t('lessonPlayer.exam.noDate')}</span>
         </>
       )}
       <button
@@ -358,7 +363,7 @@ function SecondaryExam({
         onClick={onEdit}
         className="ml-0.5 text-sky-300 underline-offset-2 hover:text-sky-200 hover:underline dark:text-brand dark:hover:text-brand-subtle-foreground"
       >
-        {days != null ? "Change" : "Set date"}
+        {days != null ? t('lessonPlayer.exam.change') : t('lessonPlayer.exam.setDate')}
       </button>
     </span>
   );

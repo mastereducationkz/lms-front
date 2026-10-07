@@ -8,6 +8,9 @@ import {
   overrideBluebookResult,
   type BluebookResultDetail,
 } from '../../services/api/exams';
+import { formatDate } from '@/lib/i18n';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/homework';
 
 /**
  * What a grader sees for a Bluebook task: the parsed scores, the source PDF, and a way
@@ -37,6 +40,7 @@ interface Props {
 }
 
 export function BluebookGraderPanel({ assignmentId, studentId, fallback }: Props) {
+  const t = useT();
   const [result, setResult] = useState<BluebookResultDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,7 +90,7 @@ export function BluebookGraderPanel({ assignmentId, studentId, fallback }: Props
       setReason('');
     } catch (e: any) {
       const detail = e?.response?.data?.detail;
-      setError(typeof detail === 'string' ? detail : 'Could not save the correction.');
+      setError(typeof detail === 'string' ? detail : t('homework.bluebook.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -107,12 +111,12 @@ export function BluebookGraderPanel({ assignmentId, studentId, fallback }: Props
   } as BluebookResultDetail : null);
 
   if (loading) {
-    return <p className="text-xs text-muted-foreground">Loading the submitted report…</p>;
+    return <p className="text-xs text-muted-foreground">{t('homework.bluebook.loadingReport')}</p>;
   }
   if (!shown) {
     return (
       <p className="text-xs text-muted-foreground">
-        No official report has been submitted for this task yet.
+        {t('homework.bluebook.noReport')}
       </p>
     );
   }
@@ -121,7 +125,7 @@ export function BluebookGraderPanel({ assignmentId, studentId, fallback }: Props
     <div className="rounded-md border bg-muted/40 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="text-xs font-medium">
-          From the official report — SAT Practice {shown.test_number}
+          {t('homework.bluebook.fromOfficial', { number: shown.test_number })}
           {shown.report_date ? ` · ${shown.report_date}` : ''}
         </div>
         <div className="flex items-center gap-2">
@@ -130,16 +134,16 @@ export function BluebookGraderPanel({ assignmentId, studentId, fallback }: Props
               size="sm"
               variant="secondary"
               onClick={() => openBluebookReport(assignmentId, studentId).catch(
-                () => setError('Could not open the report.'))}
+                () => setError(t('homework.bluebook.openFailed')))}
             >
               <Download className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-              Open PDF
+              {t('homework.bluebook.openPdf')}
             </Button>
           )}
           {result && !editing && (
             <Button size="sm" variant="outline" onClick={() => setEditing(true)}>
               <Pencil className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-              Correct scores
+              {t('homework.bluebook.correctScores')}
             </Button>
           )}
         </div>
@@ -148,15 +152,15 @@ export function BluebookGraderPanel({ assignmentId, studentId, fallback }: Props
       {!editing ? (
         <div className="mt-3 grid grid-cols-3 gap-3 text-center">
           <div>
-            <div className="text-[11px] text-muted-foreground">Reading &amp; Writing</div>
+            <div className="text-[11px] text-muted-foreground">{t('homework.bluebook.readingWriting')}</div>
             <div className="text-lg font-semibold">{shown.verbal_score}</div>
           </div>
           <div>
-            <div className="text-[11px] text-muted-foreground">Math</div>
+            <div className="text-[11px] text-muted-foreground">{t('homework.bluebook.math')}</div>
             <div className="text-lg font-semibold">{shown.math_score}</div>
           </div>
           <div>
-            <div className="text-[11px] text-muted-foreground">Total</div>
+            <div className="text-[11px] text-muted-foreground">{t('homework.bluebook.total')}</div>
             <div className="text-lg font-bold">{shown.total_score}</div>
           </div>
         </div>
@@ -164,19 +168,19 @@ export function BluebookGraderPanel({ assignmentId, studentId, fallback }: Props
         <div className="mt-3 space-y-2">
           <div className="grid grid-cols-3 gap-2">
             <div>
-              <label htmlFor="bb-ov-v" className="text-[11px] font-medium">Reading &amp; Writing</label>
+              <label htmlFor="bb-ov-v" className="text-[11px] font-medium">{t('homework.bluebook.readingWriting')}</label>
               <Input id="bb-ov-v" type="number" min={200} max={800} step={10} value={verbal}
                      aria-invalid={invalid(verbal)}
                      onChange={(e) => setVerbal(e.target.value)} className="mt-1" />
             </div>
             <div>
-              <label htmlFor="bb-ov-m" className="text-[11px] font-medium">Math</label>
+              <label htmlFor="bb-ov-m" className="text-[11px] font-medium">{t('homework.bluebook.math')}</label>
               <Input id="bb-ov-m" type="number" min={200} max={800} step={10} value={math}
                      aria-invalid={invalid(math)}
                      onChange={(e) => setMath(e.target.value)} className="mt-1" />
             </div>
             <div>
-              <span className="text-[11px] font-medium">Total</span>
+              <span className="text-[11px] font-medium">{t('homework.bluebook.total')}</span>
               <output className="mt-1 block rounded-md border border-input bg-background px-3 py-2 text-sm font-semibold"
                       aria-live="polite">
                 {invalid(verbal) || invalid(math) ? '—' : Number(verbal) + Number(math)}
@@ -185,21 +189,20 @@ export function BluebookGraderPanel({ assignmentId, studentId, fallback }: Props
           </div>
           <div>
             <label htmlFor="bb-ov-r" className="text-[11px] font-medium">
-              Reason for the correction *
+              {t('homework.bluebook.reasonLabel')}
             </label>
             <Input id="bb-ov-r" value={reason} className="mt-1"
-                   placeholder="e.g. report was for a retake; parsed value was wrong"
+                   placeholder={t('homework.bluebook.reasonPlaceholder')}
                    onChange={(e) => setReason(e.target.value)} />
             <p className="text-[11px] text-muted-foreground mt-1">
-              Recorded with your name, so a corrected score is never mistaken for a
-              parsed one. Scores must be 200–800 in steps of 10.
+              {t('homework.bluebook.reasonHint')}
             </p>
           </div>
           <div className="flex justify-end gap-2">
             <Button size="sm" variant="outline" onClick={() => { setEditing(false); setReason(''); }}
-                    disabled={saving}>Cancel</Button>
+                    disabled={saving}>{t('common.cancel')}</Button>
             <Button size="sm" onClick={saveOverride} disabled={!canSave}>
-              {saving ? 'Saving…' : 'Save correction'}
+              {saving ? t('homework.bluebook.saving') : t('homework.bluebook.saveCorrection')}
             </Button>
           </div>
         </div>
@@ -207,11 +210,11 @@ export function BluebookGraderPanel({ assignmentId, studentId, fallback }: Props
 
       {shown.report_student_name && (
         <div className="mt-2 text-[11px] text-muted-foreground">
-          Report name: {shown.report_student_name}
+          {t('homework.bluebook.reportName', { name: shown.report_student_name })}
           {shown.report_name_matches === false && (
             <span className="ml-1 inline-flex items-center gap-1 text-amber-600 dark:text-amber-500">
               <AlertTriangle className="h-3 w-3" aria-hidden="true" />
-              does not match the account name — check this is the student's own report
+              {t('homework.bluebook.nameMismatchStaff')}
             </span>
           )}
         </div>
@@ -219,7 +222,7 @@ export function BluebookGraderPanel({ assignmentId, studentId, fallback }: Props
 
       {shown.overridden_at && (
         <p className="mt-2 text-[11px] text-amber-700 dark:text-amber-500">
-          Corrected by staff on {shown.overridden_at.slice(0, 10)}
+          {t('homework.bluebook.correctedOn', { date: formatDate(shown.overridden_at) })}
           {shown.override_reason ? ` — ${shown.override_reason}` : ''}
         </p>
       )}

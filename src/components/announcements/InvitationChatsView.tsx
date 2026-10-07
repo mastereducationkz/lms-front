@@ -4,6 +4,9 @@ import { SearchableSelect } from '../ui/searchable-select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import type { InvitationLinks } from '../../services/api/announcements';
 import { chatRows, groupOptionsFor } from './invitationChats';
+import type { MessageKey } from '../../lib/i18n';
+import { useLocale, useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/announcements';
 
 type Filter = 'unlinked' | 'linked' | 'all';
 
@@ -19,6 +22,8 @@ interface Props {
  * because that is what is left to do once the suggestions are confirmed.
  */
 export function InvitationChatsView({ data, busy, readOnly, onLink }: Props) {
+  const t = useT();
+  const locale = useLocale();
   const [filter, setFilter] = useState<Filter>('unlinked');
   const [query, setQuery] = useState('');
 
@@ -39,13 +44,13 @@ export function InvitationChatsView({ data, busy, readOnly, onLink }: Props) {
   }, [rows, filter, query]);
 
   // Every LMS group can be chosen — see groupOptionsFor for the order and the hints.
-  const groupOptions = useMemo(() => groupOptionsFor(data.groups), [data.groups]);
-  const nameOf = (id: number) => data.groups.find((g) => g.id === id)?.name ?? `Group ${id}`;
+  const groupOptions = useMemo(() => groupOptionsFor(data.groups, locale), [data.groups, locale]);
+  const nameOf = (id: number) => data.groups.find((g) => g.id === id)?.name ?? t('announcements.chats.groupFallback', { id });
 
-  const FILTERS: { key: Filter; label: string }[] = [
-    { key: 'unlinked', label: 'No LMS group' },
-    { key: 'linked', label: 'Linked' },
-    { key: 'all', label: 'All chats' },
+  const FILTERS: { key: Filter; label: MessageKey }[] = [
+    { key: 'unlinked', label: 'announcements.chats.noGroup' },
+    { key: 'linked', label: 'announcements.chats.linked' },
+    { key: 'all', label: 'announcements.chats.all' },
   ];
 
   return (
@@ -57,12 +62,12 @@ export function InvitationChatsView({ data, busy, readOnly, onLink }: Props) {
             id="invitation-chat-search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search chats or groups"
-            aria-label="Search chats or groups"
+            placeholder={t('announcements.chats.search')}
+            aria-label={t('announcements.chats.search')}
             className="h-9 w-full rounded-md border border-border bg-background pl-8 pr-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
-        <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label="Show chats">
+        <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label={t('announcements.chats.show')}>
           {FILTERS.map((f) => (
             <button
               key={f.key}
@@ -72,7 +77,7 @@ export function InvitationChatsView({ data, busy, readOnly, onLink }: Props) {
               className={`rounded-md px-2.5 py-1 text-[13px] font-medium transition ${filter === f.key
                 ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              {f.label} <span className="tabular-nums text-muted-foreground">{counts[f.key]}</span>
+              {t(f.label)} <span className="tabular-nums text-muted-foreground">{counts[f.key]}</span>
             </button>
           ))}
         </div>
@@ -82,9 +87,9 @@ export function InvitationChatsView({ data, busy, readOnly, onLink }: Props) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Telegram chat</TableHead>
-              <TableHead>LMS group</TableHead>
-              <TableHead className="text-right">Link to a group</TableHead>
+              <TableHead>{t('announcements.chats.colChat')}</TableHead>
+              <TableHead>{t('announcements.chats.colGroup')}</TableHead>
+              <TableHead className="text-right">{t('announcements.chats.colLink')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -92,8 +97,8 @@ export function InvitationChatsView({ data, busy, readOnly, onLink }: Props) {
               <TableRow>
                 <TableCell colSpan={3} className="py-8 text-center text-sm text-muted-foreground">
                   {filter === 'unlinked' && !query
-                    ? 'Every approved chat is linked to an LMS group.'
-                    : 'No chats match.'}
+                    ? t('announcements.chats.allLinked')
+                    : t('announcements.chats.noMatch')}
                 </TableCell>
               </TableRow>
             ) : visible.map(({ chat, groups }) => (
@@ -101,7 +106,7 @@ export function InvitationChatsView({ data, busy, readOnly, onLink }: Props) {
                 <TableCell className="font-medium text-foreground">{chat.title}</TableCell>
                 <TableCell className="text-sm">
                   {groups.length === 0 ? (
-                    <span className="text-muted-foreground">No LMS group</span>
+                    <span className="text-muted-foreground">{t('announcements.chats.noGroup')}</span>
                   ) : (
                     <div className="flex flex-wrap gap-1.5">
                       {groups.map((g) => (
@@ -111,7 +116,7 @@ export function InvitationChatsView({ data, busy, readOnly, onLink }: Props) {
                             type="button"
                             onClick={() => void onLink(g.id, g.name, null)}
                             disabled={readOnly || busy}
-                            aria-label={`Unlink ${g.name} from ${chat.title}`}
+                            aria-label={t('announcements.chats.unlink', { group: g.name, chat: chat.title })}
                             className="rounded p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
                           >
                             <X className="h-3 w-3" />
@@ -127,9 +132,9 @@ export function InvitationChatsView({ data, busy, readOnly, onLink }: Props) {
                       options={groupOptions}
                       value={null}
                       onChange={(v) => void onLink(Number(v), nameOf(Number(v)), chat.id)}
-                      placeholder={groups.length ? 'Add another group' : 'Choose a group'}
-                      searchPlaceholder="Search LMS groups…"
-                      emptyText="No group matches"
+                      placeholder={groups.length ? t('announcements.chats.addAnother') : t('announcements.chats.chooseGroup')}
+                      searchPlaceholder={t('announcements.chats.searchGroups')}
+                      emptyText={t('announcements.chats.noGroupMatches')}
                       disabled={readOnly || busy}
                       className="h-8 w-48 text-xs"
                     />

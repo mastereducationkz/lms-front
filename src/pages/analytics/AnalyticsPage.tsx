@@ -17,6 +17,7 @@ import { Badge } from '../../components/ui/badge';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 import { Clock, Search, Filter, ArrowRight, ArrowUp, ArrowDown } from 'lucide-react';
 import '@/lib/i18n/catalogs/analytics';
+import '@/lib/i18n/catalogs/teacherInsights';
 
 interface Course {
   id: number;
@@ -109,8 +110,9 @@ interface VideoMetric {
 
 /** The active column's sort direction, drawn rather than a ↑/↓ glyph. */
 function SortMark({ dir }: { dir: string }) {
+  const t = useT();
   const Icon = dir === 'asc' ? ArrowUp : ArrowDown;
-  return <Icon className="ml-1 inline h-3.5 w-3.5 align-[-2px]" aria-label={dir === 'asc' ? 'ascending' : 'descending'} />;
+  return <Icon className="ml-1 inline h-3.5 w-3.5 align-[-2px]" aria-label={dir === 'asc' ? t('teacherInsights.analytics.sortAscending') : t('teacherInsights.analytics.sortDescending')} />;
 }
 
 export default function AnalyticsPage() {
@@ -276,11 +278,11 @@ export default function AnalyticsPage() {
       if (!selectedCourseId && mappedCourses.length > 0) {
          handleCourseChange(String(mappedCourses[0].id));
       } else if (mappedCourses.length === 0) {
-        setError("No courses available to view.");
+        setError(t('teacherInsights.analytics.noCoursesToView'));
       }
     } catch (error) {
       console.error('Failed to load courses:', error);
-      setError("Failed to load courses. Please try refreshing.");
+      setError(t('teacherInsights.analytics.loadCoursesFailed'));
     }
   };
 
@@ -348,7 +350,7 @@ export default function AnalyticsPage() {
         setStudentsPagination(data.pagination || null);
     } catch (err) {
         console.error("Failed to fetch overview", err);
-        setError("Failed to load overview data. Please refresh the page.")
+        setError(t('teacherInsights.analytics.loadOverviewFailed'))
     } finally {
         setLoadingOverview(false);
     }
@@ -431,7 +433,7 @@ export default function AnalyticsPage() {
   const sortedStudents = useMemo(() => students, [students]);
 
   const formatTimeAgo = (dateStr?: string) => {
-    if (!dateStr) return 'Never';
+    if (!dateStr) return t('teacherInsights.time.never');
     const date = new Date(dateStr);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
@@ -439,29 +441,29 @@ export default function AnalyticsPage() {
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
     
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffMins < 60) return t('teacherInsights.time.minutesAgo', { minutes: diffMins });
+    if (diffHours < 24) return t('teacherInsights.time.hoursAgo', { hours: diffHours });
+    if (diffDays < 7) return t('teacherInsights.time.daysAgo', { days: diffDays });
     return formatDate(date);
   };
 
   const formatDuration = (minutes?: number) => {
       if (!minutes) return '-';
-      if (minutes < 60) return `${Math.round(minutes)}m`;
-      return `${Math.floor(minutes / 60)}h ${Math.round(minutes % 60)}m`;
+      if (minutes < 60) return t('teacherInsights.duration.minutes', { minutes: Math.round(minutes) });
+      return t('teacherInsights.duration.hoursMinutes', { hours: Math.floor(minutes / 60), minutes: Math.round(minutes % 60) });
   };
 
   const formatQuestionType = (type: string) => {
     switch (type) {
         case 'choice':
         case 'multiple_choice':
-            return 'Multiple Choice';
+            return t('teacherInsights.analytics.questionType.multipleChoice');
         case 'multi_choice':
-            return 'Multiple Selection';
+            return t('teacherInsights.analytics.questionType.multipleSelection');
         case 'fill_blank':
-            return 'Fill in the Blank';
+            return t('teacherInsights.analytics.questionType.fillBlank');
         case 'long_text':
-            return 'Open Ended';
+            return t('teacherInsights.analytics.questionType.openEnded');
         default:
             return type.charAt(0).toUpperCase() + type.slice(1).replace('_', ' ');
     }
@@ -473,8 +475,8 @@ export default function AnalyticsPage() {
       <div className="p-6">
         <Card>
           <CardContent className="p-12 text-center">
-            <h2 className="text-xl font-semibold text-foreground mb-2">Access Denied</h2>
-            <p className="text-muted-foreground">You don't have permission to view analytics.</p>
+            <h2 className="text-xl font-semibold text-foreground mb-2">{t('teacherInsights.analytics.accessDenied')}</h2>
+            <p className="text-muted-foreground">{t('teacherInsights.analytics.noPermission')}</p>
           </CardContent>
         </Card>
       </div>
@@ -484,8 +486,8 @@ export default function AnalyticsPage() {
   if (courses.length === 0 && !loadingOverview) {
     return (
       <div className="p-8 text-center">
-        <h2 className="text-xl font-semibold text-foreground mb-2">No courses found</h2>
-        <p className="text-muted-foreground">You don't have access to any courses yet.</p>
+        <h2 className="text-xl font-semibold text-foreground mb-2">{t('teacherInsights.analytics.noCourses')}</h2>
+        <p className="text-muted-foreground">{t('teacherInsights.analytics.noCourseAccess')}</p>
       </div>
     );
   }
@@ -538,7 +540,7 @@ export default function AnalyticsPage() {
 
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded relative" role="alert">
-           <strong className="font-bold">Error: </strong>
+           <strong className="font-bold">{t('teacherInsights.analytics.errorPrefix')} </strong>
            <span className="block @lg:inline">{error}</span>
         </div>
       )}
@@ -565,7 +567,7 @@ export default function AnalyticsPage() {
             <CardContent>
               <div className="text-2xl font-bold">{overview.total_students}</div>
               <p className="text-xs text-muted-foreground mt-1">
-                {overview.active_students} active recently
+                {t('teacherInsights.analytics.activeRecently', { count: overview.active_students })}
               </p>
             </CardContent>
           </Card>
@@ -585,7 +587,7 @@ export default function AnalyticsPage() {
             <CardContent>
               <div className="text-2xl font-bold">{Math.round(overview.average_score)}%</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Assignment performance
+                {t('teacherInsights.analytics.assignmentPerformance')}
               </p>
             </CardContent>
           </Card>
@@ -596,7 +598,7 @@ export default function AnalyticsPage() {
             <CardContent>
               <div className="text-2xl font-bold">{Math.round(overview.completion_rate)}%</div>
               <p className="text-xs text-muted-foreground mt-1">
-                Course completion
+                {t('teacherInsights.analytics.courseCompletion')}
               </p>
             </CardContent>
           </Card>
@@ -617,12 +619,12 @@ export default function AnalyticsPage() {
           <div className="grid gap-4 @xl:grid-cols-2 @4xl:grid-cols-7 items-start">
             <Card className="col-span-7 @4xl:col-span-4">
               <CardHeader>
-                <CardTitle>Progress Over Time</CardTitle>
+                <CardTitle>{t('teacherInsights.analytics.progressOverTime')}</CardTitle>
               </CardHeader>
               <CardContent className="pl-2">
                 {selectedGroupId === 'all' ? (
                     <div className="h-[350px] flex items-center justify-center text-muted-foreground font-medium">
-                        Select group first
+                        {t('teacherInsights.analytics.selectGroupFirst')}
                     </div>
                 ) : loadingCharts ? (
                     <div className="h-[350px] flex items-center justify-center">
@@ -685,11 +687,11 @@ export default function AnalyticsPage() {
             
             <Card className="col-span-7 @4xl:col-span-3">
               <CardHeader>
-                <CardTitle>Difficult Lessons</CardTitle>
+                <CardTitle>{t('teacherInsights.analytics.difficultLessons')}</CardTitle>
                 <CardDescription>
-                   Lessons with highest error rates.
+                   {t('teacherInsights.analytics.difficultLessonsHint')}
                    <span className="block text-[10px] mt-1 text-muted-foreground italic">
-                     (Calculation: total incorrect question answers / total attempts)
+                     {t('teacherInsights.analytics.difficultLessonsFormula')}
                    </span>
                 </CardDescription>
               </CardHeader>
@@ -701,7 +703,7 @@ export default function AnalyticsPage() {
                         <Skeleton className="h-12 w-full" />
                     </div>
                 ) : topicAnalysis.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">No data available</div>
+                    <div className="text-center py-8 text-muted-foreground">{t('teacherInsights.analytics.noData')}</div>
                 ) : (
                     <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
                         {topicAnalysis.slice(0, 50).map((topic) => (
@@ -712,11 +714,11 @@ export default function AnalyticsPage() {
                                     {topic.title}
                                 </p>
                                 <Badge variant={topic.errorRate > 70 ? "destructive" : "secondary"}>
-                                    {Math.round(topic.errorRate)}% error
+                                    {t('teacherInsights.analytics.errorRateBadge', { rate: Math.round(topic.errorRate) })}
                                 </Badge>
                             </div>
                             <p className="text-xs text-muted-foreground truncate">
-                                {topic.questions} questions • {topic.attempts} attempts
+                                {t('teacherInsights.analytics.questionsCount', { count: topic.questions })} • {t('teacherInsights.analytics.attemptsCount', { count: topic.attempts })}
                             </p>
                             </div>
                         </div>
@@ -732,9 +734,9 @@ export default function AnalyticsPage() {
           <Card>
             <CardHeader className="flex flex-col @lg:flex-row @lg:items-start justify-between gap-3 space-y-0">
               <div>
-                <CardTitle>Student Progress Directory</CardTitle>
+                <CardTitle>{t('teacherInsights.analytics.studentDirectory')}</CardTitle>
                 <CardDescription>
-                  Detailed progress tracking for {studentsPagination?.total_items ?? students.length} students
+                  {t('teacherInsights.analytics.studentDirectoryHint', { count: studentsPagination?.total_items ?? students.length })}
                 </CardDescription>
               </div>
               <div className="flex flex-col items-stretch gap-2 w-full @lg:w-72">
@@ -772,24 +774,24 @@ export default function AnalyticsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="w-[200px] cursor-pointer hover:bg-muted dark:hover:bg-secondary" onClick={() => handleSortChange('name')}>
-                      Student {studentSort === 'name' && <SortMark dir={studentSortDir} />}
+                      {t('teacherInsights.analytics.col.student')} {studentSort === 'name' && <SortMark dir={studentSortDir} />}
                     </TableHead>
-                    <TableHead className="text-center">Group</TableHead>
+                    <TableHead className="text-center">{t('teacherInsights.analytics.col.group')}</TableHead>
                     <TableHead className="cursor-pointer hover:bg-muted dark:hover:bg-secondary" onClick={() => handleSortChange('progress')}>
-                      Progress {studentSort === 'progress' && <SortMark dir={studentSortDir} />}
+                      {t('teacherInsights.analytics.col.progress')} {studentSort === 'progress' && <SortMark dir={studentSortDir} />}
                     </TableHead>
-                    <TableHead>Current Lesson</TableHead>
+                    <TableHead>{t('teacherInsights.analytics.col.currentLesson')}</TableHead>
                     {courses.find(c => c.id.toString() === selectedCourseId)?.title.toLowerCase().includes('sat') ? (
-                      <TableHead className="w-[120px]">Weekly Test</TableHead>
+                      <TableHead className="w-[120px]">{t('teacherInsights.analytics.col.weeklyTest')}</TableHead>
                     ) : (
-                      <TableHead className="w-[180px]">Last Test</TableHead>
+                      <TableHead className="w-[180px]">{t('teacherInsights.analytics.col.lastTest')}</TableHead>
                     )}
-                    <TableHead className="text-center">Assignments</TableHead>
-                    <TableHead className="text-center">Time Spent</TableHead>
+                    <TableHead className="text-center">{t('teacherInsights.analytics.col.assignments')}</TableHead>
+                    <TableHead className="text-center">{t('teacherInsights.analytics.col.timeSpent')}</TableHead>
                     <TableHead className="cursor-pointer hover:bg-muted dark:hover:bg-secondary" onClick={() => handleSortChange('activity')}>
-                      Last Active {studentSort === 'activity' && <SortMark dir={studentSortDir} />}
+                      {t('teacherInsights.analytics.col.lastActive')} {studentSort === 'activity' && <SortMark dir={studentSortDir} />}
                     </TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="text-right">{t('teacherInsights.analytics.col.actions')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -812,7 +814,7 @@ export default function AnalyticsPage() {
                       </TableCell>
                       <TableCell className="text-center py-2 pr-0">
                         <Badge variant="outline" className="font-normal text-muted-foreground  text-xs px-2 py-0 h-6">
-                            {groups.find(g => g.name === student.group_name)?.description || student.group_name || 'No Group'}
+                            {groups.find(g => g.name === student.group_name)?.description || student.group_name || t('teacherInsights.analytics.noGroup')}
                         </Badge>
                       </TableCell>
                       <TableCell className="py-2">
@@ -824,8 +826,8 @@ export default function AnalyticsPage() {
                       <TableCell className="py-2">
                          <div className="flex flex-col gap-1 max-w-[200px]">
                             <div className="flex items-center gap-2">
-                                <span className="text-sm text-foreground  truncate font-medium" title={student.current_lesson || 'Not started'}>
-                                   {student.current_lesson || 'Not started'}
+                                <span className="text-sm text-foreground  truncate font-medium" title={student.current_lesson || t('teacherInsights.analytics.notStarted')}>
+                                   {student.current_lesson || t('teacherInsights.analytics.notStarted')}
                                 </span>
                             </div>
                             {student.current_lesson && student.current_lesson !== 'Not started' && (
@@ -849,14 +851,14 @@ export default function AnalyticsPage() {
                           <TableCell className="py-2">
                              <div className="flex flex-col gap-0.5 text-xs text-foreground">
                                 <div>
-                                    <span className="font-medium text-muted-foreground  mr-1">Verbal:</span>
+                                    <span className="font-medium text-muted-foreground  mr-1">{t('teacherInsights.shared.verbal')}:</span>
                                     {student.last_test_result?.verbal_score != null ?
                                         `${student.last_test_result.verbal_score}/${student.last_test_result.verbal_max || 0}`
                                         : '-'
                                     }
                                 </div>
                                 <div>
-                                    <span className="font-medium text-muted-foreground  mr-2.5">Math:</span>
+                                    <span className="font-medium text-muted-foreground  mr-2.5">{t('teacherInsights.shared.math')}:</span>
                                     {student.last_test_result?.math_score != null ?
                                         `${student.last_test_result.math_score}/${student.last_test_result.math_max || 0}`
                                         : '-'
@@ -902,7 +904,7 @@ export default function AnalyticsPage() {
                       </TableCell>
                       <TableCell className="text-right">
                          <Button variant="ghost" size="sm" className="h-8 px-2 text-brand">
-                            Details &rarr;
+                            {t('teacherInsights.analytics.details')}
                          </Button>
                       </TableCell>
                     </TableRow>
@@ -910,7 +912,7 @@ export default function AnalyticsPage() {
                   {sortedStudents.length === 0 && (
                      <TableRow>
                          <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
-                             No students found matching current filters.
+                             {t('teacherInsights.analytics.noStudentsMatch')}
                          </TableCell>
                      </TableRow>
                   )}
@@ -919,7 +921,7 @@ export default function AnalyticsPage() {
               {studentsPagination && studentsPagination.total_pages > 1 && (
                 <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
                   <p className="text-sm text-muted-foreground">
-                    Page {studentsPagination.page} of {studentsPagination.total_pages}
+                    {t('teacherInsights.analytics.pageOf', { page: studentsPagination.page, total: studentsPagination.total_pages })}
                   </p>
                   <div className="flex items-center gap-2">
                     <Button
@@ -928,7 +930,7 @@ export default function AnalyticsPage() {
                       disabled={studentsPagination.page <= 1 || loadingOverview}
                       onClick={() => handlePageChange(studentsPagination.page - 1)}
                     >
-                      Previous
+                      {t('teacherInsights.analytics.previous')}
                     </Button>
                     <Button
                       variant="outline"
@@ -936,7 +938,7 @@ export default function AnalyticsPage() {
                       disabled={studentsPagination.page >= studentsPagination.total_pages || loadingOverview}
                       onClick={() => handlePageChange(studentsPagination.page + 1)}
                     >
-                      Next
+                      {t('teacherInsights.analytics.next')}
                     </Button>
                   </div>
                 </div>
@@ -952,8 +954,8 @@ export default function AnalyticsPage() {
             <Card>
               <CardHeader className="flex flex-row items-start justify-between space-y-0">
                 <div>
-                  <CardTitle>Course Groups</CardTitle>
-                  <CardDescription>Overview of performance by group</CardDescription>
+                  <CardTitle>{t('teacherInsights.analytics.courseGroups')}</CardTitle>
+                  <CardDescription>{t('teacherInsights.analytics.courseGroupsHint')}</CardDescription>
                 </div>
                 <div className="flex flex-col @lg:flex-row items-stretch @lg:items-center gap-3">
                   <div className="relative w-full @lg:w-64">
@@ -980,11 +982,11 @@ export default function AnalyticsPage() {
                <Table>
                  <TableHeader>
                    <TableRow>
-                     <TableHead>Group Name</TableHead>
-                     <TableHead>Students</TableHead>
-                     <TableHead>Avg. Completion</TableHead>
-                     <TableHead>Avg. Score</TableHead>
-                     <TableHead className="text-right">Actions</TableHead>
+                     <TableHead>{t('teacherInsights.analytics.col.groupName')}</TableHead>
+                     <TableHead>{t('teacherInsights.analytics.col.students')}</TableHead>
+                     <TableHead>{t('teacherInsights.analytics.col.avgCompletion')}</TableHead>
+                     <TableHead>{t('teacherInsights.analytics.col.avgScore')}</TableHead>
+                     <TableHead className="text-right">{t('teacherInsights.analytics.col.actions')}</TableHead>
                    </TableRow>
                  </TableHeader>
                  <TableBody>
@@ -1006,7 +1008,7 @@ export default function AnalyticsPage() {
                       <TableCell>
                         <div className="flex items-center gap-1">
                             <span>{group.students_count}</span>
-                            <span className="text-muted-foreground text-xs">students</span>
+                            <span className="text-muted-foreground text-xs">{t('teacherInsights.analytics.studentsWord', { count: group.students_count })}</span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -1025,7 +1027,7 @@ export default function AnalyticsPage() {
                             className="text-brand hover:text-brand"
                             onClick={() => openGroupStudents(String(group.group_id))}
                          >
-                            View Students &rarr;
+                            {t('teacherInsights.analytics.viewStudents')}
                          </Button>
                       </TableCell>
                     </TableRow>
@@ -1033,7 +1035,7 @@ export default function AnalyticsPage() {
                   {groupsAnalytics.length === 0 && (
                       <TableRow>
                           <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                              No groups found.
+                              {t('teacherInsights.analytics.noGroups')}
                           </TableCell>
                       </TableRow>
                   )}
@@ -1050,11 +1052,11 @@ export default function AnalyticsPage() {
                     <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-muted-foreground  uppercase tracking-wider flex items-center gap-1.5">
                             <Search className="h-3 w-3" />
-                            Search Questions
+                            {t('teacherInsights.analytics.searchQuestions')}
                         </label>
                         <input 
                             type="text"
-                            placeholder="Search by keyword..."
+                            placeholder={t('teacherInsights.analytics.searchByKeyword')}
                             className="w-full px-3 py-2 bg-card border border-border dark:text-foreground dark:placeholder:text-muted-foreground rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all font-medium"
                             value={quizSearch}
                             onChange={(e) => setQuizSearch(e.target.value)}
@@ -1063,14 +1065,14 @@ export default function AnalyticsPage() {
                     <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-muted-foreground  uppercase tracking-wider flex items-center gap-1.5">
                             <Filter className="h-3 w-3" />
-                            Filter by Lesson
+                            {t('teacherInsights.analytics.filterByLesson')}
                         </label>
                         <Select value={lessonFilter} onValueChange={setLessonFilter}>
                             <SelectTrigger className="w-full bg-card border-border">
-                                <SelectValue placeholder="All Lessons" />
+                                <SelectValue placeholder={t('teacherInsights.shared.allLessons')} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Lessons ({courseLessons.length})</SelectItem>
+                                <SelectItem value="all">{t('teacherInsights.analytics.allLessonsCount', { count: courseLessons.length })}</SelectItem>
                                 {courseLessons.map(lesson => (
                                     <SelectItem key={lesson.id} value={lesson.id}>{lesson.title}</SelectItem>
                                 ))}
@@ -1080,7 +1082,7 @@ export default function AnalyticsPage() {
                 </div>
                 <div className="flex gap-2">
                     <Badge variant="outline" className="h-9 px-3 font-medium bg-brand-surface  text-brand-subtle-foreground  border-brand-border">
-                        {filteredQuizErrors.length} Questions Analyzed
+                        {t('teacherInsights.analytics.questionsAnalyzed', { count: filteredQuizErrors.length })}
                     </Badge>
                 </div>
             </div>
@@ -1090,8 +1092,8 @@ export default function AnalyticsPage() {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                             <div>
-                                <CardTitle className="text-lg font-bold text-foreground">Difficult Quiz Questions</CardTitle>
-                                <CardDescription>Questions with the highest error rates across the selected group</CardDescription>
+                                <CardTitle className="text-lg font-bold text-foreground">{t('teacherInsights.analytics.difficultQuestions')}</CardTitle>
+                                <CardDescription>{t('teacherInsights.analytics.difficultQuestionsHint')}</CardDescription>
                             </div>
                         </div>
                     </div>
@@ -1101,11 +1103,11 @@ export default function AnalyticsPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow className="bg-transparent hover:bg-transparent border-b">
-                                    <TableHead className="w-[35%] py-4 text-xs font-medium text-muted-foreground">Question</TableHead>
-                                    <TableHead className="w-[15%] py-4 text-xs font-medium text-muted-foreground">Type</TableHead>
-                                    <TableHead className="w-[20%] py-4 text-xs font-medium text-muted-foreground">Context</TableHead>
-                                    <TableHead className="w-[10%] py-4 text-center text-xs font-medium text-muted-foreground">Attempts</TableHead>
-                                    <TableHead className="w-[10%] py-4 text-center text-xs font-medium text-muted-foreground">Error</TableHead>
+                                    <TableHead className="w-[35%] py-4 text-xs font-medium text-muted-foreground">{t('teacherInsights.analytics.col.question')}</TableHead>
+                                    <TableHead className="w-[15%] py-4 text-xs font-medium text-muted-foreground">{t('teacherInsights.analytics.col.type')}</TableHead>
+                                    <TableHead className="w-[20%] py-4 text-xs font-medium text-muted-foreground">{t('teacherInsights.analytics.col.context')}</TableHead>
+                                    <TableHead className="w-[10%] py-4 text-center text-xs font-medium text-muted-foreground">{t('teacherInsights.analytics.col.attempts')}</TableHead>
+                                    <TableHead className="w-[10%] py-4 text-center text-xs font-medium text-muted-foreground">{t('teacherInsights.analytics.col.error')}</TableHead>
                                     <TableHead className="w-[10%] py-4 text-right text-xs font-medium text-muted-foreground"></TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -1122,7 +1124,7 @@ export default function AnalyticsPage() {
                                             <TableCell className="py-5">
                                                 <div className="max-w-md">
                                                     <p className="text-sm font-semibold text-foreground leading-snug line-clamp-2" title={error.question_text}>
-                                                        {error.question_text || "Untitled Question"}
+                                                        {error.question_text || t('teacherInsights.analytics.untitledQuestion')}
                                                     </p>
                                                 </div>
                                             </TableCell>
@@ -1165,7 +1167,7 @@ export default function AnalyticsPage() {
                                                     to={`/course/${selectedCourseId}/lesson/${error.lesson_id}?stepId=${error.step_id}&questionId=${error.question_id}`}
                                                     className="inline-flex items-center text-sm text-brand hover:text-brand font-medium gap-1 group/btn pr-2"
                                                 >
-                                                    View
+                                                    {t('teacherInsights.analytics.view')}
                                                     <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/btn:translate-x-0.5" />
                                                 </Link>
                                             </TableCell>
@@ -1179,15 +1181,15 @@ export default function AnalyticsPage() {
                                                     <XAxis className="h-8 w-8 text-muted-foreground/50/50" />
                                                 </div>
                                                 <div className="space-y-1">
-                                                    <p className="text-lg font-semibold text-foreground">No difficult questions found</p>
-                                                    <p className="text-sm text-muted-foreground">Try adjusting your filters or search terms</p>
+                                                    <p className="text-lg font-semibold text-foreground">{t('teacherInsights.analytics.noDifficultQuestions')}</p>
+                                                    <p className="text-sm text-muted-foreground">{t('teacherInsights.analytics.adjustFilters')}</p>
                                                 </div>
                                                 <Button 
                                                     variant="outline" 
                                                     size="sm"
                                                     onClick={() => { setQuizSearch(''); setLessonFilter('all'); }}
                                                 >
-                                                    Clear All Filters
+                                                    {t('teacherInsights.analytics.clearFilters')}
                                                 </Button>
                                             </div>
                                         </TableCell>
@@ -1203,7 +1205,7 @@ export default function AnalyticsPage() {
 
         <TabsContent value="topics">
              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Problematic Topics</h3>
+                <h3 className="text-lg font-medium">{t('teacherInsights.analytics.problematicTopics')}</h3>
                 <div className="grid gap-4 @xl:grid-cols-2 @3xl:grid-cols-3">
                   {topicAnalysis.map((topic, i) => (
                     <Card key={i}>
@@ -1212,22 +1214,22 @@ export default function AnalyticsPage() {
                       </CardHeader>
                       <CardContent>
                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm text-muted-foreground">Error Rate</span>
+                            <span className="text-sm text-muted-foreground">{t('teacherInsights.analytics.errorRate')}</span>
                             <Badge variant={topic.errorRate > 50 ? "destructive" : "secondary"}>{Math.round(topic.errorRate)}%</Badge>
                          </div>
                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm text-muted-foreground">Total Errors</span>
+                            <span className="text-sm text-muted-foreground">{t('teacherInsights.analytics.totalErrors')}</span>
                             <span className="font-medium text-red-600 dark:text-red-400">{topic.errors}</span>
                          </div>
                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">Questions</span>
+                            <span className="text-sm text-muted-foreground">{t('teacherInsights.analytics.questions')}</span>
                             <span className="font-medium">{topic.questions}</span>
                          </div>
                       </CardContent>
                     </Card>
                   ))}
                   {topicAnalysis.length === 0 && (
-                      <div className="col-span-3 text-center py-8 text-muted-foreground">No topic analysis available due to lack of error data.</div>
+                      <div className="col-span-3 text-center py-8 text-muted-foreground">{t('teacherInsights.analytics.noTopicAnalysis')}</div>
                   )}
                 </div>
              </div>
@@ -1243,12 +1245,12 @@ export default function AnalyticsPage() {
                                  <p className="text-sm text-muted-foreground">{video.step_title}</p>
                              </div>
                              <div className="text-right">
-                                 <div className="font-bold">{video.total_views} Views</div>
-                                 <div className="text-xs text-muted-foreground">{Math.round(video.average_watch_time_minutes)} mins avg</div>
+                                 <div className="font-bold">{t('teacherInsights.analytics.views', { count: video.total_views })}</div>
+                                 <div className="text-xs text-muted-foreground">{t('teacherInsights.analytics.minsAvg', { minutes: Math.round(video.average_watch_time_minutes) })}</div>
                              </div>
                          </div>
                      ))}
-                     {videoMetrics.length === 0 && <div className="text-center py-8 text-muted-foreground">No video engagement data available</div>}
+                     {videoMetrics.length === 0 && <div className="text-center py-8 text-muted-foreground">{t('teacherInsights.analytics.noVideoData')}</div>}
                  </div>
              )}
         </TabsContent>

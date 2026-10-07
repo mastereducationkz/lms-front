@@ -4,6 +4,8 @@ import type { User, UserRole } from '../types';
 import { clearOidcSession, isOidcSession } from '../services/oidc';
 import { setSentryUser } from '../lib/sentry';
 import { localeForUser, rememberDeviceLocale, setActiveLocale } from '../lib/i18n/locale';
+import { t } from '../lib/i18n/translate';
+import '@/lib/i18n/catalogs/sharedUi';
 import { setPwaUser } from '../services/pwaInstall';
 import { detachPushOnSignOut, syncPushSubscription } from '../services/webPush';
 
@@ -145,10 +147,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(result.user);
         return { success: true };
       } else {
-        throw new Error('Login failed');
+        throw new Error(t('sharedUi.auth.loginFailed'));
       }
     } catch (error: any) {
-      const errorMessage = error.message || 'Login failed';
+      const errorMessage = error.message || t('sharedUi.auth.loginFailed');
       setError(errorMessage);
       return { success: false, error: errorMessage };
     } finally {

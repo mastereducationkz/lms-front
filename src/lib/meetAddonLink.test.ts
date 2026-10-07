@@ -46,6 +46,13 @@ describe('the sign-in popup', () => {
     expect(stateFromError(null, null)).toMatchObject({ kind: 'error' });
   });
 
+  it('words its own errors in the reader’s language', () => {
+    expect(stateFromError(503, 'x', 'ru')).toMatchObject({ kind: 'error', message: expect.stringContaining('недоступен') });
+    expect(stateFromError(null, null, 'ru')).toMatchObject({ kind: 'error', message: expect.stringContaining('Попробуйте') });
+    expect(stateFromError(403, 'This request came from a different network than the Meet panel.', 'ru'))
+      .toMatchObject({ kind: 'error', message: expect.stringContaining('другой сети') });
+  });
+
   it('only teachers, head teachers and admins may connect the panel', () => {
     expect(['teacher', 'head_teacher', 'admin', ' Teacher '].map(mayUsePanel)).toEqual([true, true, true, true]);
     expect(['curator', 'head_curator', 'student', 'parent', '', null, undefined].map(mayUsePanel)).toEqual(Array(7).fill(false));

@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import AchievementCard, { formatUnlockDate } from '@/components/achievements/AchievementCard';
 import RewardPreview from '@/components/achievements/RewardPreview';
 import {
+  achievementField,
   almostThere,
   groupByCategory,
   recentlyUnlocked,
@@ -19,9 +20,11 @@ import {
   starFromLabel,
   TOTAL_LABEL,
 } from '@/lib/achievements';
+import { useLocale, useT } from '@/lib/i18n/react';
 import { getMyAchievements, type MyAchievements } from '@/services/api/achievementsUi';
 import { ShareStarButton } from '@/components/share/ShareButtons';
 import { CrownsSection } from '@/components/share/ShareMoments';
+import '@/lib/i18n/catalogs/studentHome';
 
 function Section({ title, icon, children }: { title: string; icon: ReactNode; children: ReactNode }) {
   return (
@@ -38,6 +41,8 @@ function Section({ title, icon, children }: { title: string; icon: ReactNode; ch
 export default function AchievementsPage() {
   const { user } = useAuth();
   const { hash } = useLocation();
+  const t = useT();
+  const locale = useLocale();
   const [data, setData] = useState<MyAchievements | null>(null);
   const [failed, setFailed] = useState(false);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -66,9 +71,9 @@ export default function AchievementsPage() {
   if (failed) {
     return (
       <div className="mx-auto max-w-3xl rounded-2xl border border-border bg-card p-8 text-center">
-        <p className="text-gray-700 dark:text-foreground">We couldn’t load your achievements right now.</p>
+        <p className="text-gray-700 dark:text-foreground">{t('studentHome.achievements.loadFailed')}</p>
         <Button variant="outline" size="sm" className="mt-4" onClick={load}>
-          <RefreshCw className="mr-2 h-4 w-4" /> Try again
+          <RefreshCw className="mr-2 h-4 w-4" /> {t('common.retry')}
         </Button>
       </div>
     );
@@ -87,7 +92,7 @@ export default function AchievementsPage() {
 
   const near = almostThere(list, 3);
   const recent = recentlyUnlocked(list, 4);
-  const groups = groupByCategory(list);
+  const groups = groupByCategory(list, locale);
   const stars = data.star_awards ?? [];
   const starCount = list.find((a) => a.key === 'star_of_week')?.count ?? 0;
 
@@ -102,21 +107,21 @@ export default function AchievementsPage() {
             <UserAvatar userId={user.id} name={user.name} mascot={code} isStudent size={96} />
           </div>
           <div className="min-w-0 flex-1">
-            <h1 className="text-2xl sm:text-3xl font-bold">Achievements</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold">{t('studentHome.achievements.title')}</h1>
             <p className="mt-1 text-sm text-blue-100 dark:text-muted-foreground">
-              Learn, show up, keep going — every badge unlocks something new for your Kasatik.
+              {t('studentHome.achievements.subtitle')}
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-sm font-semibold">
-                <Trophy className="h-4 w-4 text-amber-300" aria-hidden /> {TOTAL_LABEL(list)} unlocked
+                <Trophy className="h-4 w-4 text-amber-300" aria-hidden /> {t('studentHome.achievements.unlockedProgress', { progress: TOTAL_LABEL(list) })}
               </span>
               <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-sm font-semibold">
-                <Flame className="h-4 w-4 text-orange-300" aria-hidden /> {data.streak.current}-day streak
-                <span className="font-normal text-blue-100 dark:text-muted-foreground">· best {data.streak.longest}</span>
+                <Flame className="h-4 w-4 text-orange-300" aria-hidden /> {t('studentHome.achievements.streak', { count: data.streak.current })}
+                <span className="font-normal text-blue-100 dark:text-muted-foreground">{t('studentHome.achievements.streakBest', { best: data.streak.longest })}</span>
               </span>
               {starCount > 0 && (
                 <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1.5 text-sm font-semibold">
-                  <Star className="h-4 w-4 text-yellow-300" aria-hidden /> {starCount} star{starCount === 1 ? '' : 's'} of the week
+                  <Star className="h-4 w-4 text-yellow-300" aria-hidden /> {t('studentHome.achievements.starsOfWeekCount', { count: starCount })}
                 </span>
               )}
             </div>
@@ -125,7 +130,7 @@ export default function AchievementsPage() {
       </div>
 
       {near.length > 0 && (
-        <Section title="Almost there" icon={<Sparkles className="h-4 w-4 text-brand" aria-hidden />}>
+        <Section title={t('studentHome.achievements.almostThere')} icon={<Sparkles className="h-4 w-4 text-brand" aria-hidden />}>
           <div className="grid gap-4 @2xl:grid-cols-3">
             {near.map((a) => (
               <AchievementCard key={a.key} achievement={a} code={code} userId={user.id} anchor={false} />
@@ -135,7 +140,7 @@ export default function AchievementsPage() {
       )}
 
       {recent.length > 0 && (
-        <Section title="Recently unlocked" icon={<Trophy className="h-4 w-4 text-amber-500" aria-hidden />}>
+        <Section title={t('studentHome.achievements.recentlyUnlocked')} icon={<Trophy className="h-4 w-4 text-amber-500" aria-hidden />}>
           <div className="flex gap-3 overflow-x-auto pb-1">
             {recent.map((a) => (
               <Link
@@ -145,8 +150,8 @@ export default function AchievementsPage() {
               >
                 <RewardPreview code={code} userId={user.id} reward={a.rewards[0]} size={44} />
                 <span className="min-w-0">
-                  <span className="block truncate text-sm font-semibold text-foreground">{a.title}</span>
-                  <span className="block text-xs text-muted-foreground">{formatUnlockDate(a.unlocked_at)}</span>
+                  <span className="block truncate text-sm font-semibold text-foreground">{achievementField(a, 'title', locale)}</span>
+                  <span className="block text-xs text-muted-foreground">{formatUnlockDate(a.unlocked_at, locale)}</span>
                 </span>
               </Link>
             ))}
@@ -155,7 +160,7 @@ export default function AchievementsPage() {
       )}
 
       {stars.length > 0 && (
-        <Section title="Stars of the Week" icon={<Star className="h-4 w-4 text-yellow-500" aria-hidden />}>
+        <Section title={t('studentHome.achievements.starsOfWeek')} icon={<Star className="h-4 w-4 text-yellow-500" aria-hidden />}>
           <ul className="grid gap-3 @lg:grid-cols-2">
             {stars.map((s, i) => (
               <li
@@ -163,10 +168,10 @@ export default function AchievementsPage() {
                 className="rounded-2xl border border-yellow-200 dark:border-yellow-900/60 bg-yellow-50/60 dark:bg-yellow-950/20 p-4"
               >
                 <p className="text-sm font-semibold text-foreground">
-                  <Star className="mr-1 inline h-4 w-4 fill-yellow-400 text-yellow-500 align-[-3px]" aria-hidden />Star of the Week · <span className="font-normal text-muted-foreground">{starFromLabel(s)}</span>
+                  <Star className="mr-1 inline h-4 w-4 fill-yellow-400 text-yellow-500 align-[-3px]" aria-hidden />{t('studentHome.achievements.starOfWeek')} · <span className="font-normal text-muted-foreground">{starFromLabel(s, locale)}</span>
                 </p>
                 <p className="mt-1 text-sm text-gray-700 dark:text-foreground">«{s.reason}»</p>
-                <p className="mt-1 text-xs text-muted-foreground">{formatUnlockDate(s.created_at)}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{formatUnlockDate(s.created_at, locale)}</p>
                 <ShareStarButton star={s} className="-ml-2.5 mt-1" />
               </li>
             ))}

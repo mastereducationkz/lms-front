@@ -24,6 +24,9 @@ import {
   GraduationCap,
   UserCheck
 } from 'lucide-react';
+import { formatDate } from '../lib/i18n';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/teacherDesk';
 
 interface Group {
   group_id: number;
@@ -56,6 +59,7 @@ export default function GroupsTable({
   onExportGroup,
   onExportAll 
 }: GroupsTableProps) {
+  const t = useT();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('group_name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -98,20 +102,18 @@ export default function GroupsTable({
   };
 
   const getPerformanceBadge = (percentage: number) => {
-    if (percentage >= 80) return <Badge variant="default">Excellent</Badge>;
-    if (percentage >= 60) return <Badge variant="secondary">Good</Badge>;
-    if (percentage >= 40) return <Badge variant="outline">Satisfactory</Badge>;
-    return <Badge variant="destructive" className='text-center'>Needs Attention</Badge>;
+    if (percentage >= 80) return <Badge variant="default">{t('teacherDesk.performance.excellent')}</Badge>;
+    if (percentage >= 60) return <Badge variant="secondary">{t('teacherDesk.performance.good')}</Badge>;
+    if (percentage >= 40) return <Badge variant="outline">{t('teacherDesk.performance.satisfactory')}</Badge>;
+    return <Badge variant="destructive" className='text-center'>{t('teacherDesk.performance.needsAttention')}</Badge>;
   };
 
   const formatTime = (minutes: number) => {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US');
+    return hours > 0
+      ? t('teacherDesk.duration.hoursMinutes', { hours, minutes: mins })
+      : t('teacherDesk.duration.minutesShort', { minutes: mins });
   };
 
   if (isLoading) {
@@ -120,7 +122,7 @@ export default function GroupsTable({
         <CardContent className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p>Loading groups...</p>
+            <p>{t('teacherDesk.groups.loading')}</p>
           </div>
         </CardContent>
       </Card>
@@ -134,7 +136,7 @@ export default function GroupsTable({
           <div>
             <CardTitle className="flex items-center gap-2">
               <Users className="w-5 h-5" />
-              Groups ({groups.length})
+              {t('teacherDesk.groups.title', { count: groups.length })}
             </CardTitle>
           </div>
           <div className="flex gap-2">
@@ -145,7 +147,7 @@ export default function GroupsTable({
         <div className="flex items-center space-x-2">
           <Search className="w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Search by group name, description, teacher or curator..."
+            placeholder={t('teacherDesk.groups.search')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="max-w-sm"
@@ -158,7 +160,7 @@ export default function GroupsTable({
           <div className="text-center py-8">
             <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
             <p className="text-muted-foreground">
-              {searchTerm ? 'No groups found' : 'No groups available'}
+              {searchTerm ? t('teacherDesk.noGroupsFound') : t('teacherDesk.groups.noneAvailable')}
             </p>
           </div>
         ) : (
@@ -172,7 +174,7 @@ export default function GroupsTable({
                       onClick={() => handleSort('group_name')}
                       className="h-auto p-0 font-semibold"
                     >
-                      Group {getSortIcon('group_name')}
+                      {t('teacherDesk.col.group')} {getSortIcon('group_name')}
                     </Button>
                   </TableHead>
                   <TableHead>
@@ -181,7 +183,7 @@ export default function GroupsTable({
                       onClick={() => handleSort('students_count')}
                       className="h-auto p-0 font-semibold"
                     >
-                      Students {getSortIcon('students_count')}
+                      {t('teacherDesk.groups.students')} {getSortIcon('students_count')}
                     </Button>
                   </TableHead>
                   <TableHead>
@@ -190,7 +192,7 @@ export default function GroupsTable({
                       onClick={() => handleSort('average_completion_percentage')}
                       className="h-auto p-0 font-semibold"
                     >
-                      Avg Progress {getSortIcon('average_completion_percentage')}
+                      {t('teacherDesk.avgProgress')} {getSortIcon('average_completion_percentage')}
                     </Button>
                   </TableHead>
                   <TableHead>
@@ -199,7 +201,7 @@ export default function GroupsTable({
                       onClick={() => handleSort('average_assignment_score_percentage')}
                       className="h-auto p-0 font-semibold"
                     >
-                      Avg Score {getSortIcon('average_assignment_score_percentage')}
+                      {t('teacherDesk.avgScore')} {getSortIcon('average_assignment_score_percentage')}
                     </Button>
                   </TableHead>
                   <TableHead>
@@ -208,12 +210,12 @@ export default function GroupsTable({
                       onClick={() => handleSort('average_study_time_minutes')}
                       className="h-auto p-0 font-semibold"
                     >
-                      Avg Time {getSortIcon('average_study_time_minutes')}
+                      {t('teacherDesk.groups.avgTime')} {getSortIcon('average_study_time_minutes')}
                     </Button>
                   </TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead>{t('teacherDesk.groups.created')}</TableHead>
+                  <TableHead>{t('teacherDesk.col.status')}</TableHead>
+                  <TableHead>{t('teacherDesk.col.actions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -273,7 +275,7 @@ export default function GroupsTable({
                             variant="ghost"
                             size="sm"
                             onClick={() => onViewGroup(group.group_id)}
-                            title="View group students"
+                            title={t('teacherDesk.groups.viewStudents')}
                           >
                             <Eye className="w-4 h-4" />
                           </Button>

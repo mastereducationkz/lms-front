@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import apiClient from '../../services/api'
 import { parseAsUTC } from '../../lib/datetime'
-import { DATE, TIME, formatDateTime } from '../../lib/i18n'
+import { DATE, TIME, activeLocale, formatDateTime, t as tr, type Locale, type MessageKey } from '../../lib/i18n'
+import { useLocale, useT } from '../../lib/i18n/react'
+import '@/lib/i18n/catalogs/adminUsers'
 import { toast } from '../../components/Toast'
 import Loader from '../../components/Loader'
 import { Button } from '../../components/ui/button'
@@ -30,13 +32,20 @@ import type { Course, CourseModule, TrialAccess, TrialCreateRequest, TrialUpdate
 
 type StatusFilter = 'all' | TrialAccess['status']
 
-const STATUS_TABS: { value: StatusFilter; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'active', label: 'Active' },
-  { value: 'expired', label: 'Expired' },
-  { value: 'revoked', label: 'Revoked' },
-  { value: 'converted', label: 'Converted' },
+const STATUS_TABS: { value: StatusFilter; label: MessageKey }[] = [
+  { value: 'all', label: 'adminUsers.trial.tab.all' },
+  { value: 'active', label: 'adminUsers.trial.tab.active' },
+  { value: 'expired', label: 'adminUsers.trial.tab.expired' },
+  { value: 'revoked', label: 'adminUsers.trial.tab.revoked' },
+  { value: 'converted', label: 'adminUsers.trial.tab.converted' },
 ]
+
+const STATUS_LABELS: Record<TrialAccess['status'], MessageKey> = {
+  active: 'adminUsers.trial.status.active',
+  expired: 'adminUsers.trial.status.expired',
+  revoked: 'adminUsers.trial.status.revoked',
+  converted: 'adminUsers.trial.status.converted',
+}
 
 const STATUS_BADGE_CLASSES: Record<TrialAccess['status'], string> = {
   active: 'border-transparent bg-green-100 text-green-700 hover:bg-green-100 dark:bg-green-900/40 dark:text-green-300 dark:hover:bg-green-900/40',
@@ -58,13 +67,13 @@ function defaultDeadline(): string {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /** expiresAt is a naive-UTC backend string; parse with parseAsUTC, never `new Date(string)`. */
-function formatCountdown(expiresAt: string, now: number): string {
+function formatCountdown(expiresAt: string, now: number, locale: Locale = activeLocale()): string {
   const diffMs = parseAsUTC(expiresAt).getTime() - now
-  if (diffMs <= 0) return 'expired'
+  if (diffMs <= 0) return tr('adminUsers.trial.countdownExpired', undefined, locale)
   const totalMinutes = Math.floor(diffMs / 60000)
   const hours = Math.floor(totalMinutes / 60)
   const minutes = totalMinutes % 60
-  return `in ${hours}h ${minutes}m`
+  return tr('adminUsers.trial.countdown', { hours, minutes }, locale)
 }
 
 /** One course + its unlocked lessons within a (possibly multi-course) grant. `key` is a stable local id. */
@@ -123,6 +132,7 @@ function CourseSelectionBlock({
   onToggleModule: (lessonIds: number[], checked: boolean) => void
   onRemove: () => void
 }) {
+  const t = useT()
   const [modules, setModules] = useState<CourseModule[]>([])
   const [loading, setLoading] = useState(false)
   const [expanded, setExpanded] = useState<Record<number, boolean>>({})
@@ -146,7 +156,7 @@ function CourseSelectionBlock({
         setExpanded(exp)
       })
       .catch(() => {
-        if (!cancelled) toast('Failed to load course units', 'error')
+        if (!cancelled) toast(t('adminUsers.trial.unitsLoadFailed'), 'error')
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -160,10 +170,10 @@ function CourseSelectionBlock({
     <div className="border rounded-lg p-3 space-y-2">
       <div className="flex items-end gap-2">
         <div className="flex-1 space-y-1">
-          <Label className="text-xs">Course</Label>
+          <Label className="text-xs">{t('adminUsers.trial.course')}</Label>
           <Select value={selection.courseId} onValueChange={onChangeCourse} disabled={lockCourse}>
             <SelectTrigger>
-              <SelectValue placeholder="Select a course..." />
+              <SelectValue placeholder={t('adminUsers.trial.selectCourse')} />
             </SelectTrigger>
             <SelectContent>
               {courses.map((c) => (
@@ -180,7 +190,7 @@ function CourseSelectionBlock({
             variant="ghost"
             size="icon"
             className="text-muted-foreground hover:text-red-600 dark:hover:text-red-400"
-            title="Remove course"
+            title={t('adminUsers.trial.removeCourse')}
             onClick={onRemove}
           >
             <Trash2 className="w-4 h-4" />
@@ -189,16 +199,16 @@ function CourseSelectionBlock({
       </div>
 
       <div className="space-y-1">
-        <Label className="text-xs">Lessons ({selection.lessonIds.size} selected)</Label>
+        <Label className="text-xs">{t('adminUsers.trial.lessonsSelected', { count: selection.lessonIds.size })}</Label>
         <div className="border rounded-lg max-h-56 overflow-y-auto">
           {loading ? (
             <div className="py-8 flex justify-center">
               <Loader size="sm" />
             </div>
           ) : !selection.courseId ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Select a course first</p>
+            <p className="text-sm text-muted-foreground text-center py-8">{t('adminUsers.trial.selectCourseFirst')}</p>
           ) : modules.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No units in this course</p>
+            <p className="text-sm text-muted-foreground text-center py-8">{t('adminUsers.trial.noUnits')}</p>
           ) : (
             modules.map((module) => {
               const moduleId = Number(module.id)
@@ -251,6 +261,8 @@ function CourseSelectionBlock({
 }
 
 export default function TrialAccessPage() {
+  const t = useT()
+  const locale = useLocale()
   const [trials, setTrials] = useState<TrialAccess[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
@@ -272,7 +284,7 @@ export default function TrialAccessPage() {
       const res = await apiClient.getTrials()
       setTrials(res.trials)
     } catch (error: any) {
-      toast(error.message || 'Failed to load trials', 'error')
+      toast(error.message || t('adminUsers.trial.loadFailed'), 'error')
     } finally {
       setLoading(false)
     }
@@ -286,7 +298,7 @@ export default function TrialAccessPage() {
     apiClient
       .getCourses()
       .then((data) => setCourses(data as Course[]))
-      .catch(() => toast('Failed to load courses', 'error'))
+      .catch(() => toast(t('adminUsers.trial.coursesLoadFailed'), 'error'))
   }, [])
 
   // Keep the "in Xh Ym" countdown live.
@@ -368,20 +380,22 @@ export default function TrialAccessPage() {
 
   const validate = (): string | null => {
     if (!editing) {
-      if (!form.email.trim() || !EMAIL_RE.test(form.email.trim())) return 'Enter a valid email address'
-      if (!form.name.trim()) return 'Enter a name'
+      if (!form.email.trim() || !EMAIL_RE.test(form.email.trim())) return t('adminUsers.trial.validate.email')
+      if (!form.name.trim()) return t('adminUsers.trial.validate.name')
     }
-    if (form.selections.length === 0) return 'Add at least one course'
+    if (form.selections.length === 0) return t('adminUsers.trial.validate.course')
     const chosen = form.selections.map((s) => s.courseId).filter(Boolean)
-    if (chosen.length !== form.selections.length) return 'Select a course for each block'
-    if (new Set(chosen).size !== chosen.length) return 'Each course can only be added once'
+    if (chosen.length !== form.selections.length) return t('adminUsers.trial.validate.courseEachBlock')
+    if (new Set(chosen).size !== chosen.length) return t('adminUsers.trial.validate.courseOnce')
     for (const s of form.selections) {
       if (s.lessonIds.size === 0) {
-        const title = courses.find((c) => c.id.toString() === s.courseId)?.title || 'each course'
-        return `Select at least one lesson for ${title}`
+        const title = courses.find((c) => c.id.toString() === s.courseId)?.title
+        return title
+          ? t('adminUsers.trial.validate.lessonFor', { course: title })
+          : t('adminUsers.trial.validate.lessonEach')
       }
     }
-    if (!form.deadline) return 'Select a deadline'
+    if (!form.deadline) return t('adminUsers.trial.validate.deadline')
     return null
   }
 
@@ -405,7 +419,7 @@ export default function TrialAccessPage() {
           prospect_note: form.note.trim() || undefined,
         }
         await apiClient.updateTrial(editing.id, payload)
-        toast('Trial updated', 'success')
+        toast(t('adminUsers.trial.updated'), 'success')
         closeDialog()
         load()
       } else {
@@ -421,26 +435,25 @@ export default function TrialAccessPage() {
         }
         const res = await apiClient.createTrial(payload)
         setCreateResult({ password: res.generated_password })
-        const n = payload.courses.length
-        toast(`Trial granted for ${n} course${n > 1 ? 's' : ''}`, 'success')
+        toast(t('adminUsers.trial.granted', { count: payload.courses.length }), 'success')
         load()
       }
     } catch (error: any) {
-      toast(error.message || 'Failed to save trial', 'error')
+      toast(error.message || t('adminUsers.trial.saveFailed'), 'error')
     } finally {
       setSubmitting(false)
     }
   }
 
   const handleRevoke = async (trial: TrialAccess) => {
-    if (!window.confirm(`Revoke trial access for ${trial.user_name}?`)) return
+    if (!window.confirm(t('adminUsers.trial.revokeConfirm', { name: trial.user_name }))) return
     setBusyTrialId(trial.id)
     try {
       await apiClient.revokeTrial(trial.id)
-      toast('Trial revoked', 'success')
+      toast(t('adminUsers.trial.revoked'), 'success')
       load()
     } catch (error: any) {
-      toast(error.message || 'Failed to revoke trial', 'error')
+      toast(error.message || t('adminUsers.trial.revokeFailed'), 'error')
     } finally {
       setBusyTrialId(null)
     }
@@ -450,24 +463,24 @@ export default function TrialAccessPage() {
     setBusyTrialId(trial.id)
     try {
       const res = await apiClient.resendTrialInvite(trial.id)
-      toast(res.sent ? 'Invite email resent' : 'No email was sent', res.sent ? 'success' : 'info')
+      toast(res.sent ? t('adminUsers.trial.inviteResent') : t('adminUsers.trial.noEmailSent'), res.sent ? 'success' : 'info')
       load()
     } catch (error: any) {
-      toast(error.message || 'Failed to resend invite', 'error')
+      toast(error.message || t('adminUsers.trial.resendFailed'), 'error')
     } finally {
       setBusyTrialId(null)
     }
   }
 
   const handleConvert = async (trial: TrialAccess) => {
-    if (!window.confirm(`Convert ${trial.user_name} to a full student?`)) return
+    if (!window.confirm(t('adminUsers.trial.convertConfirm', { name: trial.user_name }))) return
     setBusyTrialId(trial.id)
     try {
       await apiClient.convertTrial(trial.id)
-      toast('Trial converted', 'success')
+      toast(t('adminUsers.trial.converted'), 'success')
       load()
     } catch (error: any) {
-      toast(error.message || 'Failed to convert trial', 'error')
+      toast(error.message || t('adminUsers.trial.convertFailed'), 'error')
     } finally {
       setBusyTrialId(null)
     }
@@ -480,7 +493,7 @@ export default function TrialAccessPage() {
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
-      toast('Could not copy — select and copy manually', 'error')
+      toast(t('adminUsers.trial.copyFailed'), 'error')
     }
   }
 
@@ -516,13 +529,13 @@ export default function TrialAccessPage() {
         <div>
           <h1 className="text-xl font-semibold text-foreground flex items-center gap-2">
             <Timer className="w-5 h-5" />
-            Trial Access
+            {t('adminUsers.trial.title')}
           </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Grant time-limited course access to prospects</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{t('adminUsers.trial.subtitle')}</p>
         </div>
         <Button onClick={openCreateDialog} className="gap-2">
           <Plus className="w-4 h-4" />
-          Grant trial
+          {t('adminUsers.trial.grant')}
         </Button>
       </div>
 
@@ -536,7 +549,7 @@ export default function TrialAccessPage() {
               statusFilter === tab.value ? 'bg-foreground text-background' : 'bg-muted text-muted-foreground hover:bg-border'
             }`}
           >
-            {tab.label}
+            {t(tab.label)}
           </button>
         ))}
       </div>
@@ -546,21 +559,21 @@ export default function TrialAccessPage() {
           {visible.length === 0 ? (
             <div className="py-16 text-center">
               <Timer className="w-10 h-10 text-border mx-auto mb-3" />
-              <p className="text-sm font-medium text-foreground">No trials found</p>
-              <p className="text-xs text-muted-foreground mt-1">Grant trial access to get started</p>
+              <p className="text-sm font-medium text-foreground">{t('adminUsers.trial.empty')}</p>
+              <p className="text-xs text-muted-foreground mt-1">{t('adminUsers.trial.emptyHint')}</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Prospect</TableHead>
-                  <TableHead>Course</TableHead>
-                  <TableHead>Lessons</TableHead>
-                  <TableHead>Deadline</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Granted by</TableHead>
-                  <TableHead>Note</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t('adminUsers.trial.colProspect')}</TableHead>
+                  <TableHead>{t('adminUsers.trial.course')}</TableHead>
+                  <TableHead>{t('adminUsers.trial.colLessons')}</TableHead>
+                  <TableHead>{t('adminUsers.trial.deadline')}</TableHead>
+                  <TableHead>{t('adminUsers.trial.colStatus')}</TableHead>
+                  <TableHead>{t('adminUsers.trial.colGrantedBy')}</TableHead>
+                  <TableHead>{t('adminUsers.trial.note')}</TableHead>
+                  <TableHead className="text-right">{t('adminUsers.trial.colActions')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -580,7 +593,7 @@ export default function TrialAccessPage() {
                             <p className="font-medium text-foreground">{trial.user_name}</p>
                             <p className="text-xs text-muted-foreground">{trial.user_email}</p>
                             {group.length > 1 && (
-                              <p className="text-xs text-muted-foreground mt-0.5">{group.length} courses</p>
+                              <p className="text-xs text-muted-foreground mt-0.5">{t('adminUsers.trial.coursesCount', { count: group.length })}</p>
                             )}
                           </>
                         )}
@@ -590,12 +603,12 @@ export default function TrialAccessPage() {
                       <TableCell>
                         <p className="whitespace-nowrap">{formatDateTime(trial.expires_at, { ...DATE, ...TIME })}</p>
                         {trial.status === 'active' && (
-                          <p className="text-xs text-muted-foreground">{formatCountdown(trial.expires_at, now)}</p>
+                          <p className="text-xs text-muted-foreground">{formatCountdown(trial.expires_at, now, locale)}</p>
                         )}
                       </TableCell>
                       <TableCell>
                         <Badge className={STATUS_BADGE_CLASSES[trial.status]} variant="outline">
-                          {trial.status}
+                          {t(STATUS_LABELS[trial.status])}
                         </Badge>
                       </TableCell>
                       <TableCell>{trial.granted_by_name || '—'}</TableCell>
@@ -609,7 +622,7 @@ export default function TrialAccessPage() {
                             variant="outline"
                             className="h-7 px-2 text-xs"
                             disabled={isBusy || isTerminal}
-                            title="Edit"
+                            title={t('common.edit')}
                             onClick={() => openEditDialog(trial)}
                           >
                             <Pencil className="w-3 h-3" />
@@ -619,7 +632,7 @@ export default function TrialAccessPage() {
                             variant="outline"
                             className="h-7 px-2 text-xs"
                             disabled={isBusy}
-                            title="Resend invite"
+                            title={t('adminUsers.trial.resend')}
                             onClick={() => handleResend(trial)}
                           >
                             <Mail className="w-3 h-3" />
@@ -630,7 +643,7 @@ export default function TrialAccessPage() {
                               variant="outline"
                               className="h-7 px-2 text-xs border-brand-border text-brand hover:bg-brand-surface"
                               disabled={isBusy}
-                              title="Convert to full student"
+                              title={t('adminUsers.trial.convert')}
                               onClick={() => handleConvert(trial)}
                             >
                               <CheckCircle2 className="w-3 h-3" />
@@ -642,7 +655,7 @@ export default function TrialAccessPage() {
                               variant="outline"
                               className="h-7 px-2 text-xs border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800/60 dark:text-red-400 dark:hover:bg-red-950/40"
                               disabled={isBusy}
-                              title="Revoke"
+                              title={t('adminUsers.trial.revoke')}
                               onClick={() => handleRevoke(trial)}
                             >
                               <Ban className="w-3 h-3" />
@@ -668,11 +681,11 @@ export default function TrialAccessPage() {
       >
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editing ? 'Edit trial access' : 'Grant trial access'}</DialogTitle>
+            <DialogTitle>{editing ? t('adminUsers.trial.editTitle') : t('adminUsers.trial.grantTitle')}</DialogTitle>
             <DialogDescription>
               {editing
-                ? 'Update the lessons, deadline, or note for this trial.'
-                : 'Give a prospect time-limited access to selected lessons.'}
+                ? t('adminUsers.trial.editDescription')
+                : t('adminUsers.trial.grantDescription')}
             </DialogDescription>
           </DialogHeader>
 
@@ -681,29 +694,29 @@ export default function TrialAccessPage() {
               {createResult.password ? (
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">
-                    A new account was created and an invite email was sent. Temporary password:
+                    {t('adminUsers.trial.newAccount')}
                   </p>
                   <div className="flex items-center gap-2">
                     <Input readOnly value={createResult.password} className="font-mono" />
-                    <Button type="button" variant="outline" size="icon" onClick={handleCopyPassword} title="Copy password">
+                    <Button type="button" variant="outline" size="icon" onClick={handleCopyPassword} title={t('adminUsers.trial.copyPassword')}>
                       {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     </Button>
                   </div>
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  This prospect already had an account — existing credentials remain valid. No email was sent.
+                  {t('adminUsers.trial.existingAccount')}
                 </p>
               )}
               <DialogFooter>
-                <Button onClick={closeDialog}>Done</Button>
+                <Button onClick={closeDialog}>{t('adminUsers.trial.done')}</Button>
               </DialogFooter>
             </div>
           ) : (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <Label>Email</Label>
+                  <Label>{t('adminUsers.trial.email')}</Label>
                   <Input
                     value={form.email}
                     disabled={!!editing}
@@ -712,28 +725,28 @@ export default function TrialAccessPage() {
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label>Name</Label>
+                  <Label>{t('adminUsers.trial.name')}</Label>
                   <Input
                     value={form.name}
                     disabled={!!editing}
                     onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                    placeholder="Full name"
+                    placeholder={t('adminUsers.trial.namePlaceholder')}
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <Label>Note</Label>
+                <Label>{t('adminUsers.trial.note')}</Label>
                 <Textarea
                   value={form.note}
                   onChange={(e) => setForm((f) => ({ ...f, note: e.target.value }))}
-                  placeholder="Optional prospect note"
+                  placeholder={t('adminUsers.trial.notePlaceholder')}
                 />
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label>{editing ? 'Course & lessons' : 'Courses & lessons'}</Label>
+                  <Label>{editing ? t('adminUsers.trial.courseAndLessons') : t('adminUsers.trial.coursesAndLessons')}</Label>
                   {!editing && (
                     <Button
                       type="button"
@@ -744,7 +757,7 @@ export default function TrialAccessPage() {
                       disabled={form.selections.length >= courses.length}
                     >
                       <Plus className="w-3 h-3" />
-                      Add course
+                      {t('adminUsers.trial.addCourse')}
                     </Button>
                   )}
                 </div>
@@ -769,7 +782,7 @@ export default function TrialAccessPage() {
               </div>
 
               <div className="space-y-1">
-                <Label>Deadline</Label>
+                <Label>{t('adminUsers.trial.deadline')}</Label>
                 <Input
                   type="datetime-local"
                   value={form.deadline}
@@ -779,10 +792,10 @@ export default function TrialAccessPage() {
 
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={closeDialog}>
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button type="button" onClick={handleSubmit} disabled={submitting}>
-                  {submitting ? 'Saving...' : editing ? 'Save changes' : 'Grant access'}
+                  {submitting ? t('adminUsers.trial.saving') : editing ? t('adminUsers.trial.saveChanges') : t('adminUsers.trial.grantAccess')}
                 </Button>
               </DialogFooter>
             </div>

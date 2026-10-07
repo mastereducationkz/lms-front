@@ -18,6 +18,7 @@ import { t, type Locale, type MessageKey } from '../../lib/i18n';
 import { useLocale } from '../../lib/i18n/react';
 import type { MeetFlag, MeetMark, MeetWaitingStage } from '../../services/api/meetAttendance';
 import '@/lib/i18n/catalogs/meet';
+import '@/lib/i18n/catalogs/meetViews';
 
 const STAGE: Record<MeetWaitingStage, MessageKey> = {
   lesson_running: 'meet.participants.stageLessonRunning',
@@ -197,7 +198,7 @@ export function ParticipantsPanel({ view, locale: forced, defaultOpen = false, c
                     {s.verdict && (
                       <span title={verdictHint(s.verdict, locale) ?? undefined}
                         className={cn('text-[10px] leading-tight', verdictDiffers(s.mark, s.verdict) ? 'text-amber-700 dark:text-amber-300' : 'text-muted-foreground')}>
-                        Meet: {verdictText(s.verdict, locale)}
+                        {say('meetViews.verdict.meetSays', { verdict: verdictText(s.verdict, locale) })}
                       </span>
                     )}
                   </span>

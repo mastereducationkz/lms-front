@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { clearCache } from '../../services/api';
 import { Clock } from 'lucide-react';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/studentHome';
 
 // Sales-team WhatsApp: expired trial prospects reach out here to be set up with full access.
 // wa.me click-to-chat wants the number in international format with no "+", spaces, or dashes.
@@ -9,6 +11,7 @@ const CONTACT_HREF = 'https://wa.me/77071064065';
 
 const TrialExpiredPanel: React.FC = () => {
   const { logout } = useAuth();
+  const t = useT();
 
   // Trial has ended: drop any cached course/lesson data so nothing stale lingers
   // once access is restored later (fresh grant, etc.).
@@ -22,10 +25,9 @@ const TrialExpiredPanel: React.FC = () => {
         <div className="mx-auto mb-4 w-14 h-14 rounded-full bg-amber-100 flex items-center justify-center">
           <Clock className="w-7 h-7 text-amber-600" />
         </div>
-        <h1 className="text-2xl font-bold mb-2">Your trial has ended</h1>
+        <h1 className="text-2xl font-bold mb-2">{t('studentHome.trial.endedTitle')}</h1>
         <p className="text-gray-600 dark:text-gray-300 mb-6">
-          Thanks for exploring Master Education! To continue learning with full access,
-          contact our team — we'll set you up in minutes.
+          {t('studentHome.trial.endedBody')}
         </p>
         <a
           href={CONTACT_HREF}
@@ -33,10 +35,10 @@ const TrialExpiredPanel: React.FC = () => {
           rel="noreferrer"
           className="inline-block w-full px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 mb-3"
         >
-          Contact us to continue
+          {t('studentHome.trial.contact')}
         </a>
         <button onClick={() => logout()} className="text-sm text-gray-500 hover:text-gray-700">
-          Log out
+          {t('studentHome.trial.logOut')}
         </button>
       </div>
     </div>

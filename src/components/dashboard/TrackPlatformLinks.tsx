@@ -5,6 +5,8 @@ import { Card, CardContent } from '../ui/card';
 import { PROGRAM_BADGE_STYLES } from '../../lib/groupPicker';
 import { openPlatformPage, platformLinksForTracks, type PlatformLink } from '../../lib/platformLinks';
 import { getMyTracks } from '../../services/api/exams';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/studentHome';
 
 /**
  * Track-aware links to the dedicated SAT / NUET / IELTS platforms.
@@ -19,6 +21,7 @@ import { getMyTracks } from '../../services/api/exams';
  * dashboard rather than an empty section.
  */
 export function TrackPlatformLinks() {
+  const t = useT();
   const [links, setLinks] = useState<PlatformLink[] | null>(null);
 
   useEffect(() => {
@@ -50,7 +53,7 @@ export function TrackPlatformLinks() {
         id="track-platforms-heading"
         className="text-sm font-medium text-muted-foreground mb-3"
       >
-        Your programs
+        {t('studentHome.programs.title')}
       </h2>
       <div className="grid grid-cols-1 @xl:grid-cols-2 @5xl:grid-cols-3 gap-4 sm:gap-6">
         {links.map((link) => (
@@ -63,7 +66,7 @@ export function TrackPlatformLinks() {
                 {link.label}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-medium truncate">{link.label} platform</p>
+                <p className="font-medium truncate">{t('studentHome.programs.platform', { label: link.label })}</p>
                 <p className="text-xs text-muted-foreground">{link.description}</p>
               </div>
               <Button asChild size="sm" variant="secondary">
@@ -71,7 +74,7 @@ export function TrackPlatformLinks() {
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`Open the ${link.label} platform in a new tab`}
+                  aria-label={t('studentHome.programs.openAria', { label: link.label })}
                   onClick={(event) => {
                     // Plain click: open via the signed handoff (falls back to href's host).
                     // Modified clicks keep the browser's own new-tab/window behaviour.
@@ -80,7 +83,7 @@ export function TrackPlatformLinks() {
                     void openPlatformPage(link.track, '/');
                   }}
                 >
-                  Open
+                  {t('studentHome.programs.open')}
                   <ExternalLink className="ml-1.5 h-4 w-4" aria-hidden="true" />
                 </a>
               </Button>

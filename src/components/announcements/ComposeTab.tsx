@@ -13,6 +13,8 @@ import { MAX_IMAGES, TEXT_LIMIT, visibleLength, visibleText } from './telegramTe
 import { createAnnouncement, testSendPreview } from '../../services/api/announcements';
 import type { RecipientSummary, TelegramGroup } from '../../services/api/announcements';
 import type { RecipientSelection } from './resend';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/announcements';
 
 interface ComposeTabProps {
   approvedGroups: TelegramGroup[];
@@ -22,14 +24,13 @@ interface ComposeTabProps {
   onSent: () => void;
 }
 
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
-
 /**
  * Owns the composition and decides when it may go out. The cards it lays out
  * are presentational; everything that determines WHAT is sent and to WHOM —
  * validation, the payload, the recipient count — lives here, in one place.
  */
 export function ComposeTab({ approvedGroups, summary, recipientSelection, onSent }: ComposeTabProps) {
+  const t = useT();
   const [body, setBody] = useState('');
   const [images, setImages] = useState<File[]>([]);
   const [selectedGroups, setSelectedGroups] = useState<Set<number>>(
@@ -57,12 +58,12 @@ export function ComposeTab({ approvedGroups, summary, recipientSelection, onSent
   const hasContent = visibleText(body).trim() !== '' || images.length > 0;
 
   const validate = (): string | null => {
-    if (!hasContent) return 'Write a message or attach an image';
-    if (visibleLength(body) > TEXT_LIMIT) return `Text is limited to ${TEXT_LIMIT} characters`;
-    if (images.length > MAX_IMAGES) return `Telegram allows at most ${MAX_IMAGES} images`;
-    if (recipientCount === 0) return 'Select at least one group, or all linked students';
+    if (!hasContent) return t('announcements.compose.needContent');
+    if (visibleLength(body) > TEXT_LIMIT) return t('announcements.compose.textTooLong', { limit: TEXT_LIMIT });
+    if (images.length > MAX_IMAGES) return t('announcements.compose.tooManyImages', { max: MAX_IMAGES });
+    if (recipientCount === 0) return t('announcements.compose.noRecipients');
     if (scheduledFor && new Date(scheduledFor).getTime() <= Date.now()) {
-      return 'The scheduled time is in the past';
+      return t('announcements.compose.scheduleInPast');
     }
     return null;
   };
@@ -78,16 +79,16 @@ export function ComposeTab({ approvedGroups, summary, recipientSelection, onSent
 
   const handleTestSend = async (chatId: number) => {
     if (!hasContent) {
-      toast('Write a message or attach an image first', 'error');
+      toast(t('announcements.compose.needContentFirst'), 'error');
       return;
     }
     setTesting(true);
     try {
       const result = await testSendPreview({ ...buildPayload(), test_chat_id: chatId }, images);
-      if (result.ok) toast('Test sent — check the group', 'success');
-      else toast(result.error || 'Test send failed', 'error');
+      if (result.ok) toast(t('announcements.compose.testSent'), 'success');
+      else toast(result.error || t('announcements.compose.testFailed'), 'error');
     } catch (error) {
-      toast(errorMessage(error, 'Test send failed'), 'error');
+      toast(errorMessage(error, t('announcements.compose.testFailed')), 'error');
     } finally {
       setTesting(false);
     }
@@ -107,14 +108,14 @@ export function ComposeTab({ approvedGroups, summary, recipientSelection, onSent
     try {
       await createAnnouncement(buildPayload(), images);
       toast(
-        `${scheduledFor ? 'Scheduled for' : 'Sending to'} ${plural(recipientCount, 'recipient')}`,
+        t(scheduledFor ? 'announcements.compose.scheduledFor' : 'announcements.compose.sendingTo', { count: recipientCount }),
         'success',
       );
       setConfirmOpen(false);
       // History takes over from here; this tab unmounts, so its state resets.
       onSent();
     } catch (error) {
-      toast(errorMessage(error, 'Failed to send the announcement'), 'error');
+      toast(errorMessage(error, t('announcements.compose.sendFailed')), 'error');
     } finally {
       setSending(false);
     }
@@ -153,15 +154,18 @@ export function ComposeTab({ approvedGroups, summary, recipientSelection, onSent
         <Card>
           <CardContent className="space-y-3 p-4">
             <div className="text-sm text-muted-foreground">
-              Will reach <span className="font-semibold text-foreground">{recipientCount}</span>{' '}
-              recipient{recipientCount === 1 ? '' : 's'}
+              {t('announcements.compose.willReach')} <span className="font-semibold text-foreground">{recipientCount}</span>{' '}
+              {t('announcements.compose.recipientsWord', { count: recipientCount })}
               {groupCount > 0 && studentCount > 0 && (
-                <> ({plural(groupCount, 'group')}, {plural(studentCount, 'student')})</>
+                <> {t('announcements.compose.breakdown', {
+                  groups: t('announcements.count.groups', { count: groupCount }),
+                  students: t('announcements.count.students', { count: studentCount }),
+                })}</>
               )}
             </div>
             <Button className="w-full" onClick={openConfirm} disabled={sending}>
               <Send className="mr-2 h-4 w-4" />
-              {scheduledFor ? 'Schedule' : 'Send now'}
+              {scheduledFor ? t('announcements.compose.schedule') : t('announcements.compose.sendNow')}
             </Button>
           </CardContent>
         </Card>

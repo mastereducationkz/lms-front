@@ -19,8 +19,20 @@ import { ChatMessageBubble, type ChatMessage } from '../components/chat/ChatMess
 import { ChatInfoDialog } from '../components/chat/ChatInfoDialog';
 import { DateSeparator, UnreadDivider, isSameDay, formatDateSeparator, formatMessageTime } from '../components/chat/ChatSeparators';
 import { formatDate, formatTime as formatClock } from '../lib/i18n';
+import type { MessageKey } from '../lib/i18n';
 import { useT } from '../lib/i18n/react';
 import '@/lib/i18n/catalogs/shell';
+import '@/lib/i18n/catalogs/chatLive';
+
+const ROLE_KEYS: Record<string, MessageKey> = {
+  admin: 'shell.role.admin',
+  head_teacher: 'shell.role.headTeacher',
+  teacher: 'shell.role.teacher',
+  head_curator: 'shell.role.headCurator',
+  curator: 'shell.role.curator',
+  student: 'shell.role.student',
+  parent: 'shell.role.parent',
+};
 
 // Backstop only: how long to wait for the send ack before giving up on it ever arriving.
 // Success/failure is decided by the ack itself (see `deliver`), not by this clock.
@@ -65,6 +77,8 @@ function replacePending(list: ChatMessage[], clientId: string, saved: ChatMessag
 export default function ChatPage() {
   const location = useLocation();
   const tr = useT();
+  // A contact's role as words, not the raw API value.
+  const roleName = (role?: string | null) => (!role ? tr('chatLive.chat.user') : ROLE_KEYS[role] ? tr(ROLE_KEYS[role]) : role);
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [activePartnerId, setActivePartnerId] = useState<number | null>(null);
   const [groupThreads, setGroupThreads] = useState<GroupThread[]>([]);
@@ -417,10 +431,10 @@ export default function ChatPage() {
     setReportTargetId(null);
     try {
       await reportMessage(messageId);
-      toast.success('Reported', { description: 'The school administration will review this message.' });
+      toast.success(tr('chatLive.chat.reported'), { description: tr('chatLive.chat.reportedHint') });
     } catch (error) {
       console.error('Failed to report message:', error);
-      toast.error('Could not submit the report', { description: 'Please try again.' });
+      toast.error(tr('chatLive.chat.reportFailed'), { description: tr('chatLive.chat.tryAgain') });
     }
   };
 
@@ -518,7 +532,7 @@ export default function ChatPage() {
 
   const getActivePartnerName = () => {
     const partner = getActivePartner();
-    if (!partner) return 'Select chat';
+    if (!partner) return tr('chatLive.chat.selectChat');
     
     // Для MessageThread
     if ('partner_name' in partner) {
@@ -530,7 +544,7 @@ export default function ChatPage() {
       return partner.name;
     }
     
-    return 'Unknown user';
+    return tr('chatLive.chat.unknownUser');
   };
 
   const formatTime = (dateString: string) => {
@@ -572,10 +586,10 @@ export default function ChatPage() {
 
   const getRoleDisplayName = (role: string) => {
     switch (role) {
-      case 'teacher': return 'Teachers';
-      case 'admin': return 'Administrators';
-      case 'curator': return 'Curators';
-      default: return 'Others';
+      case 'teacher': return tr('chatLive.chat.roleGroup.teacher');
+      case 'admin': return tr('chatLive.chat.roleGroup.admin');
+      case 'curator': return tr('chatLive.chat.roleGroup.curator');
+      default: return tr('chatLive.chat.roleGroup.other');
     }
   };
 
@@ -594,7 +608,7 @@ export default function ChatPage() {
       <Card className="lg:col-span-4 flex flex-col min-h-0">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
           <CardTitle className="text-lg font-semibold">
-            {currentUser?.role === 'student' ? 'Messages' : 'Chats'}
+            {currentUser?.role === 'student' ? tr('chatLive.chat.titleStudent') : tr('chatLive.chat.titleStaff')}
           </CardTitle>
           <Dialog open={showNewChatDialog} onOpenChange={(open) => {
             setShowNewChatDialog(open);
@@ -607,20 +621,20 @@ export default function ChatPage() {
                 variant="outline" 
                 size="sm"
               >
-                {currentUser?.role === 'student' ? 'Contact' : 'New Chat'}
+                {currentUser?.role === 'student' ? tr('chatLive.chat.contact') : tr('chatLive.chat.newChat')}
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>
-                  {currentUser?.role === 'student' ? 'Contact Support Team' : 'Select Contact'}
+                  {currentUser?.role === 'student' ? tr('chatLive.chat.contactSupport') : tr('chatLive.chat.selectContact')}
                 </DialogTitle>
               </DialogHeader>
               
               {/* Search for contacts */}
               <div className="mb-4 space-y-2">
                 <Input
-                  placeholder="Search contacts..."
+                  placeholder={tr('chatLive.chat.searchContacts')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full"
@@ -651,7 +665,7 @@ export default function ChatPage() {
                                   <UserAvatar userId={contact.user_id} name={contact.name} avatarUrl={contact.avatar_url} mascot={contact.mascot} isStudent={contact.role === 'student'} size={32} fallbackClassName="bg-muted text-muted-foreground" />
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium truncate">{contact.name}</p>
-                                    <p className="text-xs text-muted-foreground">Course Teacher</p>
+                                    <p className="text-xs text-muted-foreground">{tr('chatLive.chat.courseTeacher')}</p>
                                   </div>
                                 </div>
                               ))}
@@ -675,7 +689,7 @@ export default function ChatPage() {
                                   <UserAvatar userId={contact.user_id} name={contact.name} avatarUrl={contact.avatar_url} mascot={contact.mascot} isStudent={contact.role === 'student'} size={32} fallbackClassName="bg-muted text-muted-foreground" />
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium truncate">{contact.name}</p>
-                                    <p className="text-xs text-muted-foreground">Group Curator</p>
+                                    <p className="text-xs text-muted-foreground">{tr('chatLive.chat.groupCurator')}</p>
                                   </div>
                                 </div>
                               ))}
@@ -699,7 +713,7 @@ export default function ChatPage() {
                                   <UserAvatar userId={contact.user_id} name={contact.name} avatarUrl={contact.avatar_url} mascot={contact.mascot} isStudent={contact.role === 'student'} size={32} fallbackClassName="bg-muted text-muted-foreground" />
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium truncate">{contact.name}</p>
-                                    <p className="text-xs text-muted-foreground">Administrator</p>
+                                    <p className="text-xs text-muted-foreground">{tr('chatLive.chat.administrator')}</p>
                                   </div>
                                 </div>
                               ))}
@@ -709,15 +723,15 @@ export default function ChatPage() {
 
                         {availableContacts.length === 0 && (
                           <div className="text-center text-muted-foreground py-8">
-                            <p className="text-sm mb-2">No contacts available</p>
+                            <p className="text-sm mb-2">{tr('chatLive.chat.noContacts')}</p>
                             <div className="text-xs space-y-1 bg-brand-surface p-3 rounded-lg border border-brand-border">
-                              <p className="font-medium text-brand-subtle-foreground">To see your contacts, you need:</p>
+                              <p className="font-medium text-brand-subtle-foreground">{tr('chatLive.chat.noContactsWhy')}</p>
                               <ul className="text-brand-subtle-foreground space-y-1">
-                                <li>• Be enrolled in courses</li>
-                                <li>• Be assigned to a student group</li>
-                                <li>• Have active course teachers</li>
+                                <li>• {tr('chatLive.chat.noContactsEnrolled')}</li>
+                                <li>• {tr('chatLive.chat.noContactsGroup')}</li>
+                                <li>• {tr('chatLive.chat.noContactsTeachers')}</li>
                               </ul>
-                              <p className="text-brand mt-2">Contact your administrator if you don't see any teachers.</p>
+                              <p className="text-brand mt-2">{tr('chatLive.chat.noContactsAdmin')}</p>
                             </div>
                           </div>
                         )}
@@ -741,12 +755,12 @@ export default function ChatPage() {
                     <UserAvatar userId={contact.user_id} name={contact.name} avatarUrl={contact.avatar_url} mascot={contact.mascot} isStudent={contact.role === 'student'} size={32} fallbackClassName="bg-muted text-muted-foreground" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{contact.name}</p>
-                      <p className="text-xs text-muted-foreground capitalize">{contact.role}</p>
+                      <p className="text-xs text-muted-foreground">{roleName(contact.role)}</p>
                     </div>
                   </div>
                 ))}
                 {availableContacts.length === 0 && (
-                  <p className="text-center text-muted-foreground py-4">No available contacts</p>
+                  <p className="text-center text-muted-foreground py-4">{tr('chatLive.chat.noAvailableContacts')}</p>
                     )}
                   </>
                 )}
@@ -783,12 +797,12 @@ export default function ChatPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium truncate">
-                      {availableContacts.find(c => c.user_id === activePartnerId)?.name || 'Unknown'}
+                      {availableContacts.find(c => c.user_id === activePartnerId)?.name || tr('chatLive.chat.unknownName')}
                     </p>
-                    <span className="text-xs text-muted-foreground">New chat</span>
+                    <span className="text-xs text-muted-foreground">{tr('chatLive.chat.newChatTag')}</span>
                   </div>
                   <p className="text-xs text-muted-foreground truncate">
-                    Start conversation
+                    {tr('chatLive.chat.startConversation')}
                   </p>
                 </div>
               </div>
@@ -839,9 +853,9 @@ export default function ChatPage() {
 
           {threads.length === 0 && !activePartnerId ? (
             <div className="p-4 text-center text-muted-foreground">
-              <p className="text-sm">No active conversations</p>
+              <p className="text-sm">{tr('chatLive.chat.noConversations')}</p>
               {currentUser?.role === 'student' && (
-                <p className="text-xs mt-2">Click "Contact" to start a new conversation</p>
+                <p className="text-xs mt-2">{tr('chatLive.chat.clickContact', { button: tr('chatLive.chat.contact') })}</p>
               )}
             </div>
           ) : (
@@ -878,7 +892,7 @@ export default function ChatPage() {
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground truncate">
-                      {thread.last_message.from_me ? 'You: ' : ''}{thread.last_message.content}
+                      {thread.last_message.from_me ? tr('chatLive.chat.fromMe', { text: thread.last_message.content }) : thread.last_message.content}
                     </p>
                   </div>
                 </div>
@@ -897,11 +911,11 @@ export default function ChatPage() {
               disabled={!activePartnerId}
               onClick={() => { if (activePartnerId) setShowInfo(true); }}
               className={`flex items-center gap-2 min-w-0 text-left ${activePartnerId ? 'cursor-pointer hover:opacity-80' : 'cursor-default'}`}
-              aria-label={activePartnerId ? 'Open chat info' : undefined}
+              aria-label={activePartnerId ? tr('chatLive.chat.openInfo') : undefined}
             >
               <CardTitle className="text-lg font-semibold truncate">
                 {activeGroupConvId
-                  ? (groupThreads.find(t => t.id === activeGroupConvId)?.title || 'Group')
+                  ? (groupThreads.find(t => t.id === activeGroupConvId)?.title || tr('chatLive.chat.group'))
                   : getActivePartnerName()}
               </CardTitle>
               {activePartnerId && mutedIds.has(activePartnerId) && (
@@ -909,7 +923,7 @@ export default function ChatPage() {
               )}
             </button>
             {activePartnerId && (
-              <Button variant="ghost" size="sm" onClick={() => setShowInfo(true)} aria-label="Chat info">
+              <Button variant="ghost" size="sm" onClick={() => setShowInfo(true)} aria-label={tr('chatLive.chat.info')}>
                 <Info className="w-4 h-4" />
               </Button>
             )}
@@ -917,8 +931,8 @@ export default function ChatPage() {
           {activePartnerId && (
             <div className="flex items-center space-x-2 mt-2">
               <span className="text-sm text-muted-foreground">
-                {availableContacts.find(c => c.user_id === activePartnerId)?.role
-                  || threads.find(t => t.partner_id === activePartnerId)?.partner_role || 'User'}
+                {roleName(availableContacts.find(c => c.user_id === activePartnerId)?.role
+                  || threads.find(t => t.partner_id === activePartnerId)?.partner_role)}
               </span>
             </div>
           )}
@@ -931,12 +945,12 @@ export default function ChatPage() {
               <div className="text-center text-muted-foreground py-8">
                 {activePartnerId || activeGroupConvId ? (
                   currentUser?.role === 'student' ?
-                    'Start your conversation' :
-                    'Start conversation'
+                    tr('chatLive.chat.startYourConversation') :
+                    tr('chatLive.chat.startConversation')
                 ) : (
                   currentUser?.role === 'student' ?
-                    'Select a conversation or click "Contact" to start a new chat' :
-                    'Select a chat to start conversation'
+                    tr('chatLive.chat.pickOrContact', { button: tr('chatLive.chat.contact') }) :
+                    tr('chatLive.chat.pickChat')
                 )}
               </div>
             ) : (
@@ -972,14 +986,14 @@ export default function ChatPage() {
                               isMine ? 'text-blue-100' : 'text-muted-foreground'
                             }`}>
                               {formatMessageTime(gMsg.created_at)}
-                              {isPending && <span>· sending…</span>}
+                              {isPending && <span>· {tr('chatLive.chat.sending')}</span>}
                               {isFailed && (
                                 <button
                                   type="button"
                                   onClick={() => retrySend(message)}
                                   className="font-semibold text-red-200 underline hover:text-white"
                                 >
-                                  · failed · retry
+                                  · {tr('chatLive.chat.failedRetry')}
                                 </button>
                               )}
                             </span>
@@ -1021,17 +1035,17 @@ export default function ChatPage() {
               <ReplyIcon className="w-4 h-4 text-brand shrink-0" />
               <div className="flex-1 min-w-0 border-l-2 border-brand pl-2">
                 <p className="text-xs font-semibold text-brand truncate">
-                  {replyingTo.from_user_id === Number(currentUser?.id) ? 'You' : (replyingTo.sender_name || 'Message')}
+                  {replyingTo.from_user_id === Number(currentUser?.id) ? tr('chatLive.chat.you') : (replyingTo.sender_name || tr('chatLive.chat.message'))}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
-                  {replyingTo.content || (replyingTo.file_url ? <><Paperclip className="inline h-3 w-3 mr-1 align-[-2px]" aria-hidden="true" />Attachment</> : '')}
+                  {replyingTo.content || (replyingTo.file_url ? <><Paperclip className="inline h-3 w-3 mr-1 align-[-2px]" aria-hidden="true" />{tr('chatLive.chat.attachment')}</> : '')}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setReplyingTo(null)}
                 className="p-1 text-gray-400 dark:text-muted-foreground hover:text-gray-700 dark:hover:text-foreground"
-                aria-label="Cancel reply"
+                aria-label={tr('chatLive.chat.cancelReply')}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1044,7 +1058,7 @@ export default function ChatPage() {
               <Input
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder="Type a message..."
+                placeholder={tr('chatLive.chat.typeMessage')}
                 disabled={!activePartnerId && !activeGroupConvId}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
@@ -1058,7 +1072,7 @@ export default function ChatPage() {
                 disabled={!text.trim() || (!activePartnerId && !activeGroupConvId)}
                 size="sm"
               >
-                Send
+                {tr('chatLive.chat.send')}
               </Button>
             </div>
           </form>
@@ -1072,8 +1086,8 @@ export default function ChatPage() {
           onOpenChange={setShowInfo}
           partnerId={activePartnerId}
           name={getActivePartnerName()}
-          role={availableContacts.find(c => c.user_id === activePartnerId)?.role
-            || threads.find(t => t.partner_id === activePartnerId)?.partner_role}
+          role={roleName(availableContacts.find(c => c.user_id === activePartnerId)?.role
+            || threads.find(t => t.partner_id === activePartnerId)?.partner_role)}
           avatarUrl={availableContacts.find(c => c.user_id === activePartnerId)?.avatar_url
             || threads.find(t => t.partner_id === activePartnerId)?.partner_avatar}
           isMuted={mutedIds.has(activePartnerId)}
@@ -1085,15 +1099,15 @@ export default function ChatPage() {
       <AlertDialog open={reportTargetId !== null} onOpenChange={(open) => { if (!open) setReportTargetId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Report message</AlertDialogTitle>
+            <AlertDialogTitle>{tr('chatLive.chat.reportTitle')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Report this message to the school administration for review?
+              {tr('chatLive.chat.reportBody')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{tr('common.cancel')}</AlertDialogCancel>
             <AlertDialogAction onClick={confirmReport} className="bg-red-600 hover:bg-red-700">
-              Report
+              {tr('chatLive.chat.report')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -8,6 +8,8 @@ import apiClient from '../../services/api';
 import { safeUploadUrl } from '../../lib/mediaUrl';
 import { DATE, TIME, formatDate as formatAppDate, formatDateTime as formatAppDateTime } from '../../lib/i18n';
 import { CollegeBoardPasswordReveal } from '../../components/CollegeBoardPasswordReveal';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/adminUsers';
 import { Search, Download, Eye, Filter, BookOpen, Headphones, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 interface AssignmentZeroSubmission {
@@ -101,6 +103,7 @@ interface AssignmentZeroSubmission {
 }
 
 const AssignmentZeroSubmissions = () => {
+  const t = useT();
   const [submissions, setSubmissions] = useState<AssignmentZeroSubmission[]>([]);
   const [filteredSubmissions, setFilteredSubmissions] = useState<AssignmentZeroSubmission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -367,7 +370,7 @@ const AssignmentZeroSubmissions = () => {
   );
 
   const formatDateTime = (value?: string | null) => {
-    if (!value) return 'N/A';
+    if (!value) return t('adminUsers.zero.na');
     return formatAppDateTime(value, { ...DATE, ...TIME });
   };
 
@@ -437,7 +440,7 @@ const AssignmentZeroSubmissions = () => {
 
   const formatDateOnly = (value?: string | null) => {
     const parsedDate = parseDateValue(value);
-    return parsedDate ? formatAppDate(parsedDate) : 'N/A';
+    return parsedDate ? formatAppDate(parsedDate) : t('adminUsers.zero.na');
   };
 
   const getNextIeltsPromptAt = (value?: string | null) => {
@@ -453,19 +456,19 @@ const AssignmentZeroSubmissions = () => {
     resultDate?: string | null
   ) => {
     if (resultScore || resultDate) {
-      return 'Result received';
+      return t('adminUsers.zero.resultReceived');
     }
     if (!askDate) {
-      return 'No planned date';
+      return t('adminUsers.zero.noPlannedDate');
     }
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     const normalizedAskDate = new Date(askDate);
     normalizedAskDate.setHours(0, 0, 0, 0);
     if (now > normalizedAskDate) {
-      return 'Overdue';
+      return t('adminUsers.zero.overdue');
     }
-    return 'Pending';
+    return t('adminUsers.zero.pending');
   };
 
   if (loading) {
@@ -479,8 +482,8 @@ const AssignmentZeroSubmissions = () => {
   return (
     <div className="container mx-auto p-6 max-w-7xl">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Assignment Zero Submissions</h1>
-        <p className="text-muted-foreground">View and analyze student self-assessment questionnaires</p>
+        <h1 className="text-3xl font-bold mb-2">{t('adminUsers.zero.title')}</h1>
+        <p className="text-muted-foreground">{t('adminUsers.zero.subtitle')}</p>
       </div>
 
       {/* Filters and Search */}
@@ -491,7 +494,7 @@ const AssignmentZeroSubmissions = () => {
               <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
               <Input
-                placeholder="Search by name, email, group, or city..."
+                placeholder={t('adminUsers.zero.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 pr-10"
@@ -499,7 +502,7 @@ const AssignmentZeroSubmissions = () => {
               {searchQuery && (
                 <button
                   type="button"
-                  aria-label="Clear search"
+                  aria-label={t('adminUsers.zero.clearSearch')}
                   onClick={() => setSearchQuery('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
                 >
@@ -509,7 +512,7 @@ const AssignmentZeroSubmissions = () => {
             </div>
               <Button onClick={exportToCSV} variant="outline" className="shrink-0">
                 <Download className="w-4 h-4 mr-2" />
-                Export CSV
+                {t('adminUsers.zero.exportCsv')}
               </Button>
             </div>
 
@@ -521,27 +524,27 @@ const AssignmentZeroSubmissions = () => {
                   size="sm"
                 >
                   <Filter className="w-4 h-4 mr-2" />
-                  All ({submissions.length})
+                  {t('adminUsers.zero.filterAll', { count: submissions.length })}
                 </Button>
                 <Button
                   variant={filterDraft === 'submitted' ? 'default' : 'outline'}
                   onClick={() => setFilterDraft('submitted')}
                   size="sm"
                 >
-                  Submitted ({submissions.filter((s) => !s.is_draft).length})
+                  {t('adminUsers.zero.filterSubmitted', { count: submissions.filter((s) => !s.is_draft).length })}
                 </Button>
                 <Button
                   variant={filterDraft === 'draft' ? 'default' : 'outline'}
                   onClick={() => setFilterDraft('draft')}
                   size="sm"
                 >
-                  Drafts ({submissions.filter((s) => s.is_draft).length})
+                  {t('adminUsers.zero.filterDrafts', { count: submissions.filter((s) => s.is_draft).length })}
                 </Button>
               </div>
 
               <div className="flex flex-wrap gap-2 lg:ml-auto">
                 <Button variant={filterTrack === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setFilterTrack('all')}>
-                  Track: All
+                  {t('adminUsers.zero.trackAll')}
                 </Button>
                 <Button variant={filterTrack === 'sat' ? 'default' : 'outline'} size="sm" onClick={() => setFilterTrack('sat')}>
                   SAT
@@ -554,7 +557,7 @@ const AssignmentZeroSubmissions = () => {
                   onChange={(e) => setFilterGroup(e.target.value)}
                   className="h-9 rounded-md border border-input bg-background px-3 text-sm"
                 >
-                  <option value="all">All groups</option>
+                  <option value="all">{t('adminUsers.zero.allGroups')}</option>
                   {uniqueGroups.map((groupName) => (
                     <option key={groupName} value={groupName}>
                       {groupName}
@@ -572,14 +575,14 @@ const AssignmentZeroSubmissions = () => {
                       setFilterDraft('submitted');
                     }}
                   >
-                    Reset
+                    {t('adminUsers.zero.reset')}
                   </Button>
                 )}
               </div>
             </div>
 
             <p className="text-sm text-muted-foreground">
-              Found {filteredSubmissions.length} submissions
+              {t('adminUsers.zero.found', { count: filteredSubmissions.length })}
             </p>
           </div>
         </CardContent>
@@ -588,21 +591,21 @@ const AssignmentZeroSubmissions = () => {
       {/* Submissions Table */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg">Submissions</CardTitle>
+          <CardTitle className="text-lg">{t('adminUsers.zero.submissions')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border dark:border-border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Student</TableHead>
-                  <TableHead className="min-w-[9rem]">Group</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Track</TableHead>
-                  <TableHead>SAT Target</TableHead>
-                  <TableHead>IELTS Target</TableHead>
-                  <TableHead>Updated</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
+                  <TableHead>{t('adminUsers.zero.colStudent')}</TableHead>
+                  <TableHead className="min-w-[9rem]">{t('adminUsers.zero.colGroup')}</TableHead>
+                  <TableHead>{t('adminUsers.zero.colStatus')}</TableHead>
+                  <TableHead>{t('adminUsers.zero.colTrack')}</TableHead>
+                  <TableHead>{t('adminUsers.zero.colSatTarget')}</TableHead>
+                  <TableHead>{t('adminUsers.zero.colIeltsTarget')}</TableHead>
+                  <TableHead>{t('adminUsers.zero.colUpdated')}</TableHead>
+                  <TableHead className="text-right">{t('adminUsers.zero.colAction')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -616,7 +619,7 @@ const AssignmentZeroSubmissions = () => {
                       <TableCell>{submission.group_name || '-'}</TableCell>
                       <TableCell>
                         <Badge variant={submission.is_draft ? 'secondary' : 'default'}>
-                          {submission.is_draft ? 'Draft' : 'Submitted'}
+                          {submission.is_draft ? t('adminUsers.zero.draft') : t('adminUsers.zero.submitted')}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -641,7 +644,7 @@ const AssignmentZeroSubmissions = () => {
                       <TableCell className="text-right">
                         <Button variant="outline" size="sm" onClick={() => setSelectedSubmission(submission)}>
                           <Eye className="w-4 h-4 mr-2" />
-                          View
+                          {t('adminUsers.zero.view')}
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -649,7 +652,7 @@ const AssignmentZeroSubmissions = () => {
                 ) : (
                   <TableRow>
                     <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                      No submissions found matching your criteria.
+                      {t('adminUsers.zero.empty')}
                     </TableCell>
                   </TableRow>
                 )}
@@ -660,8 +663,11 @@ const AssignmentZeroSubmissions = () => {
           {/* Paging */}
           <div className="mt-4 flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              Showing {filteredSubmissions.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}-
-              {Math.min(currentPage * pageSize, filteredSubmissions.length)} of {filteredSubmissions.length}
+              {t('adminUsers.zero.showing', {
+                from: filteredSubmissions.length === 0 ? 0 : (currentPage - 1) * pageSize + 1,
+                to: Math.min(currentPage * pageSize, filteredSubmissions.length),
+                total: filteredSubmissions.length,
+              })}
             </p>
             <div className="flex items-center gap-2">
               <Button
@@ -671,10 +677,10 @@ const AssignmentZeroSubmissions = () => {
                 onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />
-                Previous
+                {t('adminUsers.list.previous')}
               </Button>
               <span className="text-sm text-muted-foreground">
-                Page {currentPage} / {totalPages}
+                {t('adminUsers.zero.page', { page: currentPage, total: totalPages })}
               </span>
               <Button
                 variant="outline"
@@ -682,7 +688,7 @@ const AssignmentZeroSubmissions = () => {
                 disabled={currentPage >= totalPages}
                 onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
               >
-                Next
+                {t('adminUsers.list.next')}
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
@@ -697,7 +703,7 @@ const AssignmentZeroSubmissions = () => {
             <CardHeader className="sticky top-0 bg-card dark:bg-card z-10 border-b dark:border-border">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <CardTitle>Assignment Zero - {selectedSubmission.full_name}</CardTitle>
+                  <CardTitle>{t('adminUsers.zero.detailTitle', { name: selectedSubmission.full_name })}</CardTitle>
                   {hasSATData(selectedSubmission) && (
                     <Badge className="bg-brand-subtle text-brand-subtle-foreground">
                       <BookOpen className="w-3 h-3 mr-1" />
@@ -711,7 +717,7 @@ const AssignmentZeroSubmissions = () => {
                     </Badge>
                   )}
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedSubmission(null)} aria-label="Close">
+                <Button variant="ghost" size="sm" onClick={() => setSelectedSubmission(null)} aria-label={t('common.close')}>
                   <X className="h-4 w-4" aria-hidden="true" />
                 </Button>
               </div>
@@ -721,23 +727,23 @@ const AssignmentZeroSubmissions = () => {
                 {/* Personal Information */}
                 <div className="bg-muted dark:bg-secondary rounded-lg p-4">
                   <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    Personal Information
+                    {t('adminUsers.zero.personalInfo')}
                   </h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                     <div className="space-y-1">
-                      <span className="text-muted-foreground text-xs uppercase">Full Name</span>
+                      <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.fullName')}</span>
                       <p className="font-medium">{selectedSubmission.full_name}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-muted-foreground text-xs uppercase">Email</span>
+                      <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.email')}</span>
                       <p className="font-medium">{selectedSubmission.email}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-muted-foreground text-xs uppercase">Phone</span>
+                      <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.phone')}</span>
                       <p className="font-medium">{selectedSubmission.phone_number}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-muted-foreground text-xs uppercase">Parent Phone</span>
+                      <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.parentPhone')}</span>
                       <p className="font-medium">{selectedSubmission.parent_phone_number}</p>
                     </div>
                     <div className="space-y-1">
@@ -745,19 +751,19 @@ const AssignmentZeroSubmissions = () => {
                       <p className="font-medium">{selectedSubmission.telegram_id}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-muted-foreground text-xs uppercase">Birthday</span>
+                      <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.birthday')}</span>
                       <p className="font-medium">{selectedSubmission.birthday_date}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-muted-foreground text-xs uppercase">City</span>
+                      <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.city')}</span>
                       <p className="font-medium">{selectedSubmission.city}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-muted-foreground text-xs uppercase">School Type</span>
+                      <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.schoolType')}</span>
                       <p className="font-medium">{selectedSubmission.school_type}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-muted-foreground text-xs uppercase">Group</span>
+                      <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.group')}</span>
                       <p className="font-medium">{selectedSubmission.group_name}</p>
                     </div>
                   </div>
@@ -766,15 +772,15 @@ const AssignmentZeroSubmissions = () => {
                 {/* Account Information */}
                 <div className="bg-muted dark:bg-secondary rounded-lg p-4">
                   <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    Account Information
+                    {t('adminUsers.zero.accountInfo')}
                   </h3>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="space-y-1">
-                      <span className="text-muted-foreground text-xs uppercase">College Board Email</span>
-                      <p className="font-medium">{selectedSubmission.college_board_email || 'N/A'}</p>
+                      <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.collegeBoardEmail')}</span>
+                      <p className="font-medium">{selectedSubmission.college_board_email || t('adminUsers.zero.na')}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-muted-foreground text-xs uppercase">College Board Password</span>
+                      <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.collegeBoardPassword')}</span>
                       <p className="font-medium">
                         {/* This grid pairs Email/Password as fixed sibling cells, so the
                             label stays even when the value is empty (stored but
@@ -787,7 +793,6 @@ const AssignmentZeroSubmissions = () => {
                           // Only admins reach this page; treat a missing flag
                           // (older backend) as "yes, may reveal".
                           defaultCanReveal
-                          lang="en"
                         />
                       </p>
                     </div>
@@ -796,23 +801,23 @@ const AssignmentZeroSubmissions = () => {
 
                 {/* Reminder Tracking */}
                 <div className="bg-muted dark:bg-secondary rounded-lg p-4">
-                  <h3 className="text-lg font-semibold mb-3">Reminder Tracking</h3>
+                  <h3 className="text-lg font-semibold mb-3">{t('adminUsers.zero.reminders')}</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div className="space-y-1">
-                      <span className="text-muted-foreground text-xs uppercase">Last Prompted At</span>
+                      <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.lastPrompted')}</span>
                       <p className="font-medium">{formatDateTime(selectedSubmission.ielts_last_date_prompted_at)}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-muted-foreground text-xs uppercase">Next Prompt At</span>
+                      <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.nextPrompt')}</span>
                       <p className="font-medium">{formatDateTime(getNextIeltsPromptAt(selectedSubmission.ielts_last_date_prompted_at))}</p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-muted-foreground text-xs uppercase">SAT Ask Result On</span>
+                      <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.satAskResult')}</span>
                       <p className="font-medium">
                         {(() => {
                           const satPlannedDate = selectedSubmission.sat_planned_test_date || selectedSubmission.sat_target_date || null;
                           const satAskDate = getCollectionAskDate(satPlannedDate);
-                          return satAskDate ? formatAppDate(satAskDate) : 'N/A';
+                          return satAskDate ? formatAppDate(satAskDate) : t('adminUsers.zero.na');
                         })()}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -828,12 +833,12 @@ const AssignmentZeroSubmissions = () => {
                       </p>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-muted-foreground text-xs uppercase">IELTS Ask Result On</span>
+                      <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.ieltsAskResult')}</span>
                       <p className="font-medium">
                         {(() => {
                           const ieltsPlannedDate = selectedSubmission.ielts_planned_test_date || selectedSubmission.ielts_target_date;
                           const ieltsAskDate = getCollectionAskDate(ieltsPlannedDate);
-                          return ieltsAskDate ? formatAppDate(ieltsAskDate) : 'N/A';
+                          return ieltsAskDate ? formatAppDate(ieltsAskDate) : t('adminUsers.zero.na');
                         })()}
                       </p>
                       <p className="text-xs text-muted-foreground">
@@ -856,10 +861,10 @@ const AssignmentZeroSubmissions = () => {
                   <div className="border-2 border-brand-border rounded-lg overflow-hidden">
                     <div className="bg-brand-surface px-4 py-3 border-b border-brand-border">
                       <h3 className="text-lg font-semibold text-brand flex items-center gap-2">
-                        SAT Assessment
+                        {t('adminUsers.zero.satAssessment')}
                         {calculateSATAverageScore(selectedSubmission) && (
                           <Badge className="bg-brand-subtle text-brand-subtle-foreground ml-auto">
-                            Average: {calculateSATAverageScore(selectedSubmission)}/5
+                            {t('adminUsers.zero.average', { score: calculateSATAverageScore(selectedSubmission) ?? '' })}
                           </Badge>
                         )}
                       </h3>
@@ -867,39 +872,39 @@ const AssignmentZeroSubmissions = () => {
                     <div className="p-4 space-y-4">
                       {/* SAT Test Information */}
                       <div>
-                        <h4 className="font-medium mb-2 text-brand">Test Information</h4>
+                        <h4 className="font-medium mb-2 text-brand">{t('adminUsers.zero.testInfo')}</h4>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
                           <div className="space-y-1">
-                            <span className="text-muted-foreground text-xs uppercase">Target Date</span>
-                            <p className="font-medium">{selectedSubmission.sat_target_date || 'N/A'}</p>
+                            <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.targetDate')}</span>
+                            <p className="font-medium">{selectedSubmission.sat_target_date || t('adminUsers.zero.na')}</p>
                           </div>
                           <div className="space-y-1">
-                            <span className="text-muted-foreground text-xs uppercase">Planned Date</span>
-                            <p className="font-medium">{selectedSubmission.sat_planned_test_date || selectedSubmission.sat_target_date || 'N/A'}</p>
+                            <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.plannedDate')}</span>
+                            <p className="font-medium">{selectedSubmission.sat_planned_test_date || selectedSubmission.sat_target_date || t('adminUsers.zero.na')}</p>
                           </div>
                           <div className="space-y-1">
-                            <span className="text-muted-foreground text-xs uppercase">Passed Before</span>
-                            <p className="font-medium">{selectedSubmission.has_passed_sat_before ? 'Yes' : 'No'}</p>
+                            <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.passedBefore')}</span>
+                            <p className="font-medium">{selectedSubmission.has_passed_sat_before ? t('common.yes') : t('common.no')}</p>
                           </div>
                           {selectedSubmission.previous_sat_score && (
                             <div className="space-y-1">
-                              <span className="text-muted-foreground text-xs uppercase">Previous Score</span>
+                              <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.previousScore')}</span>
                               <p className="font-medium">{selectedSubmission.previous_sat_score}</p>
                             </div>
                           )}
                           <div className="space-y-1 col-span-2">
-                            <span className="text-muted-foreground text-xs uppercase">Recent Practice Test</span>
-                            <p className="font-medium">{selectedSubmission.recent_practice_test_score || 'N/A'}</p>
+                            <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.recentPractice')}</span>
+                            <p className="font-medium">{selectedSubmission.recent_practice_test_score || t('adminUsers.zero.na')}</p>
                           </div>
                           <div className="space-y-1 col-span-2">
-                            <span className="text-muted-foreground text-xs uppercase">Bluebook Practice Test 5</span>
-                            <p className="font-medium">{selectedSubmission.bluebook_practice_test_5_score || 'N/A'}</p>
+                            <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.bluebookTest5')}</span>
+                            <p className="font-medium">{selectedSubmission.bluebook_practice_test_5_score || t('adminUsers.zero.na')}</p>
                           </div>
                           {selectedSubmission.screenshot_url && (() => {
                             const href = safeUploadUrl(selectedSubmission.screenshot_url);
                             return (
                               <div className="space-y-1">
-                                <span className="text-muted-foreground text-xs uppercase">Screenshot</span>
+                                <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.screenshot')}</span>
                                 {href ? (
                                   <a
                                     href={href}
@@ -907,10 +912,10 @@ const AssignmentZeroSubmissions = () => {
                                     rel="noopener noreferrer"
                                     className="text-brand hover:underline font-medium"
                                   >
-                                    View Screenshot
+                                    {t('adminUsers.zero.viewScreenshot')}
                                   </a>
                                 ) : (
-                                  <p className="text-muted-foreground font-medium">Screenshot unavailable</p>
+                                  <p className="text-muted-foreground font-medium">{t('adminUsers.zero.screenshotUnavailable')}</p>
                                 )}
                               </div>
                             );
@@ -920,34 +925,34 @@ const AssignmentZeroSubmissions = () => {
 
                       {/* Grammar Assessment */}
                       <div>
-                        <h4 className="font-medium mb-2 text-brand">Grammar Assessment (1-5)</h4>
+                        <h4 className="font-medium mb-2 text-brand">{t('adminUsers.zero.grammarTitle')}</h4>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Punctuation</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.punctuation')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.grammar_punctuation || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Noun Clauses</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.nounClauses')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.grammar_noun_clauses || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Relative Clauses</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.relativeClauses')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.grammar_relative_clauses || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Verb Forms</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.verbForms')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.grammar_verb_forms || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Comparisons</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.comparisons')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.grammar_comparisons || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Transitions</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.transitions')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.grammar_transitions || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Synthesis</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.synthesis')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.grammar_synthesis || '-'}</p>
                           </div>
                         </div>
@@ -955,26 +960,26 @@ const AssignmentZeroSubmissions = () => {
 
                       {/* Reading Skills */}
                       <div>
-                        <h4 className="font-medium mb-2 text-brand">Reading Skills (1-5)</h4>
+                        <h4 className="font-medium mb-2 text-brand">{t('adminUsers.zero.readingTitle')}</h4>
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Word in Context</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.wordInContext')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.reading_word_in_context || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Text Structure</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.textStructure')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.reading_text_structure || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Cross-Text</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.crossText')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.reading_cross_text || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Central Ideas</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.centralIdeas')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.reading_central_ideas || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Inferences</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.inferences')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.reading_inferences || '-'}</p>
                           </div>
                         </div>
@@ -982,26 +987,26 @@ const AssignmentZeroSubmissions = () => {
 
                       {/* Passage Types */}
                       <div>
-                        <h4 className="font-medium mb-2 text-brand">Passage Types (1-5)</h4>
+                        <h4 className="font-medium mb-2 text-brand">{t('adminUsers.zero.passagesTitle')}</h4>
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Literary</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.literary')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.passages_literary || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Social Science</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.socialScience')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.passages_social_science || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Humanities</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.humanities')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.passages_humanities || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Science</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.science')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.passages_science || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Poetry</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.poetry')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.passages_poetry || '-'}</p>
                           </div>
                         </div>
@@ -1011,7 +1016,7 @@ const AssignmentZeroSubmissions = () => {
                       {selectedSubmission.math_topics && selectedSubmission.math_topics.length > 0 && (
                         <div>
                           <h4 className="font-medium mb-2 text-brand">
-                            Math Topics to Work On ({selectedSubmission.math_topics.length} selected)
+                            {t('adminUsers.zero.mathTopics', { count: selectedSubmission.math_topics.length })}
                           </h4>
                           <div className="flex flex-wrap gap-2">
                             {selectedSubmission.math_topics.map((topic) => (
@@ -1031,10 +1036,10 @@ const AssignmentZeroSubmissions = () => {
                   <div className="border-2 border-green-200 dark:border-green-800 rounded-lg overflow-hidden">
                     <div className="bg-green-50 dark:bg-green-900/20 px-4 py-3 border-b border-green-200 dark:border-green-800">
                       <h3 className="text-lg font-semibold text-green-800 dark:text-green-300 flex items-center gap-2">
-                        IELTS Assessment
+                        {t('adminUsers.zero.ieltsAssessment')}
                         {calculateIELTSAverageScore(selectedSubmission) && (
                           <Badge className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 ml-auto">
-                            Average: {calculateIELTSAverageScore(selectedSubmission)}/5
+                            {t('adminUsers.zero.average', { score: calculateIELTSAverageScore(selectedSubmission) ?? '' })}
                           </Badge>
                         )}
                       </h3>
@@ -1042,35 +1047,35 @@ const AssignmentZeroSubmissions = () => {
                     <div className="p-4 space-y-4">
                       {/* IELTS Test Information */}
                       <div>
-                        <h4 className="font-medium mb-2 text-green-700 dark:text-green-400">Test Information</h4>
+                        <h4 className="font-medium mb-2 text-green-700 dark:text-green-400">{t('adminUsers.zero.testInfo')}</h4>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                           <div className="space-y-1">
-                            <span className="text-muted-foreground text-xs uppercase">Target Date</span>
-                            <p className="font-medium">{selectedSubmission.ielts_target_date || 'N/A'}</p>
+                            <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.targetDate')}</span>
+                            <p className="font-medium">{selectedSubmission.ielts_target_date || t('adminUsers.zero.na')}</p>
                           </div>
                           <div className="space-y-1">
-                            <span className="text-muted-foreground text-xs uppercase">Planned Date</span>
-                            <p className="font-medium">{selectedSubmission.ielts_planned_test_date || selectedSubmission.ielts_target_date || 'N/A'}</p>
+                            <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.plannedDate')}</span>
+                            <p className="font-medium">{selectedSubmission.ielts_planned_test_date || selectedSubmission.ielts_target_date || t('adminUsers.zero.na')}</p>
                           </div>
                           <div className="space-y-1">
-                            <span className="text-muted-foreground text-xs uppercase">Target Score</span>
-                            <p className="font-medium">{selectedSubmission.ielts_target_score || 'N/A'}</p>
+                            <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.targetScore')}</span>
+                            <p className="font-medium">{selectedSubmission.ielts_target_score || t('adminUsers.zero.na')}</p>
                           </div>
                           <div className="space-y-1">
-                            <span className="text-muted-foreground text-xs uppercase">Passed Before</span>
-                            <p className="font-medium">{selectedSubmission.has_passed_ielts_before ? 'Yes' : 'No'}</p>
+                            <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.passedBefore')}</span>
+                            <p className="font-medium">{selectedSubmission.has_passed_ielts_before ? t('common.yes') : t('common.no')}</p>
                           </div>
                           <div className="space-y-1">
-                            <span className="text-muted-foreground text-xs uppercase">Last Prompted At</span>
+                            <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.lastPrompted')}</span>
                             <p className="font-medium">{formatDateTime(selectedSubmission.ielts_last_date_prompted_at)}</p>
                           </div>
                           <div className="space-y-1">
-                            <span className="text-muted-foreground text-xs uppercase">Next Prompt At</span>
+                            <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.nextPrompt')}</span>
                             <p className="font-medium">{formatDateTime(getNextIeltsPromptAt(selectedSubmission.ielts_last_date_prompted_at))}</p>
                           </div>
                           {selectedSubmission.previous_ielts_score && (
                             <div className="space-y-1">
-                              <span className="text-muted-foreground text-xs uppercase">Previous Score</span>
+                              <span className="text-muted-foreground text-xs uppercase">{t('adminUsers.zero.previousScore')}</span>
                               <p className="font-medium">{selectedSubmission.previous_ielts_score}</p>
                             </div>
                           )}
@@ -1079,22 +1084,22 @@ const AssignmentZeroSubmissions = () => {
 
                       {/* Listening Skills */}
                       <div>
-                        <h4 className="font-medium mb-2 text-green-700 dark:text-green-400">Listening Skills (1-5)</h4>
+                        <h4 className="font-medium mb-2 text-green-700 dark:text-green-400">{t('adminUsers.zero.listeningTitle')}</h4>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Main Idea</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.mainIdea')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_listening_main_idea || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Details</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.details')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_listening_details || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Opinion</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.opinion')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_listening_opinion || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Accents</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.accents')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_listening_accents || '-'}</p>
                           </div>
                         </div>
@@ -1102,26 +1107,26 @@ const AssignmentZeroSubmissions = () => {
 
                       {/* Reading Skills */}
                       <div>
-                        <h4 className="font-medium mb-2 text-green-700 dark:text-green-400">Reading Skills (1-5)</h4>
+                        <h4 className="font-medium mb-2 text-green-700 dark:text-green-400">{t('adminUsers.zero.readingTitle')}</h4>
                         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Skimming</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.skimming')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_reading_skimming || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Scanning</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.scanning')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_reading_scanning || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Vocabulary</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.vocabulary')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_reading_vocabulary || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Inference</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.inference')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_reading_inference || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Matching</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.matching')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_reading_matching || '-'}</p>
                           </div>
                         </div>
@@ -1129,30 +1134,30 @@ const AssignmentZeroSubmissions = () => {
 
                       {/* Writing Skills */}
                       <div>
-                        <h4 className="font-medium mb-2 text-green-700 dark:text-green-400">Writing Skills (1-5)</h4>
+                        <h4 className="font-medium mb-2 text-green-700 dark:text-green-400">{t('adminUsers.zero.writingTitle')}</h4>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Task 1 - Graphs</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.task1Graphs')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_writing_task1_graphs || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Task 1 - Process</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.task1Process')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_writing_task1_process || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Task 2 - Structure</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.task2Structure')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_writing_task2_structure || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Task 2 - Arguments</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.task2Arguments')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_writing_task2_arguments || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Grammar</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.grammar')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_writing_grammar || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Vocabulary</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.vocabulary')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_writing_vocabulary || '-'}</p>
                           </div>
                         </div>
@@ -1160,30 +1165,30 @@ const AssignmentZeroSubmissions = () => {
 
                       {/* Speaking Skills */}
                       <div>
-                        <h4 className="font-medium mb-2 text-green-700 dark:text-green-400">Speaking Skills (1-5)</h4>
+                        <h4 className="font-medium mb-2 text-green-700 dark:text-green-400">{t('adminUsers.zero.speakingTitle')}</h4>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Fluency</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.fluency')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_speaking_fluency || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Vocabulary</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.vocabulary')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_speaking_vocabulary || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Grammar</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.grammar')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_speaking_grammar || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Pronunciation</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.pronunciation')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_speaking_pronunciation || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Part 2 (Long Turn)</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.part2')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_speaking_part2 || '-'}</p>
                           </div>
                           <div className="bg-card dark:bg-card p-2 rounded border dark:border-border">
-                            <span className="text-muted-foreground text-xs">Part 3 (Discussion)</span>
+                            <span className="text-muted-foreground text-xs">{t('adminUsers.zero.part3')}</span>
                             <p className="font-bold text-lg">{selectedSubmission.ielts_speaking_part3 || '-'}</p>
                           </div>
                         </div>
@@ -1193,7 +1198,7 @@ const AssignmentZeroSubmissions = () => {
                       {selectedSubmission.ielts_weak_topics && selectedSubmission.ielts_weak_topics.length > 0 && (
                         <div>
                           <h4 className="font-medium mb-2 text-green-700 dark:text-green-400">
-                            Topics to Work On ({selectedSubmission.ielts_weak_topics.length} selected)
+                            {t('adminUsers.zero.ieltsTopics', { count: selectedSubmission.ielts_weak_topics.length })}
                           </h4>
                           <div className="flex flex-wrap gap-2">
                             {selectedSubmission.ielts_weak_topics.map((topic) => (
@@ -1212,7 +1217,7 @@ const AssignmentZeroSubmissions = () => {
                 {selectedSubmission.additional_comments && (
                   <div className="rounded-lg p-4">
                     <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                      Additional Comments
+                      {t('adminUsers.zero.comments')}
                     </h3>
                     <p className="text-sm text-foreground/80 whitespace-pre-wrap">{selectedSubmission.additional_comments}</p>
                   </div>
@@ -1220,7 +1225,7 @@ const AssignmentZeroSubmissions = () => {
 
                 {/* Submission Info */}
                 <div className="text-xs text-muted-foreground text-center pt-4 border-t dark:border-border">
-                  Submitted: {formatAppDateTime(selectedSubmission.updated_at, { ...DATE, ...TIME })} | 
+                  {t('adminUsers.zero.submittedAt', { date: formatAppDateTime(selectedSubmission.updated_at, { ...DATE, ...TIME }) })}
                 </div>
               </div>
             </CardContent>

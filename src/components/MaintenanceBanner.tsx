@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle, X } from 'lucide-react';
+import { formatDate } from '@/lib/i18n';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/adminPages';
+
+/** The day of the announced maintenance; only the day and month are shown. */
+const MAINTENANCE_DAY = '2026-01-29';
 
 const MaintenanceBanner: React.FC = () => {
+  const t = useT();
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -28,9 +35,9 @@ const MaintenanceBanner: React.FC = () => {
               <AlertCircle className="h-5 w-5 text-yellow-700" aria-hidden="true" />
             </span>
             <p className="ml-3 font-medium text-yellow-800 truncate text-sm sm:text-base">
-              <span className="md:hidden">LMS unavailable from 19:00</span>
+              <span className="md:hidden">{t('adminPages.maintenance.short')}</span>
               <span className="hidden md:inline">
-                Attention: On Jan 29 at 19:00 (KZ time) the LMS will be temporarily unavailable due to technical updates.
+                {t('adminPages.maintenance.notice', { date: formatDate(MAINTENANCE_DAY, { day: 'numeric', month: 'short' }) })}
               </span>
             </p>
           </div>
@@ -39,7 +46,7 @@ const MaintenanceBanner: React.FC = () => {
               type="button"
               onClick={handleDismiss}
               className="flex p-1 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-colors"
-              title="Dismiss"
+              title={t('adminPages.maintenance.dismiss')}
             >
               <X className="h-4 w-4 text-yellow-700" aria-hidden="true" />
             </button>

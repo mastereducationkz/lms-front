@@ -9,7 +9,7 @@
  *    way round, because Google's upload overwrites an account whose address already exists;
  *  - without an uploaded users list neither is allowed.
  */
-import { activeLocale, t, type Locale } from './i18n';
+import { activeLocale, t, type Locale, type MessageKey } from './i18n';
 import '@/lib/i18n/catalogs/workspace';
 
 export const WORKSPACE_DOMAIN = 'mastereducation.kz';
@@ -50,19 +50,27 @@ export function normaliseAddress(value: string): string {
   return value.trim().toLowerCase();
 }
 
-export function addressProblem(value: string): string | null {
+export function addressProblem(value: string, locale: Locale = activeLocale()): string | null {
   const address = normaliseAddress(value);
-  if (!address) return 'Enter the Workspace address';
-  if (!address.endsWith(`@${WORKSPACE_DOMAIN}`)) return `Must end with @${WORKSPACE_DOMAIN}`;
-  if (!MAILBOX.test(address.slice(0, -(WORKSPACE_DOMAIN.length + 1)))) return 'Not a valid mailbox name';
+  if (!address) return t('workspace.rollout.addressEmpty', undefined, locale);
+  if (!address.endsWith(`@${WORKSPACE_DOMAIN}`)) return t('workspace.rollout.addressDomain', { domain: WORKSPACE_DOMAIN }, locale);
+  if (!MAILBOX.test(address.slice(0, -(WORKSPACE_DOMAIN.length + 1)))) return t('workspace.rollout.addressInvalid', undefined, locale);
   return null;
 }
 
-export function nameProblem(label: string, value: string): string | null {
+/** Which name a problem is about: each one is its own sentence (Russian agrees «Имя»/«Фамилия»). */
+export type NameField = 'first' | 'last';
+
+const NAME_PROBLEM: Record<NameField, Record<'empty' | 'tooLong' | 'latin', MessageKey>> = {
+  first: { empty: 'workspace.rollout.firstNameEmpty', tooLong: 'workspace.rollout.firstNameTooLong', latin: 'workspace.rollout.firstNameLatin' },
+  last: { empty: 'workspace.rollout.lastNameEmpty', tooLong: 'workspace.rollout.lastNameTooLong', latin: 'workspace.rollout.lastNameLatin' },
+};
+
+export function nameProblem(field: NameField, value: string, locale: Locale = activeLocale()): string | null {
   const name = value.trim();
-  if (!name) return `${label} is empty`;
-  if (name.length > NAME_MAX) return `${label} is longer than ${NAME_MAX} characters`;
-  if (!ENGLISH_NAME.test(name)) return `${label} must be written in English letters`;
+  if (!name) return t(NAME_PROBLEM[field].empty, undefined, locale);
+  if (name.length > NAME_MAX) return t(NAME_PROBLEM[field].tooLong, { max: NAME_MAX }, locale);
+  if (!ENGLISH_NAME.test(name)) return t(NAME_PROBLEM[field].latin, undefined, locale);
   return null;
 }
 
@@ -86,20 +94,20 @@ export function accountState(
 }
 
 /** What pressing the buttons would do with this pending teacher. */
-export function draftIntent(draft: Draft, state: AccountState): Intent {
-  const address = addressProblem(draft.email);
+export function draftIntent(draft: Draft, state: AccountState, locale: Locale = activeLocale()): Intent {
+  const address = addressProblem(draft.email, locale);
   if (address) return { kind: 'blocked', reason: address };
   switch (state.kind) {
     case 'taken':
-      return { kind: 'blocked', reason: `Already connected to ${state.by}` };
+      return { kind: 'blocked', reason: t('workspace.rollout.alreadyConnected', { name: state.by }, locale) };
     case 'unknown':
-      return { kind: 'blocked', reason: 'Upload the Workspace users list first' };
+      return { kind: 'blocked', reason: t('workspace.rollout.uploadListFirst', undefined, locale) };
     case 'suspended':
-      return { kind: 'blocked', reason: 'This account is suspended in Google Workspace' };
+      return { kind: 'blocked', reason: t('workspace.rollout.suspended', undefined, locale) };
     case 'exists':
       return { kind: 'connect' };
     case 'new': {
-      const problem = nameProblem('First name', draft.firstName) ?? nameProblem('Last name', draft.lastName);
+      const problem = nameProblem('first', draft.firstName, locale) ?? nameProblem('last', draft.lastName, locale);
       return problem ? { kind: 'blocked', reason: problem } : { kind: 'import' };
     }
   }

@@ -31,11 +31,20 @@ import { Badge } from '../components/ui/badge';
 import Loader from '../components/Loader';
 import { getAllEvents, deleteEvent, bulkDeleteEvents, getAllGroups } from '../services/api';
 import type { Event, EventType, Group } from '../types';
-import { EVENT_TYPE_LABELS } from '../types';
-import { formatDateTime as formatAppDateTime } from '../lib/i18n';
+import { formatDate, formatDateTime as formatAppDateTime, type MessageKey } from '../lib/i18n';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/adminPages';
+
+const EVENT_TYPE_KEYS = {
+  class: 'adminPages.events.type.class',
+  weekly_test: 'adminPages.events.type.weeklyTest',
+  webinar: 'adminPages.events.type.webinar',
+  assignment: 'adminPages.events.type.assignment',
+} as const satisfies Record<EventType, MessageKey>;
 
 export default function EventManagement() {
   const navigate = useNavigate();
+  const t = useT();
   const [events, setEvents] = useState<Event[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,7 +82,7 @@ export default function EventManagement() {
   }, [showLessons]);
 
   const handleDeleteEvent = async (eventId: number) => {
-    if (!confirm('Are you sure you want to delete this event?')) {
+    if (!confirm(t('adminPages.events.list.confirmDelete'))) {
       return;
     }
 
@@ -83,14 +92,14 @@ export default function EventManagement() {
       setSelectedEventIds(prev => prev.filter(id => id !== eventId));
     } catch (error) {
       console.error('Failed to delete event:', error);
-      alert('Error deleting event');
+      alert(t('adminPages.events.list.deleteFailed'));
     }
   };
 
   const handleBulkDelete = async () => {
     if (selectedEventIds.length === 0) return;
     
-    if (!confirm(`Are you sure you want to delete ${selectedEventIds.length} events?`)) {
+    if (!confirm(t('adminPages.events.list.confirmBulkDelete', { count: selectedEventIds.length }))) {
       return;
     }
 
@@ -98,7 +107,7 @@ export default function EventManagement() {
       setIsDeleting(true);
       const realEventIds = selectedEventIds.filter(id => !isVirtualEvent(id));
       if (realEventIds.length === 0) {
-        alert("Cannot delete scheduled lessons or assignment deadlines from here.");
+        alert(t('adminPages.events.list.cannotDeleteGenerated'));
         return;
       }
       await bulkDeleteEvents(realEventIds);
@@ -106,7 +115,7 @@ export default function EventManagement() {
       setSelectedEventIds([]);
     } catch (error) {
       console.error('Failed to delete events:', error);
-      alert('Error deleting events');
+      alert(t('adminPages.events.list.bulkDeleteFailed'));
     } finally {
       setIsDeleting(false);
     }
@@ -195,8 +204,8 @@ export default function EventManagement() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground dark:text-foreground">Event Management</h1>
-          <p className="text-muted-foreground">Create and manage group schedules</p>
+          <h1 className="text-2xl font-bold text-foreground dark:text-foreground">{t('adminPages.events.list.title')}</h1>
+          <p className="text-muted-foreground">{t('adminPages.events.list.subtitle')}</p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
           {selectedEventIds.length > 0 && (
@@ -207,7 +216,7 @@ export default function EventManagement() {
               className="flex items-center gap-2 flex-1 sm:flex-initial"
             >
               <Trash2 className="w-4 h-4" />
-              Delete {selectedEventIds.length} Selected
+              {t('adminPages.events.list.deleteSelected', { count: selectedEventIds.length })}
             </Button>
           )}
           <Button 
@@ -215,7 +224,7 @@ export default function EventManagement() {
             className="flex items-center gap-2 flex-1 sm:flex-initial"
           >
             <Plus className="w-4 h-4" />
-            Create Event
+            {t('adminPages.events.createEvent')}
           </Button>
         </div>
       </div>
@@ -227,7 +236,7 @@ export default function EventManagement() {
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
-              placeholder="Search events..."
+              placeholder={t('adminPages.events.list.searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -237,36 +246,36 @@ export default function EventManagement() {
           {/* Event Type Filter */}
           <Select value={selectedEventType} onValueChange={(value) => setSelectedEventType(value as EventType | 'all')}>
             <SelectTrigger className="w-full lg:w-48">
-              <SelectValue placeholder="Event Type" />
+              <SelectValue placeholder={t('adminPages.events.list.typePlaceholder')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              <SelectItem value="class">Classes</SelectItem>
-              <SelectItem value="weekly_test">Weekly Tests</SelectItem>
-              <SelectItem value="webinar">Webinars</SelectItem>
+              <SelectItem value="all">{t('adminPages.events.list.allTypes')}</SelectItem>
+              <SelectItem value="class">{t('adminPages.events.list.classes')}</SelectItem>
+              <SelectItem value="weekly_test">{t('adminPages.events.list.weeklyTests')}</SelectItem>
+              <SelectItem value="webinar">{t('adminPages.events.list.webinars')}</SelectItem>
             </SelectContent>
           </Select>
 
           {/* Date Filter */}
           <Select value={dateFilter} onValueChange={(value) => setDateFilter(value as any)}>
             <SelectTrigger className="w-full lg:w-48">
-              <SelectValue placeholder="Period" />
+              <SelectValue placeholder={t('adminPages.events.list.period')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Events</SelectItem>
-              <SelectItem value="upcoming">Upcoming</SelectItem>
-              <SelectItem value="today">Today</SelectItem>
-              <SelectItem value="this_week">This Week</SelectItem>
+              <SelectItem value="all">{t('adminPages.events.list.allEvents')}</SelectItem>
+              <SelectItem value="upcoming">{t('adminPages.events.list.upcoming')}</SelectItem>
+              <SelectItem value="today">{t('adminPages.events.list.today')}</SelectItem>
+              <SelectItem value="this_week">{t('adminPages.events.list.thisWeek')}</SelectItem>
             </SelectContent>
           </Select>
 
           {/* Group Filter */}
           <Select value={selectedGroupId.toString()} onValueChange={(value) => setSelectedGroupId(value === 'all' ? 'all' : parseInt(value))}>
             <SelectTrigger className="w-full lg:w-48">
-              <SelectValue placeholder="Group" />
+              <SelectValue placeholder={t('adminPages.events.list.group')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Groups</SelectItem>
+              <SelectItem value="all">{t('adminPages.events.list.allGroups')}</SelectItem>
               {groups.map(group => (
                 <SelectItem key={group.id} value={group.id.toString()}>
                   {group.name}
@@ -285,7 +294,7 @@ export default function EventManagement() {
               className="w-4 h-4 rounded border-input text-brand focus:ring-brand cursor-pointer"
             />
             <label htmlFor="show-lessons" className="text-sm font-medium text-foreground/80 cursor-pointer whitespace-nowrap">
-              Show Lessons
+              {t('adminPages.events.list.showLessons')}
             </label>
           </div>
         </div>
@@ -296,17 +305,17 @@ export default function EventManagement() {
         {filteredEvents.length === 0 ? (
           <div className="p-8 text-center">
             <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-foreground dark:text-foreground mb-2">No Events Found</h3>
+            <h3 className="text-lg font-medium text-foreground dark:text-foreground mb-2">{t('adminPages.events.list.emptyTitle')}</h3>
             <p className="text-muted-foreground mb-4">
               {searchTerm || selectedEventType !== 'all' || dateFilter !== 'all' 
-                ? 'Try adjusting your search filters'
-                : 'Create your first event to get started'
+                ? t('adminPages.events.list.emptyFiltered')
+                : t('adminPages.events.list.emptyFirst')
               }
             </p>
             {!searchTerm && selectedEventType === 'all' && dateFilter === 'all' && (
               <Button onClick={() => navigate('/admin/events/create')}>
                 <Plus className="w-4 h-4 mr-2" />
-                Create Event
+                {t('adminPages.events.createEvent')}
               </Button>
             )}
           </div>
@@ -322,8 +331,8 @@ export default function EventManagement() {
               />
               <span className="text-sm font-medium text-muted-foreground">
                 {selectedEventIds.length > 0 
-                  ? `${selectedEventIds.length} items selected` 
-                  : `Select all events (${filteredEvents.length})`}
+                  ? t('adminPages.events.list.selectedCount', { count: selectedEventIds.length })
+                  : t('adminPages.events.list.selectAll', { count: filteredEvents.length })}
               </span>
             </div>
             {filteredEvents.map(event => (
@@ -344,21 +353,21 @@ export default function EventManagement() {
                         {event.title}
                       </h3>
                       <Badge className={`${getEventTypeColor(event.event_type)} border`}>
-                        {EVENT_TYPE_LABELS[event.event_type]}
+                        {t(EVENT_TYPE_KEYS[event.event_type])}
                       </Badge>
                       {event.is_recurring && (
                         <Badge variant="outline" className="text-brand border-brand-border">
-                          Recurring
+                          {t('adminPages.events.list.recurring')}
                         </Badge>
                       )}
                       {isScheduledLesson(event.id) && (
                         <Badge variant="secondary" className="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-800">
-                          Scheduled Lesson
+                          {t('adminPages.events.list.scheduledLesson')}
                         </Badge>
                       )}
                       {isAssignmentDeadline(event.id) && (
                         <Badge variant="outline" className="text-orange-600 border-orange-200 dark:text-orange-400 dark:border-orange-800/60">
-                          Deadline
+                          {t('adminPages.events.list.deadline')}
                         </Badge>
                       )}
                     </div>
@@ -387,7 +396,7 @@ export default function EventManagement() {
                       {event.teacher_name && (
                         <div className="flex items-center gap-1">
                           <Users className="w-4 h-4 text-brand" />
-                          <span className="font-medium">Teacher: {event.teacher_name}</span>
+                          <span className="font-medium">{t('adminPages.events.list.teacher', { name: event.teacher_name })}</span>
                         </div>
                       )}
 
@@ -408,9 +417,9 @@ export default function EventManagement() {
 
                     {/* Event Meta */}
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>Created by: {event.creator_name || 'Unknown'}</span>
+                      <span>{t('adminPages.events.list.createdBy', { name: event.creator_name || t('adminPages.events.list.unknownCreator') })}</span>
                       <span>•</span>
-                      <span>{new Date(event.created_at).toLocaleDateString('en-US')}</span>
+                      <span>{formatDate(event.created_at)}</span>
                     </div>
                   </div>
 
@@ -421,7 +430,7 @@ export default function EventManagement() {
                       size="sm"
                       onClick={() => navigate(`/admin/events/${event.id}/edit`)}
                       disabled={isVirtualEvent(event.id)}
-                      title={isVirtualEvent(event.id) ? "Generated events cannot be edited" : "Edit event"}
+                      title={isVirtualEvent(event.id) ? t('adminPages.events.list.generatedNotEditable') : t('adminPages.events.list.editEvent')}
                     >
                       <Edit3 className="w-4 h-4" />
                     </Button>
@@ -436,12 +445,12 @@ export default function EventManagement() {
                         <DropdownMenuItem
                           onClick={() => navigate(`/admin/events/${event.id}`)}
                         >
-                          View Details
+                          {t('adminPages.events.list.viewDetails')}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => navigate(`/admin/events/${event.id}/participants`)}
                         >
-                          Participants
+                          {t('adminPages.events.participants')}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           className="text-red-600 dark:text-red-400"
@@ -449,7 +458,7 @@ export default function EventManagement() {
                           disabled={isVirtualEvent(event.id)}
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
-                          Delete
+                          {t('common.delete')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -466,7 +475,7 @@ export default function EventManagement() {
         <div className="bg-card dark:bg-card rounded-lg border dark:border-border p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Total Events</p>
+              <p className="text-sm font-medium text-muted-foreground">{t('adminPages.events.list.totalEvents')}</p>
               <p className="text-2xl font-bold text-foreground dark:text-foreground">{events.length}</p>
             </div>
             <Calendar className="w-8 h-8 text-brand" />
@@ -476,13 +485,13 @@ export default function EventManagement() {
         <div className="bg-card dark:bg-card rounded-lg border dark:border-border p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Classes</p>
+              <p className="text-sm font-medium text-muted-foreground">{t('adminPages.events.list.classes')}</p>
               <p className="text-2xl font-bold text-brand">
                 {events.filter(e => e.event_type === 'class').length}
               </p>
             </div>
             <div className="w-8 h-8 rounded bg-brand-subtle flex items-center justify-center">
-              <span className="text-brand font-bold text-sm">C</span>
+              <span className="text-brand font-bold text-sm">{t('adminPages.events.list.classInitial')}</span>
             </div>
           </div>
         </div>
@@ -490,13 +499,13 @@ export default function EventManagement() {
         <div className="bg-card dark:bg-card rounded-lg border dark:border-border p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Tests</p>
+              <p className="text-sm font-medium text-muted-foreground">{t('adminPages.events.list.tests')}</p>
               <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                 {events.filter(e => e.event_type === 'weekly_test').length}
               </p>
             </div>
             <div className="w-8 h-8 rounded bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
-              <span className="text-yellow-600 dark:text-yellow-400 font-bold text-sm">T</span>
+              <span className="text-yellow-600 dark:text-yellow-400 font-bold text-sm">{t('adminPages.events.list.testInitial')}</span>
             </div>
           </div>
         </div>
@@ -504,13 +513,13 @@ export default function EventManagement() {
         <div className="bg-card dark:bg-card rounded-lg border dark:border-border p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Webinars</p>
+              <p className="text-sm font-medium text-muted-foreground">{t('adminPages.events.list.webinars')}</p>
               <p className="text-2xl font-bold text-red-600 dark:text-red-400">
                 {events.filter(e => e.event_type === 'webinar').length}
               </p>
             </div>
             <div className="w-8 h-8 rounded bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-              <span className="text-red-600 dark:text-red-400 font-bold text-sm">W</span>
+              <span className="text-red-600 dark:text-red-400 font-bold text-sm">{t('adminPages.events.list.webinarInitial')}</span>
             </div>
           </div>
         </div>

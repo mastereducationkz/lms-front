@@ -1,5 +1,7 @@
 import { API_BASE } from './config';
 import { tokens as defaultTokens, type TokenStore } from './tokens';
+import { t } from '../lib/i18n';
+import '@/lib/i18n/catalogs/classLesson';
 
 /**
  * The panel's HTTP client: fetch with `Authorization: Bearer`, never cookies (the iframe has none
@@ -18,7 +20,7 @@ export class ApiError extends Error {
 
 export class SessionLost extends Error {
   constructor() {
-    super('The Meet panel is signed out');
+    super(t('classLesson.addon.signedOut'));
   }
 }
 
@@ -40,7 +42,7 @@ async function detail(response: Response): Promise<string> {
   } catch {
     /* no JSON body */
   }
-  return `Request failed (${response.status})`;
+  return t('classLesson.addon.requestFailed', { status: response.status });
 }
 
 export function createClient(options: ClientOptions = {}) {
@@ -86,7 +88,7 @@ export function createClient(options: ClientOptions = {}) {
       store.clear();
       throw new SessionLost();
     }
-    throw new ApiError(503, 'The LMS is not reachable right now');
+    throw new ApiError(503, t('classLesson.addon.lmsUnreachable'));
   }
 
   async function send(path: string, init: RequestInit, auth: boolean): Promise<Response> {

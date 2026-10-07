@@ -6,6 +6,8 @@ import { toast } from '../Toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { errorMessage } from './shared';
 import { getGroupBotSettings, setWeeklyTestNotice, type GroupBotSettings } from '../../services/api/announcements';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/announcements';
 
 /**
  * Saturday's weekly-test notice (owner, 2026-10-01): at 11:00 Almaty the bot tells every linked SAT,
@@ -14,6 +16,7 @@ import { getGroupBotSettings, setWeeklyTestNotice, type GroupBotSettings } from 
  */
 export function WeeklyTestNoticeCard() {
   const { user } = useAuth();
+  const t = useT();
   const [settings, setSettings] = useState<GroupBotSettings | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -31,7 +34,7 @@ export function WeeklyTestNoticeCard() {
     try {
       setSettings(await setWeeklyTestNotice(!settings.weekly_test_enabled));
     } catch (error) {
-      toast(errorMessage(error, 'Failed to save the switch'), 'error');
+      toast(errorMessage(error, t('announcements.weeklyNotice.saveFailed')), 'error');
     } finally {
       setSaving(false);
     }
@@ -44,19 +47,18 @@ export function WeeklyTestNoticeCard() {
           <CalendarCheck2 className="mt-0.5 h-5 w-5 flex-none text-muted-foreground" aria-hidden />
           <div className="min-w-0">
             <p className="text-sm font-medium text-foreground">
-              Weekly test notice · {on ? 'on' : 'off'}
+              {on ? t('announcements.weeklyNotice.titleOn') : t('announcements.weeklyNotice.titleOff')}
             </p>
             <p className="mt-0.5 max-w-3xl text-sm text-muted-foreground">
-              Saturdays at 11:00 Almaty the bot tells every linked SAT, IELTS and NUET chat that this week's test is
-              open (a set that opens later is announced when it opens, until 20:00), once per set.
-              {!settings.weekly_test_flag && ' The server has not switched this job on yet.'}
+              {t('announcements.weeklyNotice.description')}
+              {!settings.weekly_test_flag && ` ${t('announcements.weeklyNotice.jobOff')}`}
             </p>
           </div>
         </div>
         {user?.role === 'admin' && (
           <Button variant="outline" size="sm" onClick={flip} disabled={saving}>
             {saving && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" aria-hidden />}
-            {settings.weekly_test_enabled ? 'Switch off' : 'Switch on'}
+            {settings.weekly_test_enabled ? t('announcements.weeklyNotice.switchOff') : t('announcements.weeklyNotice.switchOn')}
           </Button>
         )}
       </CardContent>

@@ -30,18 +30,23 @@ import { getMyAchievements, type Achievement } from '../../services/api/achievem
 import { PRESETS } from './presets';
 import { ORCA_SECTION_ID } from './KasatikSpotlight';
 import { nextBaseline, parseTryParam, saveBlock, wearParts } from './tryOn';
+import type { MessageKey } from '../../lib/i18n';
+import { useLocale, useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/studentHome';
 
-const TABS: { key: MascotCategory; label: string }[] = [
-  { key: 'hat', label: 'Outfit & hat' },
-  { key: 'eyewear', label: 'Eyewear' },
-  { key: 'expression', label: 'Expression' },
-  { key: 'prop', label: 'Prop' },
-  { key: 'background', label: 'Background' },
-  { key: 'frame', label: 'Frame' },
+const TABS: { key: MascotCategory; label: MessageKey }[] = [
+  { key: 'hat', label: 'studentHome.mascot.tab.hat' },
+  { key: 'eyewear', label: 'studentHome.mascot.tab.eyewear' },
+  { key: 'expression', label: 'studentHome.mascot.tab.expression' },
+  { key: 'prop', label: 'studentHome.mascot.tab.prop' },
+  { key: 'background', label: 'studentHome.mascot.tab.background' },
+  { key: 'frame', label: 'studentHome.mascot.tab.frame' },
 ];
 
 export default function OrcaBuilder() {
   const { user, updateUser } = useAuth();
+  const tr = useT();
+  const locale = useLocale();
   const userId = user?.id ?? 0;
   const automatic = useMemo(() => seedMascot(userId), [userId]);
   const saved = parseMascot(user?.mascot);
@@ -100,10 +105,11 @@ export default function OrcaBuilder() {
   const current = serializeMascot(config);
   const savedCode = saved ? serializeMascot(saved) : serializeMascot(automatic);
   const dirty = current !== savedCode;
-  const block = saveBlock(config, locked, achievements);
+  const block = saveBlock(config, locked, achievements, locale);
   // Only call it «trying on» once we know what's unlocked — no flash for a student wearing earned rewards.
   const tryingOn = block !== null && locksKnown;
-  const presetName = PRESETS.find((p) => serializeMascot(p.config) === current)?.name;
+  const presetKey = PRESETS.find((p) => serializeMascot(p.config) === current)?.nameKey;
+  const presetName = presetKey ? tr(presetKey) : undefined;
 
   const pick = (next: MascotConfig) => {
     setConfig(next);
@@ -117,9 +123,9 @@ export default function OrcaBuilder() {
       updateUser({ ...user, mascot: updated.mascot ?? null });
       if (code === null) setConfig(automatic);
       setBaseline(code === null ? automatic : config);
-      toast.success(code === null ? 'Back to your automatic orca' : 'Your orca is saved — looking great!');
+      toast.success(code === null ? tr('studentHome.mascot.savedAutomatic') : tr('studentHome.mascot.saved'));
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not save your orca');
+      toast.error(e instanceof Error ? e.message : tr('studentHome.mascot.saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -130,28 +136,28 @@ export default function OrcaBuilder() {
   return (
     <div id={ORCA_SECTION_ID} ref={sectionRef} className="rounded-lg border bg-card text-card-foreground shadow-sm p-6 scroll-mt-24">
       <div className="mb-4">
-        <h2 className="text-lg font-semibold text-foreground">Your orca</h2>
+        <h2 className="text-lg font-semibold text-foreground">{tr('studentHome.mascot.yourOrca')}</h2>
         <p className="text-sm text-muted-foreground">
-          Dress up your study buddy. It shows next to your name across the LMS.
+          {tr('studentHome.mascot.builderHint')}
         </p>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-6">
         <div className="flex flex-col items-center gap-3 sm:w-48 shrink-0">
           <div className="relative">
-            <Orca config={config} size={160} className={`drop-shadow-md ${tryingOn ? 'ring-4 ring-amber-300/70 rounded-full' : ''}`} title="Your orca" />
+            <Orca config={config} size={160} className={`drop-shadow-md ${tryingOn ? 'ring-4 ring-amber-300/70 rounded-full' : ''}`} title={tr('studentHome.mascot.yourOrca')} />
             {tryingOn && (
               <span className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-amber-400 px-2.5 py-0.5 text-[11px] font-semibold text-amber-950 shadow">
-                <Eye className="mr-1 inline h-3 w-3 align-[-2px]" aria-hidden />Trying on
+                <Eye className="mr-1 inline h-3 w-3 align-[-2px]" aria-hidden />{tr('studentHome.mascot.tryingOn')}
               </span>
             )}
           </div>
           <p className="text-sm font-medium text-gray-700 dark:text-foreground h-5">
-            {tryingOn ? block.partName : presetName ?? (saved ? 'Your own look' : 'Custom look')}
+            {tryingOn ? block.partName : presetName ?? (saved ? tr('studentHome.mascot.ownLook') : tr('studentHome.mascot.customLook'))}
           </p>
           <div className="flex gap-2">
             <Button type="button" variant="outline" size="sm" onClick={shuffle}>
-              <Shuffle className="w-4 h-4 mr-1" /> Shuffle
+              <Shuffle className="w-4 h-4 mr-1" /> {tr('studentHome.mascot.shuffle')}
             </Button>
           </div>
           {block ? (
@@ -160,7 +166,7 @@ export default function OrcaBuilder() {
             </Button>
           ) : (
             <Button type="button" size="sm" className="w-full" disabled={!dirty || saving} onClick={() => save(current)}>
-              <Check className="w-4 h-4 mr-1" /> {saving ? 'Saving…' : 'Save'}
+              <Check className="w-4 h-4 mr-1" /> {saving ? tr('studentHome.mascot.saving') : tr('common.save')}
             </Button>
           )}
           {/* How to earn the part and the progress so far; nothing to show if the achievements didn't load. */}
@@ -182,14 +188,14 @@ export default function OrcaBuilder() {
               )}
               {block.moreAchievements > 0 && (
                 <p className="mt-1 text-muted-foreground">
-                  This look also needs {block.moreAchievements} more {block.moreAchievements === 1 ? 'achievement' : 'achievements'}.
+                  {tr('studentHome.mascot.alsoNeeds', { count: block.moreAchievements })}
                 </p>
               )}
             </div>
           )}
           {block && (
             <Button type="button" variant="outline" size="sm" className="w-full" onClick={() => setConfig(baseline)}>
-              <Undo2 className="w-4 h-4 mr-1" /> Back to my look
+              <Undo2 className="w-4 h-4 mr-1" /> {tr('studentHome.mascot.backToLook')}
             </Button>
           )}
           {saved && !block && (
@@ -199,13 +205,13 @@ export default function OrcaBuilder() {
               disabled={saving}
               onClick={() => save(null)}
             >
-              <RotateCcw className="w-3 h-3" /> Reset to automatic
+              <RotateCcw className="w-3 h-3" /> {tr('studentHome.mascot.resetAutomatic')}
             </button>
           )}
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap gap-1.5 mb-3" role="tablist" aria-label="Orca parts">
+          <div className="flex flex-wrap gap-1.5 mb-3" role="tablist" aria-label={tr('studentHome.mascot.partsTabs')}>
             {TABS.map((t) => (
               <button
                 key={t.key}
@@ -219,7 +225,7 @@ export default function OrcaBuilder() {
                     : 'bg-muted text-gray-700 dark:text-foreground hover:bg-gray-200 dark:hover:bg-secondary/70'
                 }`}
               >
-                {t.label}
+                {tr(t.label)}
               </button>
             ))}
           </div>
@@ -228,24 +234,25 @@ export default function OrcaBuilder() {
       </div>
 
       <div className="mt-6">
-        <h3 className="text-sm font-semibold text-foreground mb-2">Ready-made looks</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-2">{tr('studentHome.mascot.readyLooks')}</h3>
         <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
           {PRESETS.map((p) => {
             const active = serializeMascot(p.config) === current;
+            const name = tr(p.nameKey);
             return (
               <button
-                key={p.name}
+                key={p.nameKey}
                 type="button"
-                title={p.name}
-                aria-label={p.name}
+                title={name}
+                aria-label={name}
                 aria-pressed={active}
                 onClick={() => pick(p.config)}
                 className={`shrink-0 flex flex-col items-center gap-1 w-16 rounded-xl p-1 ${
                   active ? 'bg-brand-surface ring-2 ring-ring' : 'hover:bg-muted'
                 }`}
               >
-                <Orca config={p.config} size={52} title={p.name} />
-                <span className="text-[10px] leading-tight text-center text-muted-foreground line-clamp-2">{p.name}</span>
+                <Orca config={p.config} size={52} title={name} />
+                <span className="text-[10px] leading-tight text-center text-muted-foreground line-clamp-2">{name}</span>
               </button>
             );
           })}

@@ -3,6 +3,8 @@ import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/homeworkStaff';
 
 interface LinkTaskEditorProps {
   content: any;
@@ -10,6 +12,7 @@ interface LinkTaskEditorProps {
 }
 
 export default function LinkTaskEditor({ content, onContentChange }: LinkTaskEditorProps) {
+  const t = useT();
   const [url, setUrl] = useState(content.url || '');
   const [linkDescription, setLinkDescription] = useState(content.link_description || '');
   const [completionCriteria, setCompletionCriteria] = useState(content.completion_criteria || 'visit');
@@ -25,7 +28,7 @@ export default function LinkTaskEditor({ content, onContentChange }: LinkTaskEdi
   return (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="link-url">URL *</Label>
+        <Label htmlFor="link-url">{t('homeworkStaff.link.url')}</Label>
         <Input
           id="link-url"
           type="url"
@@ -36,18 +39,18 @@ export default function LinkTaskEditor({ content, onContentChange }: LinkTaskEdi
       </div>
 
       <div>
-        <Label htmlFor="link-description">Description *</Label>
+        <Label htmlFor="link-description">{t('homeworkStaff.link.description')}</Label>
         <Textarea
           id="link-description"
           value={linkDescription}
           onChange={(e) => setLinkDescription(e.target.value)}
-          placeholder="Describe what students should do with this link..."
+          placeholder={t('homeworkStaff.link.descriptionPlaceholder')}
           rows={3}
         />
       </div>
 
       <div>
-        <Label htmlFor="completion-criteria">Completion Criteria</Label>
+        <Label htmlFor="completion-criteria">{t('homeworkStaff.link.criteria')}</Label>
         <Select
           value={completionCriteria}
           onValueChange={setCompletionCriteria}
@@ -56,14 +59,14 @@ export default function LinkTaskEditor({ content, onContentChange }: LinkTaskEdi
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="visit">Visit the link</SelectItem>
-            <SelectItem value="watch">Watch video</SelectItem>
-            <SelectItem value="read">Read article</SelectItem>
-            <SelectItem value="complete">Complete activity</SelectItem>
+            <SelectItem value="visit">{t('homeworkStaff.link.visit')}</SelectItem>
+            <SelectItem value="watch">{t('homeworkStaff.link.watch')}</SelectItem>
+            <SelectItem value="read">{t('homeworkStaff.link.read')}</SelectItem>
+            <SelectItem value="complete">{t('homeworkStaff.link.complete')}</SelectItem>
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground  mt-1">
-          What should students do with this resource?
+          {t('homeworkStaff.link.criteriaHint')}
         </p>
       </div>
     </div>

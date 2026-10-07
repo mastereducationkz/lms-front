@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseMascot, resolveMascot } from '../components/mascot/config';
 import type { Achievement, GroupStars } from '../services/api/achievementsUi';
 import {
+  achievementField,
   achievementNotificationPath,
   almostThere,
   byExcitement,
@@ -15,6 +16,7 @@ import {
   starFromLabel,
   starQuota,
   starQuotaLabel,
+  tierLabel,
   validStarReason,
   withReward,
 } from './achievements';
@@ -82,6 +84,8 @@ describe('recent unlocks and categories', () => {
       ach({ key: 'x', category: 'brand_new' }),
     ]);
     expect(groups.map((g) => g.key)).toEqual(['getting_started', 'seasonal', 'other']);
+    expect(groups.map((g) => g.label)).toEqual(['Getting started', 'Seasonal', 'More']);
+    expect(groupByCategory([ach({ key: 'g', category: 'getting_started' })], 'ru')[0].label).toBe('Первые шаги');
   });
 });
 
@@ -144,6 +148,9 @@ describe('the celebration', () => {
   it('batches the title', () => {
     expect(celebrationTitle(1)).toBe('Achievement unlocked!');
     expect(celebrationTitle(5)).toBe('You unlocked 5 achievements!');
+    expect(celebrationTitle(1, 'ru')).toBe('Новое достижение!');
+    expect(celebrationTitle(5, 'ru')).toBe('Вы получили 5 достижений!');
+    expect(celebrationTitle(3, 'ru')).toBe('Вы получили 3 достижения!');
   });
 });
 
@@ -197,5 +204,33 @@ describe('Star of the Week', () => {
     expect(starFromLabel(award('curator'))).toBe('from your curator Aida');
     expect(starFromLabel(award('teacher'))).toBe('from your teacher Aida');
     expect(starFromLabel(award('admin'))).toBe('from Master Education');
+    expect(starFromLabel(award('curator'), 'ru')).toBe('от вашего куратора Aida');
+    expect(starFromLabel({ awarded_by_role: 'teacher', awarded_by_name: '' }, 'ru')).toBe('от вашего преподавателя');
+  });
+});
+
+describe('an achievement in the reader’s language', () => {
+  const server = ach({
+    key: 'early_bird', title: 'Early Bird', description: 'Five homeworks done a whole day early.', how_to: null, hint: 'timing is everything',
+  });
+
+  it('shows the server’s words in English', () => {
+    expect(achievementField({ ...server, title: 'Early Bird (new)' }, 'title', 'en')).toBe('Early Bird (new)');
+    expect(achievementField(server, 'hint', 'en')).toBe('timing is everything');
+  });
+
+  it('shows the catalog’s words in Russian, keeping what the server left out out', () => {
+    expect(achievementField(server, 'title', 'ru')).toBe('Ранняя пташка');
+    expect(achievementField(server, 'hint', 'ru')).toBe('всё решает время');
+    expect(achievementField(server, 'how_to', 'ru')).toBeNull();
+  });
+
+  it('keeps the server’s words for an achievement the catalog doesn’t know yet', () => {
+    expect(achievementField(ach({ key: 'brand_new', title: 'Brand New' }), 'title', 'ru')).toBe('Brand New');
+  });
+
+  it('names the tier', () => {
+    expect(tierLabel('legendary', 'en')).toBe('Legendary');
+    expect(tierLabel('rare', 'ru')).toBe('Редкое');
   });
 });

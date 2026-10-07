@@ -18,11 +18,33 @@ import { FillInBlankRenderer } from './FillInBlankRenderer';
 import { TextCompletionRenderer } from './TextCompletionRenderer';
 import { parseGap } from '../../utils/gapParser';
 import { useT } from '../../lib/i18n/react';
+import type { MessageKey } from '../../lib/i18n';
 import {
   DEFAULT_QUIZ_PASSING_SCORE_OPTIONAL,
   DEFAULT_QUIZ_PASSING_SCORE_REQUIRED,
 } from '../../utils/quizPassingScore';
 import '@/lib/i18n/catalogs/adminTools';
+import '@/lib/i18n/catalogs/courseAuthoring';
+
+/** The question-type names in the question list. */
+const QUESTION_TYPE_LABELS: Record<string, MessageKey> = {
+  single_choice: 'courseAuthoring.quiz.qtype.single',
+  multiple_choice: 'courseAuthoring.quiz.qtype.multiple',
+  short_answer: 'courseAuthoring.quiz.qtype.short',
+  fill_blank: 'courseAuthoring.quiz.qtype.fillBlank',
+  text_completion: 'courseAuthoring.quiz.qtype.textCompletion',
+  long_text: 'courseAuthoring.quiz.qtype.longText',
+  media_question: 'courseAuthoring.quiz.qtype.media',
+  media_open_question: 'courseAuthoring.quiz.qtype.mediaOpen',
+  image_content: 'courseAuthoring.quiz.qtype.image',
+  matching: 'courseAuthoring.quiz.qtype.matching',
+};
+
+const DIFFICULTY_LABELS: Record<string, MessageKey> = {
+  easy: 'courseAuthoring.quiz.difficultyEasy',
+  medium: 'courseAuthoring.quiz.difficultyMedium',
+  hard: 'courseAuthoring.quiz.difficultyHard',
+};
 
 export interface QuizLessonEditorProps {
   quizTitle: string;
@@ -120,7 +142,7 @@ export default function QuizLessonEditor({
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
   const isImageMediaUrl = (url: string) => /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
-  const getMediaFilename = (url: string) => url.split('/').pop() || 'Uploaded file';
+  const getMediaFilename = (url: string) => url.split('/').pop() || tr('courseAuthoring.upload.uploadedFile');
 
   const openAddQuestion = () => {
     const ts = Date.now().toString();
@@ -228,7 +250,7 @@ export default function QuizLessonEditor({
           }
           
           if (pairs.length < 2) {
-            errors.push(`Matching block ${blockIndex + 1}: Need at least 2 pairs`);
+            errors.push(tr('courseAuthoring.quiz.bulk.matchingNeedsPairs', { n: blockIndex + 1 }));
             continue;
           }
 
@@ -272,12 +294,12 @@ export default function QuizLessonEditor({
         questionText = questionText.replace(/^\d+\.?\d*\s*\.?\s*/, '');
 
         if (!questionText) {
-          errors.push(`Block ${blockIndex + 1}: Could not find question text`);
+          errors.push(tr('courseAuthoring.quiz.bulk.noQuestionText', { n: blockIndex + 1 }));
           continue;
         }
 
         if (optionLines.length < 2) {
-          errors.push(`Block ${blockIndex + 1}: Need at least 2 options`);
+          errors.push(tr('courseAuthoring.quiz.bulk.needsOptions', { n: blockIndex + 1 }));
           continue;
         }
 
@@ -330,7 +352,7 @@ export default function QuizLessonEditor({
 
         questions.push(question);
       } catch (error) {
-        errors.push(`Block ${blockIndex + 1}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        errors.push(tr('courseAuthoring.quiz.bulk.blockError', { n: blockIndex + 1, error: error instanceof Error ? error.message : tr('courseAuthoring.quiz.bulk.unknownError') }));
       }
     }
 
@@ -347,7 +369,7 @@ export default function QuizLessonEditor({
     }
 
     if (questions.length === 0) {
-      setBulkUploadErrors(['No valid questions found. Please check the format.']);
+      setBulkUploadErrors([tr('courseAuthoring.quiz.bulk.noneFound')]);
       return;
     }
 
@@ -367,7 +389,7 @@ export default function QuizLessonEditor({
     // image_content type only requires media_url, not question text
     if (question.question_type === 'image_content') {
       if (!question.media_url) {
-        errors.push('Please upload an image');
+        errors.push(tr('courseAuthoring.quiz.validation.uploadImage'));
       }
       return { isValid: errors.length === 0, errors };
     }
@@ -382,7 +404,7 @@ export default function QuizLessonEditor({
     }
 
     if (!question.question_text.trim()) {
-      errors.push('Question text is required');
+      errors.push(tr('courseAuthoring.quiz.validation.textRequired'));
     }
     if (question.question_type === 'fill_blank') {
       const answers = Array.isArray(question.correct_answer)
@@ -391,51 +413,51 @@ export default function QuizLessonEditor({
           ? [question.correct_answer.trim()]
           : [];
       if (answers.length === 0) {
-        errors.push('Please add at least one gap [[answer]] in the passage');
+        errors.push(tr('courseAuthoring.quiz.validation.addGap'));
       }
     } else if (question.question_type === 'short_answer' || question.question_type === 'media_open_question') {
       // Short answer and media_open_question need a correct answer
       if (!question.correct_answer || (typeof question.correct_answer === 'string' && !question.correct_answer.trim())) {
-        errors.push('Please provide the correct answer');
+        errors.push(tr('courseAuthoring.quiz.validation.provideAnswer'));
       }
     } else if (question.question_type === 'text_completion') {
       // Text completion questions need passage with gaps and correct answers
       const text = (question.content_text || '').toString();
       const gaps = Array.from(text.matchAll(/\[\[(.*?)\]\]/g));
       if (gaps.length === 0) {
-        errors.push('Please add gaps using [[answer]] format in the text');
+        errors.push(tr('courseAuthoring.quiz.validation.addGapsText'));
       }
       const answers = Array.isArray(question.correct_answer) ? question.correct_answer : [];
       if (answers.length !== gaps.length) {
-        errors.push('Number of answers must match number of gaps');
+        errors.push(tr('courseAuthoring.quiz.validation.answersMatchGaps'));
       }
       if (answers.some((answer: string) => !answer || !answer.trim())) {
-        errors.push('All gap answers must be provided');
+        errors.push(tr('courseAuthoring.quiz.validation.allGapAnswers'));
       }
     } else if (question.question_type === 'long_text') {
       // Long text questions don't need options validation
       if (!question.correct_answer && question.correct_answer !== '') {
         // For long text, we just need some placeholder for correct_answer
-        errors.push('Please provide sample answer or grading criteria');
+        errors.push(tr('courseAuthoring.quiz.validation.provideSample'));
       }
     } else if (question.question_type === 'matching') {
       // Matching questions require pairs
       if (!question.matching_pairs || question.matching_pairs.length < 2) {
-        errors.push('At least 2 matching pairs are required');
+        errors.push(tr('courseAuthoring.quiz.validation.twoPairs'));
       }
       if (question.matching_pairs?.some(pair => !pair.left.trim() || !pair.right.trim())) {
-        errors.push('All matching pairs must have both left and right values');
+        errors.push(tr('courseAuthoring.quiz.validation.pairsBothSides'));
       }
     } else if (question.question_type === 'single_choice' || question.question_type === 'media_question') {
       const hasOptionContent = question.options?.some(opt => opt.text.trim());
       if (hasOptionContent && (typeof question.correct_answer !== 'number' || question.correct_answer < 0)) {
-        errors.push('Please select a correct answer');
+        errors.push(tr('courseAuthoring.quiz.validation.selectCorrect'));
       }
       if (!question.options || question.options.length < 2) {
-        errors.push('At least 2 options are required');
+        errors.push(tr('courseAuthoring.quiz.validation.twoOptions'));
       }
       if (hasOptionContent && question.options?.some(opt => !opt.text.trim())) {
-        errors.push('All options must have text');
+        errors.push(tr('courseAuthoring.quiz.validation.optionsText'));
       }
     } else if (question.question_type === 'multiple_choice') {
       const hasOptionContent = question.options?.some(opt => opt.text.trim());
@@ -445,13 +467,13 @@ export default function QuizLessonEditor({
         ca.length > 0 &&
         ca.every((i: unknown) => typeof i === 'number' && i >= 0);
       if (hasOptionContent && !hasValidCorrect) {
-        errors.push('Please select at least one correct answer');
+        errors.push(tr('courseAuthoring.quiz.validation.selectOneCorrect'));
       }
       if (!question.options || question.options.length < 2) {
-        errors.push('At least 2 options are required');
+        errors.push(tr('courseAuthoring.quiz.validation.twoOptions'));
       }
       if (hasOptionContent && question.options?.some(opt => !opt.text.trim())) {
-        errors.push('All options must have text');
+        errors.push(tr('courseAuthoring.quiz.validation.optionsText'));
       }
     }
 
@@ -557,7 +579,7 @@ export default function QuizLessonEditor({
       return result;
     } catch (error) {
       console.error('Error uploading media:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to upload media. Please try again.';
+      const errorMessage = error instanceof Error ? error.message : tr('courseAuthoring.quiz.media.uploadFailed');
       alert(errorMessage);
       return null;
     } finally {
@@ -586,7 +608,7 @@ export default function QuizLessonEditor({
             }
           } catch (error) {
             console.error('Error uploading pasted image:', error);
-            alert('Failed to upload image from clipboard');
+            alert(tr('courseAuthoring.quiz.media.pasteFailed'));
           }
           break;
         }
@@ -644,7 +666,7 @@ export default function QuizLessonEditor({
       return result;
     } catch (error) {
       console.error('Error uploading quiz media:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to upload quiz media. Please try again.';
+      const errorMessage = error instanceof Error ? error.message : tr('courseAuthoring.quiz.media.quizUploadFailed');
       alert(errorMessage);
       return null;
     } finally {
@@ -680,8 +702,8 @@ export default function QuizLessonEditor({
       console.log('Analysis result:', result);
 
       if (!result || result.success === false) {
-        const message = (result && (result.explanation || result.error)) || 'Analysis returned no data';
-        alert(`Failed to analyze file. ${message}`);
+        const message = (result && (result.explanation || result.error)) || tr('courseAuthoring.quiz.analyze.noData');
+        alert(tr('courseAuthoring.quiz.analyze.failedWith', { message }));
         return;
       }
 
@@ -733,7 +755,7 @@ export default function QuizLessonEditor({
 
         setQuizQuestions([...quizQuestions, ...newQuestions]);
         setShowSatImageModal(false);
-        alert(`Successfully imported ${newQuestions.length} questions!`);
+        alert(tr('courseAuthoring.quiz.analyze.imported', { count: newQuestions.length }));
       } else {
         // Fallback for single question (old format or single result)
         // Convert SAT format to our Question format
@@ -767,7 +789,7 @@ export default function QuizLessonEditor({
       }
     } catch (error) {
       console.error('Error analyzing file:', error);
-      alert('Failed to analyze file. Please try again.');
+      alert(tr('courseAuthoring.quiz.analyze.failed'));
     } finally {
       setIsAnalyzingImage(false);
     }
@@ -876,17 +898,17 @@ export default function QuizLessonEditor({
       {/* Quiz Basic Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="quiz-title">Quiz Title</Label>
+          <Label htmlFor="quiz-title">{tr('courseAuthoring.quiz.title')}</Label>
           <Input
             id="quiz-title"
             type="text"
             value={quizTitle}
             onChange={(e) => setQuizTitle(e.target.value)}
-            placeholder="Enter quiz title"
+            placeholder={tr('courseAuthoring.quiz.titlePlaceholder')}
           />
         </div>
         <div className="space-y-2">
-          <Label>Max Score</Label>
+          <Label>{tr('courseAuthoring.quiz.maxScore')}</Label>
           <Input
             id="max-score"
             type="number"
@@ -896,13 +918,13 @@ export default function QuizLessonEditor({
               // For now, just ignore the input
             }}
             min="1"
-            placeholder="Auto-calculated"
+            placeholder={tr('courseAuthoring.quiz.autoCalculated')}
             disabled
           />
         </div>
         {setQuizPassingScorePercent && (
           <div className="space-y-2">
-            <Label htmlFor="quiz-passing-score">Passing score (%)</Label>
+            <Label htmlFor="quiz-passing-score">{tr('courseAuthoring.quiz.passingScore')}</Label>
             <Input
               id="quiz-passing-score"
               type="number"
@@ -926,8 +948,9 @@ export default function QuizLessonEditor({
               }
             />
             <p className="text-xs text-muted-foreground">
-              Leave empty for default: {isOptionalStep ? DEFAULT_QUIZ_PASSING_SCORE_OPTIONAL : DEFAULT_QUIZ_PASSING_SCORE_REQUIRED}%
-              {isOptionalStep ? ' (optional step)' : ''}
+              {isOptionalStep
+                ? tr('courseAuthoring.quiz.passingDefaultOptional', { value: DEFAULT_QUIZ_PASSING_SCORE_OPTIONAL })
+                : tr('courseAuthoring.quiz.passingDefault', { value: DEFAULT_QUIZ_PASSING_SCORE_REQUIRED })}
             </p>
           </div>
         )}
@@ -935,39 +958,39 @@ export default function QuizLessonEditor({
 
       {/* Quiz Type Selection */}
       <div className="space-y-3">
-        <Label>Quiz Type</Label>
+        <Label>{tr('courseAuthoring.quiz.type')}</Label>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div
             className={`p-3 border-2 rounded-lg cursor-pointer transition-colors ${quizType === 'regular' ? 'border-brand bg-brand-surface' : 'border-border hover:border-input'
               }`}
             onClick={() => setQuizType('regular')}
           >
-            <div className="font-medium">Regular Quiz</div>
-            <div className="text-sm text-muted-foreground">Standard questions</div>
+            <div className="font-medium">{tr('courseAuthoring.quiz.typeRegular')}</div>
+            <div className="text-sm text-muted-foreground">{tr('courseAuthoring.quiz.typeRegularHint')}</div>
           </div>
           <div
             className={`p-3 border-2 rounded-lg cursor-pointer transition-colors ${quizType === 'text_based' ? 'border-brand bg-brand-surface' : 'border-border hover:border-input'
               }`}
             onClick={() => setQuizType('text_based')}
           >
-            <div className="font-medium">Text Based</div>
-            <div className="text-sm text-muted-foreground">Questions with text passage</div>
+            <div className="font-medium">{tr('courseAuthoring.quiz.typeText')}</div>
+            <div className="text-sm text-muted-foreground">{tr('courseAuthoring.quiz.typeTextHint')}</div>
           </div>
           <div
             className={`p-3 border-2 rounded-lg cursor-pointer transition-colors ${quizType === 'audio' ? 'border-brand bg-brand-surface' : 'border-border hover:border-input'
               }`}
             onClick={() => setQuizType('audio')}
           >
-            <div className="font-medium">Audio Quiz</div>
-            <div className="text-sm text-muted-foreground">Audio-based questions</div>
+            <div className="font-medium">{tr('courseAuthoring.quiz.typeAudio')}</div>
+            <div className="text-sm text-muted-foreground">{tr('courseAuthoring.quiz.typeAudioHint')}</div>
           </div>
           <div
             className={`p-3 border-2 rounded-lg cursor-pointer transition-colors ${quizType === 'pdf' ? 'border-brand bg-brand-surface' : 'border-border hover:border-input'
               }`}
             onClick={() => setQuizType('pdf')}
           >
-            <div className="font-medium">Document Quiz</div>
-            <div className="text-sm text-muted-foreground">PDF or image based</div>
+            <div className="font-medium">{tr('courseAuthoring.quiz.typeDocument')}</div>
+            <div className="text-sm text-muted-foreground">{tr('courseAuthoring.quiz.typeDocumentHint')}</div>
           </div>
         </div>
       </div>
@@ -975,17 +998,17 @@ export default function QuizLessonEditor({
       {/* Text Content for Text-Based Quizzes */}
       {quizType === 'text_based' && (
         <div className="space-y-3">
-          <Label>Passage Text</Label>
+          <Label>{tr('courseAuthoring.quiz.passageText')}</Label>
           <RichTextEditor
             value={quizMediaUrl}
             onChange={(value) => {
               setQuizMediaUrl(value);
               setQuizMediaType('text');
             }}
-            placeholder="Enter the reading passage or text that students will read before answering questions..."
+            placeholder={tr('courseAuthoring.quiz.passagePlaceholder')}
           />
           <p className="text-sm text-muted-foreground">
-            Students will read this passage before answering the quiz questions
+            {tr('courseAuthoring.quiz.passageHint')}
           </p>
         </div>
       )}
@@ -993,14 +1016,14 @@ export default function QuizLessonEditor({
       {/* Media Upload for Audio/PDF Quizzes */}
       {(quizType === 'audio' || quizType === 'pdf') && (
         <div className="space-y-3">
-          <Label>{quizType === 'audio' ? 'Audio File' : 'Document (PDF or Image)'}</Label>
+          <Label>{quizType === 'audio' ? tr('courseAuthoring.quiz.audioFile') : tr('courseAuthoring.quiz.documentFile')}</Label>
           <div
             className="space-y-3 outline-none focus-visible:ring-2 focus-visible:ring-brand rounded-lg"
             onPaste={quizType === 'pdf' ? handleQuizMediaPaste : undefined}
             tabIndex={quizType === 'pdf' ? 0 : -1}
             role={quizType === 'pdf' ? 'button' : undefined}
             aria-label={quizType === 'pdf'
-              ? 'Quiz document upload area. Drag and drop, choose a file, or paste an image with Ctrl+V.'
+              ? tr('courseAuthoring.quiz.documentAreaAria')
               : undefined}
           >
           {quizMediaUrl ? (
@@ -1010,17 +1033,17 @@ export default function QuizLessonEditor({
                   {quizType === 'audio' ? (
                     <>
                       <Music className="h-4 w-4" aria-hidden="true" />
-                      <span className="font-medium">Audio uploaded</span>
+                      <span className="font-medium">{tr('courseAuthoring.quiz.audioUploaded')}</span>
                     </>
                   ) : isImageMediaUrl(quizMediaUrl) ? (
                     <>
                       <Image className="w-5 h-5 text-brand" />
-                      <span className="font-medium">Image uploaded</span>
+                      <span className="font-medium">{tr('courseAuthoring.quiz.imageUploaded')}</span>
                     </>
                   ) : (
                     <>
                       <FileText className="w-5 h-5 text-red-600 dark:text-red-400" />
-                      <span className="font-medium">PDF uploaded</span>
+                      <span className="font-medium">{tr('courseAuthoring.quiz.pdfUploaded')}</span>
                     </>
                   )}
                 </div>
@@ -1032,7 +1055,7 @@ export default function QuizLessonEditor({
                     setQuizMediaType('');
                   }}
                 >
-                  Remove
+                  {tr('courseAuthoring.quiz.remove')}
                 </Button>
               </div>
 
@@ -1049,7 +1072,7 @@ export default function QuizLessonEditor({
                   <div className="aspect-[4/3] relative flex items-center justify-center bg-muted">
                     <img
                       src={backendUrl + quizMediaUrl}
-                      alt="Quiz reference"
+                      alt={tr('courseAuthoring.quiz.referenceAlt')}
                       className="max-w-full max-h-full object-contain"
                     />
                   </div>
@@ -1072,7 +1095,7 @@ export default function QuizLessonEditor({
 
               {quizType === 'pdf' && (
                 <p className="text-xs text-muted-foreground">
-                  Click this area and press Ctrl+V to replace with a pasted image
+                  {tr('courseAuthoring.quiz.pasteToReplace')}
                 </p>
               )}
             </div>
@@ -1089,7 +1112,7 @@ export default function QuizLessonEditor({
                   if (isValidType) {
                     await uploadQuizMedia(file);
                   } else {
-                    alert(`Please upload ${quizType === 'audio' ? 'an audio' : 'a PDF or image'} file.`);
+                    alert(quizType === 'audio' ? tr('courseAuthoring.quiz.wrongTypeAudio') : tr('courseAuthoring.quiz.wrongTypeDocument'));
                   }
                 }
               }}
@@ -1099,13 +1122,13 @@ export default function QuizLessonEditor({
               <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
               <div className="text-sm text-muted-foreground mb-2">
                 {quizType === 'audio'
-                  ? 'Drag & drop or click to upload audio file (MP3, WAV, etc.)'
-                  : 'Drag & drop or click to upload PDF or image (JPG, PNG, etc.)'
+                  ? tr('courseAuthoring.quiz.dropAudio')
+                  : tr('courseAuthoring.quiz.dropDocument')
                 }
               </div>
               {quizType === 'pdf' && (
                 <div className="text-xs text-muted-foreground mb-3">
-                  Or click here and press Ctrl+V to paste an image
+                  {tr('courseAuthoring.quiz.orPaste')}
                 </div>
               )}
               <input
@@ -1123,7 +1146,7 @@ export default function QuizLessonEditor({
               <label htmlFor={`quiz-media-upload-${quizType}`} className="cursor-pointer">
                 <Button variant="outline" size="sm" disabled={isUploadingMedia} asChild>
                   <span>
-                    {isUploadingMedia ? 'Uploading...' : `Choose ${quizType === 'audio' ? 'Audio' : 'Document'} File`}
+                    {isUploadingMedia ? tr('courseAuthoring.upload.uploading') : quizType === 'audio' ? tr('courseAuthoring.quiz.chooseAudio') : tr('courseAuthoring.quiz.chooseDocument')}
                   </span>
                 </Button>
               </label>
@@ -1175,20 +1198,20 @@ export default function QuizLessonEditor({
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="time-limit">Time Limit (minutes) - Optional</Label>
+        <Label htmlFor="time-limit">{tr('courseAuthoring.quiz.timeLimit')}</Label>
         <Input
           id="time-limit"
           type="number"
           value={quizTimeLimit || ''}
           onChange={(e) => setQuizTimeLimit(e.target.value ? parseInt(e.target.value) : undefined)}
           min="1"
-          placeholder="Leave empty for no time limit"
+          placeholder={tr('courseAuthoring.quiz.timeLimitPlaceholder')}
         />
       </div>
 
       {setQuizDisplayMode && (
         <div className="space-y-2">
-          <Label>Display Mode</Label>
+          <Label>{tr('courseAuthoring.quiz.displayMode')}</Label>
           <div className="grid grid-cols-2 gap-3">
             <div
               className={`p-3 border-2 rounded-lg transition-colors ${quizType === 'pdf'
@@ -1209,9 +1232,9 @@ export default function QuizLessonEditor({
                   {quizDisplayMode === 'one_by_one' && <div className="w-2 h-2 bg-brand-solid rounded-full"></div>}
                 </div>
                 <div>
-                  <div className="font-medium text-sm">One by One</div>
-                  <div className="text-xs text-muted-foreground">Show questions sequentially</div>
-                  {quizType === 'pdf' || quizType === 'audio' && <div className="text-xs text-muted-foreground">(Not available for PDF and Audio quizzes)</div>}
+                  <div className="font-medium text-sm">{tr('courseAuthoring.quiz.oneByOne')}</div>
+                  <div className="text-xs text-muted-foreground">{tr('courseAuthoring.quiz.oneByOneHint')}</div>
+                  {quizType === 'pdf' || quizType === 'audio' && <div className="text-xs text-muted-foreground">{tr('courseAuthoring.quiz.oneByOneUnavailable')}</div>}
                 </div>
               </div>
             </div>
@@ -1228,8 +1251,8 @@ export default function QuizLessonEditor({
                   {quizDisplayMode === 'all_at_once' && <div className="w-2 h-2 bg-brand-solid rounded-full"></div>}
                 </div>
                 <div>
-                  <div className="font-medium text-sm">All at Once</div>
-                  <div className="text-xs text-muted-foreground">Show all questions together</div>
+                  <div className="font-medium text-sm">{tr('courseAuthoring.quiz.allAtOnce')}</div>
+                  <div className="text-xs text-muted-foreground">{tr('courseAuthoring.quiz.allAtOnceHint')}</div>
                 </div>
               </div>
             </div>
@@ -1240,11 +1263,11 @@ export default function QuizLessonEditor({
       {/* Questions */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-medium text-foreground">Questions ({quizQuestions.length})</h3>
+          <h3 className="text-lg font-medium text-foreground">{tr('courseAuthoring.quiz.questionsCount', { count: quizQuestions.length })}</h3>
           <div className="flex gap-2">
-            <Button onClick={() => setShowBulkUploadModal(true)} variant="outline">Bulk Upload</Button>
-            <Button onClick={() => setShowSatImageModal(true)} variant="outline">Analyze SAT Image</Button>
-            <Button onClick={openAddQuestion} variant="default">Add Question</Button>
+            <Button onClick={() => setShowBulkUploadModal(true)} variant="outline">{tr('courseAuthoring.flashcards.bulkUpload')}</Button>
+            <Button onClick={() => setShowSatImageModal(true)} variant="outline">{tr('courseAuthoring.quiz.analyzeSat')}</Button>
+            <Button onClick={openAddQuestion} variant="default">{tr('courseAuthoring.quiz.addQuestion')}</Button>
           </div>
         </div>
 
@@ -1264,7 +1287,7 @@ export default function QuizLessonEditor({
                         onClick={() => moveQuestionUp(idx)}
                         disabled={idx === 0}
                         className="p-1 rounded hover:bg-border disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                        title="Move up"
+                        title={tr('courseAuthoring.quiz.moveUp')}
                       >
                         <ChevronUp className="w-4 h-4" />
                       </button>
@@ -1272,7 +1295,7 @@ export default function QuizLessonEditor({
                         onClick={() => moveQuestionDown(idx)}
                         disabled={idx === quizQuestions.length - 1}
                         className="p-1 rounded hover:bg-border disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                        title="Move down"
+                        title={tr('courseAuthoring.quiz.moveDown')}
                       >
                         <ChevronDown className="w-4 h-4" />
                       </button>
@@ -1283,19 +1306,9 @@ export default function QuizLessonEditor({
                         {idx + 1}
                       </span>
                       <span className="text-sm font-medium text-muted-foreground">
-                        {q.question_type === 'single_choice' ? 'Single Choice' :
-                          q.question_type === 'multiple_choice' ? 'Multiple Choice' :
-                            q.question_type === 'short_answer' ? 'Short Answer' :
-                              q.question_type === 'fill_blank' ? 'Fill in the Blank' :
-                                q.question_type === 'text_completion' ? 'Text Completion' :
-                                  q.question_type === 'long_text' ? 'Long Text' :
-                                    q.question_type === 'media_question' ? 'Media Question' :
-                                      q.question_type === 'media_open_question' ? 'Open Media' :
-                                        q.question_type === 'image_content' ? 'Image/Map' :
-                                          q.question_type === 'matching' ? 'Matching' :
-                                          q.question_type}
+                        {QUESTION_TYPE_LABELS[q.question_type] ? tr(QUESTION_TYPE_LABELS[q.question_type]) : q.question_type}
                       </span>
-                      {q.difficulty && <span className="ml-2 text-[10px] uppercase text-muted-foreground">{q.difficulty}</span>}
+                      {q.difficulty && <span className="ml-2 text-[10px] uppercase text-muted-foreground">{DIFFICULTY_LABELS[q.difficulty] ? tr(DIFFICULTY_LABELS[q.difficulty]) : q.difficulty}</span>}
                       {!validation.isValid && (
                         <span className="text-xs text-red-600 bg-red-50 px-2 py-0.5 rounded dark:text-red-400 dark:bg-red-950/40">
                           {validation.errors[0]}
@@ -1306,10 +1319,10 @@ export default function QuizLessonEditor({
                   
                   <div className="flex gap-2">
                     <Button onClick={() => openEditQuestion(idx)} variant="outline" size="sm">
-                      Edit
+                      {tr('common.edit')}
                     </Button>
                     <Button onClick={() => removeQuestion(idx)} variant="destructive" size="sm">
-                      Remove
+                      {tr('courseAuthoring.quiz.remove')}
                     </Button>
                   </div>
                 </div>
@@ -1322,11 +1335,11 @@ export default function QuizLessonEditor({
                       {q.media_url ? (
                         <img
                           src={`${backendUrl}${q.media_url}`}
-                          alt="Question image"
+                          alt={tr('courseAuthoring.quiz.questionImageAlt')}
                           className="max-w-full max-h-64 object-contain rounded-lg"
                         />
                       ) : (
-                        <div className="text-muted-foreground italic">No image uploaded</div>
+                        <div className="text-muted-foreground italic">{tr('courseAuthoring.quiz.noImage')}</div>
                       )}
                       {q.question_text && (
                         <p className="text-sm text-muted-foreground mt-2">{q.question_text}</p>
@@ -1342,13 +1355,13 @@ export default function QuizLessonEditor({
                           {q.media_type === 'image' ? (
                             <img
                               src={`${backendUrl}${q.media_url}`}
-                              alt="Question media"
+                              alt={tr('courseAuthoring.quiz.questionMediaAlt')}
                               className="max-w-full max-h-48 object-contain rounded-lg"
                             />
                           ) : (
                             <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted px-3 py-2 rounded">
                               <FileText className="w-4 h-4" />
-                              PDF attached
+                              {tr('courseAuthoring.quiz.pdfAttached')}
                             </div>
                           )}
                         </div>
@@ -1369,7 +1382,7 @@ export default function QuizLessonEditor({
                               <span className="w-6 h-6 rounded-full bg-border flex items-center justify-center text-xs font-medium">
                                 {String.fromCharCode(65 + optIdx)}
                               </span>
-                              <span className="flex-1">{opt.text ? <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(opt.text)) }} /> : <span className="text-muted-foreground italic">Empty option</span>}</span>
+                              <span className="flex-1">{opt.text ? <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(opt.text)) }} /> : <span className="text-muted-foreground italic">{tr('courseAuthoring.quiz.emptyOption')}</span>}</span>
                               {q.correct_answer === optIdx && (
                                 <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                               )}
@@ -1403,7 +1416,7 @@ export default function QuizLessonEditor({
                                 <span className="w-6 h-6 rounded-full bg-border flex items-center justify-center text-xs font-medium">
                                   {String.fromCharCode(65 + optIdx)}
                                 </span>
-                                <span className="flex-1">{opt.text ? <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(opt.text)) }} /> : <span className="text-muted-foreground italic">Empty option</span>}</span>
+                                <span className="flex-1">{opt.text ? <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(opt.text)) }} /> : <span className="text-muted-foreground italic">{tr('courseAuthoring.quiz.emptyOption')}</span>}</span>
                                 {isCorrect && (
                                   <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                                 )}
@@ -1423,8 +1436,8 @@ export default function QuizLessonEditor({
                         dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(q.question_text || '')) }}
                       />
                       <div className="text-sm">
-                        <span className="text-muted-foreground">Correct answer:</span>{' '}
-                        <span className="font-medium text-green-700 dark:text-green-300">{q.correct_answer || 'Not set'}</span>
+                        <span className="text-muted-foreground">{tr('courseAuthoring.quiz.correctAnswerLabel')}</span>{' '}
+                        <span className="font-medium text-green-700 dark:text-green-300">{q.correct_answer || tr('courseAuthoring.quiz.notSet')}</span>
                       </div>
                     </div>
                   )}
@@ -1461,7 +1474,7 @@ export default function QuizLessonEditor({
                         dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(q.question_text || '')) }}
                       />
                       <div className="text-sm text-muted-foreground italic">
-                        Long text response expected
+                        {tr('courseAuthoring.quiz.longTextExpected')}
                       </div>
                     </div>
                   )}
@@ -1471,20 +1484,20 @@ export default function QuizLessonEditor({
                     <div className="space-y-3">
                       <div 
                         className="text-foreground font-medium"
-                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(q.question_text || 'Match the following:')) }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(q.question_text || tr('courseAuthoring.quiz.matchFollowing'))) }}
                       />
                       <div className="grid grid-cols-2 gap-2">
                         <div className="space-y-2">
                           {q.matching_pairs.map((pair, pairIdx) => (
                             <div key={pairIdx} className="p-2 bg-brand-surface rounded border border-brand-border text-sm">
-                              {pair.left || <span className="text-muted-foreground italic">Empty</span>}
+                              {pair.left || <span className="text-muted-foreground italic">{tr('courseAuthoring.quiz.empty')}</span>}
                             </div>
                           ))}
                         </div>
                         <div className="space-y-2">
                           {q.matching_pairs.map((pair, pairIdx) => (
                             <div key={pairIdx} className="p-2 bg-green-50 rounded border border-green-200 text-sm dark:bg-green-950/40 dark:border-green-800/60">
-                              {pair.right || <span className="text-muted-foreground italic">Empty</span>}
+                              {pair.right || <span className="text-muted-foreground italic">{tr('courseAuthoring.quiz.empty')}</span>}
                             </div>
                           ))}
                         </div>
@@ -1500,7 +1513,7 @@ export default function QuizLessonEditor({
         {quizQuestions.length === 0 && (
           <Card>
             <CardContent className="text-center py-8 text-muted-foreground">
-              <p>No questions added yet. Click "Add Question" to get started.</p>
+              <p>{tr('courseAuthoring.quiz.noQuestions')}</p>
             </CardContent>
           </Card>
         )}
@@ -1519,7 +1532,7 @@ export default function QuizLessonEditor({
             >
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">
-                  {editingQuestionIndex !== null ? 'Edit Question' : 'Add Question'}
+                  {editingQuestionIndex !== null ? tr('courseAuthoring.quiz.editQuestion') : tr('courseAuthoring.quiz.addQuestion')}
                 </h3>
                 <div className="flex gap-2">
                   <div className="flex flex-col items-center">
@@ -1529,7 +1542,7 @@ export default function QuizLessonEditor({
                       onClick={() => setShowPreviewModal(true)}
                       className="text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300"
                     >
-                      Preview
+                      {tr('courseAuthoring.create.previewAlt')}
                     </Button>
                     <div className="text-xs text-muted-foreground mt-1">⌘+O</div>
                   </div>
@@ -1540,7 +1553,7 @@ export default function QuizLessonEditor({
                       onClick={() => setShowHelpModal(true)}
                       className="text-brand hover:text-brand"
                     >
-                      Help
+                      {tr('courseAuthoring.quiz.helpButton')}
                     </Button>
                     <div className="text-xs text-muted-foreground mt-1">⌘+H</div>
                   </div>
@@ -1548,16 +1561,16 @@ export default function QuizLessonEditor({
               </div>
 
               <div className="flex items-center gap-2 mb-2">
-                <label className="text-xs text-muted-foreground">Difficulty (SAT checkpoints)</label>
+                <label className="text-xs text-muted-foreground">{tr('courseAuthoring.quiz.difficulty')}</label>
                 <select
                   className="h-8 rounded border bg-transparent px-2 text-xs"
                   value={draftQuestion.difficulty || ''}
                   onChange={(e) => applyDraftUpdate({ difficulty: (e.target.value || undefined) as any })}
                 >
-                  <option value="">— not set —</option>
-                  <option value="easy">Easy</option>
-                  <option value="medium">Medium</option>
-                  <option value="hard">Hard</option>
+                  <option value="">{tr('courseAuthoring.quiz.difficultyNone')}</option>
+                  <option value="easy">{tr('courseAuthoring.quiz.difficultyEasy')}</option>
+                  <option value="medium">{tr('courseAuthoring.quiz.difficultyMedium')}</option>
+                  <option value="hard">{tr('courseAuthoring.quiz.difficultyHard')}</option>
                 </select>
               </div>
 
@@ -1567,7 +1580,7 @@ export default function QuizLessonEditor({
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <Label>Content:</Label>
+                        <Label>{tr('courseAuthoring.quiz.content')}</Label>
                         {draftQuestion.question_type === 'text_completion' && (
                           <div className="flex gap-2">
                             <Button
@@ -1582,7 +1595,7 @@ export default function QuizLessonEditor({
                               }}
                               className="text-xs"
                             >
-                              Remove Numbering
+                              {tr('courseAuthoring.quiz.removeNumbering')}
                             </Button>
                             <Button
                               type="button"
@@ -1596,15 +1609,15 @@ export default function QuizLessonEditor({
                               }}
                               className="text-xs"
                             >
-                              Convert [ ] to [[ ]]
+                              {tr('courseAuthoring.quiz.convertBrackets')}
                             </Button>
                           </div>
                         )}
                       </div>
                       <Tabs defaultValue="passage" className="w-full">
                         <TabsList className="grid w-full grid-cols-2">
-                          <TabsTrigger value="passage">Passage</TabsTrigger>
-                          <TabsTrigger value="explanation">Explanation</TabsTrigger>
+                          <TabsTrigger value="passage">{tr('courseAuthoring.quiz.passage')}</TabsTrigger>
+                          <TabsTrigger value="explanation">{tr('courseAuthoring.quiz.explanation')}</TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="passage" className="space-y-2">
@@ -1634,12 +1647,12 @@ export default function QuizLessonEditor({
                                 applyDraftUpdate({ content_text: value });
                               }
                             }}
-                            placeholder="Enter passage. Use [[answer]] to mark gaps, e.g. 'The sky is [[blue]]'."
+                            placeholder={tr('courseAuthoring.quiz.passageGapsPlaceholder')}
                             className="min-h-[200px]"
                           />
                           {(draftQuestion.content_text || '').trim() && (
                             <div className="text-xs text-muted-foreground p-2 bg-muted rounded border dark:border-gray-700 max-h-32 overflow-y-auto">
-                              Preview: <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex((draftQuestion.content_text || '').replace(/\[\[(.*?)\]\]/g, '<b>[$1]</b>'))) }} />
+                              {tr('courseAuthoring.latex.preview')} <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex((draftQuestion.content_text || '').replace(/\[\[(.*?)\]\]/g, '<b>[$1]</b>'))) }} />
                             </div>
                           )}
                         </TabsContent>
@@ -1648,12 +1661,12 @@ export default function QuizLessonEditor({
                           <RichTextEditor
                             value={draftQuestion.explanation || ''}
                             onChange={(value) => applyDraftUpdate({ explanation: value })}
-                            placeholder="Explanation for the correct answer (supports rich text formatting and LaTeX)"
+                            placeholder={tr('courseAuthoring.quiz.explanationPlaceholder')}
                             className="min-h-[200px]"
                           />
                           {(draftQuestion.explanation || '').trim() && (
                             <div className="text-xs text-muted-foreground p-2 bg-muted rounded border dark:border-gray-700 max-h-32 overflow-y-auto">
-                              Preview: <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(draftQuestion.explanation || '')) }} />
+                              {tr('courseAuthoring.latex.preview')} <div className="prose dark:prose-invert max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(draftQuestion.explanation || '')) }} />
                             </div>
                           )}
                         </TabsContent>
@@ -1665,18 +1678,18 @@ export default function QuizLessonEditor({
                 {/* Right side - Question settings and options */}
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Question Text</Label>
+                    <Label>{tr('courseAuthoring.quiz.questionText')}</Label>
                     <Input
                       value={draftQuestion.question_text}
                       onChange={(e) => applyDraftUpdate({ question_text: e.target.value })}
-                      placeholder="Enter your question"
+                      placeholder={tr('courseAuthoring.quiz.questionTextPlaceholder')}
                       autoFocus
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Points</Label>
+                      <Label>{tr('courseAuthoring.quiz.points')}</Label>
                       <Input
                         type="number"
                         value={draftQuestion.points}
@@ -1685,7 +1698,7 @@ export default function QuizLessonEditor({
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Question Type</Label>
+                      <Label>{tr('courseAuthoring.quiz.questionType')}</Label>
                       <Select
                         value={draftQuestion.question_type}
                         onValueChange={(val) => {
@@ -1800,19 +1813,19 @@ export default function QuizLessonEditor({
                         }}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select question type" />
+                          <SelectValue placeholder={tr('courseAuthoring.quiz.questionTypePlaceholder')} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="single_choice">Single choice</SelectItem>
-                          <SelectItem value="multiple_choice">Multiple correct (select all that apply)</SelectItem>
-                          <SelectItem value="short_answer">Short answer</SelectItem>
-                          <SelectItem value="fill_blank">Fill in the blank</SelectItem>
-                          <SelectItem value="text_completion">Text completion</SelectItem>
-                          <SelectItem value="long_text">Long text answer</SelectItem>
-                          <SelectItem value="media_question">Media-based question</SelectItem>
-                          <SelectItem value="media_open_question">Open media question</SelectItem>
-                          <SelectItem value="matching">Matching</SelectItem>
-                          <SelectItem value="image_content">Image/Map (no question)</SelectItem>
+                          <SelectItem value="single_choice">{tr('courseAuthoring.quiz.pickSingle')}</SelectItem>
+                          <SelectItem value="multiple_choice">{tr('courseAuthoring.quiz.pickMultiple')}</SelectItem>
+                          <SelectItem value="short_answer">{tr('courseAuthoring.quiz.pickShort')}</SelectItem>
+                          <SelectItem value="fill_blank">{tr('courseAuthoring.quiz.pickFillBlank')}</SelectItem>
+                          <SelectItem value="text_completion">{tr('courseAuthoring.quiz.pickTextCompletion')}</SelectItem>
+                          <SelectItem value="long_text">{tr('courseAuthoring.quiz.pickLongText')}</SelectItem>
+                          <SelectItem value="media_question">{tr('courseAuthoring.quiz.pickMedia')}</SelectItem>
+                          <SelectItem value="media_open_question">{tr('courseAuthoring.quiz.pickMediaOpen')}</SelectItem>
+                          <SelectItem value="matching">{tr('courseAuthoring.quiz.pickMatching')}</SelectItem>
+                          <SelectItem value="image_content">{tr('courseAuthoring.quiz.pickImage')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1821,10 +1834,10 @@ export default function QuizLessonEditor({
                   {/* Media Upload for Media Questions */}
                   {(draftQuestion.question_type === 'media_question' || draftQuestion.question_type === 'media_open_question' || draftQuestion.question_type === 'image_content') && (
                     <div className="space-y-2">
-                      <Label>{draftQuestion.question_type === 'image_content' ? 'Image/Map' : 'Media Attachment'}</Label>
+                      <Label>{draftQuestion.question_type === 'image_content' ? tr('courseAuthoring.quiz.qtype.image') : tr('courseAuthoring.quiz.mediaAttachment')}</Label>
                       {draftQuestion.question_type === 'image_content' && (
                         <p className="text-sm text-muted-foreground">
-                          This will display as an image between questions (e.g., a map for listening exercises). No answer input will be shown.
+                          {tr('courseAuthoring.quiz.imageContentHint')}
                         </p>
                       )}
                       <div
@@ -1841,7 +1854,7 @@ export default function QuizLessonEditor({
                         onDragEnter={(e) => e.preventDefault()}
                         tabIndex={0}
                         role="button"
-                        aria-label="Question media upload area. Drag and drop, choose a file, or paste an image with Ctrl+V."
+                        aria-label={tr('courseAuthoring.quiz.mediaAreaAria')}
                       >
                         {draftQuestion.media_url ? (
                           <div className="space-y-2">
@@ -1851,14 +1864,14 @@ export default function QuizLessonEditor({
                               ) : (
                                 <Image className="w-5 h-5 text-brand" />
                               )}
-                              <span className="text-sm font-medium">Media attached</span>
+                              <span className="text-sm font-medium">{tr('courseAuthoring.quiz.mediaAttached')}</span>
                             </div>
                             {draftQuestion.media_type === 'image' && (
                               <div className="relative bg-muted border rounded-lg overflow-hidden">
                                 <div className="aspect-[4/3] relative flex items-center justify-center bg-muted">
                                   <img
                                     src={backendUrl + draftQuestion.media_url}
-                                    alt="Question media"
+                                    alt={tr('courseAuthoring.quiz.questionMediaAlt')}
                                     className="max-w-full max-h-full object-contain"
                                   />
                                 </div>
@@ -1873,24 +1886,24 @@ export default function QuizLessonEditor({
                               />
                             )}
                             <p className="text-xs text-muted-foreground">
-                              Click this area and press Ctrl+V to replace with a pasted image
+                              {tr('courseAuthoring.quiz.pasteToReplace')}
                             </p>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => applyDraftUpdate({ media_url: undefined, media_type: undefined })}
                             >
-                              Remove Media
+                              {tr('courseAuthoring.quiz.removeMedia')}
                             </Button>
                           </div>
                         ) : (
                           <div className="text-center p-2">
                             <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
                             <div className="text-sm text-muted-foreground mb-2">
-                              Drag & drop or click to upload PDF or image
+                              {tr('courseAuthoring.quiz.dropPdfOrImage')}
                             </div>
                             <div className="text-xs text-muted-foreground mb-3">
-                              Or click this area and press Ctrl+V to paste an image
+                              {tr('courseAuthoring.quiz.orPasteArea')}
                             </div>
                             <input
                               type="file"
@@ -1914,7 +1927,7 @@ export default function QuizLessonEditor({
                             <label htmlFor={`media-upload-${draftQuestion?.id || 'new'}`} className="cursor-pointer">
                               <Button variant="outline" size="sm" disabled={isUploadingMedia} asChild>
                                 <span>
-                                  {isUploadingMedia ? 'Uploading...' : 'Choose File'}
+                                  {isUploadingMedia ? tr('courseAuthoring.upload.uploading') : tr('courseAuthoring.quiz.chooseFile')}
                                 </span>
                               </Button>
                             </label>
@@ -1927,7 +1940,7 @@ export default function QuizLessonEditor({
                   {/* Short Answer Configuration */}
                   {(draftQuestion.question_type === 'short_answer' || draftQuestion.question_type === 'media_open_question') && (
                       <div className="space-y-3">
-                        <Label>Correct Answer(s)</Label>
+                        <Label>{tr('courseAuthoring.quiz.correctAnswers')}</Label>
                         {(() => {
                           const answers = (draftQuestion.correct_answer || '').toString().split('|');
                           // Ensure at least one input
@@ -1945,7 +1958,7 @@ export default function QuizLessonEditor({
                                       newAnswers[idx] = e.target.value;
                                       applyDraftUpdate({ correct_answer: newAnswers.join('|') });
                                     }}
-                                    placeholder={`Variation ${idx + 1}`}
+                                    placeholder={tr('courseAuthoring.quiz.variation', { n: idx + 1 })}
                                     className="flex-1"
                                   />
                                   {answers.length > 1 && (
@@ -1974,13 +1987,13 @@ export default function QuizLessonEditor({
                                 className="mt-2"
                               >
                                 <Plus className="w-4 h-4 mr-2" />
-                                Add Variation
+                                {tr('courseAuthoring.quiz.addVariation')}
                               </Button>
                             </div>
                           );
                         })()}
                         <p className="text-xs text-muted-foreground">
-                          Students can enter any of these variations to get the answer correct (case-insensitive).
+                          {tr('courseAuthoring.quiz.variationsHint')}
                         </p>
                       </div>
                   )}
@@ -1988,16 +2001,16 @@ export default function QuizLessonEditor({
                   {/* Text Completion Configuration */}
                   {draftQuestion.question_type === 'text_completion' && (
                     <div className="space-y-2">
-                      <Label>Gap Answers</Label>
+                      <Label>{tr('courseAuthoring.quiz.gapAnswers')}</Label>
                       <p className="text-xs text-muted-foreground">
-                        Add gaps in the Passage above using [[answer]] format. Example: "The capital of France is [[Paris]]."
+                        {tr('courseAuthoring.quiz.gapAnswersHint')}
                       </p>
 
                       {/* Preview with detected gaps */}
                       {draftQuestion.content_text && (
                         <div className="space-y-2">
                           <div className="p-3 bg-muted border rounded-md text-sm">
-                            <div className="font-medium mb-2">Detected Gaps:</div>
+                            <div className="font-medium mb-2">{tr('courseAuthoring.quiz.detectedGaps')}</div>
                             {(() => {
                               const text = (draftQuestion.content_text || '').toString();
                               const regex = /\[\[(.*?)\]\]/g;
@@ -2007,11 +2020,11 @@ export default function QuizLessonEditor({
                                 gaps.push(match);
                               }
                               if (gaps.length === 0) {
-                                return <div className="text-muted-foreground">No gaps detected. Use [[answer]] format in the Passage above.</div>;
+                                return <div className="text-muted-foreground">{tr('courseAuthoring.quiz.noGapsDetected')}</div>;
                               }
                               return gaps.map((gap, index) => (
                                 <div key={index} className="flex items-center gap-2 mb-2">
-                                  <span className="text-muted-foreground">Gap {index + 1}:</span>
+                                  <span className="text-muted-foreground">{tr('courseAuthoring.quiz.gapN', { n: index + 1 })}</span>
                                   <Input
                                     value={gap[1] || ''}
                                     onChange={(e) => {
@@ -2053,7 +2066,7 @@ export default function QuizLessonEditor({
                                         });
                                       }
                                     }}
-                                    placeholder="Correct answer"
+                                    placeholder={tr('courseAuthoring.quiz.correctAnswer')}
                                     className="w-32 text-sm"
                                   />
                                 </div>
@@ -2073,7 +2086,7 @@ export default function QuizLessonEditor({
                           className="w-4 h-4 cursor-pointer accent-blue-600"
                         />
                         <label htmlFor="show-numbering" className="text-sm text-foreground/80 cursor-pointer">
-                          Show numbering (e.g., "1. [input] 2. [input]")
+                          {tr('courseAuthoring.quiz.showNumbering')}
                         </label>
                       </div>
                     </div>
@@ -2082,21 +2095,21 @@ export default function QuizLessonEditor({
                   {/* Long Text Answer Configuration */}
                   {draftQuestion.question_type === 'long_text' && (
                     <div className="space-y-2">
-                      <Label>Answer Configuration</Label>
+                      <Label>{tr('courseAuthoring.quiz.answerConfig')}</Label>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="expected-length">Expected Length (characters)</Label>
+                          <Label htmlFor="expected-length">{tr('courseAuthoring.quiz.expectedLength')}</Label>
                           <Input
                             id="expected-length"
                             type="number"
                             value={draftQuestion.expected_length || ''}
                             onChange={(e) => applyDraftUpdate({ expected_length: parseInt(e.target.value) || undefined })}
-                            placeholder="e.g. 500"
+                            placeholder={tr('courseAuthoring.quiz.expectedLengthPlaceholder')}
                             min="1"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="keywords">Keywords (comma-separated)</Label>
+                          <Label htmlFor="keywords">{tr('courseAuthoring.quiz.keywords')}</Label>
                           <Input
                             id="keywords"
                             type="text"
@@ -2105,12 +2118,12 @@ export default function QuizLessonEditor({
                               const keywords = e.target.value.split(',').map(k => k.trim()).filter(Boolean);
                               applyDraftUpdate({ keywords: keywords.length > 0 ? keywords : undefined });
                             }}
-                            placeholder="keyword1, keyword2, keyword3"
+                            placeholder={tr('courseAuthoring.quiz.keywordsPlaceholder')}
                           />
                         </div>
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Keywords help with automatic grading. Students' answers will be checked for these terms.
+                        {tr('courseAuthoring.quiz.keywordsHint')}
                       </div>
                     </div>
                   )}
@@ -2121,9 +2134,9 @@ export default function QuizLessonEditor({
                     draftQuestion.question_type === 'media_question') && (
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <Label>Options ({draftQuestion.options?.length || 0})</Label>
+                          <Label>{tr('courseAuthoring.quiz.optionsCount', { count: draftQuestion.options?.length || 0 })}</Label>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">Click option image area + Ctrl+V to paste</span>
+                            <span className="text-xs text-muted-foreground">{tr('courseAuthoring.quiz.optionPasteHint')}</span>
                             <Button
                               type="button"
                               variant="outline"
@@ -2142,7 +2155,7 @@ export default function QuizLessonEditor({
                               }}
                               className="text-xs h-7"
                             >
-                              + Add Option
+                              {tr('courseAuthoring.quiz.addOption')}
                             </Button>
                           </div>
                         </div>
@@ -2186,7 +2199,7 @@ export default function QuizLessonEditor({
                                 <Input
                                   value={opt.text}
                                   onChange={(e) => updateDraftOptionText(idx, e.target.value)}
-                                  placeholder={`Option ${idx + 1} text`}
+                                  placeholder={tr('courseAuthoring.quiz.optionText', { n: idx + 1 })}
                                   className="flex-1"
                                 />
                                 {(draftQuestion.options?.length || 0) > 2 && (
@@ -2209,7 +2222,7 @@ export default function QuizLessonEditor({
                                       applyDraftUpdate({ options, correct_answer: newCorrect });
                                     }}
                                     className="text-red-500 hover:text-red-700 p-1 dark:text-red-400 dark:hover:text-red-300"
-                                    title="Remove option"
+                                    title={tr('courseAuthoring.quiz.removeOption')}
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
@@ -2223,7 +2236,7 @@ export default function QuizLessonEditor({
                                     className="relative inline-block outline-none focus-visible:ring-2 focus-visible:ring-brand rounded"
                                     tabIndex={0}
                                     role="button"
-                                    aria-label={`Option ${idx + 1} image. Click and press Ctrl+V to replace.`}
+                                    aria-label={tr('courseAuthoring.quiz.optionImageAria', { n: idx + 1 })}
                                     onPaste={(e) => handleMediaPaste(e, (url) => {
                                       const options = [...(draftQuestion.options || [])];
                                       options[idx] = { ...options[idx], image_url: url };
@@ -2232,7 +2245,7 @@ export default function QuizLessonEditor({
                                   >
                                     <img
                                       src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + opt.image_url}
-                                      alt={`Option ${idx + 1}`}
+                                      alt={tr('courseAuthoring.quiz.optionAlt', { n: idx + 1 })}
                                       className="max-h-40 rounded border"
                                     />
                                     <button
@@ -2252,7 +2265,7 @@ export default function QuizLessonEditor({
                                     className="inline-flex items-center gap-1 text-xs text-brand hover:text-brand border border-dashed border-brand-border rounded px-2 py-1 hover:bg-brand-surface transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
                                     tabIndex={0}
                                     role="button"
-                                    aria-label={`Add image for option ${idx + 1}. Click and press Ctrl+V to paste.`}
+                                    aria-label={tr('courseAuthoring.quiz.addOptionImageAria', { n: idx + 1 })}
                                     onClick={(e) => {
                                       const input = e.currentTarget.querySelector('input');
                                       input?.click();
@@ -2287,7 +2300,7 @@ export default function QuizLessonEditor({
                                       }}
                                     />
                                     <Image className="w-3 h-3" />
-                                    Add image (Ctrl+V)
+                                    {tr('courseAuthoring.quiz.addImagePaste')}
                                   </span>
                                 )}
                               </div>
@@ -2300,7 +2313,7 @@ export default function QuizLessonEditor({
                   {/* Show Gaps preview only for fill_blank question type */}
                   {draftQuestion.question_type === 'fill_blank' && (
                     <div className="space-y-2">
-                      <Label>Gap Separator</Label>
+                      <Label>{tr('courseAuthoring.quiz.gapSeparator')}</Label>
                       <Input
                         type="text"
                         value={draftQuestion.gap_separator || ','}
@@ -2309,10 +2322,10 @@ export default function QuizLessonEditor({
                         className="w-24"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Character to separate correct answer from distractors (default: comma)
+                        {tr('courseAuthoring.quiz.gapSeparatorHint')}
                       </p>
 
-                      <Label className="mt-4">Gaps preview</Label>
+                      <Label className="mt-4">{tr('courseAuthoring.quiz.gapsPreview')}</Label>
                       <div className="p-3 bg-muted border border-border rounded-md text-sm">
                         {(() => {
                           const text = (draftQuestion.content_text || '').toString();
@@ -2323,7 +2336,7 @@ export default function QuizLessonEditor({
                           while ((match = regex.exec(text)) !== null) {
                             gaps.push(match);
                           }
-                          if (gaps.length === 0) return <span>No gaps yet. Add [[correct{separator}wrong1{separator}wrong2]] in the passage field.</span>;
+                          if (gaps.length === 0) return <span>{tr('courseAuthoring.quiz.noGapsYet', { sep: separator })}</span>;
 
                           // Helper function to clean text from HTML tags and entities
                           const cleanText = (text: string): string => {
@@ -2378,11 +2391,11 @@ export default function QuizLessonEditor({
                                     <div className="flex-1">
                                       <div className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-800 rounded font-semibold text-sm dark:bg-green-900/40 dark:text-green-300">
                                         <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                                        {correct || '(empty)'}
+                                        {correct || tr('courseAuthoring.quiz.emptyParen')}
                                       </div>
                                       {others.length > 0 && (
                                         <div className="mt-1.5 flex flex-wrap gap-1">
-                                          <span className="text-xs text-muted-foreground mr-1">Others:</span>
+                                          <span className="text-xs text-muted-foreground mr-1">{tr('courseAuthoring.quiz.others')}</span>
                                           {others.map((o, idx) => (
                                             <span key={idx} className="inline-flex items-center px-1.5 py-0.5 bg-border text-foreground/80 rounded text-xs">
                                               {o}
@@ -2405,7 +2418,7 @@ export default function QuizLessonEditor({
                   {draftQuestion.question_type === 'matching' && (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <Label>Matching Pairs</Label>
+                        <Label>{tr('courseAuthoring.quiz.matchingPairs')}</Label>
                         <Button
                           type="button"
                           variant="outline"
@@ -2417,11 +2430,11 @@ export default function QuizLessonEditor({
                           }}
                           className="text-xs h-7"
                         >
-                          + Add Pair
+                          {tr('courseAuthoring.quiz.addPair')}
                         </Button>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Create pairs that students will need to match. The right side will be shuffled.
+                        {tr('courseAuthoring.quiz.pairsHint')}
                       </p>
                       <div className="space-y-2">
                         {(draftQuestion.matching_pairs || []).map((pair, idx) => (
@@ -2434,10 +2447,10 @@ export default function QuizLessonEditor({
                                 pairs[idx] = { ...pairs[idx], left: e.target.value };
                                 applyDraftUpdate({ matching_pairs: pairs });
                               }}
-                              placeholder="Left side (e.g., Term)"
+                              placeholder={tr('courseAuthoring.quiz.leftPlaceholder')}
                               className="flex-1"
                             />
-                            <ArrowLeftRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="matches" />
+                            <ArrowLeftRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label={tr('courseAuthoring.quiz.matchesAria')} />
                             <Input
                               value={pair.right}
                               onChange={(e) => {
@@ -2445,7 +2458,7 @@ export default function QuizLessonEditor({
                                 pairs[idx] = { ...pairs[idx], right: e.target.value };
                                 applyDraftUpdate({ matching_pairs: pairs });
                               }}
-                              placeholder="Right side (e.g., Definition)"
+                              placeholder={tr('courseAuthoring.quiz.rightPlaceholder')}
                               className="flex-1"
                             />
                             {(draftQuestion.matching_pairs?.length || 0) > 2 && (
@@ -2457,7 +2470,7 @@ export default function QuizLessonEditor({
                                   applyDraftUpdate({ matching_pairs: pairs });
                                 }}
                                 className="text-red-500 hover:text-red-700 p-1 dark:text-red-400 dark:hover:text-red-300"
-                                title="Remove pair"
+                                title={tr('courseAuthoring.quiz.removePair')}
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -2467,7 +2480,7 @@ export default function QuizLessonEditor({
                       </div>
                       {(!draftQuestion.matching_pairs || draftQuestion.matching_pairs.length === 0) && (
                         <div className="text-center py-4 text-muted-foreground">
-                          <p>No pairs yet. Click "+ Add Pair" to start.</p>
+                          <p>{tr('courseAuthoring.quiz.noPairs')}</p>
                         </div>
                       )}
                     </div>
@@ -2476,9 +2489,9 @@ export default function QuizLessonEditor({
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
-                <Button variant="outline" onClick={() => { setShowQuestionModal(false); setDraftQuestion(null); setEditingQuestionIndex(null); }}>Cancel</Button>
+                <Button variant="outline" onClick={() => { setShowQuestionModal(false); setDraftQuestion(null); setEditingQuestionIndex(null); }}>{tr('common.cancel')}</Button>
                 <Button onClick={saveDraftQuestion} className="bg-brand-solid hover:bg-brand-solid-hover">
-                  {editingQuestionIndex !== null ? 'Update Question' : 'Save Question'}
+                  {editingQuestionIndex !== null ? tr('courseAuthoring.quiz.updateQuestion') : tr('courseAuthoring.quiz.saveQuestion')}
                 </Button>
               </div>
             </div>
@@ -2497,60 +2510,45 @@ export default function QuizLessonEditor({
               tabIndex={0}
             >
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Bulk Upload Questions</h3>
+                <h3 className="text-lg font-semibold">{tr('courseAuthoring.quiz.bulk.title')}</h3>
                 <Button variant="outline" onClick={() => {
                   setShowBulkUploadModal(false);
                   setBulkUploadText('');
                   setBulkUploadErrors([]);
-                }}>Close</Button>
+                }}>{tr('common.close')}</Button>
               </div>
 
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Paste your questions in the format below. Supports any number of options (A-Z). Mark correct answers with <strong>+</strong> at the end. For multiple correct answers, mark each with +.
+                  {tr('courseAuthoring.quiz.bulk.introBefore')} <strong>+</strong> {tr('courseAuthoring.quiz.bulk.introAfter')}
                 </p>
 
                 <div className="bg-brand-surface border border-brand-border rounded-lg p-4 text-sm">
-                  <div className="font-medium text-brand mb-2">MCQ Format (any number of options):</div>
+                  <div className="font-medium text-brand mb-2">{tr('courseAuthoring.quiz.bulk.mcqFormat')}</div>
                   <pre className="text-xs text-foreground/80 whitespace-pre-wrap bg-card p-2 rounded border">
-{`1. What is the capital of France?
-A) London
-B) Paris +
-C) Berlin
-D) Madrid
+{tr('courseAuthoring.quiz.bulk.mcqExample')}</pre>
 
-2. Which are primary colors? (multiple choice)
-A) Red +
-B) Orange
-C) Blue +
-D) Green
-E) Yellow +`}</pre>
-
-                  <div className="font-medium text-brand mb-2 mt-4">Matching Format:</div>
+                  <div className="font-medium text-brand mb-2 mt-4">{tr('courseAuthoring.quiz.bulk.matchingFormat')}</div>
                   <pre className="text-xs text-foreground/80 whitespace-pre-wrap bg-card p-2 rounded border">
-{`3. MATCHING: Match the countries with capitals
-France = Paris
-Germany = Berlin
-Spain = Madrid
-Italy = Rome`}</pre>
+{tr('courseAuthoring.quiz.bulk.matchingExample')}</pre>
                   <p className="text-xs text-brand mt-2">
-                    <strong>Tip:</strong> Use "MATCHING:" prefix for matching questions. Pairs are separated by "=" sign.
+                    <strong>{tr('courseAuthoring.quiz.bulk.tip')}</strong> {tr('courseAuthoring.quiz.bulk.tipText')}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Paste Questions:</Label>
+                  <Label>{tr('courseAuthoring.quiz.bulk.paste')}</Label>
                   <textarea
                     value={bulkUploadText}
                     onChange={(e) => setBulkUploadText(e.target.value)}
-                    placeholder="Paste your questions here..."
+                    placeholder={tr('courseAuthoring.quiz.bulk.pastePlaceholder')}
                     className="w-full h-96 p-3 border rounded-lg font-mono text-sm resize-none focus:ring-2 focus:ring-brand focus:border-brand"
                   />
                 </div>
 
                 {bulkUploadErrors.length > 0 && (
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4 dark:bg-red-950/40 dark:border-red-800/60">
-                    <div className="font-medium text-red-900 mb-2 dark:text-red-300">Errors:</div>
+                    <div className="font-medium text-red-900 mb-2 dark:text-red-300">{tr('courseAuthoring.flashcards.errors')}</div>
                     <ul className="list-disc list-inside space-y-1">
                       {bulkUploadErrors.map((error, index) => (
                         <li key={index} className="text-sm text-red-700 dark:text-red-300">{error}</li>
@@ -2568,14 +2566,14 @@ Italy = Rome`}</pre>
                       setBulkUploadErrors([]);
                     }}
                   >
-                    Cancel
+                    {tr('common.cancel')}
                   </Button>
                   <Button
                     onClick={handleBulkUpload}
                     disabled={!bulkUploadText.trim()}
                     className="bg-brand-solid hover:bg-brand-solid-hover"
                   >
-                    Import Questions
+                    {tr('courseAuthoring.quiz.bulk.import')}
                   </Button>
                 </div>
               </div>
@@ -2595,13 +2593,13 @@ Italy = Rome`}</pre>
               tabIndex={0}
             >
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Import Questions (PDF/Image)</h3>
-                <Button variant="outline" onClick={() => setShowSatImageModal(false)}>Close</Button>
+                <h3 className="text-lg font-semibold">{tr('courseAuthoring.quiz.analyze.title')}</h3>
+                <Button variant="outline" onClick={() => setShowSatImageModal(false)}>{tr('common.close')}</Button>
               </div>
 
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Upload a PDF document or Image of a test (e.g., SAT) to automatically extract questions, options, and correct answers using AI.
+                  {tr('courseAuthoring.quiz.analyze.intro')}
                 </p>
 
                 <div className="flex gap-2">
@@ -2648,7 +2646,7 @@ Italy = Rome`}</pre>
                   onPaste={handleSatImagePaste}
                   tabIndex={0}
                   role="button"
-                  aria-label="Upload SAT import file. Drag and drop, choose a file, or paste an image with Ctrl+V."
+                  aria-label={tr('courseAuthoring.quiz.analyze.areaAria')}
                 >
                   <input
                     type="file"
@@ -2662,13 +2660,13 @@ Italy = Rome`}</pre>
                     <div className="space-y-2">
                       <FileText className="mx-auto h-10 w-10 text-muted-foreground" strokeWidth={1.5} aria-hidden="true" />
                       <div className="text-sm font-medium">
-                        {isAnalyzingImage ? 'Analyzing...' : 'Click to upload or drag & drop'}
+                        {isAnalyzingImage ? tr('courseAuthoring.quiz.analyze.analyzing') : tr('courseAuthoring.quiz.analyze.clickOrDrop')}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Supports PDF, PNG, JPG, JPEG, GIF, WEBP
+                        {tr('courseAuthoring.quiz.analyze.supports')}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        Or click here and press Ctrl+V to paste an image
+                        {tr('courseAuthoring.quiz.orPaste')}
                       </div>
                     </div>
                   </label>
@@ -2680,7 +2678,7 @@ Italy = Rome`}</pre>
                       <FileText className="h-6 w-6 shrink-0 text-green-700 dark:text-green-300" aria-hidden="true" />
                       <div>
                         <div className="text-sm font-medium text-green-900 dark:text-green-300">{uploadedFile.name}</div>
-                        <div className="text-xs text-green-700 dark:text-green-300">{(uploadedFile.size / 1024).toFixed(1)} KB</div>
+                        <div className="text-xs text-green-700 dark:text-green-300">{tr('courseAuthoring.size.kb', { size: (uploadedFile.size / 1024).toFixed(1) })}</div>
                       </div>
                     </div>
                     <Button
@@ -2689,23 +2687,23 @@ Italy = Rome`}</pre>
                       onClick={() => setUploadedFile(null)}
                       className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                     >
-                      Remove
+                      {tr('courseAuthoring.quiz.remove')}
                     </Button>
                   </div>
                 )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="correct-answers">Correct Answers (Optional)</Label>
+                  <Label htmlFor="correct-answers">{tr('courseAuthoring.quiz.analyze.answers')}</Label>
                   <textarea
                     id="correct-answers"
                     value={correctAnswersText}
                     onChange={(e) => setCorrectAnswersText(e.target.value)}
-                    placeholder="Enter correct answers (e.g., 1.A 2.B 3.C 4.D or A,B,C,D)"
+                    placeholder={tr('courseAuthoring.quiz.analyze.answersPlaceholder')}
                     className="w-full h-24 p-3 border rounded-lg font-mono text-sm resize-none focus:ring-2 focus:ring-brand focus:border-brand"
                     disabled={isAnalyzingImage}
                   />
                   <p className="text-xs text-muted-foreground">
-                    If provided, these answers will be used instead of AI-detected answers.
+                    {tr('courseAuthoring.quiz.analyze.answersHint')}
                   </p>
                 </div>
 
@@ -2718,15 +2716,15 @@ Italy = Rome`}</pre>
                   {isAnalyzingImage ? (
                     <span className="inline-flex items-center gap-2">
                       <ThinkingLoader state={analyzeStage} size={20} theme="dark" />
-                      Analyzing...
+                      {tr('courseAuthoring.quiz.analyze.analyzing')}
                     </span>
-                  ) : 'Analyze Questions'}
+                  ) : tr('courseAuthoring.quiz.analyze.run')}
                 </Button>
 
                 {isAnalyzingImage && (
                   <div className="flex flex-col items-center py-4 gap-2">
-                    <ThinkingLoader state={analyzeStage} size={64} label={`Analyzing file with ${analyzeMode === 'nuet' ? 'ChatGPT' : 'Gemini'} AI`} />
-                    <p className="text-sm text-muted-foreground">Analyzing file with {analyzeMode === 'nuet' ? 'ChatGPT' : 'Gemini'} AI... This may take a minute.</p>
+                    <ThinkingLoader state={analyzeStage} size={64} label={tr('courseAuthoring.quiz.analyze.withAi', { ai: analyzeMode === 'nuet' ? 'ChatGPT' : 'Gemini' })} />
+                    <p className="text-sm text-muted-foreground">{tr('courseAuthoring.quiz.analyze.withAiWait', { ai: analyzeMode === 'nuet' ? 'ChatGPT' : 'Gemini' })}</p>
                   </div>
                 )}
               </div>
@@ -2743,9 +2741,9 @@ Italy = Rome`}</pre>
           <div className="relative z-[1001] flex items-center justify-center min-h-screen p-4">
             <div className="bg-card rounded-lg w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 space-y-6 shadow-xl">
               <div className="flex items-center justify-between border-b pb-4">
-                <h3 className="text-xl font-semibold text-foreground">Question Preview</h3>
+                <h3 className="text-xl font-semibold text-foreground">{tr('courseAuthoring.quiz.preview.title')}</h3>
                 <div className="text-center">
-                  <Button variant="outline" size="sm" onClick={() => setShowPreviewModal(false)}>Close</Button>
+                  <Button variant="outline" size="sm" onClick={() => setShowPreviewModal(false)}>{tr('common.close')}</Button>
                   <div className="text-xs text-muted-foreground mt-1">Esc</div>
                 </div>
               </div>
@@ -2764,20 +2762,20 @@ Italy = Rome`}</pre>
                     {draftQuestion.media_type === 'image' ? (
                       <img
                         src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + draftQuestion.media_url}
-                        alt="Question media"
+                        alt={tr('courseAuthoring.quiz.questionMediaAlt')}
                         className="max-w-full max-h-96 object-contain rounded-lg shadow-sm"
                       />
                     ) : draftQuestion.media_type === 'pdf' ? (
                       <div className="text-center">
                         <FileText className="w-12 h-12 mx-auto text-brand mb-2" />
-                        <div className="font-medium text-foreground/80">PDF Document</div>
+                        <div className="font-medium text-foreground/80">{tr('courseAuthoring.quiz.preview.pdfDocument')}</div>
                         <a
                           href={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + draftQuestion.media_url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-brand hover:text-brand text-sm"
                         >
-                          View PDF
+                          {tr('courseAuthoring.quiz.preview.viewPdf')}
                           <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                         </a>
                       </div>
@@ -2790,7 +2788,7 @@ Italy = Rome`}</pre>
                   <div className="text-lg font-semibold text-foreground">
                     <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(draftQuestion.question_text)) }} />
                   </div>
-                  <div className="text-sm text-muted-foreground">Points: {draftQuestion.points}</div>
+                  <div className="text-sm text-muted-foreground">{tr('courseAuthoring.quiz.preview.points', { points: draftQuestion.points })}</div>
                 </div>
 
                 {/* Answer Options based on question type */}
@@ -2819,7 +2817,7 @@ Italy = Rome`}</pre>
                           <div className="flex-1">
                             <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(opt.text)) }} />
                             {isCorrect && (
-                              <span className="ml-2 inline-flex items-center gap-0.5 text-xs font-medium text-green-700 dark:text-green-300"><Check className="h-3.5 w-3.5" aria-hidden="true" />Correct</span>
+                              <span className="ml-2 inline-flex items-center gap-0.5 text-xs font-medium text-green-700 dark:text-green-300"><Check className="h-3.5 w-3.5" aria-hidden="true" />{tr('courseAuthoring.quiz.preview.correct')}</span>
                             )}
                           </div>
                         </label>
@@ -2833,12 +2831,12 @@ Italy = Rome`}</pre>
                   <div className="space-y-2">
                     <Input
                       type="text"
-                      placeholder="Student's answer will be typed here..."
+                      placeholder={tr('courseAuthoring.quiz.preview.answerPlaceholder')}
                       disabled
                       className="bg-muted"
                     />
                     <div className="text-sm text-muted-foreground bg-green-50 border border-green-200 rounded p-3 dark:bg-green-950/40 dark:border-green-800/60">
-                      <span className="font-medium text-green-700 dark:text-green-300">Correct answer:</span> {draftQuestion.correct_answer}
+                      <span className="font-medium text-green-700 dark:text-green-300">{tr('courseAuthoring.quiz.correctAnswerLabel')}</span> {draftQuestion.correct_answer}
                     </div>
                   </div>
                 )}
@@ -2874,7 +2872,7 @@ Italy = Rome`}</pre>
                   <div className="space-y-2">
                     <textarea
                       rows={6}
-                      placeholder="Student's long answer will be typed here..."
+                      placeholder={tr('courseAuthoring.quiz.preview.longAnswerPlaceholder')}
                       disabled
                       className="w-full px-3 py-2 border rounded-lg bg-muted resize-none"
                     />
@@ -2882,12 +2880,12 @@ Italy = Rome`}</pre>
                       <div className="text-sm bg-brand-surface border border-brand-border rounded p-3 space-y-1">
                         {draftQuestion.expected_length && (
                           <div className="text-foreground/80">
-                            <span className="font-medium">Expected length:</span> ~{draftQuestion.expected_length} characters
+                            <span className="font-medium">{tr('courseAuthoring.quiz.preview.expectedLength')}</span> {tr('courseAuthoring.quiz.preview.characters', { count: draftQuestion.expected_length })}
                           </div>
                         )}
                         {draftQuestion.keywords && draftQuestion.keywords.length > 0 && (
                           <div className="text-foreground/80">
-                            <span className="font-medium">Keywords to include:</span> {draftQuestion.keywords.join(', ')}
+                            <span className="font-medium">{tr('courseAuthoring.quiz.preview.keywords')}</span> {draftQuestion.keywords.join(', ')}
                           </div>
                         )}
                       </div>
@@ -2898,10 +2896,10 @@ Italy = Rome`}</pre>
                 {/* Matching Question Preview */}
                 {draftQuestion.question_type === 'matching' && (
                   <div className="space-y-3">
-                    <div className="text-sm font-medium text-foreground/80">Matching Pairs:</div>
+                    <div className="text-sm font-medium text-foreground/80">{tr('courseAuthoring.quiz.preview.matchingPairs')}</div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <div className="text-xs font-medium text-muted-foreground uppercase">Left Side</div>
+                        <div className="text-xs font-medium text-muted-foreground uppercase">{tr('courseAuthoring.quiz.preview.left')}</div>
                         {draftQuestion.matching_pairs?.map((pair, idx) => (
                           <div key={idx} className="p-3 bg-brand-surface border border-brand-border rounded-lg">
                             <span className="font-medium text-brand">{idx + 1}.</span> {pair.left}
@@ -2909,7 +2907,7 @@ Italy = Rome`}</pre>
                         ))}
                       </div>
                       <div className="space-y-2">
-                        <div className="text-xs font-medium text-muted-foreground uppercase">Right Side (shuffled for students)</div>
+                        <div className="text-xs font-medium text-muted-foreground uppercase">{tr('courseAuthoring.quiz.preview.right')}</div>
                         {draftQuestion.matching_pairs?.map((pair, idx) => (
                           <div key={idx} className="p-3 bg-green-50 border border-green-200 rounded-lg dark:bg-green-950/40 dark:border-green-800/60">
                             {pair.right}
@@ -2923,7 +2921,7 @@ Italy = Rome`}</pre>
                 {/* Explanation */}
                 {draftQuestion.explanation && (
                   <div className="bg-brand-surface border border-brand-border rounded-lg p-4">
-                    <div className="text-sm font-medium text-brand mb-2">Explanation:</div>
+                    <div className="text-sm font-medium text-brand mb-2">{tr('courseAuthoring.quiz.preview.explanation')}</div>
                     <div className="text-foreground prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderTextWithLatex(draftQuestion.explanation)) }} />
                   </div>
                 )}
@@ -2943,105 +2941,105 @@ Italy = Rome`}</pre>
               className="bg-card rounded-lg w-full max-w-2xl max-h-[80vh] overflow-y-auto p-6 space-y-4 shadow-xl"
             >
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Formatting Help</h3>
-                <Button variant="outline" onClick={() => setShowHelpModal(false)}>Close</Button>
+                <h3 className="text-lg font-semibold">{tr('courseAuthoring.quiz.help.title')}</h3>
+                <Button variant="outline" onClick={() => setShowHelpModal(false)}>{tr('common.close')}</Button>
               </div>
 
               <div className="space-y-4">
                 <div className="space-y-3">
-                  <h4 className="font-medium text-foreground">Text Formatting in Input Fields</h4>
+                  <h4 className="font-medium text-foreground">{tr('courseAuthoring.quiz.help.textTitle')}</h4>
                   <p className="text-sm text-muted-foreground">
-                    You can use simple markdown formatting in Question Text and Options fields:
+                    {tr('courseAuthoring.quiz.help.textIntro')}
                   </p>
 
                   <div className="space-y-2">
                     <div className="flex items-center gap-3 p-2 bg-muted rounded">
                       <code className="text-sm font-mono bg-card px-2 py-1 rounded border">_text_</code>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="renders as" />
-                      <em className="text-sm">italic text</em>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label={tr('courseAuthoring.quiz.help.rendersAs')} />
+                      <em className="text-sm">{tr('courseAuthoring.quiz.help.italic')}</em>
                     </div>
 
                     <div className="flex items-center gap-3 p-2 bg-muted rounded">
                       <code className="text-sm font-mono bg-card px-2 py-1 rounded border">**text**</code>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="renders as" />
-                      <strong className="text-sm">bold text</strong>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label={tr('courseAuthoring.quiz.help.rendersAs')} />
+                      <strong className="text-sm">{tr('courseAuthoring.quiz.help.bold')}</strong>
                     </div>
 
                     <div className="flex items-center gap-3 p-2 bg-muted rounded">
                       <code className="text-sm font-mono bg-card px-2 py-1 rounded border">__text__</code>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="renders as" />
-                      <u className="text-sm">underlined text</u>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label={tr('courseAuthoring.quiz.help.rendersAs')} />
+                      <u className="text-sm">{tr('courseAuthoring.quiz.help.underline')}</u>
                     </div>
 
                     <div className="flex items-center gap-3 p-2 bg-muted rounded">
                       <code className="text-sm font-mono bg-card px-2 py-1 rounded border">~~text~~</code>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="renders as" />
-                      <del className="text-sm">strikethrough text</del>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label={tr('courseAuthoring.quiz.help.rendersAs')} />
+                      <del className="text-sm">{tr('courseAuthoring.quiz.help.strike')}</del>
                     </div>
 
                     <div className="flex items-center gap-3 p-2 bg-muted rounded">
                       <code className="text-sm font-mono bg-card px-2 py-1 rounded border">`text`</code>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="renders as" />
-                      <code className="text-sm bg-border px-1 rounded">code text</code>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label={tr('courseAuthoring.quiz.help.rendersAs')} />
+                      <code className="text-sm bg-border px-1 rounded">{tr('courseAuthoring.quiz.help.code')}</code>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  <h4 className="font-medium text-foreground">LaTeX Formulas</h4>
+                  <h4 className="font-medium text-foreground">{tr('courseAuthoring.quiz.help.latexTitle')}</h4>
                   <p className="text-sm text-muted-foreground">
-                    For mathematical expressions, use LaTeX syntax:
+                    {tr('courseAuthoring.quiz.help.latexIntro')}
                   </p>
 
                   <div className="space-y-2">
                     <div className="flex items-center gap-3 p-2 bg-muted rounded">
                       <code className="text-sm font-mono bg-card px-2 py-1 rounded border">$x^2$</code>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="renders as" />
-                      <span className="text-sm">x² (inline formula)</span>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label={tr('courseAuthoring.quiz.help.rendersAs')} />
+                      <span className="text-sm">{tr('courseAuthoring.quiz.help.inlineFormula')}</span>
                     </div>
 
                     <div className="flex items-center gap-3 p-2 bg-muted rounded">
                       <code className="text-sm font-mono bg-card px-2 py-1 rounded border">$$\frac{"{a}"}{"{b}"}$$</code>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="renders as" />
-                      <span className="text-sm">a/b (block formula)</span>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-label={tr('courseAuthoring.quiz.help.rendersAs')} />
+                      <span className="text-sm">{tr('courseAuthoring.quiz.help.blockFormula')}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-3">
-                  <h4 className="font-medium text-foreground">Rich Text Editor</h4>
+                  <h4 className="font-medium text-foreground">{tr('courseAuthoring.quiz.help.richTitle')}</h4>
                   <p className="text-sm text-muted-foreground">
-                    For Passage and Explanation fields, use the rich text editor with full formatting toolbar including:
+                    {tr('courseAuthoring.quiz.help.richIntro')}
                   </p>
                   <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                    <li>Bold, italic, underline, strikethrough</li>
-                    <li>Colors and background colors</li>
-                    <li>Lists (ordered and bullet)</li>
-                    <li>Links and images</li>
-                    <li>LaTeX formulas with visual editor</li>
+                    <li>{tr('courseAuthoring.quiz.help.richStyles')}</li>
+                    <li>{tr('courseAuthoring.quiz.help.richColors')}</li>
+                    <li>{tr('courseAuthoring.quiz.help.richLists')}</li>
+                    <li>{tr('courseAuthoring.quiz.help.richLinks')}</li>
+                    <li>{tr('courseAuthoring.quiz.help.richLatex')}</li>
                   </ul>
                 </div>
 
                 <div className="space-y-3">
-                  <h4 className="font-medium text-foreground">Fill in the Blank Questions</h4>
+                  <h4 className="font-medium text-foreground">{tr('courseAuthoring.quiz.help.blankTitle')}</h4>
                   <p className="text-sm text-muted-foreground">
-                    For fill-in-the-blank questions, use double brackets in the passage:
+                    {tr('courseAuthoring.quiz.help.blankIntro')}
                   </p>
                   <div className="p-3 bg-brand-surface rounded border space-y-2">
                     <div>
-                      <div className="text-xs font-medium text-foreground/80 mb-1">Default (comma separator):</div>
+                      <div className="text-xs font-medium text-foreground/80 mb-1">{tr('courseAuthoring.quiz.help.blankDefault')}</div>
                       <code className="text-sm font-mono">
-                        The sky is [[blue, azure, cyan]] and the grass is [[green, emerald]].
+                        {tr('courseAuthoring.quiz.help.blankDefaultExample')}
                       </code>
                     </div>
                     <div>
-                      <div className="text-xs font-medium text-foreground/80 mb-1">Custom separator (e.g., slash):</div>
+                      <div className="text-xs font-medium text-foreground/80 mb-1">{tr('courseAuthoring.quiz.help.blankCustom')}</div>
                       <code className="text-sm font-mono">
-                        The capital is [[Paris / Lyon / Marseille]] and the river is [[Seine / Loire]].
+                        {tr('courseAuthoring.quiz.help.blankCustomExample')}
                       </code>
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
-                      First option is correct, others are distractors. You can customize the separator character in the question settings.
+                      {tr('courseAuthoring.quiz.help.blankNote')}
                     </p>
                   </div>
                 </div>

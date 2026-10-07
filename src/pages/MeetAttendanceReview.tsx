@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { ArrowUpRight, CheckCheck, ChevronRight, Download, Loader2, MonitorCheck, RotateCcw, Search } from 'lucide-react';
 import { lessonPath } from '../lib/lessonLinks';
 import { cn } from '../lib/utils';
-import { APP_TIMEZONE } from '../lib/datetime';
 import {
   ISSUES,
   clearedByReview,
@@ -37,7 +36,8 @@ import { LessonRecordingCell, recordingMeta } from '../components/meetAttendance
 import RecordingPlayerDialog, { type RecordingMeta } from '../components/recordings/RecordingPlayerDialog';
 import { useRecordingStatuses } from '../components/recordings/useRecordingStatuses';
 import { liveEventIds } from '../lib/recordingProgress';
-import { useLocale } from '../lib/i18n/react';
+import { useLocale, useT } from '../lib/i18n/react';
+import { formatDate, type MessageKey } from '../lib/i18n';
 import { percent } from '../lib/meetTalk';
 import {
   listMeetRecords,
@@ -50,6 +50,8 @@ import {
   type MeetVerdictRules,
 } from '../services/api/meetAttendance';
 import { useAuth } from '../contexts/AuthContext';
+import '@/lib/i18n/catalogs/meet';
+import '@/lib/i18n/catalogs/meetViews';
 
 // 'waiting': the lessons not final yet, and nothing else — what the banner's «Show them» opens.
 type Show = 'attention' | 'all' | 'waiting';
@@ -63,7 +65,7 @@ const TALK_BY_TEACHER = new Set(['admin', 'head_curator', 'head_teacher']);
 const DAY = 24 * 60 * 60 * 1000;
 
 function dayLabel(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: APP_TIMEZONE });
+  return formatDate(iso, { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
 function byName(a: { name: string }, b: { name: string }) {
@@ -81,16 +83,16 @@ function studentFlagsFor(item: MeetLessonSummary, issue: IssueKey | null): MeetL
 
 type Audience = 'heads' | 'teacher' | 'curator';
 
-const INTRO: Record<Audience, string> = {
-  heads: 'Lessons held in LMS Meet rooms: marks that disagree with who was in the room, accounts still to confirm, and teachers who started late or ended early.',
-  teacher: 'Your lessons held in LMS Meet rooms: who was in the room and when, marks that disagree with it, and students’ Google accounts to confirm — once each, then they’re recognised in every lesson.',
-  curator: 'Your groups’ lessons held in LMS Meet rooms: who was in the room and when, marks that disagree with it, and students’ Google accounts to confirm — once each, then they’re recognised in every lesson.',
+const INTRO: Record<Audience, MessageKey> = {
+  heads: 'meetViews.review.introHeads',
+  teacher: 'meetViews.review.introTeacher',
+  curator: 'meetViews.review.introCurator',
 };
 
-const EMPTY: Record<Audience, (days: number) => string> = {
-  heads: (days) => `No lessons with a Meet record in the last ${days} days.`,
-  teacher: (days) => `None of your lessons in the last ${days} days were held in an LMS Meet room. They appear here once they are.`,
-  curator: (days) => `None of your groups’ lessons in the last ${days} days were held in an LMS Meet room. They appear here once they are.`,
+const EMPTY: Record<Audience, MessageKey> = {
+  heads: 'meetViews.review.emptyHeads',
+  teacher: 'meetViews.review.emptyTeacher',
+  curator: 'meetViews.review.emptyCurator',
 };
 
 /**
@@ -104,6 +106,7 @@ const EMPTY: Record<Audience, (days: number) => string> = {
 export default function MeetAttendanceReview() {
   const { user } = useAuth();
   const locale = useLocale();
+  const t = useT();
   const audience: Audience = user?.role === 'teacher' ? 'teacher' : user?.role === 'curator' ? 'curator' : 'heads';
   const [items, setItems] = useState<MeetLessonSummary[] | null>(null);
   const [error, setError] = useState(false);
@@ -245,14 +248,14 @@ export default function MeetAttendanceReview() {
         <div>
           <h1 className="flex items-center gap-2.5 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
             <MonitorCheck className="h-7 w-7 text-primary" aria-hidden />
-            Meet attendance
+            {t('meetViews.review.title')}
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            {INTRO[audience]} Click a flag to answer it: with its reason it leaves Needs attention. Times are Almaty.
+            {t(INTRO[audience])} {t('meetViews.review.introHow')}
           </p>
           {rules && (
             <p className="mt-1 max-w-2xl text-xs text-muted-foreground">
-              {rulesText(rules)} Evidence from Meet. While the Register switch is Live, Meet writes the register; teachers correct it with a reason.
+              {rulesText(rules)} {t('meetViews.review.rulesHow')}
             </p>
           )}
         </div>
@@ -260,7 +263,7 @@ export default function MeetAttendanceReview() {
         <TalkSettingsButton role={user?.role} onChanged={(next) => { setTalkEnabled(next.enabled); load(true); }} />
         <RegisterSwitchButton role={user?.role} onChanged={() => { setRegisterRefresh((n) => n + 1); load(true); }} />
         <LiveSwitchButton role={user?.role} />
-        <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label="Period">
+        <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label={t('meetViews.review.period')}>
           {([7, 30] as Period[]).map((p) => (
             <button
               key={p}
@@ -270,15 +273,15 @@ export default function MeetAttendanceReview() {
               className={cn('rounded-md px-3 py-1.5 text-[13px] font-medium transition',
                 period === p ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}
             >
-              Last {p} days
+              {t('meetViews.shared.lastDays', { count: p })}
             </button>
           ))}
         </div>
         </div>
       </header>
 
-      <div className="flex gap-1 border-b border-border" role="tablist" aria-label="View">
-        {([['lessons', 'Lessons'], ['talk', 'Talk time']] as const).map(([key, label]) => (
+      <div className="flex gap-1 border-b border-border" role="tablist" aria-label={t('meetViews.review.view')}>
+        {([['lessons', 'meetViews.shared.lessons'], ['talk', 'meet.talkCard.title']] as const).map(([key, label]) => (
           <button
             key={key}
             type="button"
@@ -288,7 +291,7 @@ export default function MeetAttendanceReview() {
             className={cn('-mb-px border-b-2 px-3 py-2 text-sm font-medium transition',
               view === key ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground')}
           >
-            {label}
+            {t(label)}
           </button>
         ))}
       </div>
@@ -297,21 +300,21 @@ export default function MeetAttendanceReview() {
         items === null ? (
           error ? (
             <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card px-6 py-14 text-center shadow-sm">
-              <p className="text-sm text-muted-foreground">Couldn&apos;t load the lessons.</p>
+              <p className="text-sm text-muted-foreground">{t('meetViews.review.loadFailed')}</p>
               <button type="button" onClick={() => load()} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted">
-                <RotateCcw className="h-4 w-4" /> Try again
+                <RotateCcw className="h-4 w-4" /> {t('common.retry')}
               </button>
             </div>
           ) : (
             <div className="flex items-center gap-2 px-1 py-10 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" /> Loading lessons…
+              <Loader2 className="h-4 w-4 animate-spin" /> {t('meetViews.review.loading')}
             </div>
           )
         ) : (
           <div className="space-y-4">
             {byTeacher && (
-              <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label="Talk time by">
-                {([['group', 'By group'], ['teacher', 'By teacher']] as const).map(([key, label]) => (
+              <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label={t('meetViews.review.talkBy')}>
+                {([['group', 'meetViews.review.byGroup'], ['teacher', 'meetViews.shared.byTeacher']] as const).map(([key, label]) => (
                   <button
                     key={key}
                     type="button"
@@ -320,7 +323,7 @@ export default function MeetAttendanceReview() {
                     className={cn('rounded-md px-3 py-1.5 text-[13px] font-medium transition',
                       talkMode === key ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}
                   >
-                    {label}
+                    {t(label)}
                   </button>
                 ))}
               </div>
@@ -347,8 +350,8 @@ export default function MeetAttendanceReview() {
 
       {view === 'lessons' && (<>
       <div className="flex flex-wrap items-center gap-2.5">
-        <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label="Show">
-          {([['attention', 'Needs attention', attentionCount], ['all', 'All lessons', scoped.length]] as const).map(([key, label, n]) => (
+        <div className="inline-flex gap-0.5 rounded-lg border border-border bg-muted/40 p-0.5" role="group" aria-label={t('meetViews.review.show')}>
+          {([['attention', 'meetViews.review.needsAttention', attentionCount], ['all', 'meetViews.review.allLessons', scoped.length]] as const).map(([key, label, n]) => (
             <button
               key={key}
               type="button"
@@ -357,7 +360,7 @@ export default function MeetAttendanceReview() {
               className={cn('rounded-md px-2.5 py-1 text-[13px] font-medium transition',
                 !issue && show === key ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}
             >
-              {label} <span className="tabular-nums text-muted-foreground">{n}</span>
+              {t(label)} <span className="tabular-nums text-muted-foreground">{n}</span>
             </button>
           ))}
         </div>
@@ -366,14 +369,14 @@ export default function MeetAttendanceReview() {
             type="button"
             aria-pressed={showReviewed}
             onClick={() => setShowReviewed((v) => !v)}
-            title="Flags someone has already answered, with their reasons"
+            title={t('meetViews.review.reviewedHint')}
             className={cn('inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[13px] font-medium transition',
               showReviewed
                 ? 'border-slate-400 bg-muted text-foreground dark:border-border'
                 : 'border-border text-muted-foreground hover:bg-muted hover:text-foreground')}
           >
             <CheckCheck className="h-3.5 w-3.5" aria-hidden />
-            {showReviewed ? 'Showing reviewed' : 'Show reviewed'}
+            {t(showReviewed ? 'meetViews.review.showingReviewed' : 'meetViews.review.showReviewed')}
             <span className="tabular-nums opacity-70">{reviewedTotal}</span>
           </button>
         )}
@@ -383,33 +386,33 @@ export default function MeetAttendanceReview() {
             id="meet-attendance-search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search lessons, groups, students"
-            aria-label="Search lessons, groups, students"
+            placeholder={t('meetViews.review.search')}
+            aria-label={t('meetViews.review.search')}
             className="h-9 w-full rounded-md border border-border bg-background pl-8 pr-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
         {/* A teacher's own list usually has one teacher in it; the filter only earns its place
             when substitutes covered some of their groups' lessons. */}
         {teachers.length > 1 && (
-          <SearchableSelect options={teachers} value={teacherId} onChange={setTeacherId} placeholder="All teachers"
-            searchPlaceholder="Search teachers…" emptyText="No teacher matches" className="h-9 w-48 text-sm" />
+          <SearchableSelect options={teachers} value={teacherId} onChange={setTeacherId} placeholder={t('meetViews.shared.allTeachers')}
+            searchPlaceholder={t('meetViews.review.searchTeachers')} emptyText={t('meetViews.review.noTeacherMatches')} className="h-9 w-48 text-sm" />
         )}
-        <SearchableSelect options={groups} value={groupId} onChange={setGroupId} placeholder="All groups"
-          searchPlaceholder="Search groups…" emptyText="No group matches" className="h-9 w-56 text-sm" />
+        <SearchableSelect options={groups} value={groupId} onChange={setGroupId} placeholder={t('meetViews.review.allGroups')}
+          searchPlaceholder={t('meetViews.shared.searchGroups')} emptyText={t('meetViews.shared.noGroupMatches')} className="h-9 w-56 text-sm" />
         {filtered && (
           <button
             type="button"
             onClick={() => { setTeacherId(null); setGroupId(null); setQuery(''); setIssue(null); if (show === 'waiting') setShow('all'); }}
             className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
           >
-            <RotateCcw className="h-3.5 w-3.5" /> Clear
+            <RotateCcw className="h-3.5 w-3.5" /> {t('meetViews.review.clear')}
           </button>
         )}
       </div>
 
       {items !== null && items.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter by issue">
-          <span className="mr-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Issue</span>
+        <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={t('meetViews.review.filterByIssue')}>
+          <span className="mr-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{t('meetViews.review.issue')}</span>
           {ISSUES.filter(({ key }) => key !== 'silent_students' || anyTalk).map(({ key, label, hint }) => {
             const active = issue === key;
             const none = counts[key] === 0;
@@ -437,10 +440,10 @@ export default function MeetAttendanceReview() {
             type="button"
             onClick={exportCsv}
             disabled={visible.length === 0}
-            title="The lessons listed below, as a spreadsheet"
+            title={t('meetViews.review.exportHint')}
             className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-[13px] font-medium text-foreground transition hover:bg-muted disabled:opacity-50"
           >
-            <Download className="h-3.5 w-3.5" aria-hidden /> Export CSV
+            <Download className="h-3.5 w-3.5" aria-hidden /> {t('meetViews.shared.exportCsv')}
           </button>
         </div>
       )}
@@ -468,16 +471,16 @@ export default function MeetAttendanceReview() {
 
       {error && (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-card px-6 py-14 text-center shadow-sm">
-          <p className="text-sm text-muted-foreground">Couldn&apos;t load the lessons.</p>
+          <p className="text-sm text-muted-foreground">{t('meetViews.review.loadFailed')}</p>
           <button type="button" onClick={() => load()} className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted">
-            <RotateCcw className="h-4 w-4" /> Try again
+            <RotateCcw className="h-4 w-4" /> {t('common.retry')}
           </button>
         </div>
       )}
 
       {!error && items === null && (
         <div className="flex items-center gap-2 px-1 py-10 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Loading lessons…
+          <Loader2 className="h-4 w-4 animate-spin" /> {t('meetViews.review.loading')}
         </div>
       )}
 
@@ -485,28 +488,28 @@ export default function MeetAttendanceReview() {
         visible.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border bg-card/60 px-6 py-16 text-center text-sm text-muted-foreground">
             {items.length === 0
-              ? EMPTY[audience](period)
+              ? t(EMPTY[audience], { count: period })
               : show === 'attention' && !filtered
                 ? reviewedTotal > 0 && !showReviewed
-                  ? `Nothing needs attention. ${reviewedTotal} reviewed ${reviewedTotal === 1 ? 'flag is' : 'flags are'} hidden; «Show reviewed» brings them back.`
-                  : 'Nothing needs attention: every mark agrees with the room and every account is confirmed.'
+                  ? t('meetViews.review.nothingHidden', { count: reviewedTotal })
+                  : t('meetViews.review.nothing')
                 : issue
-                  ? `No lessons with “${ISSUES.find((i) => i.key === issue)?.label}” here.`
+                  ? t('meetViews.review.noIssue', { issue: ISSUES.find((i) => i.key === issue)?.label ?? '' })
                   : show === 'waiting'
-                    ? 'Every lesson here is final: nothing is in progress or waiting for Google Meet.'
-                    : 'No lessons match.'}
+                    ? t('meetViews.review.allFinal')
+                    : t('meetViews.review.noMatch')}
           </div>
         ) : (
           <div className="overflow-x-auto rounded-2xl border border-border bg-card shadow-sm">
             <table className="w-full min-w-[880px] text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                  <th className="px-4 py-2.5">Lesson</th>
-                  <th className="px-4 py-2.5">Teacher in the room</th>
-                  <th className="px-4 py-2.5 text-right">Students</th>
-                  <th className="px-4 py-2.5">What stands out</th>
-                  <th className="px-4 py-2.5">Recording</th>
-                  <th className="w-10 px-2 py-2.5" aria-label="Open" />
+                  <th className="px-4 py-2.5">{t('meet.dialog.lesson')}</th>
+                  <th className="px-4 py-2.5">{t('meetViews.review.teacherInRoom')}</th>
+                  <th className="px-4 py-2.5 text-right">{t('meet.talkPanel.students')}</th>
+                  <th className="px-4 py-2.5">{t('meetViews.review.standsOut')}</th>
+                  <th className="px-4 py-2.5">{t('meetViews.review.recording')}</th>
+                  <th className="w-10 px-2 py-2.5" aria-label={t('meetViews.shared.open')} />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -521,7 +524,7 @@ export default function MeetAttendanceReview() {
                       onClick={() => openLesson(item.event_id, 'attendance')}
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openLesson(item.event_id, 'attendance'); } }}
                       tabIndex={0}
-                      aria-label={`Open ${item.title}`}
+                      aria-label={t('meetViews.shared.openNamed', { name: item.title })}
                       className="cursor-pointer align-top transition hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none"
                     >
                       <td className="px-4 py-3">
@@ -536,7 +539,7 @@ export default function MeetAttendanceReview() {
                           onKeyDown={(e) => e.stopPropagation()}
                           className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
                         >
-                          Open lesson <ArrowUpRight className="h-3 w-3" aria-hidden />
+                          {t('meet.dialog.openLesson')} <ArrowUpRight className="h-3 w-3" aria-hidden />
                         </Link>
                       </td>
                       {stillLoading(item) ? (
@@ -549,7 +552,7 @@ export default function MeetAttendanceReview() {
                           <div className="text-xs tabular-nums text-muted-foreground">
                             {item.teacher?.first_join
                               ? `${clock(item.teacher.first_join)} → ${clock(item.teacher.last_leave)}`
-                              : item.held_back ? 'Account not confirmed yet' : 'Not in the room'}
+                              : t(item.held_back ? 'meetViews.review.accountNotConfirmed' : 'meet.participants.notInRoom')}
                           </div>
                           {teacherFlags.length > 0 && (
                             <div className="mt-1 flex flex-wrap gap-1">
@@ -559,14 +562,14 @@ export default function MeetAttendanceReview() {
                             </div>
                           )}
                           {item.talk?.teacher_share != null && (
-                            <div className="mt-1.5 flex items-center gap-2" title="The teacher’s share of everything said in the lesson">
+                            <div className="mt-1.5 flex items-center gap-2" title={t('meetViews.review.teacherShareHint')}>
                               <span className="h-1.5 w-14 overflow-hidden rounded-full bg-muted" aria-hidden>
                                 <span className="block h-full rounded-full bg-violet-500 dark:bg-violet-400"
                                   style={{ width: `${Math.min(100, item.talk.teacher_share * 100)}%` }} />
                               </span>
                               <span className="text-[11px] tabular-nums text-muted-foreground">
-                                Teacher talk {percent(item.talk.teacher_share)}
-                                {item.talk.silent.length > 0 && ` · ${item.talk.silent.length} didn’t speak`}
+                                {t('meetViews.review.teacherTalk', { share: percent(item.talk.teacher_share) })}
+                                {item.talk.silent.length > 0 && ` · ${t('meet.talk.silentCount', { count: item.talk.silent.length })}`}
                               </span>
                             </div>
                           )}
@@ -575,7 +578,7 @@ export default function MeetAttendanceReview() {
                           <span className="font-semibold text-foreground">{item.joined}</span>
                           <span className="text-muted-foreground"> / {item.students}</span>
                           {item.unknown > 0 && (
-                            <div className="text-xs text-amber-700 dark:text-amber-300">+{item.unknown} unconfirmed</div>
+                            <div className="text-xs text-amber-700 dark:text-amber-300">{t('meetViews.review.unconfirmed', { count: item.unknown })}</div>
                           )}
                         </td>
                         <td className="px-4 py-3">
@@ -595,7 +598,7 @@ export default function MeetAttendanceReview() {
                                 </li>
                               ))}
                               {studentFlags.length > 6 && (
-                                <li className="text-muted-foreground">and {studentFlags.length - 6} more: open the lesson</li>
+                                <li className="text-muted-foreground">{t('meetViews.review.more', { count: studentFlags.length - 6 })}</li>
                               )}
                             </ul>
                           )}

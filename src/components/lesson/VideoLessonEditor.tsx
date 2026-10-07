@@ -6,6 +6,8 @@ import { Input } from '../ui/input';
 import { Checkbox } from '../ui/checkbox';
 import apiClient from '../../services/api';
 import type { StepAttachment } from '../../types';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/courseAuthoring';
 
 export interface VideoLessonEditorProps {
   lessonTitle: string;
@@ -42,6 +44,7 @@ export default function VideoLessonEditor({
   onAttachmentsChange,
   onTempFilesChange
 }: VideoLessonEditorProps) {
+  const t = useT();
   const [currentAttachments, setCurrentAttachments] = useState<StepAttachment[]>([])
   const [tempFiles, setTempFiles] = useState<File[]>([])
   const [previewLanguage, setPreviewLanguage] = useState<'ru' | 'en'>('ru')
@@ -135,7 +138,7 @@ export default function VideoLessonEditor({
         <div>
           <div className="mb-2 flex items-center justify-between gap-2">
             <label className="block text-sm font-medium text-foreground/80">
-              Video Preview
+              {t('courseAuthoring.video.preview')}
             </label>
             {videoUrlRu && videoUrlEn && (
               <div className="flex items-center gap-1 rounded-md border border-border p-1">
@@ -158,7 +161,7 @@ export default function VideoLessonEditor({
           </div>
           <YouTubeVideoPlayer
             url={previewLanguage === 'en' ? videoUrlEn : videoUrlRu}
-            title={`${lessonTitle || 'Lesson Video'} (${previewLanguage.toUpperCase()})`}
+            title={`${lessonTitle || t('courseAuthoring.video.fallbackTitle')} (${previewLanguage.toUpperCase()})`}
             className="w-full"
             onError={onVideoError}
           />
@@ -167,7 +170,7 @@ export default function VideoLessonEditor({
 
       <div>
         <label className="block text-sm font-medium text-foreground/80 mb-2">
-          Video URL (YouTube, RU)
+          {t('courseAuthoring.video.urlRu')}
         </label>
         <div className="flex items-center space-x-2 mb-4">
           <Checkbox 
@@ -187,7 +190,7 @@ export default function VideoLessonEditor({
             htmlFor="explanation-mode" 
             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
           >
-            Add "Watch explanations" text
+            {t('courseAuthoring.video.addWatchExplanations')}
           </label>
         </div>
         <div className="flex gap-2 p-1">
@@ -202,20 +205,20 @@ export default function VideoLessonEditor({
             onClick={onClearUrlRu}
             className="px-4 py-2 border border-input rounded-lg text-muted-foreground hover:bg-muted"
           >
-            Clear
+            {t('courseAuthoring.video.clear')}
           </button>
         </div>
         {videoError && (
           <p className="text-sm text-red-600 mt-1 dark:text-red-400">{videoError}</p>
         )}
         <p className="text-sm text-muted-foreground mt-1">
-          Paste a YouTube video URL in Russian
+          {t('courseAuthoring.video.urlRuHint')}
         </p>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-foreground/80 mb-2">
-          Video URL (YouTube, EN)
+          {t('courseAuthoring.video.urlEn')}
         </label>
         <div className="flex gap-2 p-1">
           <Input
@@ -230,31 +233,31 @@ export default function VideoLessonEditor({
             onClick={onClearUrlEn}
             className="px-4 py-2 border border-input rounded-lg text-muted-foreground hover:bg-muted"
           >
-            Clear
+            {t('courseAuthoring.video.clear')}
           </button>
         </div>
         <p className="text-sm text-muted-foreground mt-1">
-          Paste a YouTube video URL in English
+          {t('courseAuthoring.video.urlEnHint')}
         </p>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-foreground/80 mb-2">
-          Video Lesson Content
+          {t('courseAuthoring.video.content')}
         </label>
         <RichTextEditor
           value={content}
           onChange={onContentChange}
-          placeholder="Add description, notes, or additional content for this video lesson..."
+          placeholder={t('courseAuthoring.video.contentPlaceholder')}
         />
         <p className="text-sm text-muted-foreground mt-1">
-          Add text content to accompany the video (optional)
+          {t('courseAuthoring.video.contentHint')}
         </p>
       </div>
 
       <div>
         <label className="block text-sm font-medium text-foreground/80 mb-2">
-          File Attachments
+          {t('courseAuthoring.step.attachments')}
         </label>
         <FileUploadArea
           attachments={stepId ? currentAttachments : tempFiles.map((file, index) => ({

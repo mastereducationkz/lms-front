@@ -200,6 +200,7 @@ describe('formatTag / difficultyLabel (LMS-FRONT-7/8/9)', () => {
   });
   it('labels difficulty and survives a missing one', () => {
     expect(difficultyLabel('hard')).toBe('Hard');
+    expect(difficultyLabel('easy', 'ru')).toBe('Лёгкий');
     expect(difficultyLabel('very_hard')).toBe('very_hard');
     expect(difficultyLabel(undefined)).toBe('');
   });

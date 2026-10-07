@@ -7,9 +7,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { ChevronDown, ChevronUp, BookOpen, Users, Clock, CheckCircle } from 'lucide-react';
 import apiClient from '../services/api';
 import type { CourseStepsProgress } from '../types';
+import { useT } from '../lib/i18n/react';
+import '@/lib/i18n/catalogs/lessonPlayer';
 
 export default function CourseProgressPage() {
   const { courseId } = useParams<{ courseId: string }>();
+  const t = useT();
   const [progressData, setProgressData] = useState<CourseStepsProgress | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +31,7 @@ export default function CourseProgressPage() {
       setProgressData(data);
     } catch (error) {
       console.error('Failed to load progress data:', error);
-      setError('Failed to load progress data');
+      setError(t('lessonPlayer.progress.loadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -68,8 +71,8 @@ export default function CourseProgressPage() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-foreground mb-2">Error</h2>
-          <p className="text-muted-foreground">{error || 'Progress data not found'}</p>
+          <h2 className="text-xl font-semibold text-foreground mb-2">{t('lessonPlayer.error.title')}</h2>
+          <p className="text-muted-foreground">{error || t('lessonPlayer.progress.notFound')}</p>
         </div>
       </div>
     );
@@ -80,16 +83,16 @@ export default function CourseProgressPage() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-foreground mb-2">
-          Progress Report: {progressData.course_title}
+          {t('lessonPlayer.progress.title', { course: progressData.course_title })}
         </h1>
         <div className="flex items-center gap-6 text-muted-foreground">
           <div className="flex items-center gap-2">
             <Users className="w-5 h-5" />
-            <span>{progressData.total_students} students</span>
+            <span>{t('lessonPlayer.common.students', { count: progressData.total_students })}</span>
           </div>
           <div className="flex items-center gap-2">
             <BookOpen className="w-5 h-5" />
-            <span>{progressData.modules.length} modules</span>
+            <span>{t('lessonPlayer.common.modules', { count: progressData.modules.length })}</span>
           </div>
         </div>
       </div>
@@ -98,7 +101,7 @@ export default function CourseProgressPage() {
       <div className="grid grid-cols-1 @2xl:grid-cols-3 gap-6 mb-8">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Students</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('lessonPlayer.progress.totalStudents')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{progressData.total_students}</div>
@@ -107,7 +110,7 @@ export default function CourseProgressPage() {
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Modules</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('lessonPlayer.progress.totalModules')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{progressData.modules.length}</div>
@@ -116,7 +119,7 @@ export default function CourseProgressPage() {
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Lessons</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('lessonPlayer.progress.totalLessons')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -136,7 +139,7 @@ export default function CourseProgressPage() {
                   <BookOpen className="w-5 h-5 text-brand" />
                   <div>
                     <CardTitle className="text-lg">{module.module_title}</CardTitle>
-                    <p className="text-sm text-muted-foreground">{module.lessons.length} lessons</p>
+                    <p className="text-sm text-muted-foreground">{t('common.lessons', { count: module.lessons.length })}</p>
                   </div>
                 </div>
                 <button
@@ -160,18 +163,18 @@ export default function CourseProgressPage() {
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="font-semibold text-foreground">{lesson.lesson_title}</h3>
                         <Badge variant="outline">
-                          {lesson.total_steps} steps
+                          {t('lessonPlayer.common.steps', { count: lesson.total_steps })}
                         </Badge>
                       </div>
                       
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Student</TableHead>
-                            <TableHead>Progress</TableHead>
-                            <TableHead>Completed Steps</TableHead>
-                            <TableHead>Time Spent</TableHead>
-                            <TableHead>Status</TableHead>
+                            <TableHead>{t('lessonPlayer.progress.colStudent')}</TableHead>
+                            <TableHead>{t('lessonPlayer.progress.colProgress')}</TableHead>
+                            <TableHead>{t('lessonPlayer.progress.colSteps')}</TableHead>
+                            <TableHead>{t('lessonPlayer.progress.colTime')}</TableHead>
+                            <TableHead>{t('lessonPlayer.progress.colStatus')}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -202,7 +205,7 @@ export default function CourseProgressPage() {
                               <TableCell>
                                 <div className="flex items-center gap-1">
                                   <Clock className="w-4 h-4 text-muted-foreground" />
-                                  <span>{student.time_spent_minutes} min</span>
+                                  <span>{t('common.minutes', { count: student.time_spent_minutes })}</span>
                                 </div>
                               </TableCell>
                               <TableCell>
@@ -210,7 +213,7 @@ export default function CourseProgressPage() {
                                   variant={student.completion_percentage === 100 ? "default" : "secondary"}
                                   className={student.completion_percentage === 100 ? "bg-green-100 dark:bg-green-500/20 text-green-800 dark:text-green-300" : ""}
                                 >
-                                  {student.completion_percentage === 100 ? "Completed" : "In Progress"}
+                                  {student.completion_percentage === 100 ? t('lessonPlayer.progress.completed') : t('lessonPlayer.progress.inProgress')}
                                 </Badge>
                               </TableCell>
                             </TableRow>

@@ -12,7 +12,14 @@ vi.mock('../../services/api', () => ({
 vi.mock('../../services/api/gamification', () => ({
   getStarsBreakdown: vi.fn(),
 }));
+// useT() reads AuthContext, whose module pulls the API client in (localStorage at module scope).
+// No provider here, so the hook falls back to activeLocale().
+vi.mock('../../contexts/AuthContext', async () => {
+  const { createContext } = await import('react');
+  return { default: createContext(undefined) };
+});
 
+import { setActiveLocale } from '../../lib/i18n';
 import { getGamificationStatus } from '../../services/api';
 import { getStarsBreakdown } from '../../services/api/gamification';
 import PointsDisplay from './PointsDisplay';
@@ -128,6 +135,20 @@ describe('StarsBreakdown', () => {
     expect(container.textContent).toContain("Couldn't load your stars");
     act(() => container.querySelector('button')!.click());
     expect(onRetry).toHaveBeenCalledOnce();
+  });
+
+  it('speaks Russian to a student who chose it, with the server bars and rules translated by key', () => {
+    setActiveLocale('ru');
+    try {
+      act(() => root.render(<StarsBreakdown state={{ status: 'ready', data: BREAKDOWN }} onRetry={() => {}} titleId="t" />));
+      const text = container.textContent ?? '';
+      expect(container.querySelector('#t')?.textContent).toBe('68звёзд');
+      expect(text).toContain('Сданные домашние задания20');
+      expect(text).toContain('Как заработать звёзды');
+      expect(text).toContain('Пройдите квиз курса');
+    } finally {
+      setActiveLocale('en');
+    }
   });
 });
 

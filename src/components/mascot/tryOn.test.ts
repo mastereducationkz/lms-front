@@ -66,6 +66,14 @@ describe('trying on in the builder', () => {
     expect(block.progress).toBeNull();
   });
 
+  it('speaks the reader’s language: part, achievement and hint from the catalog', () => {
+    const crown = saveBlock(wearParts(base, [{ category: 'hat', index: 18 }]), LOCKED, achievements, 'ru')!;
+    expect(crown.partName).toBe('Бриллиантовая корона');
+    expect(crown.label).toBe('Чтобы оставить, получите «Высший балл»');
+    const secret = saveBlock(wearParts(base, [{ category: 'background', index: 12 }]), LOCKED, achievements, 'ru')!;
+    expect(secret.howTo).toBe('Секрет · подсказка: всё решает время');
+  });
+
   it('a look with nothing locked saves normally; an earned reward is not «trying on»', () => {
     expect(saveBlock(base, LOCKED, achievements)).toBeNull();
     const earned = wearParts(base, [{ category: 'hat', index: 20 }]);   // Explorer hat, not in LOCKED

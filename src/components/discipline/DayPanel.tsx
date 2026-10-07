@@ -4,6 +4,9 @@ import { Loader2, X } from 'lucide-react';
 import { Button } from '../ui/button';
 import DecisionDialog, { type DecisionTarget } from './DecisionDialog';
 import { money } from '../../lib/discipline';
+import { formatDate, formatTime, type MessageKey, type TFunction } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/teacherInsights';
 import {
   getDay,
   saveDecision,
@@ -21,23 +24,22 @@ import {
  * actually happened, instead of guessing from «3′».
  */
 
-const KIND_TEXT: Record<string, string> = {
-  late: 'Late',
-  ended_early: 'Ended early',
-  miss: 'Lesson not held',
+const KIND_TEXT: Record<string, MessageKey> = {
+  late: 'teacherInsights.discipline.kind.late',
+  ended_early: 'teacherInsights.discipline.kind.endedEarly',
+  miss: 'teacherInsights.discipline.kind.miss',
 };
 
 const time = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Almaty' }) : '—';
+  iso ? formatTime(iso) : '—';
 
-function madeUpLine(lesson: DisciplineLesson, finding: DisciplineFinding): string | null {
+function madeUpLine(lesson: DisciplineLesson, finding: DisciplineFinding, t: TFunction): string | null {
   if (finding.kind !== 'late' || !finding.made_up) return null;
   const minutes = Math.round(
     (new Date(lesson.ends_at).getTime() - new Date(lesson.starts_at).getTime()) / 60000);
-  const stayed = lesson.students
-    ? `, ${lesson.students_at_end} of ${lesson.students} students stayed to the end`
-    : '';
-  return `Made up: taught the full ${minutes} min${stayed}`;
+  return lesson.students
+    ? t('teacherInsights.discipline.madeUpStayed', { minutes, stayed: lesson.students_at_end, students: lesson.students })
+    : t('teacherInsights.discipline.madeUp', { minutes });
 }
 
 export default function DayPanel({ teacherId, teacherName, day, canDecide, onClose, onChanged }: {
@@ -48,6 +50,7 @@ export default function DayPanel({ teacherId, teacherName, day, canDecide, onClo
   onClose: () => void;
   onChanged: () => void;
 }) {
+  const t = useT();
   const [data, setData] = useState<DisciplineDay | null>(null);
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState('');
@@ -56,7 +59,7 @@ export default function DayPanel({ teacherId, teacherName, day, canDecide, onClo
     try {
       setData(await getDay(teacherId, day));
     } catch (err: any) {
-      setError(err?.response?.data?.detail || 'Could not load the day');
+      setError(err?.response?.data?.detail || t('teacherInsights.discipline.loadDayFailed'));
     }
   };
 
@@ -76,7 +79,7 @@ export default function DayPanel({ teacherId, teacherName, day, canDecide, onClo
       await load();
       onChanged();
     } catch (err: any) {
-      setError(err?.response?.data?.detail || 'Could not save that');
+      setError(err?.response?.data?.detail || t('teacherInsights.discipline.saveFailed'));
     } finally {
       setSaving(null);
     }
@@ -96,7 +99,7 @@ export default function DayPanel({ teacherId, teacherName, day, canDecide, onClo
       finding,
       target: {
         lessonLabel: `${lesson.group} · ${time(lesson.starts_at)}`,
-        kindLabel: KIND_TEXT[finding.kind] || finding.kind,
+        kindLabel: KIND_TEXT[finding.kind] ? t(KIND_TEXT[finding.kind]) : finding.kind,
         minutes: finding.kind === 'miss' ? null : finding.minutes,
         proposed: finding.fine,
         current: startAt === 'waive' ? 0 : (finding.decision?.amount ?? finding.fine ?? null),
@@ -111,16 +114,16 @@ export default function DayPanel({ teacherId, teacherName, day, canDecide, onClo
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold">{teacherName}</h2>
-          <p className="text-sm text-muted-foreground">{new Date(`${day}T00:00:00`).toLocaleDateString('en-GB', {
+          <p className="text-sm text-muted-foreground">{formatDate(day, {
             weekday: 'long', day: 'numeric', month: 'long' })}</p>
         </div>
-        <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close"><X className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="sm" onClick={onClose} aria-label={t('common.close')}><X className="h-4 w-4" /></Button>
       </div>
 
       {error && <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">{error}</p>}
       {!data && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
 
-      {data?.lessons.length === 0 && <p className="text-sm text-muted-foreground">No lessons that day.</p>}
+      {data?.lessons.length === 0 && <p className="text-sm text-muted-foreground">{t('teacherInsights.discipline.noLessonsThatDay')}</p>}
 
       <div className="space-y-4">
         {data?.lessons.map((lesson) => (
@@ -131,12 +134,12 @@ export default function DayPanel({ teacherId, teacherName, day, canDecide, onClo
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
               {lesson.measurable
-                ? <>joined {time(lesson.first_join)}, left {time(lesson.last_leave)}</>
-                : <>no LMS Meet room — the LMS saw nothing and judges nothing</>}
+                ? t('teacherInsights.discipline.joinedLeft', { joined: time(lesson.first_join), left: time(lesson.last_leave) })
+                : t('teacherInsights.discipline.noRoom')}
             </p>
 
             {lesson.findings.length === 0 && lesson.measurable && (
-              <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-400">On time, full lesson.</p>
+              <p className="mt-2 text-sm text-emerald-700 dark:text-emerald-400">{t('teacherInsights.discipline.onTime')}</p>
             )}
 
             {lesson.findings.map((finding) => {
@@ -147,19 +150,19 @@ export default function DayPanel({ teacherId, teacherName, day, canDecide, onClo
                 <div key={key} className="mt-3 rounded-md bg-muted p-3">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <p className="font-medium">
-                      {KIND_TEXT[finding.kind]}
-                      {finding.kind !== 'miss' && <> · {finding.minutes} min</>}
+                      {KIND_TEXT[finding.kind] ? t(KIND_TEXT[finding.kind]) : finding.kind}
+                      {finding.kind !== 'miss' && <> · {t('teacherInsights.discipline.minutes', { minutes: finding.minutes })}</>}
                     </p>
                     <p className="text-sm">
-                      {owed === null ? <span className="text-amber-700 dark:text-amber-400">needs an amount</span> : money(owed)}
+                      {owed === null ? <span className="text-amber-700 dark:text-amber-400">{t('teacherInsights.discipline.needsAmount')}</span> : money(owed)}
                     </p>
                   </div>
-                  {madeUpLine(lesson, finding) && (
-                    <p className="mt-1 text-sm text-muted-foreground">{madeUpLine(lesson, finding)}</p>
+                  {madeUpLine(lesson, finding, t) && (
+                    <p className="mt-1 text-sm text-muted-foreground">{madeUpLine(lesson, finding, t)}</p>
                   )}
                   {decided && (
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {decided.amount === 0 ? 'Waived' : 'Set'} by {decided.by}
+                      {decided.amount === 0 ? t('teacherInsights.discipline.waivedBy', { name: decided.by ?? '' }) : t('teacherInsights.discipline.setBy', { name: decided.by ?? '' })}
                       {decided.note ? ` — ${decided.note}` : ''}
                     </p>
                   )}
@@ -168,14 +171,14 @@ export default function DayPanel({ teacherId, teacherName, day, canDecide, onClo
                       {finding.fine !== null && (
                         <Button size="sm" variant="outline" disabled={saving === key}
                                 onClick={() => decide(lesson, finding, finding.fine || 0)}>
-                          Confirm {money(finding.fine || 0)}
+                          {t('teacherInsights.discipline.confirmAmount', { amount: money(finding.fine || 0) })}
                         </Button>
                       )}
                       <Button size="sm" variant="outline" disabled={saving === key}
-                              onClick={() => openDecision(lesson, finding, 'waive')}>Waive…</Button>
+                              onClick={() => openDecision(lesson, finding, 'waive')}>{t('teacherInsights.discipline.waive')}</Button>
                       <Button size="sm" variant="outline" disabled={saving === key}
                               onClick={() => openDecision(lesson, finding, 'current')}>
-                        {finding.kind === 'miss' ? 'Set amount…' : 'Change amount…'}
+                        {finding.kind === 'miss' ? t('teacherInsights.discipline.setAmount') : t('teacherInsights.discipline.changeAmount')}
                       </Button>
                     </div>
                   )}

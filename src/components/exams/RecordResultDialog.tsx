@@ -7,6 +7,8 @@ import {
   type ExamResultRow,
   type SatOfficialDate,
 } from '../../services/api/exams';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/teacherInsights';
 
 /**
  * Record a new exam attempt for one student, optionally with the score report attached.
@@ -30,6 +32,7 @@ const IELTS_BANDS = ['', '0', '0.5', '1', '1.5', '2', '2.5', '3', '3.5', '4', '4
   '5', '5.5', '6', '6.5', '7', '7.5', '8', '8.5', '9'];
 
 export function RecordResultDialog({ row, examType, officialDates, onClose, onSaved }: Props) {
+  const t = useT();
   const today = new Date().toISOString().slice(0, 10);
 
   const [testDate, setTestDate] = useState(row.planned_test_date ?? '');
@@ -61,14 +64,14 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
   };
 
   const problems: string[] = [];
-  if (!testDate) problems.push('Test date is required.');
-  if (testDate && testDate > today) problems.push('Test date cannot be in the future.');
+  if (!testDate) problems.push(t('teacherInsights.recordResult.dateRequired'));
+  if (testDate && testDate > today) problems.push(t('teacherInsights.recordResult.dateFuture'));
   if (isSat) {
-    if (!verbal || !math) problems.push('Both section scores are required.');
-    if (sectionInvalid(verbal)) problems.push('Verbal must be 200–800 in steps of 10.');
-    if (sectionInvalid(math)) problems.push('Math must be 200–800 in steps of 10.');
+    if (!verbal || !math) problems.push(t('teacherInsights.recordResult.bothSections'));
+    if (sectionInvalid(verbal)) problems.push(t('teacherInsights.recordResult.verbalRange'));
+    if (sectionInvalid(math)) problems.push(t('teacherInsights.recordResult.mathRange'));
   } else if (!overall) {
-    problems.push(isIelts ? 'Overall band is required.' : 'Total score is required.');
+    problems.push(isIelts ? t('teacherInsights.recordResult.overallRequired') : t('teacherInsights.recordResult.totalRequired'));
   }
   const canSave = problems.length === 0 && !saving;
 
@@ -95,7 +98,7 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
         try {
           await uploadResultProof(created.id, proof);
         } catch {
-          setError('Result saved, but the proof upload failed. Attach it again from the row.');
+          setError(t('teacherInsights.recordResult.proofFailed'));
           onSaved();
           setSaving(false);
           return;
@@ -107,8 +110,8 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
       const detail = e?.response?.data?.detail;
       setError(
         e?.response?.status === 409
-          ? 'This student already has a result for that exam and date.'
-          : typeof detail === 'string' ? detail : 'Could not save the result.',
+          ? t('teacherInsights.recordResult.duplicate')
+          : typeof detail === 'string' ? detail : t('teacherInsights.recordResult.saveFailed'),
       );
       setSaving(false);
     }
@@ -121,12 +124,12 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="w-full max-w-lg rounded-lg bg-background p-5 shadow-lg max-h-[90vh] overflow-y-auto">
-        <h2 id="rr-title" className="text-lg font-semibold">Record {examType.toUpperCase()} result</h2>
+        <h2 id="rr-title" className="text-lg font-semibold">{t('teacherInsights.recordResult.title', { exam: examType.toUpperCase() })}</h2>
         <p className="text-sm text-muted-foreground mt-0.5">{row.student.full_name}</p>
 
         {row.attempts.length > 0 && (
           <div className="mt-3 rounded-md border bg-muted/40 p-2 text-xs">
-            <span className="font-medium">Existing attempts: </span>
+            <span className="font-medium">{t('teacherInsights.recordResult.existingAttempts')} </span>
             {row.attempts.map((a, i) => (
               <span key={a.id}>
                 {i > 0 && ' · '}
@@ -134,22 +137,22 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
               </span>
             ))}
             <div className="text-muted-foreground mt-1">
-              Saving adds a new attempt; nothing above is overwritten.
+              {t('teacherInsights.recordResult.appendOnly')}
             </div>
           </div>
         )}
 
         <div className="mt-4 space-y-3">
           <div>
-            <label htmlFor="rr-date" className="text-xs font-medium">Test date *</label>
+            <label htmlFor="rr-date" className="text-xs font-medium">{t('teacherInsights.recordResult.testDate')}</label>
             {isSat && officialDates.length > 0 && (
               <select
                 className="mt-1 mb-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 value={officialDates.some((d) => d.test_date === testDate) ? testDate : ''}
                 onChange={(e) => e.target.value && setTestDate(e.target.value)}
-                aria-label="Pick an official SAT date"
+                aria-label={t('teacherInsights.recordResult.pickOfficialAria')}
               >
-                <option value="">Pick an official date…</option>
+                <option value="">{t('teacherInsights.recordResult.pickOfficial')}</option>
                 {officialDates.filter((d) => d.is_past).map((d) => (
                   <option key={d.test_date} value={d.test_date}>{d.label}</option>
                 ))}
@@ -162,19 +165,19 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
           {isSat && (
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label htmlFor="rr-v" className="text-xs font-medium">Verbal *</label>
+                <label htmlFor="rr-v" className="text-xs font-medium">{t('teacherInsights.recordResult.verbalRequired')}</label>
                 <Input id="rr-v" type="number" min={200} max={800} step={10} value={verbal}
                        aria-invalid={sectionInvalid(verbal)}
                        onChange={(e) => setVerbal(e.target.value)} className="mt-1" />
               </div>
               <div>
-                <label htmlFor="rr-m" className="text-xs font-medium">Math *</label>
+                <label htmlFor="rr-m" className="text-xs font-medium">{t('teacherInsights.recordResult.mathRequired')}</label>
                 <Input id="rr-m" type="number" min={200} max={800} step={10} value={math}
                        aria-invalid={sectionInvalid(math)}
                        onChange={(e) => setMath(e.target.value)} className="mt-1" />
               </div>
               <div>
-                <span className="text-xs font-medium">Total</span>
+                <span className="text-xs font-medium">{t('teacherInsights.shared.total')}</span>
                 <output className="mt-1 block w-full rounded-md border border-input bg-muted px-3 py-2 text-sm font-semibold"
                         aria-live="polite">
                   {satTotal ?? '—'}
@@ -186,20 +189,20 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
           {isIelts && (
             <>
               <div>
-                <label htmlFor="rr-o" className="text-xs font-medium">Overall band *</label>
+                <label htmlFor="rr-o" className="text-xs font-medium">{t('teacherInsights.recordResult.overallBand')}</label>
                 <select id="rr-o" value={overall} onChange={(e) => setOverall(e.target.value)}
                         className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                  {IELTS_BANDS.map((b) => <option key={b} value={b}>{b || 'Select…'}</option>)}
+                  {IELTS_BANDS.map((b) => <option key={b} value={b}>{b || t('teacherInsights.recordResult.select')}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-4 gap-2">
-                {([['Listening', listening, setListening], ['Reading', reading, setReading],
-                   ['Writing', writing, setWriting], ['Speaking', speaking, setSpeaking]] as const)
+                {([[t('teacherInsights.recordResult.listening'), listening, setListening], [t('teacherInsights.recordResult.reading'), reading, setReading],
+                   [t('teacherInsights.recordResult.writing'), writing, setWriting], [t('teacherInsights.recordResult.speaking'), speaking, setSpeaking]] as const)
                   .map(([label, value, setter]) => (
                     <div key={label}>
                       <label className="text-xs font-medium">{label}</label>
                       <select value={value} onChange={(e) => (setter as any)(e.target.value)}
-                              aria-label={`${label} band`}
+                              aria-label={t('teacherInsights.recordResult.bandAria', { section: label })}
                               className="mt-1 block w-full rounded-md border border-input bg-background px-2 py-2 text-sm">
                         {IELTS_BANDS.map((b) => <option key={b} value={b}>{b || '—'}</option>)}
                       </select>
@@ -211,7 +214,7 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
 
           {examType === 'nuet' && (
             <div>
-              <label htmlFor="rr-t" className="text-xs font-medium">Total score *</label>
+              <label htmlFor="rr-t" className="text-xs font-medium">{t('teacherInsights.recordResult.totalScore')}</label>
               <Input id="rr-t" type="number" value={overall} className="mt-1"
                      onChange={(e) => setOverall(e.target.value)} />
             </div>
@@ -219,19 +222,18 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
 
           <div>
             <label htmlFor="rr-proof" className="text-xs font-medium">
-              Proof (score report) — optional
+              {t('teacherInsights.recordResult.proof')}
             </label>
             <input id="rr-proof" type="file" accept="image/*,application/pdf"
                    onChange={(e) => setProof(e.target.files?.[0] ?? null)}
                    className="mt-1 block w-full text-sm" />
             <p className="text-[11px] text-muted-foreground mt-1">
-              JPEG, PNG, GIF, WEBP or PDF, up to 10 MB. Stored privately and only
-              reachable by staff who can already see this student.
+              {t('teacherInsights.recordResult.proofHint')}
             </p>
           </div>
 
           <div>
-            <label htmlFor="rr-notes" className="text-xs font-medium">Notes</label>
+            <label htmlFor="rr-notes" className="text-xs font-medium">{t('teacherInsights.recordResult.notes')}</label>
             <Input id="rr-notes" value={notes} className="mt-1"
                    onChange={(e) => setNotes(e.target.value)} />
           </div>
@@ -245,9 +247,9 @@ export function RecordResultDialog({ row, examType, officialDates, onClose, onSa
         {error && <p className="mt-3 text-xs text-red-600 dark:text-red-400" role="alert">{error}</p>}
 
         <div className="mt-5 flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button variant="outline" size="sm" onClick={onClose} disabled={saving}>{t('common.cancel')}</Button>
           <Button size="sm" onClick={save} disabled={!canSave}>
-            {saving ? 'Saving…' : 'Save attempt'}
+            {saving ? t('teacherInsights.shared.saving') : t('teacherInsights.recordResult.saveAttempt')}
           </Button>
         </div>
       </div>

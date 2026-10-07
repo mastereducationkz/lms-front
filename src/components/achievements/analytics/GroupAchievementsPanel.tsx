@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { ChevronDown, Loader2, Trophy } from 'lucide-react';
 import { getAchievementsAnalytics, type AchievementsAnalytics } from '@/services/api/achievementsAnalytics';
 import { formatPct, highlights } from '@/lib/achievementsAnalytics';
+import { achievementField } from '@/lib/achievements';
 import { useT } from '@/lib/i18n/react';
 import RarityTable from './RarityTable';
 import StarsByStaff from './StarsByStaff';
@@ -91,7 +92,7 @@ export default function GroupAchievementsPanel({ groupId }: { groupId: number })
                   <p className="mb-1 text-xs font-medium text-muted-foreground">{t('achievements.group.rarest')}</p>
                   {picks && picks.rarest.length ? picks.rarest.map((a) => (
                     <p key={a.key} className="flex justify-between py-1.5 text-sm">
-                      <span className="text-foreground">{a.title}</span>
+                      <span className="text-foreground">{achievementField(a, 'title')}</span>
                       <span className="tabular-nums text-muted-foreground">{a.unlocked} · {formatPct(a.pct)}</span>
                     </p>
                   )) : <Empty>{t('achievements.nothingYet')}</Empty>}

@@ -11,16 +11,18 @@ import { AtSign, Download, Laptop, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { trackShare } from '@/services/api/shares';
+import { useT } from '@/lib/i18n/react';
+import '@/lib/i18n/catalogs/studentHome';
 import { renderShareCard } from './renderShareCard';
 import {
-  DESKTOP_HINT,
+  desktopHint,
   formatShareName,
   isIOSDevice,
   saveMethod,
-  SHARE_CAPTION,
   shareButtons,
+  shareCaption,
   shareErrorMessage,
-  TAG_PROMPT,
+  tagPrompt,
   type NameMode,
 } from './shareCopy';
 import type { ShareItem } from './shareItems';
@@ -36,6 +38,7 @@ function isDesktop(): boolean {
 }
 
 export default function ShareDialog({ item, onClose }: { item: ShareItem; onClose: () => void }) {
+  const t = useT();
   const [nameMode, setNameMode] = useState<NameMode>('short');
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -49,7 +52,7 @@ export default function ShareDialog({ item, onClose }: { item: ShareItem; onClos
   const nameOptions: { mode: NameMode; label: string }[] = [
     ...(short ? [{ mode: 'short' as const, label: short }] : []),
     ...(full && full !== short ? [{ mode: 'full' as const, label: full }] : []),
-    { mode: 'none', label: 'No name' },
+    { mode: 'none', label: t('studentHome.share.noName') },
   ];
 
   // Draw the card (again when the name option changes).
@@ -88,9 +91,9 @@ export default function ShareDialog({ item, onClose }: { item: ShareItem; onClos
     if (!file) return;
     setMessage(null);
     // No await before this call: the share sheet must open inside the tap.
-    navigator.share({ files: [file], title: item.text.title, text: SHARE_CAPTION })
+    navigator.share({ files: [file], title: item.text.title, text: shareCaption() })
       .then(() => {
-        setMessage('Shared! Tag @master.education so we can see it.');
+        setMessage(t('studentHome.share.shared'));
         trackShare(item.kind, item.ref, 'native');
       })
       .catch((error) => setMessage(shareErrorMessage(error)));
@@ -103,7 +106,7 @@ export default function ShareDialog({ item, onClose }: { item: ShareItem; onClos
       // iOS: a blob download can open a tab instead of saving; the sheet's «Save Image» puts it in Photos.
       navigator.share({ files: [file] })
         .then(() => {
-          setMessage('Saved. Post it from your Photos as a story.');
+          setMessage(t('studentHome.share.savedPhotos'));
           trackShare(item.kind, item.ref, 'download');
         })
         .catch((error) => setMessage(shareErrorMessage(error)));
@@ -115,7 +118,7 @@ export default function ShareDialog({ item, onClose }: { item: ShareItem; onClos
     document.body.appendChild(a);
     a.click();
     a.remove();
-    setMessage(desktop ? 'Saved to your downloads.' : 'Saved. Post it from your gallery as a story.');
+    setMessage(t(desktop ? 'studentHome.share.savedDownloads' : 'studentHome.share.savedGallery'));
     trackShare(item.kind, item.ref, 'download');
   };
 
@@ -130,7 +133,7 @@ export default function ShareDialog({ item, onClose }: { item: ShareItem; onClos
       disabled={!ready}
       onClick={share}
     >
-      <Share2 className={`mr-2 ${primary ? 'h-5 w-5' : 'h-4 w-4'}`} aria-hidden /> Share
+      <Share2 className={`mr-2 ${primary ? 'h-5 w-5' : 'h-4 w-4'}`} aria-hidden /> {t('studentHome.share.share')}
     </Button>
   );
   const saveButton = (primary: boolean) => (
@@ -143,7 +146,7 @@ export default function ShareDialog({ item, onClose }: { item: ShareItem; onClos
       disabled={!ready}
       onClick={save}
     >
-      <Download className={`mr-2 ${primary ? 'h-5 w-5' : 'h-4 w-4'}`} aria-hidden /> Save image
+      <Download className={`mr-2 ${primary ? 'h-5 w-5' : 'h-4 w-4'}`} aria-hidden /> {t('studentHome.share.saveImage')}
     </Button>
   );
 
@@ -155,10 +158,10 @@ export default function ShareDialog({ item, onClose }: { item: ShareItem; onClos
           <div className="flex items-center justify-center bg-gradient-to-br from-blue-900 via-blue-700 to-blue-950 p-5 md:rounded-l-3xl dark:bg-none dark:bg-brand-surface">
             <div className="relative aspect-[9/16] w-[min(168px,44vw)] overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15 md:w-[260px]">
               {preview && !drawFailed ? (
-                <img src={preview} alt={`Story card: ${item.text.title}`} className={`h-full w-full object-cover transition-opacity ${ready ? 'opacity-100' : 'opacity-60'}`} />
+                <img src={preview} alt={t('studentHome.share.cardAlt', { title: item.text.title })} className={`h-full w-full object-cover transition-opacity ${ready ? 'opacity-100' : 'opacity-60'}`} />
               ) : (
                 <div className="flex h-full w-full items-center justify-center bg-white/10 text-center text-sm text-blue-100 dark:text-brand-surface-foreground">
-                  {drawFailed ? 'We couldn’t draw your card. Close and try again.' : 'Drawing your card…'}
+                  {drawFailed ? t('studentHome.share.drawFailed') : t('studentHome.share.drawing')}
                 </div>
               )}
             </div>
@@ -167,15 +170,15 @@ export default function ShareDialog({ item, onClose }: { item: ShareItem; onClos
           {/* Options and actions */}
           <div className="flex flex-col gap-5 p-5 sm:p-6">
             <div>
-              <DialogTitle className="text-xl font-bold">Share your moment</DialogTitle>
+              <DialogTitle className="text-xl font-bold">{t('studentHome.share.title')}</DialogTitle>
               <DialogDescription className="mt-1 text-sm">
-                Post this card to your Instagram story, Snapchat or WhatsApp status.
+                {t('studentHome.share.description')}
               </DialogDescription>
             </div>
 
             <fieldset>
-              <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Name on the card</legend>
-              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Name on the card">
+              <legend className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{t('studentHome.share.nameOnCard')}</legend>
+              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t('studentHome.share.nameOnCard')}>
                 {nameOptions.map((o) => (
                   <button
                     key={o.mode}
@@ -201,22 +204,22 @@ export default function ShareDialog({ item, onClose }: { item: ShareItem; onClos
                 : [saveButton(true), ...(buttons.share ? [shareButton(false)] : [])]}
               {desktop && (
                 <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Laptop className="h-4 w-4 shrink-0" aria-hidden /> {DESKTOP_HINT}
+                  <Laptop className="h-4 w-4 shrink-0" aria-hidden /> {desktopHint()}
                 </p>
               )}
             </div>
 
             <div className="rounded-2xl bg-brand-surface/80 p-3 text-sm">
               <p className="flex items-center gap-2 font-medium text-foreground">
-                <AtSign className="h-4 w-4 text-brand" aria-hidden /> {TAG_PROMPT}
+                <AtSign className="h-4 w-4 text-brand" aria-hidden /> {tagPrompt()}
               </p>
               <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                <li><span className="font-semibold text-gray-700 dark:text-foreground">Instagram</span> → Your story</li>
-                <li><span className="font-semibold text-gray-700 dark:text-foreground">WhatsApp</span> → My status</li>
-                <li><span className="font-semibold text-gray-700 dark:text-foreground">Snapchat</span> → My Story</li>
+                <li><span className="font-semibold text-gray-700 dark:text-foreground">Instagram</span> → {t('studentHome.share.instagramStory')}</li>
+                <li><span className="font-semibold text-gray-700 dark:text-foreground">WhatsApp</span> → {t('studentHome.share.whatsappStatus')}</li>
+                <li><span className="font-semibold text-gray-700 dark:text-foreground">Snapchat</span> → {t('studentHome.share.snapchatStory')}</li>
               </ul>
               {viaSheet && (
-                <p className="mt-2 text-xs text-muted-foreground">Save image opens the share menu — choose «Save Image».</p>
+                <p className="mt-2 text-xs text-muted-foreground">{t('studentHome.share.iosSaveHint')}</p>
               )}
             </div>
 

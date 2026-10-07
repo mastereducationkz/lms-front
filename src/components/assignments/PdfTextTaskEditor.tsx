@@ -4,6 +4,9 @@ import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
+import { formatNumber } from '../../lib/i18n';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/homeworkStaff';
 
 interface PdfTextTaskEditorProps {
   content: any;
@@ -15,6 +18,7 @@ const SUPPORTED_FILE_TYPES = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png', 
 const SUPPORTED_EXTENSIONS_DISPLAY = 'PDF, DOC, DOCX, JPG, PNG, GIF';
 
 export default function PdfTextTaskEditor({ content, onContentChange }: PdfTextTaskEditorProps) {
+  const t = useT();
   const [question, setQuestion] = useState(content.question || '');
   const [maxLength, setMaxLength] = useState(content.max_length || 2000);
   const [keywords, setKeywords] = useState(content.keywords?.join(', ') || '');
@@ -48,7 +52,7 @@ export default function PdfTextTaskEditor({ content, onContentChange }: PdfTextT
       const fileName = file.name.toLowerCase();
       const isValidType = SUPPORTED_FILE_TYPES.some(ext => fileName.endsWith(ext));
       if (!isValidType) {
-        alert(`Please upload a supported file type: ${SUPPORTED_EXTENSIONS_DISPLAY}`);
+        alert(t('homeworkStaff.pdf.unsupportedType', { types: SUPPORTED_EXTENSIONS_DISPLAY }));
         return;
       }
       setTeacherFile(file);
@@ -126,7 +130,7 @@ export default function PdfTextTaskEditor({ content, onContentChange }: PdfTextT
     <div className="space-y-4">
       {/* File Upload Section */}
       <div>
-        <Label className="mb-2">Reference File for Student *</Label>
+        <Label className="mb-2">{t('homeworkStaff.pdf.referenceFile')}</Label>
         <div className="space-y-2">
           {content.teacher_file_url ? (
             // Display existing uploaded file
@@ -134,14 +138,14 @@ export default function PdfTextTaskEditor({ content, onContentChange }: PdfTextT
               <div className="flex items-center space-x-2 flex-1">
                 <FileText className="w-4 h-4 text-brand" />
                 <div className="flex flex-col">
-                  <span className="text-sm font-medium text-brand-surface-foreground">{content.teacher_file_name || 'File'}</span>
+                  <span className="text-sm font-medium text-brand-surface-foreground">{content.teacher_file_name || t('homeworkStaff.pdf.fileFallback')}</span>
                   <a 
                     href={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + content.teacher_file_url} 
                     target="_blank" 
                     rel="noopener noreferrer" 
                     className="text-xs text-brand  hover:underline"
                   >
-                    View/Download File
+                    {t('homeworkStaff.editor.viewDownloadFile')}
                   </a>
                 </div>
               </div>
@@ -162,7 +166,7 @@ export default function PdfTextTaskEditor({ content, onContentChange }: PdfTextT
                 <FileText className="w-4 h-4 text-brand" />
                 <span className="text-sm font-medium text-foreground">{teacherFileName}</span>
                 <span className="text-xs text-muted-foreground">
-                  ({(teacherFile.size / 1024 / 1024).toFixed(2)} MB)
+                  {t('homeworkStaff.editor.fileSize', { size: formatNumber(teacherFile.size / 1024 / 1024, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) })}
                 </span>
               </div>
               <Button
@@ -190,10 +194,10 @@ export default function PdfTextTaskEditor({ content, onContentChange }: PdfTextT
                   <FileText className="w-8 h-8 text-muted-foreground" />
                   <div>
                     <span className="text-sm font-medium text-brand  hover:text-brand">
-                      Click to upload a file
+                      {t('homeworkStaff.pdf.upload')}
                     </span>
                     <p className="text-xs text-muted-foreground  mt-1">
-                      Supported: {SUPPORTED_EXTENSIONS_DISPLAY}
+                      {t('homeworkStaff.editor.supported', { types: SUPPORTED_EXTENSIONS_DISPLAY })}
                     </p>
                   </div>
                 </div>
@@ -205,19 +209,19 @@ export default function PdfTextTaskEditor({ content, onContentChange }: PdfTextT
 
       {/* Question/Instructions */}
       <div>
-        <Label htmlFor="pdf-text-question">Question/Instructions for Student *</Label>
+        <Label htmlFor="pdf-text-question">{t('homeworkStaff.pdf.question')}</Label>
         <Textarea
           id="pdf-text-question"
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          placeholder="E.g.: Read the document and answer the question..."
+          placeholder={t('homeworkStaff.pdf.questionPlaceholder')}
           rows={3}
         />
       </div>
 
       {/* Max Length */}
       <div>
-        <Label htmlFor="pdf-text-max-length">Maximum Response Length (characters)</Label>
+        <Label htmlFor="pdf-text-max-length">{t('homeworkStaff.pdf.maxLength')}</Label>
         <Input
           id="pdf-text-max-length"
           type="number"
@@ -230,16 +234,16 @@ export default function PdfTextTaskEditor({ content, onContentChange }: PdfTextT
 
       {/* Keywords for Auto-Grading */}
       <div>
-        <Label htmlFor="pdf-text-keywords">Keywords for Grading (optional)</Label>
+        <Label htmlFor="pdf-text-keywords">{t('homeworkStaff.pdf.keywords')}</Label>
         <Input
           id="pdf-text-keywords"
           type="text"
           value={keywords}
           onChange={(e) => setKeywords(e.target.value)}
-          placeholder="keyword1, keyword2, keyword3"
+          placeholder={t('homeworkStaff.editor.keywordsPlaceholder')}
         />
         <p className="text-xs text-muted-foreground  mt-1">
-          Comma-separated. These words will be used for auto-grading the student's response.
+          {t('homeworkStaff.pdf.keywordsHint')}
         </p>
       </div>
 
@@ -247,9 +251,9 @@ export default function PdfTextTaskEditor({ content, onContentChange }: PdfTextT
       <div className="pt-4 border-t">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <Label className="text-sm font-semibold">Answer Fields (Auto-Check)</Label>
+            <Label className="text-sm font-semibold">{t('homeworkStaff.answerFields.title')}</Label>
             <p className="text-xs text-muted-foreground  mt-0.5">
-              Students will enter answers; system will auto-check them.
+              {t('homeworkStaff.answerFields.hint')}
             </p>
           </div>
           <Button
@@ -259,7 +263,7 @@ export default function PdfTextTaskEditor({ content, onContentChange }: PdfTextT
             onClick={addAnswerField}
           >
             <Plus className="w-4 h-4 mr-1" />
-            Add Field
+            {t('homeworkStaff.answerFields.add')}
           </Button>
         </div>
 
@@ -277,7 +281,7 @@ export default function PdfTextTaskEditor({ content, onContentChange }: PdfTextT
                       updateAnswerField(index, 'label', `${index + 1}`);
                     }
                   }}
-                  placeholder="Enter correct answer..."
+                  placeholder={t('homeworkStaff.answerFields.correctPlaceholder')}
                   className="text-sm font-mono flex-1"
                 />
                 <Button
@@ -296,8 +300,8 @@ export default function PdfTextTaskEditor({ content, onContentChange }: PdfTextT
 
         {answerFields.length === 0 && (
           <div className="text-center py-6 bg-muted dark:bg-secondary border border-dashed dark:border-border rounded-lg">
-            <p className="text-sm text-muted-foreground">No answer fields added yet</p>
-            <p className="text-xs text-muted-foreground  mt-1">Click "Add Field" to create an answer field</p>
+            <p className="text-sm text-muted-foreground">{t('homeworkStaff.answerFields.empty')}</p>
+            <p className="text-xs text-muted-foreground  mt-1">{t('homeworkStaff.answerFields.emptyHint')}</p>
           </div>
         )}
       </div>

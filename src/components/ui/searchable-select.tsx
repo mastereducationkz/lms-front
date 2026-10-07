@@ -3,6 +3,8 @@ import { Check, ChevronsUpDown, Search } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './popover';
 import { Button } from './button';
 import { Input } from './input';
+import { useT } from '../../lib/i18n/react';
+import '@/lib/i18n/catalogs/sharedUi';
 
 export interface SearchableOption {
   value: string;
@@ -25,9 +27,9 @@ interface SearchableSelectProps {
 
 /** A single-choice dropdown with a search box: type part of a name to filter, Enter picks the first match. */
 export function SearchableSelect({
-  options, value, onChange, placeholder = 'Choose…', searchPlaceholder = 'Type to search…',
-  emptyText = 'Nothing matches', disabled, className, ariaLabel,
+  options, value, onChange, placeholder, searchPlaceholder, emptyText, disabled, className, ariaLabel,
 }: SearchableSelectProps) {
+  const t = useT();
   const id = useId();
   const listId = `${id}-list`;
   const [open, setOpen] = useState(false);
@@ -75,7 +77,7 @@ export function SearchableSelect({
       <PopoverTrigger asChild>
         <Button type="button" variant="outline" role="combobox" aria-label={ariaLabel} aria-expanded={open} disabled={disabled}
                 className={`justify-between font-normal ${className ?? ''}`}>
-          <span className={`truncate ${selected ? '' : 'text-muted-foreground'}`} title={selected?.label}>{selected ? selected.label : placeholder}</span>
+          <span className={`truncate ${selected ? '' : 'text-muted-foreground'}`} title={selected?.label}>{selected ? selected.label : placeholder ?? t('sharedUi.select.placeholder')}</span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" aria-hidden="true" />
         </Button>
       </PopoverTrigger>
@@ -91,7 +93,7 @@ export function SearchableSelect({
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={searchPlaceholder}
+            placeholder={searchPlaceholder ?? t('sharedUi.select.searchPlaceholder')}
             className="h-9 border-0 px-0 shadow-none focus-visible:ring-0"
             onKeyDown={(e) => {
               if (e.key === 'ArrowDown') { e.preventDefault(); setActive((i) => Math.min(i + 1, filtered.length - 1)); }
@@ -110,7 +112,7 @@ export function SearchableSelect({
         </div>
         {/* overscroll-contain: reaching either end of the list never scrolls what is behind it. */}
         <ul ref={listRef} id={listId} role="listbox" className="max-h-72 min-h-0 flex-1 overflow-y-auto overscroll-contain py-1">
-          {filtered.length === 0 && <li className="px-3 py-2 text-sm text-muted-foreground">{emptyText}</li>}
+          {filtered.length === 0 && <li className="px-3 py-2 text-sm text-muted-foreground">{emptyText ?? t('sharedUi.select.empty')}</li>}
           {filtered.map((o, i) => (
             <li key={o.value}>
               <button

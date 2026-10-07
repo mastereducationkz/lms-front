@@ -1,4 +1,6 @@
 import { api } from './client';
+import { t, type MessageKey } from '../../lib/i18n';
+import '@/lib/i18n/catalogs/meetViews';
 
 /**
  * Who spoke in a lesson, for how long — and what was said.
@@ -188,7 +190,7 @@ export async function getLessonTalk(eventId: number): Promise<TalkRecord | null>
   } catch (error: unknown) {
     const status = statusOf(error);
     if (status === 404 || status === 403) return null;
-    throw new Error('Failed to load the talk time');
+    throw new Error(t('meetViews.talkErrors.lesson'));
   }
 }
 
@@ -310,7 +312,7 @@ export interface TeacherTalk {
 /** Talk time is switched off (409): the views say so instead of "couldn't load". */
 export class TalkSwitchedOff extends Error {
   constructor() {
-    super('Talk time is switched off');
+    super(t('meetViews.talkErrors.switchedOff'));
     this.name = 'TalkSwitchedOff';
   }
 }
@@ -318,7 +320,7 @@ export class TalkSwitchedOff extends Error {
 type Range = { date_from?: string | null; date_to?: string | null };
 
 /** A talk report: null when not the viewer's to see (404/403), TalkSwitchedOff on 409. */
-async function report<T>(url: string, range: Range, failure: string): Promise<T | null> {
+async function report<T>(url: string, range: Range, failure: MessageKey): Promise<T | null> {
   const params: Record<string, string> = {};
   if (range.date_from) params.date_from = range.date_from;
   if (range.date_to) params.date_to = range.date_to;
@@ -329,23 +331,23 @@ async function report<T>(url: string, range: Range, failure: string): Promise<T 
     const status = statusOf(error);
     if (status === 404 || status === 403) return null;
     if (status === 409) throw new TalkSwitchedOff();
-    throw new Error(failure);
+    throw new Error(t(failure));
   }
 }
 
 /** Every teacher over a period (admins and heads; null for anyone else). */
 export function getTeachersTalk(range: Range = {}): Promise<TeachersTalk | null> {
-  return report<TeachersTalk>('/meet-attendance/talk/teachers', range, 'Failed to load the teachers’ talk time');
+  return report<TeachersTalk>('/meet-attendance/talk/teachers', range, 'meetViews.talkErrors.teachers');
 }
 
 /** One teacher over a period: all their groups together, each group, each lesson. */
 export function getTeacherTalk(teacherId: number, range: Range = {}): Promise<TeacherTalk | null> {
-  return report<TeacherTalk>(`/meet-attendance/talk/teachers/${teacherId}`, range, 'Failed to load the teacher’s talk time');
+  return report<TeacherTalk>(`/meet-attendance/talk/teachers/${teacherId}`, range, 'meetViews.talkErrors.teacher');
 }
 
 /** One group's talk time over a period (default: the last 30 days); null when not the viewer's group. */
 export function getGroupTalk(groupId: number, range: Range = {}): Promise<GroupTalk | null> {
-  return report<GroupTalk>(`/meet-attendance/talk/groups/${groupId}`, range, 'Failed to load the group’s talk time');
+  return report<GroupTalk>(`/meet-attendance/talk/groups/${groupId}`, range, 'meetViews.talkErrors.group');
 }
 
 export interface TalkSettings {
@@ -365,7 +367,7 @@ export async function getTalkSettings(): Promise<TalkSettings> {
     const response = await api.get('/meet-attendance/talk/settings', NO_CACHE);
     return response.data as TalkSettings;
   } catch (error: unknown) {
-    throw detailOf(error, 'Could not load the talk time settings');
+    throw detailOf(error, t('meetViews.talkErrors.loadSettings'));
   }
 }
 
@@ -375,6 +377,6 @@ export async function updateTalkSettings(patch: { enabled?: boolean; transcripts
     const response = await api.put('/meet-attendance/talk/settings', patch);
     return response.data as TalkSettings;
   } catch (error: unknown) {
-    throw detailOf(error, 'Could not change the talk time settings');
+    throw detailOf(error, t('meetViews.talkErrors.changeSettings'));
   }
 }

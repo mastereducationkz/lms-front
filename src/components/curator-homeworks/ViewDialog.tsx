@@ -347,7 +347,7 @@ export const ViewDialog: React.FC<ViewDialogProps> = ({
                 <p className="font-medium">{student.student_name}</p>
               </div>
               <div>
-                <label className="text-sm text-muted-foreground">Email</label>
+                <label className="text-sm text-muted-foreground">{t('attendance.submission.email')}</label>
                 <p className="font-medium">{student.student_email}</p>
               </div>
               <div>

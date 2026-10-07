@@ -2,6 +2,8 @@ import React from 'react'
 import { Check, X } from 'lucide-react'
 import { renderTextWithLatex } from '../../../utils/latex'
 import { sanitizeHtml } from '../../../lib/safeHtml'
+import { useT } from '../../../lib/i18n/react'
+import '@/lib/i18n/catalogs/lessonPlayer'
 
 interface ChoiceQuestionProps {
   question: any
@@ -26,6 +28,7 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
   crossedOut,
   onCrossOut,
 }) => {
+  const t = useT()
   const isMultiple = question.question_type === 'multiple_choice'
 
   const isSelected = (i: number) =>
@@ -161,7 +164,7 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
                   {option.image_url && (
                     <img
                       src={(import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000') + option.image_url}
-                      alt={`Option ${letter}`}
+                      alt={t('lessonPlayer.choice.optionAlt', { letter })}
                       className={`mt-2 max-h-96 rounded border border-border ${crossed ? 'opacity-30' : ''}`}
                     />
                   )}
@@ -175,8 +178,8 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
               <button
                 type="button"
                 onClick={(e) => handleEliminateClick(e, i)}
-                aria-label={crossed ? `Restore option ${letter}` : `Eliminate option ${letter}`}
-                title={crossed ? 'Click to restore' : 'Click to eliminate'}
+                aria-label={crossed ? t('lessonPlayer.choice.restore', { letter }) : t('lessonPlayer.choice.eliminate', { letter })}
+                title={crossed ? t('lessonPlayer.choice.restoreHint') : t('lessonPlayer.choice.eliminateHint')}
                 className={[
                   'w-8 h-8 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all duration-150 relative',
                   crossed
@@ -184,7 +187,7 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
                     : 'border-muted-foreground/35 text-muted-foreground/35 hover:border-muted-foreground/70 hover:text-muted-foreground/70',
                 ].join(' ')}
               >
-                <span className={`text-[11px] font-bold leading-none select-none`}>
+                <span className="text-[11px] font-bold leading-none select-none">
                   {letter}
                 </span>
                 {/* Horizontal strikethrough line */}
@@ -201,7 +204,7 @@ export const ChoiceQuestion: React.FC<ChoiceQuestionProps> = ({
       {/* Nothing picked (or the pick cleared to -1) is scored wrong — say so, or no option shows it. */}
       {showResult && !(question.options || []).some((_: unknown, i: number) => isSelected(i)) && (
         <p className="flex items-center gap-1.5 text-sm font-medium text-red-600 dark:text-red-400">
-          <X className="h-4 w-4" aria-hidden="true" /> No answer selected
+          <X className="h-4 w-4" aria-hidden="true" /> {t('lessonPlayer.choice.noAnswer')}
         </p>
       )}
     </div>
