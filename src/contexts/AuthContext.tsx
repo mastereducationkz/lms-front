@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setSentryUser(user ? { id: user.id, email: user.email, name: user.full_name || user.name, role: user.role } : null);
   }, [user?.id, user?.email, user?.full_name, user?.name, user?.role]);
 
-  // The install card's per-person pacing and the update toast's language (services/pwaInstall);
+  // The install card's per-person pacing (services/pwaInstall);
   // a browser already subscribed to push is re-linked to whoever signed in (services/webPush).
   useEffect(() => {
     setPwaUser(user ? { id: user.id, role: user.role, onboardingCompletedAt: user.onboarding_completed_at ?? null } : null);
